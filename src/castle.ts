@@ -5,8 +5,8 @@
  * (src/castle-floor.ts) and the simulators all read the same castle.
  *
  * Preliminary (2026-11-19): the whole block plays end to end with the dynamics only. Every number
- * is a first guess for `just fight-sim`, the pupils are five of the eight designed, and the rest
- * room and the find are rooms with nothing in them yet.
+ * is a first guess for `just fight-sim`, and the rest room and the find are rooms with nothing in
+ * them yet.
  */
 import type { Element, TimedId } from './battle.ts';
 
@@ -29,8 +29,8 @@ export type CastleFlag = (typeof CASTLE_FLAGS)[number];
 /** Its fights: each room's pupils by phase (their year), La Delegada's, the two bosses and the Queen, before and after the artilugio. */
 export const CASTLE_ENCOUNTERS = [
   'alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1',
-  'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'delegada-2',
-  'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'delegada-3',
+  'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2',
+  'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3',
   'aurelia', 'direccion', 'reina', 'reina-vuelta',
 ] as const;
 export type CastleEncounter = (typeof CASTLE_ENCOUNTERS)[number];
@@ -61,13 +61,13 @@ export const CASTLE_PHASES: readonly CastlePhase[] = [
   },
   {
     id: 2, environment: 'castillo-2', name: 'Castillo · Segundo curso', rooms: 10, lattice: [5, 3], from: 'gimnasio', to: 'secretaria',
-    fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
+    fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
     into: { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } }, out: { environment: 'palacio-gimnasio', cell: { x: 19, z: 2 } },
     bossAt: { x: 3, z: 5 }, bossRadius: 3.2,
   },
   {
     id: 3, environment: 'castillo-3', name: 'Castillo · Tercer curso', rooms: 12, lattice: [5, 4], from: 'secretaria', to: 'trono',
-    fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c'], elite: 'delegada-3', boss: 'reina', flag: 'reina',
+    fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d'], elite: 'delegada-3', boss: 'reina', flag: 'reina',
     into: { environment: 'palacio-trono', cell: { x: 1, z: 16 } }, out: { environment: 'palacio-secretaria', cell: { x: 7, z: 1 } },
     bossAt: { x: 13, z: 7 }, bossRadius: 3.2,
   },
@@ -234,20 +234,23 @@ export const roomId = (room: CastleRoom) => `castillo-sala-${room.id}`;
 
 // ——— The fights ————————————————————————————————————————————————————————————————————————
 /**
- * The Queen's pupils (docs/castle.md § Bestiary), gum in the shape of a pupil. Five of the eight
- * are built: El Repetidor, El Empollón, La Chivata, Los Gemelos (two `gemelo`) and La Delegada.
+ * The Queen's pupils (docs/castle.md § Bestiary), gum in the shape of a pupil, all eight: El
+ * Repetidor, El Empollón, La Chivata, Los Gemelos (two `gemelo`) and La Delegada from the first
+ * year; El Ausente and El Castigado from the second; El Montón (`monton`, the one designed as El
+ * Nuevo) in the third.
  */
-export type PupilKind = 'repetidor' | 'empollon' | 'chivata' | 'gemelo' | 'delegada';
+export type PupilKind = 'repetidor' | 'empollon' | 'chivata' | 'gemelo' | 'delegada' | 'ausente' | 'castigado' | 'monton';
 /**
  * Everyone who fights in the castle. `atril` and `mano` are things with their own PV that never
  * take a turn and never hold up the win: Aurelià's lectern, the Queen's two hands. `directiva` is
  * each of Mar, Montse and Pilar.
  */
 export type CastleKind = PupilKind | 'aurelia' | 'atril' | 'directiva' | 'reina' | 'mano';
-export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'aurelia', 'atril', 'directiva', 'reina', 'mano'] as const satisfies readonly CastleKind[];
+export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'ausente', 'castigado', 'monton', 'aurelia', 'atril', 'directiva', 'reina', 'mano'] as const satisfies readonly CastleKind[];
 export const isCastle = (kind?: string): kind is CastleKind => !!kind && (CASTLE_KINDS as readonly string[]).includes(kind);
 export const CASTLE_NAMES: Record<CastleKind, string> = {
   repetidor: 'El Repetidor', empollon: 'El Empollón', chivata: 'La Chivata', gemelo: 'Gemelo', delegada: 'La Delegada',
+  ausente: 'El Ausente', castigado: 'El Castigado', monton: 'El Montón',
   aurelia: 'Aurelià', atril: 'El Atril', directiva: 'Dirección', reina: 'La Reina Bubbaloo', mano: 'Mano',
 };
 /** Who comes out in each room's fight, in the order they stand. */
@@ -259,17 +262,25 @@ export const CASTLE_FIGHTS: Record<RoomEncounter, readonly PupilKind[]> = {
   'alumnos-2a': ['chivata', 'repetidor', 'empollon'],
   'alumnos-2b': ['empollon', 'empollon', 'chivata'],
   'alumnos-2c': ['gemelo', 'gemelo', 'repetidor'],
+  // El Ausente with El Repetidor: one blow told a turn ahead, one never told but on a rhythm.
+  'alumnos-2d': ['ausente', 'repetidor'],
+  // El Empollón with El Castigado (docs/castle.md § Three years): no blow twice, and it must fall in one.
+  'alumnos-2e': ['empollon', 'castigado'],
   'delegada-2': ['delegada', 'gemelo', 'gemelo', 'chivata'],
   'alumnos-3a': ['chivata', 'chivata', 'repetidor'],
   'alumnos-3b': ['empollon', 'repetidor', 'chivata'],
   'alumnos-3c': ['gemelo', 'gemelo', 'empollon'],
+  // El Montón with La Chivata: whatever it was shown comes back, and her mark triples it.
+  'alumnos-3d': ['monton', 'chivata'],
   'delegada-3': ['delegada', 'gemelo', 'gemelo'],
 };
 /** Each fight by name, for the development picker (src/jump-menu.ts). */
 export const CASTLE_FIGHT_NAMES: Record<CastleEncounter, string> = {
   'alumnos-1a': 'Chivata y Repetidor · 1.º', 'alumnos-1b': 'Empollón y Chivata · 1.º', 'alumnos-1c': 'Los Gemelos · 1.º', 'delegada-1': 'La Delegada · 1.º',
-  'alumnos-2a': 'Chivata, Repetidor y Empollón · 2.º', 'alumnos-2b': 'Empollones y Chivata · 2.º', 'alumnos-2c': 'Gemelos y Repetidor · 2.º', 'delegada-2': 'La Delegada · 2.º',
-  'alumnos-3a': 'Chivatas y Repetidor · 3.º', 'alumnos-3b': 'Empollón, Repetidor y Chivata · 3.º', 'alumnos-3c': 'Gemelos y Empollón · 3.º', 'delegada-3': 'La Delegada · 3.º',
+  'alumnos-2a': 'Chivata, Repetidor y Empollón · 2.º', 'alumnos-2b': 'Empollones y Chivata · 2.º', 'alumnos-2c': 'Gemelos y Repetidor · 2.º',
+  'alumnos-2d': 'Ausente y Repetidor · 2.º', 'alumnos-2e': 'Empollón y Castigado · 2.º', 'delegada-2': 'La Delegada · 2.º',
+  'alumnos-3a': 'Chivatas y Repetidor · 3.º', 'alumnos-3b': 'Empollón, Repetidor y Chivata · 3.º', 'alumnos-3c': 'Gemelos y Empollón · 3.º',
+  'alumnos-3d': 'Montón y Chivata · 3.º', 'delegada-3': 'La Delegada · 3.º',
   aurelia: 'Aurelià', direccion: 'El Equipo de dirección', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',
 };
 /** A pupil's year (docs/castle.md § Three years): fresh gum, gum with a filling, rancid gum. */
@@ -279,7 +290,7 @@ export const yearOf = (encounter: string): Year => (Number(/-(\d)/.exec(encounte
 export const castlePhaseOf = (encounter: CastleEncounter): CastlePhaseId => encounter === 'aurelia' ? 1 : encounter === 'direccion' ? 2 : encounter === 'reina' || encounter === 'reina-vuelta' ? 3 : yearOf(encounter);
 export const YEARS: Record<Year, string> = { 1: 'Fresco', 2: 'Con relleno', 3: 'Rancio' };
 /** How big each stands, against the palace minion they are drawn from for now (placeholders: none has a model of its own yet). */
-export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25 };
+export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, ausente: .72, castigado: .9, monton: .78, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25 };
 /** The management team, in the order they stand and act, and the element each starts with. */
 export const DIRECTIVAS = [
   { id: 'mar', name: 'Mar', element: 'fuego' },
@@ -303,6 +314,14 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
  * times as hard; her own is `senalar`. A Gemelo hits `gemelo` and gets its twin up with `levantar` of
  * its PV. La Delegada hits `orden`; a filling's element lands as ELEMENT_RULES says.
  *
+ * El Ausente is not there: it strikes `presente` from nowhere every other round and can only be hit
+ * in the round after. El Castigado never attacks: each blow that does not fell it is a point of
+ * Rabia, and at `rabia` it bursts on everyone for `revienta` on its turn. El Montón, shapeless,
+ * leans on one for `arrimarse`; the first blow it takes gives it its shape, and from then on every
+ * turn it gives that blow back, `copia` times what it took (and its year's on top), to one or, if
+ * the blow was on everyone, to everyone, with what it carried: a fire, water (always on everyone), a
+ * shock, or `sangre` stacks of Sangrado.
+ *
  * Aurelià. Phases at `carrera` and `recta` of his PV. With El Atril standing he takes `atril` of
  * everything. Dictado `dictado` on everyone, Pregunta `pregunta` on one (answered by holding on, the
  * next blow on him lands `expuesto` times as hard), Castigo `castigo` on whoever repeated a kind of
@@ -325,6 +344,7 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
 export const CASTLE = {
   year2: 1.25, year3: 1.25,
   empujon: 46, crust: 2, crusted: .3, repaso: 24, learned: .3, chivatazo: 3, senalar: 12, gemelo: 20, levantar: .5, orden: 22,
+  presente: 55, rabia: 3, revienta: 75, arrimarse: 14, copia: 1, sangre: 2,
   carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 52, expuesto: 1.5, castigo: 40, castigoLeve: 16,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 70, recordRounds: 2,
   expediente: 18, horario: 6, circular: 12, conducida: 1.8, actaEvery: 3, resolucion: 90, cargoEvery: 4, voto: 1.3,
@@ -359,6 +379,13 @@ export const artilugioButtons = (note: number): readonly number[] => note < ARTI
  */
 export const MELODY: readonly number[] = [0, 4, 5, 7, 3, 2];
 
+/**
+ * El Montón's shapes (docs/castle.md § Bestiary): what the first blow it took carried, by kind,
+ * never by who threw it. An element (Atacar's, or a skill's: Foc Binari is fire), a blow that opens
+ * a wound, or nothing at all: a plain blow.
+ */
+export const MONTON_FORMS = { golpe: 'Golpe', fuego: 'Fuego', agua: 'Agua', electrico: 'Eléctrico', sangrado: 'Sangrado' } as const;
+export type MontonForm = keyof typeof MONTON_FORMS;
 /** Aurelià's three phases and the Queen's four, as their plates name them. */
 export const AURELIA_PHASES = { leccion: 'La lección', carrera: 'La carrera', recta: 'La última recta' } as const;
 export type AureliaPhase = keyof typeof AURELIA_PHASES;
@@ -368,7 +395,10 @@ export type ReinaPhase = keyof typeof REINA_PHASES;
  * What the castle's rules keep on a fighter (`Combatant.castle`), plain data.
  * A pupil: its `year`, the `filling` of its second (the element it is weak to), what El Empollón
  * `learned`, El Repetidor's `crust` left, a Gemelo's `twin` (an id). Anyone: `seen`, their PV when
- * last looked at (what tells a blow landed). One of the party: `marked` by La Chivata, the kinds of
+ * last looked at (what tells a blow landed). El Ausente `away`, and the round it came `back` in; El
+ * Castigado's `rage`; El Montón's `form`, how hard the blow that gave it was (`copied`, PV) and
+ * whether it reached `all` of them.
+ * One of the party: `marked` by La Chivata, the kinds of
  * their last blows (`blows`, for Castigo), rounds still `expelled`, `held` by a hand (its id) or by
  * the Queen.
  * Aurelià: his `phase`, seconds left of his `lap`, the clock statuses already on him (`clocks`) and
@@ -379,6 +409,7 @@ export type ReinaPhase = keyof typeof REINA_PHASES;
  */
 export interface CastleMark {
   year?: Year; filling?: Element; learned?: 'physical' | 'magic'; crust?: number; twin?: string; seen?: number;
+  away?: boolean; back?: number; rage?: number; form?: MontonForm; copied?: number; all?: boolean;
   /** A Gemelo brought down alone: held up by its twin at 1 PV until the round ends. `found`: a blow has found what this one is weak to. `told`: its fall has been dealt with. */
   down?: boolean; found?: boolean; told?: boolean;
   /** It loses its next turn (the Queen, her Pompa burst or startled by a note). */

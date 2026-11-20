@@ -92,6 +92,11 @@ export const PROFILES = {
   chivata: base(48, 9, 10, 8, 9, 13),
   gemelo: base(62, 12, 9, 10, 10, 10),
   delegada: base(130, 12, 12, 11, 12, 10),
+  // El Ausente quick, reached one round in two; El Castigado broad, felled in one big blow after
+  // what it could take; El Montón a lump that lasts: what it hits with is whatever the party shows it.
+  ausente: base(100, 13, 9, 9, 9, 12),
+  castigado: base(120, 12, 9, 11, 10, 6),
+  monton: base(130, 12, 12, 10, 10, 10),
   aurelia: base(420, 14, 11, 12, 12, 10),
   atril: base(90, 1, 1, 10, 8, 1),
   directiva: base(160, 10, 13, 10, 12, 10),

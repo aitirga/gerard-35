@@ -263,7 +263,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'juramento' | 'lazo' | 'resonancia' | 'destello' | 'estallido' | 'prisma' | 'golpe-directo' | 'en-linea' | 'estocada'
   | 'nota-do' | 'nota-sol' | 'nota-fa' | 'nota-re' | 'nota-sib' | 'nota-la' | 'coro' | 'aliento' | 'calderon'
   // The castle (src/castle-fight.ts): the pupils, Aurelià, Dirección and the Queen.
-  | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden'
+  | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden' | 'presente' | 'revienta' | 'arrimarse' | 'copia'
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
@@ -328,6 +328,10 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   pellizco: { name: 'Pellizco', card: false },
   codazo: { name: 'Codazo', card: false },
   orden: { name: 'Orden', card: true },
+  presente: { name: '«Presente»', card: true },
+  revienta: { name: 'Revienta', card: true },
+  arrimarse: { name: 'Se arrima', card: false },
+  copia: { name: 'Copia', card: true },
   dictado: { name: 'Dictado', card: true },
   pregunta: { name: 'Pregunta', card: true },
   castigo: { name: 'Castigo', card: true },

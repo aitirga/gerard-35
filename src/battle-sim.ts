@@ -18,8 +18,8 @@ import {
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
-import { ARTILUGIO_NOTES, CASTLE } from './castle.ts';
-import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
+import { ARTILUGIO_NOTES, CASTLE, type MontonForm } from './castle.ts';
+import { artilugioLive, castleNote, castleProp, montonCopy, nextNote } from './castle-fight.ts';
 
 export const SIM_VERSION = 2;
 export const POLICIES = {
@@ -306,6 +306,15 @@ const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo'
 const LAMP_BROKEN = 40, BRILLO_WORTH = 30;
 /** El Campeón: a step off his Plan, about a share of what his Rayo total would do to everyone. */
 const PLAN_WORTH = 22;
+/**
+ * The castle's second and third years (docs/castle.md § Bestiary). El Ausente: a PV off it the round
+ * it is there is worth more (the next chance is two rounds away). El Castigado: a point of Rabia
+ * leaves less room for the blows still to come; the one that fills it costs what its burst would do,
+ * the real rules on a copy. El Montón: the turns `smart` expects it to give its first blow back, and
+ * what each shape adds to each copy (a fire's pulses, a turn lost, a wound's ticks and its opening).
+ */
+const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 3;
+const SHAPE_WORTH: Record<MontonForm, number> = { golpe: 0, fuego: 15, agua: 0, electrico: 30, sangrado: 12 };
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
 /** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
 function threatOn(state: BattleState): Threat {
@@ -361,6 +370,18 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     }
     // Punto débil: what the next blow on it will add.
     if (now.hp > 0 && now.weakSpot !== undefined && foe.weakSpot === undefined) value += weakSpotWorth(after, now.id, ban);
+    // El Ausente the round it is there: the window.
+    if (foe.kind === 'ausente' && !foe.castle?.away) value += (foe.hp - now.hp) * PRESENT_WORTH;
+    // El Castigado: each point of Rabia, and the one that fills it, unless nothing is left to wait for (its the last, and the party's maná is full).
+    if (foe.kind === 'castigado' && now.hp > 0 && (now.castle?.rage ?? 0) > (foe.castle?.rage ?? 0)) {
+      const waiting = after.foes.some(f => f.hp > 0 && f.kind !== 'castigado') || after.allies.some(a => a.hp > 0 && a.secondary < a.maxSecondary);
+      if (waiting) {
+        value -= ((now.castle?.rage ?? 0) - (foe.castle?.rage ?? 0)) * RAGE_WORTH;
+        if ((now.castle?.rage ?? 0) >= CASTLE.rabia) value -= sum(threatOn(after)) - sum(threat);
+      }
+    }
+    // El Montón shaped by this blow: what it will give back, against what a plain Atacar would have shown it.
+    if (foe.kind === 'monton' && !foe.castle?.form && now.castle?.form) value -= Math.max(0, shapeHarm(after, now) - shapeHarm(after, now, plainCopy(before, foe.id))) * MONTON_TURNS;
   });
   // PV given back count nearly as much as PV taken away (Cardioide, Ronroneo), and a calmed mind a little.
   before.allies.forEach((ally, i) => {
@@ -369,14 +390,12 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   });
   // Cegado: what the foes would no longer do this turn and about half the next, the real rules on a copy.
   if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i]?.timed?.cegado?.level ?? 0))) {
-    const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
   // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still;
   // what the foes would no longer do, the real rules on a copy.
   const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i]?.still !== before.round);
   if (stilled) {
-    const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
   const skill = SKILLS.find(s => s.id === choice.skill);
@@ -390,6 +409,17 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   }
   return value;
 }
+/** Everything the foes would do to the party now, in PV. */
+const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);
+/** What one of El Montón's copies would take off the party, shaped as `monton` is, or by a plain blow on it alone of `copied` PV. */
+function shapeHarm(state: BattleState, monton: BattleState['foes'][number], copied?: number) {
+  const plain = copied !== undefined, form: MontonForm = plain ? 'golpe' : monton.castle!.form!;
+  const amount = plain ? montonCopy({ ...monton, castle: { ...monton.castle, copied } }) : montonCopy(monton);
+  const reach = !plain && (monton.castle!.all || form === 'agua') ? state.allies.filter(a => a.hp > 0).length : 1;
+  return (amount + SHAPE_WORTH[form]) * reach;
+}
+/** The PV a plain Atacar would take off `foeId` now: what El Montón would copy from it. */
+const plainCopy = (state: BattleState, foeId: string) => damageOn(state, { action: 'attack', target: foeId }, foeId);
 /**
  * What a fresh Punto débil on `foeId` is worth: the most the next blow on it (any ally's, a dual
  * included, with the maná they have now) would add for it, a little less since it may fade unused.
@@ -422,6 +452,12 @@ const damageOn = (state: BattleState, choice: Choice, foeId: string) => {
 const LIGHT_READ: Record<Policy, number> = { attack: 0, random: 0, casual: .3, smart: 1 };
 /** The fight as a player who has not looked at the light sees it this turn (a copy without it), or the fight itself. */
 function unread(state: BattleState, policy: Policy, random: () => number) {
+  // The castle's El Ausente: who does not read its plate swings at it as if it were there.
+  if (state.foes.some(f => f.hp > 0 && f.kind === 'ausente' && f.castle?.away) && random() >= LIGHT_READ[policy]) {
+    const blind = copy(state);
+    for (const f of blind.foes) if (f.kind === 'ausente' && f.castle) f.castle.away = false;
+    return blind;
+  }
   if (!state.light || !state.foes.some(f => f.hp > 0 && f.kind?.startsWith('estampado')) || random() < LIGHT_READ[policy]) return state;
   const blind = copy(state);
   delete blind.light;
@@ -888,6 +924,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'alumnos-primero', fight: 'alumnos-1a', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [.9, 1], why: 'Primer curso: chicle fresco, la primera lección del juego. Se gana sin pensar mucho.' },
   { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.8, 1], why: 'Tercer curso: el Empollón se aprende el golpe y el Repetidor lleva costra; alternar físico y mágico, y tumbar a la Chivata antes.' },
   { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
+  { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado.' },
+  { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .2], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
+  { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
+  { id: 'castigado-sin-pensar', fight: 'alumnos-2e', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .2], why: 'Pegándole por el camino se le llena la Rabia y revienta sobre todos mientras el Empollón sigue: se pierde.' },
+  { id: 'monton-bien', fight: 'alumnos-3d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Montón copia el primer golpe que recibe: abrir con uno flojo y sin nada (ni fuego, ni agua, ni corriente, ni sangrado, ni a todos), y la Chivata antes.' },
+  { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .35], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
   { id: 'delegada-bien', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.7, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par.' },
   { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
   { id: 'aurelia-bien', fight: 'aurelia', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.6, 1], why: 'Aurelià: romper el atril, defender la Pregunta, cambiar de estado de reloj en la carrera y gastar lo guardado antes del Récord.' },

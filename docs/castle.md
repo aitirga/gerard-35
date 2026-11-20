@@ -95,7 +95,7 @@ character **is** how it fights.
 | **Los Gemelos** | Two bodies. If one falls alone, the other gets it up at the end of the round | **Order and moment**: bring them down together and fell both in one round |
 | **El Ausente** | Not there: it cannot be hit except in the round it has just acted. Clock statuses do reach it | **Moment**, or **status**: burn it and let the clock work |
 | **El Castigado** | Facing the wall, it does not attack. Every blow that does not fell it gives it *Rabia*; at three it bursts on everyone | **Moment**: leave it for last and fell it in one big blow (an open wound, a dual, Punto débil) |
-| **El Nuevo** | Gum with no shape yet. It takes that of the first ánima that hits it and turns its status on the party | **Choose what it is shown**: open with the ánima whose status hurts least |
+| **El Montón** | One of the bunch (*uno del montón*): gum with no shape of its own. It takes the shape of the first blow that lands on it, what it carried and how hard it was, and gives it back every turn | **Choose what it is shown**: open with a light blow that carries nothing |
 | **Élite · La Delegada** | In charge. While she stands, hers all strike the same one and their tells do not show | **Part and order**: silence her (confusión, a lost turn) or fell her first |
 
 Every rule above is by **kind of blow or status, never by ánima** (combat.md), shows on the plate
@@ -113,11 +113,13 @@ year older, and the gum changes what the player knew.
 | Third | 3 | **Rancid**, grey and cracked | Fire no longer melts it: it breaks under blows. What was learned first is turned over |
 
 - **Phase 1** has four (El Repetidor, El Empollón, La Chivata, Los Gemelos) and La Delegada near
-  its end; **phase 2** adds El Ausente and El Castigado; **phase 3**, El Nuevo. Each phase brings
+  its end; **phase 2** adds El Ausente and El Castigado; **phase 3**, El Montón. Each phase brings
   something new without changing family.
 - **Difficulty comes from how they combine, not from how many there are.** La Chivata with El
   Repetidor (the mark and the shove), El Empollón with El Castigado (no blow twice, and it must
-  fall in one), La Delegada with Los Gemelos. Each room is a combination with its own question.
+  fall in one), La Delegada with Los Gemelos, El Ausente with El Repetidor (one blow told a turn
+  ahead, one never told but on a rhythm), El Montón with La Chivata (whatever it was shown comes
+  back, and her mark triples it). Each room is a combination with its own question.
 - From phase 2 on a room is **not meant to be won the first time**: it kills a party that has not
   read it, and the fall costs the day. The second meeting is the one that is played.
 - Each combination keeps its pair of `TARGETS` (`src/battle-sim.ts`), and each pupil and La
@@ -182,7 +184,7 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | --- | --- | --- |
 | The rules book, the phases, the generator | `src/castle.ts` | Floors by save, day and phase; rooms, corridors, the staff room and the cupboard |
 | A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
-| The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | Five pupils (Repetidor, Empollón, Chivata, Gemelos, Delegada) in three years, Aurelià, Dirección, the Queen; El Ausente, El Castigado and El Nuevo are to come |
+| The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), Aurelià, Dirección, the Queen |
 | The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings nightfall and moves the way in, lights for the jar, the third slot after Aurelià |
 | Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts` | She takes him at a tenth (down or not); lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
 | The last scene | `src/endings.ts` | Acabar or Bajar la mano, an epilogue over black, the Monday after |
@@ -195,13 +197,28 @@ Placeholders and decisions taken for now (each one Aitor's to change):
 - Bernat's phone call stands in for the salón de juegos mission that finds the artilugio.
 - The Acta announces its Resolución a turn ahead (docs/castle-bosses.md § Mar, Montse and Pilar),
   so holding on or breaking the quorum is the answer.
+- The last three pupils (built 2026-11-19), each in a room of its own: *Ausente y Repetidor* and
+  *Empollón y Castigado* on the second floor, *Montón y Chivata* on the third.
+  - **El Ausente** keeps a rhythm: it strikes («Presente») in the rounds it is away, then stays the
+    whole next round, the only one it can be hit in (its turn skipped), and goes. A blow while it is
+    away does nothing, but what the blow lights still takes: a fire or a wound keeps working.
+  - **El Castigado** takes no turn while it faces the wall; ticks and falls give no Rabia. Full, it
+    bursts on its turn, so the partner can still fell it first, and goes back to the wall at nought.
+  - **El Montón** reads "takes the shape of the first blow" whole: what the blow carried (an element,
+    else a wound, else nothing), how hard it was (its PV, with the year on top) and how far it
+    reached. Fire burns whoever it hits, water reaches everyone and leaves them wet, electricity
+    leaves them in shock (a turn lost), a wound bleeds; a blow on everyone comes back on everyone.
+    Its plate says what it will give back. Shapeless, it only leans on one, lightly.
 - Not built: the definitivas, the outer rings and level caps (`levelCap` exists, unused), the snow
   globe inside, zones turning back into school once won, player 2 playing Aitor, the six-note motif
   in the music, the ESP32.
 
 Measured with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`): with the dual
 party at Papagato 3 and Atacar's three elements, playing the answer wins Aurelià 82 %, Dirección
-92 %, the Queen with the artilugio 100 %; without it, 0 %. The first Queen is never won.
+92 %, the Queen with the artilugio 100 %; without it, 0 %. The first Queen is never won. The last
+three pupils' rooms, playing the answer: 100 % each; without it, El Ausente's 8 %, El Castigado's
+10 %, El Montón's 23 %: the bot that does not read it mostly opens with Las dos a la vez, a blow on
+everyone that bleeds, and wins 17 % of those; the few times it shows it a plain blow, about 60 %.
 
 ## To settle
 
@@ -220,6 +237,6 @@ Each step with Aitor's OK, and each reachable from the picker as it lands.
 3. Stage 2 of growth (the slot, the outer ring, the cap, the snow globe).
 4. Phase 2, El Ausente and El Castigado, the second year's fillings; then Mar, Montse and Pilar.
 5. The definitivas at the jar.
-6. Phase 3, El Nuevo, the third year; then La Reina Bubbaloo.
+6. Phase 3, El Montón, the third year; then La Reina Bubbaloo.
 7. Aitor held and the artilugio.
 8. The last scene and the two endings.

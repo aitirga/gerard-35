@@ -1,0 +1,195 @@
+{
+  "title": "El castillo: El Ausente, El Castigado y El Montón",
+  "description": "docs/castle.md § Bestiary. The last three pupils, each in its room from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): El Ausente with El Repetidor and its «Presente», El Empollón with El Castigado and its Rabia, El Montón with La Chivata and the blow it copies. The party holds on so the foes' turns play for real. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2d%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "ausente",
+      "delay": 1500,
+      "caption": "Second year: El Ausente and El Repetidor. El Ausente's plate: «Ausente: no se le puede pegar»"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "(() => { const el = document.querySelector('.move-callout'); return el && !el.hidden && el.querySelector('strong')?.textContent === \"«Presente»\"; })()",
+      "timeout": 30000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "ausente-presente-turno",
+      "caption": "Its turn: «Presente», a blow from nowhere"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "ausente-presente",
+      "delay": 600,
+      "caption": "The round after: «Presente hasta el final de la ronda», the only one it can be hit in"
+    },
+    {
+      "eval": "closeUp(foe('ausente').id)"
+    },
+    {
+      "shot": "ausente-cerca",
+      "delay": 900,
+      "caption": "El Ausente up close, there for one round (the palace minion's model at its size, for now)"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2e%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "castigado",
+      "delay": 1500,
+      "caption": "El Empollón and El Castigado: «De cara a la pared», it takes no turn"
+    },
+    {
+      "eval": "foe('castigado').castle.rage = 2"
+    },
+    {
+      "shot": "castigado-rabia",
+      "delay": 900,
+      "caption": "Two blows that did not fell it: «Rabia 2/3». The third that does not fell it, and it bursts on everyone"
+    },
+    {
+      "eval": "foe('castigado').castle.rage = 3"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "(() => { const el = document.querySelector('.move-callout'); return el && !el.hidden && el.querySelector('strong')?.textContent === \"Revienta\"; })()",
+      "timeout": 30000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "castigado-revienta-turno",
+      "caption": "Rabia full: on its turn it turns round and bursts on everyone («Revienta»)"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "castigado-revienta",
+      "delay": 600,
+      "caption": "Back to the wall, at nought"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-3d%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "monton",
+      "delay": 1500,
+      "caption": "Third year: El Montón and La Chivata. «Sin forma: copia el primer golpe»"
+    },
+    {
+      "eval": "Object.assign(foe('monton').castle, { form: 'sangrado', copied: 28, all: true })"
+    },
+    {
+      "shot": "monton-forma",
+      "delay": 900,
+      "caption": "Opened with Las dos a la vez, a blow on everyone that bleeds: «Copia: Sangrado · 35 a todos»"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "(() => { const el = document.querySelector('.move-callout'); return el && !el.hidden && el.querySelector('strong')?.textContent === \"Copia\"; })()",
+      "timeout": 30000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "monton-copia-turno",
+      "caption": "Its turn: «Copia», the same blow back on both of them, with Sangrado"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "monton-copia",
+      "delay": 600,
+      "caption": "Both bleeding, the copy on the plate for the rest of the fight"
+    }
+  ]
+}

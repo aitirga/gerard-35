@@ -107,7 +107,7 @@ export const FOE_SIZE: Record<string, number> = {
   // Las cuerdas' foes: La Lealtad broad, an Eco small, La Voz a person's width with room for her rings.
   lealtad: .7, eco: .35, cristalino: .5, directo: .6, voz: .8,
   // The castle: pupils a child's width (El Repetidor broader), the bosses a person's, the Queen and her hands large.
-  repetidor: .6, empollon: .4, chivata: .34, gemelo: .36, delegada: .46, aurelia: .55, atril: .4, directiva: .45, reina: 1.1, mano: .7,
+  repetidor: .6, empollon: .4, chivata: .34, gemelo: .36, delegada: .46, ausente: .36, castigado: .46, monton: .4, aurelia: .55, atril: .4, directiva: .45, reina: 1.1, mano: .7,
 };
 /** Elbow room every fighter needs round them, beyond their own size. */
 export const ROOM = .35;

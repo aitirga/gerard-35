@@ -33,7 +33,7 @@ import { LEVELLED, MAX_LEVEL, fightXp, participants } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
 import { FIRST_CLEAR, HIDING_KINDS, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, type NightTier } from './night.ts';
 import { createBoard } from './parcelas.ts';
-import { CASTLE_PHASES, castlePhaseAt } from './castle.ts';
+import { CASTLE_FIGHTS, CASTLE_PHASES, castlePhaseAt } from './castle.ts';
 import { aitorTaken } from './castle-fight.ts';
 import { Story, WRAPPER_ROOM, type StoryEffect, type StoryEvent, type StoryFlag } from './story.ts';
 import { STATION_PLACES, entranceId } from './transit.ts';
@@ -1127,7 +1127,7 @@ export const ENCOUNTER_NAMES: Record<string, string> = {
   'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-atomo': 'El Átomo', 'no-converge': 'El que no converge',
   'luca-recepcion': 'La recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', fran: 'Fran',
   // The castle (docs/castle.md): a room of pupils per letter, La Delegada, and its three bosses.
-  ...Object.fromEntries([1, 2, 3].flatMap(year => [...['a', 'b', 'c'].map(room => [`alumnos-${year}${room}`, `Alumnos · ${year}.º ${room.toUpperCase()}`]), [`delegada-${year}`, `La Delegada · ${year}.º curso`]])),
+  ...Object.fromEntries(Object.keys(CASTLE_FIGHTS).map(id => { const [, year, room] = /-(\d)(\w?)$/.exec(id)!; return [id, room ? `Alumnos · ${year}.º ${room.toUpperCase()}` : `La Delegada · ${year}.º curso`]; })),
   aurelia: 'Aurelià', direccion: 'Mar, Montse y Pilar', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',
 };
 /** A fight that tests nothing any more: won almost whole and quickly. */

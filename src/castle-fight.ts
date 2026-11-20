@@ -7,11 +7,11 @@
  *
  * Preliminary (2026-11-19): the dynamics, with first-guess numbers (src/castle.ts `CASTLE`).
  */
-import { ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, TIMED, inflict,
+import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, TIMED, addStatus, elementOf, inflict, roman, stacks, woundScale,
   type Affinity, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type TimedId } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
-import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, REINA_PHASES, UNDOES, isCastle, yearOf,
-  type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
+import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, MONTON_FORMS, REINA_PHASES, UNDOES, isCastle, yearOf,
+  type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type MontonForm, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
 
 /** What src/battle.ts lends: its own stats, PV and line-up, so a castle fight is measured as any other. */
 export interface CastleKit {
@@ -43,8 +43,12 @@ const ability = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FO
 const weakTo = (elements: readonly Element[]): Partial<Record<Element, Affinity>> => Object.fromEntries(elements.map(e => [UNDOES[e], 'weak' as const]));
 /** Things with PV that never take a turn and never hold up the win: Aurelià's lectern, the Queen's hands. */
 export const castleProp = (c: Combatant) => c.kind === 'atril' || c.kind === 'mano';
-/** Whoever has no turn now: a thing, or a Gemelo its twin is holding up. The round never waits for them. */
-export const castleIdle = (c: Combatant) => castleProp(c) || !!c.castle?.down;
+/**
+ * Whoever has no turn now: a thing, a Gemelo its twin is holding up, El Ausente the round it is
+ * there (it struck already), El Castigado until its Rabia is full. The round never waits for them.
+ */
+export const castleIdle = (c: Combatant) => castleProp(c) || !!c.castle?.down
+  || (c.kind === 'ausente' && !c.castle?.away) || (c.kind === 'castigado' && (c.castle?.rage ?? 0) < CASTLE.rabia);
 /** La Delegada in charge: standing, and neither confused nor blinded. While she is, hers strike whom she says and their tells do not show. */
 function inCharge(state: BattleState) {
   const delegada = one(state, 'delegada');
@@ -74,6 +78,9 @@ function pupil(kit: CastleKit, kind: PupilKind, id: string, name: string, year: 
   c.affinities = year === 1 ? { fuego: 'weak' } : year === 2 ? { [c.castle.filling!]: 'weak' } : { fuego: 'resist' };
   if (kind === 'repetidor' && year === 1) c.shell = true;
   if (kind === 'repetidor' && year === 3) c.castle.crust = CASTLE.crust;
+  // El Ausente starts out of reach; El Castigado facing the wall, calm.
+  if (kind === 'ausente') c.castle.away = true;
+  if (kind === 'castigado') c.castle.rage = 0;
   return c;
 }
 /** A castle fight as it starts: a room's pupils in their year, Aurelià behind his lectern, the three of Dirección, or the Queen. */
@@ -131,13 +138,14 @@ function wrap(queen: Combatant, gum: Gum) {
 /**
  * What a castle rule does to a blow that lands on `target` (a share of it; ticks and pulses never
  * come through here). El Empollón resists the kind it took last; El Repetidor's crust; a Gemelo held
- * up by its twin takes nothing; Aurelià behind his lectern takes half, and more once a question was
- * answered; the Queen's gum, her hands, and Aitor in front of her.
+ * up by its twin and El Ausente while it is not there take nothing (what a blow lights still takes:
+ * a fire, a wound); Aurelià behind his lectern takes half, and more once a question was answered;
+ * the Queen's gum, her hands, and Aitor in front of her.
  */
 export function castleTaken(state: BattleState, target: Combatant, blow: Blow): number {
   const m = target.castle;
   if (!m || !isCastle(target.kind)) return 1;
-  if (m.down) return 0;
+  if (m.down || m.away) return 0;
   if (target.kind === 'empollon') return m.learned && m.learned === blow ? CASTLE.learned : 1;
   if (target.kind === 'repetidor') return m.crust ? CASTLE.crusted : 1;
   if (target.kind === 'aurelia') return (alive(one(state, 'atril')) ? CASTLE.atril : 1) * (m.exposed ? CASTLE.expuesto : 1);
@@ -219,6 +227,21 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     use('orden'); effect.amount = strike(target, CASTLE.orden);
     called.push({ target: target.id, text: 'A ese', detail: 'Todos golpean al mismo' });
     state.message = `${actor.name} señala a ${target.name}. «A ese». −${effect.amount} PV.`;
+  } else if (actor.kind === 'ausente') {
+    // It was there all along: it strikes, and stays where it can be reached until the next round is over.
+    const m = mark(actor);
+    use('presente'); effect.amount = strike(target, CASTLE.presente);
+    m.away = false; m.back = state.round;
+    called.push({ target: actor.id, text: 'Presente', detail: 'Se le puede pegar la ronda que viene' });
+    state.message = `«Presente». ${actor.name} estaba detrás de ${target.name}, y nadie lo había visto. −${effect.amount} PV.`;
+  } else if (actor.kind === 'castigado') {
+    // Its Rabia full: it turns round and bursts on everyone, then goes back to the wall.
+    mark(actor).rage = 0;
+    use('revienta'); everyone(strike, () => CASTLE.revienta, target);
+    called.push({ target: actor.id, text: 'Revienta', detail: 'Vuelve a la pared' });
+    state.message = `${actor.name} se da la vuelta y revienta sobre todos. −${effect.amount} PV a ${target.name}. Luego vuelve a la pared.`;
+  } else if (actor.kind === 'monton') {
+    montonTurn();
   } else if (actor.kind === 'aurelia') {
     aureliaTurn();
   } else if (actor.kind === 'directiva') {
@@ -237,6 +260,44 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
   forsaken(state);
   return true;
 
+  /**
+   * El Montón: shapeless, it leans on one. Shaped, it gives back the first blow it took, as hard as
+   * that blow was (`montonCopy`), to one or to everyone as that blow reached, and with what it
+   * carried: a fire on whoever it strikes, water on everyone, a shock that costs a turn, or a wound
+   * (a blow on someone bleeding opens the old one first).
+   */
+  function montonTurn() {
+    const m = mark(actor), form = m.form;
+    if (!form) {
+      use('arrimarse'); effect.amount = strike(target, CASTLE.arrimarse);
+      state.message = `${actor.name} se os arrima, todavía sin forma. −${effect.amount} PV a ${target.name}.`;
+      return;
+    }
+    // The copy: what it took, as it took it; La Chivata's mark and holding on count as for any blow.
+    const copy: Hit = who => {
+      const marked = who.castle?.marked, bled = form === 'sangrado' ? stacks(who, 'sangrado') : 0;
+      if (marked) { delete who.castle!.marked; called.push({ target: who.id, text: `×${CASTLE.chivatazo}`, detail: 'Chivatazo' }); }
+      if (bled) delete who.statuses!.sangrado;
+      const raw = kit.sighted(actor, Math.max(1, Math.round(montonCopy(actor) * (marked ? CASTLE.chivatazo : 1) * woundScale(bled))));
+      return kit.changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
+    };
+    use('copia');
+    // What the copy leaves on each one it reaches.
+    const leave = (who: Combatant): string => {
+      if (!alive(who)) return '';
+      if (form === 'agua') { who.timed = { ...who.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; return ''; }
+      if (form === 'fuego') { const fire = inflict(who, 'quemado'); if (who === target) effect.burn = { id: 'quemado', level: fire.level }; return fire.level > 1 ? ` ${who.name}: ${TIMED.quemado.name} ${roman(fire.level)}.` : ` ${who.name} arde.`; }
+      if (form === 'electrico') { who.shock = true; effect.shocked = [...effect.shocked ?? [], who.id]; return ` ${who.name} queda en shock: pierde su siguiente turno.`; }
+      if (form === 'sangrado') { const n = addStatus(who, 'sangrado', CASTLE.sangre); if (who === target) effect.status = { id: 'sangrado', stacks: n }; return ` ${who.name}: Sangrado ${n}.`; }
+      return '';
+    };
+    const wide = m.all || form === 'agua';
+    if (wide) everyone(copy, () => 0, target); else effect.amount = copy(target, 0);
+    const after = (wide ? up : [target]).map(leave).join('');
+    state.message = wide
+      ? `${actor.name} copia el golpe y os lo devuelve a todos. −${effect.amount} PV a ${target.name}.${form === 'agua' ? ' Mojados.' : ''}${after}`
+      : `${actor.name} copia el golpe y se lo devuelve a ${target.name}. −${effect.amount} PV.${after}`;
+  }
   /** Aurelià: each turn he does what he announced and announces what comes next, by his phase. */
   function aureliaTurn() {
     const m = mark(actor), phase = m.phase ?? 'leccion', atril = alive(one(state, 'atril'));
@@ -438,6 +499,21 @@ function blowOf(effect?: BattleEffect): Blow | undefined {
   const skill = effect.kind === 'skill' ? SKILLS.find(s => s.id === effect.skill) : undefined;
   return skill?.kind === 'magic' ? 'magic' : skill?.kind === 'physical' ? 'physical' : undefined;
 }
+/** What El Montón gives back with each copy: the blow it took, and its year on top. */
+export const montonCopy = (c: Combatant) => Math.round((c.castle?.copied ?? 0) * CASTLE.copia * yearScale(c));
+/** Whether a party action was aimed at `c` or reached it (a blow on everyone). */
+const reached = (effect: BattleEffect | undefined, c: Combatant) => !!effect && (effect.hits ? effect.hits.some(h => h.target === c.id) : effect.target === c.id);
+/**
+ * What a blow carried, for El Montón's shape: the element it landed with (Atacar's, a skill's or a
+ * dual's: Foc Binari and Zarpazos de fuego are fire), else a wound it opened, else nothing.
+ */
+export function carried(effect: BattleEffect): MontonForm {
+  const dual = effect.dual ? DUALS.find(d => d.id === effect.dual!.id) : undefined, skill = effect.skill ? SKILLS.find(s => s.id === effect.skill) : undefined;
+  const element = effect.element ?? elementOf(dual ?? skill);
+  if (element) return element;
+  if ((skill && 'bleed' in skill) || effect.status?.id === 'sangrado' || effect.hits?.some(h => h.status?.id === 'sangrado')) return 'sangrado';
+  return 'golpe';
+}
 /**
  * After anything that can take PV off (an action, a tick, a pulse, a round's end): what the castle's
  * rules make of it. With an `effect` it is told there; without one, as news (`takeNews`).
@@ -463,6 +539,25 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
       m.learned = blow;
       called.push({ target: c.id, text: 'Se lo aprende', detail: blow === 'magic' ? 'Resiste la magia' : 'Resiste los golpes' });
       said.push(`${c.name} se aprende ${blow === 'magic' ? 'la magia' : 'el golpe'}: el siguiente igual le hará mucho menos.`);
+    }
+    // El Ausente is not there: the blow goes through where it was (a fire or a wound it carried still takes).
+    if (c.kind === 'ausente' && m.away && alive(c) && blow && reached(effect, c)) {
+      called.push({ target: c.id, text: 'No está', detail: 'Solo la ronda después de su golpe' });
+      said.push(`El golpe pasa por donde estaba ${c.name}. No hay nadie.`);
+    }
+    // El Castigado: every blow that does not fell it is a point of Rabia; full, it bursts on its turn.
+    if (c.kind === 'castigado' && alive(c) && hurtNow(c) && blow) {
+      m.rage = Math.min(CASTLE.rabia, (m.rage ?? 0) + 1);
+      const full = m.rage >= CASTLE.rabia;
+      called.push({ target: c.id, text: `Rabia ${m.rage}/${CASTLE.rabia}`, ...full ? { detail: 'Revienta en su turno' } : {} });
+      said.push(full ? `${c.name} se tensa entero contra la pared. En su turno se dará la vuelta.` : `${c.name} aprieta los puños contra la pared.`);
+    }
+    // El Montón takes the shape of the first blow that lands on it: what it carried, and how hard it was.
+    if (c.kind === 'monton' && !m.form && alive(c) && hurtNow(c) && blow) {
+      m.form = carried(effect!); m.copied = m.seen! - c.hp;
+      if ((effect!.hits?.length ?? 0) > 1) m.all = true;
+      called.push({ target: c.id, text: `Forma: ${MONTON_FORMS[m.form]}`, detail: `Lo devolverá${m.all || m.form === 'agua' ? ' a todos' : ''}: ${montonCopy(c)}` });
+      said.push(`${c.name} toma la forma del golpe. ${m.form === 'golpe' ? 'Solo eso: un golpe.' : `Lleva ${MONTON_FORMS[m.form].toLowerCase()} dentro.`}`);
     }
     if (c.kind === 'repetidor' && m.crust && alive(c) && hurtNow(c) && (blow === 'physical' || blow === 'dual')) {
       m.crust -= 1;
@@ -614,6 +709,11 @@ export function castleRoundEnd(state: BattleState) {
   if (!state.foes.some(f => isCastle(f.kind))) return;
   const called: Called = [], said: string[] = [], f = fight(state);
   for (const c of state.foes) {
+    // El Ausente, there since the round before: it is gone again.
+    if (c.kind === 'ausente' && alive(c) && c.castle && !c.castle.away && (c.castle.back ?? 0) < state.round) {
+      c.castle.away = true;
+      called.push({ target: c.id, text: 'Ausente' }); said.push(`${c.name} ya no está.`);
+    }
     const m = c.castle;
     if (c.kind !== 'gemelo' || !m?.down) continue;
     const twin = state.foes.find(x => x.id === m.twin);
@@ -737,6 +837,9 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
   if (m.crust) chips.push(['costra', `Costra ${m.crust}`]);
   if (m.down) chips.push(['caido', 'Caído · lo levanta su gemelo']);
   if (m.marked) chips.push(['chivatazo', `Chivatazo ×${CASTLE.chivatazo}`]);
+  if (c.kind === 'ausente') chips.push(m.away ? ['ausente', 'Ausente: no se le puede pegar'] : ['presente', 'Presente hasta el final de la ronda']);
+  if (c.kind === 'castigado') chips.push(m.rage ? ['rabia', `Rabia ${m.rage}/${CASTLE.rabia}${m.rage >= CASTLE.rabia ? ' · revienta' : ''}`] : ['pared', 'De cara a la pared']);
+  if (c.kind === 'monton') chips.push(m.form ? ['forma', `Copia: ${MONTON_FORMS[m.form]} · ${montonCopy(c)}${m.all || m.form === 'agua' ? ' a todos' : ''}`] : ['sin-forma', 'Sin forma: copia el primer golpe']);
   if (m.expelled) chips.push(['expulsado', `Expulsado · ${m.expelled}`]);
   if (m.held) chips.push(['atrapado', m.held === 'reina' ? 'Suyo' : 'Atrapado']);
   if (c.kind === 'delegada') chips.push(['delegada', inCharge(state) ? 'Manda: todos al mismo' : 'Callada']);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CASTLE, CASTLE_ENCOUNTERS, CASTLE_PHASES, MELODY, castleEntry, extraSlots, floorFor, isCastle } from '../src/castle.ts';
-import { aitorTaken, artilugioLive, castleAfter, castleNote, castleTaken, nextNote } from '../src/castle-fight.ts';
+import { aitorTaken, artilugioLive, castleAfter, castleChips, castleIdle, castleNote, castleRoundEnd, castleTaken, montonCopy, nextNote } from '../src/castle-fight.ts';
 import { castleEnvironment } from '../src/castle-floor.ts';
 import { createFearBattle } from '../src/battle.ts';
 import { Story } from '../src/story.ts';
@@ -165,4 +165,88 @@ test('held, Aitor plays her side: player 2 picks his blow from his own kit, and 
   enemyAct(state, queen.id);
   assert.ok(gerard.hp < gerard.maxHp, 'there is no way out the first time');
   assert.match(state.message, /hilo de chicle/);
+});
+
+test('El Ausente is only there the round after it strikes: a blow goes through it before, a fire it carried still burns', async () => {
+  const { act, enemyAct } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'alumnos-2d'), ausente = state.foes.find(f => f.kind === 'ausente');
+  assert.ok(ausente.castle.away && castleIdle(ausente) === false, 'it starts out of reach, with its turn to come');
+  assert.equal(castleTaken(state, ausente, 'physical'), 0);
+  assert.deepEqual(castleChips(state, ausente).map(([id]) => id).filter(id => id === 'ausente'), ['ausente'], 'its plate says so');
+  state.active = state.allies.findIndex(a => a.classId === 'matemagico');
+  const before = ausente.hp, fire = act(state, 'skill', ausente.id, 'foc-binari');
+  assert.equal(ausente.hp, before, 'nothing of the blow reaches it');
+  assert.ok(ausente.timed?.quemado, 'the fire it carried does: the clock works while it is away');
+  assert.ok(fire.called?.some(c => c.target === ausente.id && c.text === 'No está'));
+  // Its turn: «Presente», from nowhere, and it stays where it can be reached.
+  state.phase = 'enemy'; state.enemyActions = [];
+  const blow = enemyAct(state, ausente.id, state.allies[0].id);
+  assert.equal(blow.ability.id, 'presente');
+  assert.ok(blow.amount > 0 && !ausente.castle.away && castleIdle(ausente), 'there now, with no turn until it is gone again');
+  assert.equal(castleTaken(state, ausente, 'magic'), 1);
+  castleRoundEnd(state);
+  assert.ok(!ausente.castle.away, 'still there through the next round');
+  state.round++; castleRoundEnd(state);
+  assert.ok(ausente.castle.away, 'and gone when that round ends');
+});
+
+test('El Castigado never attacks: three blows that do not fell it and it bursts on everyone, a fall or a fire gives it no Rabia', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'alumnos-2e'), castigado = state.foes.find(f => f.kind === 'castigado');
+  const hit = (amount, kind = 'attack') => { castigado.hp -= amount; castleAfter(undefined, state, { kind, actor: state.allies[0].id, target: castigado.id, amount }); };
+  assert.ok(castleIdle(castigado), 'facing the wall: no turn');
+  castigado.hp -= 4; castleAfter(undefined, state);
+  assert.equal(castigado.castle.rage, 0, 'a tick is no blow');
+  hit(10); hit(10);
+  assert.equal(castigado.castle.rage, 2);
+  assert.ok(castleIdle(castigado));
+  hit(10);
+  assert.equal(castigado.castle.rage, CASTLE.rabia);
+  assert.ok(!castleIdle(castigado), 'its Rabia full, it has a turn');
+  state.phase = 'enemy'; state.enemyActions = [];
+  const hp = state.allies.map(a => a.hp), burst = enemyAct(state, castigado.id, state.allies[0].id);
+  assert.equal(burst.ability.id, 'revienta');
+  assert.ok(state.allies.every((a, i) => a.hp < hp[i]), 'on everyone');
+  assert.equal(castigado.castle.rage, 0, 'and back to the wall');
+  // One big blow that fells it adds nothing.
+  hit(castigado.hp);
+  assert.equal(castigado.castle.rage, 0);
+});
+
+test('El Montón takes the shape of the first blow it takes, by what that blow carried, and gives it back every turn', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const shaped = effect => {
+    const state = createFearBattle(party, 'alumnos-3d'), monton = state.foes.find(f => f.kind === 'monton'), other = state.foes.find(f => f !== monton);
+    const target = effect.hits ? undefined : monton.id, hits = effect.hits ? [{ target: monton.id, amount: 20 }, { target: other.id, amount: 20 }] : undefined;
+    monton.hp -= 20; if (hits) other.hp -= 20;
+    castleAfter(undefined, state, { kind: 'skill', actor: state.allies[0].id, amount: 20, ...target ? { target } : {}, ...effect, ...hits ? { hits } : {} });
+    return { state, monton };
+  };
+  const fresh = createFearBattle(party, 'alumnos-3d');
+  assert.deepEqual(castleChips(fresh, fresh.foes.find(f => f.kind === 'monton')).map(([id]) => id), ['sin-forma'], 'shapeless, and its plate says what it will do');
+  assert.equal(shaped({ kind: 'attack' }).monton.castle.form, 'golpe', 'a plain blow');
+  assert.equal(shaped({ kind: 'attack', element: 'electrico' }).monton.castle.form, 'electrico', "Atacar's element");
+  assert.equal(shaped({ skill: 'foc-binari' }).monton.castle.form, 'fuego', 'a skill that burns is fire');
+  assert.equal(shaped({ skill: 'zarpazo' }).monton.castle.form, 'sangrado', 'a blow that opens a wound');
+  assert.equal(shaped({ dual: { id: 'zarpazos-de-fuego', name: '', parts: ['foc-binari', 'zarpazos'], actors: [], spent: {} } }).monton.castle.form, 'fuego', "a dual's fire");
+  const wide = shaped({ skill: 'a-la-vez', hits: true });
+  assert.ok(wide.monton.castle.form === 'sangrado' && wide.monton.castle.all, 'a blow on everyone comes back on everyone');
+  // Its turn: the copy, as hard as the blow it took and its year on top, and a shock that costs the next turn.
+  const { state, monton } = shaped({ kind: 'attack', element: 'electrico' });
+  assert.equal(montonCopy(monton), Math.round(20 * CASTLE.copia * CASTLE.year3));
+  const gerard = state.allies.find(a => a.id === 'gerard'), before = gerard.hp;
+  state.phase = 'enemy'; state.enemyActions = [];
+  const copy = enemyAct(state, monton.id, gerard.id);
+  assert.equal(copy.ability.id, 'copia');
+  assert.equal(before - gerard.hp, montonCopy(monton));
+  assert.ok(gerard.shock, 'in shock: the next turn is lost');
+  // A second blow changes nothing: the first one gave it its shape.
+  monton.hp -= 40; castleAfter(undefined, state, { kind: 'skill', actor: gerard.id, skill: 'foc-binari', target: monton.id, amount: 40 });
+  assert.equal(monton.castle.form, 'electrico');
+});
+
+test('the second year brings El Ausente and El Castigado, the third El Montón, each in a room of its own', () => {
+  const kinds = phase => new Set(CASTLE_PHASES[phase - 1].fights.flatMap(id => createFearBattle(party, id).foes.map(f => f.kind)));
+  assert.ok(kinds(2).has('ausente') && kinds(2).has('castigado') && !kinds(1).has('ausente'));
+  assert.ok(kinds(3).has('monton') && !kinds(2).has('monton'));
 });
