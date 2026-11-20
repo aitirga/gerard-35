@@ -3,7 +3,7 @@ import { HeldArtilugio, PROP } from './artilugio-held';
 import { DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
+import { MINION_HEIGHT, castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
 import { createStamps } from './dice-stamp';
@@ -205,6 +205,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     minion: boolean;
     /** A castle pupil drawn from its own file (src/castle-models.ts): its clips, running when it moves. */
     figure?: FigureClips;
+    /** How high over its feet its plate hangs, when that is not the usual 1.45 m: a figure of its own, over its head. */
+    plateAt?: number;
     /**
      * A giant of tiles and ladders (Vertitrón): it does not wobble, stretch or squash like the gum
      * creatures. It leans in heavy and slow from where it stands, and a blow only makes it shudder.
@@ -2289,7 +2291,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
-    if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); }
+    if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); built.plateAt = own.size * MINION_HEIGHT + .1; }
     if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
     if (isCamping(unit.kind)) built.camp = unit.kind;
@@ -2483,7 +2485,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         id, visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
         position: f.bone ? f.model.getPosition().clone().add(new pc.Vec3(0, .85, 0))
           : f.part ? f.model.getPosition().clone().add(new pc.Vec3(right.x * 1.35, right.y * 1.35 - .25, right.z * 1.35))
-          : f.model.getPosition().clone().add(new pc.Vec3(0, f.party ? 1.65 : f.onion ? 1.6 * f.scale.y : 1.45, 0)),
+          : f.model.getPosition().clone().add(new pc.Vec3(0, f.plateAt ?? (f.party ? 1.65 : f.onion ? 1.6 * f.scale.y : 1.45), 0)),
       }));
       const robot = [...fighters.values()].find(f => f.robot);
       if (robot?.robot?.uri) list.push({ id: 'uri', visible: !!state && entryTime >= ENTRY_SECONDS, position: robot.robot.uri.getPosition().clone().add(new pc.Vec3(0, 1.75, 0)) });
