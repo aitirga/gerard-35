@@ -129,6 +129,7 @@ def dump(spec: dict) -> str:
     fit = f'  "fit": {line(spec["fit"])},\n' if "fit" in spec else ""
     fit += f'  "lids": {line(spec["lids"])},\n' if "lids" in spec else ""
     fit += f'  "backpack": {line(spec["backpack"])},\n' if "backpack" in spec else ""
+    fit += f'  "carries": {line(spec["carries"])},\n' if "carries" in spec else ""
     glb = f'  "glb": {line(spec["glb"])},\n' if "glb" in spec else ""
     return (f'{{\n  "id": {line(spec["id"])},\n  "name": {line(spec["name"])},\n{glb}'
             f'  "materials": {{\n{materials}\n  }},\n  "rig": {line(spec["rig"])},\n{fit}  "parts": [\n{parts}\n  ]\n}}\n')

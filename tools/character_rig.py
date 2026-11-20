@@ -925,6 +925,40 @@ def convert_creature(model: Path, name: str, display: str, height: float, wings:
     return glb, {"id": name, "name": display, "glb": f"models/creatures/{name}.glb", "height": height, **({"wings": wings} if wings else {})}
 
 
+def plain_model(model: Path, height: float):
+    """Meshy's plain model standing on the ground, centred and `height` tall, with its texture cleaned and laid
+    out again: the new atlas's vertex map, faces, points, normals, UVs and image."""
+    gltf, blob = read_glb(model.read_bytes())
+    primitive = gltf["meshes"][0]["primitives"][0]
+    attributes = primitive["attributes"]
+    positions = accessor(gltf, blob, attributes["POSITION"])
+    uvs = accessor(gltf, blob, attributes["TEXCOORD_0"])
+    triangles = accessor(gltf, blob, primitive["indices"]).astype(np.uint32).reshape(-1, 3)
+    low, high = positions.min(axis=0), positions.max(axis=0)
+    positions = (positions - [(low[0] + high[0]) / 2, low[1], (low[2] + high[2]) / 2]) * height / (high[1] - low[1])
+    normals = smooth_normals(positions, triangles)
+    vmap, faces, atlas_uvs, atlas = reatlas(positions, triangles, uvs, clean_texture(texture_of(gltf, blob), uvs, triangles))
+    return faces, positions[vmap], normals[vmap], atlas_uvs, atlas
+
+
+def convert_held(model: Path, name: str, display: str, height: float):
+    """
+    Someone carried in another figure's arms (Nil in Uri's), from Meshy's plain model: one piece, `height` tall
+    in the carrier's own units, sitting on its node's origin. The game puts it in the carrier's arms
+    (src/character-model.ts `carries`).
+    """
+    faces, points, bent, atlas_uvs, atlas = plain_model(model, height)
+    file = GlbFile()
+    part = {"POSITION": file.put(points.astype(np.float32), "VEC3", 5126, 34962, True),
+            "NORMAL": file.put(bent.astype(np.float32), "VEC3", 5126, 34962),
+            "TEXCOORD_0": file.put(atlas_uvs.astype(np.float32), "VEC2", 5126, 34962)}
+    mesh = {"name": name, "primitives": [{"attributes": part, "indices": file.put(faces.reshape(-1, 1).astype(np.uint32), "SCALAR", 5125, 34963), "material": 0}]}
+    material = {"name": display, "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}, "metallicFactor": 0, "roughnessFactor": .82}}
+    nodes = [{"name": "Malla", "mesh": 0}, {"name": display, "children": [0]}]
+    glb = file.finish(jpeg(atlas), 1, nodes, mesh, [material])
+    return glb, {"id": name, "name": display, "glb": f"models/held/{name}.glb", "height": round(height, 4)}
+
+
 if __name__ == "__main__":
     import sys
     # uv run python tools/character_rig.py reatlas public/models/characters/<id>.glb …: models made before `reatlas`.

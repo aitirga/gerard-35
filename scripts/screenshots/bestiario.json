@@ -209,7 +209,39 @@
     {
       "shot": "nuria",
       "delay": 1500,
-      "caption": "A person: Nuria, her model, portrait and expressions"
+      "caption": "A person: Nuria, her toy figure from Meshy (just character-3d), portrait and expressions"
+    },
+    {
+      "eval": "window.bestiary.select('npc:uri')"
+    },
+    {
+      "shot": "uri",
+      "delay": 1800,
+      "caption": "Uri, his toy figure from Meshy with Nil in his arms: his file `carries` Nil's own figure"
+    },
+    {
+      "eval": "window.bestiary.select('npc:nil')"
+    },
+    {
+      "shot": "nil",
+      "delay": 1500,
+      "caption": "Nil, a figure of kind held: drawn from his portrait in the game and words, never a photo"
+    },
+    {
+      "eval": "window.bestiary.select('npc:haru')"
+    },
+    {
+      "shot": "haru",
+      "delay": 1800,
+      "caption": "Haru, kind animal: Meshy's figure on the game's cat skeleton (tools/animal_rig.py), moving with the cats' gait"
+    },
+    {
+      "eval": "window.bestiary.select('npc:yuki')"
+    },
+    {
+      "shot": "yuki",
+      "delay": 1800,
+      "caption": "Yuki, the same: the white semi-longhair with big pointed ears, sleepy eyes and the plumed tail, dark past its root"
     },
     {
       "eval": "window.bestiary.filter('todos'); window.bestiary.select('diseno:gemelo')"

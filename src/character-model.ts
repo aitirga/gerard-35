@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { separateFlushFaces } from './flush-faces';
 import { ELBOW_REST } from './walk-animation';
+import type { CatRig } from './cat-gait';
 
 /**
  * A character, stored as JSON in src/characters/: built from primitives (`just character <id>`) or,
@@ -46,6 +47,8 @@ export interface CharacterSpec {
    * game.ts shows once the backpack is picked up (`BACKPACK_PARTS`).
    */
   backpack?: { bag: string; straps: string };
+  /** A model from a file carrying someone in its arms (Uri, Nil): the id of a `HELD` figure, put there with the arms round it. */
+  carries?: string;
   parts: CharacterPart[];
 }
 
@@ -83,8 +86,31 @@ export interface CreatureSpec { id: string; name: string; glb: string; height: n
 /** Every creature with a file, by its path. */
 export const CREATURES = import.meta.glob<CreatureSpec>('./creatures/*.json', { eager: true, import: 'default' });
 
+/** Someone small a character carries in their arms (Nil, `carries`), from `just character-3d`: in the carrier's units. */
+export interface HeldSpec { id: string; name: string; glb: string; height: number }
+export const HELD = import.meta.glob<HeldSpec>('./held/*.json', { eager: true, import: 'default' });
+/**
+ * A pet from `just character-3d` (Haru, Yuki) on the game's cat skeleton (src/cats.ts): its own measures of
+ * that skeleton, and its eyelids, of the fur round its painted eyes.
+ */
+export interface AnimalSpec { id: string; name: string; glb: string; height: number; rig: CatRig; lids: { color: string; size: Vec3 } }
+export const ANIMALS = import.meta.glob<AnimalSpec>('./animals/*.json', { eager: true, import: 'default' });
+/** The files that go with the cast: who they carry and their pets. Load them with the characters. */
+export const COMPANIONS = [...Object.values(HELD), ...Object.values(ANIMALS)];
+
 /** What each file holds, ready to copy from. */
 const models = new Map<string, pc.ContainerResource>();
+
+/** Whether `id`'s file is loaded: a pet without one keeps its primitives (src/cats.ts). */
+export const hasModel = (id: string) => models.has(id);
+/** A copy of a loaded file's figure under `parent`, shown. */
+export function instantiateModel(id: string, parent: pc.Entity) {
+  const file = models.get(id);
+  if (!file) throw new Error(`${id}'s model is not loaded (loadCharacterModels).`);
+  const root = file.instantiateRenderEntity({ castShadows: true, receiveShadows: true }) as pc.Entity;
+  parent.addChild(root);
+  return root;
+}
 
 /** Loads the files of `specs`: whoever builds them needs them at hand. */
 export function loadCharacterModels(app: pc.AppBase, specs: { id: string; glb?: string }[]) {
@@ -161,6 +187,7 @@ function buildFromFile(spec: CharacterSpec, parent: pc.Entity): CharacterModel {
   const limbs = body.children.filter(node => node.name === RIG.leg || node.name === RIG.arm) as pc.Entity[];
   const joints = limbs.map((limb, i) => limb.findByName(i % 2 ? 'Antebrazo' : 'Espinilla') as pc.Entity);
   joints[1].setLocalEulerAngles(ELBOW_REST, 0, 0); joints[3].setLocalEulerAngles(ELBOW_REST, 0, 0);
+  if (spec.carries) carry(body, spec, limbs, joints);
   return {
     body, limbs, joints,
     head: body.findByName(RIG.head) as pc.Entity,
@@ -168,6 +195,29 @@ function buildFromFile(spec: CharacterSpec, parent: pc.Entity): CharacterModel {
     ankles: [limbs[0], limbs[2]].map(leg => leg.findByName(RIG.ankle) as pc.Entity),
     eyes, materials,
   };
+}
+
+/** How a carrier holds someone: arms forward and in, forearms bent up under them (degrees). */
+const CARRY = { arm: [-30, 0, 40] as Vec3, elbow: -78 };
+
+/**
+ * Someone in a model's arms (`carries`, Nil in Uri's): sitting on the forearms against the chest,
+ * measured from the `Torso` box, its back against the chest's front; the arms forward and in round them.
+ */
+function carry(body: pc.Entity, spec: CharacterSpec, limbs: pc.Entity[], joints: (pc.Entity | null)[]) {
+  const held = Object.values(HELD).find(h => h.id === spec.carries);
+  const torso = spec.parts.find(part => part.name === 'Torso');
+  if (!held || !torso || !models.has(held.id)) return;
+  const figure = instantiateModel(held.id, body);
+  figure.name = `En brazos: ${held.name}`;
+  const box = (figure.findByName('Malla') as pc.Entity | null)?.render?.meshInstances[0]?.mesh?.aabb;
+  if (!box) return;
+  const [, py, pz] = torso.position, [, sy, sz] = torso.scale;
+  figure.setLocalPosition(0, py - sy * .42, pz + sz / 2 + box.halfExtents.z - box.center.z - .02);
+  for (const [side, i] of [[1, 1], [-1, 3]] as const) {
+    limbs[i].setLocalEulerAngles(CARRY.arm[0], CARRY.arm[1], side * CARRY.arm[2]);
+    joints[i]?.setLocalEulerAngles(CARRY.elbow, 0, 0);
+  }
 }
 
 /**

@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 import character_3d  # noqa: E402
+import animal_rig  # noqa: E402
 import character_rig  # noqa: E402
 
 
@@ -158,6 +159,29 @@ class CharacterThreeDTool(unittest.TestCase):
         self.assertNotIn("pose_mode", self.meshy.options)
         self.assertEqual((self.root / "public" / "models" / "creatures" / "bicho.glb").read_bytes(), b"glb")
         self.assertEqual(json.loads((self.root / "src" / "creatures" / "bicho.json").read_text())["height"], 2)
+
+    def test_an_animal_is_a_toy_on_the_games_cat_skeleton(self):
+        self.add_figure("gata", kind="animal", face_photos=["gata/foto.png"], scale=1.35)
+        self.addCleanup(setattr, animal_rig, "convert", animal_rig.convert)
+        animal_rig.convert = lambda model, name, display, height: (b"glb", {"id": name, "name": display, "glb": f"models/animals/{name}.glb", "height": height})
+        character_3d.run(["gata"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
+        self.assertEqual(self.images.calls[0], ["foto.png", character_3d.GAME_STYLE], "drawn from the photos of the animal")
+        self.assertEqual(self.meshy.rigs, [], "Meshy only rigs two arms and two legs")
+        self.assertNotIn("pose_mode", self.meshy.options)
+        self.assertNotEqual(self.meshy.options["texture_prompt"], character_3d.MONSTER_TEXTURE, "a toy like the people")
+        self.assertEqual((self.root / "public" / "models" / "animals" / "gata.glb").read_bytes(), b"glb")
+        self.assertAlmostEqual(json.loads((self.root / "src" / "animals" / "gata.json").read_text())["height"], 2 / 1.35)
+
+    def test_someone_held_is_a_toy_in_the_carriers_units_and_the_carrier_says_so(self):
+        self.add_figure("bebe", kind="held", art=["output/retrato.png"], scale=1.3)
+        self.addCleanup(setattr, character_rig, "convert_held", character_rig.convert_held)
+        character_rig.convert_held = lambda model, name, display, height: (b"glb", {"id": name, "name": display, "glb": f"models/held/{name}.glb", "height": height})
+        character_3d.run(["bebe"], root=self.root, images=self.images, meshy=self.meshy, log=self.made.append)
+        self.assertEqual(self.images.calls[0], ["retrato.png", character_3d.GAME_STYLE], "a child from the game's own art, never a photo")
+        self.assertEqual(self.meshy.rigs, [])
+        self.assertAlmostEqual(json.loads((self.root / "src" / "held" / "bebe.json").read_text())["height"], 2 / 1.3)
+        self.assertEqual(character_3d.FIGURES["uri"].carries, "nil")
+        self.assertEqual(character_3d.FIGURES["nil"].photos + character_3d.FIGURES["nil"].face_photos, [], "Nil is a child: no photo of him")
 
     def test_a_monster_gets_meshys_skeleton_and_clips_and_no_face(self):
         self.add_figure("alumno", kind="monster")

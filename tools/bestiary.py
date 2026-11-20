@@ -14,7 +14,7 @@ OUT = ROOT / "output" / "bestiary" / "figures.json"
 STEPS = {"front": "front.png", "toy": "toy.png", "left": "left.png", "right": "right.png", "back": "back.png",
          "model": "model.glb", "rigged": "rigged.glb", "walking": "walking.glb", "running": "running.glb"}
 # Where the game step puts a figure, by its kind.
-FOLDERS = {"person": "characters", "monster": "monsters", "creature": "creatures"}
+FOLDERS = {"person": "characters", "monster": "monsters", "creature": "creatures", "animal": "animals", "held": "held"}
 
 
 def figures(root: Path = ROOT) -> list[dict]:

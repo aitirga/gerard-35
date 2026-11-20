@@ -9,7 +9,10 @@
   game   rigged or plain model                  -> public/models/<characters|monsters|creatures>/<id>.glb and src/<same>/<id>.json
 
 A monster (kind "monster") is a foe with two arms and two legs: it gets Meshy's skeleton and its walking
-and running clips, and no face. A creature (kind "creature") is one piece, with no skeleton.
+and running clips, and no face. A creature (kind "creature") is one piece, with no skeleton. An animal (kind
+"animal", Nuria's cats) is a toy like the people on four legs: Meshy cannot rig it, so the game step cuts
+it to the game's own cat skeleton (src/cat-gait.ts). Someone held (kind "held", Nil) is a toy like the people
+in one piece, sitting as if carried: the person who `carries` it holds it in the game.
 
 The 3D model is for the game's world only. Portraits for conversations, menus and fight plates are low-poly
 paintings made with `just character <id> --only portrait`, never drawn from this figure or rendered from its model.
@@ -29,6 +32,7 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
+import animal_rig
 import character_model
 import character_rig
 import providers
@@ -76,6 +80,8 @@ class Figure:
     # A creature with wings: how far from its middle, in metres, its body ends and its wings begin. The
     # game gets the wings as their own nodes, hinged there, to beat them (`character_rig.convert_creature`).
     wings: float = 0
+    # Who this person carries in their arms, a figure of kind "held" (Uri carries Nil): the game puts it there.
+    carries: str = ""
 
 
 FRONT_PROMPT = """Create a full-body character sheet front view of the person in the photos, as a stylised 3D game character: a clean, appealing render like a modern animated film or a premium collectible figure, with smooth forms and soft even lighting. Not a photo, not realistic skin, not low-poly, not childish.
@@ -123,6 +129,28 @@ WHAT IT IS: {about}
 """ + MONSTER_LOOK + """
 
 Pose: """ + A_POSE + ", hands and arms clearly apart from the body. " + BACKDROP
+
+# A pet is a toy of the cast's world, like the people, on four legs: never a monster's look.
+TOY_ANIMAL = """Draw this animal as a toy figure that belongs in the game world shown in the last image, a screenshot of the game: its matte, softly lit miniature world and its chunky little figures. The images before it are real photos of this very animal: keep what makes it itself (its coat's colours and where its patches are, its eye colour, its build, how long its fur is) as large simple shapes and colours, never the photo's realism or its lighting.
+
+WHO IT IS: {about}
+
+WHAT IT IS: a small toy figure of moulded matte plastic, a close relative of the figures in the screenshot, a little rounder and better made. A slightly big rounded head, a rounded body, four sturdy rounded legs and a thick tail. Fur is one solid sculpted surface: long fur is a few big smooth tufts, never strands. The face is painted on and simple: eyes in their own colour with a dark pupil and one tiny highlight, a small nose, no mouth line, no whiskers. Each patch of the coat is one flat area of its colour with clean edges.
+
+""" + SURFACES + """
+
+Pose: seen straight from the front, the camera level with it and the animal facing it squarely and symmetrically (never three quarters), standing square on all four straight legs, all four paws flat on the ground and clearly apart from each other, the tail raised up behind it in a gentle curve and clear of the body, head level looking at the camera, the whole animal from the tips of its ears to its paws and tail, nothing cropped, no base. """ + BACKDROP
+
+# Someone small another figure carries (Nil in Uri's arms): a toy like the people, sitting as if held.
+TOY_HELD = """Draw this person as a toy figure that belongs in the game world shown in the last image, a screenshot of the game: its matte, softly lit miniature world and its chunky little figures. Any image before it is an image of the same game showing who they are: take from it what makes them recognisable, as large simple shapes and colours, never its realism or its lighting.
+
+WHO THEY ARE: {about}
+
+WHAT THEY ARE: a small toy figure of moulded matte plastic, a close relative of the figures in the screenshot, made to be carried in another figure's arms. A big rounded head, a soft rounded body, short thick rounded arms and legs, simple rounded hands and feet with no fingers or toes. Hair is one solid sculpted piece: no strands. The face is painted on and very simple: small solid dark oval eyes with one tiny highlight, a small bump of a nose, a small plain mouth.
+
+""" + SURFACES + """
+
+Pose: sitting upright on nothing as if held up in someone's arms, facing the camera squarely, legs bent forward and a little apart, arms a little raised and clear of the body, the whole figure in frame, nothing cropped, no one holding them, no base, no chair. """ + BACKDROP
 
 TOY_CREATURE = """Draw this creature as a figure that belongs in the game world shown in the last image, a screenshot of the game: its matte, softly lit miniature world and its chunky figures. Any image before it is another figure of the same family, or this same one in another form: the words below say which, and what to keep of it.
 
@@ -173,7 +201,7 @@ def data_uri(path: Path) -> str:
 def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Path:
     args = parse(argv)
     figure, out = FIGURES[args.id], root / "output" / "characters" / "3d" / args.id
-    person, rigged_kind = figure.kind == "person", figure.kind in RIGGED
+    person, rigged_kind, animal, held = figure.kind == "person", figure.kind in RIGGED, figure.kind == "animal", figure.kind == "held"
     out.mkdir(parents=True, exist_ok=True)
     photos = root / "assets" / "references" / "characters"
     style = photos / GAME_STYLE
@@ -205,7 +233,7 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
         if figure.photos:
             draw(TOY_FROM_PHOTOS.format(cues=figure.cues), [front, *(photos / photo for photo in figure.face_photos), style], toy)
         else:
-            prompt = TOY_FROM_WORDS if person else TOY_MONSTER if rigged_kind else TOY_CREATURE
+            prompt = TOY_FROM_WORDS if person else TOY_MONSTER if rigged_kind else TOY_ANIMAL if animal else TOY_HELD if held else TOY_CREATURE
             draw(prompt.format(about=figure.about), [*(root / image for image in figure.art), *(photos / photo for photo in figure.face_photos), style], toy)
     sides = [out / f"{view}.png" for view in VIEWS]
     if pending("views", *sides):
@@ -224,7 +252,7 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
             log(f"  Meshy: picking up task {tasks['model']}")
         else:
             log("  Meshy: toy.png, " + ", ".join(side.name for side in sides))
-            options = {**MESHY_OPTIONS, **({} if person else {"texture_prompt": MONSTER_TEXTURE}), **(PERSON_OPTIONS if rigged_kind else {})}
+            options = {**MESHY_OPTIONS, **({} if person or animal or held else {"texture_prompt": MONSTER_TEXTURE}), **(PERSON_OPTIONS if rigged_kind else {})}
             tasks["model"] = client.start_views([data_uri(toy), *map(data_uri, sides)], **options)
             tasks.pop("rig", None)
             fresh.add("model")
@@ -257,13 +285,14 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
             tasks_file.write_text(json.dumps(tasks, indent=1))
         actions.write_bytes(client.download(client.wait(tasks["anim"], log, kind="animations")["result"]["animation_glb_url"]))
 
-    folder = "characters" if person else "monsters" if rigged_kind else "creatures"
+    folder = "characters" if person else "monsters" if rigged_kind else "animals" if animal else "held" if held else "creatures"
     target = root / "public" / "models" / folder / f"{args.id}.glb"
     described = root / "src" / folder / f"{args.id}.json"
     if pending("game", target, described):
         if person:
             glb, spec = character_rig.convert(rigged, args.id, figure.name, figure.scale, figure.clean_shaven)
             if figure.backpack: spec["backpack"] = figure.backpack
+            if figure.carries: spec["carries"] = figure.carries
         elif rigged_kind:
             # Meshy's own skeleton for now, and its clips beside it: the game's rig for foes is still to come.
             moves = ([*CLIPS, "actions"] if actions.exists() and figure.animations else [*CLIPS])
@@ -272,6 +301,10 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
             target.parent.mkdir(parents=True, exist_ok=True)
             for clip, path in zip(moves, [*clips, actions]):
                 (target.parent / f"{args.id}-{clip}.glb").write_bytes(path.read_bytes())
+        elif animal:
+            glb, spec = animal_rig.convert(model, args.id, figure.name, figure.height / figure.scale)
+        elif held:
+            glb, spec = character_rig.convert_held(model, args.id, figure.name, figure.height / figure.scale)
         else:
             glb, spec = character_rig.convert_creature(model, args.id, figure.name, figure.height, figure.wings)
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -4,15 +4,15 @@ import { ANIMA_OWNERS, CLASS_STATS, DUALS, ELEMENTS, MANA_POINTS, PASSIVES, SKIL
 import { buildStreetDogs, foeScale } from './battle-scene';
 import { MERIDIANA_BED } from './bed';
 import { BIP, createBip } from './bip';
-import { createCat } from './cats';
+import { createCat, type CatId } from './cats';
 import { IMPROVEMENTS, LINES } from './ecos';
-import { LEVELLED, LEVEL_XP, MAX_LEVEL } from './levels';
+import { LEVELLED, LEVEL_XP, topOf } from './levels';
 import { WalkAnimation, carriage, idlePose, poseLimbs } from './walk-animation';
 import {
   CASTLE_ANSWERS, MOTION, familyOf, fightName, foesOfTheGame, modelStatusOf, movesOf, targetsOf, traitsOf,
   type FoeKindSeen, type ModelStatus,
 } from './bestiary-data';
-import { CREATURES, buildCharacter, buildCreature, loadCharacterModels, type CharacterSpec, type CreatureSpec } from './character-model';
+import { COMPANIONS, CREATURES, HELD, buildCharacter, buildCreature, loadCharacterModels, type CharacterSpec, type CreatureSpec } from './character-model';
 import { CLASSES, grownUp, wearClass } from './classes';
 import { SPEAKERS, type Speaker } from './dialogue';
 import type { Effects } from './effects';
@@ -36,7 +36,7 @@ import { PROFILES, STAT_LABELS, type ProfileId, type Stats } from './stats';
 interface MonsterSpec { id: string; name: string; glb: string; clips: Record<string, string>; height: number }
 /** A figure of tools/figures.toml, as tools/bestiary.py writes it. */
 interface Figure {
-  id: string; name: string; kind: 'person' | 'monster' | 'creature'; about: string; cues: string; height?: number;
+  id: string; name: string; kind: 'person' | 'monster' | 'creature' | 'animal' | 'held'; about: string; cues: string; height?: number;
   files: Partial<Record<'front' | 'toy' | 'left' | 'right' | 'back' | 'model' | 'rigged' | 'walking' | 'running', string>>; earlier: string[];
   game: { glb: boolean; spec: boolean };
 }
@@ -72,7 +72,9 @@ type View =
   /** A party member wearing an ánima (or none), dressed by the game's own `wearClass`. */
   | { type: 'wearer'; profile: ProfileId; anima?: ClassId }
   /** The street dogs, as the fight builds them (`buildStreetDogs`). */
-  | { type: 'dogs' };
+  | { type: 'dogs' }
+  /** Haru or Yuki, as src/cats.ts builds and moves them. */
+  | { type: 'cat'; id: CatId };
 interface Entry {
   key: string; filter: Filter; name: string; sub: string; group: string;
   status: ModelStatus; portrait?: string; art: { src: string; label: string }[];
@@ -104,7 +106,8 @@ function figureArt(figure?: Figure) {
 /** What `just character-3d` has made of a figure, step by step. */
 function pipeline(figure: Figure) {
   const steps: [string, boolean][] = [['imagen', !!figure.files.toy], ['vistas', !!(figure.files.left && figure.files.back)], ['modelo', !!figure.files.model],
-    ...(figure.kind !== 'creature' ? [['esqueleto', !!figure.files.rigged] as [string, boolean]] : []),
+    // Meshy rigs people and monsters; a pet is put on the game's cat skeleton, and the rest stay in one piece.
+    ...(figure.kind === 'person' || figure.kind === 'monster' ? [['esqueleto', !!figure.files.rigged] as [string, boolean]] : []),
     ...(figure.kind === 'monster' ? [['clips', !!(figure.files.walking && figure.files.running)] as [string, boolean]] : []),
     ['en el juego', figure.game.glb && figure.game.spec]];
   return `<div class="steps">${steps.map(([name, done]) => `<span class="${done ? 'done' : ''}">${done ? '✓' : '·'} ${name}</span>`).join('')}</div>`;
@@ -143,7 +146,7 @@ async function start() {
   const floor = new pc.Entity('Suelo'); floor.addComponent('render', { type: 'plane', material: ground }); floor.setLocalScale(14, 1, 14); app.root.addChild(floor);
 
   // Everything the game builds its fighters from: the people's files, the minion, the fears' templates.
-  await loadCharacterModels(app, [...CHARACTERS, ...CREATURE_SPECS]).catch(error => console.warn('[bestiario]', error));
+  await loadCharacterModels(app, [...CHARACTERS, ...CREATURE_SPECS, ...COMPANIONS]).catch(error => console.warn('[bestiario]', error));
   const silent = { emit() {} } as unknown as Effects;
   const minion = createMinion(app, silent);
   minion.root.enabled = false;
@@ -231,6 +234,11 @@ async function start() {
       } else if (view.type === 'dogs') {
         dogs ??= buildStreetDogs(app.root, dogMaterial, dogMaterial('#3c302a'));
         dogs.forEach((dog, i) => { const copy = dog.clone(); copy.enabled = true; copy.setLocalPosition((i - 1.5) * .8, 0, 0); copy.setLocalEulerAngles(0, 0, 0); holder.addChild(copy); });
+      } else if (view.type === 'cat') {
+        cats ??= [createCat(app, 'haru'), createCat(app, 'yuki')];
+        const cat = cats[view.id === 'haru' ? 0 : 1];
+        cat.entity.reparent(holder); cat.entity.enabled = true; cat.entity.setLocalPosition(0, 0, 0); cat.entity.setLocalEulerAngles(0, 0, 0); cat.entity.setLocalScale(1.35, 1.35, 1.35);
+        companions.push({ entity: cat.entity, animate: dt => cat.animate(dt) });
       } else if (view.type === 'creature') buildCreature(view.spec, holder).enabled = true;
       else if (view.type === 'template' || view.type === 'minion') {
         const source = view.type === 'template' ? fears.templates.get(view.kind)! : minion.root;
@@ -323,7 +331,7 @@ async function start() {
   const foes = foesOfTheGame();
   // The party: whoever speaks and has a fighter's profile (stats.ts) without being a foe.
   const party = (Object.keys(speakers) as string[]).filter(id => id in PROFILES && !foes.some(f => f.kind === id)) as ProfileId[];
-  const figureLinks = (key: string) => figures.filter(f => f.kind !== 'person' && (f.id === key || f.id.startsWith(`${key}-`)));
+  const figureLinks = (key: string) => figures.filter(f => (f.kind === 'monster' || f.kind === 'creature') && (f.id === key || f.id.startsWith(`${key}-`)));
   const characterView = (spec?: CharacterSpec, figure?: Figure): View => spec ? { type: 'character', spec }
     : { type: 'none', why: 'Sin modelo 3D todavía.', image: figure?.files.toy };
   const characterStatus = (spec?: CharacterSpec): ModelStatus => spec?.glb ? { tone: 'own', label: 'Modelo propio (just character-3d, rig del juego)' }
@@ -349,7 +357,7 @@ async function start() {
     const owner = ANIMA_OWNERS[id];
     const level = (s: (typeof skills)[number]) => 'level' in s ? s.level : 1;
     const skillLine = (s: (typeof skills)[number]) => `<div class="skill"><b>${html(s.name)}</b><small>${s.cost} maná · ${KINDS[s.kind] ?? s.kind}${'element' in s && s.element ? ` · ${ELEMENTS[s.element].name}` : ''}</small><p>${html(s.description)}</p></div>`;
-    const byLevel = LEVELLED.includes(id) ? [1, 2, 3].map(n => [n, skills.filter(s => !('node' in s && s.node) && level(s) === n)] as const).filter(([, list]) => list.length) : [];
+    const byLevel = LEVELLED.includes(id) ? Array.from({ length: topOf(id) }, (_, i) => i + 1).map(n => [n, skills.filter(s => !('node' in s && s.node) && level(s) === n)] as const).filter(([, list]) => list.length) : [];
     const lines = [...new Set(jar.map(i => i.line))];
     entries.push({
       key: `anima:${id}`, filter: 'aliados', name: anima.name, sub: anima.motto, group: 'Ánimas',
@@ -360,7 +368,7 @@ async function start() {
       detail: () => `<div class="swatches"><span><i style="--c:${anima.colour}"></i>${html(anima.colour)} · su color</span>${anima.scarf ? `<span><i style="--c:${anima.scarf}"></i>pañuelo</span>` : ''}${Object.entries(anima.look).map(([role, colour]) => `<span><i style="--c:${colour}"></i>${html(role)}</span>`).join('')}</div>
         <p>${owner ? `Es de ${owner === 'gerard' ? 'Gerard' : 'Aitor'}: solo la lleva él.` : 'Compartida: la puede llevar cualquiera del grupo menos Bernat.'} ${wearers.map(w => w.name).join(', ')}.</p>
         ${section('Suma a quien la lleva', `<p>${Object.entries(CLASS_STATS[id]).map(([k, v]) => `${STAT_LABELS[k as keyof Stats] ?? k} ${v! > 0 ? '+' : ''}${v}`).join(' · ') || 'Nada todavía.'}</p><p>Maná: ${MANA_POINTS}${jar.some(i => i.mana) ? `, y ${jar.filter(i => i.mana).map(i => `+${i.mana}`).join(', ')} en el tarro` : ''}.</p>`)}
-        ${section('Cómo crece', `<p>${LEVELLED.includes(id) ? `Por niveles, hasta el ${MAX_LEVEL} (EXP ${LEVEL_XP.join(' y ')}).` : 'Por su árbol en el tarro, con Ecos de luz.'}</p>`)}
+        ${section('Cómo crece', `<p>${LEVELLED.includes(id) ? `Por niveles, hasta el ${topOf(id)} (EXP ${LEVEL_XP.slice(0, topOf(id) - 1).join(' · ')}).` : 'Por su árbol en el tarro, con Ecos de luz.'}</p>`)}
         ${section('Habilidades', byLevel.length ? byLevel.map(([n, list]) => `<p><b>Nivel ${n}</b></p>${list.map(skillLine).join('')}`).join('') : skills.filter(s => !('node' in s && s.node)).map(skillLine).join('') || '<p>Ninguna de base.</p>')}
         ${section('El tarro (Ecos de luz)', lines.map(line => `<div class="tree"><b>${line ? html(LINES[line].name) : 'Suelto'}</b>${jar.filter(i => i.line === line).map(i => `<div class="skill"><b>${html(i.name)}</b><small>${i.cost} eco${i.cost > 1 ? 's' : ''} · ${{ mana: 'maná', element: 'elemento', skill: 'habilidad', passive: 'pasiva', ulti: 'definitiva' }[i.kind]}${i.veiled ? ' · dormida' : ''}</small><p>${html(i.description)}</p></div>`).join('')}</div>`).join(''))}
         ${section('Pasivas', (Object.keys(PASSIVES) as (keyof typeof PASSIVES)[]).filter(k => PASSIVES[k].anima === id).map(k => `<p><b>${html(PASSIVES[k].name)}</b> · ${html(jar.find(i => i.passive === k)?.description ?? '')}</p>`).join(''))}
@@ -429,7 +437,7 @@ async function start() {
   }
 
   // The monsters being designed (tools/figures.toml, kind monster or creature).
-  for (const figure of figures.filter(f => f.kind !== 'person')) {
+  for (const figure of figures.filter(f => f.kind === 'monster' || f.kind === 'creature')) {
     const monster = MONSTERS.find(m => m.id === figure.id), creature = CREATURE_SPECS.find(c => c.id === figure.id);
     const foe = foes.find(f => figure.id === f.kind || figure.id.startsWith(`${f.kind}-`));
     const base = foe?.kind ?? figure.id.split('-')[0];
@@ -441,6 +449,22 @@ async function start() {
       status, art: figureArt(figure), views: [{ label: monster ? `src/monsters/${figure.id}.json` : '', view }],
       search: `${figure.name} ${figure.id} diseño monstruo ${foe?.place.name ?? ''}`,
       detail: () => `${section('Truco del combate', answer(base))}${section('Animaciones', motion(MOTION[figure.kind === 'creature' ? 'creature' : 'monster']))}${figureDetail(figure)}`,
+    });
+  }
+
+  // Who goes with the cast: Nuria's cats, on the game's cat skeleton, and Nil in Uri's arms.
+  for (const figure of figures.filter(f => f.kind === 'animal' || f.kind === 'held')) {
+    const cat = figure.kind === 'animal', made = figure.game.glb && figure.game.spec;
+    const held = Object.values(HELD).find(h => h.id === figure.id);
+    entries.push({
+      key: `npc:${figure.id}`, filter: cat ? 'aliados' : 'npc', name: figure.name, sub: cat ? 'Papagato: va con el grupo y pelea' : 'En brazos de Uri',
+      group: 'Casa de Nuria',
+      status: made ? { tone: 'own', label: cat ? 'Modelo propio: figura de Meshy en el esqueleto de gato del juego' : 'Modelo propio: figura de Meshy, en brazos de quien lo lleva' }
+        : cat ? { tone: 'procedural', label: 'Procedural (primitivas en src/cats.ts)' } : { tone: 'none', label: figure.files.toy ? 'Solo diseño (imagen)' : 'Sin imagen aún' },
+      art: figureArt(figure),
+      views: [{ label: made ? `src/${cat ? 'animals' : 'held'}/${figure.id}.json` : '', view: cat ? { type: 'cat', id: figure.id as CatId } : held ? { type: 'glb', url: held.glb } : { type: 'none', why: 'Aún sin modelo en el juego.', image: figure.files.toy } }],
+      search: `${figure.name} ${figure.id} ${cat ? 'gato papagato aliado' : 'npc bebé'} nuria`,
+      detail: () => `${cat ? section('Animaciones', '<p>El andar de los gatos (src/cat-gait.ts): paso, trote y galope, sentarse, agazaparse, saltar y esconderse; respira, parpadea, mueve las orejas y la cola.</p>') : ''}${figureDetail(figure)}`,
     });
   }
 

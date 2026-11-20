@@ -160,6 +160,20 @@ le pone su esqueleto y da sus clips de andar y correr; sin cara que buscar. Van 
 criaturas no son juguetes: comparten el mundo del juego y su escala de detalle, pero su imagen pide
 una figura esculpida de terror (`MONSTER_LOOK`), y Meshy una textura mate de chicle, no de plástico.
 
+Con `kind = "animal"` (una mascota de cuatro patas: Haru y Yuki, los gatos de Nuria) la figura es un juguete
+como las personas, dibujado desde las fotos del animal (`face_photos`, recortadas sin gente). Meshy no
+riggea cuatro patas, así que el paso `game` ([animal_rig.py](animal_rig.py)) mide sobre el modelo el
+esqueleto de gato del juego (patas, tripa y lomo, cabeza por la línea del cuello, orejas, cola en cuatro
+tramos) y lo piela con pesos suaves en cada articulación. Va a `public/models/animals/` y `src/animals/`,
+cuya ficha trae esas medidas (`rig`) para que el andar (`src/cat-gait.ts`) plante las patas bajo sus
+caderas, y los párpados del pelo de alrededor de sus ojos pintados. `height` es hasta la punta de las
+orejas.
+
+Con `kind = "held"` (alguien a quien otro lleva en brazos: Nil) es un juguete de una pieza, sentado como
+en brazos, en las unidades de quien lo lleva (`scale`). Va a `public/models/held/` y `src/held/`, y la
+persona que lo lleva dice `carries = "<id>"` en su tabla: el juego se lo pone delante del pecho con los
+brazos alrededor (`carry` en `src/character-model.ts`).
+
 Todo lo que se hace aquí aparece en el bestiario (`just bestiario`, docs/dev-tools.md § The bestiary): las imágenes, los pasos hechos y el modelo, que [bestiary.py](bestiary.py) lee de `figures.toml` y de `output/characters/3d/`.
 
 - **Privacidad:** a OpenAI solo van las fotos listadas en `figures.toml`; a Meshy, solo las imágenes

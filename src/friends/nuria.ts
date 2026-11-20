@@ -23,6 +23,8 @@ export const STREET: EnvironmentId = 'cardedeu';
 export const MAZE: EnvironmentId = 'cardedeu-laberinto';
 /** Jacint Verdaguer once Uri has run down it: one way, straight on, to the bubble (§ La calle que no acaba). */
 export const CALLE: EnvironmentId = 'cardedeu-calle';
+/** Nuria and Uri in the world: their models are at the cast's scale (tools/figures.toml), like Marta's. */
+export const NURIA_SCALE = 1.3;
 
 /** The fights that jump out of the maze, one per level, and the boss on the roof. */
 export type FearEncounter = 'cebollon' | 'cebolla' | 'plato' | 'escolta' | 'uri-vertigo' | 'crias-1' | 'crias-2' | 'crias-3';

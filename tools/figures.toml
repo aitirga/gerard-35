@@ -15,6 +15,12 @@
 #   clean_shaven     Paints a moustache the model came with off its texture, without paying for another.
 #   backpack         A school backpack the game builds on its back: { bag = "#hex", straps = "#hex" }. It is
 #                    not in the images: Meshy only makes the body, and Gerard's shows once he picks it up.
+# kind = "animal"    A pet on four legs, a toy like the people: Nuria's cats. Its photos go in `face_photos`
+#                    (cropped clear of people), and the game moves it with its own cat skeleton. `height` is
+#                    to the tips of its ears, in the game; `scale` the entity's (1.35, src/story.ts).
+# kind = "held"      Someone small another person carries, a toy like the people in one piece, sitting as if
+#                    held (Nil). `height` is in the game, `scale` the carrier's; the carrier says `carries`.
+#   carries          On a person: the id of the held figure the game puts in their arms.
 # kind = "creature"  A foe or a monster, in one piece: Meshy only gives a skeleton to human shapes.
 #   about            What it is and what it looks like.
 #   height           Metres in the game.
@@ -148,12 +154,77 @@ cues = "a rounded, fairly wide head with full cheeks, long wavy hair in big scul
 height = 1.66
 scale = 1.3
 
+# Nuria's household (docs/quests/nuria.md), in the clothes their portraits wear. Couple photos were cropped
+# to one person; the name on Uri's sleeve and his T-shirt's lettering were painted out on a copy.
+[nuria]
+name = "Nuria"
+kind = "person"
+photos = ["nuria/fullbody-white.jpg", "nuria/hood-close-up.jpg", "nuria/nuria-cara-playa.jpg", "nuria/with-yuki.jpg"]
+face_photos = ["nuria/hood-close-up.jpg", "nuria/nuria-cara-playa.jpg"]
+about = "About her: 35, slim, average height, a new mother, warm and quick to laugh. A long oval face with a slightly pointed chin and a wide, bright smile. Long wavy dark brown hair falling past her shoulders, a little lighter at the ends, parted to one side. Dark brown eyes, dark straight brows, a few light freckles. A thin silver ring in her left nostril and small silver hoops in her ears.\nClothes: a cream knitted jumper with long sleeves and thin navy blue horizontal stripes, one red stripe across the chest, light blue jeans rolled at the ankle, white trainers, no logos."
+cues = "a long oval head with a slightly pointed chin and a wide smile, long wavy dark brown hair past her shoulders in big sculpted waves with a side parting, dark straight brows, a small silver ring in her nostril, a cream jumper with thin navy stripes and one red stripe across the chest"
+height = 1.63
+scale = 1.3
+
+[uri]
+name = "Uri"
+kind = "person"
+photos = ["uri/uri-solo.jpg", "uri/uri-cara-playa.jpg"]
+face_photos = ["uri/uri-cara-playa.jpg", "uri/uri-solo.jpg"]
+about = "About him: 35, average build, a quiet dad. A long face with a strong rounded jaw and a high forehead. Short dark brown hair, a little longer and tousled on top, with high temples. Brown eyes, thick dark brows. A short dark brown beard and moustache, kept short like heavy stubble. No glasses.\nClothes: a plain white crew-neck T-shirt with one small red heart on the left sleeve and nothing else on it, dark navy jeans, grey trainers with white soles, no logos."
+cues = "a long head with a strong rounded jaw and a high forehead, short dark brown hair in big tousled chunks on top, thick dark brows, a short dark beard painted as one flat patch along his jaw, a plain white T-shirt with one small red heart on the left sleeve"
+height = 1.78
+scale = 1.3
+carries = "nil"
+
+# Nil, under a year old, in Uri's arms: a real child, so drawn from his portrait in the game and words, never a photo.
+[nil]
+name = "Nil"
+kind = "held"
+art = ["assets/characters/nil/portrait-transparent.png"]
+about = "Nil, a baby boy under a year old, the same boy as in the first image: short soft brown hair, big brown eyes, full round cheeks, a happy open look. A white long-sleeved babygrow with a few small green crocodiles printed on it, a blue bandana bib round his neck, bare feet."
+height = 0.42
+scale = 1.3
+
+# Nuria's cats (docs/animas/papagato/README.md): toys of the cast's world on four legs, from photos of the
+# cats cropped clear of people. The game moves them with its own cat skeleton (src/cat-gait.ts).
+[haru]
+name = "Haru"
+kind = "animal"
+face_photos = ["haru/haru-tumbada.jpg"]
+about = "Haru, a real cat in the photo: a slim, short-haired female cat, a tortoiseshell-and-white. Her head and ears are blue-grey, with one patch of warm orange-cream across her forehead between the eyes; her muzzle and chin are white. A white chest and belly and four white legs with white paws. Her back and flanks are dark brown-black with big patches of warm orange-ginger. A dark tail. Big almond-shaped green eyes, a small pink nose. Alert, bold, the brave one."
+height = 0.6
+scale = 1.35
+
+[yuki]
+name = "Yuki"
+kind = "animal"
+face_photos = ["yuki/yuki-frente.jpg", "yuki/yuki-cama.jpg", "yuki/yuki-silla.jpg", "yuki/yuki-sofa.jpg"]
+about = "Yuki, a real cat in the photos: a medium-sized female cat with semi-long fur, a warm off-white all over. Not a Persian and not a ball of fluff: an ordinary cat's build and proportions under a coat that lies smooth and close to the body, like a Turkish Angora. Her head is a soft wedge with a clear muzzle and a straight nose, the fur short and smooth over her face and skull. Big, tall, pointed ears set high and upright, wide at the base, pink inside. Pale blue-grey eyes with dark pupils under heavy, half-lowered lids: a sleepy, unimpressed look. A clearly pink nose. Only a modest soft ruff on her chest and slightly longer fur on her flanks and the backs of her legs, sculpted as a few smooth waves that hug the body, never spiky tufts sticking out. Slim legs and white paws. Her tail is the only dark thing on her: long and bushy, plumed like a soft feather duster in a few big smooth locks, white for a short stretch where it leaves her back, then dark brown-black to the tip. Gentle and timid, the fearful one."
+height = 0.6
+scale = 1.35
+
+# Luca and Fran (docs/quests/luca.md), from photos cropped to one person: their daughter, the people
+# around them and an Instagram avatar were cut or painted out on a copy; the airport photos keep only a face.
+[luca]
+name = "Luca"
+kind = "person"
+photos = ["luca/luca-aeropuerto.jpg", "luca/luca-playa.jpg", "luca/luca-casa.jpg", "luca/luca-cafe.jpg"]
+face_photos = ["luca/luca-aeropuerto.jpg", "luca/luca-playa.jpg"]
+about = "About him: about forty-five, a maths teacher, eccentric, warm and talkative. Average height, slim but soft, a little slouched and playful. A round, egg-shaped head, bald on top and shaved very short at the sides and back, a high rounded forehead, big ears. Thick, round, matte bottle-green glasses, perfectly circular. Blue-grey eyes, light brows. A short grey-brown stubble beard all over his jaw and upper lip. A wide, mischievous half smile with the corners pulled up.\nClothes: a loud short-sleeved shirt, buttoned and untucked, with a big bold print of large simple shapes in bright orange, sunny yellow and turquoise (big blocks, not fine pattern), teal trousers, grey trainers with white soles, no logos."
+cues = "a round, egg-shaped bald head with very short sides, thick perfectly round bottle-green glasses as his strongest feature, a grey-brown stubble beard painted as one flat patch, big ears, a mischievous half smile, a loud orange, yellow and turquoise printed shirt"
+height = 1.75
+scale = 1.12
+
 [fran]
 name = "Fran"
 kind = "person"
-about = "An invented man of about forty, a hairdresser, with no likeness to anyone real (docs/quests/luca.md). Very tall and very thin, with a long neck and long hands. Dark hair sculpted into a high, sharp quiff, the sides shaved short, not one hair out of place. A long face, clean shaven, a cool, distant look. A black, fitted shirt buttoned to the collar and black slim trousers, black boots; a pair of silver scissors and a comb in a black holster at his hip. A white hairdresser's cutting cape over his shoulders, worn like a priest's chasuble, with a few chalk curves drawn on it."
-height = 1.92
-scale = 1.36
+photos = ["fran/fran-aeropuerto.jpg", "fran/fran-cafe.jpg"]
+face_photos = ["fran/fran-aeropuerto.jpg", "fran/fran-cafe.jpg"]
+about = "About him: about forty-five, a hairdresser, Luca's partner. Slim and tall, with a long neck. A long, narrow face with hollow cheeks, high cheekbones and a narrow chin, a long straight nose, a high forehead. Short dark brown hair going grey, neatly cut, short on the sides and a little longer on top, combed back and to one side, with high temples. Round glasses with a clear, transparent pale frame. Grey-green eyes. A dark moustache and a short greying goatee, the rest of his jaw in light stubble. A dry, guarded, slightly ironic look.\nClothes: a black fitted shirt buttoned to the collar and black slim trousers, black boots; a pair of silver scissors and a comb in a black holster at his hip. A white hairdresser's cutting cape over his shoulders, worn like a priest's chasuble, with a few chalk curves drawn on it."
+cues = "a clearly long, narrow head with hollow cheeks and a long nose, round glasses with a pale transparent frame, short dark greying hair combed back and to one side in big chunks, a dark moustache and short goatee painted as one flat shape, a white cutting cape over a black shirt"
+height = 1.84
+scale = 1.21
 [fran.view_notes]
 back = "The white cape hangs down his back to the knees, the chalk curves on it too."
 
@@ -285,16 +356,6 @@ height = 2.4
 [repetidor-tercero.view_notes]
 back = "Hot pink rolls of gum over its back, spotted with black pustules and black rot."
 
-# Càmping Eurosport (docs/quests/universidad.md § Monsters).
-[campeon]
-name = "El Campeón"
-kind = "creature"
-about = """An invented super-villain, no real character: no real costume, emblem, colours or name. A foe of a campsite at dusk where a superhero board game the friends used to play came true: the villain of that game, with powers of energy rays, grown to life size. Not a toy, not a figurine, no plinth and no base: a real comic-book super-villain with heroic proportions, broad shoulders, a big chest and a narrow waist, thick arms and legs, heavy and imposing.
-He must not look like any famous hero or villain: not red and gold, no round chest light, no gold helmet. His suit: sculpted heavy armour of matte charcoal black, with plates of dark gunmetal steel at the shoulders, forearms, belt and boots. Set into the middle of his chest, a tall narrow furnace grate of steel bars, like the door of an old stove, with hot orange fire glowing between the bars; from it, lines of the same orange glow run along cracks in the armour down both arms. Heavy gunmetal gauntlets whose knuckles and the backs of the hands glow orange through slots: where his rays come from. A smooth, blank full helmet of dark gunmetal, like a welder's mask made of armour, with a low ridge over the top and one single thin horizontal visor slit glowing pale violet, no mouth. A heavy cape of blue tarpaulin, the kind that covers a tent, with metal grommets along its edge, hangs from his shoulders to his calves.
-He stands planted, feet apart, arms a little away from his body, fists clenched and glowing: menacing, not friendly."""
-height = 2.1
-[campeon.view_notes]
-back = "The blue tarpaulin cape with its grommets covers his back to the calves."
 
 # Las cuerdas (docs/quests/marta.md § Monsters): the qualities Marta lost, with nobody to govern them. Each
 # `about` opens with the same sentence; the fight keeps what moves by hand (src/cuerdas-foes.ts): La
@@ -322,6 +383,17 @@ kind = "creature"
 about = """One of the qualities Marta has lost, loose in Las cuerdas, the void inside her where taut silver strings hang over dark petrol glass: not a creature and not a person, a quality of hers given a body of glass, steel and cold light. No pink and no violet anywhere.
 THIS ONE, Lo Directo, saying things straight: a tall, imposing, faceless knight made of blades, the straightest line between two points. Everything about it is straight, sharp and symmetric, with no curve anywhere, and it is elaborate: many layers, not a simple shape. Its armour is hundreds of narrow sword blades of dark navy glass-steel, set edge to edge and overlapping in tiers like the scales of a pangolin made of swords: a broad chest of stacked blades, tall pauldrons of fanned blades rising at its shoulders, a high collar of upright blades round its neck, and a long heavy tabard of hanging blades split in front, down to its shins. Every blade's edge is a thin line of cold blue-white light, so the whole figure is drawn in fine straight lines of light. Its head is a tall pointed diamond of navy rising out of the collar, one narrow vertical slit of blue light in it, no face. Long arms in sleeves of overlapping blades held straight down its sides, ending in long blade tips that point at the floor. Long legs in greaves of blades that taper to sharpened points standing on the floor. A bright line of blue-white light runs down its front from the crown to the floor. It holds nothing."""
 height = 2.3
+
+# Càmping Eurosport (docs/quests/universidad.md § Monsters).
+[campeon]
+name = "El Campeón"
+kind = "creature"
+about = """An invented super-villain, no real character: no real costume, emblem, colours or name. A foe of a campsite at dusk where a superhero board game the friends used to play came true: the villain of that game, with powers of energy rays, grown to life size. Not a toy, not a figurine, no plinth and no base: a real comic-book super-villain with heroic proportions, broad shoulders, a big chest and a narrow waist, thick arms and legs, heavy and imposing.
+He must not look like any famous hero or villain: not red and gold, no round chest light, no gold helmet. His suit: sculpted heavy armour of matte charcoal black, with plates of dark gunmetal steel at the shoulders, forearms, belt and boots. Set into the middle of his chest, a tall narrow furnace grate of steel bars, like the door of an old stove, with hot orange fire glowing between the bars; from it, lines of the same orange glow run along cracks in the armour down both arms. Heavy gunmetal gauntlets whose knuckles and the backs of the hands glow orange through slots: where his rays come from. A smooth, blank full helmet of dark gunmetal, like a welder's mask made of armour, with a low ridge over the top and one single thin horizontal visor slit glowing pale violet, no mouth. A heavy cape of blue tarpaulin, the kind that covers a tent, with metal grommets along its edge, hangs from his shoulders to his calves.
+He stands planted, feet apart, arms a little away from his body, fists clenched and glowing: menacing, not friendly."""
+height = 2.1
+[campeon.view_notes]
+back = "The blue tarpaulin cape with its grommets covers his back to the calves."
 
 # La torre de Uri (docs/quests/nuria.md § Monsters, § Final boss): Uri's fears, made real. Aitor
 # (2026-11-19): more realistic, less like toys. The fight keeps their rules by hand (src/fears.ts).
@@ -360,11 +432,11 @@ back = "Rows of curved terracotta roof tiles cover its whole back like a roof."
 name = "Fran (jefe)"
 kind = "monster"
 art = ["public/portraits/fran.png"]
-about = """The first image is a portrait of Fran, the boss of a mission in the game: keep his face and his look as big shapes, his long narrow face, sharp jaw and cheekbones, dark rectangular glasses, his very high sculpted dark quiff with the sides shaved short, his black shirt buttoned to the collar and the white hairdresser's cutting cape. Make him the boss, harder and more real than the portrait: a gaunt, very tall man of about forty with a long neck and long hands, cold and arrogant, his jaw set, his eyes behind the glasses a faint glowing violet (he is held by La Reina Bubbaloo). The white cutting cape hangs from his shoulders to his knees like a priest's chasuble, with grey chalk curves drawn on it like cutting lines. Black fitted shirt and slim black trousers, pointed black boots. A long pair of silver tailor's shears in each hand, blades down, as long as his forearms. A heavy silver aspergillum, a holy-water sprinkler like a mace, hangs at his belt."""
+about = """The first image is a portrait of Fran, a real man, the boss of a mission: keep his face and his look as big shapes, recognisably the same man, his clearly long, narrow face with hollow cheeks, high cheekbones and a long straight nose, his round glasses with a clear, transparent pale frame, his dark moustache and short greying goatee, his short dark hair going grey, his black shirt buttoned to the collar and the white hairdresser's cutting cape. Make him the boss, harder and more real than the portrait: a gaunt, tall man of about forty-five with a long neck and long hands, cold and absorbed, his jaw set, his eyes behind the clear glasses a faint glowing violet (he is held by La Reina Bubbaloo). His own short greying hair is combed straight back, stiff and lacquered flat to his skull like a helmet, not a quiff. The white cutting cape hangs from his shoulders to his knees like a priest's chasuble, with grey chalk curves drawn on it like cutting lines. Black fitted shirt and slim black trousers, pointed black boots. A long pair of silver tailor's shears in each hand, blades down, as long as his forearms. A heavy silver aspergillum, a holy-water sprinkler like a mace, hangs at his belt."""
 height = 2.0
 animations = [0, 97, 92, 125, 178, 8]
 [fran-jefe.view_notes]
-back = "The white cape covers his back to the knees, the chalk curves on it too; the back of the quiff and the shaved nape."
+back = "The white cape covers his back to the knees, the chalk curves on it too; the back of his slicked, greying hair and the temples of the glasses."
 
 [voz]
 name = "La Voz"

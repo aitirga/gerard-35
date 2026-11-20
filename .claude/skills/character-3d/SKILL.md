@@ -32,6 +32,8 @@ field). The table's name is the figure's id in the game.
 | Someone invented, an NPC, a person with no photos | `person`, no `photos` | Words → toy → views → model → skeleton → game rig |
 | A monster with two arms and two legs (the castle's pupils) | `monster` | Words → image → views → model → Meshy's skeleton + walking/running clips → `public/models/monsters/`, no face |
 | A monster with no human shape (a heap, a beast), an object turned monster | `creature` | Words → image → views → model → game, in one piece |
+| A pet on four legs (Nuria's cats) | `animal`, photos of the animal in `face_photos` | Photos → toy → views → model → the game's cat skeleton measured on it (`tools/animal_rig.py`) |
+| Someone carried in another's arms (Nil) | `held`, the carrier says `carries` | Words and `art` → toy sitting as if held → views → model → in the carrier's arms |
 
 Anything that must walk, talk and blink like the cast is a `person`, also if it isn't human. A foe
 that walks but has no face (a bubble, a mask) is a `monster`: Meshy rigs it like a person and its
@@ -148,6 +150,17 @@ just character <id> [--variant child] --only expressions --expressions riendo so
 ```
 
 It only draws, never pays for a model. A child is drawn from an adult's photo and words, as in `toy`.
+
+**An animal.** `src/cats.ts` builds it from its file when it is loaded (`COMPANIONS` in the game's
+and the bestiary's `loadCharacterModels`), on its own measures of the cat skeleton, so the gait plants
+its paws under its hips; without the file it keeps its primitives. Check it walking, trotting, sitting
+and pouncing (`just screenshots cats --gpu`): the converter finds belly, back, the neck line under the
+chin, ears and tail by shape, and a model that stands otherwise may need its thresholds. Its pose must
+be straight from the front, all four paws on the ground and the tail clear of the body.
+
+**Someone held.** The carrier's table says `carries = "<id>"`; `buildCharacter` puts the figure on
+the forearms against the chest and turns the arms round it (`CARRY`). Nothing animates a carrier's
+arms, so it holds everywhere they appear.
 
 **A creature.** It is a template for a foe, with the part names of the minion and Uri's fears:
 

@@ -1,0 +1,130 @@
+{
+  "title": "La casa de Nuria · modelos",
+  "description": "Nuria, Uri, Nil, Haru y Yuki con sus figuras de Meshy (just character-3d, tools/figures.toml), como los amigos de las otras misiones. Primero Nuria en su puerta de Cardedeu con los gatos, antes de prestarlos: a la distancia de juego y de cerca, y los gatos en el esqueleto de gato del juego (tools/animal_rig.py). Después, la misión ganada: Uri en la puerta con Nil en brazos (su propia figura, `carries`). Run with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=door&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Cardedeu') && !document.querySelector('#hud[data-dialogue]') && ['nuria', 'haru', 'yuki'].every(id => window.gerard.game.app.root.findByName('Reparto')?.children.some(c => c.name === id))",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.story.days.clock.hour = 11; const cast = () => window.gerard.game.app.root.findByName('Reparto'); window.who = name => cast().children.find(c => c.name === name); window.head = (name, up) => { const p = window.who(name).getPosition(); return { x: p.x, y: p.y + up, z: p.z }; };"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "puerta",
+      "caption": "A la distancia de juego: Nuria en su puerta con Haru y Yuki, como los amigos de las otras misiones."
+    },
+    {
+      "eval": "window.gerard.game.frame(window.head('nuria', .9), 1.5);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "de-cerca",
+      "caption": "De cerca, con la cámara del juego, que mira desde arriba."
+    },
+    {
+      "eval": "window.gerard.game.frame(window.head('nuria', 1.45), .55);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "nuria",
+      "caption": "Nuria: melena ondulada, aro en la nariz, jersey crudo de rayas marino con una raya roja."
+    },
+    {
+      "eval": "const p = ['haru', 'yuki'].map(id => window.who(id).getPosition()); window.gerard.game.frame({ x: (p[0].x + p[1].x) / 2, y: p[0].y + .3, z: (p[0].z + p[1].z) / 2 }, .9);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "gatos",
+      "caption": "Haru y Yuki: sus figuras en el esqueleto de gato del juego."
+    },
+    {
+      "record": "gatos-en-casa",
+      "seconds": 3,
+      "fps": 12,
+      "tiles": 8,
+      "caption": "Respiran, miran alrededor, mueven las orejas y la cola y parpadean."
+    },
+    {
+      "open": "/?story=clue-r4&solo=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [59, 100]
+    },
+    {
+      "eval": "window.gerard.story.handle({ type: 'interact', id: 'talk-nuria' }); window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'uri-vertigo', worn: ['papagato'] })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.title.startsWith('Cardedeu')",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 3"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('.anima-banner:not([hidden])')",
+      "timeout": 40000
+    },
+    {
+      "until": "document.querySelector('.anima-banner[hidden]')",
+      "timeout": 40000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.app.timeScale = 1; window.gerard.story.days.clock.hour = 11; const cast = () => window.gerard.game.app.root.findByName('Reparto'); window.who = name => cast().children.find(c => c.name === name); window.head = (name, up) => { const p = window.who(name).getPosition(); return { x: p.x, y: p.y + up, z: p.z }; };"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "eval": "const n = window.head('nuria', 0), u = window.head('uri', 0); window.gerard.game.frame({ x: (n.x + u.x) / 2, y: n.y + .9, z: (n.z + u.z) / 2 }, 1.5);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "nuria-y-uri",
+      "caption": "Ganada la misión: Nuria y Uri en la puerta, Nil en brazos de su padre."
+    },
+    {
+      "eval": "window.gerard.game.frame(window.head('uri', 1.3), .65);"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "uri-y-nil",
+      "caption": "Uri: cara larga, barba corta, camiseta blanca con el corazón rojo en la manga; Nil sentado en sus antebrazos."
+    },
+    {
+      "eval": "window.gerard.game.frame();"
+    }
+  ]
+}

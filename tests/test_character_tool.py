@@ -52,7 +52,7 @@ class FakeMeshy:
 
 
 def gerard_spec() -> dict:
-    return json.loads((ROOT / "src/characters/uri.json").read_text())
+    return json.loads((ROOT / "src/characters/luca.json").read_text())
 
 
 class FakeClaude:
@@ -77,9 +77,9 @@ class CharacterToolTests(unittest.TestCase):
         gerard = self.root / "assets/characters/gerard"
         gerard.mkdir(parents=True)
         (gerard / "portrait-transparent.png").write_bytes(PNG)
-        example = self.root / "src/characters/uri.json"
+        example = self.root / "src/characters/luca.json"
         example.parent.mkdir(parents=True)
-        shutil.copyfile(ROOT / "src/characters/uri.json", example)
+        shutil.copyfile(ROOT / "src/characters/luca.json", example)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -108,7 +108,7 @@ class CharacterToolTests(unittest.TestCase):
         content = claude.calls[0][0]["content"]
         self.assertEqual([base64.b64decode(c["source"]["data"]) for c in content if c["type"] == "image"],
                          [PNG + b"1024x1536", PNG + b"1024x1024"])
-        self.assertIn('"Uri"', content[-1]["text"])
+        self.assertIn('"Luca"', content[-1]["text"])
         self.assertIn('Use "bernat" as the id', content[-1]["text"])
 
         self.assertEqual((self.root / "public/portraits/bernat.png").read_bytes(), PNG + b"1024x1024")

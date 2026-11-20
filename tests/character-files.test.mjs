@@ -67,3 +67,36 @@ test('Gerard and Bernat at ten carry their school backpacks, sized by their trun
     if (spec.glb) assert.ok(spec.parts.some(part => part.name === 'Torso'), `${id}: a Torso to hang it on`);
   }
 });
+
+// Nuria's cats on the game's cat skeleton (tools/animal_rig.py) and Nil, whom Uri carries.
+const filesIn = folder => readdirSync(new URL(`../src/${folder}/`, import.meta.url)).filter(file => file.endsWith('.json'))
+  .map(file => JSON.parse(readFileSync(new URL(`../src/${folder}/${file}`, import.meta.url), 'utf8')));
+const LEGS = ['lf', 'rf', 'lh', 'rh'];
+
+for (const spec of filesIn('animals')) {
+  test(`${spec.id}: its file has the cat skeleton src/cats.ts poses, and the gait its measures`, () => {
+    const path = new URL(`../public/${spec.glb}`, import.meta.url);
+    assert.ok(existsSync(path), `${spec.glb} is missing: run just character-3d ${spec.id}`);
+    const { nodes, skins } = gltfOf(path);
+    const names = nodes.map(node => node.name);
+    const bones = ['Cuerpo de gato', ...LEGS.flatMap(leg => [`Pata ${leg}`, `Rodilla ${leg}`]), 'Cabeza de gato', 'Oreja izquierda', 'Oreja derecha',
+      ...Array.from({ length: spec.rig.tailSegments }, (_, i) => `Cola ${i + 1}`)];
+    for (const name of [...bones, 'Ojo izquierdo', 'Ojo derecho']) assert.equal(names.filter(n => n === name).length, 1, name);
+    assert.deepEqual(skins[0].joints.map(i => nodes[i].name).sort(), [...bones].sort(), 'every bone skins, by a name of its own');
+    for (const leg of LEGS) {
+      assert.ok(spec.rig.bones[leg].every(n => n > 0) && Math.abs(spec.rig.bend[leg]) === 1, leg);
+      // The gait stands it on its legs: neither straight nor folded flat.
+      const reach = spec.rig.bodyY + spec.rig.joints[leg].y, length = spec.rig.bones[leg][0] + spec.rig.bones[leg][1];
+      assert.ok(reach > .6 * length && reach < .95 * length, `${leg} stands at ${(reach / length).toFixed(2)} of its length`);
+      assert.ok(Math.sign(spec.rig.joints[leg].x) === (leg[0] === 'l' ? 1 : -1) && Math.sign(spec.rig.joints[leg].z) === (leg[1] === 'f' ? 1 : -1), `${leg} where it belongs`);
+    }
+    assert.ok(spec.lids.size.every(n => n > 0) && /^#[0-9a-f]{6}$/.test(spec.lids.color), 'its lids say their size and colour');
+  });
+}
+
+for (const spec of filesIn('held')) {
+  test(`${spec.id}: its file is there and someone carries it`, () => {
+    assert.ok(existsSync(new URL(`../public/${spec.glb}`, import.meta.url)), `${spec.glb} is missing: run just character-3d ${spec.id}`);
+    assert.ok(specs.some(carrier => carrier.carries === spec.id && carrier.glb), 'a model from a file carries it');
+  });
+}
