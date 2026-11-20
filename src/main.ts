@@ -323,6 +323,8 @@ try {
     speed: () => game.fightSpeed(),
     // La Voz's recording plays where her fight's clock is.
     song: (t, rate) => vozSong.follow(t, rate),
+    // A dual already found is armed while aimed; one not found yet unlocks the first time it happens.
+    known: id => story.duals.includes(id),
     board: () => artilugio.board.connected,
   });
   /**

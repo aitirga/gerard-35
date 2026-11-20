@@ -11,8 +11,8 @@ import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
 import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toNextLevel, type Growth } from './levels';
+import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_REVEAL, DUAL_SLOW, holdAfter } from './battle-motion';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
@@ -102,7 +102,7 @@ const statusSvg = (id: IconId) => `<svg viewBox="0 0 16 16" aria-hidden="true">$
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
 /** The queue's hints go once used: preparing a choice ahead, and taking it back. */
 let queueLearned = false, unqueueLearned = false;
-/** Duals already seen this session: their banner holds for less (DUAL_BANNER_SEEN). */
+/** Duals already seen this session: their banner holds for less (DUAL_BANNER_SEEN), and they count as found (the fight tester's are never kept). */
 const seenDuals = new Set<DualId>();
 /** Duals that played already seen: the beat after them is shorter too (BEAT.dualSeen). */
 const repeatedDuals = new WeakSet<BattleEffect>();
@@ -145,8 +145,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   board?: () => boolean;
   /** Development build (`import.meta.env.DEV`): the Dual command takes its place in the menu. */
   dev?: () => boolean;
-  /** A dual's banner: the 3D fight runs at `scale` for `seconds` of real time, then eases back (the scene's FightClock). */
+  /** A dual's banner: the 3D fight runs at `scale` for `seconds` of real time, then eases back (the scene's FightClock); 0 stops it. */
   slowmo?: (scale: number, seconds: number) => void;
+  /**
+   * Whether the players have found this dual already (`Story.duals`). One not found is never armed
+   * while it is aimed: it can only happen by chance, and the first time it does time stops to unlock it.
+   */
+  known?: (id: DualId) => boolean;
   /** How fast the 3D fight runs now (1: full speed), all its slow motions together: the fight's clock follows it. */
   speed?: () => number;
   /**
@@ -179,7 +184,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.id = 'battle'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Combate por turnos');
   root.innerHTML = `
-    <div class="dual-cinema" aria-hidden="true" hidden><i></i><b></b></div>
+    <div class="dual-cinema" aria-hidden="true" hidden><span class="dual-veil"></span><i></i><b></b></div>
     <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-glyph-template="{notes} · El artilugio" hidden></p></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
     <button class="summary-key" type="button" tabindex="-1" aria-controls="battle-summary" hidden><kbd data-glyph="summary"></kbd> Resumen</button>
@@ -551,7 +556,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // A hidden tab or a long frame never burns a fight away at once.
     // As fast as the 3D fight runs (a dual's banner, Punto débil's aim slowing it further), or the banner's own slow.
     const rate = callbacks.speed?.() ?? clockScale(now), seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * rate; clockLast = now;
-    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || callbacks.paused();
+    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || !!root.dataset.revealing || callbacks.paused();
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
@@ -779,6 +784,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * turn. Alone (chapter 1, or the development `solo` mode) one dock follows whoever's turn it is.
    */
   const split = () => !!state && state.allies.some(a => callbacks.driver(a.id) === 2);
+  /** A dual the players have found (kept, or already played this session): only then is it armed while aimed. */
+  const knownDual = (id: DualId) => seenDuals.has(id) || !!callbacks.known?.(id);
   const dockOf = (allyId: string) => get(`.battle-dock[data-dock="${split() ? callbacks.driver(allyId) : 1}"]`);
   /** Whose dock it is: in a split fight its player's fighter, alone whoever's turn it is. */
   const ownerOf = (dock: HTMLElement) => !state ? undefined : split() ? state.allies.find(a => callbacks.driver(a.id) === Number(dock.dataset.dock)) : state.allies[state.active];
@@ -1300,13 +1307,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The banner's card for `spec`, each half under whoever brings it. */
   function fillDualBanner(spec: DualSpec, brought: (id: ClassId) => Combatant | undefined) {
     const banner = get('.dual-banner');
+    banner.querySelector('.battle-kicker')!.textContent = 'ATAQUE DUAL';
     banner.querySelector('h2')!.textContent = spec.name;
     banner.querySelector('.dual-halves')!.innerHTML = halves(spec).map(x => `<div class="dual-half" data-anima="${x.class}" style="--chip:${CLASSES[x.class].colour}"><span class="battle-kicker">${escapeHtml(brought(x.class)?.name.toUpperCase() ?? '')}</span><strong>${escapeHtml(x.name)}</strong><span class="dual-pips"><span class="dual-pip-group"><span>${'<i></i>'.repeat(dualCost(spec)[x.id] ?? 0)}</span></span></span></div>`).join('');
     banner.querySelector('.dual-total')!.textContent = dualTotal(spec);
     banner.querySelector('footer p')!.textContent = spec.description;
     clearTimeout(bannerTimer); clearTimeout(compactTimer);
-    for (const key of ['leaving', 'compact', 'armed', 'fire']) delete banner.dataset[key];
-    const bars = get('.dual-cinema'); bars.hidden = true; delete bars.dataset.leaving;
+    for (const key of ['leaving', 'compact', 'armed', 'fire', 'reveal']) delete banner.dataset[key];
+    const bars = get('.dual-cinema'); bars.hidden = true; delete bars.dataset.leaving; delete bars.dataset.reveal;
     banner.hidden = true; void banner.offsetWidth; banner.hidden = false;
     return banner;
   }
@@ -1316,7 +1324,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!s || !targeting || s.phase !== 'player') return;
     if (duo) return DUALS.find(d => d.id === duo!.id);
     if (selected === 'dual') return DUALS.find(d => d.id === selectedDual);
-    if (selected === 'skill' && selectedSkill && !split()) return queuedDual(s, selectedSkill);
+    if (selected === 'skill' && selectedSkill && !split()) { const d = queuedDual(s, selectedSkill); return d && knownDual(d.id) ? d : undefined; }
   }
   /**
    * While a dual is being aimed, its banner is already up, whole, its two halves meeting in the middle
@@ -1353,6 +1361,26 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     for (const id of d.actors) { const ally = s.allies.find(a => a.id === id); if (ally?.classId) flashAnima(dockOf(id), CLASSES[ally.classId].colour); }
     return wait(seconds * 1000);
   }
+  /**
+   * The first time a dual ever goes off (docs/combat.md § Ataques duales): nobody armed it, the two
+   * players just chose its halves together. Time stops (the scene and the fight's clock) and the
+   * banner comes in as «DÚO DESBLOQUEADO», with its name, who brought which half, the cost and what it
+   * does, for DUAL_REVEAL; then it goes off from there as an armed one does (`showDualBanner`).
+   */
+  function revealDual(effect: BattleEffect) {
+    const d = effect.dual!, spec = DUALS.find(x => x.id === d.id), s = state!;
+    if (!spec) return Promise.resolve();
+    const brought = (id: ClassId) => { const i = d.parts.findIndex(part => SKILLS.find(x => x.id === part)?.class === id); return s.allies.find(a => a.id === d.actors[i]); };
+    const banner = fillDualBanner(spec, brought);
+    banner.querySelector('.battle-kicker')!.textContent = 'DÚO DESBLOQUEADO';
+    banner.dataset.armed = d.id; banner.dataset.reveal = 'true';
+    const bars = get('.dual-cinema'); bars.dataset.reveal = 'true'; bars.hidden = false;
+    callbacks.sound('dual-armed');
+    callbacks.slowmo?.(0, DUAL_REVEAL);
+    root.dataset.revealing = 'true';
+    for (const id of d.actors) { const ally = s.allies.find(a => a.id === id); if (ally?.classId) flashAnima(dockOf(id), CLASSES[ally.classId].colour); }
+    return wait(DUAL_REVEAL * 1000).finally(() => { delete root.dataset.revealing; });
+  }
   function hideDualBanner() {
     const banner = get('.dual-banner'), bars = get('.dual-cinema');
     if (banner.hidden) return;
@@ -1360,7 +1388,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!bars.hidden) bars.dataset.leaving = 'true';
     clearTimeout(bannerTimer); clearTimeout(compactTimer); bannerTimer = setTimeout(() => {
       banner.hidden = true; bars.hidden = true; delete bars.dataset.leaving;
-      for (const key of ['leaving', 'compact', 'armed', 'fire']) delete banner.dataset[key];
+      for (const key of ['leaving', 'compact', 'armed', 'fire', 'reveal']) delete banner.dataset[key];
+      delete bars.dataset.reveal;
     }, 300);
   }
   /**
@@ -1482,6 +1511,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   async function play(effect: BattleEffect, token: number) {
     // A banner aimed for a dual that did not happen (its half no longer there) goes.
     if (!effect.dual && get('.dual-banner').dataset.armed) hideDualBanner();
+    // A dual nobody had found: time stops first, to unlock it.
+    if (effect.dual && !knownDual(effect.dual.id)) { await revealDual(effect); if (token !== generation) return; }
     const banner = effect.dual ? showDualBanner(effect) : undefined;
     const called = showCallout(effect);
     shout(effect);
@@ -1668,7 +1699,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /**
    * A dual between the two players (docs/combat.md § Ataques duales): while one is aiming a skill,
    * the other picks the skill that completes it, and both are now aiming the dual. Either can back
-   * out (each goes back to what they had); it goes off once both have picked the same foe.
+   * out (each goes back to what they had); it goes off once both have picked the same foe. Only a
+   * dual already found: one not found yet happens by chance instead (`chanceDual`).
    */
   let duo: { id: DualId; skills: Record<PlayerId, SkillId>; aims: Partial<Record<PlayerId, string>> } | undefined;
   const other = (p: PlayerId): PlayerId => p === 1 ? 2 : 1;
@@ -1677,7 +1709,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const s = state!, them = menus[other(ctx)], partner = allyOf(other(ctx)), me = allyOf(ctx);
     if (!split() || duo || !partner || !me || !canAct(partner) || !them.targeting || them.selected !== 'skill' || !them.selectedSkill) return false;
     const d = dualOf(skill, them.selectedSkill);
-    if (!d || !dualReady(s, d, me, partner)) return false;
+    if (!d || !knownDual(d.id) || !dualReady(s, d, me, partner)) return false;
     duo = { id: d.id, skills: { [ctx]: skill, [other(ctx)]: them.selectedSkill } as Record<PlayerId, SkillId>, aims: {} };
     for (const p of [1, 2] as PlayerId[]) menus[p] = { selected: 'dual', selectedDual: d.id, targeting: true };
     loadMenu(ctx);
@@ -1696,6 +1728,24 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     collapse(); choose('skill');
     focusOn(scope().querySelector<HTMLButtonElement>(`[data-skill="${mine}"]`));
     render();
+  }
+  /**
+   * A dual not found yet, by chance: confirming `skill` while the other player has the skill that
+   * completes it picked (aiming it, or confirmed and waiting its turn) sets it off, with no warning
+   * before. Nothing was armed: the two of them just happened to choose it, and time stops to unlock
+   * it (`revealDual`). Aimed where the one confirming aimed, else where the other's was going.
+   */
+  function chanceDual(skill: SkillId, target?: string): Job | undefined {
+    const s = state!, me = allyOf(ctx), partner = allyOf(other(ctx)), them = menus[other(ctx)];
+    if (!split() || duo || !me || !partner || partner.hp <= 0 || callbacks.waiting(partner.id)) return;
+    const waiting = pending.find(j => j.ally === partner.id && j.command === 'skill' && j.skill);
+    const aiming = canAct(partner) && them.targeting && them.selected === 'skill' ? them.selectedSkill : undefined;
+    const theirs = waiting?.skill ?? aiming, d = theirs && dualOf(skill, theirs);
+    if (!d || knownDual(d.id) || !dualReady(s, d, me, partner)) return;
+    if (waiting) pending.splice(pending.indexOf(waiting), 1);
+    else withPlayer(other(ctx), () => collapse());
+    const foes = validTargets(s, 'attack').map(f => f.id), aim = [aimed(skill) ? target : undefined, waiting?.target].find(t => t && foes.includes(t));
+    return { player: ctx, ally: me.id, command: 'dual', dual: d.id, target: aim, text: `${d.name} → ${[...s.foes].find(f => f.id === aim)?.name ?? ''}` };
   }
   /** The target picker's title and line for what the menu being worked on is aiming. */
   function pickerText() {
@@ -1980,7 +2030,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (!spec) return;
       job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, target, text: `${spec.name} → ${named(target) ?? ''}` };
     } else {
-      job = { player: ctx, ally: me.id, command: selected, skill: selectedSkill, die: selectedDie, target, text: queuedText({ action: selected as Queued['action'], skill: selectedSkill, target }, me) };
+      job = (selected === 'skill' && selectedSkill ? chanceDual(selectedSkill, target) : undefined)
+        ?? { player: ctx, ally: me.id, command: selected, skill: selectedSkill, die: selectedDie, target, text: queuedText({ action: selected as Queued['action'], skill: selectedSkill, target }, me) };
     }
     // Against La Voz the press is what counts: a blow pressed in her silence lands there, even if it plays behind the partner's.
     if (state.song) job.at = state.song.t;

@@ -1,0 +1,112 @@
+{
+  "title": "Dúo descubierto: el primero sale por casualidad",
+  "description": "docs/combat.md § Ataques duales (El primero, por casualidad). Two players (two pads faked: the keyboard is Gerard, pad 2 is Aitor) against Vertitrón, Gerard in Matemágico and Aitor in Papagato at level 2, no dual found yet (the tester's help: free maná, no PV lost, unbound so a dual can go off again). Round 1: Gerard aims Foc Binari and Aitor picks Zarpazos in his own dock: nothing is armed, no banner, each just aims their own skill. Aitor confirms: time stops (the scene still, a dark veil, black bars) under «DÚO DESBLOQUEADO · Zarpazos de fuego» with who brought which half, the cost and the description; then it goes off as always. Round 2: now it is found, so the moment Aitor picks Zarpazos with Gerard aiming Foc Binari, both aim the dual with its banner armed, as before. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22uri-vertigo%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.pick = (p, sel) => { const el = document.querySelector('.battle-dock[data-dock=\"' + p + '\"] ' + sel); if (p === 1) el.focus(); else for (let i = 0; i < 12 && !el.classList.contains('is-cursor-2'); i++) ui.control('down', 2); ui.control('confirm', p); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.setAnimas(['matemagico', 'papagato', 'tecnopata'], { matemagico: 2, papagato: 2 }); ui.refresh?.()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "pick(1, '[data-command=\"skill\"] .command-trigger')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "pick(1, '[data-skill=\"foc-binari\"]')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "pick(2, '[data-command=\"skill\"] .command-trigger')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "pick(2, '[data-skill=\"zarpazos\"]')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "both-aiming",
+      "delay": 400,
+      "caption": "Not found yet: Gerard aims Foc Binari and Aitor Zarpazos, each in their own dock. No banner, nothing armed"
+    },
+    {
+      "eval": "ui.control('confirm', 2)"
+    },
+    {
+      "until": "document.querySelector('.dual-banner[data-reveal]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "unlocked",
+      "delay": 1100,
+      "caption": "Aitor confirms and the two halves meet by chance: time stops under «DÚO DESBLOQUEADO · Zarpazos de fuego», who brought which half, the cost and what it does"
+    },
+    {
+      "until": "document.querySelector('.dual-banner[data-fire]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "goes-off",
+      "delay": 150,
+      "caption": "Then it goes off as any dual: the veil lifts, the banner bursts, gold flares and rays, slow motion"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "eval": "pick(1, '[data-command=\"skill\"] .command-trigger')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "pick(1, '[data-skill=\"foc-binari\"]')"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "pick(2, '[data-command=\"skill\"] .command-trigger')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "pick(2, '[data-skill=\"zarpazos\"]')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "armed-once-found",
+      "delay": 600,
+      "caption": "Found now: the moment Aitor picks Zarpazos with Gerard aiming Foc Binari, both aim Zarpazos de fuego and its banner is armed, as before"
+    }
+  ]
+}

@@ -225,7 +225,9 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
   goes off once a fight), someone without the ánima of their half, the partner down or already
   through this round, no maná, no target). Picking one puts on the active fighter the ánima of their
   half if it is free in their kit, asks for a target (its banner already up) and fires it, so a dual can be
-  tried with one player and no queue. Outside development there is no such command and the menu is
+  tried with one player and no queue. One not found yet still stops time under *DÚO DESBLOQUEADO*
+  before it goes off; in the fight tester a dual counts as found until the page reloads (`just
+  screenshots duo-descubierto` plays both). Outside development there is no such command and the menu is
   Atacar · Habilidad · Defender · Huir; duals only come as a surprise (docs/combat.md § Ataques
   duales).
 - **Salir del combate**: the fight ends at once, with no result for the story. Picking a place in

@@ -340,11 +340,13 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 - **Once a fight each** (decided 2026-11-05, for now): a dual that has gone off cannot again until
   the next fight (`usedDuals`, `DualBlock` `'used'`); its two skills still work on their own.
 - **A surprise** (decided 2026-11-05): nothing glows, no skill is marked as part of a pair, no
-  dual is listed or hinted before its skill is picked. With two players, the one who acts later can
-  choose ahead in their own dock while the other chooses; when the earlier one picks the skill that
-  completes the other half, the dual's banner comes up while they aim it, and confirming fires the
-  dual instead (`commit`). Only the earlier fighter completes one. The combined cost and the
-  description show only then, in the dual's banner (and in the development Dual command).
+  dual is listed or hinted before its skill is picked. The combined cost and the description show
+  only in the dual's banner (and in the development Dual command).
+- **The first one by chance** (decided 2026-11-20, so they are not found by trying pairs blindly):
+  a dual not found yet is never armed while aimed. It goes off only when one player confirms their
+  skill while the other has the skill that completes it picked; then time stops under *DÚO
+  DESBLOQUEADO*, its name and what it does, and it goes off. Once found, picking the skill that
+  completes the other player's aimed one puts both on aiming the dual, its banner already up.
 - **Found, then remembered** (decided 2026-11-05): once a dual has gone off in a fight (not the
   fight tester's), it is found (`Story.discover`, kept in the browser like the EXP). On the status
   screen's Ánimas page, under the lists, *HABILIDADES DÚO DESCUBIERTAS* shows the ones found that

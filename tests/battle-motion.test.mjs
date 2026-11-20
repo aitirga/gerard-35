@@ -44,7 +44,7 @@ test('the tempo: a short breath between actors, and time to read whatever an act
   assert.ok(surge(.25) - surge(0) < surge(.5) - surge(.25), 'it accelerates');
 });
 test('a dual gets its moment, and so does a foe\'s ability that is not a plain blow, or one announced a turn ahead', async () => {
-  const { BEAT, holdAfter, DUAL_SLOW, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_CLOCK, DUAL_SECONDS } = await import('../src/battle-motion.ts');
+  const { BEAT, holdAfter, DUAL_SLOW, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_CLOCK, DUAL_SECONDS, DUAL_REVEAL } = await import('../src/battle-motion.ts');
   assert.equal(holdAfter({ dual: { id: 'zarpazos-de-fuego' } }), BEAT.dual);
   assert.equal(holdAfter({ dual: { id: 'zarpazos-de-fuego' } }, false, true), BEAT.dualSeen, 'shorter once seen');
   assert.ok(BEAT.dualSeen < BEAT.dual);
@@ -53,6 +53,8 @@ test('a dual gets its moment, and so does a foe\'s ability that is not a plain b
   assert.equal(holdAfter({ telegraph: { id: 'carrerilla' } }), BEAT.ability);
   assert.ok(DUAL_SLOW > 0 && DUAL_SLOW < 1 && DUAL_BANNER_SEEN < DUAL_BANNER && DUAL_SECONDS < DUAL_CLOCK);
   assert.ok(BEAT.queue < BEAT.ability && BEAT.ability < BEAT.dual);
+  // Unlocking a dual stops time long enough to read its name and what it does, longer than its banner ever holds.
+  assert.ok(DUAL_REVEAL > DUAL_BANNER && DUAL_REVEAL <= 4);
 });
 test('a foe\'s move has its name up a moment before it moves: read in a glance, never a wait', async () => {
   const { BEAT } = await import('../src/battle-motion.ts');

@@ -1804,6 +1804,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 @keyframes dual-flare { 12% { opacity: 1; } }
 @keyframes dual-rays { 0% { opacity: 0; scale: .3; rotate: -8deg; } 14% { opacity: 1; } 100% { opacity: 0; scale: 1.35; rotate: 10deg; } }
 @media (prefers-reduced-motion: reduce) { .dual-cinema::before, .dual-cinema::after { animation: none !important; } }
+/* Unlocked (battle-ui `revealDual`): the first time a dual ever happens, time stops under its banner.
+   A dark veil over the still fight, the kicker «DÚO DESBLOQUEADO» lit; the veil lifts as the dual goes off. */
+.dual-veil { position: absolute; inset: 0; background: #060504; opacity: 0; transition: opacity .35s ease-out; }
+.dual-cinema[data-reveal] .dual-veil { opacity: .55; }
+.dual-banner[data-reveal] header .battle-kicker { display: inline-block; font-size: 13px; color: #fff3d6; text-shadow: 0 0 14px #ffd27a, 0 0 2px #f0954a; animation: dual-unlock .7s .15s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes dual-unlock { from { opacity: 0; scale: 1.6; } }
+@media (prefers-reduced-motion: reduce) { .dual-veil { transition: none; } .dual-banner[data-reveal] header .battle-kicker { animation: none; } }
 /* A dual's combined cost: one group of circles per half, in its ánima's colour, under whoever pays it. */
 .dual-pips { display: inline-flex; align-items: center; gap: 6px; }
 .dual-pips > b { color: color-mix(in srgb, currentColor 60%, transparent); font-size: 10px; }

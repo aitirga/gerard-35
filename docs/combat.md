@@ -589,23 +589,24 @@ esta ronda y sin haber actuado (`acted`), maná de cada mitad en el ánima de qu
 y un enemigo al que apuntar (`target`). Solo quien actúa **antes** completa un dual.
 
 **El turno: es una sorpresa.** En la lista de habilidades no brilla nada, no hay marcas de pareja
-ni una pose de carga: el dual se descubre al elegir la habilidad que lo completa, cuando su cartel
-sube mientras se apunta.
+ni una pose de carga. Con dos jugadores cada uno elige a la vez en su mitad de la pantalla (`withPlayer`).
 
-1. Con dos jugadores, mientras uno elige, el que actúa después en la ronda puede **adelantar** su
-   elección en su propia mitad de la pantalla: Atacar, Habilidad o Defender, con objetivo
-   (`queue`); sin Huir ni cambio de ánima. Su placa dice entonces qué ha preparado, y puede
-   cambiarlo o anularlo hasta su turno.
-2. Al elegir el primero una habilidad que, con la del compañero, es un dual posible ahora
-   (`queuedDual`), el selector de objetivo se abre con el cartel del dual ya arriba (*armado*, ver
-   abajo); volver atrás, o que el compañero quite lo suyo, lo baja.
-   Al confirmar (`commit`), sale el dual. Apunta adonde apuntaba el que confirma, si
-   su habilidad apunta; si no, adonde apuntaba el compañero; si no, al primer enemigo en pie. El
-   compañero queda gastado esa ronda (`spent`). Si no, `act` como siempre, y lo adelantado sigue.
-3. Al llegar el turno del compañero, lo adelantado se juega solo si aún vale (`takeQueued`: objetivo
-   en pie, maná, habilidad puesta, mejora sin correr), tras un destello de su placa (`BEAT.queue`).
-   Si ya no vale, se borra y elige de nuevo.
-4. Al pasar el turno a los enemigos, o al acabar el combate, no queda nada adelantado ni gastado.
+**El primero, por casualidad** (decidido 2026-11-20, para que no se encuentren probando parejas a
+ciegas). Un dual que aún no se ha encontrado (`Story.duals`, `known`) no se arma nunca mientras se
+apunta: cada uno apunta su habilidad como siempre, sin cartel. Si uno **confirma** su habilidad mientras
+el otro tiene elegida la que la completa (apuntándola, o confirmada y esperando turno), y el dual se
+puede ahora (`dualBlock`), sale el dual (`chanceDual`): apunta adonde apuntaba el que confirma, si su
+habilidad apunta; si no, adonde iba la del otro; si no, al primer enemigo en pie. Y antes de salir **se
+para el tiempo** (`revealDual`, `DUAL_REVEAL`, 3,2 s): la escena y el reloj del combate quietos bajo un
+velo oscuro y las bandas de cine, y el cartel con *DÚO DESBLOQUEADO*, el nombre, quién pone qué mitad,
+el maná y la descripción; suena `dual-armed`. Después sale como cualquier dual (el cartel estalla, el
+velo se va). Desde entonces está encontrado (en el juego, se guarda; en el probador de combates, hasta
+recargar la página) y va como sigue.
+
+**Ya encontrado.** Mientras uno apunta una habilidad, el otro elige la que la completa (`joinDual`): los
+dos pasan a apuntar el dual, con su cartel ya arriba (*armado*, ver abajo). Cualquiera puede volver atrás
+(cada uno vuelve a lo que tenía); sale cuando los dos eligen el mismo enemigo (*Los dos, al mismo
+objetivo.*). Al pasar el turno a los enemigos, o al acabar el combate, no queda nada a medias.
 
 **Qué hace.** Gasta los dos turnos y la mitad de maná de cada uno; las dos ánimas cuentan como que
 han luchado. Su golpe usa los atributos de quien trae la mitad de su tipo (los dos de hoy son
@@ -624,7 +625,7 @@ con `markSpent` y `markLeft`). Si nadie la usa, se apaga al final de la ronda si
 
 **El cartel, el cine y la cámara lenta** (`armDualBanner`, `showDualBanner`, `effect.dual`;
 `src/battle-motion.ts`). Es el único sitio, fuera del modo de desarrollo, donde se ven el coste
-conjunto y la descripción:
+conjunto y la descripción (la primera vez, desde el parón de *DÚO DESBLOQUEADO*):
 
 - **armado**, mientras se apunta: sube entero, sus dos mitades entran cada una por su lado y chocan
   en el centro con un destello en la junta, un brillo cruza el nombre y su borde dorado respira hasta
