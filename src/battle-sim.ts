@@ -11,13 +11,13 @@ import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, songNow, takeNews, takeSongNews,
+  createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
-import { VOZ_SONG, untilNote } from './song.ts';
+import { VOZ_SONG, songAt, untilSilence } from './song.ts';
 import { ARTILUGIO_NOTES, CASTLE } from './castle.ts';
 import { artilugioLive, castleNote, castleProp, nextNote } from './castle-fight.ts';
 
@@ -63,7 +63,8 @@ export interface Setup {
   policy: Policy;
   /**
    * Skills the bot may not use, to measure how much one decides ("and without Zarpazos?"): a skill
-   * also bans every dual it is half of, a dual id bans that dual, and `duals` bans them all.
+   * also bans every dual it is half of, a dual id bans that dual, `duals` bans them all, and `defend`
+   * never holds on.
    */
   ban?: Ban[];
   /** The ánimas L and R walk through; Matemágico and Papagato by default, as in Nuria's mission. */
@@ -156,7 +157,7 @@ export function storyRows(points: StoryPoint[], policies: Policy[], options: { f
     row: simulate({ fight, party: options.party ?? DUO, policy, ...point.setup }, options.runs ?? 200, options.seed ?? 35, options.tuning ?? {}),
   }))));
 }
-export type Ban = SkillId | DualId | 'duals';
+export type Ban = SkillId | DualId | 'duals' | 'defend';
 /** A turn: `dual` is the active fighter and the next one together (both turns, both halves of maná). */
 export interface Choice { wear?: ClassId; action: BattleAction | 'dual'; target?: string; skill?: SkillId; dual?: DualId; element?: Element }
 /** Whether `ban` keeps a dual out: all of them, that one, or one of its halves. */
@@ -253,7 +254,7 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
  */
 export function legalChoices(state: BattleState, setup: Pick<Setup, 'ban'>, swaps = true, duals = true): Choice[] {
   const worn = state.allies[state.active].classId;
-  const out: Choice[] = [{ action: 'defend' }];
+  const out: Choice[] = setup.ban?.includes('defend') ? [] : [{ action: 'defend' }];
   const actorNow = state.allies[state.active];
   for (const target of validTargets(state, 'attack')) {
     out.push({ action: 'attack', target: target.id });
@@ -513,10 +514,18 @@ function ahead(state: BattleState, partnerId: string, setup: Setup, random: () =
   const choice = setup.policy === 'casual' && random() >= (setup.error ?? ERRORS.casual) ? best(options, c => damageNow(look, c))[0] : options[Math.floor(random() * options.length)];
   return { action: choice.action as 'attack' | 'defend' | 'skill', ...choice.skill ? { skill: choice.skill } : {}, ...choice.target ? { target: choice.target } : {} };
 }
-/** How often each kind of player waits for La Voz's note before a blow, and how far into it the blow comes (seconds). */
+/**
+ * La Voz (docs/quests/marta.md § Final boss): how often each kind of player waits for one of her
+ * silences before a blow, the shortest silence worth waiting for (`ROOM`) and how far into it the
+ * press comes (`REACT`, seconds). `smart` holds on while she sings at them and her next silence is
+ * more than `DENSE` seconds away.
+ */
 const TIMED: Record<Policy, number> = { attack: 0, random: 0, casual: .5, smart: 1 };
-const NOTE_LAG = .25;
-/** How often the second fighter has their blow ready to land inside the note the first one struck in. */
+const ROOM = .2, REACT = .12, DENSE = .8;
+/** Against her song nobody sits and thinks: the menu is open and the hand on it, waiting for the beat. */
+const SONG_THINK = 1.2;
+/** How long after the first press the partner's comes, for the Acorde, and how often it is ready to. */
+const NOTE_LAG = .2;
 const CHORD: Record<Policy, number> = { attack: 0, random: 0, casual: .15, smart: .8 };
 /** One fight, from its first turn to its end. */
 export function playFight(setup: Setup, seed: number): Run {
@@ -547,47 +556,72 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     // Fran's salon: a lamp of the canopy broken, and a blow the light ate.
     if (effect.lampBroken) count('lampara-rota');
     if (effect.annulled) count('anulado');
+    // La Voz: a blow that went through her while she sang, and an Acorde in one of her silences.
+    if (effect.sung) count('atraviesa');
+    if (effect.chord) count('acorde');
     if (effect.reaction) count(effect.reaction.id);
   };
   const watch = () => {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     takeNews(state).forEach(note);
-    // La Voz's song: its Ecos and Crescendos are counted, and nothing of it is left behind.
-    for (const news of takeSongNews(state)) count(news.kind === 'part' ? `parte:${news.part}` : news.kind);
+    // La Voz's song: each note she sang is a move of hers (the bestiary lists them), what it set off, and her Crescendos and parts.
+    for (const news of takeSongNews(state)) {
+      if (news.kind === 'nota') {
+        count(news.ability);
+        const moves = run.moves.voz ??= {}; moves[news.ability] = (moves[news.ability] ?? 0) + 1;
+        if (news.conducted) count('conduccion');
+        news.shocked?.forEach(() => count('shock'));
+      } else count(news.kind === 'part' ? `parte:${news.part}` : news.kind);
+    }
   };
+  /** La Voz: the moment the last blow that found her in a silence was pressed, and by whom (for the partner's Acorde). */
+  let pressed: { t: number; by: string } | undefined;
   while (!over() && state.round <= maxRounds) {
     if (state.phase === 'player') {
       // A choice queued ahead plays on its own after a short flash; anyone else thinks first.
       const waiting = !!state.queued?.[state.allies[state.active].id];
-      // La Voz: two who read her song have the second blow ready before the first lands, to strike inside
-      // the same note (the Acorde); the second one's thinking overlapped the first one's.
-      const struck = state.song?.struck, sung = state.song && songNow(state)!;
-      const ready = !!struck && !!sung && sung.sounding && struck.loop === sung.loop && struck.index === sung.index && struck.by !== state.allies[state.active].id && random() < CHORD[setup.policy];
-      tick(waiting ? BEAT.queue / 1000 : ready ? NOTE_LAG : think); watch();
+      // La Voz: two who read her song have the second blow ready to press inside the silence the first one
+      // struck in (the Acorde); it is judged at that press (`song.aim`), though it plays after the first.
+      const chooser = state.allies[state.active], struck = state.song?.struck;
+      const chordAt = pressed && struck && struck.by === pressed.by && pressed.by !== chooser.id ? pressed.t + NOTE_LAG : undefined;
+      const sameSilence = chordAt !== undefined && (() => { const gap = silenceAt(songAt(VOZ_SONG, chordAt)); return !!gap && gap.loop === struck!.loop && gap.index === struck!.index; })();
+      const ready = sameSilence && random() < CHORD[setup.policy];
+      pressed = undefined;
+      if (!ready) { tick(waiting ? BEAT.queue / 1000 : state.song ? Math.min(think, SONG_THINK) : think); watch(); }
       if (over()) break;
-      // The song took whoever was choosing (an Eco) and nobody else is left to: the foes go.
+      // The song took whoever was choosing (a note) and nobody else is left to: the foes go.
       if (state.phase !== 'player') continue;
-      // La Voz (docs/quests/marta.md): whoever reads her song waits for a note before choosing (`TIMED`), and the
-      // song goes on meanwhile, Ecos and all. If it takes the one choosing, the turn has moved on.
-      // With her second voice standing there is someone to strike in a silence: nobody waits.
-      const idle = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
-      if (state.song && idle && !songNow(state)!.sounding && random() < TIMED[setup.policy]) {
-        const chooser = state.allies[state.active].id;
-        tick(untilNote(VOZ_SONG, state.song.t) + NOTE_LAG); watch();
-        if (over()) break;
-        if (state.phase !== 'player' || state.allies[state.active].id !== chooser) continue;
+      // La Voz (docs/quests/marta.md): whoever reads her song holds on while she sings at them and her next silence is
+      // far, and otherwise waits for a silence before choosing (`TIMED`); the song goes on meanwhile. If it takes the one
+      // choosing, the turn has moved on. With her second voice standing there is someone to strike while she sings: nobody waits.
+      let held: Choice | undefined;
+      const voz = state.foes.find(f => f.kind === 'voz' && f.hp > 0), alone = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
+      if (state.song && voz && alone && !ready && !waiting) {
+        const me = state.allies[state.active], gap = () => untilSilence(VOZ_SONG, state.song!.t, ROOM);
+        if (setup.policy === 'smart' && voz.facing === me.id && !me.guarding && gap() > DENSE && !setup.ban?.includes('defend')) held = { action: 'defend' };
+        else if (gap() > 0 && random() < TIMED[setup.policy]) {
+          tick(gap() + REACT); watch();
+          if (over()) break;
+          if (state.phase !== 'player' || state.allies[state.active].id !== me.id) continue;
+        }
       }
       // The artilugio (docs/castle-bosses.md § With the artilugio): while she has Aitor, whoever reads the fight plays
       // the melody's next notes, two a turn; anyone else plays any of its eight notes. It takes nobody's turn.
       if (artilugioLive(state)) for (let n = 0; n < (setup.policy === 'smart' ? 2 : 1) && artilugioLive(state); n++) { castleNote(state, setup.policy === 'smart' ? nextNote(state) : Math.floor(random() * ARTILUGIO_NOTES.length)); count('nota'); }
+      // The partner's Acorde is chosen and judged at its press, inside the silence (a blow there is worth something).
+      if (ready && state.song) state.song.aim = chordAt;
       const queued = takeQueued(state);
-      const choice: Choice = queued ? { ...queued } : decide(state, setup, random);
+      const choice: Choice = queued ? { ...queued } : held ?? decide(state, setup, random);
       // Someone in no hurry queues their own choice while the first one chooses (`QUEUE`): their dual, if any, comes by chance.
       const partner = !queued && dualPartner(state);
       if (partner && QUEUE[setup.policy] && pairable(state) && random() < QUEUE[setup.policy]) queue(state, partner.id, ahead(state, partner.id, setup, random));
+      const pressAt = state.song?.aim ?? state.song?.t;
       const hp = state.foes.map(f => f.hp), effect = play(state, choice, setup.ban);
+      if (state.song) delete state.song.aim;
       if (!effect) throw new Error(`The bot chose something illegal: ${JSON.stringify(choice)}`);
+      // A blow that found La Voz in a silence: the partner may press inside the same one.
+      if (state.song && pressAt !== undefined && !effect.chord && state.song.struck?.by === effect.actor && (effect.amount ?? 0) > 0) pressed = { t: pressAt, by: effect.actor };
       const key = effect.dual?.id ?? choice.skill ?? choice.action;
       if (effect.dual) run.duals++;
       const dealt = state.foes.reduce((sum, foe, i) => sum + (hp[i] ?? foe.maxHp) - foe.hp, 0);
@@ -601,9 +635,12 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     } else if (state.phase === 'enemy') {
       for (const foe of state.foes.filter(f => f.hp > 0)) {
         if (state.phase !== 'enemy') break;
-        note(enemyAct(state, foe.id));
+        // La Voz while she only sings has no turn, and takes no time, as on screen: her song never waits on it. (Parts
+        // and other turnless foes still count a turn's time here; the fights tuned with them were measured so.)
+        const moved = enemyAct(state, foe.id);
+        note(moved);
         watch();
-        if (state.phase === 'enemy') tick(ACTION_SECONDS);
+        if ((moved || foe.kind !== 'voz') && state.phase === 'enemy') tick(ACTION_SECONDS);
         watch();
       }
       if (state.phase === 'enemy') nextRound(state);
@@ -837,14 +874,15 @@ export const TARGETS: readonly Target[] = [
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
   { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
   { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, levels: P2M2, policy: 'smart', improved: ['matemagico:electrico'], win: [.65, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan.' },
-  // La Voz, the mission's boss. A blow only lands on a note, so who does not wait for one loses turns; her Eco and its
-  // Crescendo make a long fight a lost one; the Acorde (the second fighter striking inside the same note) is what shortens it.
-  { id: 'voz-bien', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', win: [.93, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: esperar la nota, pegar los dos dentro de ella y agarrarse al golpe directo.' },
-  { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.7, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
-  // Since 2026-11-19 her song is Marta's recording, a note sounding most of the time: striking out of time loses less than with the old phrase.
-  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .4], why: 'Quien pega a destiempo pierde golpes en los silencios y no se agarra al golpe directo: gana pocas veces, y el Eco crece sin esperar.' },
+  // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
+  // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
+  // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
+  { id: 'voz-bien', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', win: [.9, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar.' },
+  { id: 'voz-sin-cubrirse', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['defend'], win: [.5, .86], why: 'Pegando bien pero sin cubrirse nunca, sus notas entran enteras y con el agua y el rayo encima: cuesta bastante más.' },
+  { id: 'voz-sin-duales', fight: 'voz', party: DUO, levels: P3M3, policy: 'smart', ban: ['duals'], win: [.6, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
+  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
-  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .92], why: 'Con dos ánimas de magia cuesta más: su Nota clara la devuelve, y hay que guardarse los rayos para cuando no es de vidrio.' },
+  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
   // The castle (docs/castle.md, docs/castle-bosses.md), preliminary: measured 2026-11-19 with the dual party at Papagato 3 and Atacar's three elements bought.
   { id: 'alumnos-primero', fight: 'alumnos-1a', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [.9, 1], why: 'Primer curso: chicle fresco, la primera lección del juego. Se gana sin pensar mucho.' },
   { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.8, 1], why: 'Tercer curso: el Empollón se aprende el golpe y el Repetidor lleva costra; alternar físico y mágico, y tumbar a la Chivata antes.' },

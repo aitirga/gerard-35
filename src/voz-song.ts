@@ -6,7 +6,7 @@ import { VOZ_RECORDING, recordingAt } from './song';
  * Las cuerdas the mazes' (src/game.ts, `onCuerdasSong`), whose pieces answer to her notes, and in her
  * fight La Voz's (src/battle-ui.ts, `callbacks.song`). It stops when the clock stops, slows when it
  * slows, and if it ever drifts it jumps to where the clock is, so what is heard is what holds: a
- * piece up while its note sounds, a window on La Voz open while she sings.
+ * piece up while its note sounds, a note's beam as it is sung, a window on La Voz open in her silences.
  *
  * Far off in Las cuerdas (`near` 0 to 1) it is quiet, muffled and lost in a big room, nearer with each
  * quality beaten; in her fight it is whole and dry.

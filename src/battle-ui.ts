@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, AFFINITIES, ELEMENT_RULES, elementOf, type Affinity, type FoeKind, diceOf, dieUse, bestDie, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, markLeft, markSpent, kitIn, DUALS, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -325,7 +325,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     return shownHp(c) > 0 ? [
       ...light ? [{ id: 'luz' as const, name: lightText(state!, light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
-      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño mientras suena una nota.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
+      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
       ...c.converged ? [{ id: 'converge' as const, name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
@@ -364,8 +364,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (c.kind?.startsWith('estampado') && c.hp > 0 && state?.light) chips.push(shirtLit(state, c) ? ['en-su-luz', 'En su luz'] : ['apagada', 'Fuera de su luz']);
     if (state && (c.lacado ?? -1) >= state.round) chips.push(['lacado', 'Lacado']);
     if (c.kind === 'voz' && state?.song) {
-      if ((c.shielded ?? -1) >= state.round) chips.push(['guardia', 'Guardia']);
-      if (c.clear) chips.push(['cristal', 'Nota clara']);
+      // Whom her notes go to: whoever touched her last.
+      const sung = state.allies.find(a => a.id === c.facing && a.hp > 0);
+      if (sung) chips.push(['canta', `Canta → ${sung.name}`]);
       if (c.winded) chips.push(['sin-aire', 'Sin aire']);
     }
     // The castle's rules (src/castle-fight.ts): what a pupil learned, the lectern, the Acta, the Queen's gum and Aitor's marks.
@@ -571,8 +572,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   /**
    * La Voz's song is a status on her, continuous, drawn like a fire's clock (`statusList`, `drain`):
-   * nothing else on screen tells it. Here, what the song did since the last frame: an Eco's number on
-   * everyone as each note starts, a Crescendo over her. Returns whether the plates have something new to say.
+   * nothing else on screen tells it. Here, what the song did since the last frame: each note she
+   * starts is a move of hers, its number on whoever its beam reached (named after the note, with its
+   * element), and what it left on them a beat later; a Crescendo over her. The beam itself is the
+   * scene's. Returns whether the plates have something new to say.
    */
   let songSaid = '';
   function showSong() {
@@ -580,12 +583,29 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const voz = state.foes.find(f => f.kind === 'voz');
     const news = takeSongNews(state);
     for (const item of news) {
-      if (item.kind === 'eco') {
+      if (item.kind === 'nota') {
         // No note is played here: her recording is the song, and it is playing (`callbacks.song`).
-        for (const hit of item.hits) if (hit.amount) pop(hit.target, `−${hit.amount}`, 'damage', 'Eco');
+        const name = FOE_ABILITIES[item.ability].name, kind = item.element ? `${name} · ${ELEMENTS[item.element].name}` : vozNote(item.tone).physical ? `${name} · Físico` : name;
+        const token = generation;
+        item.hits.forEach((hit, i) => {
+          if (hit.amount) { pop(hit.target, `−${hit.amount}`, 'damage', hit.conducted && item.hits.length > 1 && i ? 'Conducción' : hit.guarded ? `${kind} · Protegido` : kind, undefined, i * 16); callbacks.pulse(hit.target); }
+          // What it left on them, a beat after the number, in its colour.
+          const left = hit.wet ? { id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: '' } : hit.burn ? { id: 'quemado', text: `¡${TIMED.quemado.name}${hit.burn > 1 ? ` ${roman(hit.burn)}` : ''}!`, detail: hit.burn > 1 ? 'El fuego sube' : '' }
+            : hit.dried ? { id: 'mojado', text: 'Seco', detail: 'El fuego se lleva el agua' } : hit.conducted && !i ? { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' } : undefined;
+          if (left) setTimeout(() => { if (token === generation) pop(hit.target, left.text, 'status', left.detail, left.id); }, 170);
+        });
+        item.shocked?.forEach(id => setTimeout(() => { if (token === generation) pop(id, '¡Shock!', 'status', 'Pierde su siguiente turno', 'shock'); }, 340));
+        // Heard only where it leaves something: the water, the fire catching, the bolt in the water, her Re's weight.
+        const hit = item.hits.find(h => !h.guarded);
+        if (item.conducted) callbacks.sound('zap');
+        else if (hit?.wet) callbacks.sound('splash');
+        else if (hit?.burn) callbacks.sound('fire-hit');
+        else if (hit && vozNote(item.tone).physical) callbacks.sound('thump');
         // Her icon flashes as the note starts, as a fire's does when it burns.
         root.querySelectorAll<HTMLElement>('.status-icon[data-status="cancion"]').forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
       } else if (item.kind === 'crescendo' && voz) pop(voz.id, 'Crescendo', 'status', roman(item.level), 'crescendo');
+      // A new turn of her phrase, for someone else: whoever touched her last.
+      else if (item.kind === 'mira') pop(item.target, 'Le canta', 'status', 'Toda esta vuelta', 'canta');
     }
     // The plate says it again when the note changes (the icon's colour is set every frame, `drain`).
     const said = `${songLabel(state) ?? ''}${state.song.part}${voz?.crescendo ?? 0}`;
@@ -774,7 +794,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const loadMenu = (p: PlayerId) => { ctx = p; ({ selected, selectedSkill, selectedDual, targeting, pickingDie, selectedDie } = menus[p]); };
   const allyOf = (p: PlayerId) => state?.allies.find(a => callbacks.driver(a.id) === p);
   /** An action confirmed while another one plays: it goes off as soon as that one is over, in the order confirmed. */
-  interface Job { player: PlayerId; ally: string; command: Command; skill?: SkillId; die?: number; dual?: DualId; target?: string; text: string }
+  /** A confirmed choice waiting its turn to play; `at`: when it was pressed on La Voz's song, the moment it is judged at. */
+  interface Job { player: PlayerId; ally: string; command: Command; skill?: SkillId; die?: number; dual?: DualId; target?: string; text: string; at?: number }
   const pending: Job[] = [];
   /** Whether `ally` can still choose this round: standing, not through yet, nothing confirmed waiting to go off. */
   const canAct = (ally: Combatant | undefined) => !!state && !!ally && state.phase === 'player' && ally.hp > 0 && !state.spent?.includes(ally.id) && !pending.some(j => j.ally === ally.id) && !callbacks.waiting(ally.id);
@@ -1832,7 +1853,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.stopped) setTimeout(() => { if (token === generation) effect.stopped!.forEach(id => pop(id, 'Quieto', 'status', 'Sin nadie a quien copiar', 'clavado')); }, 420);
       if (effect.burst) setTimeout(() => { if (token !== generation) return; pop(effect.burst!.actor, '¡Estalla!', 'status', 'Fuego en la laca', 'quemado'); effect.burst!.hits.forEach(h => pop(h.target, `−${h.amount}`, 'damage', 'Estallido')); }, 420);
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
-      if (effect.kind === 'enemy' && effect.clear) pop(effect.actor, 'Nota clara', 'status', 'Devuelve la magia', 'cristal');
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');
@@ -1952,6 +1972,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     } else {
       job = { player: ctx, ally: me.id, command: selected, skill: selectedSkill, die: selectedDie, target, text: queuedText({ action: selected as Queued['action'], skill: selectedSkill, target }, me) };
     }
+    // Against La Voz the press is what counts: a blow pressed in her silence lands there, even if it plays behind the partner's.
+    if (state.song) job.at = state.song.t;
     pending.push(job);
     collapse(); render();
     if (!busy) await run();
@@ -1969,9 +1991,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     while (token === generation && state && state.phase === 'player' && pending.length) {
       if (last) { await breath(last); if (token !== generation || !state) return; }
       const job = pending.shift()!;
+      if (state.song && job.at !== undefined) state.song.aim = job.at;
       const effect = holdBack(() => !takeTurn(state!, job.ally) ? undefined
         : job.command === 'dual' ? actDual(state!, job.dual!, job.target)
         : split() ? act(state!, job.command as BattleAction, job.target, job.skill, job.die) : commit(state!, job.command as BattleAction, job.target, job.skill, job.die));
+      if (state.song) delete state.song.aim;
       // It could no longer be (its target fell, no maná): that player chooses again.
       if (!effect) { stale = job.ally; render(); continue; }
       render();

@@ -171,21 +171,6 @@
       "caption": "Picker moment «Allegro»: shorter notes, more of them"
     },
     {
-      "eval": "ui.jumpTo('voz-nota-clara')"
-    },
-    {
-      "until": "window.ready()",
-      "timeout": 60000
-    },
-    {
-      "eval": "closeUp('voz', 4.2)"
-    },
-    {
-      "shot": "voz-nota-clara",
-      "delay": 500,
-      "caption": "Picker moment «Nota clara»: glass, magic comes back"
-    },
-    {
       "eval": "window.gerard.game.frame(); ui.jumpTo('voz-a-capela')"
     },
     {

@@ -46,7 +46,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `vertigo` | `VERTIGO`, the final boss's whole book, as `vertigo.boss` | `vertigo.boss.pisoton`, `vertigo.boss.gritoDown` |
 | `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
 | `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
-| `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.eco`, `marta.rules.acorde`, `marta.rules.directo` |
+| `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.vozRe`, `marta.rules.acorde`, `marta.rules.directo` |
 | `castle` | `CASTLE` (`src/castle.ts`), the castle's pupils, Aurelià, Dirección and the Queen, as `castle.rules` | `castle.rules.resolucion`, `castle.rules.year3`, `castle.rules.reinaVuelta` |
 | `modelo` | `MODELO`, the foes of Emilie's model and El que no converge, as `modelo.rules` | `modelo.rules.seca`, `modelo.rules.descargaStep`, `modelo.rules.convergeTurns` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
@@ -348,16 +348,21 @@ move inside it (36, so whoever she names holds on), her Eco is frailer (50 PV) a
 La Voz's Golpe directo is 54. Lo Cristalino is the one left to do: two magic ánimas playing at
 random still win 41 %. Measure again whenever what the party's ánimas can do changes.
 
-La Voz runs on the fight's clock, so the bots play it in time: `smart` waits for a note before
-choosing and has the second fighter's blow ready to land inside the same note (the Acorde) four times
-in five; `casual` waits half the time and chains one in seven; `attack` and `random` never look at
-the song (`TIMED`, `CHORD` in `src/battle-sim.ts`). Her fight is steep on purpose and narrow to tune:
-Eco and Crescendo punish length, so 80 PV more or less moves `smart` from always to rarely
-(`--tune foe.voz.pv=360:400:440`). Change her PV, `eco` or `ecoStep` one at a time. Her second voice
-(`marta.rules.coro`, its PV) is the other steep one: at 64 a party of two magic ánimas almost never
-wins, at 32 it does four times in five. `smart` counts breaking the Calderón (an Acorde while she
-holds her breath) as the damage it saves, and does not wait for a note while her second voice
-stands, since that one can be hit in a silence.
+La Voz runs on the fight's clock, so the bots play it in time (2026-11-20, each note she sings a
+beam and her silences the only window): `smart` holds on while she sings at it and her next silence
+is more than `DENSE` seconds off, otherwise waits for a silence and presses `REACT` into it, and has
+the second fighter's blow ready inside the same silence (the Acorde) four times in five, judged at
+its press (`song.aim`) as on screen; `casual` waits half the time and chains one in seven; `attack`
+and `random` never look at the song (`TIMED`, `CHORD`, `ROOM`, `REACT`, `DENSE` in
+`src/battle-sim.ts`). Against her song nobody thinks for three seconds: a turn's thinking is
+`SONG_THINK` (1.2 s). With her notes landing about once a second, every point of them counts: tune
+one note at a time (`--tune marta.rules.vozRe=4:5`), and `vozDo`/`vozFa`, which come twice a turn,
+twice as carefully. Her Magia against the party's Espíritu does the rest, so a note of 2 is 2 on
+Gerard and 5 on Aitor. `voz-sin-cubrirse` (`--ban defend`) measures what holding on is worth. Her
+second voice (`marta.rules.coro`, its PV) can be hit while she sings, so nobody waits for a silence
+while it stands; `smart` counts breaking the Calderón (an Acorde while she holds her breath) as the
+damage it saves. While she only sings she takes no turn and no time in the foes' phase (other
+turnless foes still count a turn's time; the fights tuned with them were measured so).
 
 ## The castle, as tuned
 

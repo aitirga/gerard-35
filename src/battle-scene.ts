@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { DIE, createDie, dressDie, faceUp } from './dice';
@@ -34,7 +34,7 @@ export interface FightStage { layout: Layout; pocket?: boolean; spread?: number 
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
 import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
-import { TONES } from './song';
+import { TONES, type ToneId } from './song';
 import { takeZero } from './anima-looks';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { spellLaunch } from './battle-sounds';
@@ -908,6 +908,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   /** Where a foe called in mid-fight stands from its caller: metres to its side, and towards the party. */
   const SUMMON = { side: 2, ahead: .7 } as const;
+  /** One of La Voz's notes as it starts (VOZ_NOTES): its beam at whom it reaches, as the fight's rules have just sung it (`runSong`). */
+  function voiceBeam(voz: Fighter, unit: Combatant, tone: ToneId) {
+    if (!state) return;
+    const note = vozNote(tone), alive = state.allies.filter(a => a.hp > 0);
+    const reached = note.all ? alive : alive.filter(a => a.id === unit.facing).slice(0, 1);
+    const on = (reached.length ? reached : alive.slice(0, 1)).map(a => ({ f: fighters.get(a.id), guarded: a.guarding })).filter((x): x is { f: Fighter; guarded: boolean } => !!x.f).map(x => ({ at: v3(chestOf(x.f)), guarded: x.guarded }));
+    if (!on.length) return;
+    const kind = note.element ?? (note.physical ? 'fisico' : 'plain');
+    dualFx.voiceBeam(v3(partOf(voz, 'Garganta')), on, TONES[tone].colour, kind, viewDir(), unit.crescendo ?? 0);
+    if (note.physical && on.some(x => !x.guarded)) { shake = Math.max(shake, .25); pulse?.(.25, .2); }
+  }
   function cuerdasFx(e: BattleEffect, actor: Fighter, target: Fighter | undefined, view: V3) {
     const ability = e.ability?.id, kind = actor.strings!;
     const chest = target ? v3(chestOf(target)) : undefined, feet = target ? v3(floorUnder(target)) : undefined;
@@ -922,8 +933,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (ability === 'golpe-directo' && chest) dualFx.straight(kind === 'voz' ? mouth : v3(chestOf(actor)), chest, kind === 'voz' ? CUERDAS_COLOURS.mi : CUERDAS_COLOURS.sol);
     if (ability === 'en-linea') { dualFx.through(v3(partOf(actor, 'Lanza')), everyone); shake = Math.max(shake, .4); pulse?.(.4, .3); }
     if (ability === 'estocada' && chest && feet) { dualFx.lunge(v3(chestOf(actor)), chest, feet); shake = Math.max(shake, .7); pulse?.(.7, .5); zoom.x = Math.max(zoom.x, HIT.punch.size); }
-    if (ability === 'guardia') { dualFx.firewall(v3(partOf(actor, 'Talle')), view, CUERDAS_COLOURS.string); cue('mana'); }
-    if (ability === 'nota-clara') { dualFx.clearNote(v3(partOf(actor, 'Talle')), view); cue('clink'); }
     if (ability === 'coro' && e.summoned) { const second = fighters.get(e.summoned); if (second) { dualFx.choir(mouth, v3(second.base.clone().add(new pc.Vec3(0, 1.1 * second.scale.y, 0))), view); cue('charge'); } }
     if (ability === 'aliento') { dualFx.inhale(mouth, view); pulse?.(.3, .5); cue('charge'); }
     if (ability === 'calderon') {
@@ -2622,11 +2631,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (f.strings && unit) {
           const seen = camera(), toCamera = ((Math.atan2(seen.x, seen.z) * 180 / Math.PI - f.turn + 540) % 360) - 180;
           const song = state ? songNow(state) : undefined;
-          fears?.cuerdas.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera, song, state?.round ?? 0, effect?.actor === id && !effect.cancelled ? effect.ability?.id : undefined);
-          // Each note of La Voz's song, as it starts: a ring of its colour off her throat (her Eco reaching everyone).
-          if (f.strings === 'voz' && song?.sounding && unit.hp > 0 && animate) {
+          fears?.cuerdas.show(f.model, unit, time, dt, animate, effect?.actor === id && !impacted ? effect : undefined, toCamera, song, effect?.actor === id && !effect.cancelled ? effect.ability?.id : undefined);
+          // Each note of La Voz's song, as it starts: its beam from her throat, in its colour, at whoever she sings at (La: at everyone).
+          if (f.strings === 'voz' && song?.sounding && unit.hp > 0 && animate && state) {
             const key = `${song.loop}:${song.index}`;
-            if (sungNote !== key) { if (sungNote !== undefined) dualFx.songNote(v3(partOf(f, 'Garganta')), TONES[song.tone].colour, viewDir(), unit.crescendo ?? 0); sungNote = key; }
+            if (sungNote !== key) { if (sungNote !== undefined) voiceBeam(f, unit, song.tone); sungNote = key; }
           }
         }
         f.body?.setLocalPosition(0, 0, 0);

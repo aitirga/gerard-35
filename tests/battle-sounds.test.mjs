@@ -96,6 +96,8 @@ test('every tower fight has sound for its foes\' turns', () => {
     const s = createFearBattle(party, encounter);
     s.phase = 'enemy';
     const foe = s.foes[0], blow = enemyAct(s, foe.id, 'gerard');
+    // La Voz takes no turn of her own in Andante: her recording is what is heard, each note a move of hers.
+    if (encounter === 'voz') { assert.equal(blow, undefined); continue; }
     assert.ok(impactSounds(blow, s).length, encounter);
   }
 });

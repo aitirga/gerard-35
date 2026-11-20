@@ -276,32 +276,6 @@
       "timeout": 180000
     },
     {
-      "eval": "catchPop('Guardia', 140); round('voz'); 0"
-    },
-    {
-      "until": "window.frozen === 'Guardia'",
-      "timeout": 60000
-    },
-    {
-      "shot": "guardia",
-      "delay": 250,
-      "caption": "Guardia: a lattice of strings in front of her"
-    },
-    {
-      "eval": "thaw()"
-    },
-    {
-      "until": "window.ready()",
-      "timeout": 60000
-    },
-    {
-      "eval": "thaw(); ui.jumpTo('voz-nota-clara')"
-    },
-    {
-      "until": "window.ready()",
-      "timeout": 60000
-    },
-    {
       "eval": "thaw(); ui.jumpTo('voz-allegro')"
     },
     {

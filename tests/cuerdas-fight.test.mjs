@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CUERDAS_ENCOUNTERS, CUERDAS_FIGHTS, DIRECTO_TURNS, FEAR_ENCOUNTERS, MARTA, SECOND_VOICE, SOBREMESA, STAGED_MOMENTS, VOZ_TURNS, act, cornered, createFearBattle, enemyAct, intentLabel, nextRound, partFor, resonancia, runClock, silenced, songLabel, songNow, stageMoment, takeNews, takeSongNews } from '../src/battle.ts';
-import { VOZ_SONG, phraseLength, songAt, turnAt } from '../src/song.ts';
+import { CUERDAS_ENCOUNTERS, CUERDAS_FIGHTS, DIRECTO_TURNS, FEAR_ENCOUNTERS, MARTA, SECOND_VOICE, STAGED_MOMENTS, VOZ_NOTES, VOZ_TURNS, act, cornered, createFearBattle, enemyAct, intentLabel, nextRound, partFor, resonancia, runClock, singing, songLabel, songNow, stageMoment, takeNews, takeSongNews, vozMove } from '../src/battle.ts';
+import { VOZ_SONG, phraseLength, songAt, turnAt, turnStarts } from '../src/song.ts';
 import { FOE_XP } from '../src/levels.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
@@ -14,7 +14,7 @@ const fight = (encounter, random = () => 0) => {
 const turn = (s, id, target) => { s.phase = 'enemy'; s.enemyActions = []; return enemyAct(s, id, target); };
 const round = s => { s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id); return nextRound(s); };
 const as = (s, who) => { s.phase = 'player'; s.active = s.allies.findIndex(a => a.id === who); };
-/** Moves the song to `t` seconds into Marta's recording, with no Eco on the way. */
+/** Moves the song to `t` seconds into Marta's recording, with no note sung on the way. */
 const sing = (s, t) => { s.song.t = t; };
 const ally = (s, id) => s.allies.find(a => a.id === id);
 /** Whoever the fight's dice (`random` 0) pick first: the first to stand in line. */
@@ -218,84 +218,192 @@ test('after its Estocada Lo Directo is stuck until its next turn: every blow on 
   assert.ok(Math.abs(act(s, 'attack', 'directo').amount - plain) <= 1);
 });
 
-test('La Voz is only hurt while a note sounds: in a silence a blow goes through her, maná spent', () => {
+/** Where in Marta's recording the `n`th note (0 up) that is `tone` starts, and its beat. */
+const noteAt = (tone, n = 0) => {
+  let clock = 0, seen = 0;
+  for (const beat of VOZ_SONG.beats) {
+    if (beat.tone === tone && seen++ === n) return { at: clock, beat };
+    clock += beat.sing + beat.rest;
+  }
+  throw new Error(`No ${tone} number ${n}`);
+};
+/** The note `tone` (its `n`th) starts: the song is put just before it and runs over it. Returns what it did. */
+const sung = (s, tone, n = 0) => {
+  takeSongNews(s);
+  sing(s, noteAt(tone, n).at - .005); runClock(s, .01);
+  return takeSongNews(s).find(news => news.kind === 'nota');
+};
+/** A note that starts after a silence, and one bound to the note before it (no silence between). */
+const afterSilence = () => { let clock = 0; for (const [i, beat] of VOZ_SONG.beats.entries()) { if (i && VOZ_SONG.beats[i - 1].rest > .2) return clock; clock += beat.sing + beat.rest; } };
+const afterBound = () => { let clock = 0; for (const [i, beat] of VOZ_SONG.beats.entries()) { if (i && VOZ_SONG.beats[i - 1].rest === 0) return clock; clock += beat.sing + beat.rest; } };
+
+test('La Voz is only hurt in her silences: while a note sounds a blow goes through her, maná spent', () => {
   const s = fight('voz'), voz = s.foes[0], beat = VOZ_SONG.beats[0];
-  assert.equal(songLabel(s), 'Nota · Do'); assert.ok(!silenced(s, voz));
-  as(s, 'gerard');
-  assert.ok(act(s, 'attack', 'voz').amount > 0);
-  sing(s, beat.sing + .1);
-  assert.equal(songLabel(s), 'Silencio'); assert.ok(silenced(s, voz));
+  sing(s, .3);
+  assert.equal(songLabel(s), 'Nota · Do'); assert.ok(singing(s, voz));
   as(s, 'gerard');
   const hp = voz.hp, mana = ally(s, 'gerard').secondary, miss = act(s, 'skill', 'voz', 'foc-binari');
-  assert.equal(miss.amount, 0); assert.equal(miss.silent, true); assert.equal(miss.burn, undefined);
+  assert.equal(miss.amount, 0); assert.equal(miss.sung, true); assert.equal(miss.burn, undefined);
   assert.equal(voz.hp, hp); assert.equal(ally(s, 'gerard').secondary, mana - 1);
   // A blow that reaches every foe finds nobody either.
   s.levels = { papagato: 3 }; as(s, 'aitor');
   assert.equal(act(s, 'skill', undefined, 'a-la-vez').hits[0].amount, 0);
   assert.equal(voz.hp, hp);
+  // In the silence after it, she is there.
+  sing(s, beat.sing + .1);
+  assert.equal(songLabel(s), 'Silencio'); assert.ok(!singing(s, voz));
+  as(s, 'gerard');
+  assert.ok(act(s, 'attack', 'voz').amount > 0);
 });
 
-test('a fire on La Voz burns on, and only takes PV on a note', () => {
+test('a blow pressed just as she starts again still counts as the silence before, never one after a bound note', () => {
   const s = fight('voz'), voz = s.foes[0];
-  // Set alight on a note whose next pulse lands on a note too, and the one after in a silence.
+  sing(s, afterSilence() + MARTA.hueco / 2);
+  assert.ok(songNow(s).sounding); assert.ok(!singing(s, voz));
+  sing(s, afterSilence() + MARTA.hueco * 1.5);
+  assert.ok(singing(s, voz));
+  sing(s, afterBound() + MARTA.hueco / 2);
+  assert.ok(singing(s, voz));
+});
+
+test('a blow is judged when it was pressed: one pressed in a silence lands though it plays after a note started', () => {
+  const s = fight('voz'), voz = s.foes[0], beat = VOZ_SONG.beats[0];
+  sing(s, beat.sing + beat.rest + .4);
+  assert.ok(singing(s, voz));
+  s.song.aim = beat.sing + .1;
+  as(s, 'gerard');
+  assert.ok(act(s, 'attack', 'voz').amount > 0);
+  // Pressed too long ago, it is judged now.
+  s.song.aim = s.song.t - 4;
+  as(s, 'gerard');
+  assert.equal(act(s, 'attack', 'voz').sung, true);
+});
+
+test('a fire on La Voz burns on, and only takes PV in a silence', () => {
+  const s = fight('voz'), voz = s.foes[0];
+  // Set alight in a silence whose next pulse lands in a silence too, and the one after on a note.
   let at = 0;
-  while (!(songAt(VOZ_SONG, at).sounding && songAt(VOZ_SONG, at + 2.01).sounding && !songAt(VOZ_SONG, at + 4.02).sounding)) at += .05;
+  while (!(!songAt(VOZ_SONG, at).sounding && !songAt(VOZ_SONG, at + 2.01).sounding && songAt(VOZ_SONG, at + 4.02).sounding && songAt(VOZ_SONG, at + 4.02).into > MARTA.hueco)) at += .01;
   sing(s, at);
   as(s, 'gerard'); act(s, 'skill', 'voz', 'foc-binari');
   assert.ok(voz.timed.quemado);
   const hp = voz.hp;
-  // Two seconds on, on a note: the fire pulses.
-  assert.equal(runClock(s, 2.01).length, 1);
+  // Two seconds on, still silent: the fire pulses.
+  assert.equal(runClock(s, 2.01).filter(p => p.target === 'voz').length, 1);
   assert.ok(voz.hp < hp);
-  // Into the silence: the next pulse comes and takes nothing, and shows nothing.
+  // On a note: the next pulse comes and takes nothing, and shows nothing.
   const kept = voz.hp;
-  assert.equal(runClock(s, 2.01).length, 0);
+  assert.equal(runClock(s, 2.01).filter(p => p.target === 'voz').length, 0);
   assert.equal(voz.hp, kept); assert.ok(voz.timed.quemado);
 });
 
-test('every note that starts is an Eco on the whole party; holding on takes two thirds off', () => {
-  const s = fight('voz'), [first, next] = VOZ_SONG.beats;
-  assert.deepEqual(runClock(s, 1), []);
-  assert.deepEqual(takeSongNews(s), []);
-  // Many Crescendos in, so that a third of it is less than all of it.
-  s.foes[0].crescendo = 30;
-  const raw = Math.round(MARTA.eco + 30 * MARTA.ecoStep);
-  ally(s, 'aitor').guarding = true;
-  runClock(s, first.sing + first.rest);
-  const news = takeSongNews(s);
-  assert.equal(news.length, 1); assert.equal(news[0].kind, 'eco'); assert.equal(news[0].tone, next.tone);
-  assert.ok(raw > Math.ceil(raw / 3));
-  assert.deepEqual([...news[0].hits].sort((a, b) => b.amount - a.amount), [{ target: 'gerard', amount: raw }, { target: 'aitor', amount: Math.ceil(raw / 3) }]);
-  assert.deepEqual(takeSongNews(s), []);
-  assert.equal(s.foes[0].silent, false);
+test('every note she starts is a move of hers, a beam at whom she sings at, with its element; La reaches everyone', () => {
+  assert.deepEqual(Object.keys(VOZ_NOTES).sort(), ['do', 'fa', 'la', 're', 'sib', 'sol']);
+  const s = fight('voz'), voz = s.foes[0], at = voz.facing, other = s.allies.find(a => a.id !== at).id;
+  assert.equal(at, firstOf(s).id);
+  for (const tone of ['do', 're']) {
+    const note = sung(s, tone);
+    assert.equal(note.ability, VOZ_NOTES[tone].ability); assert.equal(note.element, undefined);
+    assert.equal(note.hits.length, 1); assert.equal(note.hits[0].target, at); assert.ok(note.hits[0].amount > 0);
+  }
+  const water = sung(s, 'sol');
+  assert.equal(water.element, 'agua'); assert.equal(water.hits[0].wet, true); assert.ok(ally(s, at).timed.mojado);
+  delete ally(s, at).timed.mojado;
+  const fire = sung(s, 'sib');
+  assert.equal(fire.element, 'fuego'); assert.equal(fire.hits[0].burn, 1); assert.equal(ally(s, at).timed.quemado.level, 1);
+  const bolt = sung(s, 'fa');
+  assert.equal(bolt.element, 'electrico'); assert.equal(bolt.conducted, undefined);
+  const all = sung(s, 'la');
+  assert.deepEqual(all.hits.map(h => h.target).sort(), [at, other].sort());
+  assert.equal(intentLabel(s, voz), undefined, 'her notes are not announced: the song is what says them');
 });
 
-test('every time her phrase comes round in the recording, a Crescendo: her Magia up, and her Eco with it, with no ceiling', () => {
+test('holding on against her song takes two thirds off and leaves nothing on: no water, no fire', () => {
+  const s = fight('voz'), voz = s.foes[0], who = ally(s, voz.facing);
+  // Many Crescendos in, so that a third of it is less than all of it.
+  voz.lasting = { shifts: { magia: 20 }, from: 'Crescendo' };
+  const look = structuredClone(s), whole = sung(look, 'sol').hits[0].amount;
+  who.guarding = true;
+  const held = sung(s, 'sol').hits[0];
+  assert.equal(held.amount, Math.ceil(whole / 3)); assert.equal(held.guarded, true); assert.equal(held.wet, undefined);
+  assert.equal(who.timed?.mojado, undefined);
+  assert.equal(sung(s, 'sib').hits[0].burn, undefined); assert.equal(who.timed?.quemado, undefined);
+});
+
+test('Fa on someone wet runs through the water: Conducción on everyone wet, who are left dry; Si♭ on someone wet dries them and does not catch', () => {
+  const s = fight('voz'), voz = s.foes[0], who = ally(s, voz.facing);
+  const dry = structuredClone(s), plain = sung(dry, 'fa').hits[0].amount;
+  sung(s, 'sol');
+  assert.ok(who.timed.mojado);
+  const bolt = sung(s, 'fa');
+  assert.equal(bolt.conducted, true); assert.equal(bolt.hits[0].conducted, true); assert.ok(bolt.hits[0].amount > plain);
+  assert.equal(who.timed.mojado, undefined);
+  sung(s, 'sol');
+  const fire = sung(s, 'sib');
+  assert.equal(fire.hits[0].dried, true); assert.equal(fire.hits[0].burn, undefined);
+  assert.equal(who.timed.mojado, undefined); assert.equal(who.timed.quemado, undefined);
+});
+
+test('she sings each turn of her phrase at whoever touched her last in the one before', () => {
+  const s = fight('voz'), voz = s.foes[0], first = voz.facing, other = s.allies.find(a => a.id !== first).id;
+  // The other one lands a blow in a silence: she remembers it, and goes on singing at the first.
+  sing(s, VOZ_SONG.beats[0].sing + .1); as(s, other);
+  act(s, 'attack', 'voz');
+  assert.equal(voz.struck, other); assert.equal(voz.facing, first);
+  // A blow that goes through her (on a note) does not count.
+  sing(s, .3); as(s, first);
+  act(s, 'attack', 'voz');
+  assert.equal(voz.struck, other);
+  assert.equal(sung(s, 'sol').hits[0].target, first);
+  // Her phrase comes round: this turn is the other one's, and the fight says so.
+  takeSongNews(s);
+  sing(s, turnAt(VOZ_SONG, 0).length - .005); runClock(s, .01);
+  const news = takeSongNews(s);
+  assert.deepEqual(news.find(n => n.kind === 'mira'), { kind: 'mira', target: other });
+  assert.equal(news.find(n => n.kind === 'nota').hits[0].target, other);
+  assert.equal(voz.facing, other); assert.equal(voz.struck, undefined);
+});
+
+test('every time her phrase comes round in the recording, a Crescendo: her Magia up, with no ceiling', () => {
   const s = fight('voz'), voz = s.foes[0];
   runClock(s, turnAt(VOZ_SONG, 0).length + .01);
   const news = takeSongNews(s);
   assert.deepEqual(news.filter(n => n.kind === 'crescendo'), [{ kind: 'crescendo', level: 1 }]);
   assert.equal(voz.lasting.shifts.magia, MARTA.crescendo);
-  assert.equal(news.at(-1).hits[0].amount, Math.round(MARTA.eco + MARTA.ecoStep));
   // The whole recording again: its eight turns, and the song goes on from its top.
   runClock(s, phraseLength(VOZ_SONG));
   assert.equal(voz.crescendo, 9);
-  assert.equal(takeSongNews(s).at(-1).hits[0].amount, Math.round(MARTA.eco + 9 * MARTA.ecoStep));
+  assert.equal(voz.lasting.shifts.magia, 9 * MARTA.crescendo);
 });
 
-test('the Eco can end the fight on its own', () => {
+test('her notes can end the fight on their own', () => {
   const s = fight('voz');
   s.allies.forEach(a => { a.hp = 1; });
-  // Once it has grown (it starts at nothing: her song comes in softly).
-  s.foes[0].crescendo = 10;
-  runClock(s, VOZ_SONG.beats[0].sing + VOZ_SONG.beats[0].rest + .01);
+  // Her La reaches everyone.
+  sung(s, 'la');
   assert.equal(s.phase, 'lost');
 });
 
-test('Acorde: a second blow inside the same note, by the other fighter, lands half as hard again, once a note', () => {
-  const s = fight('voz'), voz = s.foes[0];
+test('against her song Defender lasts until that fighter acts again, not to the end of the round', () => {
+  const s = fight('voz');
+  as(s, 'gerard'); act(s, 'defend');
+  assert.ok(ally(s, 'gerard').guarding);
+  round(s);
+  assert.ok(ally(s, 'gerard').guarding, 'still holding on in the round after');
+  sing(s, VOZ_SONG.beats[0].sing + .1); as(s, 'gerard');
+  act(s, 'attack', 'voz');
+  assert.equal(ally(s, 'gerard').guarding, false);
+  // Anywhere else it ends with the round, as always.
+  const line = fight('cuerdas-directo');
+  as(line, 'gerard'); act(line, 'defend'); round(line);
+  assert.equal(ally(line, 'gerard').guarding, false);
+});
+
+test('Acorde: a second blow inside the same silence, by the other fighter, lands half as hard again, once a silence', () => {
+  const s = fight('voz'), voz = s.foes[0], [first, second] = VOZ_SONG.beats;
   // Both attack with the same arm, so one blow can be measured against the other.
   ally(s, 'aitor').stats = { ...ally(s, 'gerard').stats };
+  sing(s, first.sing + .05);
   as(s, 'gerard');
   const one = act(s, 'attack', 'voz');
   assert.equal(one.chord, undefined);
@@ -306,11 +414,11 @@ test('Acorde: a second blow inside the same note, by the other fighter, lands ha
   const two = act(s, 'attack', 'voz');
   assert.equal(two.chord, true);
   assert.ok(Math.abs(two.amount - one.amount * MARTA.acorde) <= 1, `${two.amount} against ${one.amount}`);
-  // Spent: a third blow in the same note is a plain one.
+  // Spent: a third blow in the same silence is a plain one.
   as(s, 'gerard');
   assert.equal(act(s, 'attack', 'voz').chord, undefined);
-  // In the next note a blow starts over: nothing is owed from the one before.
-  sing(s, VOZ_SONG.beats[0].sing + VOZ_SONG.beats[0].rest + .1);
+  // In the next silence a blow starts over: nothing is owed from the one before.
+  sing(s, first.sing + first.rest + second.sing + .05);
   as(s, 'aitor');
   assert.equal(act(s, 'attack', 'voz').chord, undefined);
   as(s, 'gerard');
@@ -318,37 +426,18 @@ test('Acorde: a second blow inside the same note, by the other fighter, lands ha
   assert.ok(voz.hp < voz.maxHp);
 });
 
-test('in Andante her turns go round Guardia, Nota clara and Golpe directo', () => {
+test('in Andante she takes no turn of her own: her song is all she does, and the round does not wait on her', () => {
   const s = fight('voz'), voz = s.foes[0];
-  assert.deepEqual([...VOZ_TURNS.andante], ['guardia', 'nota-clara', 'golpe-directo']);
-  // Guardia: the next blow at half, and it is spent.
-  assert.equal(turn(s, 'voz').ability.id, 'guardia');
-  round(s); sing(s, .1);
-  as(s, 'gerard');
-  const halved = act(s, 'attack', 'voz');
-  assert.equal(halved.shield, 'spent');
-  as(s, 'gerard');
-  const whole = act(s, 'attack', 'voz');
-  assert.ok(Math.abs(halved.amount - whole.amount * SOBREMESA.shield) <= 1);
-  // Nota clara: magic comes back, and she says whom she will hit.
-  const clear = turn(s, 'voz');
-  assert.equal(clear.ability.id, 'nota-clara'); assert.equal(clear.clear, true);
-  assert.equal(intentLabel(s, voz), `Golpe directo → ${s.allies.find(a => a.id === clear.telegraph.target).name}`);
-  round(s); sing(s, .1);
-  as(s, 'gerard');
-  const back = act(s, 'skill', 'voz', 'foc-binari');
-  assert.equal(back.amount, 0); assert.ok(back.reflected > 0);
-  as(s, 'gerard');
-  assert.ok(act(s, 'attack', 'voz').amount > 0, 'a plain blow still lands through her Nota clara');
-  // Golpe directo: on whom she said, and the glass is gone.
-  const named = voz.intent.target, blow = turn(s, 'voz', named === 'gerard' ? 'aitor' : 'gerard');
-  assert.equal(blow.ability.id, 'golpe-directo'); assert.equal(blow.target, named);
-  assert.equal(voz.clear, undefined); assert.equal(voz.intent, undefined);
-  round(s);
-  assert.equal(turn(s, 'voz').ability.id, 'guardia');
+  assert.deepEqual([...VOZ_TURNS.andante], []);
+  assert.equal(vozMove(s, voz), undefined);
+  s.phase = 'enemy'; s.enemyActions = [];
+  assert.equal(enemyAct(s, 'voz'), undefined);
+  assert.ok(s.enemyActions.includes('voz'));
+  nextRound(s);
+  assert.equal(s.phase, 'player'); assert.equal(s.round, 2);
 });
 
-test('Coro: in Allegro she calls a second voice, once, an Eco that can be struck in a silence; it goes when she does', () => {
+test('Coro: in Allegro she calls a second voice, once, an Eco that can be struck while she sings, at the one she is not singing at; it goes when she does', () => {
   const s = fight('voz'), voz = s.foes[0];
   voz.hp = Math.floor(voz.maxHp * MARTA.allegro); runClock(s, .016); takeSongNews(s);
   assert.equal(voz.turns, 0, 'a new part starts her turns over');
@@ -356,31 +445,33 @@ test('Coro: in Allegro she calls a second voice, once, an Eco that can be struck
   assert.equal(call.ability.id, 'coro'); assert.equal(call.summoned, SECOND_VOICE);
   const second = s.foes.find(f => f.id === SECOND_VOICE);
   assert.equal(second.kind, 'eco'); assert.equal(second.name, 'Segunda voz'); assert.ok(second.hp > 0);
-  // It waits for the next round, then repeats its blow, harder each time.
+  // It waits for the next round, then sings at the other one, harder each time.
   assert.equal(enemyAct(s, SECOND_VOICE), undefined);
   round(s);
-  const blows = [turn(s, SECOND_VOICE, 'gerard').amount, turn(s, SECOND_VOICE, 'gerard').amount];
-  assert.ok(blows[1] > blows[0]);
-  // In a silence a blow goes through her and lands on it.
-  sing(s, VOZ_SONG.beats[0].sing + .1); as(s, 'gerard');
+  const blows = [turn(s, SECOND_VOICE), turn(s, SECOND_VOICE)];
+  assert.ok(blows.every(b => b.target !== voz.facing));
+  assert.ok(blows[1].amount > blows[0].amount);
+  // While she sings a blow goes through her and lands on it.
+  sing(s, .3); as(s, 'gerard');
   assert.equal(act(s, 'attack', 'voz').amount, 0);
   as(s, 'gerard');
   assert.ok(act(s, 'attack', SECOND_VOICE).amount > 0);
-  // She calls it once: standing or fallen, that turn is her Guardia from then on.
+  // She calls it once: standing or fallen, she only sings from then on.
   voz.turns = 0;
-  assert.equal(turn(s, 'voz').ability.id, 'guardia');
-  second.hp = 0; voz.turns = 0;
-  assert.equal(turn(s, 'voz').ability.id, 'guardia');
+  assert.equal(vozMove(s, voz), undefined);
+  second.hp = 0;
+  assert.equal(vozMove(s, voz), undefined);
   assert.equal(s.foes.filter(f => f.id === SECOND_VOICE).length, 1);
   second.hp = second.maxHp;
   // She falls: it goes with her, and the fight is won.
-  voz.hp = 1; sing(s, .1); as(s, 'gerard');
+  voz.hp = 1; sing(s, VOZ_SONG.beats[0].sing + .1); as(s, 'gerard');
   act(s, 'attack', 'voz');
   assert.equal(second.hp, 0); assert.equal(s.phase, 'won');
 });
 
-test('Calderón: in A capela she takes a breath and holds a note on everyone, unless an Acorde breaks it first', () => {
-  assert.deepEqual([...VOZ_TURNS['a-capela']], ['aliento', 'calderon', 'golpe-directo']);
+test('Calderón: in A capela she takes a breath and holds a note on everyone, unless an Acorde in a silence breaks it first', () => {
+  assert.deepEqual([...VOZ_TURNS['a-capela']], ['aliento', 'calderon', null]);
+  const silence = VOZ_SONG.beats[0].sing + .05;
   const stage = () => {
     const s = fight('voz'), voz = s.foes[0];
     voz.hp = Math.floor(voz.maxHp * MARTA.capela); runClock(s, .016); takeSongNews(s);
@@ -393,12 +484,15 @@ test('Calderón: in A capela she takes a breath and holds a note on everyone, un
   round(s);
   const held = turn(s, 'voz');
   assert.equal(held.ability.id, 'calderon'); assert.ok(held.amount > 0); assert.equal(held.splash.length, 1);
-  assert.match(intentLabel(s, voz), /^Golpe directo → /);
+  assert.equal(intentLabel(s, voz), undefined);
+  // The round after, she only sings; then she takes a breath again.
   round(s);
-  assert.equal(turn(s, 'voz').ability.id, 'golpe-directo');
-  // Broken: a blow alone does nothing to it; the other fighter's, inside the same note, does.
+  assert.equal(turn(s, 'voz'), undefined);
+  round(s);
+  assert.equal(turn(s, 'voz').ability.id, 'aliento');
+  // Broken: a blow alone does nothing to it; the other fighter's, inside the same silence, does.
   const again = stage();
-  turn(again.s, 'voz'); round(again.s); sing(again.s, .1);
+  turn(again.s, 'voz'); round(again.s); sing(again.s, silence);
   as(again.s, 'gerard');
   assert.equal(act(again.s, 'attack', 'voz').cancelled, undefined);
   assert.equal(intentLabel(again.s, again.voz), 'Calderón → todos');
@@ -410,7 +504,6 @@ test('Calderón: in A capela she takes a breath and holds a note on everyone, un
   assert.equal(lost.ability.id, 'calderon'); assert.equal(lost.cancelled, 'calderon'); assert.equal(lost.amount, undefined);
   assert.deepEqual(again.s.allies.map(a => a.hp), before);
   assert.equal(again.voz.winded, undefined);
-  assert.match(intentLabel(again.s, again.voz), /^Golpe directo → /);
 });
 
 test('her PV say which part she is in; her song goes on through them, never from the top', () => {
@@ -456,9 +549,9 @@ test('the picker can put each fight at its moments', () => {
     runClock(s, .016);
     assert.equal(s.song.part, part, moment);
   }
-  const clear = createFearBattle(party, 'voz');
-  assert.ok(stageMoment(clear, 'voz-nota-clara'));
-  assert.equal(clear.foes[0].clear, true); assert.equal(intentLabel(clear, clear.foes[0]), `Golpe directo → ${clear.allies[0].name}`);
+  const fast = createFearBattle(party, 'voz');
+  assert.ok(stageMoment(fast, 'voz-deprisa'));
+  assert.equal(fast.song.part, 'andante'); assert.ok(Math.abs(fast.song.t - (turnStarts(VOZ_SONG)[5] - .5)) < 1e-9);
   assert.equal(stageMoment(createFearBattle(party, 'cuerdas-lealtad'), 'voz-allegro'), false);
 });
 

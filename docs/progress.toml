@@ -421,6 +421,12 @@ title = "Dadaísta: caras con iconos (Mano, Tijeras, Ojo, Corchete, En blanco) e
 # docs/animas/dadaista/README.md § Round 5: each face is a move; Doble o nada removed.
 grep = "cara-corchete"
 in = "src/battle.ts"
+[[block.item]]
+title = "Marta: La Voz ataca con su canción (cada nota una habilidad, solo herible en sus silencios)"
+# docs/quests/marta.md § Final boss: each of the six notes is a beam with its element; holding on lasts until acting again.
+grep = "VOZ_NOTES"
+in = "src/battle.ts"
+
 
 [[block.item]]
 title = "Dadaísta: Agitar, niveles 2 a 7 y su línea en el bote"

@@ -168,71 +168,99 @@ bodies in `src/cuerdas-foes.ts`).
   showing on her as a **pulse**. Not Marta possessed: the real Marta is beside the party. Name,
   colour and what it is made of: _open_
 - **It sings** (decided 2026-11-07): the real Marta records **songs of single notes** for the game.
-  They are its **cyclic, endless attack**: a buff that comes round with the song and an attack on
-  every tick.
-- **The window to hurt it is the note** (decided): while a note sounds it can be attacked and takes
-  damage; between notes it is **immune**. The party times its attacks to her singing.
-- Decided and built: the note shows on screen as that status ring, so it can be played with the
-  sound off, and the window runs on the fight's clock like the timed statuses (`docs/combat.md`
-  § Estados en tiempo real). Still a proposal: Defender pays between notes.
+  They are its **cyclic, endless attack**.
+- **Each note is a move of hers, and she is only hurt when she does not sing** (decided 2026-11-20,
+  the user: «asocies cada nota diferente a una habilidad y uses su canción, la mayoría hacen daño de
+  diferentes elementos, sale como un rayo cada vez que la canta y ataca también, solo es vulnerable
+  cuando no canta, si hay partes donde canta mucho, pues toca defenderse»). This turns round what
+  was built before (a window on each note, immune between them, a small Eco on everyone per note).
 - Must not repeat: Joan's *Escala* in La Sobremesa (a note that climbs turn by turn,
   `docs/quests/universidad.md`), nor the artilugio's melody of the ending, which is Aitor's.
 - **Name** (proposal, built): **La Voz**. `Encounter` `voz`, `FoeKind` `voz`.
-- **Built as a base** (`MARTA` in `src/battle.ts`, the phrase in `src/song.ts`):
-  - **Her song is Marta's recording** (decided 2026-11-19: «que suenen en bucle todo el rato… que
-    el boss las use en el ritmo que plantea»): `public/music/marta-voz.m4a`, 87 s, one eight-note
-    phrase (*Do Sol Fa Re · Do Si♭ La Fa*) sung eight times, slow, bound, short and fast. It loops for
-    the whole fight with no battle song under it, and every note change in it was found by pitch
-    (`VOZ_SONG` in `src/song.ts`): each note heard is a window open, each silence one shut, each start
-    an Eco, and each time the phrase starts over a Crescendo. **Her cycle is always eight notes**
-    (decided 2026-11-19: «el ciclo del boss debería ser también de 8»): a passing note she sings on
-    the way is part of the note it leads from. Notes bound with less than 0.15 s between them count as
-    one window. `src/voz-song.ts` holds the sound to the fight's clock (it stops, slows and catches up
-    with it).
-  - **Her song is heard all through Las cuerdas** (decided 2026-11-19: «al principio se escuche
-    bajito, lejano y que a medida que avancemos en la misión se amplifique»): the same recording,
-    looping from anywhere in it, far off at first (quiet, muffled, mostly the echo of a big room) and
-    nearer with each quality beaten (`distance` in `src/voz-song.ts`, from `scorePlace` in
-    `src/main.ts`). It gives way to the battle song in the qualities' fights, and in hers it is whole
-    and dry. This is «Alguien canta. Muy lejos.» made sound.
-  - Numbers for her recording (`just fight-sim`, 2026-11-19): some 64 notes in 87 s, a note sounding
-    78 % of the time, so each Eco starts at nothing and grows a PV every ten Crescendos, a Crescendo
-    is half a point of Magia, her Golpe directo is 64 and her PV 430. Striking out of time loses less
-    than with the old phrase: `voz-sin-pensar` wins 35 % (its target went from 25 % to 40 %).
-  - The song runs on the fight's clock, in every part, and never starts over when the part changes. **It shows as a status on her plate and
-    nowhere else** (decided 2026-11-13: «un status effect como de quemado, la bola que gira… algo
-    más sutil, tipo un status effect continuo»): one icon like a fire's clock that never runs out.
-    Its ring is the turn of the phrase she is on, an arc per note in the note's colour and a gap per
-    silence, in the recording's rhythm; its hand goes round once a turn; it is lit while a note sounds and flashes as each starts; its corner
-    is her Crescendo. A first version drew a track of notes across the top of the fight: cut. Her
-    body is there while she sings and almost gone in the silences.
-  - **A blow chosen while a note sounds lands; in a silence it goes through her** (nothing, and the
-    maná is spent). Fire and bleeding on her only hurt on a note too.
-  - ***Eco***: every note that starts hurts the whole party a little (Defender takes two thirds off).
-  - ***Crescendo***: every time the phrase comes round, her Magia goes up one, and her Eco with it.
-    No ceiling: the fight cannot be sat out.
-  - ***Acorde*** (the players' side of it): a second blow from **the other** fighter inside the same
-    note lands half as hard again. This is where the two players time each other.
-  - Her own turns go round three moves, and each phrase has its own three (reworked 2026-11-15,
-    `VOZ_TURNS`; a base to play):
-    - *Andante*: ***Guardia*** (the next blow on her lands at half, and is spent), ***Nota clara***
-      (until her next turn magic comes back; she says whom she will hit) and ***Golpe directo***
-      (very hard, on whom she said). One move from each quality.
-    - *Allegro*: ***Coro*** instead of Guardia, once: a ring leaves her throat and a **second
-      voice** comes together beside her, an Eco of her own (few PV, its Resonancia growing). It
-      takes blows in the silences too, so there is something to do between notes; left alone it is
-      a second clock. It goes when she does.
-    - *A capela*: ***«Toma aire»*** (she lifts her arms and draws the four notes' light in: the
-      plate says «Calderón → todos»), then ***Calderón*** (the held note let go on everyone), then
-      Golpe directo. **An Acorde on her while she holds her breath breaks it**: the Calderón is
-      lost, she is «Sin aire» and her next turn does nothing. It is the Acorde's reason to exist
-      in the last phase: the two players have to land inside the same note, on purpose.
-  - **Parts**, by her PV, each a `FightMoment`: *Andante*, *Allegro* (from 60 %) and *A capela* (from
-    25 %). Each is its own round of her turns (`VOZ_TURNS`); the song is the same recording in all
-    three (before 2026-11-19 each part was a synthesised phrase, shorter notes each time).
+
+### Her song, measured
+
+`public/music/marta-voz.m4a`, 87 s, analysed by pitch (pYIN) on 2026-11-20. It loops for the whole
+fight with no battle song under it; `src/voz-song.ts` holds the sound to the fight's clock (it stops,
+slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
+
+- **Six notes, a sixth wide**: Do4 262 Hz, Re4 294, Fa4 349, Sol4 392, La4 440, Si♭4 466, sung in
+  tune (a median 7 cents off). One eight-note phrase, *Do Sol Fa Re · Do Si♭ La Fa*, eight times:
+  Do and Fa twice a turn, the rest once. Passing notes she slides through (a Si♭ inside a La, a Re
+  between Do and Sol) are part of the note they leave, so her cycle is always eight (decided
+  2026-11-19). The breath in the middle of the phrase (after Re) and the one at its end (after the
+  last Fa) are the silences that come back every turn.
+- **Where she sings a lot and where she leaves room** (a turn is the phrase once):
+
+  | Turn | From | Notes a second | Sounding | Silences of 0.3 s or more | Character |
+  | --- | --- | --- | --- | --- | --- |
+  | 1 | 0 s | 0.56 | 77 % | 6 (3.1 s) | Slow, a breath after nearly every note: **room to strike** |
+  | 2 | 14 s | 0.66 | 87 % | 3 (1.5 s) | Bound, long notes: **she sings a lot** |
+  | 3 | 27 s | 0.64 | 83 % | 3 (1.9 s) | Bound, one long breath at its end |
+  | 4 | 39 s | 0.67 | 70 % | 5 (3.1 s) | Short notes with gaps: **room to strike** |
+  | 5 | 51 s | 0.73 | 88 % | 2 (1.1 s) | Two notes held over two seconds (Sol, Si♭): **she sings a lot** |
+  | 6 | 62 s | 1.10 | 85 % | 2 (1.1 s) | Fast and bound: **the hardest stretch, hold on** |
+  | 7 | 69 s | 1.06 | 82 % | 2 (1.2 s) | Fast and bound |
+  | 8 | 77 s | 0.83 | 63 % | 6 (3.3 s) | Fast but detached, a gap after every note: **room to strike** |
+
+### The fight (built 2026-11-20, `MARTA`, `VOZ_NOTES` and `voiceNote` in `src/battle.ts`)
+
+- **She is only hurt in her silences.** While a note sounds she is all voice: a blow goes through her
+  (nothing, and the maná is spent), and a fire or a wound on her takes nothing. A blow pressed in the
+  first tenth of a second of a note that came after a silence still counts as that silence (`hueco`,
+  the ear hears her start a little late). **A blow is judged when it is pressed**, not when it plays:
+  a blow confirmed in a silence lands even if it waits behind the partner's (`song.aim`).
+- **Every note she sings is a beam of it**, from her throat, in the note's colour, at **whom she sings
+  that turn of her phrase at**. The plate says it («Canta → Gerard»); she sings each turn at whoever
+  struck her last in the turn before, and the fight says so as the turn starts («Le canta»), so
+  whoever she names can hold on and the other strikes (her oath works like La Lealtad's):
+
+  | Note | Move | What it does |
+  | --- | --- | --- |
+  | Do (×2) | *Do* | Her plain voice, magic |
+  | Sol | *Sol* | Water: wets (Mojado) |
+  | Fa (×2) | *Fa* | A bolt, drawn jagged like lightning. On someone wet it runs through everyone wet (Conducción, turned on the party), drying them, and may leave whoever it struck in Shock |
+  | Re | *Re* | Physical, her heaviest note (Defensa against it, not Espíritu) |
+  | Si♭ | *Si♭* | Fire: burns (Quemado; again while it burns, a level up). On someone wet it dries them and does not catch |
+  | La | *La* | The note everyone tunes to: it reaches the whole party |
+
+  Sol comes right before Fa in every turn: standing in her song unguarded, the water and the bolt
+  come together. Her Magia (13) against the party's Espíritu does most of the work: her notes are
+  light on Gerard and heavy on Aitor, and Re the other way round, so who takes her song is a choice.
+- **Holding on** against her song takes two thirds off each note and **leaves nothing on**: no water,
+  no fire, so no Conducción and no Shock. **It lasts until that fighter acts again**, not to the end
+  of the round, since her song does not wait for rounds. Where she sings a lot (turns 2, 3, 5, 6, 7)
+  whoever she sings at holds on; where she leaves room (1, 4, 8) both strike in her silences.
+- ***Crescendo***: every time the phrase comes round, her Magia goes up a quarter of a point, and
+  every note with it. No ceiling: the fight cannot be sat out.
+- ***Acorde*** (the players' side): a second blow from **the other** fighter inside the same silence
+  lands half as hard again. With silences of a fifth of a second to a second, the two players press
+  together on purpose.
+- **Her own turns** (`VOZ_TURNS`): in *Andante* none, her song is all she does. In *Allegro* (from 60 %
+  of her PV) ***Coro***, once: a **second voice** beside her, an Eco of her own (few PV, its
+  Resonancia growing) that sings at the one she is not singing at and can be struck while she sings.
+  In *A capela* (from 25 %) ***«Toma aire»*** (the plate says «Calderón → todos»), then
+  ***Calderón*** on everyone, then a round of only singing. **An Acorde while she holds her breath
+  breaks it**: the Calderón is lost, she is «Sin aire» and that turn does nothing. Guardia, Nota
+  clara and Golpe directo are gone: the notes do their work.
+- **On screen**: the song is a status on her plate and nowhere else (decided 2026-11-13: «un status
+  effect como de quemado»): its ring is the turn of the phrase she is on, an arc per note in its
+  colour and a gap per silence, lit on a note. Her body is **solid in a silence** and see-through,
+  lit from inside in the note's colour, while one sounds (`src/cuerdas-foes.ts`). Each beam is drawn
+  as the note starts (`voiceBeam` in `src/dual-fx.ts`): water ends in a splash, fire drips sparks, Fa
+  goes in a jagged line, Re lands heavy, and on whoever holds on it breaks on a small white ring.
+  Each number is named after its note and element («Sol · Agua»), and what it left comes a beat
+  later (¡Mojado!, ¡Quemado!, ¡Conducción!, ¡Shock!). Only the water, the fire catching, the bolt in
+  the water and Re are heard over her recording.
+- **Parts**, by her PV, each a `FightMoment`: *Andante*, *Allegro* and *A capela*; and *Andante,
+  donde canta deprisa* (`voz-deprisa`), her song just before its fast turns.
+- **Numbers** (`just fight-sim`, 2026-11-20): Do 2, Sol 1, Fa 2 (6 through the water), Re 4, Si♭ 1,
+  La 1, a Crescendo a quarter point, her PV 430. Reading the song (`voz-bien`) wins 91 %; striking
+  well but never holding on (`voz-sin-cubrirse`) 73 %; without duals 77 %; striking while she sings
+  (`voz-sin-pensar`) 2 %; only Atacar 0 %; with two magic ánimas 46 %.
 - How the friend helps: _open_ (she is beside them and gets nothing back until it is over).
 - What the party's ánimas do against it: nothing special by ánima (rules by kind): fire keeps
-  burning on the notes, a mark (Ángulo exacto, Punto débil) waits for one.
+  burning in her silences, a mark (Ángulo exacto, Punto débil) waits for one.
 - **Marta's recordings are in** (2026-11-19, § Assets): nothing in her fight is synthesised now.
 
 ## Ánima

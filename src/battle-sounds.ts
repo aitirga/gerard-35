@@ -157,9 +157,6 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'rayo-lente') return [{ id: 'mark-set' }];
   if (effect.kind === 'enemy' && effect.lacquered) return [{ id: 'fizzle' }];
   if (effect.kind === 'enemy' && effect.cancelled && !effect.amount) return [{ id: 'sink', volume: .6 }];
-  // La Voz crossing her arms (Guardia) and turning to glass (Nota clara): no blow, but each is heard.
-  if (effect.kind === 'enemy' && effect.ability?.id === 'guardia') return [{ id: 'guard' }];
-  if (effect.kind === 'enemy' && effect.clear) return [{ id: 'mark-set' }, { id: 'stat-up', volume: .5, delay: .1 }];
   // The castle's moves that are a word, not a blow (Chivatazo, Dictado announced, La Pompa starting): a mark set, heard.
   if (effect.kind === 'enemy' && !effect.amount && !effect.splash && (effect.telegraph || effect.called?.length) && isCastle(foeOf(effect, state)?.kind)) return [{ id: 'mark-set' }];
   if (effect.kind !== 'enemy' || !(effect.amount || effect.splash)) return [];

@@ -14,8 +14,8 @@ import { FOE_BODIES } from './foe-bodies';
  * blades with a lance of blue-white light and a crossbar when it means everyone, are Meshy figures
  * (src/foe-bodies.ts). Lo Cristalino, an obelisk of aqua glass with a string of light through it and
  * shards turning round it.
- * La Voz, a woman's outline in a gown of strings with the note alight in her throat: there while a
- * note sounds, almost gone in the silences, her arms crossed on Guardia and glass on Nota clara.
+ * La Voz, a woman's outline in a gown of strings with the note alight in her throat: solid in her
+ * silences, the only time a blow finds her, and see-through while a note sounds, lit from inside in its colour.
  * No pink and no violet anywhere: nobody here is possessed.
  */
 export function createCuerdasFoes(app: pc.Application) {
@@ -165,15 +165,15 @@ export function createCuerdasFoes(app: pc.Application) {
   }
   const shown = new WeakMap<pc.Entity, Shown>();
   const material = (model: pc.Entity, name: string) => (model.findByName(name) as pc.Entity).render!.meshInstances[0].material as pc.StandardMaterial;
-  const GLASS = new pc.Color().fromString('#bff4ec'), RIM = new pc.Color().fromString('#9fc4cf');
+  const RIM = new pc.Color().fromString('#9fc4cf');
   return {
     templates,
     /**
      * Each frame, one of Las cuerdas' foes shows its rule now. An Eco's bead goes faster and it has a
      * ring more each turn; Lo Cristalino's shards turn; Lo Directo draws its lance back at whom it
-     * said and shows its crossbar for En línea recta; La Voz is there while `song` sounds (in the
-     * note's colour) and nearly gone in a silence, crosses her arms on Guardia, turns to glass on Nota
-     * clara, and has a ring lit behind her for each Crescendo. `animate` false snaps to it.
+     * said and shows its crossbar for En línea recta; La Voz is solid in a silence of `song` (the
+     * only time she can be struck) and see-through while a note sounds, lit from inside in its colour,
+     * and has a ring lit behind her for each Crescendo. `animate` false snaps to it.
      *
      * `move` is its own move under way (`pending` until it lands), and each body makes it: La Lealtad
      * draws her shield back and thrusts it (Juramento) or her knot swells (Lazo); an Eco's rings open;
@@ -182,7 +182,7 @@ export function createCuerdasFoes(app: pc.Application) {
      * (`stuck`); La Voz lifts her arms to take air, throws them forward on the Calderón, points at
      * where her second voice comes, and hangs low when out of air (`winded`).
      */
-    show(model: pc.Entity, unit: Combatant, time: number, dt: number, animate: boolean, pending?: BattleEffect, toCamera = 0, song?: Moment, round = 0, move?: FoeAbilityId) {
+    show(model: pc.Entity, unit: Combatant, time: number, dt: number, animate: boolean, pending?: BattleEffect, toCamera = 0, song?: Moment, move?: FoeAbilityId) {
       const s = shown.get(model) ?? {};
       shown.set(model, s);
       const ease = (k: number) => animate ? 1 - Math.exp(-dt * k) : 1;
@@ -265,11 +265,10 @@ export function createCuerdasFoes(app: pc.Application) {
           };
         }
         const v = s.voz, alive = unit.hp > 0;
+        // Solid in her silences, the only time a blow finds her; while a note sounds she is all voice, light of its colour.
         const sounding = song ? song.sounding : !unit.silent;
-        const there = alive && !sounding ? 0 : 1, guard = alive && (unit.shielded ?? -1) >= round && !(pending?.shielded) ? 1 : 0, glass = alive && unit.clear && !pending?.clear ? 1 : 0;
-        s.there = (s.there ?? there) + (there - (s.there ?? there)) * ease(9);
-        s.guard = (s.guard ?? guard) + (guard - (s.guard ?? guard)) * ease(6);
-        s.glass = (s.glass ?? glass) + (glass - (s.glass ?? glass)) * ease(5);
+        const there = alive && sounding ? 0 : 1;
+        s.there = (s.there ?? there) + (there - (s.there ?? there)) * ease(12);
         // Taking air for her Calderón (from the turn that says it until she lets it go or it breaks); out of air after it broke.
         s.air = to(s.air, alive && unit.intent?.ability === 'calderon' && !pending?.telegraph ? 1 : 0, 5);
         s.winded = to(s.winded, alive && unit.winded ? 1 : 0, 6);
@@ -280,17 +279,17 @@ export function createCuerdasFoes(app: pc.Application) {
         s.colour.lerp(s.colour, want, ease(10));
         // A note swells as it starts and thins as it ends.
         const swell = song?.sounding ? Math.sin(Math.min(1, song.k * 5) * Math.PI / 2) * (song.left < .5 ? .55 + song.left : 1) : 0;
-        const t = s.there, c = s.colour;
+        const t = s.there, c = s.colour, sung = 1 - t;
         v.body.forEach((m, i) => {
-          m.opacity = (.1 + .8 * t) * (1 - .5 * s.glass!);
-          m.diffuse.lerp(v.base[i], GLASS, s.glass! * .8);
-          // Her own outline stays the void's petrol and silver: the note's colour is in her throat, her strings and her rings.
-          m.emissive.lerp(RIM, GLASS, s.glass!); m.emissiveIntensity = .05 + .07 * t * swell + .4 * s.glass!;
-          m.gloss = .7 + .28 * s.glass!;
+          // Silent: an opaque figure of the void's petrol, its silver showing, there to be struck. Singing: see-through, lit from inside by the note.
+          m.opacity = .26 + .66 * t;
+          m.diffuse.copy(v.base[i]);
+          m.emissive.lerp(RIM, c, sung * .8); m.emissiveIntensity = .38 * t + (.22 + .3 * swell) * sung;
+          m.gloss = .7;
           m.update();
         });
-        v.strand.opacity = .22 + .7 * t; v.strand.emissive.set(c.r, c.g, c.b); v.strand.emissiveIntensity = (.5 + 1.6 * swell + 1.4 * air + 2.4 * release) * (1 - .6 * low); v.strand.update();
-        v.note.emissive.set(c.r, c.g, c.b); v.note.emissiveIntensity = .15 + 4.2 * swell; v.note.diffuse.set(c.r * t, c.g * t, c.b * t); v.note.update();
+        v.strand.opacity = .3 + .62 * sung; v.strand.emissive.set(c.r, c.g, c.b); v.strand.emissiveIntensity = (.3 + 1.8 * swell * sung + 1.4 * air + 2.4 * release) * (1 - .6 * low); v.strand.update();
+        v.note.emissive.set(c.r, c.g, c.b); v.note.emissiveIntensity = .1 + 4.2 * swell; v.note.diffuse.set(c.r * sung, c.g * sung, c.b * sung); v.note.update();
         const level = unit.crescendo ?? 0;
         v.rings.forEach((m, k) => {
           const on = k < level ? 1 : 0;
@@ -301,8 +300,8 @@ export function createCuerdasFoes(app: pc.Application) {
         v.halo.setLocalScale(wide, wide, 1);
         v.float.setLocalPosition(0, .32 + (animate ? Math.sin(time * 1.1) * .06 : 0) + swell * .05 + air * .22 - low * .24, 0);
         (model.findByName('Cabeza de chicle') as pc.Entity).setLocalEulerAngles(-16 * air + 26 * low + 8 * release, 0, 0);
-        // Open at her sides singing; crossed over her chest on Guardia.
-        const g = s.guard, sway = animate ? Math.sin(time * 1.3) * 2 : 0, lift = swell * 6;
+        // Open at her sides singing, lifting with each note.
+        const g = 0, sway = animate ? Math.sin(time * 1.3) * 2 : 0, lift = swell * 6;
         v.arms.forEach((arm, k) => {
           const side = k ? 1 : -1;
           // Up and out to take air, thrown forward as she lets it go, hanging when she has none; one arm out at where her second voice comes.

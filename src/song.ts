@@ -2,8 +2,9 @@
  * The song's clock (docs/quests/marta.md): a phrase sung in a loop, note after note, with or without
  * a silence after each. Marta's mission runs on one, her own recording (`VOZ_SONG`), twice: in Las
  * cuerdas, where each piece of a maze answers to one of her notes as she is heard far off
- * (src/cuerdas.ts), and in the last fight, where La Voz can only be hurt while a note sounds
- * (src/battle.ts). Pure: what sounds at a moment, and what started between two.
+ * (src/cuerdas.ts), and in the last fight, where every note La Voz sings is a move of hers and she
+ * can only be hurt in her silences (src/battle.ts). Pure: what sounds at a moment, what started
+ * between two, and how long until the next silence.
  */
 export const TONES = {
   // Low to high: the six Marta sings (src/cuerdas.ts, La Voz), and Mi, which no piece or fight uses now.
@@ -115,6 +116,25 @@ export function untilNote(phrase: Phrase, t: number, room = 0): number {
     const beat = phrase.beats[(now.index + step) % phrase.beats.length];
     if (beat.sing >= room) return wait;
     wait += beat.sing + beat.rest;
+  }
+  return wait;
+}
+/** Where each turn of the phrase starts, in seconds into one go of it (a phrase with no `round` beats is one turn). */
+export function turnStarts(phrase: Phrase): number[] {
+  const starts: number[] = [];
+  let clock = 0;
+  phrase.beats.forEach((beat, index) => { if (index === 0 || beat.round) starts.push(clock); clock += beat.sing + beat.rest; });
+  return starts;
+}
+/** Seconds from `t` until a silence with at least `room` seconds of it left (0 if in one now). */
+export function untilSilence(phrase: Phrase, t: number, room = 0): number {
+  const now = songAt(phrase, t);
+  if (!now.sounding && now.left >= room) return 0;
+  let wait = now.sounding ? now.left : now.left + phrase.beats[(now.index + 1) % phrase.beats.length].sing;
+  for (let step = now.sounding ? 0 : 1; step <= phrase.beats.length; step++) {
+    const index = (now.index + step) % phrase.beats.length, beat = phrase.beats[index];
+    if (beat.rest >= room && beat.rest > 0) return wait;
+    wait += beat.rest + phrase.beats[(index + 1) % phrase.beats.length].sing;
   }
   return wait;
 }

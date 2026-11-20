@@ -1,6 +1,6 @@
 {
   "title": "La Voz: la canción grabada de Marta",
-  "description": "docs/quests/marta.md § Final boss. La Voz sings Marta's own recording in a loop (public/music/marta-voz.m4a): her status ring is the turn of the phrase she is on, in its real rhythm, lit on a note and dark in a silence. Fight tester: Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost. Run it with --gpu.",
+  "description": "docs/quests/marta.md § Final boss. La Voz sings Marta's own recording in a loop (public/music/marta-voz.m4a), and every note she sings is a move of hers: a beam of its colour at whom she sings that turn at (the chip «Canta → …»), with its element. She is only hurt in her silences, solid then; while a note sounds she is light. Her status ring is the turn of the phrase she is on, lit on a note and dark in a silence. Fight tester: Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22voz%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -10,56 +10,130 @@
       "timeout": 180000
     },
     {
-      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.song = () => ui.fight && ui.fight.song;"
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.song = () => ui.fight && ui.fight.song; window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.frozen = ''; window.catchNote = (test, after = 120) => { window.frozen = ''; const o = new MutationObserver(() => { const hit = [...document.querySelectorAll('.damage-pop small, .damage-pop strong')].find(el => test(el.textContent)); if (hit) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = hit.textContent; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
     },
     {
       "until": "window.ready() && (window.t0 ??= performance.now())",
       "timeout": 180000
     },
     {
-      "until": "window.song() === 'Nota · Do'",
+      "until": "window.song() === 'Nota · Do' && performance.now() - window.t0 > 300 && (window.gerard.game.app.timeScale = 0, document.documentElement.classList.add('shot-frozen'), true)",
       "timeout": 20000
     },
     {
-      "shot": "do",
-      "delay": 200,
-      "caption": "Her first note, Do: the ring is the first turn of her phrase, eight notes in the rhythm she sang them, lit while one sounds"
+      "shot": "canta",
+      "delay": 250,
+      "caption": "Her first note, Do: while a note sounds she is light of its colour and see-through, and a blow goes through her. The chip says whom she sings this turn at; the ring is the turn of her phrase, in the rhythm she sang it"
     },
     {
-      "until": "window.song() === 'Silencio'",
-      "timeout": 20000
+      "eval": "thaw(); 0"
+    },
+    {
+      "eval": "thaw(); window.frozen = ''; (function look() { if (window.song() === 'Silencio') { window.ts ??= performance.now(); if (performance.now() - window.ts > 150) { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = 'Silencio'; return; } } else window.ts = undefined; requestAnimationFrame(look); })(); 0"
+    },
+    {
+      "until": "window.frozen === 'Silencio'",
+      "timeout": 30000
     },
     {
       "shot": "silencio",
-      "delay": 100,
-      "caption": "A silence between two of her notes: the ring goes dark and nothing lands on her"
+      "delay": 120,
+      "caption": "A silence: she is solid, the only moment a blow finds her"
     },
     {
-      "until": "window.song() === 'Nota · Si♭'",
+      "eval": "thaw(); catchNote(t => t === 'Sol · Agua', 120); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "sol-agua",
+      "delay": 200,
+      "caption": "Sol: a beam of water at whom she sings at, and it wets"
+    },
+    {
+      "eval": "thaw(); catchNote(t => t === '¡Conducción!' || t === 'Fa · Eléctrico', 120); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "fa-electrico",
+      "delay": 200,
+      "caption": "Fa right after: a bolt, jagged like lightning; on someone wet it runs through the water (Conducción) and may leave them in shock"
+    },
+    {
+      "eval": "thaw(); catchNote(t => t === 'Re · Físico', 120); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "re-fisico",
+      "delay": 200,
+      "caption": "Re: the heaviest of her notes, a physical blow"
+    },
+    {
+      "eval": "thaw(); catchNote(t => t === 'Si♭ · Fuego', 120); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "sib-fuego",
+      "delay": 200,
+      "caption": "Si♭: fire, and it burns (again while it burns, a level up)"
+    },
+    {
+      "eval": "thaw(); catchNote(t => t === 'La', 120); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "la-todos",
+      "delay": 200,
+      "caption": "La, the note everyone tunes to: it reaches the whole party"
+    },
+    {
+      "eval": "thaw(); round('voz', 'defend'); 0"
+    },
+    {
+      "eval": "thaw(); catchNote(t => t.endsWith('· Protegido'), 100); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "protegido",
+      "delay": 200,
+      "caption": "Both holding on: each note lands at a third on a small white ring, and leaves no water and no fire. Against her song, holding on lasts until that one acts again"
+    },
+    {
+      "eval": "thaw(); ui.jumpTo('voz-deprisa')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "until": "window.song() && window.song() !== 'Silencio'",
       "timeout": 20000
     },
     {
-      "shot": "si-bemol",
-      "delay": 150,
-      "caption": "Si♭, the second half of her phrase"
+      "until": "performance.now() - (window.t1 ??= performance.now()) > 1500",
+      "timeout": 20000
     },
     {
-      "until": "performance.now() - window.t0 > 41000 && window.song() !== 'Silencio'",
-      "timeout": 90000
-    },
-    {
-      "shot": "picado",
+      "shot": "deprisa",
       "delay": 100,
-      "caption": "About 40 s in, the fourth time round: short notes with silences between, a Crescendo for each turn so far"
-    },
-    {
-      "until": "performance.now() - window.t0 > 63500 && window.song() !== 'Silencio'",
-      "timeout": 90000
-    },
-    {
-      "shot": "rapido",
-      "delay": 100,
-      "caption": "About a minute in: the fast turns, notes bound one into the next"
+      "caption": "Picker moment «Andante, donde canta deprisa»: the fast turns of her phrase, notes bound one into the next and almost no silence: a time to hold on"
     }
   ]
 }

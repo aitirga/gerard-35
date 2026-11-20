@@ -506,12 +506,6 @@ export function createDualFx(effects: Effects) {
       after(.05, () => ring({ ...feet, y: feet.y + .06 }, UP, .5, c.sol, { count: 120, outward: 4.5, life: .6, size: 1.4 }));
       gpu()?.burst('gale', { at: to, count: 140, spread: .25, speed: 7, life: [.3, .6], colour: c.sol });
     },
-    /** Nota clara: one clean ring round her that stays. She is glass until it goes. */
-    clearNote(at: V3, facing: V3) {
-      const { facing: f } = screenAxes(facing), c = CUERDAS_COLOURS;
-      ring(at, f, 1.1, c.glass, { count: 170, around: 1.2, life: 1.3, size: 1.3, light: 1.6 });
-      after(.12, () => ring(at, f, .7, '#eafffb', { count: 110, around: -1.6, life: 1.1, size: 1.1 }));
-    },
     /** Coro: a ring of her own leaves her throat and closes where her second voice comes together. */
     choir(mouth: V3, at: V3, facing: V3) {
       const { facing: f } = screenAxes(facing), c = CUERDAS_COLOURS;
@@ -544,10 +538,35 @@ export function createDualFx(effects: Effects) {
         gpu()?.burst('gale', { at: mouth, count: 120, spread: .3, speed: 4, life: [.3, .7], colour: c.string });
       });
     },
-    /** A note of her song as it starts: a ring of its colour off her throat, wider with each Crescendo (her Eco). */
-    songNote(mouth: V3, colour: string, facing: V3, level = 0) {
-      const { facing: f } = screenAxes(facing);
-      ring(add(mouth, f, .15), f, .25, colour, { count: 70 + level * 20, outward: 3 + level * .6, life: .55, size: 1.2 + level * .1, light: 1 });
+    /**
+     * One of La Voz's notes as she starts it (VOZ_NOTES): a beam of its colour from her throat to
+     * each one it reaches, brighter with each Crescendo, carrying what the note carries. Water ends in
+     * a splash, fire drips sparks, a bolt (Fa) goes in a jagged line like lightning, Re lands heavy.
+     * On whoever holds on it breaks on a small white ring instead of going in.
+     */
+    voiceBeam(mouth: V3, on: readonly { at: V3; guarded: boolean }[], colour: string, kind: 'plain' | 'agua' | 'fuego' | 'electrico' | 'fisico', facing: V3, level = 0) {
+      const { facing: f } = screenAxes(facing), c = CUERDAS_COLOURS, bright = 1 + Math.min(6, level) * .08;
+      ring(add(mouth, f, .15), f, .2, colour, { count: 50 + level * 10, outward: 2.4, life: .4, size: 1.1 * bright, light: 1 });
+      for (const { at, guarded } of on) {
+        const dir = norm(sub(at, mouth)), side = norm(cross(UP, dir)), heavy = kind === 'fisico';
+        if (kind === 'electrico') {
+          // Lightning: a jagged line, each bend a little off the straight way, white with the note's silver round it.
+          const bends = 7, points: V3[] = [mouth];
+          for (let k = 1; k < bends; k++) points.push(add(add(mix(mouth, at, k / bends), side, (Math.random() - .5) * .5), UP, (Math.random() - .5) * .35));
+          points.push(at);
+          for (let k = 0; k < bends; k++) { line(points[k], points[k + 1], c.white, { count: 26, life: .28, size: 1.5 * bright }); line(points[k], points[k + 1], colour, { count: 18, life: .4, size: 1.1 }); }
+          gpu()?.burst('flare', { at, count: 1, spread: .05, life: [.12, .2], colour: '#fff6c8', light: { intensity: 3, range: 3, colour: '#ffe45c' } });
+        } else {
+          line(mouth, at, c.white, { count: heavy ? 110 : 70, life: .22, size: (heavy ? 1.6 : 1.1) * bright });
+          line(mouth, at, colour, { count: heavy ? 140 : 90, life: .38, size: (heavy ? 1.9 : 1.3) * bright });
+          if (heavy) for (const k of [-.05, .05]) line(add(mouth, UP, k), add(at, UP, k), colour, { count: 70, life: .3, size: 1.3 });
+        }
+        if (guarded) { ring(at, dir, .32, c.white, { count: 70, outward: 1.2, life: .35, size: 1.3, light: 1.2 }); continue; }
+        ring(at, dir, heavy ? .38 : .26, colour, { count: heavy ? 90 : 60, outward: heavy ? 4 : 2.6, life: .35, size: 1.3 * bright, light: heavy ? 2 : 1.2 });
+        if (kind === 'agua') gpu()?.burst('gale', { at, count: 70, spread: .2, speed: 3.5, life: [.3, .55], colour: '#6cc8f2' });
+        if (kind === 'fuego') gpu()?.burst('sunspark', { at, count: 40, spread: .15, speed: 2.2, life: [.4, .8], colour: '#ff8f3f' });
+        if (heavy) gpu()?.burst('gale', { at, count: 90, spread: .2, speed: 6, life: [.25, .5], colour });
+      }
     },
     /** Acorde: two blows inside one note. Two rings cross on her, the note's colour and white. */
     chord(at: V3, colour: string, facing: V3) {
