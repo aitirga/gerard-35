@@ -197,7 +197,8 @@ test('La Sobremesa beaten: it comes apart at the table, the photo, five lights, 
   const story = new Story(flagsAt('parcelas'));
   story.startUni({ entered: true, beaten: ['campeon'] });
   const won = story.handle({ type: 'battle', won: true, encounter: 'sobremesa', worn: [], xp: 0 });
-  assert.deepEqual(beats(won).slice(0, 9), ['unmask', 'dialogue', 'look', 'photo', 'lights', 'portal', 'travel', 'emerge', 'dialogue']);
+  assert.deepEqual(beats(won).slice(0, 10), ['unmask', 'dialogue', 'look', 'photo', 'lights', 'portal', 'travel', 'emerge', 'dialogue', 'dialogue']);
+  assert.deepEqual([won[8].dialogue, won[9].dialogue], [LINES_UNI.home, LINES_UNI.coro], 'on the beach, they send the seven to the choir');
   assert.equal(won.find(e => e.kind === 'lights').people.length, 5);
   assert.equal(won.find(e => e.kind === 'portal').who, 'everyone', 'the seven go home through it too');
   for (const flag of ['sobremesa', 'anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan']) assert.ok(story.has(flag), flag);

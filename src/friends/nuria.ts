@@ -246,4 +246,15 @@ export const LINES_NURIA = {
     nuria('Ya. Pues mira, igual deberíamos jugar más.', 'riendo'),
     nuria('Gerard, quedaos a Haru y a Yuki un tiempo. Os han echado de menos.'),
   ),
+  /**
+   * Before they go, Gerard and Aitor send them to the choir (docs/quests/coro.md § The choir room):
+   * every mission ends with it, and it is why the people helped turn up there every morning after.
+   */
+  coro: withNuria(
+    aitor('Nuria, Uri. Una cosa más. El coro ya tiene local: A cop de diapasó, en la Meridiana, al lado de casa.'),
+    gerard('Pase lo que pase, venid allí. Acordaos siempre.'),
+    nuria('¿Al coro? ¿Desde Cardedeu?'),
+    gerard('Desde donde sea.'),
+    uri('A cop de diapasó.'),
+  ),
 } as const;

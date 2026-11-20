@@ -157,6 +157,18 @@ export const LINES_EMILIE = {
     emilie('Os debo una cena. Y la explicación de por qué esto no tenía que haber pasado.'),
     aitor('La cena primero.'),
   ),
+  /**
+   * Before they go, Gerard and Aitor send her to the choir (docs/quests/coro.md § The choir room):
+   * every mission ends with it, and it is why the people helped turn up there every morning after.
+   * She sings in it already; what is new is the room.
+   */
+  coro: group('emilie',
+    aitor('Y el coro, Emilie. Ya tenemos local: A cop de diapasó, en la Meridiana, al lado de casa.'),
+    gerard('Pase lo que pase, ven allí. Acuérdate siempre.'),
+    emilie('¿Por qué lo decís así?'),
+    gerard('Tú acuérdate.'),
+    emilie('A cop de diapasó. Después de hoy, no se me olvida nada.'),
+  ),
   /** After the mission, in the flat. */
   after: group('emilie', emilie('El modelo ya converge. El piso, mañana.'), aitor('Hecho.')),
   /** The laptop once she is herself. */

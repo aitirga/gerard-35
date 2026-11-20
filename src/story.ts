@@ -661,7 +661,7 @@ export class Story {
    * La Sobremesa beaten: it comes apart at the long table and the seven are left round it, free; the
    * photo with the melon; their five lights go with Gerard and Aitor (one a couple, one each alone),
    * a beat apart; a spiral opens behind the table and takes them all; and out of it on the November
-   * beach, the seven round the two of them.
+   * beach, the seven round the two of them, who send them to the choir (`coro`, as every mission ends).
    */
   private winUni(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
@@ -672,7 +672,7 @@ export class Story {
       { kind: 'unmask' }, say(LINES_UNI.won), { kind: 'look', anchor: 'merendero-mesa', height: 8.5 }, { kind: 'photo', caption: LINES_UNI.photo },
       { kind: 'lights', people: ['anna', 'sarah', 'soraya', 'nico', 'joan'] },
       { kind: 'portal', who: 'everyone', open: { ...PLACES_CAMP.vuelta } },
-      beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), ...this.spend('fight'),
+      beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), say(LINES_UNI.coro), ...this.spend('fight'),
     ];
   }
   /**
@@ -707,7 +707,8 @@ export class Story {
   }
   /**
    * La Voz beaten: all Marta lost comes back to her at once, and she is herself; back in Alegia at
-   * the piano the song sounds as it should, her light goes with them, and the day is spent.
+   * the piano the song sounds as it should, they send her to the choir (`coro`, as every mission
+   * ends), her light goes with them, and the day is spent.
    */
   private winMarta(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
@@ -715,11 +716,12 @@ export class Story {
     for (const flag of ['anima-marta', 'luz-marta'] as const) this.set(flag);
     this.marta = freshMarta(); delete this.globe.marta;
     const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
-    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), say(LINES_MARTA.coro), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * El que no converge beaten: the why comes back to Emilie all at once; they come back out through her
-   * laptop to the flat, she says why it flooded, her light goes with them, and the day is spent.
+   * laptop to the flat, she says why it flooded, they send her to the choir (`coro`, as every mission
+   * ends), her light goes with them, and the day is spent.
    */
   private winEmilie(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
@@ -727,7 +729,7 @@ export class Story {
     for (const flag of ['anima-emilie', 'luz-emilie'] as const) this.set(flag);
     this.emilie = freshEmilie(); delete this.globe.emilie;
     const home: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } };
-    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), { kind: 'lights', people: ['emilie'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), say(LINES_EMILIE.coro), { kind: 'lights', people: ['emilie'] }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * The laptop on her desk: once she has been spoken to, the Queen's whirlpool swells out of the screen
@@ -809,8 +811,9 @@ export class Story {
     return [inside, { kind: 'shout', speaker: 'uri', text: LINES_NURIA.mazeIn }, ...this.spend('cafe')];
   }
   /**
-   * Uri is himself again: the cats and Papagato stay, two lights go with Gerard and Aitor (Nuria's
-   * and Uri's, Nil in his arms), and Papagato's banner says it is theirs for good.
+   * Uri is himself again and they send them to the choir (`coro`, as every mission ends): the cats
+   * and Papagato stay, two lights go with Gerard and Aitor (Nuria's and Uri's, Nil in his arms),
+   * and Papagato's banner says it is theirs for good.
    */
   private winNuria(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
@@ -818,7 +821,7 @@ export class Story {
     for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri'] as const) this.set(flag);
     this.nuria = freshRun(); delete this.globe.nuria;
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
-    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), say(LINES_NURIA.coro), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What src/castle-story.ts reads and does of the story: its flags, its days, and how it spends them. */
   private get castleHost(): CastleHost {
@@ -938,14 +941,14 @@ export class Story {
       : [{ kind: 'look', cell: { ...zone.cell }, height: ZONE_VIEW }, say(LINES_LUCA.zones[zone.id]), { kind: 'look' }];
     return [...told ? [] : close, { kind: 'battle', encounter: zone.encounter }];
   }
-  /** Fran beaten: his eyes clear, he walks out; outside, Luca in full colour, and his light goes with them. */
+  /** Fran beaten: his eyes clear, he walks out; outside, Luca in full colour, sent to the choir (`coro`), and his light goes with them. */
   private winLuca(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.set('fran')) return [];
     for (const flag of ['anima-luca', 'luz-luca', 'peluqueria'] as const) this.set(flag);
     this.luca = freshLuca(); delete this.globe.luca;
     const out: StoryEffect = { kind: 'travel', environment: SAGRADA, cell: { ...PLACES_LUCA.won } };
-    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), { kind: 'lights', people: ['luca'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), say(LINES_LUCA.coro), { kind: 'lights', people: ['luca'] }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {

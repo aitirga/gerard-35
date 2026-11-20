@@ -126,6 +126,9 @@ test('beating Vertitrón keeps Papagato, the cats and two lights, one for Gerard
   const won = story.handle({ type: 'battle', won: true, encounter: 'uri-vertigo', worn: ['papagato'] });
   for (const flag of ['nuria-uri', 'papagato', 'anima-nuria', 'luz-nuria', 'luz-uri']) assert.ok(story.has(flag), flag);
   assert.deepEqual(won.find(e => e.kind === 'lights'), { kind: 'lights', people: ['nuria', 'uri'] });
+  const said = won.filter(e => e.kind === 'dialogue').map(e => e.dialogue);
+  assert.equal(said[said.indexOf(LINES_NURIA.home) + 1], LINES_NURIA.coro, 'at the door, they send them to the choir');
+  assert.ok(won.findIndex(e => e.dialogue === LINES_NURIA.coro) < won.findIndex(e => e.kind === 'lights'));
   assert.equal(story.jar.length, 2, 'two ánimas to spend at home');
   // After the lights, the banner: Papagato is theirs for good.
   const kinds = won.map(e => e.kind);

@@ -140,6 +140,17 @@ export const LINES_MARTA = {
     gerard('Suena como tiene que sonar.'),
     marta('Felicidades, Gerard. Esto era lo que te quería cantar.'),
   ),
+  /**
+   * Before they go, Gerard and Aitor send her to the choir (docs/quests/coro.md § The choir room):
+   * every mission ends with it, and it is why the people helped turn up there every morning after.
+   */
+  coro: group('marta',
+    aitor('Marta. El coro ya tiene local: A cop de diapasó, en la Meridiana, al lado de casa.'),
+    gerard('Pase lo que pase, ve allí. Acuérdate siempre.'),
+    marta('¿Desde Alegia? Me pilla un poco lejos.'),
+    gerard('Ven igual.'),
+    marta('Vale. A cop de diapasó. Apuntado.'),
+  ),
   /** After the mission, by the piano. */
   after: group('marta', marta('Otro día la grabamos. Pero bien.'), aitor('Hecho.')),
 };

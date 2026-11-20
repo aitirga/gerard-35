@@ -1,0 +1,171 @@
+{
+  "title": "Despedidas: al coro, A cop de diapasó",
+  "description": "docs/quests/coro.md § The choir room. Every ánima mission now ends with Gerard and Aitor sending the people helped to the choir: Aitor names A cop de diapasó and where it is, on the Meridiana next to home; Gerard asks them to go there whatever happens and to always remember it; they say its name back. It is why they turn up there every morning after. Each mission from the picker's 'won' part (just dev-mission <id> won). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?mission=nuria&part=won&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('al lado de casa')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 240000
+    },
+    {
+      "shot": "nuria-local",
+      "delay": 300,
+      "caption": "Cardedeu, Nuria and Uri at their door: Aitor names the choir and where it is"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('Pase lo que pase')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "nuria-siempre",
+      "delay": 300,
+      "caption": "Gerard: whatever happens, go there; always remember it"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (!!d.querySelector('.dots i:last-child.on')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "nuria-respuesta",
+      "delay": 300,
+      "caption": "Uri, who hardly ever talks, says its name back"
+    },
+    {
+      "open": "/?mission=marta&part=won&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('al lado de casa')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 240000
+    },
+    {
+      "shot": "marta-local",
+      "delay": 300,
+      "caption": "Alegia, Marta by the piano: Aitor names the choir and where it is"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('Pase lo que pase')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "marta-siempre",
+      "delay": 300,
+      "caption": "Gerard: whatever happens, go there; always remember it"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (!!d.querySelector('.dots i:last-child.on')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "marta-respuesta",
+      "delay": 300,
+      "caption": "Marta: Alegia is far, but she has it written down"
+    },
+    {
+      "open": "/?mission=emilie&part=won&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('al lado de casa')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 240000
+    },
+    {
+      "shot": "emilie-local",
+      "delay": 300,
+      "caption": "Emilie's flat, the water still on the floor: Aitor names the choir and where it is"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('Pase lo que pase')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "emilie-siempre",
+      "delay": 300,
+      "caption": "Gerard: whatever happens, go there; always remember it"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (!!d.querySelector('.dots i:last-child.on')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "emilie-respuesta",
+      "delay": 300,
+      "caption": "Emilie, who already sings in it: after today she forgets nothing"
+    },
+    {
+      "open": "/?mission=luca&part=won&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('al lado de casa')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 240000
+    },
+    {
+      "shot": "luca-local",
+      "delay": 300,
+      "caption": "The pond at the Sagrada Família, Luca in full colour: Aitor names the choir and where it is"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('Pase lo que pase')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "luca-siempre",
+      "delay": 300,
+      "caption": "Gerard: whatever happens, go there; always remember it"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (!!d.querySelector('.dots i:last-child.on')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "luca-respuesta",
+      "delay": 300,
+      "caption": "Luca: he will be there, in the most horrible thing he owns"
+    },
+    {
+      "open": "/?mission=universidad&part=won&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('al lado de casa')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 240000
+    },
+    {
+      "shot": "universidad-local",
+      "delay": 300,
+      "caption": "The November beach, the seven round them: Aitor names the choir and where it is"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (t.includes('Pase lo que pase')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "universidad-siempre",
+      "delay": 300,
+      "caption": "Gerard: whatever happens, go there; always remember it"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; const t = d.querySelector('.text').textContent; if (!!d.querySelector('.dots i:last-child.on')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "universidad-respuesta",
+      "delay": 300,
+      "caption": "Anna, for the seven: done"
+    }
+  ]
+}

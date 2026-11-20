@@ -158,9 +158,10 @@ test('the salon\'s furniture stands on the floor and keeps Gerard out; one thing
 test('Fran beaten: Luca in full colour by the pond, his ánima and light, the day spent, the plain church again', () => {
   const story = inSalon(ZONES.map(z => z.id));
   const won = story.handle({ type: 'battle', won: true, encounter: 'fran' });
-  assert.deepEqual(beats(won).slice(0, 4), ['dialogue', 'travel', 'dialogue', 'lights']);
+  assert.deepEqual(beats(won).slice(0, 5), ['dialogue', 'travel', 'dialogue', 'dialogue', 'lights']);
   assert.deepEqual(won[1], { kind: 'travel', environment: SAGRADA, cell: { ...PLACES_LUCA.won } });
-  assert.deepEqual(won[3].people, ['luca']);
+  assert.deepEqual([won[2].dialogue, won[3].dialogue], [LINES_LUCA.home, LINES_LUCA.coro], 'they send him to the choir before his light goes');
+  assert.deepEqual(won[4].people, ['luca']);
   for (const flag of ['fran', 'anima-luca', 'luz-luca']) assert.ok(story.has(flag), flag);
   assert.ok(story.animas.includes('luca') && story.jar.includes('luca'));
   assert.equal(story.salon, false);

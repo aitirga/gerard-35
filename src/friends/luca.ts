@@ -292,6 +292,16 @@ export const LINES_LUCA = {
     luca('Ya. Le he visto pasar. Ni me ha mirado.'),
     luca('Bueno. Ahora me voy a casa a ponerme lo más horrible que tenga. Lo más horrible.'),
   ),
+  /**
+   * Before they go, Gerard and Aitor send him to the choir (docs/quests/coro.md § The choir room):
+   * every mission ends with it, and it is why the people helped turn up there every morning after.
+   */
+  coro: group('luca',
+    gerard('Luca, espera. Una cosa más.'),
+    aitor('El coro ya tiene local: A cop de diapasó, en la Meridiana, al lado de casa.'),
+    gerard('Pase lo que pase, ve allí. Acuérdate siempre.'),
+    luca('A cop de diapasó. Allí estaré. Con lo más horrible que tenga.'),
+  ),
   /** Talking to him after it all. */
   after: group('luca', luca('¿A que es horrible? Me encanta. Ven, que te dé otro abrazo.')),
 } as const;

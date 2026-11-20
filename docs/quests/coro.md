@@ -1,6 +1,6 @@
 # A cop de diapasó · (working title)
 
-Status: designing (round 7) · Last updated: 2026-11-16
+Status: designing (round 7) · Last updated: 2026-11-19
 
 **Decided** means the user said so. **Proposal** means it came from the design side and is waiting
 for a yes. This doc is the choir as a place; Emilie's mission gets its own, `docs/quests/emilie.md`.
@@ -50,15 +50,22 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
 
 - **Who runs it** (decided round 3, real): **Aitor directs the choir**; **Gerard sings in it**. In
   the game Aitor stands at the front with the tuning fork, and Gerard takes his chair in a row.
-- **No strange reason** (decided round 3): the people helped simply turn up at the choir; nothing
-  explains it, and nothing needs to. (Round 2's tuning-fork A as the reason is dropped.)
+- **Gerard and Aitor send them there** (decided 2026-11-19, replaces round 3's *no strange
+  reason*): at the end of every ánima mission, before the light goes, Aitor names the choir and
+  where it is, *A cop de diapasó*, on the Meridiana next to home, and Gerard asks them to go there
+  whatever happens and to always remember it. That is why, every new morning after they are
+  saved, the people helped turn up there. **Built**: `coro` in each friend's lines
+  (`src/friends/*.ts`), said right after the mission's `home` (`src/story.ts`); every mission
+  shares Gerard's core line, «Pase lo que pase, venid allí. Acordaos siempre.» (in the singular
+  for one friend), and each answer is the friend's own (`tests/coro.test.mjs`). Nobody explains
+  why, Gerard least of all. (Round 2's tuning-fork A as the reason stays dropped.)
 - **Why the Queen leaves it alone** (proposal): the weekly rehearsal is the one adult routine that
   already is ilusión: grown-ups meeting every week to sing because they like it. She has nothing to
   pop there. A soft plant for *Is the Queen good?* (`docs/lore.md`): what she respects is exactly
   what she wants for everyone. Never said aloud.
-- **The endings, changed little** (proposal): no mission's ending is rewritten. Each one ends as it
-  does now; the next time the party walks into the choir room, the people they helped are there.
-  Each has one line on arriving and a short one after.
+- **The endings, changed little** (decided 2026-11-19): no mission's ending is rewritten; each only
+  gains the choir lines above at its close. The next time the party walks into the choir room, the
+  people they helped are there. Proposal: each has one line on arriving and a short one after.
 - **Ensayar** (decided round 3): an activity at the choir, with hours spent like the piano at
   home, that leaves **very subtle clues** to a side mission or something to do. Proposal for how:
   - Aitor gives the A with the tuning fork, the choir sings a stretch, stops, goes again. In the

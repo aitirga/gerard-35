@@ -83,8 +83,9 @@ test('in her model a patrol is its fight, she speaks once per zone below, and on
 test('El que no converge beaten in her model: her ánima and her light, back in the flat, the day spent', () => {
   const story = inModel();
   const won = story.handle({ type: 'battle', won: true, encounter: 'no-converge' });
-  assert.deepEqual(beats(won).slice(0, 4), ['dialogue', 'travel', 'dialogue', 'lights']);
-  assert.deepEqual(won[3].people, ['emilie']);
+  assert.deepEqual(beats(won).slice(0, 5), ['dialogue', 'travel', 'dialogue', 'dialogue', 'lights']);
+  assert.equal(won[3].dialogue, LINES_EMILIE.coro, 'they send her to the choir before her light goes');
+  assert.deepEqual(won[4].people, ['emilie']);
   assert.equal(won[1].environment, PISO);
   for (const flag of ['converge', 'anima-emilie', 'luz-emilie']) assert.ok(story.has(flag), flag);
   assert.ok(story.animas.includes('emilie') && story.jar.includes('emilie'));

@@ -249,6 +249,17 @@ export const LINES_UNI = {
     line('joan', 'A ver si quedamos. De verdad, esta vez.'),
     aitor('Esta vez sí.'),
   ),
+  /**
+   * Before they go, Gerard and Aitor send the seven to the choir (docs/quests/coro.md § The choir
+   * room): every mission ends with it, and it is why the people helped turn up there every morning after.
+   */
+  coro: group('miquel',
+    aitor('Y ya tenemos sitio. El coro tiene local: A cop de diapasó, en la Meridiana, al lado de casa.'),
+    gerard('Pase lo que pase, venid allí. Acordaos siempre.'),
+    line('miquel', '¿Siempre?'),
+    gerard('Siempre.'),
+    line('anna', 'A cop de diapasó. Hecho.'),
+  ),
   /** Gerard's caption on the photo. */
   photo: 'Càmping Eurosport · Los nueve y el melón',
 };
