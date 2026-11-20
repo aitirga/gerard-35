@@ -2,26 +2,30 @@ import * as pc from 'playcanvas';
 import type { Effects } from './effects';
 import type { GpuEmitter, GpuKind, GpuVolume } from './fight-particles';
 import type { createPost } from './post';
+import { createEcoSheets } from './eco-shaders';
 
 /**
  * Sincopante's ecos as the fight will show them (docs/animas/sincopante/README.md § Look and
  * interface). This is a visual piece only, played from the effects lab (`?fxlab`): it never touches
- * a fight's numbers. An eco is light, not glass: a bead inside thin rings of nácar (white turning
- * seafoam at the edge, a pale gold shimmer running round), a soft halo, a shaft of light to the
- * floor and a real light that falls on whoever is under it. Rising motes come at *mf* and an orbit
- * of specks at *f*, all on the GPU engine. Every ring is the Eco of Las cuerdas, here on the party's
- * side.
+ * a fight's numbers. An eco is light, not glass, and it is drawn by `src/eco-shaders.ts`:
  *
- * - **The kinds are told by shape**: Ostinato's rings open towards the foes like a bell's mouth,
- *   Bordón's lie flat over the party like a halo.
- * - **The grades are told by size and rings**: one ring at *p*, two at *mf*, and three at *f* with two
- *   wings of arcs of light (never feathers).
- * - **The compás**: every 5 s each eco draws in and lets a ring go, to its foe (a halo closing round
- *   it) or down over its ally (a halo falling and rising through them), with a ripple on the floor.
- * - **Light changes**: Crescendo swells the ecos and dims the fight round them for a moment. The
- *   chord joins the three with lines of light. Tutti darkens everything but the foes and drops one
- *   great halo on them. Da capo turns every ring backwards.
- * - **Muffled** (the wearer in another ánima): under half their light, no gold, no motes.
+ * - **Interferencia is the eco itself**, the ánima's mark: a voice and its echo. A bead inside rings
+ *   of nácar, each ring doubled by a copy a little apart, fine ripples running out from both and a
+ *   pale gold where the two agree. One ring at *p*, two at *mf*, three at *f* with two wings, fans of
+ *   fine doubled arcs curling up (never feathers). Ostinato's stands like a bell's mouth turned to the
+ *   foes, Bordón's lies like a halo, its light warmer.
+ * - **Cimática is what a note does to what it touches**: struck (the beat, Crescendo, the chord),
+ *   an eco shows inside it the figure sand draws on a sounding plate, a new one for each grade. The
+ *   same figure flashes on a foe where a blow lands, is the great plate Tutti lowers on the foes
+ *   (changing figure as it comes), and runs backwards under the party in Da capo.
+ * - **Cáustica is the light an eco gives**: a veil of light through water hangs from each eco to a
+ *   pool on the floor, wraps the ally Bordón cures, and is Tutti's column.
+ * - On top, the GPU particles (motes rising from *mf*, specks in orbit at *f*, sparks on an accent),
+ *   one real light that falls on whoever is under the ecos, and the picture dimming round them in
+ *   Crescendo, Da capo and Tutti.
+ * - **The compás**: every 5 s each eco draws in and lets a doubled ring go, to its foe (closing round
+ *   it, with two fainter copies behind) or down over its ally, and two-point ripples cross the floor.
+ * - **Muffled** (the wearer in another ánima): under half their light, no gold, no figure, no motes.
  *
  * No pink and no violet (docs/visual-style.md). Sincopante's astral is rings and light that rises;
  * Dadista's is stars and light that falls.
@@ -34,8 +38,12 @@ export const ECO = {
   heights: [2.05, 2.4, 2.75],
   /** How far behind the party, and how far apart across the screen (m). */
   back: .2, apart: .85,
-  /** Ring radii at grade *p* (m), and how much bigger the eco is at each grade. */
-  rings: [.17, .25, .33], scale: [1.25, 1.5, 1.75],
+  /** Metres to one eco unit: its one ring at *p* is .62 units out, the outer of three at *f* 1.9. */
+  unit: .32,
+  /** How each kind's circle is squashed (across, up) and turned. */
+  shape: { ostinato: { squash: [.72, 1], turn: -.12 }, bordon: { squash: [1.2, .5], turn: 0 } },
+  /** Line width (px), and how bright each sheet of light is. */
+  line: 1.5, gain: { body: 1.5, figure: 1.8, light: 2, wave: 1.5 },
 } as const;
 
 export type EcoKind = 'ostinato' | 'bordon';
@@ -66,90 +74,103 @@ export interface EcoScene {
   model(id: string): pc.Entity | undefined;
 }
 
+
+type F = Float32Array;
+type Turn = 'face' | 'upright' | 'flat';
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 interface Eco {
   kind: EcoKind; grade: Grade; slot: number; target?: string; left: number; born: number;
-  root: pc.Entity; body: pc.Entity; rings: pc.Entity[]; golds: pc.Entity[]; wings: pc.Entity[];
-  bead: pc.Entity; halo: pc.Entity; shaft: pc.Entity;
+  /** Where it is, its own sheet of light, the veil it hangs to the floor and the pool under it. */
+  root: pc.Entity; sheet: pc.Entity; veil: pc.Entity; pool: pc.Entity;
+  /** What its sheets are drawn with (src/eco-shaders.ts). */
+  u: { eco: F; form: F; half: F; look: F; veil: F; veil2: F; veil3: F; pool: F; pool2: F; pool3: F };
+  seed: number;
   /** How much it lights round it now (the ecos share one real light: the fight's light budget is small). */
   glow: number;
-  mats: { ring: pc.StandardMaterial; gold: pc.StandardMaterial; bead: pc.StandardMaterial; halo: pc.StandardMaterial; shaft: pc.StandardMaterial; wing0: pc.StandardMaterial; wing1: pc.StandardMaterial; wing2: pc.StandardMaterial; wing3: pc.StandardMaterial };
   /** The grade as drawn (eased), when it last pulsed and swelled, and how bright a flash on it still is. */
   shown: number; pulseAt: number; swellAt: number; flash: number;
-  /** Where it floats; flying somewhere else for Tutti. */
-  home: pc.Vec3; flying?: pc.Vec3;
+  /** Its own clock (it runs backwards in Da capo), and the figure it shows when struck: how much is left of it, for how long, how strong, which. */
+  clock: number; figure: number; figureFor: number; figureAmount: number; mode: number;
+  /** Where it floats. Going: how much of it is left, how fast it goes, and where to (Tutti gathers them). */
+  home: pc.Vec3; going: boolean; fade: number; fadeFor: number; to?: pc.Vec3;
   motes?: GpuEmitter; orbit?: GpuVolume; specks?: GpuEmitter;
 }
 
 const v = (p: V3) => new pc.Vec3(p.x, p.y, p.z);
+const f4 = (a = 0, b = 0, c = 0, d = 0) => new Float32Array([a, b, c, d]);
 const ease = (k: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, k)), 3);
 const back = (k: number) => { const c = 1.7, x = Math.min(1, Math.max(0, k)) - 1; return 1 + (c + 1) * x * x * x + c * x * x; };
+/** How far out an eco's outer ring is at a grade, in eco units. */
+const reachOf = (g: number) => (1 + .28 * g) * (.62 + .3 * g);
 
 export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | undefined, scene: EcoScene) {
-  const device = app.graphicsDevice;
   const gpu = () => effects.gpu && effects.gpu.active ? effects.gpu : undefined;
   const g = effects.gpu;
   if (g) for (const [name, kind] of Object.entries(ECO_KINDS)) if (!g.get(name)) g.define(name, kind);
-  const owned: { meshes: pc.Mesh[]; textures: pc.Texture[]; materials: pc.Material[] } = { meshes: [], textures: [], materials: [] };
-
-  // ——— Textures: a soft round glow, and a fade from top to bottom for the shaft ———
-  function canvasTexture(name: string, w: number, h: number, paint: (c: CanvasRenderingContext2D) => void) {
-    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h; paint(canvas.getContext('2d')!);
-    const t = new pc.Texture(device, { name, width: w, height: h, mipmaps: true, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
-    t.setSource(canvas); owned.textures.push(t); return t;
-  }
-  const glowTex = canvasTexture('Halo de eco', 128, 128, c => {
-    const r = c.createRadialGradient(64, 64, 0, 64, 64, 64);
-    r.addColorStop(0, '#ffffff'); r.addColorStop(.18, '#9a9a9a'); r.addColorStop(.45, '#2a2a2a'); r.addColorStop(1, '#000000');
-    c.fillStyle = r; c.fillRect(0, 0, 128, 128);
-  });
-  const shaftTex = canvasTexture('Haz de eco', 8, 128, c => {
-    const l = c.createLinearGradient(0, 0, 0, 128); l.addColorStop(0, '#000000'); l.addColorStop(.06, '#7a7a7a'); l.addColorStop(.5, '#262626'); l.addColorStop(1, '#000000');
-    c.fillStyle = l; c.fillRect(0, 0, 8, 128);
-  });
-
-  // ——— Materials: all light, added on top, never hiding what is behind ———
-  function light(hex: string, k: number, map?: pc.Texture) {
-    const m = new pc.StandardMaterial(); m.diffuse.set(0, 0, 0); m.emissive.fromString(hex); m.emissiveIntensity = k; m.useLighting = false;
-    if (map) m.emissiveMap = map;
-    m.blendType = pc.BLEND_ADDITIVE; m.depthWrite = false; m.cull = pc.CULLFACE_NONE; m.update(); owned.materials.push(m); return m;
-  }
-  /** A passing thing's material, let go with it. */
-  function release(...ms: pc.Material[]) { for (const m of ms) { const i = owned.materials.indexOf(m); if (i >= 0) owned.materials.splice(i, 1); m.destroy(); } }
-  function torus(radius: number, tube: number, sector = 360) {
-    const mesh = pc.Mesh.fromGeometry(device, new pc.TorusGeometry({ ringRadius: radius, tubeRadius: tube, segments: Math.max(12, Math.round(64 * sector / 360)), sides: 8, sectorAngle: sector }));
-    // Shared by every eco and halo: held here too, or the first one destroyed would take the mesh with it.
-    mesh.incRefCount(); owned.meshes.push(mesh); return mesh;
-  }
-  function render(parent: pc.Entity, name: string, mesh: pc.Mesh, m: pc.Material) {
-    const e = new pc.Entity(name); e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, m)], castShadows: false, receiveShadows: false });
-    parent.addChild(e); return e;
-  }
-  function prim(parent: pc.Entity, name: string, type: 'sphere' | 'plane' | 'cone' | 'cylinder', m: pc.Material) {
-    const e = new pc.Entity(name); e.addComponent('render', { type, material: m, castShadows: false, receiveShadows: false }); parent.addChild(e); return e;
-  }
-  const RING_MESHES = ECO.rings.map(r => torus(r, .0065));
-  const GOLD_MESHES = ECO.rings.map(r => torus(r, .009, 46));
-  /** The wings' arcs: each a quarter circle from the eco out and up, tangent level where it leaves it (a raised wing). */
-  const WING_R = [.28, .4, .53, .67];
-  const WING_MESHES = WING_R.map((r, j) => torus(r, .005 - j * .0008, 74 - j * 7));
-  /** Each arc of a wing dimmer than the one inside it, so a wing fades out towards its edge. */
-  const WING_LIGHT = [2.1, 1.45, .95, .6];
-  const basis = new pc.Mat4(), turn = new pc.Quat();
-  const HALO_RING = torus(.5, .012), FLOOR_RING = torus(1, .01);
+  const sheets = createEcoSheets(app.graphicsDevice);
 
   const root = new pc.Entity('Ecos de Sincopante'); app.root.addChild(root);
   // One real light for all the ecos, between them, as bright as they are together: it falls on the
   // party under them and swells with each beat and Crescendo. One, because the fight's lights are few
   // (the GPU particles share four) and every light more makes every lit shader heavier.
   const lamp = new pc.Entity('Luz de los ecos'); lamp.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#e3fbf1'), intensity: 0, range: 4.2, castShadows: false }); app.root.addChild(lamp);
-  const ecos: Eco[] = [];
+  const ecos: Eco[] = [], leaving: Eco[] = [];
   const tweens: Tween[] = [];
-  let time = 0, beatAt = -1, muffled = false, chordAt = -9;
+  let time = 0, beatAt = -1, muffled = false, chordAt = -9, rewind = 0;
   const tween = (dur: number, step: (k: number) => void, end?: () => void, delay = 0) => tweens.push({ t0: time + delay, dur, step, end });
+  const after = (delay: number, run: () => void) => tween(.001, () => {}, run, delay);
+
+  // ——— Sheets of light: a square each, turned to the camera, stood upright or laid on the floor ———
+  const basis = new pc.Mat4(), faceQ = new pc.Quat(), uprightQ = new pc.Quat(), flatQ = new pc.Quat();
+  const camera = () => (app.root.findComponents('camera') as pc.CameraComponent[]).find(c => c.enabled && c.entity.enabled)?.entity;
+  function quatOf(q: pc.Quat, x: pc.Vec3, y: pc.Vec3) {
+    const z = new pc.Vec3().cross(x, y);
+    basis.data.set([x.x, x.y, x.z, 0, y.x, y.y, y.z, 0, z.x, z.y, z.z, 0, 0, 0, 0, 1]);
+    q.setFromMat4(basis);
+  }
+  /** Where the camera is looking from, once a frame: the three ways a sheet can be turned. */
+  function aim() {
+    const cam = camera(); if (!cam) return;
+    faceQ.copy(cam.getRotation());
+    const x = cam.right.clone(); x.y = 0; if (x.length() < 1e-4) x.set(1, 0, 0); x.normalize();
+    quatOf(uprightQ, x, pc.Vec3.UP);
+    quatOf(flatQ, x, new pc.Vec3().cross(pc.Vec3.UP, x));
+  }
+  const turned = (e: pc.Entity, turn: Turn) => e.setRotation(turn === 'face' ? faceQ : turn === 'upright' ? uprightQ : flatQ);
+  function sheet(parent: pc.Entity, name: string, material: pc.Material, uniforms: Record<string, F>) {
+    const e = new pc.Entity(name), instance = new pc.MeshInstance(sheets.quad, material);
+    // Held by reference: writing into these arrays is all it takes to change how the sheet is drawn.
+    for (const [key, values] of Object.entries(uniforms)) instance.setParameter(key, values);
+    e.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: false });
+    parent.addChild(e); return e;
+  }
+  interface Passing { delay?: number; warm?: number; gold?: number }
+  /** A doubled ring or two-point ripples, for `seconds`: `step` moves its front (`w`) and says how much is ring and how much ripples (`w2`). */
+  function wave(at: V3, size: number, turn: Turn, seconds: number, step: (k: number, w: F, w2: F, e: pc.Entity) => void, o: Passing & { lam?: number } = {}) {
+    const w = f4(.9, .1, .1, 0), w2 = f4(1, 0, o.gold ?? (muffled ? 0 : 1), ECO.line), w3 = f4(ECO.gain.wave, o.lam ?? .1, o.warm ?? 0, 0);
+    const e = sheet(root, 'Onda', sheets.wave, { uWave: w, uWave2: w2, uWave3: w3 });
+    e.setPosition(at.x, at.y, at.z); e.setLocalScale(size, size, 1); turned(e, turn);
+    tween(seconds, k => step(k, w, w2, e), () => e.destroy(), o.delay);
+    return e;
+  }
+  /** A sounding plate, for `seconds`: `step` sets its figures and alpha (`m`), and when it was struck and its turn (`m2`). */
+  function plate(at: V3, size: number, turn: Turn, seconds: number, step: (k: number, m: F, m2: F, e: pc.Entity) => void, o: Passing & { cells?: number } = {}) {
+    const m = f4(0, 0, 0, 0), m2 = f4(9, ECO.line, o.gold ?? (muffled ? 0 : 1), 0), m3 = f4(ECO.gain.figure, o.cells ?? 14, .05, 0);
+    const e = sheet(root, 'Figura', sheets.membrane, { uMem: m, uMem2: m2, uMem3: m3 });
+    e.setPosition(at.x, at.y, at.z); e.setLocalScale(size, size, 1); turned(e, turn);
+    tween(seconds, k => step(k, m, m2, e), () => e.destroy(), o.delay);
+    return e;
+  }
+  /** Light through water, for `seconds`: a veil `wide` by `tall` (half sizes, m) stood at `at`, or a pool lying there. `step` sets its alpha (`c[1]`) and when it was struck and its grade (`c2[2]`, `c2[3]`). */
+  function water(at: V3, wide: number, tall: number, kind: 'veil' | 'pool', seconds: number, step: (k: number, c: F, c2: F, e: pc.Entity) => void, o: Passing = {}) {
+    const c = f4(kind === 'pool' ? 1 : 0, 0, o.warm ?? 0, Math.random() * 40), c2 = f4(wide, tall, 9, 0), c3 = f4(ECO.gain.light, time, 0, 0);
+    const e = sheet(root, kind === 'pool' ? 'Charco de luz' : 'Velo de luz', sheets.caustic, { uCau: c, uCau2: c2, uCau3: c3 });
+    e.setPosition(at.x, at.y, at.z); e.setLocalScale(wide, tall, 1); turned(e, kind === 'pool' ? 'flat' : 'upright');
+    tween(seconds, k => { c3[1] = time; step(k, c, c2, e); }, () => e.destroy(), o.delay);
+    return e;
+  }
 
   // ——— Where things are ———
-  const camera = () => (app.root.findComponents('camera') as pc.CameraComponent[]).find(c => c.enabled && c.entity.enabled)?.entity;
   function sides() {
     const all = scene.fighters();
     const party = all.filter(f => f.party).map(f => ({ id: f.id, p: scene.at(f.id) })).filter((f): f is { id: string; p: V3 } => !!f.p);
@@ -171,76 +192,69 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
 
   // ——— One eco ———
   function build(kind: EcoKind, slot: number): Eco {
-    const home = slotAt(slot);
+    const home = slotAt(slot), seed = Math.random() * 40, warm = kind === 'bordon' ? 1 : 0;
     const e = new pc.Entity(kind === 'ostinato' ? 'Eco de Ostinato' : 'Eco de Bordón'); root.addChild(e); e.setPosition(home);
-    const body = new pc.Entity('Cuerpo'); e.addChild(body);
-    const warm = kind === 'bordon';
-    const mats = {
-      ring: light(ECO.nacar, 2.2), gold: light(ECO.gold, 3), bead: light('#ffffff', 5.5),
-      halo: light(warm ? '#f6efd2' : '#c8f2e2', 1.1, glowTex), shaft: light(warm ? ECO.gold : ECO.foam, .55, shaftTex),
-      wing0: light(ECO.nacar, WING_LIGHT[0]), wing1: light(ECO.nacar, WING_LIGHT[1]), wing2: light(ECO.foam, WING_LIGHT[2]), wing3: light(ECO.foam, WING_LIGHT[3]),
+    const shape = ECO.shape[kind], { fwd } = sides(), cam = camera();
+    // Ostinato's mouth leans towards the foes, whichever side of the screen they are on.
+    const lean = shape.turn * (cam && fwd.dot(cam.right) < 0 ? -1 : 1);
+    const u = {
+      eco: f4(0, 9, seed, 0), form: f4(shape.squash[0], shape.squash[1], lean, warm), half: f4(2.1, 2.1, 0, 0), look: f4(ECO.gain.body, ECO.line, 1, 0),
+      veil: f4(0, 0, warm, seed), veil2: f4(.4, 1, 9, 0), veil3: f4(ECO.gain.light, 0, 0, 0),
+      pool: f4(1, 0, warm, seed + 7), pool2: f4(.8, .8, 9, 0), pool3: f4(ECO.gain.light, 0, 0, 0),
     };
-    const wingMats = [mats.wing0, mats.wing1, mats.wing2, mats.wing3];
-    // Ostinato's rings face the foes, nested like a bell's mouth opening towards them; Bordón's lie flat.
-    const { fwd } = sides();
-    if (kind === 'ostinato') {
-      const cam = camera(), aim = fwd.clone().mulScalar(.8);
-      if (cam) aim.add(cam.forward.clone().mulScalar(-.55));
-      aim.normalize();
-      const axis = new pc.Vec3().cross(pc.Vec3.UP, aim), angle = Math.acos(Math.max(-1, Math.min(1, aim.y))) * 180 / Math.PI;
-      if (axis.length() > 1e-4) body.setRotation(new pc.Quat().setFromAxisAngle(axis.normalize(), angle));
-    }
-    const rings = RING_MESHES.map((mesh, i) => { const r = render(body, `Anillo ${i + 1}`, mesh, mats.ring); r.setLocalPosition(0, kind === 'ostinato' ? i * .045 : -i * .012, 0); return r; });
-    const golds = GOLD_MESHES.map((mesh, i) => render(rings[i], 'Brillo dorado', mesh, mats.gold));
-    const bead = prim(e, 'Perla', 'sphere', mats.bead); bead.setLocalScale(.07, .07, .07);
-    if (kind === 'ostinato') bead.setLocalScale(.11, .05, .05);
-    const halo = prim(e, 'Halo', 'plane', mats.halo); halo.setLocalScale(1.1, 1, 1.1);
-    const shaft = prim(e, 'Haz', 'cone', mats.shaft);
-    // The wings at *f*: two fans of arcs of light rising from its sides, in the plane the camera sees.
-    const wings: pc.Entity[] = [];
-    for (const side of [-1, 1]) for (let j = 0; j < WING_MESHES.length; j++) {
-      const w = render(e, `Ala ${side < 0 ? 'izquierda' : 'derecha'} ${j + 1}`, WING_MESHES[j], wingMats[j]);
-      w.enabled = false; wings.push(w);
-    }
-    for (const r of rings) r.setLocalScale(0, 0, 0);
-    return { kind, grade: 0, slot, left: ECO.life, born: time, root: e, body, rings, golds, wings, bead, halo, shaft, glow: 0, mats, shown: 0, pulseAt: -9, swellAt: -9, flash: 1, home };
+    const body = sheet(e, 'Voz y eco', sheets.body, { uEco: u.eco, uForm: u.form, uHalf: u.half, uLook: u.look });
+    const veil = sheet(root, 'Velo del eco', sheets.caustic, { uCau: u.veil, uCau2: u.veil2, uCau3: u.veil3 });
+    const pool = sheet(root, 'Charco del eco', sheets.caustic, { uCau: u.pool, uCau2: u.pool2, uCau3: u.pool3 });
+    return { kind, grade: 0, slot, left: ECO.life, born: time, root: e, sheet: body, veil, pool, u, seed, glow: 0, shown: 0, pulseAt: -9, swellAt: -9, flash: 1, clock: seed, figure: 0, figureFor: 1, figureAmount: 0, mode: 0, home, going: false, fade: 1, fadeFor: .6 };
   }
-  function drop(e: Eco, quiet = false) {
+  const shown = (e: Eco, on: boolean) => { e.root.enabled = on; e.veil.enabled = on; e.pool.enabled = on; };
+  const emitters = (e: Eco) => { e.motes?.remove(); e.orbit?.remove(); e.specks?.remove(); e.motes = undefined; e.orbit = undefined; e.specks = undefined; };
+  const destroyEco = (e: Eco) => { emitters(e); e.root.destroy(); e.veil.destroy(); e.pool.destroy(); };
+  /** An eco goes: it opens and fades over `seconds` (flying to `to` meanwhile, if given). */
+  function leave(e: Eco, seconds = .6, to?: pc.Vec3) {
     const i = ecos.indexOf(e); if (i >= 0) ecos.splice(i, 1);
-    e.motes?.remove(); e.orbit?.remove(); e.specks?.remove();
+    emitters(e);
+    e.going = true; e.fadeFor = seconds; e.to = to; e.home = e.root.getPosition().clone();
+    leaving.push(e);
+  }
+  function drop(e: Eco) {
     const at = e.root.getPosition().clone();
-    if (!quiet) {
-      gpu()?.burst('eco-mote', { at, count: 28, spread: .25, speed: .35, up: .3, life: [.9, 1.6] });
-      gpu()?.burst('eco-ring', { at, count: 2, life: [.5, .7], size: 1.3 });
-    }
-    // Its rings open and drift apart as it goes, and its light fades.
-    const mats = Object.values(e.mats), base = mats.map(m => m.emissiveIntensity);
-    tween(.6, k => {
-      e.body.setLocalScale(1 + k * 1.2, 1 + k * 1.2, 1 + k * 1.2);
-      mats.forEach((m, i) => { m.emissiveIntensity = base[i] * (1 - k); m.update(); });
-    }, () => { e.root.destroy(); release(...mats); });
+    gpu()?.burst('eco-mote', { at, count: 28, spread: .25, speed: .35, up: .3, life: [.9, 1.6] });
+    gpu()?.burst('eco-ring', { at, count: 2, life: [.5, .7], size: 1.3 });
+    leave(e);
+  }
+  /** Struck: its inside shows its note's figure for `seconds`. */
+  function strike(e: Eco, seconds: number, amount: number) {
+    if (muffled) return;
+    e.figure = 1; e.figureFor = seconds; e.figureAmount = amount; e.mode = e.grade;
   }
 
   // ——— What happens on the beat ———
-  function closeHalo(at: pc.Vec3, colour: string, big = 1) {
-    const m = light(colour, 3.2);
-    const h = render(root, 'Halo que se cierra', HALO_RING, m); h.setPosition(at);
-    tween(.22, k => { const s = (1.15 - .85 * ease(k)) * big; h.setLocalScale(s, s, s); }, () => {
+  /**
+   * A ring and its echo close round `at`, two fainter copies behind them (the echo of the echo), and
+   * where they close the note's figure flashes for a moment, as on a struck plate.
+   */
+  function closeHalo(at: pc.Vec3, accent: boolean, big = 1, mode = 0) {
+    const k0 = muffled ? .45 : 1;
+    for (let i = 0; i < 3; i++) wave(at, .66 * big, 'face', .22, (k, w) => { w[0] = .92 - .62 * ease(k); w[2] = .1; w[3] = [1, .5, .25][i] * k0; }, { delay: i * .07, warm: accent ? 1 : 0 });
+    after(.22, () => {
+      plate(at, .52 * big, 'face', .55, (k, m, m2) => { m[0] = mode; m[1] = mode; m[3] = Math.pow(1 - k, 1.5) * k0; m2[0] = k * .55; }, { cells: 9 + mode * 2 });
       gpu()?.burst('eco-glow', { at, count: 2, spread: .05, life: [.35, .5], size: big, light: { intensity: 2.4 * big, range: 2.2, colour: ECO.nacar } });
       gpu()?.burst('eco-spark', { at, count: Math.round(26 * big), spread: .12, speed: 1.6, up: .3, life: [.3, .6] });
       gpu()?.burst('eco-mote', { at, count: Math.round(22 * big), spread: .25, speed: .25, up: .5, life: [.8, 1.5] });
       post?.pulse(.02, .3 * big);
-      tween(.25, k => { m.emissiveIntensity = 3.2 * (1 - k); m.update(); h.setLocalScale(.3 * big * (1 + k * .3), .3 * big, .3 * big * (1 + k * .3)); }, () => { h.destroy(); release(m); });
     });
   }
-  function fallHalo(id: string, colour: string) {
+  /** The cure: a veil of warm light through water wraps the ally, a ring and its echo go down through them and up again, a pool of light at their feet. */
+  function fallHalo(id: string, accent: boolean) {
     const feet = scene.at(id); if (!feet) return;
-    const top = feet.y + 1.25 * heightOf(id) + .3, m = light(colour, 2.6);
-    const h = render(root, 'Halo que cura', HALO_RING, m); h.setLocalScale(.62, .62, .62);
-    tween(.6, k => {
-      const y = k < .5 ? top - (top - feet.y - .05) * ease(k * 2) : feet.y + .05 + (top - feet.y - .05) * ease((k - .5) * 2);
-      h.setPosition(feet.x, y, feet.z); m.emissiveIntensity = 2.6 * (k < .5 ? 1 : 1 - (k - .5) * 2); m.update();
-    }, () => { h.destroy(); release(m); });
+    const tall = 1.25 * heightOf(id) + .3, top = feet.y + tall, k0 = muffled ? .45 : 1;
+    wave(feet, .66, 'flat', .6, (k, w, _w2, e) => {
+      const y = k < .5 ? top - (tall - .05) * ease(k * 2) : feet.y + .05 + (tall - .05) * ease((k - .5) * 2);
+      e.setPosition(feet.x, y, feet.z); w[0] = .9; w[2] = .09; w[3] = (k < .5 ? 1 : 1 - (k - .5) * 2) * k0;
+    }, { warm: 1, gold: accent ? 1.6 : undefined });
+    water({ x: feet.x, y: feet.y + tall / 2, z: feet.z }, .6, tall / 2, 'veil', 1, (k, c, c2) => { c[1] = Math.sin(Math.PI * k) * 1.5 * k0; c2[2] = k; c2[3] = 1; }, { warm: 1 });
+    water({ x: feet.x, y: feet.y + .04, z: feet.z }, 1, 1, 'pool', 1.3, (k, c, c2) => { c[1] = Math.sin(Math.PI * k) * k0; c2[2] = k * 1.3; c2[3] = 1; }, { warm: 1 });
     gpu()?.burst('eco-mote', { at: { x: feet.x, y: feet.y + .1, z: feet.z }, shape: 'ring', spread: .45, count: 26, up: .9, speed: .1, life: [.9, 1.6], colour: ECO.warm, light: { intensity: 1.6, range: 2, colour: ECO.warm } });
   }
   /** A sung beam from `a` to `b`: a fine core and two strands twisting round it, like a wave of sound. */
@@ -249,14 +263,17 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     effects.trails.comet(a, b, ['#ffffff', tip], seconds, { arc: .1, width: .022 * k, life: .26, intensity: 3.2 * k, core: .9, additive: 1, taper: .85 });
     for (const phase of [0, Math.PI]) effects.trails.comet(a, b, [ECO.nacar, tip], seconds, { arc: .1, width: .012 * k, life: .32, intensity: 2.4 * k, core: .5, additive: 1, taper: .6, twist: { turns: 2.5, radius: .07 * k, phase } });
   }
+  /** The floor answers: ripples from two points, the voice and its echo, crossing in gold as they run out. */
   function ripple(e: Eco) {
-    const p = e.root.getPosition(), floor = sides().us.y + .03, m = light(ECO.foam, 1.4), reach = e.grade === 2 ? 2.6 : 1.1;
-    const r = render(root, 'Onda en el suelo', FLOOR_RING, m); r.setPosition(p.x, floor, p.z);
-    tween(1.5, k => { const s = .15 + reach * ease(k); r.setLocalScale(s, 1, s); m.emissiveIntensity = 1.4 * (1 - k) * (muffled ? .35 : 1); m.update(); }, () => { r.destroy(); release(m); });
-    gpu()?.burst('eco-floor', { at: { x: p.x, y: floor + .02, z: p.z }, shape: 'ring', spread: .2, count: muffled ? 10 : 30, outward: .9 + e.grade * .5, life: [.8, 1.3] });
+    const p = e.root.getPosition(), floor = sides().us.y + .04, reach = e.grade === 2 ? 2.8 : 1.4;
+    wave({ x: p.x, y: floor, z: p.z }, reach, 'flat', 1.6, (k, w, w2) => {
+      w[0] = .08 + .84 * ease(k); w[1] = .22; w[2] = .2; w[3] = (1 - k) * (muffled ? .3 : .75); w2[0] = .35; w2[1] = 1;
+    }, { lam: .17 / reach, warm: e.kind === 'bordon' ? .6 : 0 });
+    gpu()?.burst('eco-floor', { at: { x: p.x, y: floor + .02, z: p.z }, shape: 'ring', spread: .2, count: muffled ? 8 : 20, outward: .9 + e.grade * .5, life: [.8, 1.3] });
   }
   function pulse(e: Eco, accent = false) {
     e.pulseAt = time; e.flash = accent ? 1.4 : 1;
+    strike(e, accent ? 1.1 : .9, accent ? .9 : .65);
     const at = e.root.getPosition().clone(), { party, foes } = sides(), k = muffled ? .45 : 1;
     if (!accent) ripple(e);
     if (e.kind === 'ostinato') {
@@ -264,11 +281,11 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
       for (const id of targets) {
         const to = chest(id); if (!to) continue;
         beam(at, to, k, accent, .28);
-        setTimeout(() => closeHalo(to, accent ? ECO.gold : ECO.nacar, (e.grade === 2 ? .8 : .7) * k), 280);
+        after(.28, () => closeHalo(to, accent, e.grade === 2 ? .8 : .7, e.grade));
       }
     } else {
       const hurt = e.grade === 2 ? party.map(f => f.id) : [party[0]?.id].filter((id): id is string => !!id);
-      for (const id of hurt) fallHalo(id, accent ? ECO.gold : ECO.warm);
+      for (const id of hurt) fallHalo(id, accent);
     }
     if (accent) gpu()?.burst('eco-spark', { at, count: 24, spread: .08, speed: 1.2, life: [.25, .5] });
   }
@@ -278,33 +295,35 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
   function call(kind: EcoKind, wearer: string, target?: string) {
     if (ecos.length >= 3) drop(ecos[0]);
     const slot = freeSlot(), from = chest(wearer), { foes, party } = sides();
-    const aim = kind === 'ostinato' ? target && foes.some(f => f.id === target) ? target : foes[0]?.id : target && party.some(f => f.id === target) ? target : party[0]?.id;
-    const to = aim ? chest(aim) : undefined;
-    const e = build(kind, slot); e.target = aim; ecos.push(e);
-    e.root.enabled = false;
+    const aimed = kind === 'ostinato' ? target && foes.some(f => f.id === target) ? target : foes[0]?.id : target && party.some(f => f.id === target) ? target : party[0]?.id;
+    const to = aimed ? chest(aimed) : undefined;
+    const e = build(kind, slot); e.target = aimed; ecos.push(e);
+    shown(e, false);
     if (beatAt < 0) beatAt = time;
     if (from && to && kind === 'ostinato') {
       beam(from, to, 1.4, false, .3);
-      setTimeout(() => closeHalo(to, ECO.nacar, 1), 300);
-    } else if (aim) fallHalo(aim, ECO.warm);
+      after(.3, () => closeHalo(to, false, 1, 0));
+    } else if (aimed) fallHalo(aimed, false);
     // A paler copy of the ring rises from where it landed to where the eco will float.
     const start = to ?? from ?? e.home;
-    setTimeout(() => effects.trails.comet(start, e.home, [ECO.nacar, ECO.foam], .55, { arc: .6, width: .04, life: .6, intensity: 2, core: .5, additive: 1, taper: .8 }), 520);
-    setTimeout(() => {
-      e.root.enabled = true; e.born = time;
-      gpu()?.burst('eco-ring', { at: e.home, count: 2, life: [.5, .7], size: 1 });
+    after(.52, () => effects.trails.comet(start, e.home, [ECO.nacar, ECO.foam], .55, { arc: .6, width: .04, life: .6, intensity: 2, core: .5, additive: 1, taper: .8 }));
+    after(1.05, () => {
+      if (!ecos.includes(e)) return;
+      shown(e, true); e.born = time;
+      wave(e.home, .9, 'face', .6, (k, w, w2) => { w[0] = .15 + .75 * ease(k); w[1] = .14; w[2] = .12; w[3] = 1 - k; w2[1] = .5; }, { lam: .09, warm: kind === 'bordon' ? .6 : 0 });
       gpu()?.burst('eco-mote', { at: e.home, count: 30, spread: .2, speed: .5, life: [.8, 1.4] });
       post?.pulse(.02, .35);
-    }, 1050);
+    });
     return e;
   }
-  /** Every eco up a grade: louder, then wider; their clocks start over. The fight dims round them for a moment. */
+  /** Every eco up a grade: louder, then wider; their clocks start over. Each shows its new note's figure, and the fight dims round them for a moment. */
   function crescendo() {
     if (!ecos.length || muffled) return false;
     for (const e of ecos) {
       e.grade = Math.min(2, e.grade + 1) as Grade; e.left = ECO.life; e.swellAt = time; e.flash = 1.2;
+      strike(e, 1.6, 1);
       const at = e.root.getPosition();
-      gpu()?.burst('eco-ring', { at, count: 3, life: [.6, .9], size: 1.4 });
+      wave(at, 1.1 + .25 * e.grade, 'face', .75, (k, w, w2) => { w[0] = .15 + .78 * ease(k); w[1] = .14; w[2] = .14; w[3] = (1 - k) * .8; w2[1] = .7; }, { lam: .08 });
       gpu()?.burst('eco-mote', { at, shape: 'ring', spread: .35, count: 40, around: 2.4, up: .7, life: [1, 1.8] });
     }
     post?.pulse(.02, .7);
@@ -324,134 +343,135 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     post?.pulse(.02, .25);
     return true;
   }
-  /** The ecos fly together over the foes, the fight darkens round them, and one great halo comes down on all. */
+  /**
+   * The ecos fly together over the foes and become one great sounding plate, its figure changing
+   * note by note as it grows; the fight darkens round it, a column of warm light through water
+   * stands over the foes, and the plate comes down on them all and is struck.
+   */
   function tutti() {
     const list = ecos.slice(); if (muffled) return false;
-    const { foes, them } = sides(), over = them.clone().add(new pc.Vec3(0, 2.4, 0));
-    ecos.length = 0; beatAt = -1;
+    const { foes, them } = sides(), over = them.clone().add(new pc.Vec3(0, 2.4, 0)), floor = them.y + .06, t0 = time;
+    beatAt = -1;
     const spot = () => foes.map(f => { const c = chest(f.id)!; return { x: c.x, y: c.y, z: c.z, radius: 1.2 }; });
     tween(2.2, k => post?.spotlight(.72 * Math.min(1, k * 4) * (k > .8 ? (1 - k) / .2 : 1), spot()), () => post?.spotlight(0, []));
-    for (const e of list) {
-      e.flying = e.root.getPosition().clone(); e.motes?.remove(); e.orbit?.remove(); e.specks?.remove();
-      const from = e.flying.clone(), mats = Object.values(e.mats);
-      tween(.45, k => { e.root.setPosition(from.clone().lerp(from, over, ease(k))); const s = e.root.getLocalScale().x * (1 + .02); e.root.setLocalScale(s, s, s); }, () => { e.root.destroy(); release(...mats); });
-    }
-    // One great halo of every ring, with a column of warm light from above.
-    const m = light(ECO.nacar, 3.4), halo = new pc.Entity('Gran halo'); root.addChild(halo); halo.setPosition(over);
-    const parts = [0, 1, 2, 3].map(i => { const r = render(halo, 'Anillo del halo', HALO_RING, m); const s = 1.4 + i * .35; r.setLocalScale(s, s, s); r.setLocalPosition(0, i * .06, 0); return r; });
-    const colM = light(ECO.warm, 1.4, glowTex), column = prim(root, 'Columna de luz', 'plane', colM);
-    const cam = camera();
-    column.setPosition(them.x, them.y + 2.2, them.z);
-    if (cam) { column.setRotation(cam.getRotation()); column.rotateLocal(90, 0, 0); }
-    column.setLocalScale(3.2, 1, 7.5);
-    halo.setLocalScale(0, 0, 0);
-    tween(.5, k => { const s = back(k); halo.setLocalScale(s, s, s); colM.emissiveIntensity = 1.4 * k; colM.update(); }, undefined, .4);
-    tween(.32, k => halo.setPosition(over.x, over.y - (over.y - them.y - 1) * ease(k), over.z), () => {
-      for (const f of foes) { const c = chest(f.id); if (c) closeHalo(c, ECO.nacar, 1.6); }
-      gpu()?.burst('eco-ring', { at: { x: them.x, y: them.y + .05, z: them.z }, count: 4, life: [.7, 1], size: 3 });
+    for (const e of list) leave(e, .5, over);
+    const GROW = .4, FALL = .95, LAND = 1.27, size = 1.9;
+    plate(over, size, 'flat', 2.7, (_k, m, m2, e) => {
+      const s = time - t0, grow = back((s - GROW) / .5), note = Math.min(2.999, Math.max(0, (s - GROW) / (FALL - GROW)) * 3), out = Math.max(0, (s - LAND) / 1.4);
+      m[0] = Math.floor(note); m[1] = m[0] + 1; m[2] = note - m[0];
+      m[3] = Math.min(1, Math.max(0, (s - GROW) / .25)) * Math.pow(Math.max(0, 1 - out), 1.3) * 1.6;
+      m2[0] = s > LAND ? s - LAND : 9; m2[3] = s * .45;
+      e.setPosition(over.x, over.y - (over.y - floor) * ease((s - FALL) / (LAND - FALL)), over.z);
+      const big = size * Math.max(.001, grow) * (1 + out * .22); e.setLocalScale(big, big, 1);
+    }, { cells: 30 });
+    water({ x: them.x, y: them.y + 3.3, z: them.z }, 1.7, 3.3, 'veil', 2.9, (_k, c, c2) => {
+      const s = time - t0;
+      c[1] = Math.min(1, Math.max(0, (s - .2) / .8)) * (s > LAND + .3 ? Math.max(0, 1 - (s - LAND - .3) / 1.2) : 1) * 1.7;
+      c2[2] = s > LAND ? s - LAND : 9; c2[3] = 2;
+    }, { warm: 1 });
+    after(LAND, () => {
+      for (const f of foes) { const c = chest(f.id); if (c) closeHalo(c, false, 1.15, 3); }
+      const at = { x: them.x, y: floor, z: them.z };
+      wave(at, 3.6, 'flat', 1.5, (k, w, w2) => { w[0] = .1 + .82 * ease(k); w[1] = .2; w[2] = .12; w[3] = 1 - k; w2[0] = .8; w2[1] = 1; }, { lam: .06 });
+      water(at, 2.6, 2.6, 'pool', 1.7, (k, c, c2) => { c[1] = Math.sin(Math.PI * Math.min(1, k * 1.6) * .5) * (1 - k) * 2.2; c2[2] = k * 1.7; c2[3] = 2; }, { warm: 1 });
+      gpu()?.burst('eco-ring', { at, count: 4, life: [.7, 1], size: 3 });
       gpu()?.burst('eco-mote', { at: { x: them.x, y: them.y + .4, z: them.z }, count: 160, spread: 1.6, speed: .4, up: .8, life: [1.2, 2.4], light: { intensity: 4, range: 4.5, colour: ECO.warm } });
       post?.pulse(.06, 1, .22);
-      tween(.5, k => { m.emissiveIntensity = 3.4 * (1 - k); m.update(); parts.forEach((p, i) => { const s = (1.4 + i * .35) * (1 + k * .6); p.setLocalScale(s, s, s); }); }, () => { halo.destroy(); release(m); });
-      tween(1.2, k => { colM.emissiveIntensity = 1.4 * (1 - k); colM.update(); }, () => { column.destroy(); release(colM); });
-    }, .95);
+    });
     return true;
   }
-  /** Back to the beginning: every ring turns backwards, a wave of nácar crosses the party, the ecos start over. */
+  /**
+   * Back to the beginning: every eco's clock runs backwards, a great plate under the party plays its
+   * figures from the last to the first while rings close in on it, and the ecos start over.
+   */
   function dacapo() {
     if (ecos.length < 3 || muffled) return false;
-    const { us, party } = sides();
-    for (const e of ecos) { e.left = ECO.life; e.swellAt = time; e.flash = 1.3; }
+    const { us, party } = sides(), at = { x: us.x, y: us.y + .05, z: us.z };
+    for (const e of ecos) { e.left = ECO.life; e.swellAt = time; e.flash = 1.3; strike(e, 1.4, 1); }
     rewind = 1.2;
-    for (let i = 0; i < 3; i++) {
-      const m = light(ECO.nacar, 1.6), r = render(root, 'Onda que vuelve', FLOOR_RING, m); r.setPosition(us.x, us.y + .03, us.z); r.setLocalScale(0, 1, 0);
-      tween(.9, k => { const s = 2.8 - 2.5 * ease(k); r.setLocalScale(s, 1, s); m.emissiveIntensity = 1.6 * Math.sin(Math.PI * k); m.update(); }, () => { r.destroy(); release(m); }, i * .18);
-    }
-    gpu()?.burst('eco-floor', { at: { x: us.x, y: us.y + .04, z: us.z }, shape: 'ring', spread: 2.2, count: 70, outward: -1.1, around: -1.2, life: [.9, 1.2] });
+    plate(at, 2.7, 'flat', 1.6, (k, m, m2) => {
+      const note = 3 * (1 - k);
+      m[0] = Math.min(2, Math.floor(note)); m[1] = m[0] + 1; m[2] = note - m[0];
+      m[3] = Math.pow(Math.sin(Math.PI * k), .6); m2[3] = -k * 1.4;
+    }, { cells: 32 });
+    for (let i = 0; i < 3; i++) wave(at, 2.9, 'flat', .9, (k, w, w2) => { w[0] = .95 - .85 * ease(k); w[1] = .1; w[2] = .07; w[3] = Math.sin(Math.PI * k); w2[1] = .5; }, { delay: i * .18, lam: .05 });
+    gpu()?.burst('eco-floor', { at, shape: 'ring', spread: 2.2, count: 70, outward: -1.1, around: -1.2, life: [.9, 1.2] });
     for (const f of party) { const c = chest(f.id); if (c) gpu()?.burst('eco-mote', { at: c, count: 40, spread: .5, up: .6, life: [1, 1.8], light: { intensity: 1.5, range: 2, colour: ECO.nacar } }); }
     post?.pulse(.02, .6, .12);
     swellLight(1.6, .5);
     return true;
   }
-  let rewind = 0;
 
   function setMuffled(on: boolean) { muffled = on; }
 
   // ——— Every frame ———
+  /** One eco as it is now: where, how big, how bright, and what its three sheets are drawn with. */
+  function draw(e: Eco, dt: number, floor: number) {
+    e.clock += dt * (rewind > 0 ? -6 : 1);
+    e.shown += (e.grade - e.shown) * Math.min(1, dt * 5);
+    e.flash = Math.max(0, e.flash - dt * 2.2);
+    e.figure = Math.max(0, e.figure - dt / e.figureFor);
+    const appear = back((time - e.born) / .55), seen = Math.min(1, Math.max(0, (time - e.born) / .35)), since = time - e.pulseAt;
+    const breath = since < .15 ? 1 - .1 * Math.sin(since / .15 * Math.PI / 2) : since < .4 ? .9 + .1 * (since - .15) / .25 : 1;
+    const pop = 1 + .22 * Math.sin(Math.PI * Math.min(1, Math.max(0, (time - e.swellAt) / .5)));
+    const gone = 1 - e.fade, size = breath * pop * appear * (1 + gone * (e.to ? -.35 : .6));
+    const bob = e.going ? 0 : Math.sin((time - Math.max(0, beatAt)) / ECO.beat * Math.PI * 2) * .04;
+    const at = e.to ? new pc.Vec3().lerp(e.home, e.to, ease(gone)) : new pc.Vec3(e.home.x, e.home.y + bob, e.home.z);
+    e.root.setPosition(at);
+    const dim = muffled ? .4 : 1, lit = dim * seen * e.fade;
+    // Its own sheet, wide enough for its wings once it has them.
+    const wings = e.shown > 1.02, hx = wings ? 4.8 : 2.1, hy = wings ? 2.7 : 2.1, shape = ECO.shape[e.kind];
+    e.sheet.setRotation(faceQ); e.sheet.setLocalScale(hx * ECO.unit * size, hy * ECO.unit * size, 1);
+    const figure = e.figure > .85 ? (1 - e.figure) / .15 : e.figure / .85;
+    e.u.eco[0] = e.shown; e.u.eco[1] = since; e.u.eco[3] = lit;
+    // Bordón's halo sways a little as it lies.
+    if (e.kind === 'bordon') e.u.form[2] = shape.turn + Math.sin(time * .6 + e.seed) * .07;
+    e.u.half[0] = hx; e.u.half[1] = hy; e.u.half[2] = muffled ? 0 : figure * e.figureAmount; e.u.half[3] = e.mode;
+    e.u.look[0] = ECO.gain.body * (1 + e.flash * .6); e.u.look[2] = muffled ? 0 : 1; e.u.look[3] = e.clock;
+    // Its veil hangs from it to the floor, and its pool lies there; both fade faster than it when it goes.
+    const tall = Math.max(.2, at.y - floor), wide = .42 + .1 * e.shown, reach = .8 + .25 * e.shown, under = lit * .6 * Math.max(0, 1 - gone * 2.5);
+    e.veil.setPosition(at.x, floor + tall / 2, at.z); e.veil.setLocalScale(wide, tall / 2, 1); e.veil.setRotation(uprightQ);
+    e.u.veil[1] = under; e.u.veil2[0] = wide; e.u.veil2[1] = tall / 2; e.u.veil2[2] = since; e.u.veil2[3] = e.shown; e.u.veil3[1] = time;
+    e.pool.setPosition(at.x, floor + .03, at.z); e.pool.setLocalScale(reach, reach, 1); e.pool.setRotation(flatQ);
+    e.u.pool[1] = under; e.u.pool2[0] = reach; e.u.pool2[1] = reach; e.u.pool2[2] = since; e.u.pool2[3] = e.shown; e.u.pool3[1] = time;
+    // The light it throws on whoever is under it (summed into the one shared light below).
+    e.glow = (.5 + .45 * e.shown) * dim * (1 + e.flash * 1.6);
+    if (e.going) return;
+    // Motes rise off it from *mf*; at *f*, specks orbit it.
+    if (e.shown > .6 && !muffled && gpu()) {
+      e.motes ??= gpu()!.emitter('eco-mote', { at: { x: at.x, y: at.y, z: at.z }, rate: 10, spread: .18, life: [.9, 1.6], speed: .08, up: .25 });
+      e.motes.at = { x: at.x, y: at.y, z: at.z }; e.motes.rate = 8 + 10 * e.shown;
+    } else if (e.motes) { e.motes.remove(); e.motes = undefined; }
+    if (e.shown > 1.5 && !muffled && gpu()) {
+      const r = reachOf(e.shown) * ECO.unit * .55;
+      e.orbit ??= gpu()!.volume({ shape: 'sphere', mode: 'orbit', at, size: { x: r, y: r, z: r }, strength: 6, swirl: 5, distance: .12, range: .7, kinds: ['eco-orbit'] });
+      e.specks ??= gpu()!.emitter('eco-orbit', { at: { x: at.x, y: at.y, z: at.z }, rate: 26, spread: .4, life: [1.2, 2] });
+      e.orbit.at.set(at.x, at.y, at.z); e.specks.at = { x: at.x, y: at.y, z: at.z };
+    } else { e.orbit?.remove(); e.specks?.remove(); e.orbit = undefined; e.specks = undefined; }
+  }
   function update(dt: number) {
     time += dt;
+    aim();
     for (let i = tweens.length - 1; i >= 0; i--) {
       const tw = tweens[i], k = (time - tw.t0) / tw.dur;
       if (k < 0) continue;
       tw.step(Math.min(1, k));
-      if (k >= 1) { tweens.splice(i, 1); tw.end?.(); }
+      if (k >= 1) { tweens.splice(tweens.indexOf(tw), 1); tw.end?.(); }
     }
     // The compás: every eco sounds together on the beat.
     if (beatAt >= 0 && ecos.length) {
       if (time - beatAt >= ECO.beat) { beatAt += ECO.beat; for (const e of ecos) if (e.root.enabled) pulse(e); if (ecos.length === 3) chord(); }
     } else if (!ecos.length) beatAt = -1;
-    const cam = camera(), camRot = cam?.getRotation(), floor = sides().us.y;
+    const floor = sides().us.y;
     rewind = Math.max(0, rewind - dt);
     for (const e of [...ecos]) {
       e.left -= dt;
       if (e.left <= 0) { drop(e); continue; }
-      if (!e.root.enabled) continue;
-      e.shown += (e.grade - e.shown) * Math.min(1, dt * 5);
-      e.flash = Math.max(0, e.flash - dt * 2.2);
-      const appear = back((time - e.born) / .55), since = time - e.pulseAt;
-      const breath = since < .15 ? 1 - .1 * Math.sin(since / .15 * Math.PI / 2) : since < .4 ? .9 + .1 * (since - .15) / .25 : 1;
-      const pop = 1 + .22 * Math.sin(Math.PI * Math.min(1, Math.max(0, (time - e.swellAt) / .5)));
-      const bob = Math.sin((time - Math.max(0, beatAt)) / ECO.beat * Math.PI * 2) * .04;
-      const s = (ECO.scale[0] + (ECO.scale[2] - ECO.scale[0]) * e.shown / 2) * breath * pop;
-      e.root.setPosition(e.home.x, e.home.y + bob, e.home.z);
-      e.root.setLocalScale(s, s, s);
-      const dim = muffled ? .4 : 1, glow = (1 + e.flash * .8) * dim;
-      // Rings: as many as its grade, each opening in turn; they turn on their own axes, the gold running round.
-      e.rings.forEach((r, i) => {
-        const on = Math.min(1, Math.max(0, e.shown + 1 - i)) * appear;
-        r.setLocalScale(on, on, on);
-        r.rotateLocal(0, (e.kind === 'ostinato' ? 40 : 18) * (rewind > 0 ? -6 : 1) * (i % 2 ? -1 : 1) * dt, 0);
-        e.golds[i].enabled = !muffled;
-      });
-      if (e.kind === 'bordon') e.body.setLocalEulerAngles(Math.sin(time * .6) * 6, 0, Math.cos(time * .5) * 6);
-      e.mats.ring.emissiveIntensity = 2.2 * glow; e.mats.ring.update();
-      e.mats.gold.emissiveIntensity = 3 * glow; e.mats.gold.update();
-      e.mats.bead.emissiveIntensity = 5.5 * glow; e.mats.bead.update();
-      e.mats.halo.emissiveIntensity = (.8 + .3 * e.shown) * glow; e.mats.halo.update();
-      e.mats.shaft.emissiveIntensity = (.3 + .2 * e.shown) * dim * (1 + e.flash * .5); e.mats.shaft.update();
-      [e.mats.wing0, e.mats.wing1, e.mats.wing2, e.mats.wing3].forEach((m, j) => { m.emissiveIntensity = WING_LIGHT[j] * glow; m.update(); });
-      // The halo faces the camera; the shaft reaches the floor.
-      if (camRot) { e.halo.setRotation(camRot); e.halo.rotateLocal(90, 0, 0); }
-      const h = Math.max(.2, e.home.y + bob - floor) / s;
-      e.shaft.setLocalPosition(0, -h / 2, 0); e.shaft.setLocalScale(.5 + .2 * e.shown, h, .5 + .2 * e.shown);
-      // The light it throws on whoever is under it (summed into the one shared light below).
-      e.glow = (.5 + .45 * e.shown) * dim * (1 + e.flash * 1.6);
-      // The wings: arcs in the plane the camera sees, unfolding at *f*.
-      const unfold = Math.max(0, e.shown - 1);
-      e.wings.forEach((w, j) => {
-        w.enabled = unfold > .02;
-        if (!w.enabled || !cam) return;
-        // A torus arc runs from its +x round towards +z. Turned so +x points down the screen and +z out
-        // to this side, it leaves the eco level and curls up at its tip; set its centre above the eco by
-        // its radius so it starts at the eco. They breathe a little, each on its own.
-        const side = j < 4 ? -1 : 1, n = j % 4, u = unfold * (1 + Math.sin(time * 1.3 + n * .9) * .035), up = cam.up, right = cam.right;
-        const X = up.clone().mulScalar(-1), Z = right.clone().mulScalar(side), Y = new pc.Vec3().cross(Z, X);
-        basis.data.set([X.x, X.y, X.z, 0, Y.x, Y.y, Y.z, 0, Z.x, Z.y, Z.z, 0, 0, 0, 0, 1]);
-        w.setRotation(turn.setFromMat4(basis));
-        w.setLocalScale(u, u, u);
-        const r = WING_R[n] * s * u, p = e.root.getPosition();
-        w.setPosition(p.x + up.x * r + right.x * side * .05 * s, p.y + up.y * r + right.y * side * .05 * s, p.z + up.z * r + right.z * side * .05 * s);
-      });
-      // Motes rise off it from *mf*; at *f*, specks orbit it.
-      const at = e.root.getPosition();
-      if (e.shown > .6 && !muffled && gpu()) {
-        e.motes ??= gpu()!.emitter('eco-mote', { at: { x: at.x, y: at.y, z: at.z }, rate: 10, spread: .18, life: [.9, 1.6], speed: .08, up: .25 });
-        e.motes.at = { x: at.x, y: at.y, z: at.z }; e.motes.rate = 8 + 10 * e.shown;
-      } else if (e.motes) { e.motes.remove(); e.motes = undefined; }
-      if (e.shown > 1.5 && !muffled && gpu()) {
-        e.orbit ??= gpu()!.volume({ shape: 'sphere', mode: 'orbit', at, size: { x: .26, y: .26, z: .26 }, strength: 6, swirl: 5, distance: .12, range: .6, kinds: ['eco-orbit'] });
-        e.specks ??= gpu()!.emitter('eco-orbit', { at: { x: at.x, y: at.y, z: at.z }, rate: 26, spread: .4, life: [1.2, 2] });
-        e.orbit.at.set(at.x, at.y, at.z); e.specks.at = { x: at.x, y: at.y, z: at.z };
-      } else { e.orbit?.remove(); e.specks?.remove(); e.orbit = undefined; e.specks = undefined; }
+      if (e.root.enabled) draw(e, dt, floor);
+    }
+    for (const e of [...leaving]) {
+      e.fade -= dt / e.fadeFor;
+      if (e.fade <= 0) { leaving.splice(leaving.indexOf(e), 1); destroyEco(e); } else draw(e, dt, floor);
     }
   }
   /** The shared light: at the ecos' middle, weighted by how bright each is, as bright as them all (eased). */
@@ -464,7 +484,7 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     if (sum > 0) lamp.setPosition(at.mulScalar(1 / sum).add(new pc.Vec3(0, -.4, 0)));
     (lamp.light as pc.LightComponent).intensity = lit;
   }
-  /** Three ecos at once: lines of light join them for a beat, and the fight brightens on them. */
+  /** Three ecos at once: lines of light join them for a beat, each shows its figure, and the fight brightens on them. */
   function chord() {
     if (chordAt > time - 1) return;
     chordAt = time;
@@ -473,6 +493,7 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
       const a = ps[i], b = ps[(i + 1) % ps.length], d = a.distance(b);
       gpu()?.burst('eco-floor', { at: a, to: b, shape: 'line', count: Math.round(d * 60), life: [.8, 1], size: .8 });
     }
+    for (const e of ecos) strike(e, 1.2, 1);
     post?.pulse(.02, .45);
   }
 
@@ -482,19 +503,18 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     call, crescendo, contratiempo, tutti, dacapo, setMuffled,
     get muffled() { return muffled; },
     /** Development: where each eco is and how it is drawn now. */
-    debug() { return ecos.map(e => ({ kind: e.kind, grade: e.grade, shown: e.shown, at: e.root.getPosition().toString(), scale: e.root.getLocalScale().x, wings: e.wings.map(w => w.getPosition().toString()), light: e.glow })); },
+    debug() { return ecos.map(e => ({ kind: e.kind, grade: e.grade, shown: e.shown, at: e.root.getPosition().toString(), figure: e.figure, mode: e.mode, light: e.glow })); },
     get count() { return ecos.length; },
     /** How far the compás is between beats (0–1), for an icon. */
     get phase() { return beatAt < 0 ? 0 : ((time - beatAt) % ECO.beat) / ECO.beat; },
     /** Whether now is the off-beat (half a second either side of halfway). */
     get offbeat() { return beatAt >= 0 && Math.abs(((time - beatAt) % ECO.beat) - ECO.beat / 2) <= .5; },
     /** Every eco gone at once, nothing left in the air. */
-    clear() { for (const e of [...ecos]) { e.motes?.remove(); e.orbit?.remove(); e.specks?.remove(); e.root.destroy(); } ecos.length = 0; beatAt = -1; tweens.length = 0; post?.spotlight(0, []); for (const c of [...root.children]) c.destroy(); },
+    clear() { for (const e of [...ecos, ...leaving]) emitters(e); ecos.length = 0; leaving.length = 0; beatAt = -1; tweens.length = 0; post?.spotlight(0, []); for (const c of [...root.children]) c.destroy(); },
     destroy() {
       app.off('update', onUpdate);
-      for (const e of ecos) { e.motes?.remove(); e.orbit?.remove(); e.specks?.remove(); }
-      root.destroy(); lamp.destroy();
-      owned.meshes.forEach(m => { m.decRefCount(); if (m.refCount === 0) m.destroy(); }); owned.textures.forEach(t => t.destroy()); owned.materials.forEach(m => m.destroy());
+      for (const e of [...ecos, ...leaving]) emitters(e);
+      root.destroy(); lamp.destroy(); sheets.destroy();
     },
   };
 }
