@@ -39,7 +39,7 @@ const LIMP: Acts = Object.fromEntries(SOBREMESA_FRIENDS.map(f => [f, { kind: 'fr
 const UNMASK_SECONDS = 2.2;
 import { createPocket, type Pocket } from './pocket';
 import { ARENA_SPREAD, BOSS_ARENAS, createBossArena, type BossArena } from './boss-arena';
-import { THRONE_SPREAD, createThroneArena, onThroneStage, type ThroneArena } from './throne-arena';
+import { THRONE_INTRO, THRONE_LAYOUT, THRONE_SPREAD, THRONE_VIEW, createThroneArena, loadThroneLook, onThroneStage, throneLookReady, type ThroneArena, type ThroneCue } from './throne-arena';
 import { createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
@@ -120,6 +120,11 @@ export interface GameCallbacks {
    */
   onCuerdasSong?: (t: number, rate: number) => void;
   onBattleTargets: (targets: { id: string; x: number; y: number; visible: boolean }[]) => void;
+  /**
+   * La Reina Bubbaloo's entrance on her stage (src/throne-arena.ts): it has started, her name is up,
+   * the camera pulls back. The fight's screen shows its bars and her name in time with it.
+   */
+  onEntrance?: (moment: 'start' | 'title' | 'pull') => void;
   /** Where the companion's head is on screen, for speech bubbles; undefined when he is not shown. */
   onCompanionScreen: (at: { x: number; y: number } | undefined) => void;
   /** A shout from afar (`shout`) and where the shouter's head is on screen, every frame; undefined once it is over. */
@@ -241,6 +246,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   /** The pocket a fight moved to, while it goes on there (src/pocket.ts, `setBattle`). */
   let pocket: Pocket | BossArena | ThroneArena | undefined;
+  /** The Queen's stage, while her fight is on it (src/throne-arena.ts): its entrance drives the camera. */
+  let throne: ThroneArena | undefined;
+  /** Her entrance's camera shake: when the spotlight slammed on. */
+  let slammedAt = -1, throneLit = false;
   // In a pocket the floor is its own, flat; elsewhere the scene's.
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => pocket?.contains(x, z) ? pocket.floorAt() : scenery.groundHeight(x, z), effects);
   battleScene.setPulse(post.pulse);
@@ -2432,11 +2441,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const fight = next.encounter ?? encounterId;
       const wearers = next.allies.flatMap((a, i) => a.classId === 'papagato' ? [i] : []);
       const cast = { allies: next.allies.length, foes: standing(next.foes.map(f => f.kind)), cats: wearers.length ? wearers : catWalk ? [0] : [] };
-      // The Queen's last fight goes up onto her stage, built for it (src/throne-arena.ts).
+      // The Queen's last fight goes up onto her stage, built for it (src/throne-arena.ts), its textures fetched first.
+      if (onThroneStage(fight) && !throneLookReady()) return loadThroneLook().then(() => setBattle(next, effect, onImpact));
       if (onThroneStage(fight)) return diffuse(() => {
-        pocket = createThroneArena(app, { cast });
-        fightStage = { layout: 'open', pocket: true, spread: THRONE_SPREAD };
-        return applyBattle(next, effect, onImpact, pocket.centre);
+        const stage = throne = createThroneArena(app, { cast });
+        pocket = stage;
+        fightStage = { layout: THRONE_LAYOUT, pocket: true, spread: THRONE_SPREAD };
+        // Her entrance first (src/throne-arena.ts THRONE_INTRO): the fight waits for it, the camera is hers until it ends.
+        if (!reducedMotion.matches) { stage.beginIntro(); callbacks.onEntrance?.('start'); }
+        return applyBattle(next, effect, onImpact, stage.centre).then(() => new Promise<void>(resolve => {
+          const wait = () => stage.introTime === undefined || throne !== stage ? resolve() : requestAnimationFrame(wait);
+          wait();
+        }));
       });
       // A boss with its own arena fights there, built of the place's pieces, away from its waiting dressing (src/boss-arena.ts).
       const arena = environment.geo ? BOSS_ARENAS[fight] : undefined;
@@ -2466,6 +2482,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     if (!next && battle && pocket) return diffuse(() => {
       const settled = applyBattle(undefined, effect, onImpact);
+      if (throne) { throne = undefined; post.spotlight(0, []); }
       pocket?.destroy(); pocket = undefined; fightStage = { layout: 'open' };
       return settled;
     });
@@ -2661,6 +2678,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * old one (src/street-shift.ts): nothing jumps, the camera and everyone walking with him carry on.
    */
   function setEnvironment(id: EnvironmentId, destination?: Cell, exact?: { x: number; z: number }) {
+    // Near her, her figure and her stage's textures load quietly, so her fight starts without waiting (src/throne-arena.ts).
+    if (id === 'palacio-trono' || id === 'castillo-3') { void loadThroneLook(); void loadCastleModels(app, ['reina']); }
     if (battle) return;
     clearInput();
     // Out of a portal on the other side (`intoPortal`): whole again, and free to walk.
@@ -2796,6 +2815,54 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   function resize() { app.resizeCanvas(); }
   window.addEventListener('keydown', keydown);
+  // Her entrance can be skipped: Enter, Space or Escape go straight to the camera pulling back.
+  const skipEntrance = (event: KeyboardEvent) => {
+    if (throne?.introTime === undefined || throne.introTime >= THRONE_INTRO.pull || !['Enter', ' ', 'Escape'].includes(event.key)) return;
+    event.preventDefault(); event.stopImmediatePropagation(); throne.skipIntro();
+  };
+  window.addEventListener('keydown', skipEntrance, { capture: true });
+  app.on('destroy', () => window.removeEventListener('keydown', skipEntrance, { capture: true }));
+  /** A sound her stage asks for (`ThroneCue`): her heart, the footlights, the slam of the spotlight, the crown. */
+  function throneCue(cue: ThroneCue) {
+    if (cue === 'heartbeat') callbacks.onSound('thump', { volume: .55 });
+    else if (cue === 'lamp') callbacks.onSound('glass-tick', { volume: .28 });
+    else if (cue === 'charge') callbacks.onSound('charge', { volume: .7 });
+    else if (cue === 'flavour') callbacks.onSound('clink', { volume: .4 });
+    else if (cue === 'title' || cue === 'pull') callbacks.onEntrance?.(cue);
+    else if (cue === 'bang') {
+      callbacks.onSound('slam'); callbacks.onSound('thump', { volume: .9 });
+      slammedAt = performance.now();
+      post.pulse(.8, 1, .85);
+    }
+  }
+  /**
+   * Her entrance's camera (src/throne-arena.ts THRONE_INTRO), at `t` seconds: up the dark stage onto
+   * her throne's beating core, a cut to her face from below as the spotlight slams on, a slow push in
+   * while her crown lights, and a pull back over the party's shoulders into the fight's own view
+   * (`fight`, `height`), where the fight's camera takes over without a jump.
+   */
+  function throneShot(t: number, fight: pc.Vec3, height: number) {
+    const I = THRONE_INTRO, stage = throne!;
+    const queenUnit = battle?.foes.find(f => f.kind === 'reina');
+    const at = queenUnit ? battleScene.modelOf(queenUnit.id)?.getPosition() : undefined;
+    const core = stage.throneCore(), face = at ? at.clone().add(new pc.Vec3(0, 2.3, 0)) : core.clone();
+    // Low along the footlights as they come on, then up the dark stage onto the core.
+    const front = stage.footlightsAt();
+    const keys = [
+      { at: 0, target: front.clone().add(new pc.Vec3(-3.5, 0, 0)), height: 2.7, yaw: -28, pitch: -14 },
+      { at: I.glide, target: front.clone().add(new pc.Vec3(2.5, .4, -1.2)), height: 3.1, yaw: -16, pitch: -13 },
+      { at: I.bang, target: core.clone(), height: 2.8, yaw: -3, pitch: -12 },
+      { at: I.bang, target: face.clone().add(new pc.Vec3(0, -.3, 0)), height: 2.25, yaw: 12, pitch: -19 },
+      { at: I.pull, target: face.clone(), height: 1.7, yaw: 21, pitch: -21 },
+      { at: I.length, target: fight, height, yaw: 0, pitch: 0 },
+    ];
+    // The cut at the slam: before it, the first two keys; after it, the rest.
+    const k = t < I.glide ? 0 : t < I.bang ? 1 : t < I.pull ? 3 : 4, a = keys[k], b = keys[k + 1];
+    const raw = Math.min(1, Math.max(0, (t - a.at) / Math.max(.001, b.at - a.at)));
+    // Into the core it creeps; on her it drifts at an even pace; out to the fight it eases in and out.
+    const u = k === 1 || k === 4 ? raw * raw * (3 - 2 * raw) : raw;
+    return { target: a.target.clone().lerp(a.target, b.target, u), height: pc.math.lerp(a.height, b.height, u), yaw: pc.math.lerp(a.yaw, b.yaw, u), pitch: pc.math.lerp(a.pitch, b.pitch, u) };
+  }
   window.addEventListener('keyup', keyup);
   window.addEventListener('blur', clearInput);
   document.addEventListener('visibilitychange', clearInput);
@@ -2817,7 +2884,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   app.on('update', (dt: number) => {
     const delta = Math.min(dt, 0.05);
     stepDiffusion(dt);
-    pocket?.update(delta, !reducedMotion.matches);
+    // Her stage: whether she holds Aitor (her light turns), and what its entrance asks to sound.
+    throne?.setHeld(!!battle?.allies.some(a => a.castle?.held === 'reina'));
+    const cues = pocket?.update(delta, !reducedMotion.matches);
+    if (Array.isArray(cues)) for (const cue of cues) throneCue(cue);
     // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
     // second with software rendering); walking stays on `delta`, which keeps collisions safe.
     const shown = Math.min(dt, SHOW_STEP);
@@ -3091,9 +3161,14 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const shared = free && mate?.entity.enabled ? mate.entity.getPosition() : undefined;
     const between = shared ? player.getPosition().clone().lerp(player.getPosition(), shared, .5) : player.getPosition().clone();
     const apart = shared ? player.getPosition().distance(shared) : 0;
-    const target = battle && framed && cinematic ? cinematic.target.clone() : battle && faceZoom ? faceZoom.clone() : battle ? battleScene.frame.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
+    let target = battle && framed && cinematic ? cinematic.target.clone() : battle && faceZoom ? faceZoom.clone() : battle ? battleScene.frame.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
+    // Her entrance holds the camera (`throneShot`); it ends on the fight's own view.
+    const fightHeight = battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) * (throne ? THRONE_VIEW.wider : 1) : 0;
+    const shot = battle && throne?.introTime !== undefined ? throneShot(throne.introTime, target, fightHeight) : undefined;
+    if (shot) target = shot.target;
     // A pocket's diffusion swaps the scene at its peak: the camera is there at once, not on its way.
-    const cut = cameraCut; cameraCut = false;
+    // Her entrance's keys are smooth already: the camera follows them exactly, frame by frame.
+    const cut = cameraCut || !!shot; cameraCut = false;
     cameraTarget.lerp(cameraTarget, target, reducedMotion.matches || cut ? 1 : 1 - Math.exp(-delta * 7));
     // Among buildings the camera may tilt up to find Gerard and his partner, but only while both stand
     // still: walking, it holds whatever angle it has. Fights, cut-scenes and the overview bring it
@@ -3122,10 +3197,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // Up to 45° round the fight and 15° up or down, so the foes and the party always stay in view.
       // Big moments (a dual's two-shot and orbit, the Rayo) turn it a little more: battle-scene `lens`.
       const lens = battleScene.lens;
-      const yaw = (-battleLook.x * 45 + lens.yaw) * pc.math.DEG_TO_RAD, length = offset.length();
+      const yaw = (-battleLook.x * 45 + lens.yaw + (shot?.yaw ?? 0)) * pc.math.DEG_TO_RAD, length = offset.length();
       offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
       // A little lower than the street's camera, so faces read.
-      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch - 7) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch - 7 + (shot?.pitch ?? 0) + (throne ? THRONE_VIEW.lower : 0)) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
       offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
     } else { battleLook.set(0, 0); battleAim.set(0, 0); }
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
@@ -3135,7 +3210,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (!battle && !cinematic && (overview || !follow)) offset.mulScalar(Math.max(1, (spread + 40) / offset.length()));
     // Into a fight the camera gathers speed: it leaves slowly and closes in quicker and quicker,
     // swinging a little out on the way (battle-scene `entryProgress`); otherwise it eases as ever.
-    const entering = battleScene.entering && !reducedMotion.matches;
+    const entering = battleScene.entering && !reducedMotion.matches && !shot;
     const ease = entering ? 1 - Math.exp(-delta * (2 + 46 * battleScene.entryProgress ** 2)) : 1 - Math.exp(-delta * 6);
     if (entering) {
       const arc = Math.sin(battleScene.entryProgress * Math.PI);
@@ -3153,10 +3228,22 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     camera.lookAt(cameraTarget);
     // A blow shoves the whole picture: a sideways move after lookAt, so nothing swims or tilts.
     cameraKick.copy(battle ? battleScene.cameraKick : shift?.quake ?? pc.Vec3.ZERO);
+    // The slam of her spotlight shakes the picture, briefly.
+    const slam = slammedAt < 0 ? 0 : Math.max(0, 1 - (performance.now() - slammedAt) / 450);
+    if (slam > 0 && !reducedMotion.matches) cameraKick.add(new pc.Vec3((Math.random() - .5) * .16 * slam, (Math.random() - .5) * .12 * slam, 0));
     camera.translate(cameraKick);
+    // Her entrance's light on the picture: the rest of it darkened and drained round her core, then round her, until the camera pulls back.
+    if (shot && throne?.introTime !== undefined) {
+      const I = THRONE_INTRO, t = throne.introTime, queenUnit = battle?.foes.find(f => f.kind === 'reina');
+      const at = queenUnit ? battleScene.modelOf(queenUnit.id)?.getPosition() : undefined;
+      const amount = (t < I.bang ? .6 : .45) * (1 - Math.min(1, Math.max(0, (t - I.pull) / (I.length - I.pull))));
+      const core = throne.throneCore();
+      post.spotlight(amount, t < I.bang || !at ? [{ x: core.x, y: core.y, z: core.z, radius: 1.7 }] : [{ x: at.x, y: at.y + 1.8, z: at.z, radius: 1.9 }, { x: core.x, y: core.y, z: core.z, radius: 1.2 }]);
+      throneLit = true;
+    } else if (throneLit) { throneLit = false; post.spotlight(0, []); }
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = battle && framed && cinematic ? cinematic.height : battle && faceZoom ? Math.max(FACE_ZOOM, FACE_ZOOM / aspect) : battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = shot ? shot.height : battle && framed && cinematic ? cinematic.height : battle && faceZoom ? Math.max(FACE_ZOOM, FACE_ZOOM / aspect) : battle ? fightHeight : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
     viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches || cut ? 1 : ease);
     // Heavy blows punch the frame in for a moment (battle-scene `punch`).
     camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));

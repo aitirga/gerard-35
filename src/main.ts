@@ -743,6 +743,7 @@ try {
       if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),
+    onEntrance: moment => battleUI.entrance(moment),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onShout: shout => storyUI.shout(dialogue.open || exploration.active ? undefined : shout),
     onStep: (steps, cell) => {

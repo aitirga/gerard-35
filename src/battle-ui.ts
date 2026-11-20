@@ -190,6 +190,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.id = 'battle'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Combate por turnos');
   root.innerHTML = `
+    <div class="boss-intro" aria-hidden="true"><i class="boss-bar"></i><i class="boss-bar"></i><p class="boss-name"><small>El salón del trono</small><span>La Reina <em>Bubbaloo</em></span><small class="boss-sub">Lo que dejasteis en el patio.</small></p><p class="boss-skip" data-glyph-template="{confirm} Saltar"></p></div>
     <div class="dual-cinema" aria-hidden="true" hidden><span class="dual-veil"></span><i></i><b></b></div>
     <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-glyph-template="{notes} · El artilugio" hidden></p></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
@@ -2531,6 +2532,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       get('.battle-heading h1').innerHTML = FEAR_TITLES[encounter as keyof typeof FEAR_TITLES] ?? (encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : encounter === 'night-guard' ? 'De vuelta <em>a casa.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>');
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => plateHtml(f, i, i < foeCount)).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
+      // Her entrance (src/throne-arena.ts THRONE_INTRO, played by the game): the bars and her name over it, and no HUD until it ends.
+      const entrance = (encounter === 'reina' || encounter === 'reina-vuelta') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      root.toggleAttribute('data-intro', entrance); for (const key of ['introEnd', 'introRun', 'introName', 'introPull'] as const) delete root.dataset[key];
       root.querySelectorAll('.party-card').forEach(card => card.remove()); root.querySelectorAll('.anima-chips').forEach(chips => chips.removeAttribute('data-for'));
       get('.battle-pops').replaceChildren(); positions.clear();
       hud.dataset.battle = 'open'; outside().forEach(el => { el.inert = true; });
@@ -2539,8 +2543,18 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       void callbacks.change(state).then(() => {
         if (token !== generation || !state) return;
         delete root.dataset.entering; busy = false; render();
+        if (root.hasAttribute('data-intro')) {
+          root.removeAttribute('data-intro'); for (const key of ['introRun', 'introName', 'introPull'] as const) delete root.dataset[key]; root.dataset.introEnd = 'true';
+          setTimeout(() => { if (token === generation) delete root.dataset.introEnd; }, 900);
+        }
         for (const p of [1, 2] as PlayerId[]) withPlayer(p, focusFirst);
       });
+    },
+    /** La Reina Bubbaloo's entrance (src/game.ts): it has started (the skip hint), her name is up, the camera pulls back (the bars open). */
+    entrance(moment: 'start' | 'title' | 'pull') {
+      if (moment === 'start') root.dataset.introRun = 'true';
+      else if (moment === 'title') root.dataset.introName = 'true';
+      else { delete root.dataset.introName; root.dataset.introPull = 'true'; }
     },
     /** Redraws the turn line when a controller connects or leaves. */
     refresh() {
