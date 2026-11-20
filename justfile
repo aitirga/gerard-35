@@ -207,7 +207,7 @@ check: typecheck test
 perf *args:
     node scripts/perf-probe.mjs "$@"
 
-# The artilugio (docs/story-outline.md § The device): the Bomba-G board, built and flashed with the Arduino IDE's own arduino-cli
+# The artilugio (docs/story-outline.md § The device): its ESP32 board, built and flashed with the Arduino IDE's own arduino-cli
 arduino_cli := `command -v arduino-cli 2>/dev/null || for c in "/Applications/Arduino IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli" "/c/Program Files/Arduino IDE/resources/app/lib/backend/resources/arduino-cli.exe" "$HOME/AppData/Local/Programs/Arduino IDE/resources/app/lib/backend/resources/arduino-cli.exe"; do [ -x "$c" ] && { echo "$c"; break; }; done; true`
 artilugio_fqbn := "esp32:esp32:esp32"
 
@@ -221,17 +221,17 @@ artilugio-setup:
 
 # Compile the artilugio's firmware (firmware/artilugio/), with the example secrets if secrets.h is missing
 [group('Artilugio')]
-artilugio-build sketch="artilugio":
+artilugio-build:
     @[ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
-    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} firmware/{{ sketch }}
+    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} firmware/artilugio
 
 # Flash the board plugged in by USB (port: /dev/cu.usbserial-0001 on a Mac, COM3 on Windows; found if only one)
 [group('Artilugio')]
-artilugio-flash port="" sketch="artilugio":
+artilugio-flash port="":
     #!/usr/bin/env bash
     set -euo pipefail
     [ -n "{{ arduino_cli }}" ] || { printf 'Install the Arduino IDE (or arduino-cli) first.\n'; exit 1; }
-    if [ "{{ sketch }}" = artilugio ] && [ ! -f firmware/artilugio/secrets.h ]; then
+    if [ ! -f firmware/artilugio/secrets.h ]; then
       printf 'Falta firmware/artilugio/secrets.h: copia secrets.example.h y pon la Wi-Fi, la IP del servidor y la clave.\n'; exit 1
     fi
     port="{{ port }}"
@@ -240,7 +240,7 @@ artilugio-flash port="" sketch="artilugio":
       [ "$(printf '%s\n' "$ports" | grep -c .)" = 1 ] || { printf 'Choose the port: just artilugio-flash <port>\n%s\n' "$ports"; exit 1; }
       port=$ports
     fi
-    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} --upload --port "$port" firmware/{{ sketch }}
+    "{{ arduino_cli }}" compile --fqbn {{ artilugio_fqbn }} --upload --port "$port" firmware/artilugio
 
 # Watch what the board says over USB (115200 baud): notes, modes, Wi-Fi
 [group('Artilugio')]

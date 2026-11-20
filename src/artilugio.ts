@@ -1,5 +1,5 @@
 /**
- * The artilugio (docs/story-outline.md § The device): the Bomba-G board hidden in the real flat, and
+ * The artilugio (docs/story-outline.md § The device): the board hidden in the real flat, and
  * the one way its notes come into the game. A note (0–7: a button alone or a pair, `artilugioNote`)
  * comes from the real board through the game's server (artilugio.py, as server-sent events), or,
  * when the board is not there, from the keyboard (1–4, two at once for a pair) or player 1's pad

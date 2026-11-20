@@ -276,12 +276,11 @@ that the user owns and will hide in the real flat.
 
 ### The device (decided)
 
-**The board is the Bomba-G** (decided 2026-11-19): the surprise Aitor built in July 2026 on a
-Keyestudio FKS0001 ESP32 board, reused as far as it goes. Its firmware lives in
-`firmware/artilugio/`, grown from the Bomba-G's (`geraitor_domotic_house`,
-`gere_mini_surprise-270726`). What that board has: **4 coloured buttons, each with its LED** (red,
-yellow, green, blue), a **buzzer**, a **16×2 LCD**, a **4-digit display**, a **PIR** motion sensor and
-a mic. It has no colour screen, so *the colours that burst* are its four LEDs.
+**The board** (decided 2026-11-19): a Keyestudio FKS0001 ESP32 inventor board Aitor already had
+wired. Its firmware and its wiring are in `firmware/artilugio/`. What it uses: **4 coloured
+buttons, each with its LED** (red, yellow, green, blue), a **buzzer**, a **16×2 LCD** and a **PIR**
+motion sensor (its 4-digit display stays dark, its mic unused). It has no colour screen, so *the
+colours that burst* are its four LEDs.
 
 - **8 notes** (decided 2026-11-19, replaces the 10 below): the 4 buttons alone and **4 pairs**
   pressed together, the eight notes of a **G Phrygian dominant scale** from G to G (Aitor):

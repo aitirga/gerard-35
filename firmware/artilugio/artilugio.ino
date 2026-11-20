@@ -1,6 +1,6 @@
 /*
-  El artilugio (docs/story-outline.md § The device): the Bomba-G board of July 2026, hidden in the
-  real flat, as the last key of gerard-35.
+  El artilugio (docs/story-outline.md § The device): the board hidden in the real flat, as the last
+  key of gerard-35.
 
   Four coloured buttons play notes; two neighbours pressed together play a fifth, sixth, seventh or
   eighth (notes.h). Every note sounds on the buzzer, lights its buttons' LEDs, draws a bar on the LCD
@@ -22,17 +22,17 @@
   Library: "LiquidCrystal_I2C" by Frank de Brabander (`just artilugio-setup`).
 
   Jumper wires, each from the peripheral header to the yellow (S) pin of that IO row in the ESP32
-  Pin OUT block (the Bomba-G's map, plus the PIR):
+  Pin OUT block. Only the yellow row is wired (red is VCC, black GND), and the VCC switch is on 3V3:
 
       SW1 (red)    -> IO19        RED LED    -> IO25    BUZZER/SPEAKER -> IO5
-      SW2 (yellow) -> IO18        YELLOW LED -> IO26    PIR            -> IO35
+      SW2 (yellow) -> IO18        YELLOW LED -> IO26    PIR            -> IO34
       SW3 (green)  -> IO17        GREEN LED  -> IO27    SDA (LCD)      -> IO23
       SW4 (blue)   -> IO16        BLUE LED   -> IO33    SCL (LCD)      -> IO32
                                                         DIO (4-digit)  -> IO13
                                                         CLK (4-digit)  -> IO14
 
-  IO0, IO2 and IO12 stay free: they are strapping pins and a load on them can stop it booting.
-  firmware/i2c_scan and firmware/find_led_pin help when something stays dark.
+  The microphone (SOUND) is not used: its wire on IO34 goes to the PIR. IO0, IO2 and IO12 stay
+  free: they are strapping pins and a load on them can stop it booting.
 */
 
 #include <ESPmDNS.h>
@@ -52,14 +52,14 @@
 #endif
 
 static const int PIN_BUZZER = 5;
-static const int PIN_PIR = 35;
+static const int PIN_PIR = 34;
 static const int PIN_SDA = 23, PIN_SCL = 32;
 static const int PIN_TUBE_SDA = 13, PIN_TUBE_SCL = 14;
 // Red, yellow, green, blue: the order of notes.h.
 static const int PIN_BUTTON[BUTTONS] = {19, 18, 17, 16};
 static const int PIN_LED[BUTTONS] = {25, 26, 27, 33};
 
-static const char *HOSTNAME = "gere-artilugio";
+static const char *HOSTNAME = "artilugio";
 static const unsigned long DEBOUNCE_MS = 40;
 static const unsigned long NOTE_MS = 420;
 static const unsigned long LIT_MS = 260;
@@ -79,7 +79,7 @@ HTTPClient http;
 Mode mode = ASLEEP;
 bool online = false;
 
-// ——— The 4-digit tube (TM1650 on Wire1, the Bomba-G's driver): kept dark ———————————————————
+// ——— The 4-digit tube (TM1650 on Wire1): kept dark ————————————————————————————————————————
 static const uint8_t TUBE_DATA_BASE = 0x34, TUBE_CTRL_BASE = 0x24;
 
 void tubeDark() {

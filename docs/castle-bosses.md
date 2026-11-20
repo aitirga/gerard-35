@@ -127,7 +127,7 @@ order).
 
 ### With the artilugio
 
-The real one, in Gerard's hands: the Bomba-G board, four buttons and four pairs, eight notes
+The real one, in Gerard's hands: the board, four buttons and four pairs, eight notes
 (story-outline.md § The device). Nobody says what it is for. It wakes as she takes Aitor: its four
 lights go round on their own, on the real board and on the one in Gerard's hands on screen.
 

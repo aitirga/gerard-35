@@ -78,7 +78,7 @@ bulbs and limits: [docs/home-lights.md](docs/home-lights.md).
 ## Playing at home on Windows, with the artilugio
 
 Gerard plays on the Windows PC at home, with the game's own server on the home network, so the
-artilugio (the Bomba-G board, `firmware/artilugio/`, docs/story-outline.md § The device) can reach
+artilugio (its ESP32 board, `firmware/artilugio/`, docs/story-outline.md § The device) can reach
 it over the Wi-Fi.
 
 1. Install [Git for Windows](https://git-scm.com/download/win) (its Git Bash runs the justfile,

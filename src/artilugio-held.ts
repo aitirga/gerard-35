@@ -1,5 +1,5 @@
 /**
- * The artilugio in Gerard's hands (docs/story-outline.md § The device): the Bomba-G board as a
+ * The artilugio in Gerard's hands (docs/story-outline.md § The device): the real board as a
  * thing he holds, not a panel. Once the story has it, a note or someone moving in front of the real
  * board has him take it out of his pocket and hold it in both hands like a pad: his left thumb
  * presses red and yellow, his right thumb green and blue, both at once for a pair. Its LEDs light

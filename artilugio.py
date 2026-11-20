@@ -1,4 +1,4 @@
-"""El artilugio (docs/story-outline.md § The device): the Bomba-G board hidden in the real flat.
+"""El artilugio (docs/story-outline.md § The device): the board hidden in the real flat.
 
 The board never takes a connection from the game. It sends each note it plays and each movement its
 PIR sees here, and every half second asks what it is meant to be: asleep (mute, until the portal at

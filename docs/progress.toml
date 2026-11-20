@@ -614,7 +614,7 @@ priority = "final"
 grep = "export function heldAct"
 in = "src/battle.ts"
 
-# The artilugio is the Bomba-G board of July 2026 (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
+# The artilugio is an ESP32 board (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
 # (docs/story-outline.md § The device).
 [[block.item]]
 title = "Artilugio físico: ESP32 y firmware"
