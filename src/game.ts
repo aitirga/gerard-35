@@ -71,7 +71,8 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
-import { CASTLE_FIGHTS, CASTLE_SIZES, isCastleEncounter, isCastlePlace, type CastleEncounter, type CastleKind, type RoomEncounter } from './castle';
+import { CASTLE_FIGHTS, CASTLE_SIZES, isCastle, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type RoomEncounter } from './castle';
+import { castleFigure, castleModel, castleModelSettled, figureClips, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -566,7 +567,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const summitShade = new pc.StandardMaterial(); summitShade.diffuse.fromString('#120818'); summitShade.emissive.fromString('#3a1a56'); summitShade.emissiveIntensity = .6;
   summitShade.blendType = pc.BLEND_NORMAL; summitShade.depthWrite = false; summitShade.useMetalness = false; summitShade.update();
   /** `away`: seconds until a pack of young beaten comes back (story FEARS `respawn`). */
-  let hunters: { chaser: Chaser; model: pc.Entity; id: string; respawn: boolean; away: number }[] = [];
+  /** `clips`: a castle room's pupils drawn from their own figures, walking on their round and running after the party. */
+  let hunters: { chaser: Chaser; model: pc.Entity; id: string; respawn: boolean; away: number; clips?: FigureClips[] }[] = [];
   /** The hunter whose fight is on, so a pack of young beaten can go away for a while. */
   let fightingHunter: string | undefined;
   /**
@@ -1193,17 +1195,23 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     await new Promise<void>(resolve => { const wait = () => runs.every(r => r.finished) ? resolve() : requestAnimationFrame(wait); wait(); });
     if (who !== 'party' && who !== 'everyone') release();
   }
+  /** Who walks as a castle fight's group, in the order they stand. */
+  const castleKinds = (encounter: CastleEncounter): readonly CastleKind[] => encounter === 'aurelia' ? ['aurelia'] : encounter === 'direccion' ? ['directiva', 'directiva', 'directiva'] : encounter === 'reina' || encounter === 'reina-vuelta' ? ['reina'] : CASTLE_FIGHTS[encounter as RoomEncounter];
+  /** The figures a castle fight's group is drawn with (src/castle-models.ts). */
+  const castleFigures = (encounter: CastleEncounter) => castleKinds(encounter).map(kind => castleFigure(kind, yearOf(encounter)));
   /** A fear as it hunts the ramp; their young go in a little pack of the ring's own fear, small. */
-  function huntingModel(encounter: FearEncounter | CampingEncounter | CastleEncounter) {
-    // The castle: a room's pupils walk as the group they fight as, a boss stands alone. Gum for all of them, for now.
+  function huntingModel(encounter: FearEncounter | CampingEncounter | CastleEncounter, clips?: FigureClips[]) {
+    // The castle: a room's pupils walk as the group they fight as, a boss stands alone. Each its own figure once it has one, gum until then.
     if (isCastleEncounter(encounter)) {
-      const group = new pc.Entity('Alumnos');
-      const kinds: readonly CastleKind[] = encounter === 'aurelia' ? ['aurelia'] : encounter === 'direccion' ? ['directiva', 'directiva', 'directiva'] : encounter === 'reina' || encounter === 'reina-vuelta' ? ['reina'] : CASTLE_FIGHTS[encounter as RoomEncounter];
+      const group = new pc.Entity('Alumnos'), kinds = castleKinds(encounter), figures = castleFigures(encounter);
       kinds.forEach((kind, i) => {
-        const one = minion.root.clone(); one.enabled = true;
-        const size = CASTLE_SIZES[kind] * .9; one.setLocalScale(size, size, size);
+        const own = castleModel(figures[i]);
+        const one = (own?.template ?? minion.root).clone(); one.enabled = true;
+        const size = (own?.size ?? CASTLE_SIZES[kind]) * .9; one.setLocalScale(size, size, size);
         one.setLocalPosition((i - (kinds.length - 1) / 2) * .95, 0, i % 2 ? -.35 : .35);
         group.addChild(one);
+        const played = own && figureClips(one, own);
+        if (played) clips?.push(played);
       });
       return group;
     }
@@ -1373,9 +1381,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       hunters.push({ id: spec.id, model, respawn: false, away: 0, chaser });
     }
     for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
-      const model = huntingModel(spec.encounter);
-      castRoot.addChild(model); mergeHunter(model);
-      hunters.push({ id: spec.id, model, respawn: !!spec.respawn, away: 0, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }) });
+      // A castle room's pupils come out once their figures are at hand (or known to have none yet).
+      if (isCastleEncounter(spec.encounter)) {
+        const figures = castleFigures(spec.encounter);
+        if (!figures.every(castleModelSettled)) { void loadCastleModels(app, figures); continue; }
+      }
+      const clips: FigureClips[] = [], model = huntingModel(spec.encounter, clips);
+      // Skinned figures move by their bones: only the gum's loose pieces are merged into one mesh.
+      castRoot.addChild(model); if (!clips.length) mergeHunter(model);
+      hunters.push({ id: spec.id, model, respawn: !!spec.respawn, away: 0, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }), ...clips.length ? { clips } : {} });
     }
     let chased = false;
     for (const h of hunters) {
@@ -1408,7 +1422,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       chased ||= h.chaser.mode === 'chase';
       h.model.enabled = !battle;
       const at = scenery.toWorld(h.chaser.position.x, h.chaser.position.z);
-      const bob = h.chaser.mode === 'chase' ? Math.abs(Math.sin(clock * 14)) * .25 : Math.abs(Math.sin(clock * 5)) * .08;
+      // Figures with clips walk their round and run the chase on their own legs: no hop.
+      for (const clip of h.clips ?? []) clip.play(h.chaser.mode === 'chase' ? 'running' : h.chaser.mode === 'resting' ? 'rest' : 'walking', !reducedMotion.matches && !battle && !paused ? 1 : 0);
+      const bob = h.clips ? 0 : h.chaser.mode === 'chase' ? Math.abs(Math.sin(clock * 14)) * .25 : Math.abs(Math.sin(clock * 5)) * .08;
       h.model.setPosition(at.x, scenery.groundHeight(at.x, at.z) + bob, at.z);
       h.model.setLocalEulerAngles(0, h.chaser.facing, h.chaser.mode === 'chase' ? Math.sin(clock * 18) * 6 : 0);
     }
@@ -2365,6 +2381,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (next && !battle && next.encounter === 'sobremesa' && !battleScene.hasSobremesa) {
       return loadGlb(app, SOBREMESA_URL).then(model => battleScene.setSobremesa(model), error => console.warn('La Sobremesa:', error)).then(() => setBattle(next, effect, onImpact));
     }
+    // The castle's pupils with a figure of their own (src/castle-models.ts): the fight waits for the files the first time.
+    const figures = next && !battle ? next.foes.flatMap(f => isCastle(f.kind) ? [castleFigure(f.kind, f.castle?.year)] : []) : [];
+    if (figures.some(id => !castleModelSettled(id))) return loadCastleModels(app, figures).then(() => setBattle(next, effect, onImpact));
     if (next && !battle) {
       // What was measured on the way down has calibrated the model before its fight (src/modelo.ts).
       if (modelo && next.encounter === 'no-converge') calibrate(next, calibration(section.run));

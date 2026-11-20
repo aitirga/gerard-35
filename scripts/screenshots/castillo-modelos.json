@@ -1,0 +1,126 @@
+{
+  "title": "El castillo: los alumnos con sus modelos",
+  "description": "docs/castle.md § Bestiary. The castle's pupils drawn from their own figures (just character-3d, Meshy) where they have one, the palace minion where not yet: La Chivata and El Repetidor of the first year, El Castigado of the second and its run at the party, and a room's pupils patrolling the first floor. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "primero",
+      "delay": 1500,
+      "caption": "First year, La Chivata and El Repetidor in their own figures (Meshy), at their own heights: 1 m and 1.9 m"
+    },
+    {
+      "eval": "closeUp(foe('repetidor').id, 3.6)"
+    },
+    {
+      "shot": "repetidor-cerca",
+      "delay": 1200,
+      "caption": "El Repetidor up close: the crust like armour, the small face bubble sunk between the shoulders"
+    },
+    {
+      "eval": "closeUp(foe('chivata').id, 2.4)"
+    },
+    {
+      "shot": "chivata-cerca",
+      "delay": 1200,
+      "caption": "La Chivata up close: the rope-thin arm down to the floor"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2e%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "castigado",
+      "delay": 1500,
+      "caption": "Second year: El Castigado in its own figure, the bubble on its back; El Empollón still the minion until its model lands"
+    },
+    {
+      "eval": "closeUp(foe('castigado').id, 3.8)"
+    },
+    {
+      "shot": "castigado-cerca",
+      "delay": 1200,
+      "caption": "El Castigado up close"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "foe('castigado').castle.rage = 3"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "(() => { const el = document.querySelector('.move-callout'); return el && !el.hidden && el.querySelector('strong')?.textContent === \"Revienta\"; })()",
+      "timeout": 30000
+    },
+    {
+      "wait": 250
+    },
+    {
+      "shot": "castigado-carga",
+      "caption": "Revienta: it runs at the party on its own legs (Meshy's running clip), then back to its pose"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "(() => { const floor = window.gerard.story.place('castillo-1').palace.floor, room = floor.rooms.find(r => r.encounter === 'alumnos-1a') ?? floor.rooms.find(r => r.encounter); window.castleRoom = room; window.gerard.game.setEnvironment('castillo-1', { x: room.cell.x, z: room.rect.z + room.rect.d + 3 }); })()"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "shot": "planta",
+      "caption": "On the floor: a room's pupils walking their round in their own figures (Meshy's walking clip)"
+    }
+  ]
+}

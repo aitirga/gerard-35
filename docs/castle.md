@@ -191,7 +191,11 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 
 Placeholders and decisions taken for now (each one Aitor's to change):
 
-- Every pupil, Aurelià, Dirección and the Queen are the palace minion's model at their own size.
+- Each pupil is drawn from its own figure once it has one (`just character-3d`: src/monsters/ or
+  src/creatures/, loaded by `src/castle-models.ts` the first time a fight or a floor needs it), at
+  its own height, El Repetidor by his year; in a fight it runs on Meshy's clip when it runs up and
+  holds its pose standing, and on the floor it walks its round and runs the chase. Until its figure
+  lands it is the palace minion's model at its own size, as Aurelià, Dirección and the Queen are.
 - One hour a fight inside the castle (`COSTS.castle`); a boss beaten ends the day at nightfall.
 - The Queen comes back at 40 % of her PV (`CASTLE.reinaVuelta`).
 - Bernat's phone call stands in for the salón de juegos mission that finds the artilugio.

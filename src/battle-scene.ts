@@ -3,6 +3,7 @@ import { HeldArtilugio, PROP } from './artilugio-held';
 import { DICED, diceOf, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
+import { castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx } from './dice-fx';
 import { CUERDAS_SIZES } from './cuerdas-foes';
@@ -190,6 +191,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     limbRig?: LimbRig;
     /** Foes that are not dogs (the palace minion) wobble instead of sniffing. */
     minion: boolean;
+    /** A castle pupil drawn from its own file (src/castle-models.ts): its clips, running when it moves. */
+    figure?: FigureClips;
     /**
      * A giant of tiles and ladders (Vertitrón): it does not wobble, stretch or squash like the gum
      * creatures. It leans in heavy and slow from where it stands, and a blow only makes it shudder.
@@ -1906,10 +1909,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const standsAlone = (unit: Combatant) => !unit.part || unit.kind === 'lampara';
   function sourceOf(unit: Combatant, i: number, party: boolean) {
     const fear = !party && unit.kind ? fears?.templates.get(unit.kind) : undefined;
-    // The castle's foes are gum, hers: the minion's model at their own size, until each has one.
+    // The castle's foes are gum, hers: each its own figure once it has one, the minion's model at their own size until then.
+    const own = ownFigure(unit, party);
     const minion = !party && (!!fear || ((unit.kind === 'minion' || unit.kind === 'guardian' || isCastle(unit.kind)) && !!minionTemplate));
-    return party ? partyModel(unit.id) : fear ?? (minion ? minionTemplate! : dogs[i % dogs.length]);
+    return party ? partyModel(unit.id) : own?.template ?? fear ?? (minion ? minionTemplate! : dogs[i % dogs.length]);
   }
+  /** A castle foe's own figure, if it has one loaded (src/castle-models.ts): El Repetidor's by his year. */
+  const ownFigure = (unit: Combatant, party: boolean) => !party && isCastle(unit.kind) ? castleModel(castleFigure(unit.kind, unit.castle?.year)) : undefined;
   /**
    * Vertitrón's eye (a part, `vertigo-ojo`): a fighter with no model of its own. It is the eye in
    * Vertitrón's chest, so blows, plates, fire and particles go there; it stands, for whoever runs at
@@ -2012,6 +2018,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const body = party ? model.findByName('Cuerpo') as pc.Entity : null;
     const arms = (body?.children.filter(c => c.name === 'Brazo') ?? []) as pc.Entity[];
     if (minion) { const size = foeScale(unit.kind, unit.layers ?? 0, !!fear); model.setLocalScale(size, size, size); }
+    // A pupil with a figure of its own stands its own height: so many minions tall.
+    const own = ownFigure(unit, party);
+    if (own) model.setLocalScale(own.size, own.size, own.size);
     const legs = (body?.children.filter(c => c.name === 'Pierna') ?? (minion ? [] : model.children.filter(c => c.name === 'Pata'))) as pc.Entity[];
     const yaw = party ? (source.findByName('Cuerpo') as pc.Entity).getLocalEulerAngles().y : source.getEulerAngles().y;
     if (body) body.setLocalEulerAngles(0, 0, 0);
@@ -2040,6 +2049,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
+    if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); }
     if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
     if (isCamping(unit.kind)) built.camp = unit.kind;
@@ -2493,6 +2503,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const attacking = !!motion && id === effect?.actor;
         const stepping = attacking ? (t > .12 && t < CONTACT_SECONDS) || (t > .62 && t < 1.06) : movingIn || pivoting;
         const gait = f.walk.update(dt, stepping, animate, attacking ? .3 : .38);
+        // A pupil's own figure runs while it runs up and back, and holds its pose standing.
+        f.figure?.play(stepping && animate ? 'running' : 'rest', animate ? 1 : 0);
         const stride = gait.stride;
         let hop = 0;
         if (motion && id === effect?.actor) {
