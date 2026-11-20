@@ -65,11 +65,13 @@ const CUT_RATE = 8;
  */
 const SINK = { floor: 0.8, rate: 2.2, hold: 1.4 };
 /**
- * What a building down to its foundations shows on top (`foundationCap`): its outer walls' stumps,
- * `wall` metres thick in its plinth's stone made `stone` times darker, round a floor of packed earth in
- * `earth`, `drop` metres lower.
+ * What a building down to its foundations shows on top (`foundationCap`), like a plan cut through it:
+ * the stumps of its outer walls, `wall` metres thick, their cut face in its plinth's stone; inside
+ * them, `drop` metres lower, a floor of flags in the same stone `floor` times as bright; and on that
+ * floor the stumps of its inner walls, `inner` metres thick and `step` metres lower than the outer
+ * ones, dividing it into rooms about `room` metres across, each wall with a doorway `door` metres wide.
  */
-const CAP = { wall: 0.45, drop: 0.45, stone: 0.82, earth: '#4f483f' };
+const CAP = { wall: 0.55, inner: 0.28, step: 0.06, drop: 0.45, floor: 0.62, room: 5.4, door: 1.1 };
 /** A colour `k` times as bright. */
 const darker = (hex: string, k: number) => { const c = new pc.Color().fromString(hex); return new pc.Color(c.r * k, c.g * k, c.b * k).toString(false); };
 /** Where a building is cut while it stands whole: above anything. */
@@ -96,6 +98,7 @@ uniform geoCutToCamera: vec3f;
 uniform geoCutStyle: f32;
 uniform geoCutOpen: f32;
 uniform geoCutPlane: f32;
+uniform geoCutLean: f32;
 var<private> geoCutGlow: f32 = 0.0;
 var<private> geoCutShade: f32 = 0.0;
 `;
@@ -111,7 +114,8 @@ if (uniform.geoCutOpen > 0.0) {
   // This surface's own plane, turned to the camera: Gerard must be behind it for it to hide him.
   let cutFace = normalize(cross(dpdx(vPositionW), dpdy(vPositionW)));
   let cutBehind = dot(cutOffset, cutFace) * sign(dot(cutFace, uniform.geoCutToCamera));
-  if (cutAlong > ${CUT.near} && cutBehind > ${CUT.lean}) {
+  // A wall opens only the faces Gerard is behind (geoCutLean); foliage overhead opens right through, its underside too.
+  if (cutAlong > ${CUT.near} && cutBehind > uniform.geoCutLean) {
     let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
     let cutStub = vPositionW.y - (uniform.geoCutFocus.y + ${CUT.stub});
     let cutNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
@@ -1663,9 +1667,10 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   }
   /**
    * The top of a building's foundations, seen once it comes down to them, like a plan cut through it:
-   * the stumps of its outer walls `CAP.wall` thick in its plinth's stone round its footprint, and inside
-   * them, `CAP.drop` lower, a floor of packed earth. It goes down with the cut (`sinkTo`), so the
-   * building never shows hollow.
+   * the stumps of its outer walls `CAP.wall` thick in its plinth's stone round its footprint, inside
+   * them, `CAP.drop` lower, a floor of stone flags, and on it the stumps of inner walls that divide it
+   * into rooms with their doorways (`rooms`). It goes down with the cut (`sinkTo`), so the building
+   * never shows hollow.
    */
   function foundationCap(b: GeoBuilding, pivot: pc.Entity) {
     const poly = b.poly, ccw = signedArea(poly) > 0, sign = ccw ? 1 : -1;
@@ -1685,16 +1690,73 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       rim.quad(at(a2, 0), at(c2, 0), at(c2, -drop), at(a2, -drop), [inX, 0, inZ], [0, 0], [run, 0], [run, -CAP.drop], [0, -CAP.drop]);
     }
     if (floor.empty) return;
-    const stone = mat(`Cimientos ${b.id}`, darker(b.base ?? '#a69a86', CAP.stone), 0.05), texture = b.materials?.base;
-    if (texture) onLoad.push(() => dress(stone, texture, darker(b.base ?? '#a69a86', CAP.stone)));
-    const earth = mat('Suelo de los cimientos', CAP.earth, 0.02);
-    if (scene.textures?.terra) onLoad.push(() => dress(earth, 'terra', CAP.earth));
+    // An inner wall's stump from `a` to `c` (grid space): its cut face a little under the outer walls', its four sides down to the floor.
+    const half = CAP.inner / 2 / cellM, top = -CAP.step / cellM, tall = CAP.drop - CAP.step;
+    const stump = (a: GeoPoint, c: GeoPoint) => {
+      const len = Math.hypot(c[0] - a[0], c[1] - a[1]), ux = (c[0] - a[0]) / len, uz = (c[1] - a[1]) / len, nx = -uz, nz = ux, run = len * cellM;
+      const a1: GeoPoint = [a[0] + nx * half, a[1] + nz * half], a2: GeoPoint = [a[0] - nx * half, a[1] - nz * half];
+      const c1: GeoPoint = [c[0] + nx * half, c[1] + nz * half], c2: GeoPoint = [c[0] - nx * half, c[1] - nz * half];
+      rim.quad(at(a1, top), at(c1, top), at(c2, top), at(a2, top), [0, 1, 0], flat(a1), flat(c1), flat(c2), flat(a2));
+      rim.quad(at(a1, top), at(c1, top), at(c1, -drop), at(a1, -drop), [nx, 0, nz], [0, 0], [run, 0], [run, -tall], [0, -tall]);
+      rim.quad(at(a2, top), at(c2, top), at(c2, -drop), at(a2, -drop), [-nx, 0, -nz], [0, 0], [run, 0], [run, -tall], [0, -tall]);
+      rim.quad(at(a1, top), at(a2, top), at(a2, -drop), at(a1, -drop), [-ux, 0, -uz], [0, 0], [CAP.inner, 0], [CAP.inner, -tall], [0, -tall]);
+      rim.quad(at(c1, top), at(c2, top), at(c2, -drop), at(c1, -drop), [ux, 0, uz], [0, 0], [CAP.inner, 0], [CAP.inner, -tall], [0, -tall]);
+    };
+    for (const [a, c] of rooms(poly)) stump(a, c);
+    const stone = mat(`Cimientos ${b.id}`, b.base ?? '#a69a86', 0.05), flags = mat(`Suelo de los cimientos ${b.id}`, darker(b.base ?? '#a69a86', CAP.floor), 0.04), texture = b.materials?.base;
+    if (texture) onLoad.push(() => { dress(stone, texture, b.base ?? '#a69a86'); dress(flags, texture, darker(b.base ?? '#a69a86', CAP.floor)); });
     const cap = new pc.Entity('Cimientos');
-    const instances = [[rim, stone], [floor, earth]].map(([builder, m]) => { const mesh = (builder as MeshBuilder).mesh(device); meshes.push(mesh); return new pc.MeshInstance(mesh, m as pc.Material); });
-    cap.addComponent('render', { meshInstances: instances, castShadows: false, receiveShadows: true });
+    const instances = [[rim, stone], [floor, flags]].map(([builder, m]) => { const mesh = (builder as MeshBuilder).mesh(device); meshes.push(mesh); return new pc.MeshInstance(mesh, m as pc.Material); });
+    // The stumps shade the floor and the street beside them, as the foot of any wall does.
+    cap.addComponent('render', { meshInstances: instances, castShadows: true, receiveShadows: true });
     cap.enabled = false;
     pivot.addChild(cap);
     buildingCuts.get(pivot)!.foundations!.cap = cap;
+  }
+  /**
+   * The inner walls of a footprint, as runs to draw (grid space): a spine along its longest wall, a
+   * little off the middle, and walls across it every `CAP.room` metres or so, those behind the spine
+   * out of step with those before it, as the rooms of a real plan are. Each wall is cut to the
+   * footprint, its ends in the outer walls, and opens a doorway `CAP.door` wide.
+   */
+  function rooms(poly: GeoPoint[]) {
+    let best = 0, ux = 1, uz = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], c = poly[(i + 1) % poly.length], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      if (len > best) { best = len; ux = (c[0] - a[0]) / len; uz = (c[1] - a[1]) / len; }
+    }
+    const vx = -uz, vz = ux, along = poly.map(p => p[0] * ux + p[1] * uz), over = poly.map(p => p[0] * vx + p[1] * vz);
+    const u0 = Math.min(...along), u1 = Math.max(...along), v0 = Math.min(...over), v1 = Math.max(...over);
+    const point = (u: number, v: number): GeoPoint => [u * ux + v * vx, u * uz + v * vz];
+    const margin = (CAP.wall - 0.1) / cellM, door = CAP.door / cellM, stepLen = 0.1 / cellM, runs: [GeoPoint, GeoPoint][] = [];
+    /** Whether a point of an inner wall lies well inside the footprint: clear of the outer walls on every side. */
+    const within = (p: GeoPoint) => [[0, 0], [margin, 0], [-margin, 0], [0, margin], [0, -margin]].every(([dx, dz]) => inside(p[0] + dx, p[1] + dz, poly));
+    /** The wall from `a` to `c`, cut to the footprint, with its doorway `at` of the way along what is left of it. */
+    const wallRun = (a: GeoPoint, c: GeoPoint, at: number) => {
+      const len = Math.hypot(c[0] - a[0], c[1] - a[1]), n = Math.floor(len / stepLen), on = (k: number): GeoPoint => [a[0] + (c[0] - a[0]) * k / n, a[1] + (c[1] - a[1]) * k / n];
+      if (n < 2) return;
+      const inRuns: [number, number][] = [];
+      let start = -1;
+      for (let k = 0; k <= n; k++) {
+        const ok = within(on(k));
+        if (ok && start < 0) start = k;
+        if ((!ok || k === n) && start >= 0) { inRuns.push([start, ok ? k : k - 1]); start = -1; }
+      }
+      for (const [s, e] of inRuns) {
+        const gap = Math.round(door / stepLen), mid = s + Math.round((e - s) * at);
+        // Too short for a doorway and a wall each side of it: one plain wall.
+        if (e - s < gap * 2.2) { if (e - s > gap * 1.5) runs.push([on(s), on(e)]); continue; }
+        const g0 = Math.min(Math.max(mid - gap / 2, s + gap * 0.5), e - gap * 1.5);
+        runs.push([on(s), on(Math.round(g0))], [on(Math.round(g0 + gap)), on(e)]);
+      }
+    };
+    const length = (u1 - u0) * cellM, width = (v1 - v0) * cellM;
+    const spine = width > 7 ? v0 + (v1 - v0) * 0.44 : undefined;
+    if (spine !== undefined) wallRun(point(u0, spine), point(u1, spine), 0.3);
+    const count = Math.max(1, Math.round(length / CAP.room));
+    for (let k = 1; k < count; k++) wallRun(point(u0 + (u1 - u0) * k / count, v0), point(u0 + (u1 - u0) * k / count, spine ?? v1), 0.55);
+    if (spine !== undefined) for (let k = 0; k < count; k++) wallRun(point(u0 + (u1 - u0) * (k + 0.5) / count, spine), point(u0 + (u1 - u0) * (k + 0.5) / count, v1), 0.4);
+    return runs;
   }
   /**
    * What stands on a lived-in terrat, read from above: each house of the row has its stair head
@@ -2046,6 +2108,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
             group.triangles.push(v.x, v.y, v.z);
           }
           group.instances.push(instance); instance.setParameter('geoCutOpen', 0);
+          if (cut === 'canopy') instance.setParameter('geoCutLean', -1e6);
         }
         return e;
       },
@@ -2285,6 +2348,7 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   const cutFocus = uniform('geoCutFocus'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
   // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
   const cutPlane = uniform('geoCutPlane');
+  uniform('geoCutLean').setValue(BUILDING_CUT_LEAN);
   cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue(NO_PLANE);
   /** A building coming down to its foundations or rising again: the plane its cut stands at, its cap there, its loose pieces gone while it is down. */
   function sinkTo(cut: BuildingCut, down: Foundations, top: number, sink: number) {

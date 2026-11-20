@@ -1,6 +1,6 @@
 {
-  "title": "Alegia: el ayuntamiento baja a sus cimientos",
-  "description": "docs/graphics.md § Seeing Gerard behind things, src/geo-scenery.ts `SINK`. Behind the town hall, where Marta's piano is, it and its neighbour come down to their foundations instead of opening a window; out in front on San Juan kalea they stand whole. Run it with --gpu.",
+  "title": "Alegia: el ayuntamiento baja a sus cimientos, y la pérgola de Txintxarri",
+  "description": "docs/graphics.md § Seeing Gerard behind things, src/geo-scenery.ts `SINK`. Behind the town hall, where Marta's piano is, it and its neighbour come down to their foundations instead of opening a window; out in front on San Juan kalea they stand whole. Then the plan its foundations show up close, and the wisteria pergola whole and with Gerard under it (src/landmarks/pergola.ts). Run it with --gpu --scale 2.",
   "steps": [
     {
       "open": "/?mission=marta&part=start"
@@ -47,6 +47,50 @@
     {
       "shot": "otra-vez",
       "caption": "Back behind it: down again"
+    },
+    {
+      "eval": "window.__w = window.gerard.game.app.root.findByName('Pérgola').getPosition(); window.gerard.game.frame({ x: window.__w.x + 12, y: 0.5, z: window.__w.z + 8 }, 9)"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "planta",
+      "delay": 300,
+      "caption": "The foundations up close: outer walls' stumps, a floor of flags, inner walls with their doorways"
+    },
+    {
+      "eval": "window.gerard.game.frame({ x: window.__w.x, y: 1.5, z: window.__w.z }, 5)"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "pergola",
+      "delay": 300,
+      "caption": "The pergola whole: cushions of wisteria leaves, stems twisting up two posts"
+    },
+    {
+      "eval": "window.gerard.game.standAt({ x: 80, z: 54 })"
+    },
+    {
+      "wait": 5000
+    },
+    {
+      "shot": "bajo-la-pergola",
+      "delay": 300,
+      "caption": "Gerard under it: leaves and joists open round him, posts and beams stay"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "bajo-la-pergola-lejos",
+      "delay": 300,
+      "caption": "The same from the game's own camera"
     }
   ]
 }
