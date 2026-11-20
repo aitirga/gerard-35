@@ -151,9 +151,9 @@ friends listed in `docs/story-outline.md`, some 12 to 16 by the end, 3 to 5 arou
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 17, and 3 for the definitiva |
-| Tecnópata's tree | 11, and 3 for the definitiva |
-| Each shared ánima | 2 for maná, 3 for the definitiva |
+| Matemágico's tree | 17, and 2 for the definitiva |
+| Tecnópata's tree | 11, and 2 for the definitiva |
+| Each shared ánima | 2 for maná, 2 for the definitiva |
 | All of it, with three shared ánimas | 49 |
 
 So at the end the party holds about a third of it, and re-does the split before a hard fight.
@@ -398,7 +398,7 @@ The castle these stages belong to, and what each boss opens in full: [castle.md]
 
 ## Definitivas
 
-Decided 2026-11-14 (Aitor): the definitiva is **bought at the jar** (3 ecos, `<ánima>:definitiva`),
+Decided 2026-11-14 (Aitor): the definitiva is **bought at the jar** (2 ecos since 2026-11-20, `<ánima>:definitiva`),
 and each ánima has **a condition that, met in a fight, unlocks it** there. The rest is a proposal.
 
 - **The condition is the ánima played well**: its own mechanic taken to its end, something seen on

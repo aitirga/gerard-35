@@ -243,7 +243,7 @@ or Matemágico (Gerard). To design in their folders, not here (§ Open).
 
 ## Definitiva: Un golpe de dados
 
-Bought at the jar (3 ecos). The name is Mallarmé's: *Un golpe de dados jamás abolirá el azar*.
+Bought at the jar (2 ecos). The name is Mallarmé's: *Un golpe de dados jamás abolirá el azar*.
 
 | | |
 | --- | --- |

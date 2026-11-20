@@ -242,7 +242,7 @@ What each one is for in the loop:
 ## Definitiva: Da capo
 
 *Da capo*: in a score, "back to the beginning". Aitor's (2026-11-20): it lets the party use the
-dual attacks again. Bought at the jar (3 ecos) once the castle's second boss falls
+dual attacks again. Bought at the jar (2 ecos) once the castle's second boss falls
 ([`../README.md`](../README.md) § Definitivas).
 
 | | |
