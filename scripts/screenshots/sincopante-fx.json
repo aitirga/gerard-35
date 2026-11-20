@@ -1,0 +1,114 @@
+{
+  "title": "Sincopante · los ecos en el motor",
+  "description": "Sincopante's ecos in the effects lab over Las cuerdas' first fight, Gerard and Aitor against La Lealtad and her Eco (?fxlab, src/eco-fx.ts, src/eco-lab.ts; docs/animas/sincopante/README.md § Look and interface). Each moment is played on its own and caught as it happens: an Ostinato eco forming over the party, Bordón's halo, the beat, Crescendo dimming the fight round them, three ecos, all at f with their wings, the chord, an accent off the beat, Da capo, the ecos muffled, and Tutti. Only the look, never a fight's numbers. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fxlab&battle=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22cuerdas-lealtad%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!window.ecoLab && !!document.querySelector('.fx-lab [data-field=target] option')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('.fx-lab [data-act=fold]').click(); window.ecoLab.act('ostinato')"
+    },
+    {
+      "shot": "ostinato",
+      "delay": 380,
+      "caption": "Ostinato: the blow, a fine beam with two strands twisting round it, closes a halo on La Lealtad"
+    },
+    {
+      "shot": "ostinato-eco",
+      "delay": 1300,
+      "caption": "Its eco settles over the party: one ring at p, its bell open towards the foes, a shaft of light to the floor"
+    },
+    {
+      "eval": "window.ecoLab.act('bordon')"
+    },
+    {
+      "shot": "bordon",
+      "delay": 1500,
+      "caption": "Bordón: a halo comes down over Gerard and its eco settles beside the first, rings lying flat, its light warmer"
+    },
+    {
+      "eval": "new Promise(done => { const t = setInterval(() => { if (window.ecoLab.fx.phase > .9) { clearInterval(t); done(0); } }, 16); })"
+    },
+    {
+      "shot": "pulso",
+      "delay": 700,
+      "caption": "The beat: every eco lets a ring go, a halo closes on the foe, another falls over the ally, ripples run over the floor"
+    },
+    {
+      "eval": "window.ecoLab.act('crescendo')"
+    },
+    {
+      "shot": "crescendo",
+      "delay": 300,
+      "caption": "Crescendo: the ecos swell to mf (two rings, motes rising) and the fight dims and greys round them for a moment"
+    },
+    {
+      "eval": "window.ecoLab.act('ostinato')"
+    },
+    {
+      "shot": "tres",
+      "delay": 1700,
+      "caption": "A third eco: three in the air, low, middle and high, a chord on a stave"
+    },
+    {
+      "eval": "window.ecoLab.act('crescendo'); setTimeout(() => window.ecoLab.act('crescendo'), 700)"
+    },
+    {
+      "shot": "fortissimo",
+      "delay": 1500,
+      "caption": "All three at f: three rings each, wings of light at their sides, specks orbiting them"
+    },
+    {
+      "eval": "new Promise(done => { const t = setInterval(() => { if (window.ecoLab.fx.phase > .93) { clearInterval(t); done(0); } }, 16); })"
+    },
+    {
+      "shot": "acorde",
+      "delay": 650,
+      "caption": "The beat at f with three ecos: the chord, lines of light joining them, beams to every foe, a halo on each ally, ripples across the whole side"
+    },
+    {
+      "eval": "new Promise(done => { const t = setInterval(() => { if (window.ecoLab.fx.offbeat) { clearInterval(t); done(0); } }, 16); })"
+    },
+    {
+      "eval": "window.ecoLab.fx.contratiempo()"
+    },
+    {
+      "shot": "contratiempo",
+      "delay": 320,
+      "caption": "A contratiempo: pressed in the off-beat, every eco sounds again at once, accented in gold"
+    },
+    {
+      "eval": "window.ecoLab.act('dacapo')"
+    },
+    {
+      "shot": "dacapo",
+      "delay": 650,
+      "caption": "Da capo: every ring turns backwards, a wave of nácar runs in over the party, the fight dims round the ecos"
+    },
+    {
+      "eval": "window.ecoLab.act('apagados')"
+    },
+    {
+      "shot": "apagados",
+      "delay": 900,
+      "caption": "Muffled: their wearer is in another ánima; the ecos go on, under half their light, no gold, no motes"
+    },
+    {
+      "eval": "window.ecoLab.act('apagados'); setTimeout(() => window.ecoLab.act('tutti'), 600)"
+    },
+    {
+      "shot": "tutti",
+      "delay": 1350,
+      "caption": "Tutti: the ecos gather over the foes into one great halo, the fight darkened and greyed round them, a column of warm light"
+    },
+    {
+      "shot": "tutti-cae",
+      "delay": 420,
+      "caption": "Tutti lands: the halo closes on every foe, motes rise in the warm light"
+    }
+  ]
+}

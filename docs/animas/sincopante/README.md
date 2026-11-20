@@ -1,152 +1,569 @@
 # Sincopante
 
-Status: designing (first proposal, 2026-11-14: nothing here is decided unless it says so) · Comes
-from: Marta's mission, [`docs/quests/marta.md`](../../quests/marta.md)
+Status: designed whole 2026-11-20 around Aitor's direction of that day (floating ecos that work
+for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), and
+reworked the same evening with his answers (no feeding; muffled ecos when switching; Marta's voice
+in them). It is waiting for his yes to the whole. Nothing is built: the game only has Marta's light,
+a placeholder · Comes from:
+Marta's mission, [`docs/quests/marta.md`](../../quests/marta.md)
+
+What is **decided** says so and by whom. Everything else is a proposal, and its numbers are first
+guesses ([`../README.md`](../README.md) § Order of work).
+
+**Decided by Aitor**
+
+| When | What |
+| --- | --- |
+| 2026-11-07 | **Skills like hers: song and timing**, in the same spirit as her boss (`docs/quests/marta.md` § Ánima) |
+| 2026-11-14 | The name is **Sincopante** |
+| 2026-11-20 | **Ecos floating over the party that do things for it, support too** |
+| 2026-11-20 | ***Crescendo***: a skill that makes the ecos already standing stronger. The ones that cure cure everyone, the ones that strike strike harder, and they are seen to grow |
+| 2026-11-20 | It uses **the astral: magic damage of no element** (as Dadista, [`../dadaista/README.md`](../dadaista/README.md)) |
+| 2026-11-20 | ***Da capo*** is its definitiva, and **it lets the party use the dual attacks again** |
+| 2026-11-20 | The look: **the ecos' geometry, with an ethereal, magical, angelic air** |
+| 2026-11-20 | **No feeding the eco**: the 2026-11-14 idea is cut |
+| 2026-11-20 | **The ecos keep sounding when their wearer switches ánima, but muffled** |
+| 2026-11-20 | **Marta's voice is the ecos' voice**, worked into them **without getting in the way of the fight's song** |
+
+**What the 2026-11-14 proposal loses** (all of it was a proposal, never decided):
+
+- **Feeding the eco** is cut (Aitor confirmed it, 2026-11-20). In that proposal the eco repeated
+  whatever an ally aimed at it. That cost the allies turns, which is the opposite of ecos working
+  for the party. *Acompañamiento* keeps the idea of repeating a blow, as support.
+- **Redoble, Canon and Coda** are cut. Crescendo restarts the ecos' clocks, so Redoble has nothing
+  left to do. Several ecos are allowed from level 1, so Canon goes. Tutti spends the ecos, so Coda
+  goes.
+- **Renamed**: Eco de guerra is now *Ostinato* and Eco curativo is now *Bordón*.
+- ***A contratiempo* changed**: the blow now goes between two beats, in the gap, which is what
+  La Voz teaches since her 2026-11-20 rework.
 
 ## Identity
 
-- **Sincopante** (name decided 2026-11-14): Marta's ánima. Whoever wears it does not strike on
-  the beat: they leave an **eco** on the field that keeps playing behind the fight, at its own
-  rhythm, while everybody else does something else.
-- Where it comes from: Las cuerdas. The party met an Eco there as a foe (beside La Lealtad, its
-  blow growing each turn) and learned to time blows to La Voz's notes. The ánima hands them both.
-- Unlocked: when Marta's ánima leaves her, at the end of the mission. Shared: Gerard or Aitor
-  equips it in an extra slot.
-- Motto (proposal): *"Entra donde nadie cuenta."*
-- Colour: grey in the first round → _open_ (candidate: a cold string green, `#7fe3b0`; not
-  silver, which reads as the grey of the first round; never pink or violet).
+- **What it is**: whoever wears it does not strike alone. What they do stays in the air as an
+  **eco**: a figure of light over the party that repeats it on its own beat. One strikes, one cures,
+  one goes with a friend. They grow louder until they reach everyone. At most three sound at once:
+  a chord. It is Marta's voice let loose in the fight, as her qualities were in Las cuerdas, but
+  this time on the party's side.
+- **What wearing it feels like**: playing with a band behind you. The work goes on while you do
+  something else, and the skill is in keeping it going and in coming in off the beat.
+- **Unlocked**: at the end of Marta's mission, when the song is played well and her ánima leaves
+  her (§ In the world). Shared: Gerard or Aitor equips it in an extra slot. Seven levels by EXP.
+- **Motto** (proposal): *"Entra donde nadie cuenta."* Syncopation is the accent where nobody
+  counts one.
+- **Colour** (proposal): **nácar**, a pearl white whose edges turn seafoam `#8fe3c4`, with a pale
+  gold shimmer. It is grey in the first round and takes its colour in the second (§ Look and
+  interface).
 
 ## Role
 
-A **second voice**: the only ánima whose work goes on while its wearer does something else, and
-the only one the rest of the party can play *into*. Good at steady pressure and at stretching
-what the others bring (a fire kept alive, a wound kept open, a cure that keeps coming). Bad at
-burst: it has no big blow of its own until level 7, and an eco nobody feeds is gone.
+**The party's second voice: damage and cures that keep coming while its wearer, or the whole party,
+does something else.**
 
-It changes how a fight is played because it adds a third thing to spend a turn on: not the foe,
-not an ally, the eco.
+| | Sincopante | Papagato | Matemágico | Tecnópata | Dadista |
+| --- | --- | --- | --- | --- | --- |
+| Hurts with | Magic of no element (the astral), mostly through ecos that keep sounding | Physical blows | Magic, with elements | Magic, clocks | Physical faces; the astral, by luck |
+| Its resource | **Ecos on its own side**, not a status on the foe | Sangrado on the foe | Elements and their statuses | Clock statuses | Crítico (the Racha) |
+| Pays off as | Ecos raised by Crescendo until they reach everyone; Tutti spends them; three at once wake Da capo | A golpe crítico on the wound | A reaction between elements | Longer clocks, control | Críticos, Dados astrales |
+
+- **Good at**: long fights; steady damage and cures; reaching every foe or every ally without a
+  skill that costs a lot; helping the partner (*Acompañamiento*, Da capo); turns spent holding on,
+  because the ecos keep working.
+- **Bad at**: fights that are over in two rounds; a big blow right now (nothing hits hard until
+  Tutti at level 7). It has no physical blows and Fuerza −1. It is fragile to a fall: the ecos go
+  out with their wearer.
+- **The decision it adds to every turn**: spend this turn on the foe, or on the music (call an
+  eco, raise them, hold on to keep them). Wait for the off-beat, or act now. Stay in Sincopante
+  to raise the ecos, or switch to another ánima and let them sound on their own.
 
 ## Stats
 
-Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1. The eco hits with its wearer's stats.
-Marta's light (`ANIMAS`, the party bonus): _open_ (proposal: Espíritu +1).
+Proposal, kept from 2026-11-14: **Magia +2, Espíritu +2, Defensa +1, Fuerza −1** (sum +4). The
+ecos strike and cure with their wearer's Magia (curing grows with Magia, `healing` in
+`src/stats.ts`). Defensa and Espíritu are for a wearer who spends turns holding on (*Pedal*). The
+trade-off is Fuerza: Atacar is weak in it.
 
-## Signature: the eco
+Marta's light (`ANIMAS` in `src/animas.ts`, the party bonus) still has the placeholder Magia +1,
+Velocidad +1 and 10 PV, and Velocidad no longer exists. Proposal: **Espíritu +1, Defensa +1, 10 PV**.
+No other light has that pair yet, and it fits a friend who holds on.
 
-One rule: **the eco repeats the last thing it heard.**
+## Signature: the ecos and the compás
 
-- **What it is**: a figure of sound on the party's side, a still echo of whoever called it. It
-  cannot be hurt and no foe aims at it. Allies can aim at it (it is in the target list of every
-  blow and every cure, with no word about why).
-- **Its own rhythm**: it runs on the fight's clock (`docs/combat.md` § Estados en tiempo real),
-  not on turns. It acts on **a beat every 5 s** and lives **20 s** (four beats, about two
-  rounds). Its plate carries one continuous status icon, like a fire's clock: the ring empties,
-  a notch for each beat still to come.
-- **Looking after it**: anything an ally aims at it starts its 20 s over. Nothing aimed at it in
-  20 s and it fades. Atacar is free, so keeping it costs a turn, never maná.
-- **Hidden: it becomes what it is fed** (a surprise, as the duals are: nothing says so). What is
-  aimed at it does no damage and cures nobody: the eco takes it and from then on repeats it, by
-  the kind of the action, never by who wears what:
+The loop:
 
-  | Fed with | The eco's beat |
-  | --- | --- |
-  | A physical blow | Light physical damage to a foe (*Eco de guerra*) |
-  | A magic blow | Light magic damage to a foe |
-  | A blow with an element or a clock status (fire) | The same, and it starts that status's clock over on its target; it never raises its level |
-  | A blow that adds Sangrado | Light physical damage, and one stack |
-  | A cure | A light cure to the ally with the least PV (*Eco curativo*) |
+1. **Call** an eco. *Ostinato* strikes a foe and *Bordón* cures an ally, and what they did stays in
+   the air as an eco that repeats it on every beat for 20 s.
+2. **Raise** them with *Crescendo*. The first time they sound stronger; the second time they reach
+   everyone (every foe, or the whole party). Each Crescendo also starts their 20 s over.
+3. **Keep** them going or **spend** them. Keeping them costs turns (Crescendo, and from level 6
+   Defender with *Pedal*). *Tutti* (level 7) spends them all at once. Three ecos at once, a chord,
+   wake *Da capo*.
 
-- **Whom it hits**: the foe its wearer last hit; if none, any standing.
-- One eco at a time until level 5. Calling another replaces it.
-- If the wearer falls or takes Sincopante off, the eco fades.
+**The rules of an eco**
 
-Needs, none of which exists yet: a field entity that allies can target and that acts on the
-clock; the feeding rule; the plate icon. The timing window exists for La Voz (`src/song.ts`).
+- **What it is**: a figure of light floating over the party's side. It is not a fighter: it
+  cannot be hurt, no foe aims at it, and nobody aims anything at it.
+- **The compás**: every eco sounds on one shared beat, **every 5 s**. The first eco called starts
+  the beat, and it keeps running while one eco sounds. A new eco joins it: its first pulse comes
+  on the next beat. The beat runs on the fight's clock (`docs/combat.md` § Estados en tiempo
+  real), not on turns, so it also sounds while the players choose.
+  - **It follows the fight's song** (proposal, so the ecos never cross the music). When the song
+    has a tempo (`bpm`, `beatsPerBar`, `downbeat` in `TRACKS`, `src/music.ts`), the beat falls on
+    the first beat of every second bar: **4.8 s** in the battle song (100 bpm, 4/4).
+  - Without a tempo, it is 5 s.
+  - When the fight's clock stops (a dual's banner, a golpe crítico), it picks up at the next
+    second downbeat.
+  - The numbers in this doc count 5 s.
+- **How long it lasts**: **20 s** from its call, which is four beats. Crescendo and Da capo start
+  it over. That is the README's length for something that must reach the foes' turn
+  ([`../README.md`](../README.md) § How long a clock status lasts).
+- **At most three at once.** A fourth replaces the oldest.
+- **Its grade** (*matiz*), which Crescendo raises:
 
-**Name clash to settle**: *eco* is already the party's currency (Ecos de luz) and a foe in Las
-cuerdas (the Eco beside La Lealtad). The foe is a feature (the ánima is that thing, on your
-side). The currency may confuse on the status screen. Alternatives if it does: *réplica*,
-*contracanto*.
+  | Grade | Shown | What it does |
+  | --- | --- | --- |
+  | *p* | One ring, small and dim | As called |
+  | *mf* | Two rings, brighter | Half as strong again (×1.5) |
+  | *f* | Three rings and two arcs open at its sides | Still ×1.5, and **it reaches everyone**: an eco that strikes hits every foe, and one that cures cures the whole party |
+
+  Crescendo on an eco already at *f* only starts its clock over.
+- **Whom it hits**: an Ostinato eco hits the foe it was called on. If that foe falls, it hits the
+  next foe its wearer hits; until then, the foe with the fewest PV. A Bordón eco cures the ally
+  with the least of their PV left, as a share.
+- **A pulse is not a blow.** It is magic damage of no element (the astral) with the wearer's Magia
+  at the moment it sounds, or a cure. Like a fire's pulse:
+  - it is never a golpe crítico;
+  - it neither spends nor uses a wound (Sangrado) or a *Punto débil*;
+  - it sets off no reaction;
+  - a foe's rules about kinds of blow treat it as they treat a fire's pulse. Against La Voz, a pulse
+    during a note does nothing and one in a silence lands.
+
+  So it never spoils what the partner is building, and it never cashes it in either.
+- **Its wearer switching ánima** (Aitor, 2026-11-20: they keep sounding, but muffled): the ecos
+  go on, *apagados*.
+  - **Sound and look**: their voice comes through as from behind a door (a low-pass at 650 Hz,
+    9 dB lower, less reverb). Their light drops under half, with no gold shimmer and no motes.
+  - **Strength**: each beat strikes or cures at **half** (proposal for what muffled means in
+    numbers: 6 → 3, 9 → 5). Their clock runs as before.
+  - **What needs Sincopante worn**: calling ecos, Crescendo, Acompañamiento, Tutti and the
+    passives. Putting Sincopante back on brings the ecos back whole at once.
+  - **Maná**: Sincopante gets its maná back while it is not worn, like any ánima (+1 a round).
+
+  So calling ecos and then playing another ánima still pays, which no other ánima allows, but less
+  than staying.
+- **Its wearer falling**: every eco goes out at once, with no last note.
+- **Where it shows**: in the scene, each eco's size and rings give its grade. On the wearer's plate,
+  one continuous status icon, *Compás*: a ring with a hand that goes round once every 5 s. It has a
+  notch at the top (the beat) and one at the bottom (the off-beat), and inside, a dot for each eco
+  with an arc that empties over its 20 s and its grade as a small letter (*p*, *mf*, *f*). A fight's
+  mechanic shown as a status, like a fire's clock.
+
+Needs that do not exist yet: a field entity on the party's side that acts on the clock; the
+compás; the icon. The seconds come from `src/battle.ts`'s clock (`runClock`). Judging a press
+against a moment already exists for La Voz (`song.aim`).
+
+### Passives
+
+| Passive | When | What it does |
+| --- | --- | --- |
+| **A contratiempo** | Level 3 | An action of the wearer pressed **in the off-beat** (the second halfway between two beats, give or take half a second) makes every eco sound once more, at once |
+| **Pedal** | Level 6 | **While its wearer holds on** (Defender, until they act again), the ecos' clocks stop. They keep sounding |
+
+**A contratiempo, by example.** Aitor wears Sincopante (Magia 12) with two Ostinato ecos at *mf*,
+each hitting 9. It is his turn, and the hand on *Compás* has just passed the top notch:
+
+- **He confirms at once** (on the beat, or anywhere else): his action, and nothing more. The ecos
+  sound when their beat comes.
+- **He waits two seconds and confirms as the hand crosses the bottom notch**: his action, and both
+  ecos sound right then, **+18**, on top of their four beats. Their clocks do not move. *PASIVA ·
+  A contratiempo*.
+
+That is about a fifth more from the ecos for each turn played off the beat. The window is a whole
+second out of every five, judged when the button is pressed (as La Voz judges a blow in her
+silences), so it asks for reading, never for a perfect frame. Waiting has a price: the foes' clocks,
+and the fire someone is keeping alive, run on too.
+
+**Pedal, by example.** At 0:33 Aitor holds on. His eco has 6 s left, and he acts again at 0:49:
+
+- **Without Pedal**: it sounds once more (0:37) and goes out at 0:39.
+- **With Pedal**: it sounds at 0:37, 0:42 and 0:47, still has its 6 s when he acts, and has time to
+  be raised. *PASIVA · Pedal*.
+
+Defender already gives 2 maná back. With Pedal it also keeps the band playing, so the turn that
+refills maná is no longer a lost turn. It is the sustain pedal of a piano, Aitor's instrument in
+Keiran.
 
 ## Skills per level
 
-Seven levels (the shared proposal is in [`../README.md`](../README.md) § Levels). Numbers are
-first guesses, to tune with `just fight-sim` once the eco exists there.
+Seven levels ([`../README.md`](../README.md) § Levels; today only three are built for any ánima).
+Numbers are first guesses: "Base" is the power, against Atacar's 18.
 
-| Level | What it gives | Cost | Base | Description |
+| Level | What it gives | Who | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | **Ostinato** | The wearer, then its eco | 2 | 14; the eco 4 a beat | `Daño mágico no elemental leve a un enemigo. Deja un eco que repite el golpe cada 5 segundos durante 20 segundos.` | Designed |
+| 1 | **Bordón** | The wearer, then its eco | 2 | 16; the eco 4 a beat | `Cura leve a un aliado herido. Deja un eco que cura al aliado más herido cada 5 segundos durante 20 segundos.` | Designed |
+| 2 | **Crescendo** (Aitor's) | The ecos | 1 | ×1.5, then everyone | `Los ecos suenan más fuerte y su reloj vuelve a empezar. Los que ya sonaban fuerte llegan a todos.` | Designed |
+| 3 | Passive · **A contratiempo** | The wearer | — | — | `Si quien la lleva actúa justo entre dos pulsos, todos sus ecos suenan una vez más.` | Designed |
+| 4 | **Maná +1** | — | — | — | — | Designed |
+| 5 | **Acompañamiento** | Its eco | 2 | 6 a repeat | `Deja un eco junto a un aliado durante 20 segundos. Repite cada golpe suyo con daño mágico no elemental leve.` | Designed |
+| 6 | Passive · **Pedal** | The wearer | — | — | `Mientras quien la lleva se defiende, el reloj de sus ecos se para. Siguen sonando.` | Designed |
+| 7 | **Tutti** | The wearer and every eco | 3 | 36 | `Daño mágico no elemental alto a todos los enemigos. Cada eco suena una última vez, el doble de fuerte, y se apaga.` | Designed |
+| Definitiva | ***Da capo*** (Aitor's) | The wearer | — | — | *Abstract*: `Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.` | Designed |
+
+**What `AGENTS.md`'s shape has no word for**: Ostinato, Bordón and Tutti pass it as they are. A
+skill that leaves an eco says so in an extra sentence, which the shape already allows. Three rows
+do not fit it:
+
+- **Crescendo** acts on the ecos, not on a fighter.
+- **Acompañamiento** only leaves an eco.
+- **Da capo** gives back maná and duals.
+
+Proposal for `AGENTS.md` and `tests/battle.test.mjs`: a fifth shape, **Ecos**, either
+`Deja un eco <junto a un aliado> durante <N> segundos. <Qué hace>.` or `Los ecos <qué les pasa>.`,
+for a skill of `kind: 'eco'`. Da capo, the only skill that gives duals back, is marked
+`abstract: true` with this exact sentence rather than given a shape of its own.
+
+What each one is for in the loop:
+
+- **Ostinato** builds. A light astral blow now, and a light one every beat for 20 s.
+- **Bordón** builds, on the support side. A cure now and a small one every beat on whoever needs
+  it most. At *f* it cures the whole party every 5 s.
+- **Crescendo** (Aitor's) raises and keeps. For one maná every eco gets stronger, or wider, and
+  its 20 s start over. It is worth more the more ecos are up, which is the reason to call several
+  before raising them.
+- **A contratiempo** is timing. It turns waiting for the off-beat into extra pulses.
+- **Acompañamiento** is support for the partner. For 20 s every blow of theirs is repeated by the
+  eco at their side: a skill, Atacar, a dual (one repeat per action, not per claw of a flurry). At
+  *f* the repeat reaches every foe.
+- **Pedal** keeps the ecos alive. It turns Defender into a turn that refills maná *and* keeps the
+  ecos going.
+- **Tutti** spends: a strong blow on every foe, and the band's last chord. Called, raised, then
+  spent: the ánima's whole shape in one fight.
+
+## Definitiva: Da capo
+
+*Da capo*: in a score, "back to the beginning". Aitor's (2026-11-20): it lets the party use the
+dual attacks again. Bought at the jar (3 ecos) once the castle's second boss falls
+([`../README.md`](../README.md) § Definitivas).
+
+| | |
+| --- | --- |
+| **Wakes in a fight when** | **Three ecos sound at once: a chord.** It is met while Sincopante is worn, by whoever wears it. The chord can be heard (three notes together) and seen (§ Look) |
+| **Then** | Once in that fight, for the wearer's turn and no maná |
+| **The duals** | **Every dual already used in this fight can go off once more**, as at the start. It only brings back duals already used: one never found, or not used yet, stays as it was. They are played as always: both turns, each half chosen by its wearer, each half paid from its own maná |
+| **The maná** | **Every ánima of both fighters, worn or not, is full again**, so the duals can be paid |
+| **The ecos** | The ones standing start their 20 s over, at the grade they have |
+| **What it does not do** | It never fires a dual by itself. It does not bring back a definitiva, its own or another's. A dual takes both turns, so the first one comes the round after, not in the round Da capo is used (the wearer's turn went on it) |
+| **In the game** | *Abstract*: `Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.` |
+
+**By example.** Against a boss, Gerard (Matemágico) and Aitor (Tecnópata, Sincopante) fire *Rayo
+solar* in round 3. By round 6 Aitor has three ecos up: the chord sounds and *Da capo* appears in
+his dock. He uses it. Gerard's and Aitor's ánimas are all full again, and in round 7 *Rayo solar*
+can go off a second time, which until now never happened in one fight. With Papagato on one of
+them, *Zarpazos de fuego* and *Punto débil* come back as well.
+
+Why this condition: it is the ánima played to its end and it can be seen on the field. Keeping
+three ecos alive at once is the whole skill of the ánima (calling, raising, holding on), and it
+leads straight into what Da capo rewards: a party that knows its duals.
+
+## What a round looks like
+
+Aitor wears Sincopante at level 6 (Magia 12 with its +2, Maná 4); Gerard is on Matemágico; two
+foes with Espíritu 10. A round takes about 15 s, the compás beats every 5 s, and the numbers come
+before any balance. Ostinato's eco hits 6 at *p* and 9 at *mf*.
+
+| When | Who | Does | Ecos | On the foes |
 | --- | --- | --- | --- | --- |
-| 1 | **Eco de guerra** | 2 | 8 physical a beat | *Abstract*: `Deja un eco que golpea a un enemigo cada 5 segundos durante 20 segundos: daño leve físico.` |
-| 1 | **Eco curativo** | 2 | 6 heal a beat | *Abstract*: `Deja un eco que cura al aliado más herido cada 5 segundos durante 20 segundos: cura leve.` |
-| 2 | **Redoble** | 1 | two beats now | *Abstract*: `El eco da dos golpes seguidos ahora mismo y su reloj vuelve a empezar.` |
-| 3 | Passive · **A contratiempo** | — | — | A blow of the wearer that lands as the eco beats is repeated by the eco whole, not as a light one |
-| 4 | **Maná +1** | — | — | Its pool goes from 3 to 4 |
-| 5 | **Canon** | 2 | a second eco | *Abstract*: `Deja un segundo eco, que entra medio compás después. Cada uno repite lo suyo.` |
-| 6 | Passive · **Coda** | — | — | An eco that fades (nobody fed it, or it was replaced) gives one last beat on every foe, or every ally if it cures, twice as strong |
-| 7 | **Tutti** | 3 | — | *Abstract*: `Durante esta ronda, el eco repite entera cada acción del equipo.` |
+| 0:02 | Aitor | Ostinato on the first foe (4 → 2 maná) | One, *p*, until 0:22. The beat starts: 0:07, 0:12, 0:17… | 16 |
+| 0:07, 0:12 | Its eco | Two beats | | 6 + 6 |
+| 0:17 | Its eco | A beat (round 2 has started) | | 6 |
+| 0:19.5 | Aitor | **Crescendo, in the off-beat** (2 → 1) | *mf*, until 0:39.5. *A contratiempo*: it sounds now | 9 |
+| 0:22, 0:27, 0:32 | Its eco | Three beats | | 9 + 9 + 9 |
+| 0:33 | Aitor | **Defender** (1 → 3). *Pedal*: the eco's clock stops at 6.5 s | | — |
+| 0:37, 0:42, 0:47 | Its eco | Three beats while he holds on | | 9 + 9 + 9 |
+| 0:49 | Aitor | **Bordón** on Gerard (3 → 1) | Two: the first still has its 6.5 s | Cure 18 |
 
-- **Cost of the eco: 2, not 3** (Aitor proposed 3). At 3 it empties the pool: the wearer cannot
-  call it and play Redoble (half of the dual) without two rounds of Defender in between. At 2 a
-  maná is left for Redoble the round after. To revisit with the sim.
-- **Eco de guerra / Eco curativo** are the same eco, already tuned. They show the player that it
-  comes in kinds; that it can be retuned on the field is what they find out.
-- **Redoble**: burst and upkeep in one, for a maná. Needs an eco standing.
-- **A contratiempo**: the timing the mission taught, now the player's. The beat is read on the
-  eco's ring; the blow has to land in a short window round it (as with La Voz's notes, never
-  frame-perfect).
-- **Canon**: two ecos, two clocks to keep: war and cure at once, or fire and wound. More upkeep
-  is the price.
-- **Coda**: letting it die becomes a choice as well.
-- **Tutti**: the strong skill of level 7. Costs the whole base pool, so it is prepared.
-- **Definitiva** (bought at the jar, [`../README.md`](../README.md) § Definitivas): proposal,
-  *Da capo*, unlocked in a fight once the eco has stayed alive 60 s.
+Three of Aitor's turns, one of them Defender, put **97** on the first foe for 3 maná, of which
+Defender gave 2 back. Atacar three times with his Fuerza 12 puts 60, for nothing. Meanwhile Gerard
+played his own three turns untouched. The cost is that it is slow: 16 of the 97 land in the first
+turn, and a foe that goes down at once makes the rest worth nothing. From level 7, a Tutti here
+(two ecos at *mf*) would be 38 on each foe, plus 18 from the Ostinato eco's last note and 18 of cure
+from the Bordón eco's.
 
-Against Atacar (18): an eco left alone gives 4 beats, about 32 for 2 maná (Zarpazos: 28 for 2,
-at once). Fed with a free Atacar it gives about 32 more for a turn that would have dealt 18, less
-whatever was left on its clock: better than Atacar only if it is fed late. That is the tension to
-keep when tuning.
+**The largest single action the design allows**: Tutti with three Ostinato ecos at *f*. That is
+38, plus 3 × 18, so **92 on every foe**. Getting there costs 3 calls, 2 Crescendos and Tutti: 11
+maná and four or five rounds. For comparison: Rayo solar is 40 on each foe, Bombardeo orbital 42,
+and Dados astrales about 140 at random.
 
-## Combined skills
+## What it offers a dual
 
-| With | Dual | Halves | Levels | What it does |
-| --- | --- | --- | --- | --- |
-| Tecnópata | **Bombardeo orbital** | Redoble + Explosión | 2 · 2 | The eco goes into Bip and takes it up out of sight. As the next round starts, before anyone chooses, three volleys of blue and white light fall on the foes' side, one a beat. `Daño leve mágico a todos los enemigos. Golpea tres veces. Se carga un turno y sale al empezar el siguiente. Los ciega durante 20 segundos.` |
+The duals are designed after every ánima is ([`../README.md`](../README.md) § Order of work). What
+Sincopante brings to a pair:
 
-- Three volleys of 14 (42 in all; Rayo solar is 40 and Quemado II). Cegado at level II: the foes'
-  blows land at 50 %.
-- It charges like Rayo solar (`DualSpec.charge`). It does **not** cost Aitor his next turn, as
-  Explosión alone does: Bip comes back down. The eco is spent: it has to be called again.
-- **Why 20 s**: see [`../README.md`](../README.md) § Shared mechanics, *How long a clock status
-  lasts*. It lands before anyone chooses, so the whole of the party's choosing runs before the
-  foes act; 10 s would be gone by then.
-- Ideas for later, not designed: with Matemágico (the eco fed with Foc Binari already keeps a
-  fire alive: a dual may not be needed); with Papagato (*Maullido*, the eco carries Yuki's purr).
+- **Something that keeps going**: an eco that repeats a dual's blow every beat (a dual that leaves
+  an eco).
+- **A partner accompanied**: *Acompañamiento* repeats any action of the partner. A dual is an
+  action, so it is repeated once.
+- **A beat to hit in**: a dual pressed in the off-beat, for a partner whose skill waits or
+  charges (Rayo solar, Acecho).
+- **Cures that keep coming** (Bordón), for a dual that shields or heals.
+- **Da capo**: the duals themselves, again. It is the ánima for a party that plays its duals.
+
+None is built. Ideas to take up at the duals step, not designed:
+
+- **Bombardeo orbital** (Tecnópata, proposal 2026-11-14): the eco took Bip up out of sight and three
+  astral volleys fell on every foe as the next round started (`Daño mágico no elemental leve a todos
+  los enemigos. Golpea tres veces. Se carga un turno y sale al empezar el siguiente. Los ciega
+  durante 20 segundos.`). Its halves have gone stale: *Redoble* is cut, and Explosión is now a node
+  of Tecnópata's tree, not a level. Ostinato or Crescendo would be the eco's half.
+- With Papagato: the eco carrying the purr (*Ronroneo* + Bordón).
 
 ## Look and interface
 
-_Open_ (round 7). Directions: the wearer in dark petrol with silver strings; the eco as their
-own outline in light, a half-beat late. Interface: staves and strings, thin silver on petrol.
+Aitor's direction (2026-11-20): **the ecos' geometry, with an ethereal, magical, angelic air**. The
+detail is a proposal.
+
+**In the engine** (built 2026-11-20, the look only; Aitor: «una integración gráfica potente,
+mezclando partículas, VFX bonito, mágico, cambios de luz»). [src/eco-fx.ts](../../../src/eco-fx.ts)
+draws the ecos with the game's own means:
+- **Meshes**: rings of light, a bead and the wings' arcs, all additive, all blooming.
+- **Halo and shaft**: a soft halo facing the camera, and a shaft of light to the floor.
+- **Light**: one real light shared by all the ecos, which falls on the party under them.
+- **GPU particles**: motes, specks, sparks, rings of dots on the floor.
+- **Beams**: from the trails, a fine core with two strands twisting round it.
+- **The picture**: a pulse of bloom when they sound, and the spotlight that dims and greys the
+  fight round them for Crescendo, Da capo and Tutti.
+
+It is played from the effects lab, section *Sincopante · ecos* (`just dev-fx`; docs/dev-tools.md §
+Effects lab). The frames are from `just screenshots sincopante-fx --gpu`, over Las cuerdas with
+Gerard and Aitor. Not yet: the rings on the wearer's nape, and the *Compás* icon on the plate (both
+wait for the ánima itself).
+
+A moving sketch, playable from a mock dock in the proposed theme:
+`output/mockups/sincopante-ecos/index.html`, with frames in `frames/`. It shows the compás, the
+three grades, the chord, Da capo, Tutti and the muffled ecos. With *Sonido* and *Música de combate*,
+it also plays Marta's voice in the ecos over the battle song, on its downbeats.
+
+### The ecos
+
+They take their geometry from the Eco of Las cuerdas (`src/cuerdas-foes.ts`: a bead of light inside
+rings, ripples running over the floor), without its body of glass. On the party's side an eco is
+only what a voice leaves in the air.
+
+- **Body**: a bead of light (6 cm, a white core) inside thin rings (6 mm thick), each ring turning
+  slowly on its own axis. A soft halo surrounds it, and a faint shaft of light falls from it towards
+  the floor. On the floor under it, a ripple on each beat: the Eco's ripples, slower and paler.
+- **Material**: light, not glass. Additive, casting no shadow, partly see-through. **Nácar**: a
+  white core, rings going from white to seafoam at their edge, and a pale gold shimmer as they turn.
+  The iridescence stays between mint and gold: the pink and violet that real mother-of-pearl shows
+  are left out (pink is La Reina's and violet is possession's, `docs/visual-style.md`).
+- **Where**: over and behind the party's side, between 1.8 and 2.6 m up, at three heights for
+  three ecos (low, middle, high: a chord as it would sit on a stave). They bob slowly, a few
+  centimetres over the 5 s of the compás. Acompañamiento's eco sits at its ally's shoulder and
+  follows them.
+- **Each kind is told by its shape, never by its colour**:
+  - **Ostinato** (strikes): rings tilted towards the foes and nested like a bell's mouth, with the
+    bead drawn out into a short spindle pointing at its foe.
+  - **Bordón** (cures): rings lying flat, wide and slow, a halo over the ally it last cured. Its
+    shaft of light is warmer, a pale gold.
+  - **Acompañamiento**: two thirds the size, its rings upright and facing the foes.
+- **Its grade, by size and rings** (Crescendo):
+
+  | Grade | Size | Rings | Light |
+  | --- | --- | --- | --- |
+  | *p* | 0.25 m | One | Dim; the shaft barely there |
+  | *mf* | 0.32 m | Two | Brighter; soft motes rise off it |
+  | *f* | 0.40 m | Three, and **two arcs that open at its sides like wings**, each a fan of three thin ripples | A shaft of light falls on it from above; its floor ripple crosses the party's whole side |
+
+  The wings are the one angelic figure, and they are drawn with rings, never with feathers. The
+  tone stays serious: no cherubs, no hearts, no sparkles.
+- **Particles**: soft round motes that rise slowly and fade, like dust in a shaft of light. Never
+  stars, which are Dadista's astral: Sincopante's astral is rings and rising light, and Dadista's
+  is stars and falling light. All on the GPU engine.
+- **The number** of a pulse is small, in nácar, and named *Eco*.
+
+### Beat by beat
+
+| Moment | Lasts | What happens |
+| --- | --- | --- |
+| **Ostinato** | 1.2 s | The wearer opens a hand towards the foe (0.25 s). A flat ring of light leaves it and flies to the foe (0.3 s), then closes round it like a halo pulled tight: that is the blow (0.15 s), with the number in nácar. A fainter copy of the ring rises off the foe, floats back over the party and settles at its height, turning into the eco (0.5 s) |
+| **Bordón** | 1 s | The wearer lifts a hand over the ally. A flat ring comes down over them like a halo and rises back through them (0.5 s), with the number of the cure. A copy stays above them and rises to its place |
+| **A pulse** (every 5 s, all at once) | 0.4 s | Each eco draws in (10 % smaller, 0.15 s) and lets out its outer ring. An Ostinato's ring flies flat to its foe (0.25 s) and closes on it with a soft flash, and motes rise off the foe. A Bordón's ring falls like a halo on its ally and rises through them. At *f* the ring grows as it leaves and becomes a wave that crosses every foe (or the whole party) at once. The floor ripples under the eco |
+| **Crescendo** | 0.8 s | The wearer raises both hands, palms up (0.3 s). Every eco draws in, then swells to its new grade (0.5 s): a new ring opens from the bead outwards, and at *f* the arcs unfold. The ecos' notes swell. *Crescendo* rises over each eco with its new grade (*mf*, *f*), and their arcs on *Compás* fill again |
+| **A contratiempo** | 0.3 s | On the press, a bright tick at the bottom notch of *Compás*. Every eco flashes and lets out an extra pulse at once, a short accented chord off the beat. *PASIVA · A contratiempo* |
+| **Pedal** | While it lasts | As the wearer holds on, a thin level line of light runs under the ecos, like the pedal line under a piano stave. Their arcs on *Compás* stop and glow steady, and their notes ring longer. *PASIVA · Pedal*. When the wearer acts again, the line fades |
+| **The chord** (three ecos) | One beat | Three thin lines of light join the three ecos into a triangle for a beat, and the three notes sound together. If Da capo is bought, its command appears in the dock. Nothing else says so |
+| **Tutti** | 1.6 s | The ecos fly together over the foes (0.4 s) and stack into one great halo of all their rings. The scene dims by a third and a warm white light falls from above (0.3 s). The halo comes down on every foe at once as rings closing on them, with the fight frozen for 0.25 s as for a golpe crítico, and every note sounds together. Motes rise off the foes for a second, and the ecos are gone |
+| **Da capo** | 2.4 s | The three ecos rise into a column (0.4 s). Every ring on the field turns backwards, and the hand of *Compás* spins a whole turn back (0.6 s), while the ecos sing the start of Marta's phrase, *Do Sol Fa Re*. A wave of nácar light crosses the party's side, and every maná pip fills again, one by one, each with a note (0.6 s). The names of the duals already used appear faintly over the party, written on five thin lines, and light up (0.6 s). *¡DA CAPO!* |
+| **An eco going out** | 0.6 s | Its rings open and drift apart, the motes rise, and its note fades. If the wearer falls, every eco goes out at once |
+
+*Movimiento reducido* keeps the ecos, the pulses and the numbers, and drops the dimming, the freeze
+and the waves.
+
+### Sound: Marta's voice
+
+Decided by Aitor (2026-11-20): **the ecos sing with Marta's voice, without getting in the way of
+the fight's song**. The detail is a proposal. It can be heard in the sketch: *Sonido*, then
+*Música de combate*.
+
+**The grains.** Short takes cut from her recording (`public/music/marta-voz.m4a`), from the
+steadiest middle of a note:
+
+| Grain | Where in the file | Length | Pitch | For |
+| --- | --- | --- | --- | --- |
+| **Fa** | 4.64 to 5.66 s (turn 1, third note) | 1.0 s | F4, 10 cents sharp | The first eco |
+| **La** | 11.77 to 12.95 s (turn 1, seventh note) | 1.2 s | A4, 3 cents sharp | The second eco |
+| **Do** | 21.51 to 22.30 s (turn 2, fifth note) | 0.8 s | C4, 10 cents sharp | The third eco |
+| **Da capo** | 62.80 to 66.30 s (turn 6) | 3.5 s | *Do Sol Fa Re*, the start of her phrase, quick and bound | Da capo |
+
+Each grain is:
+- filtered (high-pass 200 Hz, low-pass 7 kHz);
+- faded in over 60 ms and out over 350 ms;
+- peaked at −3 dB;
+- played retuned by its cents.
+
+**They fit the music by construction.**
+- **Key**: the battle song (`music/battle.m4a`) is **in F major**: its chroma is F, C and D, and it
+  matches F major at 0.81. Fa, La and Do are its tonic chord, so the ecos never sing out of key with
+  it. A fight with a song in another key transposes the grains to that song's tonic chord (a `key`
+  for each track in `TRACKS`; proposal). Within a fourth, the voice still sounds like hers.
+- **Time**: the compás falls on the song's downbeats (§ Signature), so a voice lands on the music,
+  never across it.
+
+**How loud: under the music, never in front of it.**
+- **Level**: at *f* an eco is about **12 dB under the song** (the song's median is −17 dB), and at
+  *p* about **18 dB under**. Between them sits *mf*, 3 dB under *f*. For comparison, the haunt's
+  sounds are 8 to 21 dB under their song (`docs/audio.md`).
+- **More ecos are not louder**: with two ecos each note goes 3 dB down, and with three 4.8 dB, so a
+  chord is as loud as one eco.
+- **Placement**: everything goes through a long reverb (2.8 s, wet over dry), so the voice sits far
+  back. The high-pass leaves the bass and body to the song, and the low-pass takes off the breath
+  and the sibilants.
+- **Bus**: the ecos play on the effects bus, so the player's sound settings govern them.
+
+**What sings when.**
+
+| Moment | Her voice |
+| --- | --- |
+| An eco is called | Its note comes in softly as it settles (a quarter-second attack) |
+| A pulse | Each eco's note, short (0.7 s), together |
+| *A contratiempo* | The same notes clipped short (0.22 s) and 2 dB up: an accent off the beat |
+| Crescendo | The notes swell in slowly (0.45 s) to the new grade |
+| The chord | A pulse with all three: Fa, La and Do together. Nothing else marks it |
+| Da capo | The start of her phrase, *Do Sol Fa Re* |
+| Tutti | All three, 3 dB over *f*: the only time the voice comes forward |
+| Muffled | Behind a door: low-pass 650 Hz, 9 dB lower, half the reverb |
+
+In the game the grains go to `public/sfx/` as `eco-fa`, `eco-la`, `eco-do` and `eco-dacapo`.
+For now they sit in the sketch: `output/mockups/sincopante-ecos/audio/`.
+
+### On the wearer
+
+- **Recolours** (`look`, in `CLASSES`): `jacket` a nácar white, `navy` a deep petrol (the dark of
+  Las cuerdas), `cream` a pale seafoam, `trousers` petrol.
+- **On the rig** (`src/anima-looks.ts`): two thin concentric rings floating behind the shoulders,
+  at the nape and tilted, a halo that is also the Eco's rings. They breathe with the compás and
+  shine a little more for each eco standing. A ripple spreads under the feet on each beat.
+- `scarf`, the colour over the portraits: seafoam nácar.
+
+### Colour and interface
+
+- **Colour** (proposal): `#8fe3c4`, seafoam nácar, with a light `#eefbf6`, a pale gold `#f2e2a8` and
+  a dark petrol `#0f2a2c`. It sits clear of Tecnópata's cyan (`#4fe0ff`, bluer and harder) and of
+  Dadista's astral (`#bfe0ff`, blue); there is no pink and no violet.
+- **Theme** (`#hud[data-class="sincopante"]`):
+  - panels of dark petrol glass with a fine double border in nácar (two hairlines 3 px apart), and
+    concentric arcs at the top corners;
+  - headings in small capitals with wide spacing;
+  - the selected command lit by a soft ellipse of light behind it rather than a box;
+  - while ecos sound, the dock's border breathes faintly with the compás (its light, never its
+    size).
+- **New on the plate**: only *Compás* (§ Signature).
 
 ## In the world
 
-_Open_.
+- **The unlock** (proposal, beat 4 of Marta's mission, `docs/quests/marta.md`): back in Alegia,
+  Aitor plays *Izana dena geroa* again and Marta sings it well. As the song ends, three notes of her
+  voice stay in the air over the piano as three rings of light (Fa, La, Do), then go into whoever
+  will wear the ánima. *ÁNIMA DESBLOQUEADA · Sincopante*. Flag `anima-marta`, already set at the end
+  of her mission (`src/story.ts`).
+- Nothing else in the street for now: everyone wears their own clothes there.
 
 ## Second round
 
-_Open_.
+Proposal: grey in the first round. In the second round with Marta (still open in her mission) it
+takes its colour, nácar. **Her voice is in the ecos from the start**: the ánima is her voice, back.
 
 ## Implementation
 
-Nothing built. Order once the design is agreed:
+**Built**:
+- **The ecos' look in the effects lab** (`src/eco-fx.ts`, `src/eco-lab.ts`; § Look and interface).
+  It touches no fight, so it is ready for step 3 below.
+- **Nothing of the ánima itself**. `progress.toml`'s *Sincopante, la de Marta* is unticked, and
+  Marta's light in `ANIMAS` is the placeholder.
 
-1. The seven-level table and what a level can give (maná, a passive), `src/levels.ts`.
-2. The eco as a field entity on the clock, fed and targeted, with tests; in `just fight-sim`.
-3. `sincopante` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`, `SKILLS`, `CLASSES`; the fight tester.
-4. Bombardeo orbital in `DUALS`, Bip's choreography.
-5. Look, interface theme, screenshots scenario, `docs/party.md`.
+**To build**, once Aitor says yes ([`../README.md`](../README.md) § How an ánima is built):
+
+1. **The ecos**, a new field entity that is not a fighter: `BattleState.ecos` (kind, grade, target,
+   life, owner) and the compás, sounding from `runClock` in `src/battle.ts`. This includes:
+   - the pulse rule (a pulse, not a blow);
+   - three at most;
+   - going on after a switch, and going out on a fall.
+
+   Then tests, and `just fight-sim` (a bot that calls, raises and holds on, with the off-beat
+   played as a chance).
+2. **The ánima**: `sincopante` in `ClassId`, `ANIMA_NAMES` and `CLASS_STATS`. In `SKILLS`:
+   Ostinato, Bordón and Crescendo. In `PASSIVES`: A contratiempo. Its levels 1 to 3 in `LEVELLED`
+   (`src/levels.ts`), `CLASSES`, and the *Ecos* description shape in `AGENTS.md` and
+   `tests/battle.test.mjs`. In the fight tester: ecos at will, and a *Contratiempo seguro* (as
+   *Crítico seguro*).
+3. **The look**: the ecos' bodies (rings, bead, motes on the GPU engine), every beat above, the
+   muffled state, the *Compás* icon, the theme. Then a screenshot scenario `sincopante.json` that is
+   the ánima's sheet (`scripts/screenshots/papagato.json` is the model), and `docs/party.md`.
+4. **Her voice** (§ Sound): the four grains in `public/sfx/` with `SOUNDS` entries
+   (`src/sfx.ts`), played through a reverb on the effects bus and muffled through a filter. Also
+   the compás locked to the song's downbeats (from `TRACKS` and `untilBoundary` in
+   `src/music.ts`), and a `key` for each fight song so the grains can be transposed.
+5. **The unlock** at the end of Marta's mission, and her light's bonus in `ANIMAS`.
+6. **What waits on a system that does not exist yet**:
+   - Acompañamiento, Pedal and Tutti wait on the seven levels;
+   - Da capo waits on the definitivas in a fight.
+
+## For the balance, later
+
+`just fight-sim` cannot play it yet: there are no ecos in the game. Numbers to watch once it can:
+
+- **The eco's pulse** (base 4, 6 on Aitor). It is the number that decides whether Sincopante outdoes
+  Atacar while its wearer holds on. In *What a round looks like* it gives 97 against Atacar's 60
+  over three turns, and it should stay above Atacar without making Defender plus Pedal the best
+  play every turn.
+- **Crescendo at 1 maná**. It restarts every eco, so its worth grows with how many ecos are up.
+- **The *f* grade with three ecos**: 27 on each foe every beat, or 9 cure on each ally every beat.
+- **Tutti**: 92 on every foe at most. If that is too much, the ecos' last note goes from ×2 to ×1.5.
+- **The clock**. A slow player gets more beats per round (with `think: 8`, about four), as with
+  fire.
+- **Da capo**: how much a second Rayo solar or Zarpazos de fuego is worth against a boss, and
+  whether filling every ánima's maná is too much on top of it.
 
 ## Open
 
-- The eco's name against Ecos de luz.
-- Whether a foe's blow on everyone also silences the eco (a counter the bosses could use).
-- Colour, look, motto, in the world, the second round.
-- Whether boosts and debuffs can be fed to it.
+Answered by Aitor on 2026-11-20: feeding is cut; the ecos keep sounding, muffled; her voice is
+theirs. Still open:
+
+1. **What muffled means in numbers**: half strength. *Recommendation*: yes. Staying in Sincopante
+   should be worth more than leaving its ecos behind, and half is easy to read.
+2. **The compás on the song's downbeats** (4.8 s in the battle song), with each song's key for the
+   grains. *Recommendation*: yes. It is what keeps her voice from crossing the music.
+3. **A new description shape, *Ecos*** (for Crescendo and Acompañamiento), with Da capo marked
+   `abstract`. *Recommendation*: yes. Marking them all abstract would hide an ánima whose skills
+   are exact.
+4. **An eco costs 2**, where you said 3 on 2026-11-14. *Recommendation*: 2, with Crescendo at 1.
+   At 3, calling one empties the pool and a Crescendo has to wait two rounds.
+
+Notes, not questions:
+
+- *Eco* now names four things: the party's Ecos de luz, the Eco of Las cuerdas, the one La Voz
+  calls with *Coro*, and these. In a fight the context tells them apart.
+- *Crescendo* is also La Voz's rule (her Magia rising with each phrase): her crescendo, made the
+  party's.
+- A boss could silence the ecos with a named move announced on its plate a turn ahead. Designed
+  with each boss, if any.
