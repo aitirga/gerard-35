@@ -1,15 +1,19 @@
 import * as pc from 'playcanvas';
 import type { BattleEffect, Combatant, CuerdasKind, FoeAbilityId } from './battle';
 import { TONES, type Moment } from './song';
+import { buildFoeBody } from './character-model';
+import { FOE_BODIES } from './foe-bodies';
 
 /**
  * Las cuerdas' foes (docs/quests/marta.md § Monsters, § La Voz), built from primitives and named as
  * the fight looks for a part (`Charco pringoso` under them, `Vista` to turn to the camera, `Cabeza de
  * chicle` for a head). They are what Marta lost, so none is a creature: each is string, glass and
- * light, in the one note it answers to. La Lealtad, a dark figure behind a tall shield strung like a
- * harp, an amber knot at its middle. An Eco, rings round a bead that goes faster each turn. Lo
- * Cristalino, an obelisk of aqua glass with a string of light through it and shards turning round it.
- * Lo Directo, a standing blade with a lance of blue-white light, and a crossbar when it means everyone.
+ * light, in the one note it answers to. La Lealtad, a faceless woman of petrol glass behind a shield
+ * strung like a harp, an amber knot at its middle, and an Eco, a breaking wave of pale glass with rings
+ * round a bead that goes faster each turn and ripples on the floor, and Lo Directo, a knight of sword
+ * blades with a lance of blue-white light and a crossbar when it means everyone, are Meshy figures
+ * (src/foe-bodies.ts). Lo Cristalino, an obelisk of aqua glass with a string of light through it and
+ * shards turning round it.
  * La Voz, a woman's outline in a gown of strings with the note alight in her throat: there while a
  * note sounds, almost gone in the silences, her arms crossed on Guardia and glass on Nota clara.
  * No pink and no violet anywhere: nobody here is possessed.
@@ -46,50 +50,47 @@ export function createCuerdasFoes(app: pc.Application) {
     if (axis.length() > 1e-6) e.setLocalRotation(new pc.Quat().setFromAxisAngle(axis.normalize(), Math.acos(Math.max(-1, Math.min(1, up.dot(dir)))) * 180 / Math.PI));
     return e;
   }
+  /** A figure lit from inside by its own colours (`k` of them), so glass and lines of light read in the void's dark. */
+  function glowFrom(figure: pc.Entity, k: number) {
+    for (const render of figure.findComponents('render') as pc.RenderComponent[]) for (const mesh of render.meshInstances) {
+      const m = mesh.material as pc.StandardMaterial;
+      m.emissiveMap = m.diffuseMap; m.emissive.set(k, k, k); m.emissiveIntensity = 1; m.update();
+    }
+  }
   /** The light each one stands in, in place of a shadow: a thin pale disc. */
   const pool = (parent: pc.Entity, hex: string, size: number) => part(parent, 'Charco pringoso', 'cylinder', mat('Luz del suelo', hex, .2, .35, .14), [0, .012, 0], [size, .01, size], [0, 0, 0], false);
-  const dark = mat('Cuerpo oscuro', '#12343d', .55), darker = mat('Cuerpo hondo', '#0b2229', .5), silver = mat('Cuerda de plata', '#cfdde6', .8, 1.4);
   const tone = (id: keyof typeof TONES) => TONES[id].colour;
 
-  // La Lealtad: a slender dark figure that never leaves its place, behind a tall shield strung like a
-  // harp. Where the strings cross, an amber knot.
+  // La Lealtad: a tall faceless woman of dark petrol glass with a touch of Marta (her two-tone hair, her
+  // hoops), holding up a shield strung like a harp (a Meshy figure, tools/figures.toml `[lealtad]`). She
+  // never leaves her place: on Juramento all of her (`Escudo`) thrusts the shield out. Where its strings
+  // cross, an amber knot of light that swells on Lazo; it rides her wobble (`Cabeza de chicle`).
   const lealtad = root('La Lealtad');
   pool(lealtad, tone('la'), 1.5);
-  const guard = pivot(lealtad, 'Vista');
-  part(guard, 'Falda', 'cone', dark, [0, .62, -.12], [.7, 1.24, .6]);
-  part(guard, 'Torso', 'cylinder', dark, [0, 1.42, -.12], [.34, .62, .24]);
-  part(guard, 'Hombros', 'sphere', dark, [0, 1.68, -.12], [.6, .2, .28]);
-  const head = pivot(guard, 'Cabeza de chicle', [0, 1.98, -.12]);
-  part(head, 'Cabeza', 'sphere', darker, [0, 0, 0], [.27, .32, .28]);
-  // The cord of its oath, wound twice round its chest.
-  const amber = mat('Nudo', tone('la'), .6, 2.2), amberSoft = mat('Cuerda ámbar', tone('la'), .5, 1.1);
-  ring(guard, 'Cordón', amberSoft, .19, .014, [0, 1.46, -.12], [14, 0, 8]);
-  ring(guard, 'Cordón', amberSoft, .2, .014, [0, 1.3, -.12], [-12, 0, -9]);
-  for (const side of [-1, 1]) part(guard, 'Brazo', 'cylinder', dark, [side * .3, 1.36, .08], [.1, .62, .1], [-58, 0, side * -16]);
-  const shield = pivot(guard, 'Escudo', [0, 0, .36]);
-  const frame = mat('Marco del escudo', '#8fa3ad', .85);
-  part(shield, 'Larguero', 'box', frame, [-.5, 1.05, 0], [.05, 1.9, .06]);
-  part(shield, 'Larguero', 'box', frame, [.5, 1.05, 0], [.05, 1.9, .06]);
-  part(shield, 'Travesaño', 'box', frame, [0, 2.0, 0], [1.05, .06, .07]);
-  part(shield, 'Travesaño', 'box', frame, [0, .1, 0], [1.05, .06, .07]);
-  for (let k = 0; k < 9; k++) string(shield, 'Cuerda del escudo', k % 4 === 0 ? amberSoft : silver, [-.4 + k * .1, .13, 0], [-.4 + k * .1, 1.97, 0], .012);
-  const knot = pivot(shield, 'Nudo', [0, 1.12, .03]);
-  ring(knot, 'Lazo', amber, .15, .022, [0, 0, 0], [90, 0, 0]);
-  ring(knot, 'Lazo', amber, .15, .022, [.06, 0, 0], [90, 0, 60]);
-  ring(knot, 'Lazo', amber, .15, .022, [-.06, 0, 0], [90, 0, -60]);
-  part(knot, 'Corazón del nudo', 'sphere', amber, [0, 0, 0], [.09, .09, .09], [0, 0, 0], false);
+  const guard = buildFoeBody(FOE_BODIES.lealtad!, pivot(pivot(lealtad, 'Vista'), 'Escudo'));
+  const amber = mat('Nudo', tone('la'), .6, 2.2);
+  const knot = pivot(guard.findByName('Cabeza de chicle') as pc.Entity, 'Nudo', [0, LEALTAD.knot[1] - LEALTAD.height / 2, LEALTAD.knot[2]]);
+  ring(knot, 'Lazo', amber, .13, .018, [0, 0, 0], [90, 0, 0]);
+  ring(knot, 'Lazo', amber, .13, .018, [.05, 0, 0], [90, 0, 60]);
+  ring(knot, 'Lazo', amber, .13, .018, [-.05, 0, 0], [90, 0, -60]);
+  part(knot, 'Corazón del nudo', 'sphere', amber, [0, 0, 0], [.08, .08, .08], [0, 0, 0], false);
 
-  // Eco: nothing but what a blow leaves in the air. A bead on a ring, and a ring more each turn it has had.
+  // Eco: what a blow leaves in the air, a breaking wave of pale glass (`[eco]`) floating over the floor,
+  // a bead of light in its hollow inside rings, a ring more each turn it has had; under it, ripples run
+  // out over the floor like rings on water, faster each turn, and a wave of them on its Resonancia.
   const eco = root('Eco');
   pool(eco, tone('mi'), .9);
-  const echo = pivot(pivot(eco, 'Vista'), 'Flota', [0, 1.15, 0]);
+  const echo = buildFoeBody(FOE_BODIES.eco!, pivot(pivot(eco, 'Vista'), 'Flota', [0, ECO.lift, 0]));
+  glowFrom(echo, ECO.glow);
+  const heart = pivot(echo.findByName('Cabeza de chicle') as pc.Entity, 'Corazón del eco', [0, ECO.bead - ECO.height / 2, ECO.depth]);
   const pale = mat('Anillo del eco', tone('mi'), .7, 1.8), paleSoft = mat('Anillo lejano', tone('mi'), .6, .9, .55);
-  ring(echo, 'Anillo', pale, .4, .014, [0, 0, 0], [90, 0, 0]);
-  ring(echo, 'Anillo segundo', paleSoft, .56, .01, [0, 0, 0], [90, 0, 0]);
-  ring(echo, 'Anillo tercero', paleSoft, .73, .008, [0, 0, 0], [90, 0, 0]);
-  const orbit = pivot(echo, 'Órbita');
-  part(orbit, 'Cuenta', 'sphere', mat('Cuenta', '#ffffff', .9, 3), [.4, 0, 0], [.13, .13, .13], [0, 0, 0], false);
-  string(eco, 'Hilo', paleSoft, [0, .02, 0], [0, .72, 0], .01);
+  ring(heart, 'Anillo', pale, .26, .012, [0, 0, 0], [90, 0, 0]);
+  ring(heart, 'Anillo segundo', paleSoft, .38, .009, [0, 0, 0], [90, 0, 0]);
+  ring(heart, 'Anillo tercero', paleSoft, .5, .007, [0, 0, 0], [90, 0, 0]);
+  const orbit = pivot(heart, 'Órbita');
+  part(orbit, 'Cuenta', 'sphere', mat('Cuenta', '#ffffff', .9, 3), [.26, 0, 0], [.09, .09, .09], [0, 0, 0], false);
+  const ripples = pivot(eco, 'Olas', [0, .03, 0]);
+  for (let k = 0; k < ECO.ripples; k++) ring(ripples, `Ola ${k + 1}`, mat(`Ola ${k + 1}`, tone('mi'), .6, 1.4, .5), 1, .012, [0, 0, 0], [0, 0, 0]);
 
   // Lo Cristalino: an obelisk of aqua glass on its point, a string of light through it, shards turning round it.
   const cristalino = root('Lo Cristalino');
@@ -106,19 +107,15 @@ export function createCuerdasFoes(app: pc.Application) {
     part(shards, 'Esquirla', 'box', glass, [Math.cos(a) * .58, (k - 2) * .34, Math.sin(a) * .58], [.05, .3 + (k % 2) * .12, .14], [k * 23, -a * 57.3, 18], false);
   }
 
-  // Lo Directo: a standing blade, the straightest way between two points, with a lance of blue-white
-  // light at its side. The crossbar only shows when it means everyone.
+  // Lo Directo: a faceless knight built of sword blades edged in blue-white light, the straightest way
+  // between two points (a Meshy figure, `[directo]`), with a lance of light at its side that it draws,
+  // thrusts and leaves in the floor. The crossbar only shows when it means everyone.
   const directo = root('Lo Directo');
   pool(directo, tone('sol'), 1.2);
   const blade = pivot(directo, 'Vista');
-  const navy = mat('Hoja', '#17264a', .7), line = mat('Filo', '#cfe0ff', .8, 2.6), blue = mat('Luz azul', tone('sol'), .6, 1.8);
-  part(blade, 'Hoja', 'box', navy, [0, 1.05, 0], [.3, 1.9, .1]);
-  part(blade, 'Filo', 'box', line, [0, 1.05, .055], [.025, 1.9, .012], [0, 0, 0], false);
-  part(blade, 'Pie de la hoja', 'cone', navy, [0, .1, 0], [.3, .22, .1], [180, 0, 0]);
-  const point = pivot(blade, 'Cabeza de chicle', [0, 2.2, 0]);
-  part(point, 'Rombo', 'box', navy, [0, 0, 0], [.2, .2, .2], [54.7, 0, 45]);
-  part(point, 'Luz del rombo', 'sphere', line, [0, 0, .1], [.05, .05, .03], [0, 0, 0], false);
-  const lance = pivot(blade, 'Lanza', [.36, 1.3, 0]);
+  glowFrom(buildFoeBody(FOE_BODIES.directo!, blade), DIRECTO.glow);
+  const line = mat('Filo', '#cfe0ff', .8, 2.6), blue = mat('Luz azul', tone('sol'), .6, 1.8);
+  const lance = pivot(blade, 'Lanza', [DIRECTO.lance[0], DIRECTO.lance[1], 0]);
   part(lance, 'Asta', 'cylinder', blue, [0, 0, -.2], [.035, 1.5, .035], [90, 0, 0], false);
   part(lance, 'Punta de la lanza', 'cone', line, [0, 0, .95], [.11, .8, .11], [90, 0, 0], false);
   ring(lance, 'Guarda', blue, .1, .014, [0, 0, .5], [90, 0, 0]);
@@ -162,7 +159,7 @@ export function createCuerdasFoes(app: pc.Application) {
     /** La Voz: how much she is there (1 on a note, 0 in a silence), how crossed her arms, how much glass. */
     there?: number; guard?: number; glass?: number; lit?: number; colour?: pc.Color;
     voz?: { body: pc.StandardMaterial[]; strand: pc.StandardMaterial; note: pc.StandardMaterial; rings: pc.StandardMaterial[]; arms: pc.Entity[]; fores: pc.Entity[]; float: pc.Entity; halo: pc.Entity; base: pc.Color[] };
-    spin?: number; bar?: number; draw?: number;
+    spin?: number; bar?: number; draw?: number; wave?: number;
     /** A move under way, eased: wound up before it lands (−1 to 0) and let go after (0 to 1); and the looks that stay. */
     act?: number; tie?: number; crack?: number; stuck?: number; air?: number; winded?: number; reach?: number;
   }
@@ -203,19 +200,29 @@ export function createCuerdasFoes(app: pc.Application) {
         const size = 1 + beat * .06 + s.tie * .7;
         (model.findByName('Nudo') as pc.Entity).setLocalScale(size, size, size);
         (model.findByName('Nudo') as pc.Entity).setLocalEulerAngles(0, 0, animate ? time * (14 + s.tie * 260) : 0);
-        // Juramento: the shield back against her, then out at arm's length, its strings still shaking.
-        (model.findByName('Escudo') as pc.Entity).setLocalPosition(animate ? Math.sin(time * 95) * .012 * go * oath : 0, 0, .36 + oath * (go * .42 - wind * .14));
+        // Juramento: she draws the shield back against her, then thrusts it out at arm's length, its strings still shaking.
+        (model.findByName('Escudo') as pc.Entity).setLocalPosition(animate ? Math.sin(time * 95) * .012 * go * oath : 0, 0, oath * (go * .42 - wind * .14));
       } else if (kind === 'eco') {
         const turns = unit.turns ?? 0;
         s.spin = (s.spin ?? 0) + (animate ? dt : 0) * (110 + turns * 70);
         (model.findByName('Órbita') as pc.Entity).setLocalEulerAngles(0, 0, s.spin);
         (model.findByName('Anillo segundo') as pc.Entity).enabled = turns >= 1;
         (model.findByName('Anillo tercero') as pc.Entity).enabled = turns >= 2;
-        float?.setLocalPosition(0, 1.15 + (animate ? Math.sin(time * 1.9 + 1) * .07 : 0), 0);
-        float?.setLocalEulerAngles(animate ? Math.sin(time * .9) * 10 : 0, animate ? time * 20 : 0, 0);
-        // Resonancia: its rings close a little, then open wide.
+        // It hangs in the air, rising and sinking like a swell, leaning with it.
+        float?.setLocalPosition(0, ECO.lift + (animate ? Math.sin(time * 1.9 + 1) * .08 : 0), 0);
+        float?.setLocalEulerAngles(animate ? Math.sin(time * .9) * 6 : 0, animate ? Math.sin(time * .4) * 18 : 0, animate ? Math.sin(time * 1.3) * 4 : 0);
+        // Resonancia: its rings close a little, then open wide, and a wave of ripples runs out.
         const open = 1 + go * .55 - wind * .25;
-        float?.setLocalScale(open, open, open);
+        (model.findByName('Corazón del eco') as pc.Entity).setLocalScale(open, open, open);
+        // The ripples under it: out from under it and fading, faster each turn it has had.
+        s.wave = (s.wave ?? 0) + (animate ? dt : 0) * (.35 + Math.min(turns, 4) * .12 + go * 1.6) * (unit.hp > 0 ? 1 : 0);
+        const ripples = (model.findByName('Olas') as pc.Entity).children as pc.Entity[];
+        ripples.forEach((ripple, k) => {
+          const phase = animate ? (s.wave! + k / ripples.length) % 1 : k / ripples.length, r = .25 + phase * (1.5 + go);
+          ripple.setLocalScale(r, 1, r);
+          const m = (ripple.render!.meshInstances[0].material as pc.StandardMaterial);
+          m.opacity = unit.hp > 0 ? .55 * (1 - phase) * Math.min(1, phase * 6) : 0; m.update();
+        });
       } else if (kind === 'cristalino') {
         // Cracked (once its Estallido has landed): it leans, its point slips, its shards fly wide and fast.
         s.crack = to(s.crack, unit.cracked && !pending?.cracked && unit.hp > 0 ? 1 : 0, 7);
@@ -244,7 +251,7 @@ export function createCuerdasFoes(app: pc.Application) {
         bar.setLocalScale(2.6 * s.bar, .035, .035);
         const lance = model.findByName('Lanza') as pc.Entity;
         const thrust = move === 'golpe-directo' || move === 'estocada' ? go : 0, k = s.stuck;
-        lance.setLocalPosition(.36 * (1 - s.bar) * (1 - k), 1.3 - .62 * k, (-.34 * s.draw + thrust * .55) * (1 - k) + .8 * k + (animate ? Math.sin(time * 38) * .006 * s.draw : 0));
+        lance.setLocalPosition(DIRECTO.lance[0] * (1 - s.bar) * (1 - k), DIRECTO.lance[1] - .62 * k, (-.34 * s.draw + thrust * .55) * (1 - k) + .8 * k + (animate ? Math.sin(time * 38) * .006 * s.draw : 0));
         lance.setLocalEulerAngles(58 * k, 0, 0);
         (model.findByName('Vista') as pc.Entity).setLocalEulerAngles(11 * k, toCamera * TO_CAMERA[kind], 0);
       } else if (kind === 'voz') {
@@ -314,6 +321,12 @@ export function createCuerdasFoes(app: pc.Application) {
     destroy() { templates.forEach(t => t.destroy()); materials.forEach(m => m.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }
+/** La Lealtad's figure (`[lealtad]`, metres): how tall it is, and where on it the knot of her shield is (height, out in front). */
+const LEALTAD = { height: 2.1, knot: [0, 1.12, .3] } as const;
+/** Lo Directo's lance of light at its side (out, up; metres), clear of its pauldrons of blades, and how much its edges glow. */
+const DIRECTO = { lance: [.62, 1.3], glow: .45 } as const;
+/** An Eco's figure (`[eco]`): how tall, how high it floats, where its bead hangs in its hollow, how many ripples run under it, and how much it glows. */
+const ECO = { height: 1.7, lift: .3, bead: 1.0, depth: .05, ripples: 4, glow: .65 } as const;
 /** How big each one stands in the fight. */
 export const CUERDAS_SIZES: Record<CuerdasKind, number> = { lealtad: 1.05, eco: .85, cristalino: 1.1, directo: 1.05, voz: 1.3 };
 /** How far each turns its front from the party towards the fight's camera (0–1). */

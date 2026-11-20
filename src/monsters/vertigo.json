@@ -1,0 +1,10 @@
+{
+  "id": "vertigo",
+  "name": "Vertitrón",
+  "glb": "models/monsters/vertigo.glb",
+  "clips": {
+    "walking": "models/monsters/vertigo-walking.glb",
+    "running": "models/monsters/vertigo-running.glb"
+  },
+  "height": 3.4
+}

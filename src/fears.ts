@@ -1,17 +1,19 @@
 import * as pc from 'playcanvas';
 import type { FoeKind } from './battle';
-import { buildCharacter, type CharacterSpec } from './character-model';
+import { buildCharacter, buildFoeBody, type CharacterSpec } from './character-model';
+import { FOE_BODIES } from './foe-bodies';
 import { createCampingFoes } from './camping-foes';
 import { createCuerdasFoes } from './cuerdas-foes';
 import { createModeloFoes } from './modelo-foes';
 import { createLucaFoes } from './luca-foes';
 
 /**
- * Uri's fears (docs/quests/nuria.md § The maze, § Final boss), built from primitives like the
- * minion: El Cebollón, a huge onion in layers; El Plato Misterioso, a covered dish; a fantasmita, an
- * arcade ghost of pixels; and Vertitrón, a robot of roof tiles and ladders with one eye in its chest
- * and Uri on its head. They reuse the minion's part names (`Cabeza de chicle`, `Charco pringoso`, `Ojo`) so the
- * fight animates them the same way: a wobbling head, a base on the ground, blinking eyes.
+ * Uri's fears (docs/quests/nuria.md § The maze, § Final boss): El Cebollón, a real onion the size of a
+ * man; El Plato Misterioso, a covered dish on a café table; a fantasmita, an arcade ghost become real
+ * (each a Meshy figure, src/foe-bodies.ts); and Vertitrón, a robot of roof tiles and ladders with one
+ * eye in its chest and Uri on its head, built from primitives. They carry the minion's part names
+ * (`Cabeza de chicle`, `Charco pringoso`) so the fight animates them the same way: a wobbling head, a
+ * base on the ground.
  */
 export function createFears(app: pc.Application) {
   const materials: pc.StandardMaterial[] = [];
@@ -26,50 +28,27 @@ export function createFears(app: pc.Application) {
     e.setLocalPosition(p[0], p[1], p[2]); e.setLocalScale(s[0], s[1], s[2]); e.setLocalEulerAngles(r[0], r[1], r[2]);
     parent.addChild(e); return e;
   }
-  const shadow = mat('#2a2320', .2, 0, .35), eyeWhite = mat('#fffaf0', .6), pupil = mat('#1c1418', .8);
-  function eyes(head: pc.Entity, y: number, z: number, gap: number, size: number, angry = 0) {
-    for (const side of [-1, 1]) {
-      part(head, 'Ojo', 'sphere', eyeWhite, [side * gap, y, z], [size, size, size * .5]);
-      part(head, 'Pupila', 'sphere', pupil, [side * gap, y, z + size * .22], [size * .45, size * .45, size * .2]);
-      if (angry) part(head, 'Ceja', 'box', pupil, [side * gap, y + size * .7, z + .02], [size * 1.1, size * .18, .03], [0, 0, side * -angry]);
-    }
-  }
+  const shadow = mat('#2a2320', .2, 0, .35);
   const root = (name: string) => { const e = new pc.Entity(name); e.enabled = false; app.root.addChild(e); return e; };
 
-  // El Cebollón: a golden onion, layer on layer, a green sprout on top and roots below.
+  // El Cebollón: a real onion the size of a heavy man, its dry skins torn, its roots spread over the
+  // floor (a Meshy figure, tools/figures.toml `[cebollon]`). Its mesh is the `Capa` the fight tints as
+  // it loses layers; its young wear it smaller.
   const onion = root('El Cebollón');
-  part(onion, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.3, .02, 1.3]);
-  const onionHead = new pc.Entity('Cabeza de chicle'); onionHead.setLocalPosition(0, .75, 0); onion.addChild(onionHead);
-  const skins = ['#e9c46a', '#e2b04f', '#d69a3c', '#f2dc9b'].map(c => mat(c, .5));
-  skins.forEach((m, i) => part(onionHead, 'Capa', 'sphere', m, [0, 0, 0], [1.3 - i * .12, 1.2 - i * .1, 1.3 - i * .12].map(v => v * (i === 3 ? .82 : 1))));
-  part(onionHead, 'Brote', 'cone', mat('#6fae4a', .3), [0, .78, 0], [.22, .5, .22]);
-  part(onionHead, 'Brote', 'cone', mat('#86c45c', .3), [.1, .72, .04], [.14, .38, .14], [0, 0, -25]);
-  for (const x of [-.18, 0, .18]) part(onion, 'Raíz', 'cylinder', mat('#cdb48a'), [x, .1, 0], [.04, .22, .04], [0, 0, x * 60]);
-  eyes(onionHead, .08, .58, .2, .17, 18);
-  part(onionHead, 'Lágrima', 'sphere', mat('#8fd3ff', .9, .4, .8), [.34, -.05, .56], [.07, .11, .05]);
+  part(onion, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.5, .02, 1.5]);
+  buildFoeBody(FOE_BODIES.cebollon!, onion, 'Capa');
 
-  // El Plato Misterioso: a white plate on a little table, the silver cloche peeking with two eyes.
+  // El Plato Misterioso: a café table, a stained cloth, a tarnished cloche lifted a hand's breadth and
+  // something pale reaching out from under it (`[plato]`). The fight turns it over when it changes dish.
   const dish = root('El Plato Misterioso');
-  part(dish, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.1, .02, 1.1]);
-  part(dish, 'Mesita', 'cylinder', mat('#8a5a3a', .3), [0, .3, 0], [.12, .6, .12]);
-  part(dish, 'Plato', 'cylinder', mat('#f7f4ee', .7), [0, .62, 0], [1, .05, 1]);
-  const cloche = new pc.Entity('Cabeza de chicle'); cloche.setLocalPosition(0, .66, 0); dish.addChild(cloche);
-  part(cloche, 'Campana', 'sphere', mat('#c9ccd2', .95), [0, .2, 0], [.86, .62, .86]);
-  part(cloche, 'Asa', 'sphere', mat('#a7abb3', .95), [0, .54, 0], [.14, .1, .14]);
-  part(cloche, 'Rendija', 'box', mat('#1c1418'), [0, .02, .4], [.6, .06, .06]);
-  eyes(cloche, .06, .41, .12, .08);
+  part(dish, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1.2, .02, 1.2]);
+  buildFoeBody(FOE_BODIES.plato!, dish);
 
-  // A fantasmita: an arcade ghost of big pixels, magenta with a green glow.
+  // A fantasmita: an arcade ghost become real, cubes of magenta glass coming loose at its edges, its
+  // hem acid green (`[fantasmita]`). It goes see-through as a whole on its last count.
   const ghost = root('Fantasmita');
   part(ghost, 'Charco pringoso', 'cylinder', shadow, [0, .01, 0], [1, .02, 1]);
-  const pixels = new pc.Entity('Cabeza de chicle'); pixels.setLocalPosition(0, .35, 0); ghost.addChild(pixels);
-  const neon = mat('#ff3ad6', .4, .5), edge = mat('#3aff8a', .4, .9);
-  const rows = ['..####..', '.######.', '########', '########', '########', '########', '#.##.##.', '.#..#..#'];
-  rows.forEach((row, r) => [...row].forEach((c, k) => { if (c === '#') part(pixels, 'Píxel', 'box', r === rows.length - 1 ? edge : neon, [(k - 3.5) * .14, (rows.length - r) * .14, 0], [.14, .14, .3]); }));
-  for (const side of [-1, 1]) {
-    part(pixels, 'Ojo', 'box', eyeWhite, [side * .21, .78, .16], [.2, .24, .04]);
-    part(pixels, 'Pupila', 'box', mat('#2a3aff', .5, .3), [side * .21 + .04, .75, .19], [.1, .12, .03]);
-  }
+  buildFoeBody(FOE_BODIES.fantasmita!, ghost);
 
   // Vertitrón: a robot of roof tiles, ladders and Nuria's lime-white render, a house that stood up.
   // A boxy trunk with a window in its chest that is its one eye (lens, spiral and pupil, shutters

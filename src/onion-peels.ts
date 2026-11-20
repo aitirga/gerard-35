@@ -8,6 +8,16 @@ import * as pc from 'playcanvas';
  */
 const SKINS = ['#e9c46a', '#d69a3c', '#e2b04f'], NAKED = '#f4e4b4';
 export const skinOf = (layers: number) => layers > 0 ? SKINS[layers % SKINS.length] : NAKED;
+/**
+ * Shows `layers` on an onion's skin: its colour outright on a plain material, and as a light wash over
+ * the painted skin of a figure (a Meshy texture), so it still reads as that onion.
+ */
+export function tintSkin(skin: pc.StandardMaterial, layers: number) {
+  const tint = new pc.Color().fromString(skinOf(layers));
+  if (skin.diffuseMap) skin.diffuse.set(1 + (tint.r - 1) * .45, 1 + (tint.g - 1) * .45, 1 + (tint.b - 1) * .45);
+  else skin.diffuse.copy(tint);
+  skin.update();
+}
 const LIFE = .95, PIECES = 4;
 
 export function createOnionPeels(root: pc.Entity, groundHeight: (x: number, z: number) => number) {

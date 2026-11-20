@@ -14,7 +14,13 @@ conflicts, as a starting list for it:
   weight.
 - **The fears as food gags**: El Cebollón (he hates onion), El Plato Misterioso (he won't try new
   food), La Cebolla y los suyos with its cebollitas, platitos and the fantasmita's «GAME OVER».
-  His fears should be real.
+  His fears should be real. A first step (2026-11-19, Aitor: «más realistas, que parecen muy de
+  juguete»): the onion, the dish and the fantasmita are now realistic Meshy figures (`[cebollon]`,
+  `[plato]`, `[fantasmita]` in tools/figures.toml; `src/foe-bodies.ts`): a man-sized onion with torn
+  dry skins and roots like legs, a tarnished cloche lifted on something pale and wet, an arcade ghost
+  of magenta glass cubes coming apart. What they are (food, a game) is still to rethink. Vertitrón's
+  new figure (`[vertigo]`, Meshy's skeleton) is made but not yet in the fight, which still poses the
+  robot built from primitives.
 - **Velocidad is gone as a stat** (2026-10-31, `docs/combat.md`): Mareo (lowers Velocidad) and
   Papagato's Velocidad +2 need another form.
 - **The pushchair raced like a go-kart** (proposal, § Unusual things).

@@ -277,3 +277,62 @@ He stands planted, feet apart, arms a little away from his body, fists clenched 
 height = 2.1
 [campeon.view_notes]
 back = "The blue tarpaulin cape with its grommets covers his back to the calves."
+
+# Las cuerdas (docs/quests/marta.md § Monsters): the qualities Marta lost, with nobody to govern them. Each
+# `about` opens with the same sentence; the fight keeps what moves by hand (src/cuerdas-foes.ts): La
+# Lealtad's knot, Lo Directo's lance and crossbar, an Eco's rings and waves.
+[lealtad]
+name = "La Lealtad"
+kind = "creature"
+art = ["output/characters/3d/marta/toy.png"]
+about = """One of the qualities Marta has lost, loose in Las cuerdas, the void inside her where taut silver strings hang over dark petrol glass: not a creature and not a person, a quality of hers given a body of dark petrol blue-green glass, silver strings and cold light. No pink and no violet anywhere.
+THIS ONE, La Lealtad, her loyalty: a tall, slender, faceless woman of dark petrol glass who stands guard and never leaves her place. A little of Marta (the first image) is in her, only as a touch: long wavy hair falling past her chest in big sculpted waves, dark at the roots and turning warm amber gold from the ears down, and a big thin gold hoop at each ear. She is not Marta and is nothing like a toy: where the face should be, a smooth dark glass mask with only the faint hollow imprint of a face pressed into it, no eyes, no mouth. A long closed gown of dark petrol glass to the floor, edged in silver, an amber cord wound twice round her chest. With both hands she holds upright in front of her body a tall shield as high as her shoulders: a frame of silver metal strung from top to bottom with taut silver strings like a harp, and where the strings cross at its middle, a big glowing amber knot. Planted and unbending, chin up, guarding someone behind her."""
+height = 2.1
+[lealtad.view_notes]
+back = "Her long hair, dark at the roots and amber gold below, falls down her back over the gown; the silver frame of the shield shows at both sides."
+
+[eco]
+name = "Eco"
+kind = "creature"
+about = """One of the qualities Marta has lost, loose in Las cuerdas, the void inside her where taut silver strings hang over dark petrol glass: not a creature and not a person, a quality of hers given a body of glass, silver strings and cold light. No pink and no violet anywhere.
+THIS ONE, an Eco, what a blow leaves in the air: it floats, and has no legs, no arms and no face. A tall airy shape of pale silver-blue glass like a wave of sound breaking: several thin curling crests rising one over another and curling forward at the top like a wave about to break, wrapped round a hollow centre where a bright white bead of light hangs inside three thin concentric rings. Long thin streamers of the same glass sweep back and down from it in spirals, like a veil or a comet's tail, thinning to points; only its lowest point touches the floor. Big and complex but light, everything in sweeping curves, pale silver-blue and white with fine silver edges, a little dark petrol glass at the roots of the curls."""
+height = 1.7
+
+[directo]
+name = "Lo Directo"
+kind = "creature"
+about = """One of the qualities Marta has lost, loose in Las cuerdas, the void inside her where taut silver strings hang over dark petrol glass: not a creature and not a person, a quality of hers given a body of glass, steel and cold light. No pink and no violet anywhere.
+THIS ONE, Lo Directo, saying things straight: a tall, imposing, faceless knight made of blades, the straightest line between two points. Everything about it is straight, sharp and symmetric, with no curve anywhere, and it is elaborate: many layers, not a simple shape. Its armour is hundreds of narrow sword blades of dark navy glass-steel, set edge to edge and overlapping in tiers like the scales of a pangolin made of swords: a broad chest of stacked blades, tall pauldrons of fanned blades rising at its shoulders, a high collar of upright blades round its neck, and a long heavy tabard of hanging blades split in front, down to its shins. Every blade's edge is a thin line of cold blue-white light, so the whole figure is drawn in fine straight lines of light. Its head is a tall pointed diamond of navy rising out of the collar, one narrow vertical slit of blue light in it, no face. Long arms in sleeves of overlapping blades held straight down its sides, ending in long blade tips that point at the floor. Long legs in greaves of blades that taper to sharpened points standing on the floor. A bright line of blue-white light runs down its front from the crown to the floor. It holds nothing."""
+height = 2.3
+
+# La torre de Uri (docs/quests/nuria.md § Monsters, § Final boss): Uri's fears, made real. Aitor
+# (2026-11-19): more realistic, less like toys. The fight keeps their rules by hand (src/fears.ts).
+[cebollon]
+name = "El Cebollón"
+kind = "creature"
+about = """One of Uri's fears made real by La Reina Bubbaloo in his dark tower: a small boy's fear grown to the size and weight of an adult's dread, real and heavy, not a cartoon. Realistic materials and surfaces in one strong, simple silhouette that reads from a high camera. No face drawn on it, no eyes, no mouth, nothing cute.
+THIS ONE, El Cebollón, his hatred of onion: a real onion the size of a heavy man, wider than tall, slumped on the floor under its own weight. Its outer skins are dry, papery and torn, golden brown and copper, curling away from it in big brittle sheets; under them, layer on layer of thick glistening onion flesh, pale yellow-white with faint purple veins, wet where a skin has come off. A crown of long thick pale green shoots splits from its top, bent and limp. From its base a dense tangle of long, hairy, dirty-white roots spreads over the floor like the legs of something. It looks as if it weighs a tonne."""
+height = 1.7
+
+[plato]
+name = "El Plato Misterioso"
+kind = "creature"
+about = """One of Uri's fears made real by La Reina Bubbaloo in his dark tower: a small boy's fear grown to the size and weight of an adult's dread, real and heavy, not a cartoon. Realistic materials and surfaces in one strong, simple silhouette that reads from a high camera. No face drawn on it, no eyes, no mouth, nothing cute.
+THIS ONE, El Plato Misterioso, his dread of a food he does not know: a small round café table as high as a child's chest, a stained white tablecloth hanging to the floor, and on it a big white china plate under a tall domed silver cloche, old, dented and tarnished nearly black in places. The cloche is lifted a hand's breadth at the front, as if from inside: under its rim a dark gap, a little steam, and a few thin, pale, wet tendrils of something nobody could name reaching over the plate's edge. Realistic metal, china and cloth. Something is waiting under there."""
+height = 1.3
+
+[fantasmita]
+name = "Fantasmita"
+kind = "creature"
+about = """One of Uri's fears made real by La Reina Bubbaloo in his dark tower: a small boy's fear grown to the size and weight of an adult's dread, real, not a cartoon. Realistic materials and surfaces in one strong, simple silhouette that reads from a high camera. Nothing cute.
+THIS ONE, a fantasmita, his fear of the «GAME OVER» of an old arcade game: the ghost of that game become real, floating above the floor, as tall as a child. A domed head and a ragged hem cut in four points, the shape of a pixel ghost, but built of hundreds of real small cubes of translucent deep magenta glass packed together like voxels; at its edges cubes come loose and hang in the air round it, as if it were breaking up into pixels. Its hem glows a sick acid green. Two big empty rectangular eye holes, black inside, no pupils, no mouth. Cold, glitching, unsettling."""
+height = 1.1
+
+[vertigo]
+name = "Vertitrón"
+kind = "monster"
+about = """One of Uri's fears made real by La Reina Bubbaloo in his dark tower: a small boy's fear grown to the size and weight of an adult's dread, real and heavy, not a cartoon. Realistic materials and surfaces in one strong, simple silhouette that reads from a high camera. Nothing cute.
+THIS ONE, Vertitrón, his fear of heights, the boss at the top of the tower: a heavy robot as tall as two men, built from an old Catalan village house that stood up. Its trunk is a boxy block of lime-white render, chipped and stained; in the middle of its chest an old window whose louvred grey-green wooden shutters stand open on either side, and in the window, bulging out, a big glass eyeball in an iron rim, its iris deep violet with a spiral of light. Rows of old curved terracotta roof tiles cover its back, shoulders and the outsides of its arms and thighs like armour. Its forearms and shins are short wooden ladders, rungs and all. Big blocky hands and feet of rough stone. Its head is small, flat-topped and wide, a piece of tiled roof with a short brick chimney at one corner, no face: someone small could stand on top of it. Heavy, rigid, worn, imposing."""
+height = 3.4
+[vertigo.view_notes]
+back = "Rows of curved terracotta roof tiles cover its whole back like a roof."

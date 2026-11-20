@@ -20,7 +20,7 @@ import type { ParticleBody } from './particles';
 import { FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 import { createCat, type Cat, type CatAction } from './cats';
 import { BIP, createBip, type Bip } from './bip';
-import { createOnionPeels, skinOf } from './onion-peels';
+import { createOnionPeels, skinOf, tintSkin } from './onion-peels';
 import type { StatWay } from './stat-fx';
 import { createStatArrows } from './stat-arrows';
 import { createStatMotes } from './stat-motes';
@@ -852,7 +852,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (ability === 'capa-nueva' && actor) { const { height, radius } = extent(actor); dualFx.wrap(v3(floorUnder(actor)), Math.max(.3, radius * .8), Math.max(.5, height)); cue('peel'); }
     if (ability === 'aplaston' && feet && actor?.onion) {
       // Heavier than any blow: wider, dark grit along the floor, and the picture drops with it.
-      dualFx.shock(v3(feet), 3.4, actor.onion.skin.diffuse.toString(false), { chips: 140, light: true, heavy: true });
+      dualFx.shock(v3(feet), 3.4, skinOf(actor.onion.shown), { chips: 140, light: true, heavy: true });
       lensWant.y = -.5; lensHold = Math.max(lensHold, .3); shake = Math.max(shake, .7); pulse?.(.6, .4); cue('slam');
     }
     if (ability === 'vuelta' && actor?.dish) { actor.dish.flipAt = time; cue('clink'); }
@@ -915,7 +915,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const mouth = v3(partOf(actor, 'Garganta'));
     if (ability === 'juramento' && chest) dualFx.oath(v3(partOf(actor, 'Nudo')), chest, view);
     if (ability === 'lazo' && e.lazo) { const eco = fighters.get(e.lazo.target); if (eco) { dualFx.tie(v3(partOf(actor, 'Nudo')), v3(eco.base.clone().add(new pc.Vec3(0, 1.1 * eco.scale.y, 0))), e.lazo.back); cue('heal'); } }
-    if (ability === 'resonancia' && chest) dualFx.resonance(v3(partOf(actor, 'Flota')), chest, 1 + Math.min(3, (state?.foes.find(u => u.id === e.actor)?.turns ?? 1) - 1));
+    if (ability === 'resonancia' && chest) dualFx.resonance(v3(partOf(actor, 'Corazón del eco')), chest, 1 + Math.min(3, (state?.foes.find(u => u.id === e.actor)?.turns ?? 1) - 1));
     if (ability === 'destello' && chest) dualFx.glint(v3(partOf(actor, 'Cuerda de dentro')), chest);
     if (ability === 'estallido') { dualFx.shatter(v3(partOf(actor, 'Fuste')), everyone, view); shake = Math.max(shake, .6); pulse?.(.6, .5); cue('crack'); cue('clink', { delay: .12 }); }
     if (ability === 'prisma') { dualFx.prism(v3(partOf(actor, 'Fuste')), everyone, view); shake = Math.max(shake, .3); cue('zap'); }
@@ -1555,7 +1555,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         effects.emit('dust', new pc.Vec3(position.x, position.y + .75 * onion.size, position.z), 5, radius * .8);
       }
       onion.shown = shown;
-      onion.skin.diffuse.fromString(skinOf(shown)); onion.skin.update();
+      tintSkin(onion.skin, shown);
     }
     const want = onionSize(onion.kind, onion.shown);
     onion.size = animate ? onion.size + (want - onion.size) * (1 - Math.exp(-dt * 14)) : want;
@@ -2027,7 +2027,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (!party && unit.kind !== 'vertigo') fighters.get(unit.id)!.materials.forEach(dissolvable);
     if (isOnion(unit.kind)) {
       const skin = (model.find(node => node.name === 'Capa')[0] as pc.Entity).render!.meshInstances[0].material as pc.StandardMaterial;
-      skin.diffuse.fromString(skinOf(unit.layers ?? 0)); skin.update();
+      tintSkin(skin, unit.layers ?? 0);
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
