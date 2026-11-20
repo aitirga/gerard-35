@@ -80,10 +80,18 @@ const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#con
 const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
  * Each place's song, coming in slowly from anywhere in it (a vamping or cycled one from the top);
- * a place without one fades to silence.
+ * a place without one fades to silence. Walking between two places with the same song keeps it going.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
+  // Childhood: the house and its street (the game opens in the house), and Alegia like Sant Quirze.
+  'home-floor-2': 'triste', 'home-floor-1': 'triste', 'home-entrance': 'triste', maresme: 'triste', cardedeu: 'triste', alegia: 'triste',
+  meridiana: 'home', 'meridiana-calle': 'concrete',
+  // The friends' missions, each with a mazmorra song: Nuria's and Luca's the dark one, the university's and Emilie's the cycled one.
+  'cardedeu-laberinto': 'mazmorra-oscuro', 'sagrada-familia': 'mazmorra-oscuro', 'sagrada-familia-interior': 'mazmorra-oscuro',
+  camping: 'mazmorra-2', 'poble-sec': 'mazmorra-2', 'piso-emilie': 'mazmorra-2', modelo: 'mazmorra-2',
+  palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo',
+};
 let place: EnvironmentId | undefined;
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
@@ -380,7 +388,8 @@ try {
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
-    else if (effect.kind === 'song') void audio.unlocked.then(() => music.play(effect.track, { restart: true, fade: 0 }));
+    // A recording that comes out in the scene (Marta's at the piano) starts at once, and the place's song fades out under it.
+    else if (effect.kind === 'song') void audio.unlocked.then(() => { music.stop({ fade: 1.5 }); return music.play(effect.track, { restart: true, fade: 0 }); });
     else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
     else if (effect.kind === 'ambush') { await game.ambush(() => storyUI.blackout(true, 1400)); storyEvent({ type: 'caught' }); }

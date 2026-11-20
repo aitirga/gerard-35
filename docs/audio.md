@@ -73,14 +73,21 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **Places**: `PLACE_SONGS` in [src/main.ts](../src/main.ts). In the Meridiana flat, `home`
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
-  somewhere else, when the fight is over.
+  somewhere else, when the fight is over. Walking between two places with the same song keeps it
+  going.
+- **Childhood**: `triste` in the house the game opens in (its three floors), out in Passatge Maresme,
+  on Nuria's street in Cardedeu (Jacint Verdaguer, not the street that never ends nor Uri's tower),
+  and in Alegia, as in Sant Quirze. The first time Aitor plays the piano there, Marta's «Izana»
+  starts at once and `triste` fades out under it over 1.5 s.
+- **The friends' missions**, each with a mazmorra song: `mazmorra-oscuro` in Uri's tower and in Luca's
+  (the Sagrada Família, outside and inside, Fran's salon included); `mazmorra-2` in the university
+  friends' camping and in Emilie's (Poble Sec, her flat and her model). Marta's Las cuerdas has her own
+  voice instead (below). The beach where the university friends' mission starts has no song.
 - **Uri's tower**: `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11 min) the same way, from a different
   point every time they go in and every time a fight there ends, and never at any other moment: at
   the end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
-- **Streets**: `triste` in Passatge Maresme and on Nuria's street in Cardedeu (Jacint Verdaguer, not
-  the street that never ends nor Uri's tower), and `concrete` on Meridiana street, each from the top
-  over 4 s (`triste` from a random point). `just screenshots street-music --chrome` checks both and the
-  vamp.
+- **Streets**: `concrete` on Meridiana street, from the top over 4 s, and `triste` (above) from a
+  random point. `just screenshots street-music --chrome` checks both and the vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
@@ -107,8 +114,8 @@ The first two are at 110 BPM, measured with `just music-loop` and a self-similar
 - `mazmorra-2` (`song-mazmorra-2`, 4:48) holds six versions of one 48 s cycle: 88 beats, Logic's
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
-  (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
-  mazmorra songs; none plays it yet.
+  (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, picked among the
+  mazmorra songs: the camping and Emilie's places play it.
 - `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Uri's tower's: a long take, streamed, with its
   loudness map (−26.8 to −16.9 dB, median −20.7).
 - `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
