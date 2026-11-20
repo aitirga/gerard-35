@@ -748,7 +748,24 @@ in = "src/battle.ts"
 [[block.item]]
 title = "Modelo de la Reina"
 priority = "final"
-file = "public/models/characters/reina.glb"
+file = "public/models/monsters/reina.glb"
+
+[[block.item]]
+title = "Retrato de la Reina, con la cara de Nuria Mendoza"
+priority = "final"
+file = "public/portraits/reina.png"
+
+[[block.item]]
+title = "El escenario de la Reina: su arena en la sala de actos"
+weight = 2
+priority = "final"
+file = "src/throne-arena.ts"
+
+# Aitor's own rewrite (2026-11-20): the fight's rules stay preliminary until every ánima's mechanics exist.
+[[block.item]]
+title = "Combate de la Reina: diseño definitivo, con todas las ánimas hechas"
+weight = 3
+priority = "final"
 
 [[block.item]]
 title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"
@@ -761,6 +778,12 @@ in = ["src/battle.ts", "src/story.ts"]
 title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
 priority = "final"
 used = "heldAct"
+
+[[block.item]]
+title = "Aitor poseído cruza al lado de la Reina y ataca desde allí, con su ficha"
+priority = "final"
+grep = "function crossOver"
+in = "src/battle-scene.ts"
 
 # The artilugio is an ESP32 board (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
 # (docs/story-outline.md § The device).
@@ -832,6 +855,12 @@ file = "src/endings.ts"
 title = "Créditos"
 priority = "final"
 file = "src/credits.ts"
+
+[[block.item]]
+title = "Créditos: el álbum de las vacaciones de Nuria Mendoza"
+priority = "final"
+grep = "export const ALBUM"
+in = "src/credits.ts"
 
 # ——— Economía ———
 [[block]]

@@ -160,7 +160,12 @@ The fight tester. Choose:
   and two dice) and *El Campeón*; on the Barceloneta's sand until the campsite has a place of its own.
   **Castillo** has every fight of the castle (docs/castle.md): each room's pupils by year, La
   Delegada, Aurelià, El Equipo de dirección, La Reina Bubbaloo (the first meeting, which cannot be
-  won) and La Reina with the artilugio; rooms on their floor, bosses in their own room.
+  won) and La Reina with the artilugio; rooms on their floor, bosses in their own room, the Queen
+  up on her stage (src/throne-arena.ts). Her fight's *Momentos* jump to each phase (*El chicle*,
+  *Las manos*, *La pompa*, *Tiene a Aitor*; *Suyo* in the first meeting), and the keyboard's 1–4
+  are the artilugio's buttons there. **Beating her here plays the ending on**: the last scene,
+  Acabar or Bajar la mano, what it does, the Monday's words and the credits, as the story would,
+  with nothing raised and no morning (`previewEnding` in src/main.ts): the save is the same after.
   Dogs come 1 to 4; the guards are as many and as strong as the friends' ánimas leave them.
 - To try **Ángulo exacto**, **Ronroneo** and the **duals**, the Ánimas column sets the
   levels (Matemágico and Papagato at *Nv 2* reach all of them) and *Equipo* + *Ánimas* put
@@ -311,8 +316,9 @@ to turn, wheel to come closer; a rigged monster plays its Meshy clips), its port
 expressions, the `just character-3d` images (design, views, earlier tries), and for a foe its PV
 and weaknesses in every fight it is in, the moves it makes, the fight's question and its answer,
 and how its model moves. A badge says how its model stands: its own, procedural, a part of
-another, or **provisional** (drawn with someone else's, as the castle's pupils still use the palace
-minion); the *Por mejorar* filter keeps only those and whoever has none.
+another, or **provisional** (drawn with someone else's: a castle foe with no figure yet uses the
+palace minion; one with its own, src/monsters/<id>.json, fights with it and shows it); the *Por
+mejorar* filter keeps only those and whoever has none.
 
 Every model starts **front-on** and still: chosen (or switched with the buttons over it), the camera
 looks at its face (yaw 0, every family faces +z), framed to its height, the turntable off until

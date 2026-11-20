@@ -83,9 +83,23 @@ The question has three parts:
 
 ## La Reina Bubbaloo
 
-She is nobody: what is left of being a kid (lore.md). Her motive is good and her means are cruel.
-The fight is the whole game asked again, in the throne room, with everything the party has: stage
-3, the definitivas, three ánimas each. No joke, no cartoon monster.
+She is nobody: what is left of being a kid (lore.md), wearing Nuria Mendoza's face. Her motive is
+good and her means are cruel. The fight is the whole game asked again, in the throne room, with
+everything the party has: stage 3, the definitivas, three ánimas each. No joke, no cartoon monster.
+
+- **Her figure** (2026-11-20): `[reina]` in tools/figures.toml, drawn from Nuria Mendoza's face
+  photos (a mix of two drafts Aitor chose), Meshy's skeleton and clips (src/monsters/reina.json),
+  2.8 m; her portrait, public/portraits/reina.png. The bestiary shows both.
+- **Where**: her stage (src/throne-arena.ts). As she comes down from the throne the picture breaks
+  into glass and the fight goes up onto the sala d'actes' stage, built for it: the boards with their
+  gold edge and footlights over the dark rows of chairs, the indigo velvet in pleats with the
+  school's banner, the balcony open onto the night city, and her throne beside her (the gum seat,
+  the bubble she blows with her core beating in it, the crown of five flavours on top), her gum
+  spreading from it over the boards and climbing the velvet, bubbles rising and popping. One warm
+  spotlight on her, her core's pink, the city's cold glow, the footlights' wash. It keeps the throne
+  room's card (places/palace-zones.md).
+- **The rules are preliminary, on purpose**: Aitor (2026-11-20) leaves the fight's real design for
+  last, once every ánima's mechanics exist; until then it is the version below.
 
 | Phase | PV | What it tests |
 | --- | --- | --- |
@@ -102,8 +116,11 @@ The fight is the whole game asked again, in the throne room, with everything the
 At about a tenth of her PV she **takes control of Aitor** (decided, story-outline.md § The end, in
 order).
 
-- His eyes go violet, as Uri's did. **His dock crosses to the enemy side**, and **player 2 keeps
-  driving him, against Gerard**, with all of his kit.
+- His eyes go violet, as Uri's did. **He crosses to her side**: he walks over to stand in front of
+  her, turns on Gerard and from then on attacks from there, as a foe would; **his card crosses
+  too**, out of the party's docks onto her side in possession's violet («Del lado de la Reina»), and
+  **player 2 keeps driving him, against Gerard**, with all of his kit (built 2026-11-20).
+  Freed, he walks back to his place and his card comes home.
 - **The music does not change** when she takes him (Aitor, 2026-11-19, replacing the motif-only
   idea): it only fades out, for good, when the artilugio is played at her (`silenced` in `src/main.ts`).
 - **By default there is no way out.** Without the artilugio they kill Gerard. It happens once, and
@@ -117,8 +134,9 @@ order).
   can pay for, or Defender, and what he picks runs as his own action against Gerard (`heldAct` in
   `src/battle.ts`), growing as hers did; picked something that does not hurt Gerard, the thread of
   gum pulls his arm anyway, so the first time there is still no way out. His eyes go violet in the
-  fight. Without a choice (the simulators) she moves him herself, as before. Still to come: his card
-  crossing too. Then Bernat calls, the salón de juegos is played, and they come back with it.
+  fight. Without a choice (the simulators) she moves him herself, as before. He and his card cross to
+  her side (`crossOver` in `src/battle-scene.ts`, `.held-side` in `src/battle-ui.ts`, built 2026-11-20).
+  Then Bernat calls, the salón de juegos is played, and they come back with it.
 - **The artilugio survives a rewind** (decided 2026-11-19): her castle covering everything takes the
   day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
   (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed
