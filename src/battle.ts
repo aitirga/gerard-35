@@ -3,8 +3,8 @@ import { adjustResource } from './combat/engine.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
-import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove } from './castle.ts';
-import { castleAfter, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
+import { castleAfter, castleAtNight, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
@@ -1579,8 +1579,10 @@ export type GuardStrength = ReturnType<typeof palaceGuards>;
  * whole-game simulator plays (src/game-sim.ts), one dispatch for both, so an encounter added here is
  * met the same on screen and headless.
  */
-export function createEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; random?: () => number } = {}): BattleState {
-  const { foeCount = 1, possessed = false, animas, guards = palaceGuards(0), random } = options;
+export function createEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; random?: () => number } = {}): BattleState {
+  const { foeCount = 1, possessed = false, animas, guards = palaceGuards(0), night, random } = options;
+  // At night on the Meridiana: the castle's pupils of the floor the party is on, a room's group, stronger out here (src/night.ts).
+  if (encounter === 'night-guard' && night) return castleAtNight(createCastleBattle(castleKit, slots, night.room, animas, random ?? Math.random), night.might);
   return (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, animas)
     : encounter === 'palace-guards' || encounter === 'night-guard' ? createGuardBattle(slots, guards, animas, encounter)
@@ -1787,7 +1789,7 @@ function winMessage(state: BattleState) {
     : (BROOD_ENCOUNTERS as readonly string[]).includes(state.encounter) ? 'Se deshacen en humo violeta. Desde arriba, la risa de Uri. Volverán.'
     : state.encounter === 'palace-minion' ? 'El esbirro se queda tieso, se agrieta como chicle viejo… y revienta.'
     : state.encounter === 'palace-guards' ? 'Los guardianes se deshacen en charcos rosas. La cortina tiembla.'
-    : state.encounter === 'night-guard' ? 'El guardián se deshace en un charco rosa sobre las baldosas.'
+    : state.encounter === 'night-guard' ? state.foes.some(f => isCastle(f.kind)) ? 'El chicle pierde la forma y se queda pegado a las baldosas. Solo era chicle.' : 'El guardián se deshace en un charco rosa sobre las baldosas.'
     : state.possessed ? `El rosa se les va de los ojos. ${state.foes.length === 1 ? 'El perro sale corriendo' : 'Los perros salen corriendo'}, con el rabo entre las patas.`
     : `${state.foes.length === 1 ? 'El perro se tranquiliza' : 'Los perros se tranquilizan'}. ¡Camino despejado!`;
 }

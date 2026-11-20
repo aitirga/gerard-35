@@ -1,0 +1,90 @@
+{
+  "title": "La Meridiana de noche: los alumnos del castillo",
+  "description": "docs/chapter-2.md § Night and the way home. At night the pupils of the castle floor the party is on (the first) climb out of the grates, a room's group each, with their own figures and gaits; the group that catches the party is the fight. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1&day=5"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.story.days.clock.hour = 21"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        225,
+        75
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 60000
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "eval": "{ const g = window.gerard.game, at = g.world(g.position.x - 16, g.position.z - 10); g.frame({ x: at.x, y: 1, z: at.z }, 18); }"
+    },
+    {
+      "shot": "calle",
+      "delay": 1500,
+      "caption": "Night on the Meridiana: the first floor's pupils out of the grates, a room's group each, walking their rounds"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        248,
+        67
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "{ const g = window.gerard.game, h = g.nightHunters.find(h => h.id === 'night-1'), at = g.world(h.x, h.z); g.frame({ x: at.x, y: 1, z: at.z }, 3.6); }"
+    },
+    {
+      "shot": "grupo-1",
+      "delay": 250,
+      "caption": "Up close in the dark, the first group (La Chivata and El Repetidor) walking its round, each in its own gait, its gum glowing a little"
+    },
+    {
+      "eval": "{ const g = window.gerard.game, h = g.nightHunters.find(h => h.id === 'night-1'), at = g.world(h.x, h.z); g.frame({ x: at.x, y: 1, z: at.z }, 2.4); }"
+    },
+    {
+      "shot": "grupo-1-cerca",
+      "delay": 250,
+      "caption": "Closer still: their gaits from Meshy's library"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "setTimeout(() => window.gerard.storyEvent({ type: 'near', id: 'night-4' }), 300)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "pillados",
+      "caption": "Caught: the group that caught them is the fight, with the castle's rules, stronger out here on the first nights (provisional numbers)"
+    }
+  ]
+}

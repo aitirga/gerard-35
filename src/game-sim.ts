@@ -33,7 +33,7 @@ import { LEVELLED, MAX_LEVEL, fightXp, participants } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
 import { FIRST_CLEAR, HIDING_KINDS, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, type NightTier } from './night.ts';
 import { createBoard } from './parcelas.ts';
-import { CASTLE_FIGHTS, CASTLE_PHASES, castlePhaseAt } from './castle.ts';
+import { CASTLE_FIGHTS, CASTLE_PHASES, castlePhaseAt, type NightFight } from './castle.ts';
 import { aitorTaken } from './castle-fight.ts';
 import { Story, WRAPPER_ROOM, type StoryEffect, type StoryEvent, type StoryFlag } from './story.ts';
 import { STATION_PLACES, entranceId } from './transit.ts';
@@ -282,7 +282,7 @@ export class Playing {
       switch (effect.kind) {
         case 'dialogue': this.spend('read', reading(effect.dialogue, this.player.read)); break;
         case 'travel': this.moveTo({ environment: effect.environment, cell: effect.cell }); this.spend('scene', BEAT.travel!); break;
-        case 'battle': this.fight(effect.encounter); break;
+        case 'battle': this.fight(effect.encounter, effect.night); break;
         case 'minion': this.spend('scene', BEAT.minion!); this.send({ type: 'minion' }); break;
         case 'palace': this.spend('scene', BEAT.palace!); this.send({ type: 'palace' }); break;
         case 'ambush': this.spend('scene', BEAT.ambush!); this.send({ type: 'caught' }); break;
@@ -565,10 +565,10 @@ export class Playing {
 
   // ── Fights ──────────────────────────────────────────────────────────────
   /** A story fight: the party exactly as the story has it, played to its end by the player's bot. */
-  private fight(encounter: string) {
+  private fight(encounter: string, night?: NightFight) {
     const story = this.story, before = { ...story.storyLevels };
     const state = createEncounter(story.battleParty(true), encounter as Encounter, {
-      foeCount: DOGS, possessed: story.possessed, animas: story.classes, guards: palaceGuards(story.animas.length), random: this.random,
+      foeCount: DOGS, possessed: story.possessed, animas: story.classes, guards: palaceGuards(story.animas.length), night, random: this.random,
     });
     state.levels = story.levels;
     improve(state, story.improved);

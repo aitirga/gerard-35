@@ -103,11 +103,27 @@ export function hunterSpec(n: number, at: Cell, grid: readonly string[], tier: N
 }
 
 /**
- * What Aitor says when they first see them, by the ánimas the party has gathered: the palace's
- * guards are as strong as those leave them (`palaceGuards` in src/battle.ts), and so are these.
+ * How much stronger than inside the castle its pupils are out here at night (src/castle.ts
+ * `NightFight`), from what the party has: each friend's ánima and each level its ánimas have grown
+ * take some off, down to `floor`, as strong as inside. On the first nights a caught fight cannot be
+ * won; with the friends' ánimas and a few levels it can. Tunable (`just fight-sim`, book `night`).
+ * Provisional (2026-11-20): Aitor will balance the night later; El Empollón and La Chivata's group
+ * is still won from the first night.
  */
-export function sizeUp(animas: number) {
-  return animas <= 0 ? 'Son como los del castillo. Ni se te ocurra pararte a pelear.'
-    : animas === 1 ? 'Los del castillo… Con lo de Nuria igual podemos. Mejor no probarlo.'
-    : 'Esos ya no me dan tanto miedo. Creo que a estos les podemos.';
+export const NIGHT_PUPILS = { start: 8, perFriend: 1.1, perLevel: .4, floor: 1 };
+export function nightMight(friends: number, levels: Partial<Record<string, number>> = {}) {
+  const grown = Object.values(levels).reduce((sum: number, level) => sum + Math.max(0, (level ?? 1) - 1), 0);
+  return Math.max(NIGHT_PUPILS.floor, NIGHT_PUPILS.start - NIGHT_PUPILS.perFriend * friends - NIGHT_PUPILS.perLevel * grown);
+}
+/** The castle's floors as Aitor names their pupils. */
+const FLOORS = { 1: 'los de primero', 2: 'los de segundo', 3: 'los de tercero' } as const;
+/**
+ * What Aitor says when they first see them: whose they are (the floor of the castle the party is on,
+ * `phase`) and, by the friends' ánimas gathered, whether to stop and fight.
+ */
+export function sizeUp(animas: number, phase: 1 | 2 | 3 = 1) {
+  const who = FLOORS[phase];
+  return animas <= 0 ? `Son ${who} del castillo. Ni se te ocurra pararte a pelear.`
+    : animas === 1 ? `Son ${who} del castillo… Con lo de Nuria igual podemos. Mejor no probarlo.`
+    : `Son ${who} del castillo. Si aquí les podemos, dentro también.`;
 }

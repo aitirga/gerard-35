@@ -283,6 +283,18 @@ export const CASTLE_FIGHT_NAMES: Record<CastleEncounter, string> = {
   'alumnos-3d': 'Montón y Chivata · 3.º', 'delegada-3': 'La Delegada · 3.º',
   aurelia: 'Aurelià', direccion: 'El Equipo de dirección', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',
 };
+/**
+ * The castle at night on the Meridiana (docs/chapter-2.md § Night and the way home): the pupils of the
+ * floor the party is on climb out of the grates, a room's group each, the floor's rooms in turn and La
+ * Delegada's last. What walks the street is what waits inside, so it measures the party for it.
+ * `might`: how much stronger than inside they are tonight, PV and blows (src/night.ts `nightMight`).
+ */
+export interface NightFight { room: RoomEncounter; might: number }
+/** The group the `n`th of the night's hunters (`night-n`) brings, on `phase`'s floor. */
+export function nightGroup(n: number, phase: CastlePhaseId): RoomEncounter {
+  const spec = castlePhase(phase), groups = [...spec.fights, spec.elite];
+  return groups[(Math.max(1, n) - 1) % groups.length];
+}
 /** A pupil's year (docs/castle.md § Three years): fresh gum, gum with a filling, rancid gum. */
 export type Year = 1 | 2 | 3;
 export const yearOf = (encounter: string): Year => (Number(/-(\d)/.exec(encounter)?.[1]) || 1) as Year;
@@ -410,6 +422,8 @@ export type ReinaPhase = keyof typeof REINA_PHASES;
 export interface CastleMark {
   year?: Year; filling?: Element; learned?: 'physical' | 'magic'; crust?: number; twin?: string; seen?: number;
   away?: boolean; back?: number; rage?: number; form?: MontonForm; copied?: number; all?: boolean;
+  /** Out on the Meridiana at night: how much harder it hits and holds than inside (`NightFight.might`). */
+  might?: number;
   /** A Gemelo brought down alone: held up by its twin at 1 PV until the round ends. `found`: a blow has found what this one is weak to. `told`: its fall has been dealt with. */
   down?: boolean; found?: boolean; told?: boolean;
   /** It loses its next turn (the Queen, her Pompa burst or startled by a note). */

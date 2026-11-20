@@ -156,8 +156,13 @@ head and tail lights. Her pink stays low in the haze, more as she spreads.
 **The way home.** The Meridiana's station is the L1's real Fabra i Puig, at its Concepció Arenal
 entrance on the even side, about 300 m and one crossing from home's portal at Meridiana 335 on the
 odd side ([places/meridiana.md](places/meridiana.md#home-at-meridiana-335-the-avenue-turned-round)).
-Coming out onto the avenue at night, the palace's monsters climb out of the vent grates (the
-station's under the plaza, the median's over the trains) and hunt the party (`src/chasers.ts`):
+Coming out onto the avenue at night, the castle's pupils climb out of the vent grates (the
+station's under the plaza, the median's over the trains) and hunt the party (`src/chasers.ts`).
+They are the pupils of the castle's floor the party is on (decided with Aitor 2026-11-20): each
+hunter is one of that floor's groups, its rooms in turn and La Delegada's last (`nightGroup` in
+`src/castle.ts`), drawn with their own figures and each walking its own gait from Meshy's library,
+the chase in that gait sped up (`src/castle-models.ts`; El Montón, with no skeleton, crawls). What
+walks the street is what waits inside, so the way home measures the party for the floor:
 
 - **Light gives you away.** In a lamp's light they see Gerard from far off; in the dark between
   lamps only up close, a little further once they are after him.
@@ -167,11 +172,14 @@ station's under the plaza, the median's over the trains) and hunt the party (`sr
 - **The portal is safe.** Its warm light is the brightest on the street, and they never step into it.
 - **Each train brings more.** A train under the median puffs out of the grates and, at night, more
   of them climb out after it, never in the party's face.
-- **The hint.** Aitor sizes them up the first time they show, by the friends' ánimas
-  (`sizeUp`). The one that catches the party brings the palace's whole guard, as many and as
-  strong as the palace has them now (`createGuardBattle` with `night-guard`): what happens in the
-  street is what would happen inside. Escaping is allowed. Beaten, they wake at 11:00 the next day
-  (*"Las once…"*); winning melts the guard and the hunt goes on.
+- **The hint.** Aitor sizes them up the first time they show: whose floor they come from, and by
+  the friends' ánimas whether to stop (`sizeUp`). The group that catches the party is the fight,
+  with the castle's own rules (`night-guard` with a `NightFight`), stronger out here the fewer
+  friends and levels the party has (`nightMight`: PV and blows times its might, never weaker than
+  inside): on the first nights it cannot be won, with the friends' ánimas and grown levels it can.
+  Escaping is allowed. Beaten, they wake at 11:00 the next day (*"Las once…"*); winning melts the
+  group and the hunt goes on. Its numbers are provisional (book `night`): Aitor balances the night
+  later, and El Empollón and La Chivata's group is still won from the first night.
 
 How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 
@@ -184,13 +192,13 @@ How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 
 Gerard walks at 5.2 cells/s and runs at 7.8: at first they are slower than a walk; on the last night
 only running keeps ahead. No more than twice the first count are ever out. The fight sim holds the
-street fight to the palace (`noche-sin-amigos`, `noche-con-nuria` in `TARGETS`). Development:
+street fight to that (`noche-sin-amigos`, `noche-con-nuria`, `noche-con-tres` in `TARGETS`). Development:
 `just dev-night <castle stage 0–4> [<ánimas>]`, the picker's *De noche · La vuelta a casa* (its
 level is the castle's stage), Hora (Noche), the fight tester's *De noche en la Meridiana*,
 and `just screenshots camino-a-casa`.
 
-For later: the palace's other stages (each zone's own monsters walking the street once the zone is
-built and won); cars flattening a guard that steps onto a lane (proposed, not built).
+For later: balancing the night (each floor's groups, and levels raising the ánimas' stats a little,
+proposed by Aitor 2026-11-20); cars flattening a pupil that steps onto a lane (proposed, not built).
 
 ## The snow globe
 

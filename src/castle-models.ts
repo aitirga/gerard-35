@@ -40,6 +40,13 @@ export interface CastleModel {
   size: number;
   /** Its clips by name: `rest` (the file's own pose) and those it came with (`walking`, `running`). */
   clips: Map<string, pc.AnimTrack>;
+  /**
+   * Its own walk, if it has one: the move from Meshy's animation library its file of `actions` brings
+   * (`animations` in tools/figures.toml), each pupil's own. Without one, it walks Meshy's plain walk.
+   */
+  gait?: string;
+  /** A creature in one piece (El Montón): no skeleton, so it crawls by squashing and stretching. */
+  crawls?: boolean;
 }
 const loading = new Map<string, Promise<CastleModel | undefined>>();
 const loaded = new Map<string, CastleModel | null>();
@@ -66,11 +73,18 @@ async function build(app: pc.AppBase, id: string): Promise<CastleModel | undefin
   const clips = new Map<string, pc.AnimTrack>();
   const rest = file?.animations[0]?.resource as pc.AnimTrack | undefined;
   if (rest) clips.set('rest', rest);
+  let gait: string | undefined;
   await Promise.all(Object.entries(spec.clips).map(async ([name, url]) => {
-    const track = (await container(app, url).catch(() => undefined))?.animations[0]?.resource as pc.AnimTrack | undefined;
+    const file = await container(app, url).catch(() => undefined);
+    // The library's moves come in one file, a clip each: its walk is the first.
+    if (name === 'actions') {
+      file?.animations.forEach((animation, i) => { const id = `actions-${i}`; clips.set(id, animation.resource as pc.AnimTrack); if (!i) gait = id; });
+      return;
+    }
+    const track = file?.animations[0]?.resource as pc.AnimTrack | undefined;
     if (track) clips.set(name, track);
   }));
-  return { template, size: spec.height / MINION_HEIGHT, clips };
+  return { template, size: spec.height / MINION_HEIGHT, clips, ...gait ? { gait } : {}, ...spec.creature ? { crawls: true } : {} };
 }
 /** Loads the figure `id` (once): undefined if it has no file yet, or it could not be loaded. */
 export function loadCastleModel(app: pc.AppBase, id: string): Promise<CastleModel | undefined> {
@@ -88,22 +102,57 @@ export const castleModel = (id: string) => loaded.get(id) ?? undefined;
 /** Whether `id` is settled: loaded, failed, or with no file to load. */
 export const castleModelSettled = (id: string) => !specOf(id) || loaded.has(id);
 
-/** What plays a copy's clips: `play` moves to another (a short blend), and does nothing if it is the one playing. */
-export interface FigureClips { play(name: string, speed?: number): void }
-/** The clips of a copy of `model`'s template, on its figure. Nothing if the model came with none. */
+/** How much faster a pupil's own walk plays when it runs after the party: it chases in its own gait. */
+export const CHASE_PACE = 1.8;
+/**
+ * What moves a copy. `play` takes a clip by name (`rest`, `walking`, `running`), or what it means:
+ * `walk` its own walk (the plain one without), `chase` that walk at CHASE_PACE (the plain run without);
+ * changing clip blends a moment, the same one again only sets its speed. `tick` runs a creature's crawl.
+ */
+export interface FigureClips { play(name: string, speed?: number): void; tick?(dt: number): void }
+/** What moves a copy of `model`'s template: its clips on its figure, or a creature's crawl. Nothing if it has neither. */
 export function figureClips(copy: pc.Entity, model: CastleModel): FigureClips | undefined {
-  const figure = (copy.findByName(FIGURE) as pc.Entity | null)?.children[0] as pc.Entity | undefined;
+  const holder = copy.findByName(FIGURE) as pc.Entity | null;
+  if (model.crawls && holder) return crawl(holder);
+  const figure = holder?.children[0] as pc.Entity | undefined;
   if (!figure || !model.clips.size) return undefined;
   figure.addComponent('anim', { activate: true });
   for (const [name, track] of model.clips) figure.anim!.assignAnimation(name, track);
   let now = '';
   return {
     play(name, speed = 1) {
-      const clip = model.clips.has(name) ? name : 'rest';
-      figure.anim!.speed = speed;
+      const meant = name === 'walk' ? model.gait ?? 'walking' : name === 'chase' ? model.gait ?? 'running' : name;
+      const clip = model.clips.has(meant) ? meant : 'rest';
+      figure.anim!.speed = speed * (name === 'chase' && model.gait ? CHASE_PACE : 1);
       if (clip === now || !model.clips.has(clip)) return;
       now = clip;
       figure.anim!.baseLayer?.transition(clip, .15);
     },
   };
+}
+/** A heap of gum on the move with no legs (El Montón): it squashes and stretches forward, faster when it gives chase. */
+function crawl(holder: pc.Entity): FigureClips {
+  const base = holder.getLocalScale().clone();
+  let pace = 0, phase = 0;
+  return {
+    play(name, speed = 1) { pace = speed * (name === 'chase' || name === 'running' ? 2.2 : name === 'walk' || name === 'walking' ? 1 : 0); },
+    tick(dt) {
+      phase += dt * pace * 5;
+      const surge = pace ? Math.sin(phase) : 0;
+      holder.setLocalScale(base.x * (1 - surge * .05), base.y * (1 + surge * .08), base.z * (1 + surge * .1));
+      holder.setLocalEulerAngles(pace ? 4 + surge * 3 : 0, 0, 0);
+    },
+  };
+}
+/**
+ * Out on the Meridiana at night (src/night.ts) the pupils glow a little from within, their own gum
+ * lighting itself, as the palace guards' pink eyes did: the dark between lamps still hides the party
+ * from them, but the party can see what is coming and measure it. Each copy gets its own materials.
+ */
+export function glowAtNight(copy: pc.Entity, strength = .45) {
+  for (const render of copy.findComponents('render') as pc.RenderComponent[]) for (const mesh of render.meshInstances) {
+    const own = (mesh.material as pc.StandardMaterial).clone();
+    own.emissiveMap = own.diffuseMap; own.emissive = new pc.Color(1, 1, 1); own.emissiveIntensity = strength;
+    own.update(); mesh.material = own;
+  }
 }

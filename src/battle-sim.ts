@@ -11,14 +11,15 @@ import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, DEFEND_CHARGE, DUALS, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
-import { ARTILUGIO_NOTES, CASTLE, type MontonForm } from './castle.ts';
+import { ARTILUGIO_NOTES, CASTLE, type MontonForm, type RoomEncounter } from './castle.ts';
+import { NIGHT_PUPILS, nightMight } from './night.ts';
 import { artilugioLive, castleNote, castleProp, montonCopy, nextNote } from './castle-fight.ts';
 
 export const SIM_VERSION = 2;
@@ -179,6 +180,7 @@ const BOOKS = {
   camping: { rules: CAMPING },
   marta: { rules: MARTA },
   castle: { rules: CASTLE },
+  night: { rules: NIGHT_PUPILS },
   modelo: { rules: MODELO },
   luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
@@ -234,7 +236,8 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
   const [kind, count] = setup.fight.split(':');
   const state = kind === 'dogs' || kind === 'possessed' ? createBattle(party, Number(count ?? 1), kind === 'possessed', undefined, animas)
     : kind === 'palace-guards' ? createGuardBattle(party, palaceGuards(animas.length), animas)
-    : kind === 'night-guard' ? createGuardBattle(party, palaceGuards(setup.friends?.length ?? 0), animas, 'night-guard')
+    // At night on the Meridiana: a group of the castle's pupils (`night-guard:<room>`, the first floor's first by default), as strong as friends and levels leave it.
+    : kind === 'night-guard' ? createEncounter(party, 'night-guard', { animas, night: { room: (count ?? 'alumnos-1a') as RoomEncounter, might: nightMight(setup.friends?.length ?? 0, setup.levels) }, random })
     : (BROOD_ENCOUNTERS as readonly string[]).includes(kind) ? createBroodBattle(party, kind as BroodEncounter, animas, random)
     : (FEAR_ENCOUNTERS as readonly string[]).includes(kind) ? createFearBattle(party, kind as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : undefined;
@@ -860,8 +863,11 @@ export const TARGETS: readonly Target[] = [
   { id: 'escolta-sin-pensar', fight: 'escolta', party: MISSION_PARTY, levels: P2M1, policy: 'casual', win: [0, .15], why: 'A lo loco, la Cebolla y los suyos ganan casi siempre.' },
   // The way home at night (src/night.ts): the one that catches them brings the palace's whole guard, as the palace has it now,
   // so the street tells the truth about the palace. Without friends' ánimas there is no winning it: get home unseen.
-  { id: 'noche-sin-amigos', fight: 'night-guard', party: 'gerard:matemagico+aitor:tecnopata', animas: ['matemagico', 'tecnopata'], policy: 'smart', win: [0, .05], roundsLost: [3, 8], why: 'Sin ánimas de amigos, la guardia del castillo que sale de noche no se gana ni pensando: hay que llegar a casa sin que te pillen.' },
-  { id: 'noche-con-nuria', fight: 'night-guard', party: DUO, friends: ['nuria'], levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con el ánima de Nuria aún son demasiados, como en el castillo: Aitor ya lo dice, mejor no probarlo.' },
+  // At night the castle's pupils of the floor the party is on walk the Meridiana, stronger out there the fewer friends
+  // and levels the party has (src/night.ts `nightMight`). Provisional numbers: Aitor balances the night later.
+  { id: 'noche-sin-amigos', fight: 'night-guard:alumnos-1a', party: 'gerard:matemagico+aitor:tecnopata', animas: ['matemagico', 'tecnopata'], policy: 'smart', win: [0, .05], why: 'Sin ánimas de amigos, los alumnos del castillo que salen de noche no se ganan ni pensando: hay que llegar a casa sin que te pillen.' },
+  { id: 'noche-con-nuria', fight: 'night-guard:delegada-1', party: DUO, friends: ['nuria'], levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con el ánima de Nuria, La Delegada y los suyos aún son demasiados aquí fuera: Aitor ya lo dice, mejor no probarlo.' },
+  { id: 'noche-con-tres', fight: 'night-guard:delegada-1', party: DUO, friends: ['nuria', 'universidad', 'marta'], levels: P3M3, policy: 'smart', win: [.6, 1], why: 'Con tres amigos y las ánimas crecidas, ya se les puede: lo que ganan fuera es lo que ganarían dentro.' },
   // Vertitrón, the final boss. Its numbers are VERTIGO (book vertigo.boss), PROFILES.vertigo and its eye's (foe.vertigo-ojo).
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },

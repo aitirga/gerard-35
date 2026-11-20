@@ -1,5 +1,5 @@
 import { ANIMAS, ANIMA_IDS, type AnimaId } from './animas';
-import { canWear, palaceGuards, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
+import { canWear, STAGED_MOMENTS, type ClassId, type Encounter, type StagedMoment } from './battle';
 import type { FightMoment } from './battle-ui';
 import { CASTLE_ENCOUNTERS, CASTLE_FIGHT_NAMES } from './castle.ts';
 import { CLASSES } from './classes';
@@ -7,7 +7,7 @@ import { IMPROVEMENTS, TREE_ANIMAS, improvementOf } from './ecos';
 import { xpFloor, LEVELLED } from './levels';
 import type { EnvironmentId } from './environments';
 import { dayForStage } from './days';
-import { nightTier } from './night';
+import { nightMight, nightTier } from './night';
 import { STORY_ARCS, TIMELINE, isChapter2, missionParts, missionsDone, topLevel, type Arc } from './story-points';
 import type { StoryFlag } from './story';
 import type { GameSummary } from './game-sim';
@@ -267,12 +267,12 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   function nightArc() {
     const done = missions ??= missionsDone(dev!.flags());
     const on = dev!.nightNow(), stage = castle ??= on ?? 2;
-    const tier = nightTier(stage), guards = palaceGuards(done.length);
+    const tier = nightTier(stage), might = nightMight(done.length);
     return `<div class="jump-arc" role="group" aria-label="De noche">
       <h4><span>De noche</span><small>La vuelta a casa desde Fabra i Puig</small></h4>
       <div class="jump-row jump-castle" role="group" aria-label="Estado del castillo"><span>El castillo</span>${CASTLE_STAGES.map((label, i) => `<button type="button" data-castle="${i}" aria-pressed="${i === stage}">${i} · ${escape(label)}</button>`).join('')}</div>
       <button type="button" class="jump-item jump-beat" data-night="${stage}" ${on === stage ? 'aria-current="true"' : ''}><span class="jump-step">☾</span><strong>La vuelta a casa</strong><code>día ${dayForStage(stage, done.length)} · ${TIER_NAMES[tier.id] ?? tier.id}</code></button>
-      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: ${tier.hunters} guardianes al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Si os pillan: ${guards.count} ${guards.count > 1 ? 'guardianes' : 'guardián'} de ${guards.hp} PV, por las ánimas de «Con ánimas».</p>
+      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: ${tier.hunters} guardianes al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Salen los alumnos de la planta del castillo en la que estáis, un grupo cada uno; si os pillan, ese grupo, ×${might.toFixed(2)} de PV y de golpe por las ánimas de «Con ánimas» (menos con niveles).</p>
     </div>`;
   }
   /** The chapter 2 jump's day and the other missions it starts with done, shared by Historia and Misiones. */
@@ -346,7 +346,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     </aside>`;
   }
   /** Every fight by name (TypeScript asks for each new one). */
-  const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'un guardián en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
+  const FIGHT_NAMES: Record<Encounter, string> = { dogs: 'perros', 'palace-minion': 'el esbirro', 'palace-guards': 'guardianes de chicle', 'night-guard': 'los alumnos en la Meridiana', cebollon: 'El Cebollón', cebolla: 'La Cebolla', plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón', 'crias-1': 'cebollitas', 'crias-2': 'crías del segundo anillo', 'crias-3': 'crías del tercer anillo', sobremesa: 'La Sobremesa',
     'camping-magos': 'magos de camping', 'camping-dados': 'dados', 'camping-agentes': 'agentes', 'camping-tienda': 'una tienda equivocada', 'camping-negra': 'la parcela negra', campeon: 'El Campeón',
     'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz', ...CASTLE_FIGHT_NAMES,
     'modelo-celdas': 'celdas secas', 'modelo-oscilacion': 'oscilaciones', 'modelo-atomo': 'El Átomo', 'no-converge': 'El que no converge',
@@ -400,7 +400,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${f.adult ? `<div class="fight-row"><span>Castillo</span><div class="fight-chips">${CASTLE_FIGHTS.map(id => chip('encounter', id, CASTLE_FIGHT_NAMES[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
-      ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'Uno solo, tan fuerte como los del castillo con las ánimas de los amigos.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
+      ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'El primer grupo de alumnos de la planta del castillo en la que estáis, más fuerte fuera cuantos menos amigos y niveles.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Ecos de luz</span><div class="fight-chips">${IMPROVEMENTS.filter(item => !item.veiled && f.animas.includes(item.anima)).map(item => chip('improve', item.id, `${CLASSES[item.anima].name} · ${item.name}`, f.improved.includes(item.id), !!item.after && !f.improved.includes(item.after))).join('')}</div></div>` : ''}
       <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}${chip('unbound', '1', 'Sin límites', f.unbound)}</div></div>
       <button type="button" class="jump-go" data-start>Empezar combate</button>

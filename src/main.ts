@@ -17,7 +17,8 @@ import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag }
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
 import { LINES_CASTLE } from './castle-story';
-import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseOf } from './castle';
+import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
+import { nightMight } from './night';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
@@ -386,7 +387,7 @@ try {
     else if (effect.kind === 'item') { sfx.play('pickup'); storyUI.item(effect.item); }
     else if (effect.kind === 'hint') storyUI.hint(effect.id, learned[effect.id]);
     else if (effect.kind === 'minion') { await game.summonMinion(); storyEvent({ type: 'minion' }); }
-    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter); }
+    else if (effect.kind === 'battle') { if (effect.encounter === 'dogs') game.encounter(true); else game.startPalaceFight(effect.encounter, effect.night); }
     else if (effect.kind === 'palace') { await game.raisePalace(); storyEvent({ type: 'palace' }); }
     else if (effect.kind === 'gate') await game.popGate();
     else if (effect.kind === 'travel') game.setEnvironment(effect.environment, effect.cell);
@@ -648,7 +649,9 @@ try {
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0) });
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
+        // At night on the Meridiana: the first of the night's groups of the castle's floor the save is on, as strong as the friends chosen and the levels leave it.
+        ...setup.encounter === 'night-guard' ? { night: { room: nightGroup(1, castlePhaseAt(story)), might: nightMight(setup.adult ? setup.friends.length : 0, story.levels) } } : {} });
       if (help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }

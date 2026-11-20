@@ -71,8 +71,8 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
-import { CASTLE_FIGHTS, CASTLE_SIZES, isCastle, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type RoomEncounter } from './castle';
-import { castleFigure, castleModel, castleModelSettled, figureClips, loadCastleModels, type FigureClips } from './castle-models';
+import { CASTLE_FIGHTS, CASTLE_SIZES, castlePhaseAt, isCastle, isCastleEncounter, isCastlePlace, nightGroup, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { castleFigure, castleModel, castleModelSettled, figureClips, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -103,7 +103,8 @@ export const TETHER = 7;
 
 export interface GameCallbacks {
   /** A fight starts; `withPartner` says whether the companion is there to fight too. */
-  onEncounter: (withPartner: boolean, foes: number, options: { possessed: boolean; encounter: Encounter }) => void;
+  /** `night`: caught on the Meridiana at night, the castle's group that caught them and how strong it is out there (src/castle.ts `NightFight`). */
+  onEncounter: (withPartner: boolean, foes: number, options: { possessed: boolean; encounter: Encounter; night?: NightFight }) => void;
   /** A fight closed, however it ended. */
   /** `worn`: the ánimas that took part in the fight, and `xp` what it was worth to each (src/levels.ts). */
   /** `taken`: the Queen had Aitor when it ended (src/castle-fight.ts). */
@@ -618,8 +619,6 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (nightShown === 0 && nightLights) { nightLights.destroy(); nightLights = undefined; }
     nightLights?.update(scenery.toWorld(movement.position.x, movement.position.z), nightShown);
   }
-  /** The guards out in the street are smaller than the palace's: a wardrobe still, a narrower one. */
-  const NIGHT_GUARD_SCALE = 1.35;
   function huntAtNight(dt: number) {
     if (environment.id !== 'meridiana-calle' || !story.night) { nightHunt = undefined; return; }
     if (nightHunt?.scene === environment.id) { nightHunt.still = movement.walking ? 0 : nightHunt.still + dt; return; }
@@ -650,7 +649,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function nightLines(h: { chaser: Chaser }) {
     if (!nightHunt || !mateHere()) return;
     const near = Math.hypot(h.chaser.position.x - movement.position.x, h.chaser.position.z - movement.position.z);
-    if (!nightHunt.seen && (h.chaser.mode === 'chase' || near < 14)) { nightHunt.seen = true; tetherLine = { text: sizeUp(story.animas.length), until: clock + 4 }; return; }
+    if (!nightHunt.seen && (h.chaser.mode === 'chase' || near < 14)) { nightHunt.seen = true; tetherLine = { text: sizeUp(story.animas.length, castlePhaseAt(story)), until: clock + 4 }; return; }
     if (nightHunt.seen && !nightHunt.hinted && h.chaser.mode === 'chase' && (!tetherLine || tetherLine.until < clock)
       && nightHunt.hides.some(c => Math.hypot(c.x - movement.position.x, c.z - movement.position.z) < 7)) {
       nightHunt.hinted = true; tetherLine = { text: '¡Ahí detrás! Y ni te muevas.', until: clock + 3 };
@@ -1374,11 +1373,15 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const wanted = story.fears(environment.id), night = nightHunt?.specs ?? [];
     hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id) || night.some(s => s.id === h.id); if (!keep) { partFrom(h.model); h.model.destroy(); } return keep; });
     for (const spec of night) if (!hunters.some(h => h.id === spec.id)) {
-      const model = minion.root.clone(); model.enabled = true; model.setLocalScale(NIGHT_GUARD_SCALE, NIGHT_GUARD_SCALE, NIGHT_GUARD_SCALE);
+      // The castle's pupils of the floor the party is on, a room's group each (src/castle.ts `nightGroup`), once their figures are at hand.
+      const group = nightGroup(Number(spec.id.slice('night-'.length)), castlePhaseAt(story)), figures = castleFigures(group);
+      if (!figures.every(castleModelSettled)) { void loadCastleModels(app, figures); continue; }
+      const clips: FigureClips[] = [], model = huntingModel(group, clips);
+      glowAtNight(model);
       castRoot.addChild(model);
       // Climbing out of the grate, it sees nothing yet.
       const chaser = createChaser(spec); chaser.mode = 'resting'; chaser.timer = CLIMB;
-      hunters.push({ id: spec.id, model, respawn: false, away: 0, chaser });
+      hunters.push({ id: spec.id, model, respawn: false, away: 0, chaser, ...clips.length ? { clips } : {} });
     }
     for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
       // A castle room's pupils come out once their figures are at hand (or known to have none yet).
@@ -1422,8 +1425,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       chased ||= h.chaser.mode === 'chase';
       h.model.enabled = !battle;
       const at = scenery.toWorld(h.chaser.position.x, h.chaser.position.z);
-      // Figures with clips walk their round and run the chase on their own legs: no hop.
-      for (const clip of h.clips ?? []) clip.play(h.chaser.mode === 'chase' ? 'running' : h.chaser.mode === 'resting' ? 'rest' : 'walking', !reducedMotion.matches && !battle && !paused ? 1 : 0);
+      // Figures with clips walk their round and give chase in their own gait (src/castle-models.ts): no hop.
+      const moving = !reducedMotion.matches && !battle && !paused;
+      for (const clip of h.clips ?? []) { clip.play(h.chaser.mode === 'chase' ? 'chase' : h.chaser.mode === 'resting' ? 'rest' : 'walk', moving ? 1 : 0); if (moving) clip.tick?.(dt); }
       const bob = h.clips ? 0 : h.chaser.mode === 'chase' ? Math.abs(Math.sin(clock * 14)) * .25 : Math.abs(Math.sin(clock * 5)) * .08;
       h.model.setPosition(at.x, scenery.groundHeight(at.x, at.z) + bob, at.z);
       h.model.setLocalEulerAngles(0, h.chaser.facing, h.chaser.mode === 'chase' ? Math.sin(clock * 18) * 6 : 0);
@@ -2331,7 +2335,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     orb.destroy(); glow.destroy(); haze.destroy();
   }
   /** A fight inside the palace: the minion of chapter 1, or the guards before the curtain in chapter 2. */
-  function startPalaceFight(encounter: Exclude<Encounter, 'dogs'> = 'palace-minion') {
+  function startPalaceFight(encounter: Exclude<Encounter, 'dogs'> = 'palace-minion', night?: NightFight) {
     // Uri's fears and the guards loose on the Meridiana at night fight where they caught the party.
     const fear = (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) || encounter === 'night-guard';
     if (battle || (!fear && environment.id !== 'palacio')) return;
@@ -2339,7 +2343,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     movement.teleport(environment.grid, movement.cell);
     if (fear) fearStage = { ...movement.cell };
     encounterId = encounter;
-    callbacks.onEncounter(true, encounter === 'palace-guards' ? story.guarded.length : 1, { possessed: false, encounter });
+    callbacks.onEncounter(true, encounter === 'palace-guards' ? story.guarded.length : 1, { possessed: false, encounter, ...night ? { night } : {} });
   }
   /** The minion's head rises out of the manhole and pops a bubble: the dogs' eyes turn pink and they face the boys. */
   async function summonMinion() {

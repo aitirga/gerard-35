@@ -25,7 +25,8 @@ import { APSE, BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE,
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
-import { CASTLE_BOSSES, castleEntry, extraSlots, isCastlePlace, type CastleEncounter } from './castle.ts';
+import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, isCastlePlace, nightGroup, type CastleEncounter, type NightFight } from './castle.ts';
+import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
@@ -136,7 +137,7 @@ export type StoryEffect =
   /** The minion's head rises out of the manhole and pops a gum bubble over the dogs. */
   | { kind: 'minion' }
   /** A fight starts right away. */
-  | { kind: 'battle'; encounter: EncounterId }
+  | { kind: 'battle'; encounter: EncounterId; night?: NightFight }
   /** The north end of the street turns into La Reina Bubbaloo's palace. */
   | { kind: 'palace' }
   /** La Pompa, the palace gate's bubble, bursts as they walk through. */
@@ -444,6 +445,13 @@ export class Story {
   get adult() { return this.has('caught'); }
   /** Ánimas the party has gathered from friends (chapter 2). */
   get animas(): AnimaId[] { return ANIMA_IDS.filter(id => this.flags.has(`anima-${id}` as StoryFlag)); }
+  /**
+   * The night's `n`th hunter caught them (src/night.ts): the group of the castle's floor they are on
+   * that it brings, as strong as the friends' ánimas and the levels gathered leave it out here.
+   */
+  nightFight(n: number): NightFight {
+    return { room: nightGroup(n, castlePhaseAt(this.flags)), might: nightMight(this.animas.length, this.levels) };
+  }
   get clock() { return { ...this.days.clock }; }
   /**
    * What holds her back: each friend's ánima, and each boss of her castle beaten (Aurelià, the
@@ -1599,7 +1607,7 @@ export class Story {
         if (event.id.startsWith('modelo-')) return this.nearModelo(event.id);
         if (event.id.startsWith('luca-')) return this.nearLuca(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
-        if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard' }] : [];
+        if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard', night: this.nightFight(Number(event.id.slice('night-'.length))) }] : [];
         if (event.id !== 'tv') return this.nearNuria(event.id);
         if (!this.adult || !this.set('tv-news')) return [];
         // The ticker carries the R4 clue, and the Sagrada Família's: seen on the TV, they are known.

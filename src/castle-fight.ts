@@ -38,7 +38,8 @@ function standing(state: BattleState) {
   const up = state.allies.filter(a => a.hp > 0), free = up.filter(a => !a.castle?.held);
   return free.length ? free : up;
 }
-const yearScale = (c: Combatant) => c.castle?.year === 3 ? CASTLE.year3 : c.castle?.year === 2 ? CASTLE.year2 : 1;
+/** How much harder a pupil hits than in its first year, and out on the Meridiana at night, by its `might` too. */
+const yearScale = (c: Combatant) => (c.castle?.year === 3 ? CASTLE.year3 : c.castle?.year === 2 ? CASTLE.year2 : 1) * (c.castle?.might ?? 1);
 const ability = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 const weakTo = (elements: readonly Element[]): Partial<Record<Element, Affinity>> => Object.fromEntries(elements.map(e => [UNDOES[e], 'weak' as const]));
 /** Things with PV that never take a turn and never hold up the win: Aurelià's lectern, the Queen's hands. */
@@ -126,6 +127,21 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: kit.seedFrom(random),
     message: message!, castle,
   };
+}
+/**
+ * A room's pupils out on the Meridiana at night (src/castle.ts `NightFight`, docs/chapter-2.md § Night
+ * and the way home): the same rules, `might` times their PV and blows, and the fight is the night's
+ * (`night-guard`: lost, they wake late the next morning; won, the hunt goes on).
+ */
+export function castleAtNight(state: BattleState, might: number): BattleState {
+  for (const c of state.foes) {
+    if (!c.castle) continue;
+    c.castle.might = might;
+    c.hp = c.maxHp = Math.round(c.maxHp * might); c.stats = { ...c.stats, pv: c.maxHp }; c.castle.seen = c.hp;
+  }
+  state.encounter = 'night-guard';
+  state.message = `${state.foes.length > 1 ? 'Suben por la rejilla y os rodean' : 'Sube por la rejilla y os corta el paso'}, chorreando chicle: los alumnos de la Reina, aquí fuera.`;
+  return state;
 }
 /** The Queen wraps herself in a layer of gum: what takes it off is what it is weak to (a blow, for the rancid one). */
 function wrap(queen: Combatant, gum: Gum) {

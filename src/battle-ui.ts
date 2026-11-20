@@ -16,7 +16,7 @@ import { award, fightXp, levelForXp, levelProgress, MAX_LEVEL, participants, toN
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
-import { CASTLE_ENCOUNTERS, MELODY, isCastle, yearOf, type CastleEncounter, type HeldMove } from './castle';
+import { CASTLE_ENCOUNTERS, MELODY, isCastle, yearOf, type CastleEncounter, type HeldMove, type NightFight } from './castle';
 import { artilugioLive, castleChips, castleNote } from './castle-fight';
 
 /** The castle's fights on the kicker and the heading (docs/castle.md, docs/castle-bosses.md). */
@@ -896,7 +896,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.battle-heading .battle-kicker').textContent = fear ? `ENCUENTRO / ${fear}`
       : state.encounter === 'palace-minion' ? 'ENCUENTRO / ESBIRRO DE LA REINA'
       : state.encounter === 'palace-guards' ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} ${state.foes.length === 1 ? 'GUARDIÁN' : 'GUARDIANES'} DE CHICLE`
-      : state.encounter === 'night-guard' ? 'ENCUENTRO / UN GUARDIÁN DE CHICLE EN LA MERIDIANA'
+      : state.encounter === 'night-guard' ? state.foes.some(f => isCastle(f.kind)) ? 'ENCUENTRO / ALUMNOS DE LA REINA EN LA MERIDIANA' : 'ENCUENTRO / UN GUARDIÁN DE CHICLE EN LA MERIDIANA'
       : state.encounter.startsWith('crias-') ? `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} CRÍAS DEL MIEDO`
       : `ENCUENTRO / ${state.foes.filter(f => shownHp(f) > 0).length} DE ${state.foes.length} PERROS${state.possessed ? ' POSEÍDOS' : ''}`;
     get('.round-badge strong').textContent = String(state.round).padStart(2, '0');
@@ -1706,7 +1706,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const standing = s.foes.filter(f => f.hp > 0);
     const mine = duo?.aims[ctx], theirs = duo?.aims[other(ctx)];
     get('.target-picker p').textContent = duo ? mine && theirs && mine !== theirs ? 'Elegid el mismo objetivo.' : mine ? 'Esperando al otro…' : 'Los dos, al mismo objetivo.'
-      : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
+      : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'night-guard' && s.foes.some(f => isCastle(f.kind)) ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
   }
   function beginTargeting(skill?: SkillId) {
     if (!state || locked() || !selected) return;
@@ -2386,7 +2386,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
     /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. `guards` sizes the palace guards. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; improved?: Improved } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; improved?: Improved } = {}) {
       if (state) return;
       const count = foeCount;
       reopen = (): void => { ui.open(party, count, options); };
@@ -2394,7 +2394,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;
       const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
-      state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards }); busy = true;
+      state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night }); busy = true;
       state.levels = options.levels;
       if (options.improved) improve(state, options.improved);
       xpBefore = { ...options.xp }; rewarded = false; resetRewards();
