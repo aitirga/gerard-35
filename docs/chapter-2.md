@@ -136,14 +136,28 @@ rewind: the server lets a newer epoch replace the flags, and ignores tabs still 
 
 ## Night and the way home
 
-Decided 2026-11-07 with Aitor; built in `src/night.ts` (rules), `src/night-lights.ts` (light),
-`src/game.ts` (the hunt), `src/story.ts` (`nightfall`, `home`, `night-guard`).
+Decided 2026-11-07 with Aitor, and redone with him 2026-11-20 (each pupil hunts its own way, the
+afternoons, no night after a castle boss); built in `src/night.ts` (the night's tiers, light and
+cover), `src/night-pupils.ts` (how each pupil hunts), `src/night-lights.ts` (light), `src/game.ts`
+(`huntAtNight`: bodies, sounds, Aitor's lines), `src/story.ts` (`nightfall`, `home`, `night-guard`).
 
-**When night falls.** At once after a friend's mission is won (Nuria's: Vertitrón beaten) or a
-milestone in her palace (today: the guards beaten; each palace zone finished will be one), with
-Aitor's line; otherwise when the clock reaches 21:00. One list of triggers: `nightfall()` in
-`src/story.ts`. At night the day no longer ends by itself: the clock stops at 22:00, and the day
-ends through home's portal (Aitor: *"Ya está. Dentro."*), in bed, or with a fall.
+**When night falls.** Three ways, all in `src/story.ts`:
+
+- **Back from a friend's mission** (`nightfall()`): at once when it is won, with Aitor's line. The
+  mission's place is far from home, so the way back is the night's walk.
+- **An afternoon spent** (§ Spending the afternoon): in bed, on the sofa, cooking, at the gym or
+  with the choir. It is night at once.
+- **The clock** reaching 21:00.
+
+Her castle brings no night (docs/castle.md § Structure): the guards before the curtain bring
+nothing, and a boss beaten ends the day with her scream and a flash, in bed. At night the day no
+longer ends by itself: the clock stops at 22:00, and the day ends through home's portal (Aitor:
+*"Ya está. Dentro."*), in bed, or with a fall.
+
+**What the night is for.** Getting home, and finding out how strong the party is before going into
+her castle: out here a fall costs a late morning, in there it ends the day's run. What walks the
+street is what waits inside (the pupils of the castle's floor the party is on), so the street
+teaches each of them by its body before its fight asks its question.
 
 **How night looks, outdoors only.** Every street scene (`scenery.outdoor`) fades to `NIGHT_LIGHT`
 (`src/scenery.ts`): a low cold moon, a deep blue ambient, the sky's reflections a street night
@@ -151,39 +165,68 @@ ends through home's portal (Aitor: *"Ya está. Dentro."*), in bed, or with a fal
 dusk's own glow, at full), the lamps' heads glow, and the ten lamps nearest Gerard light the
 pavement for real (a pool of lights handed from lamp to lamp, so the frame never pays for more);
 home's portal, the station halls and VivaGym's window keep their own lights. Moving cars carry
-head and tail lights. Her pink stays low in the haze, more as she spreads.
+head and tail lights. Her pink stays low in the haze, more as she spreads. While one of them runs
+at Gerard the screen's edges close in, cold and dark, and beat (`#hud[data-hunted]`).
 
 **The way home.** The Meridiana's station is the L1's real Fabra i Puig, at its Concepció Arenal
 entrance on the even side, about 300 m and one crossing from home's portal at Meridiana 335 on the
 odd side ([places/meridiana.md](places/meridiana.md#home-at-meridiana-335-the-avenue-turned-round)).
 Coming out onto the avenue at night, the castle's pupils climb out of the vent grates (the
-station's under the plaza, the median's over the trains) and hunt the party (`src/chasers.ts`).
-They are the pupils of the castle's floor the party is on (decided with Aitor 2026-11-20): each
-hunter is one of that floor's groups, its rooms in turn and La Delegada's last (`nightGroup` in
-`src/castle.ts`), drawn with their own figures and each walking its own gait from Meshy's library,
-the chase in that gait sped up (`src/castle-models.ts`; El Montón, with no skeleton, crawls). What
-walks the street is what waits inside, so the way home measures the party for the floor:
+station's under the plaza, the median's over the trains) in groups: the floor's rooms in turn and
+La Delegada's last (`nightGroup` in `src/castle.ts`). Once up, **each pupil is a body of its own**
+with its own figure and gait (`src/castle-models.ts`), walking its own round and hunting its own
+way. The one that touches Gerard brings its whole group's fight.
+
+The street's rules, for everyone (`STREET` in `src/night-pupils.ts`, every number in one book):
 
 - **Light gives you away.** In a lamp's light they see Gerard from far off; in the dark between
   lamps only up close, a little further once they are after him.
+- **Running is heard.** A run is heard from 11 cells in the dark, and whoever hears it comes to
+  look. Walking is silent. Running is still the only way to outpace most of them: the choice is
+  the night's.
+- **They doubt, then they look.** One that sees Gerard doubts for a moment before running at him
+  (stepping back into the dark in that moment loses it). One that loses him goes to where it last
+  had him and looks round there before going back to its round.
 - **Cover hides.** Standing still behind the containers, the bus shelter or a café terrace, out of
   the light, is out of sight. Aitor says it once, the first time they are chased near cover:
   *"¡Ahí detrás! Y ni te muevas."*
+- **Cars flatten them.** Traffic stops for Gerard and Aitor, not for them: one caught on the
+  carriageway by a moving car is flat for six seconds, then peels itself up. Crossing between cars
+  loses them.
 - **The portal is safe.** Its warm light is the brightest on the street, and they never step into it.
-- **Each train brings more.** A train under the median puffs out of the grates and, at night, more
-  of them climb out after it, never in the party's face.
-- **The hint.** Aitor sizes them up the first time they show: whose floor they come from, and by
-  the friends' ánimas whether to stop (`sizeUp`). The group that catches the party is the fight,
-  with the castle's own rules (`night-guard` with a `NightFight`), stronger out here the fewer
-  friends and levels the party has (`nightMight`: PV and blows times its might, never weaker than
-  inside): on the first nights it cannot be won, with the friends' ánimas and grown levels it can.
-  Escaping is allowed. Beaten, they wake at 11:00 the next day (*"Las once…"*); winning melts the
-  group and the hunt goes on. Its numbers are provisional (book `night`): Aitor balances the night
-  later, and El Empollón and La Chivata's group is still won from the first night.
+- **Each train brings more.** A train under the median puffs out of the grates and, at night, one
+  more group climbs out after it, never in the party's face.
+
+And each one's own way, which is its fight's way (docs/castle.md § The pupils):
+
+| Pupil | Year | On the street | What gets past it |
+| --- | --- | --- | --- |
+| El Repetidor | 1 | Slow. Seeing Gerard within nine cells it stops, leans back and paws the ground (dust at its feet), then charges in a straight line it cannot leave, nearly twice as fast as he runs. | Step out of its line in the last moment: it crashes into what is there and stays dazed four seconds. |
+| La Chivata | 1 | Never runs at him. She sees half as far again, keeps her distance and points: a line of glints from her to Gerard, and everyone within forty cells knows where he is while she has him. | Break her line of sight (dark, cover); or go for her first, she is the weakest fight. |
+| El Empollón | 1 | Hunts like anyone, but when Gerard loses it behind cover it learns that kind of cover: the next time it goes straight to the nearest one and looks behind it. It remembers one kind, the last. | Do not hide twice the same way: containers, then a shelter, then a terrace. |
+| Los Gemelos | 1 | Two as one: what either sees or hears both know. The nearer one follows; the further one runs round to where Gerard is running to. One flat under a car is got up by the other. | Do not run straight away from one. Turn, cross, or stop behind something. |
+| La Delegada | 1–3 | Never runs, never stops: she walks at Gerard wherever he is, and cover and dark mean nothing to her. While she is out the others doubt less and do not give up. | She is slow: distance. Or her fight. |
+| El Ausente | 2 | Only seen in a lamp's light or while it runs at him; it sees in the dark as far as the others do chasing. | The lit stretches, where Gerard is seen, are where it is seen too. |
+| El Castigado | 2 | Stands facing the wall and hunts nobody. Each run near it is a point of Rabia (it swells); at three it bursts: everyone within thirty cells comes, and it runs fastest of all without doubting or giving up. | Walk past it. |
+| El Montón | 3 | Does what Gerard does: stands while he stands, walks when he walks, runs when he runs, nearly as fast. It needs no sight of him. | Walk away from it, far enough that it lets go. Running never loses it. |
+
+Nothing on screen names these rules. They are read off the bodies (the lean, the dust, the line of
+glints, the swelling) and Aitor says what he sees of each the first time, in a speech bubble
+(`showNight` in `src/game.ts`): *"¡Ese toma carrerilla!"*, *"La pequeña nos señala. Mientras nos
+vea, lo saben todos."*, *"Esa no corre. Tampoco para."*… He also sizes them up the first time they
+show: whose floor they come from, and by the friends' ánimas whether to stop (`sizeUp`).
+
+**Caught.** The group of the pupil that touched Gerard is the fight, with the castle's own rules
+(`night-guard` with a `NightFight`), stronger out here the fewer friends and levels the party has
+(`nightMight`: PV and blows times its might, never weaker than inside): on the first nights it
+cannot be won, with the friends' ánimas and grown levels it can. Escaping is allowed, and the group
+stands still a few seconds after it. Beaten, they wake at 11:00 the next day (*"Las once…"*);
+winning melts the group and the hunt goes on. Its numbers are provisional (book `night`): Aitor
+balances the night later, and El Empollón and La Chivata's group is still won from the first night.
 
 How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 
-| Tier | Stage | At first | Per train | Walk / run (cells/s) | Sight lit / dark / chasing | Trains every | Lamps out |
+| Tier | Stage | Groups at first | Per train | Walk / run (cells/s) | Sight lit / dark / chasing | Trains every | Lamps out |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | calma | 0–1 | 2 | 0 | 1.4 / 4.4 | 8 / 3 / 5 | 40 s | none |
 | tensa | 2 | 3 | 1 | 1.6 / 5.2 | 9 / 3 / 6 | 28 s | none |
@@ -191,14 +234,42 @@ How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 | última | 4 | 5 | 2 | 2.0 / 7.2 | 12 / 4 / 8 | 18 s | one in three |
 
 Gerard walks at 5.2 cells/s and runs at 7.8: at first they are slower than a walk; on the last night
-only running keeps ahead. No more than twice the first count are ever out. The fight sim holds the
-street fight to that (`noche-sin-amigos`, `noche-con-nuria`, `noche-con-tres` in `TARGETS`). Development:
-`just dev-night <castle stage 0–4> [<ánimas>]`, the picker's *De noche · La vuelta a casa* (its
-level is the castle's stage), Hora (Noche), the fight tester's *De noche en la Meridiana*,
-and `just screenshots camino-a-casa`.
+only running keeps ahead, and running is heard. No more than twice the first count of groups are
+ever out. The fight sim holds the street fight to that (`noche-sin-amigos`, `noche-con-nuria`,
+`noche-con-tres` in `TARGETS`); the game simulator walks home by the same rules
+(`src/game-sim.ts`). Development: `just dev-night <castle stage 0–4> [<ánimas>] [<year 1–3>]`, the
+picker's *De noche · La vuelta a casa* (its level is the castle's stage, *Alumnos* the year whose
+pupils are out), Hora (Noche), the fight tester's *De noche en la Meridiana*, and
+`just screenshots camino-a-casa` and `just screenshots alumnos-de-noche` (each pupil's moment,
+staged through `game.nightStreet`).
 
 For later: balancing the night (each floor's groups, and levels raising the ánimas' stats a little,
-proposed by Aitor 2026-11-20); cars flattening a pupil that steps onto a lane (proposed, not built).
+proposed by Aitor 2026-11-20); a tell for Gerard himself when he is out of sight behind cover.
+
+## Spending the afternoon
+
+Decided with Aitor 2026-11-20; `EVENINGS` in `src/days.ts`, `spendAfternoon` and `afternoonGone` in
+`src/story.ts`. From the news on, the afternoon can be spent somewhere: a line or two, the dark, and
+it is night at once. The bed only passes the time (every fight starts with full mana anyway); the
+other four leave **one state**, for the whole party, that lasts that night and the next day and
+shows in a fight as any buff does (its arrow over each head, its line in the summary). One at a
+time: the last afternoon is the one that counts. It is never announced beforehand: the first time,
+the note that comes with the night says what it was (*Hasta mañana por la noche*).
+
+| Where | Offered as | What happens | Leaves |
+| --- | --- | --- | --- |
+| The bed (home) | *Echarse un rato* by day, *Dormir* at night | Gerard lies down, Aitor wakes him when it is dark. At night the bed is sleeping, and the day ends. | Nothing: the hours |
+| The sofa (home) | *Sentarse en el sofá* | Aitor scratches Gerard's back until neither notices the light go. | **Tranquilos**: Espíritu +2 |
+| The kitchen (home) | *Cocinar* | Gerard cooks what is left, Aitor lays the table and opens the wine. | **Bien cenados**: Crítico +10 |
+| VivaGym (next door, on the avenue) | *Entrenar en VivaGym* | An afternoon at the gym. Out of it, it is night ten steps from the portal. | **En forma**: Fuerza +2 |
+| The choir (on the avenue, 80 cells from home) | *Ensayar con el coro* | A rehearsal; the first one is where they learn Emilie is missing (docs/quests/coro.md). The way home from it is a real walk at night. | **Afinados**: Magia +2 |
+
+At night there is no afternoon left: each of them answers with a line instead. The state is kept
+with the days (`Days.boost`, saved by the server) and goes with the morning after next. Seen in
+`just screenshots pasar-la-tarde`.
+
+For later: the gym's and the choir's doors are interactions on the avenue's pavement, with no
+interior of their own yet; cooking is one dish.
 
 ## The snow globe
 

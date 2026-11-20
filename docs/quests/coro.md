@@ -48,6 +48,15 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
 
 ## The choir room (round 3)
 
+- **A rehearsal is an afternoon** (decided with Aitor 2026-11-20, built: `meridiana-coro` in
+  `src/story.ts`, `EVENINGS.coro` in `src/days.ts`; docs/chapter-2.md § Spending the afternoon):
+  from the news on, *Ensayar con el coro* at its door on the avenue (`PLACES_2.choir`, 80 cells
+  from home's portal) spends the afternoon, brings the night at once and leaves **Afinados** (Magia
+  up a little for the whole party, that night and the next day). The first rehearsal is where they
+  learn Emilie is missing (`clue-emilie`). Coming out it is night, and the way home is a real walk
+  with the castle's pupils out. For now the door is an interaction on the pavement: the room
+  itself, with Marta, Ferran and Darío in it, is not built.
+
 - **Who runs it** (decided round 3, real): **Aitor directs the choir**; **Gerard sings in it**. In
   the game Aitor stands at the front with the tuning fork, and Gerard takes his chair in a row.
 - **Gerard and Aitor send them there** (decided 2026-11-19, replaces round 3's *no strange

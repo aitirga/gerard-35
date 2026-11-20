@@ -30,6 +30,19 @@ Rec Comtal → the hall (the guards, the curtain)
   places/palace.md § identity). The palace is crossed "by the checkpoints its bosses leave"
   (chapter-2.md), and these are the two.
 - **Falling** in the castle still ends the day: Gerard wakes at home (decided, chapter-2.md).
+- **A boss beaten: her scream, white, and bed** (decided with Aitor 2026-11-20; `screamed` in
+  `src/story.ts`, `LINES_CASTLE.screams`, `#queen-scream` in `src/story-ui.ts`). No night follows a
+  castle boss and nobody walks home: with the boss's last words said, the Queen screams through the
+  whole building, her words across the screen in her pink, shaking, more afraid with each boss
+  (Aurelià: *"No. ¡NO! ¡Devolvédmelo! ¡Era mío!"*; Dirección, bigger: *"¡Otra vez no! ¡No os
+  vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!"*), the picture goes to white, and out of the white they are in
+  bed in the morning: the 22nd again, as every morning of the loop (the day's count goes on, as it
+  does after any night). The night is for coming back from the friends' missions and for the
+  afternoons spent (chapter-2.md § Night and the way home), not for her castle.
+- **The castle hardens with each scream** (planned, not built): after each boss the building itself
+  looks more threatening, its textures further along from school towards hers, so the fear in the
+  scream is seen on the walls the next time they go in. Today only each phase's own drift exists
+  (§ The art drifts towards the boss).
 - **Flags** (they replace the proposed `zona-patio`, `zona-gimnasio`, `zona-secretaria`):
   `aurelia`, `direccion`, and the ending's (`aitor-poseido`, `artilugio`, `reina`). Each gets its
   step in `STORY_ARCS`, its dot on the picker's timeline and its place in `dev-chapter`.
@@ -50,7 +63,8 @@ Each phase is **one continuous floor**, walked like any place: no loading betwee
   way through with `reachable` (`src/street-shift.ts`).
 - **Kinds of room**: fight, corridor, élite (La Delegada, § Bestiary), **rest** (one per floor: a
   staff room, which cures at the cost of time), **find** (an object) and the boss's antechamber.
-- **The pupils roam** as chasers (`src/chasers.ts`, as the tower's fears and the night's guards do):
+- **The pupils roam** as chasers (`src/chasers.ts`, as the tower's fears do; out on the Meridiana at
+  night each one hunts its own way instead, `src/night-pupils.ts`):
   they can be seen coming, dodged or met. A fight is a choice more often than not.
 - **No map tells the way.** The map shows the rooms walked and where the party is, never the route.
 
@@ -186,7 +200,7 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | The rules book, the phases, the generator | `src/castle.ts` | Floors by save, day and phase; rooms, corridors, the staff room and the cupboard |
 | A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
 | The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), Aurelià, Dirección, the Queen |
-| The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings nightfall and moves the way in, lights for the jar, the third slot after Aurelià |
+| The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings her scream, a flash and bed (no night) and moves the way in, lights for the jar, the third slot after Aurelià |
 | Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts`, `src/battle-scene.ts` | She takes him at a tenth (down or not): he walks over to her side and fights from there, his card with him, player 2 choosing his moves; lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
 | The Queen's figure and stage | `src/monsters/reina.json`, `public/portraits/reina.png`, `src/throne-arena.ts` | Nuria Mendoza's face made cruel; her fight goes up onto the sala d'actes' stage, built for it |
 | The last scene | `src/endings.ts` | Acabar or Bajar la mano, an epilogue over black, the Monday after |
@@ -199,7 +213,7 @@ Placeholders and decisions taken for now (each one Aitor's to change):
   holds its pose standing, and on the floor it walks its round and runs the chase. Until its figure
   lands it is the palace minion's model at its own size, as Aurelià and Dirección are (the Queen has
   hers since 2026-11-20).
-- One hour a fight inside the castle (`COSTS.castle`); a boss beaten ends the day at nightfall.
+- One hour a fight inside the castle (`COSTS.castle`); a boss beaten ends the day there, with her scream (§ Structure).
 - The Queen comes back at 40 % of her PV (`CASTLE.reinaVuelta`).
 - Bernat's phone call stands in for the salón de juegos mission that finds the artilugio.
 - The Acta announces its Resolución a turn ahead (docs/castle-bosses.md § Mar, Montse and Pilar),
@@ -231,6 +245,10 @@ everyone that bleeds, and wins 17 % of those; the few times it shows it a plain 
 
 - **Time.** One hour a fight inside the castle for now (§ Built so far); whether at night the
   castle hardens instead of throwing the party out.
+- **After a boss, which day it is.** Built as every other morning of the loop: they wake in bed and
+  the day's count goes on. Aitor's note (2026-11-20) was "the same day again, so the loop is not
+  broken": if he meant the count itself should not move after a boss, `screamed` in `src/story.ts`
+  is the one place to change.
 - Which nodes are in each ring of each constellation, and the exact caps.
 - Whether the rest room and the finds are the same every day or drawn with the floor.
 - Every number: they come out of `just fight-sim` as each fight is built.

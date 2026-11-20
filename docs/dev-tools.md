@@ -60,8 +60,19 @@ quick way home with part of the story done, e.g. to open the jar with Nuria's li
   jump wakes on the first day the castle is at that stage with the ánimas of *Con ánimas*
   (`dayForStage`), so the castle, the pink and the hunt all match: stages 0–1 are a calm night,
   2 tense, 3 hard and 4 the last (`NIGHT_TIERS` in src/night.ts). The line under it says how many
-  guards come out and, if they catch the party, how strong the fight is (by the ánimas alone).
-  Same as `just dev-night <castle> [<ánimas>]`, i.e. `/?story=metro&night=<0–4>&with=nuria`.
+  groups come out and, if they catch the party, how strong the fight is (by the ánimas alone).
+  **Alumnos** picks whose pupils are out, 1.º to 3.º (the castle's bosses beaten up to that year):
+  each hunts its own way (src/night-pupils.ts), El Ausente and El Castigado from the second, El
+  Montón in the third. Same as `just dev-night <castle> [<ánimas>] [<year>]`, i.e.
+  `/?story=metro&night=<0–4>&with=nuria&year=2`. In the console, `gerard.game.nightStreet` is the
+  night itself (its pupils can be moved and set to a mode, as `just screenshots alumnos-de-noche`
+  does to stage each one's moment), `gerard.game.nightHunters` who is out and what each is doing,
+  and `gerard.game.traffic` the vehicles on the move.
+- **The afternoons and the Queen's scream** need no jump of their own: from any chapter 2 point at
+  home (*Historia* with *En casa*), the sofa, the kitchen and the bed offer the afternoon, and
+  VivaGym's door and the choir's are on the avenue; `gerard.storyEvent({ type: 'battle', won: true,
+  encounter: 'aurelia' })` plays a castle boss beaten (her scream, the flash, bed) from anywhere.
+  `just screenshots pasar-la-tarde` plays all of it.
 
 The step the story has reached is marked, and those behind it are brighter. The ánima missions
 are in their own tab.

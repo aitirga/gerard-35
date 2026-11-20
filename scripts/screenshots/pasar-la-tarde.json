@@ -272,7 +272,7 @@
     {
       "shot": "grito-2",
       "delay": 500,
-      "caption": "Dirección beaten: she is more afraid, the words bigger («¡Otra vez no! ¡No os vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!»)"
+      "caption": "Dirección beaten (played from home here; in play it happens in her room): she is more afraid, the words bigger («¡Otra vez no! ¡No os vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!»)"
     },
     {
       "until": "window.gerard.story.clock.day === 3",

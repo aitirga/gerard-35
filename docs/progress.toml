@@ -229,6 +229,26 @@ title = "La noche y la vuelta a casa por la Meridiana"
 weight = 3
 file = "src/night.ts"
 
+# Decided with Aitor 2026-11-20 (docs/chapter-2.md § Night and the way home): each pupil a body of
+# its own, hunting the street the way it fights; noise, doubt and search, cars.
+[[block.item]]
+title = "De noche cada alumno caza a su manera (los ocho), se oye correr y los coches los chafan"
+weight = 3
+grep = "export function stepStreet"
+in = "src/night-pupils.ts"
+
+# docs/chapter-2.md § Spending the afternoon: bed, sofa, kitchen, gym, choir.
+[[block.item]]
+title = "Pasar la tarde (cama, sofá, cocina, gimnasio, coro) trae la noche y deja un estado"
+weight = 2
+grep = "export const EVENINGS"
+in = "src/days.ts"
+
+[[block.item]]
+title = "El gimnasio y el coro por dentro (hoy son una puerta en la acera)"
+absent = "no interior of their own yet"
+in = "docs/chapter-2.md"
+
 [[block.item]]
 title = "La bola de nieve: volver a casa guardando la misión"
 weight = 2
@@ -731,6 +751,20 @@ weight = 2
 priority = "palacio"
 grep = "castillo-3"
 in = "src/environments.ts"
+
+# Decided with Aitor 2026-11-20 (docs/castle.md § Structure): no night after a castle boss.
+[[block.item]]
+title = "Tras cada jefe, la Reina grita (cada vez con más miedo), un flash y a la cama"
+priority = "palacio"
+grep = "private screamed"
+in = "src/story.ts"
+
+[[block.item]]
+title = "El castillo se vuelve más amenazante tras cada grito (sus texturas)"
+weight = 2
+priority = "palacio"
+absent = "The castle hardens with each scream\\*\\* \\(planned, not built\\)"
+in = "docs/castle.md"
 
 [[block.item]]
 title = "Los alumnos de la Reina: los cinco primeros y sus tres cursos"

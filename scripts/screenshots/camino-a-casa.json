@@ -1,6 +1,6 @@
 {
   "title": "De vuelta a casa · la Meridiana de noche",
-  "description": "Night and the way home (docs/chapter-2.md § Night and the way home, src/night.ts): home's door at Meridiana 335 by day, on the odd side facing the camera (VivaGym on Gerard's right as he comes out, the portal, Bluespace's ramp going down on his left); then night, the fifth day: out of the L1's Concepció Arenal stair on the even side, the palace's guards coming up out of the grates, home's side of the avenue lit by its lamps, the avenue from above at night, home's portal as the warmest light on the street, and through it the day is over. Last, the picker's way home at the castle's last stage.",
+  "description": "Night and the way home (docs/chapter-2.md § Night and the way home, src/night.ts): home's door at Meridiana 335 by day, on the odd side facing the camera (VivaGym on Gerard's right as he comes out, the portal, Bluespace's ramp going down on his left); then night, the fifth day: out of the L1's Concepció Arenal stair on the even side, the castle's pupils coming up out of the grates, each a body of its own, home's side of the avenue lit by its lamps, the avenue from above at night, home's portal as the warmest light on the street, and through it the day is over. Last, the picker's way home at the castle's last stage.",
   "steps": [
     {"open": "/?story=metro&solo=1&day=5"},
     {"until": "!!window.gerard", "timeout": 60000},
@@ -13,11 +13,11 @@
     {"eval": "window.gerard.story.days.clock.hour = 21"},
     {"teleport": "meridiana-calle", "cell": [225, 75]},
     {"skipDialogue": true},
-    {"shot": "estacion", "delay": 3000, "caption": "Night, the fifth day: up the L1's Concepció Arenal stair on the even side of the avenue, under the near blocks (seen through their window); the guards climb out of the grates in a puff of the trains' draught"},
+    {"shot": "estacion", "delay": 3000, "caption": "Night, the fifth day: up the L1's Concepció Arenal stair on the even side of the avenue, under the near blocks (seen through their window); the castle's pupils climb out of the grates in a puff of the trains' draught"},
     {"until": "window.gerard.game.nightHunters.length >= 4", "timeout": 20000},
     {"wait": 2500},
     {"eval": "{ const g = window.gerard.game, at = g.world(g.position.x - 16, g.position.z - 10); g.frame({ x: at.x, y: 1, z: at.z }, 18); }"},
-    {"shot": "guardianes", "delay": 1500, "caption": "Looking along the way home, across the avenue and towards Meridiana 335: the palace's guards out on the pavements and the median, walking their rounds round the grates they came up from"},
+    {"shot": "guardianes", "delay": 1500, "caption": "Looking along the way home, across the avenue and towards Meridiana 335: the castle's pupils out on the pavements and the median, each walking its own round about the grate its group came up from (how each hunts: just screenshots alumnos-de-noche)"},
     {"eval": "window.gerard.game.frame()"},
     {"teleport": "meridiana-calle", "cell": [112, 44]},
     {"shot": "avenida", "delay": 3000, "caption": "Over the zebra, on home's side: lamp light pools on the panot (the nearest lamps light for real), lit flats and shop windows, the dark gaps between lamps where they see less"},
@@ -40,6 +40,6 @@
     {"until": "window.gerard && window.gerard.story.night && window.gerard.game.environmentId === 'meridiana-calle' && window.gerard.game.nightHunters.length >= 5", "timeout": 60000},
     {"eval": "if (window.gerard.story.clock.day !== 6) throw new Error('day: ' + window.gerard.story.clock.day)"},
     {"skipDialogue": true},
-    {"shot": "noche-ultima", "delay": 3000, "caption": "Jumped from the picker at castle stage 4: day 6, out of Fabra i Puig, the last night's five guards out and one lamp in three dark"}
+    {"shot": "noche-ultima", "delay": 3000, "caption": "Jumped from the picker at castle stage 4: day 6, out of Fabra i Puig, the last night's five groups out and one lamp in three dark"}
   ]
 }
