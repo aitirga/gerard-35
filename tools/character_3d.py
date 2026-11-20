@@ -82,6 +82,9 @@ class Figure:
     wings: float = 0
     # Who this person carries in their arms, a figure of kind "held" (Uri carries Nil): the game puts it there.
     carries: str = ""
+    # A monster that is not faceless (the Queen, with the face she took): replaces MONSTER_LOOK, the
+    # look every monster shares, for this one figure. The rest of the monster's route stays the same.
+    look: str = ""
 
 
 FRONT_PROMPT = """Create a full-body character sheet front view of the person in the photos, as a stylised 3D game character: a clean, appealing render like a modern animated film or a premium collectible figure, with smooth forms and soft even lighting. Not a photo, not realistic skin, not low-poly, not childish.
@@ -126,7 +129,7 @@ TOY_MONSTER = """Draw this monster as a figure that belongs in the game world sh
 
 WHAT IT IS: {about}
 
-""" + MONSTER_LOOK + """
+{look}
 
 Pose: """ + A_POSE + ", hands and arms clearly apart from the body. " + BACKDROP
 
@@ -234,7 +237,7 @@ def run(argv=None, root: Path = ROOT, images=None, meshy=None, log=print) -> Pat
             draw(TOY_FROM_PHOTOS.format(cues=figure.cues), [front, *(photos / photo for photo in figure.face_photos), style], toy)
         else:
             prompt = TOY_FROM_WORDS if person else TOY_MONSTER if rigged_kind else TOY_ANIMAL if animal else TOY_HELD if held else TOY_CREATURE
-            draw(prompt.format(about=figure.about), [*(root / image for image in figure.art), *(photos / photo for photo in figure.face_photos), style], toy)
+            draw(prompt.format(about=figure.about, look=figure.look or MONSTER_LOOK), [*(root / image for image in figure.art), *(photos / photo for photo in figure.face_photos), style], toy)
     sides = [out / f"{view}.png" for view in VIEWS]
     if pending("views", *sides):
         for view, side in zip(VIEWS, sides):

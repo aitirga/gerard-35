@@ -52,10 +52,22 @@ friends' stories and the second round carry it.
     villain borrows the nickname, not the person.
   - **The false lead: Nuria Mendoza has disappeared.** During the game the idea comes up that the
     Queen may be Nuria Mendoza: she is missing, and Bernat and other characters say they do not
-    know where she is. **She never appears in the game.**
-  - **The truth, in the credits**: Nuria Mendoza was **on holiday the whole time** and never found
-    out about any of it.
-- **Her look (invented, as Bernat imagined her; nothing to do with Nuria Mendoza):**
+    know where she is. **She never appears in the game as herself.**
+  - **The Queen wears her face (decided 2026-11-20, Aitor).** Being nobody, she takes the face of
+    the one they are looking for: her figure and portrait are Nuria Mendoza's face made cruel
+    (gaunt, a cold grey-pink pallor, dark hollows round half-closed smug eyes, her wide smile held
+    too long), recognisable to whoever knows her. In the throne room Gerard asks «…¿Nuria?» and
+    she answers that she put on her face because they were looking for her (`LINES_CASTLE.reinaBefore`).
+  - **The truth, in the credits**: Nuria Mendoza was **on holiday the whole time**, posing for
+    photos, and never found out about any of it; her holiday photos drop in round the last card.
+- **Her look, as built (2026-11-20; `[reina]` in `tools/figures.toml`, src/monsters/reina.json,
+  public/portraits/reina.png):** Nuria Mendoza's face and her long, straight, dark hair; a crown of
+  five gum balls on dark twisted spikes; a stiff hot pink and black striped collar fanning behind
+  her head; a gown of wrapper paper in hot pink and black stripes with the wrapper's twisted ends
+  as huge puffed sleeves; long gloves of pink gum dripping from the fingers; black blisters of old
+  gum bursting through the gown; thin strands of gum from the crown into her hair. 2.8 m tall.
+- **Her look as Bernat first imagined it** (before she took a face; the throne and her minions
+  keep it):
   tall and theatrical; hair piled up in a huge pink beehive shaped like a half-blown gum bubble;
   a crown of five gum balls in different flavours (strawberry, mint, grape, lemon, liquorice);
   a gown made of wrapper paper with twisted ends as puffed sleeves; long sticky gloves; a sceptre
@@ -144,7 +156,7 @@ friends' stories and the second round carry it.
 | **Jan** | Gerard's older brother. Teases him; brews a "POCIÓ" on his desk. |
 | **Mamá** | Gives Gerard running shoes for his birthday and sends him to fetch Bernat. |
 | **Aitor** | Gerard's partner; they live in the Meridiana flat. A little taller and bigger than Gerard, a toy figure of the cast made from his photos (`just character-3d`), with a big head: a rounder face than Gerard's, short dark hair, low straight brows close over small hazel eyes, a straight nose, a short light beard (no glasses), a black plug in his left ear and a blue fleece zipped to the neck with a small yellow bolt. Gerard at 35 is the slighter one, with the longer face (their proportions were measured on their photos): round dark glasses, a side-swept fringe with a cowlick that will not lie down, an olive hoodie with white drawstrings. From chapter 2 he is in the party, played by a second player; he fights with the party's ánimas. **The real Aitor made this game for Gerard: he is its creator and composed all its music.** |
-| **Nuria Mendoza** | A good friend of Gerard's today. As kids they called her "la Reina Bubbaloo" (she never knew). In the game she has disappeared and never appears; the player may suspect she is the Queen; she is not. The credits reveal she was on holiday the whole time and knew nothing. |
+| **Nuria Mendoza** | A good friend of Gerard's today. As kids they called her "la Reina Bubbaloo" (she never knew). In the game she has disappeared and never appears as herself, but the Queen wears her face; the player may suspect she is the Queen; she is not. The credits reveal, with her holiday photos, that she was on holiday the whole time and knew nothing. |
 | **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Not Nuria Mendoza. |
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |

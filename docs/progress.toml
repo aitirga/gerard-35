@@ -835,7 +835,30 @@ in = "src/battle.ts"
 [[block.item]]
 title = "Modelo de la Reina"
 priority = "final"
-file = "public/models/characters/reina.glb"
+file = "public/models/monsters/reina.glb"
+
+[[block.item]]
+title = "Retrato de la Reina, con la cara de Nuria Mendoza"
+priority = "final"
+file = "public/portraits/reina.png"
+
+[[block.item]]
+title = "El escenario de la Reina: su arena en la sala de actos"
+weight = 2
+priority = "final"
+file = "src/throne-arena.ts"
+
+[[block.item]]
+title = "La entrada de la Reina: la película corta antes de su combate"
+priority = "final"
+grep = "export const THRONE_INTRO"
+in = "src/throne-arena.ts"
+
+# Aitor's own rewrite (2026-11-20): the fight's rules stay preliminary until every ánima's mechanics exist.
+[[block.item]]
+title = "Combate de la Reina: diseño definitivo, con todas las ánimas hechas"
+weight = 3
+priority = "final"
 
 [[block.item]]
 title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"
@@ -848,6 +871,12 @@ in = ["src/battle.ts", "src/story.ts"]
 title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
 priority = "final"
 used = "heldAct"
+
+[[block.item]]
+title = "Aitor poseído cruza al lado de la Reina y ataca desde allí, con su ficha"
+priority = "final"
+grep = "function crossOver"
+in = "src/battle-scene.ts"
 
 # The artilugio is an ESP32 board (Keyestudio FKS0001): 4 buttons, 4 pairs, a PIR
 # (docs/story-outline.md § The device).
@@ -916,10 +945,35 @@ weight = 2
 priority = "final"
 file = "src/endings.ts"
 
+# The last fight's music (docs/audio.md § The last fight).
+[[block.item]]
+title = "Música del último combate: el artilugio aparta la canción"
+priority = "final"
+grep = "function scoreNote"
+in = "src/main.ts"
+
+[[block.item]]
+title = "Canción de La Reina: intro y tres versiones de su A (la compone Aitor)"
+weight = 2
+priority = "final"
+file = "public/music/battle-final.m4a"
+
+[[block.item]]
+title = "La decisión: el viento, y el piano del inicio más triste"
+priority = "final"
+grep = "'intro-triste'"
+in = "src/main.ts"
+
 [[block.item]]
 title = "Créditos"
 priority = "final"
 file = "src/credits.ts"
+
+[[block.item]]
+title = "Créditos: el álbum de las vacaciones de Nuria Mendoza"
+priority = "final"
+grep = "export const ALBUM"
+in = "src/credits.ts"
 
 # ——— Economía ———
 [[block]]
@@ -962,6 +1016,25 @@ title = "Banda sonora completa"
 weight = 2
 
 # Each place's card says what it sounds like, or that it is not built (docs/places/*.md).
+[[block.item]]
+title = "Pantalla de inicio con el piano"
+file = "src/title.ts"
+
+[[block.item]]
+title = "Una canción en cada sitio de las misiones"
+grep = "'sagrada-familia-interior': 'mazmorra-oscuro'"
+in = "src/main.ts"
+
+[[block.item]]
+title = "Pasos según el suelo"
+grep = "STEPS"
+in = "src/game.ts"
+
+[[block.item]]
+title = "Salas del jefe: mazmorra-3 en la sala y el combate de tres misiones"
+grep = "BOSS_ROOM_FIGHTS"
+in = "src/main.ts"
+
 [[block.item]]
 title = "Sonido en los sitios que no lo tienen"
 weight = 2

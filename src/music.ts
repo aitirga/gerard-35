@@ -13,10 +13,13 @@ import { createHaunt, type Haunt } from './haunt.ts';
  * another in random order, with no end. A `vamp` repeats the section between its two marks a random
  * number of `laps` (or until `music.moveOn`), then the song goes on; with a `loop` too, the song
  * starts over from the loop's start at its end, and vamps again. A long take that `wraps` only picks
- * a random point as it starts: at the end of its file it goes on from the top.
+ * a random point as it starts: at the end of its file it goes on from the top. A cycled song with an
+ * `intro` (the mark where its first version starts) plays the intro once and its versions once in
+ * order, then any of them, never the same twice in a row. `rate` plays a song straight through slower
+ * (and so lower) or faster, and `tone` darkens it through a lowpass at that many Hz.
  */
 export interface Vamp { from: string; to: string; laps: readonly [number, number] }
-export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number; vamp?: Vamp; wraps?: boolean }
+export interface Track { src: string; marks: Record<string, number>; loop?: readonly [string, string]; bpm?: number; beatsPerBar?: number; downbeat?: string; stream?: boolean; loudness?: string; haunted?: boolean; cycle?: number; intro?: string; vamp?: Vamp; wraps?: boolean; rate?: number; tone?: number }
 export const TRACKS = {
   // Measured with `just music-loop`: the quick notes end on a piano G that rings until the C strikes
   // at 2.398 s; the loop starts right there, so it comes round on the C alone, and runs everything
@@ -30,25 +33,41 @@ export const TRACKS = {
   // The concrete streets, 46 bars at 110 BPM: bars 1 to 9 open, bars 10 to 17 (8 bars, Logic's 10
   // to 18) vamp three to seven times, then the rest plays, the break at bars 19 and 20 included, and
   // the song starts over from bar 1 at its end. Bar 17 ends on the same fill as bar 9, so going back
-  // to bar 10 keeps its tail; both marks sit 58 samples before the downbeat, where the waveforms meet.
-  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 19.635146, on: 37.089708, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [3, 7] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
-  // The same street at night, the way home hunted: the song's dark section only. It comes in on the
-  // break of bars 19 and 20, then loops bars 21 to 36 (16 bars, the second break at their end leads
-  // back in as the first did), measured with `just music-loop`: 43.607 → 78.510 s, match 0.92.
-  'concrete-noche': { src: 'music/song-concrete.m4a', marks: { start: 39.273, loop: 43.607, end: 78.51 }, loop: ['loop', 'end'], bpm: 110, beatsPerBar: 4, downbeat: 'loop' },
+  // to bar 10 keeps its tail. Bounced again on 2026-11-19 (bars 18–20 and 34–36 rewritten, 1–17 as
+  // before): both marks sit 2035 samples (42.4 ms) before the downbeats of bars 10 and 18, inside
+  // that fill, where the waveforms meet (a step of .007 against .029), exactly 8 bars apart.
+  concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 19.593958, on: 37.048521, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [3, 7] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
   // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
   // The file starts already sounding, so a cut at exactly 0 → 96 s clicked; the loop runs 43
   // samples (at 48 kHz) after the start to 61 before 96 s, where the waveforms meet, 2 ms short.
   triste: { src: 'music/song-triste.m4a', marks: { start: 0, loop: 0.000896, end: 95.998729 }, loop: ['loop', 'end'], bpm: 50, beatsPerBar: 4, downbeat: 'start' },
-  // Uri's tower, 11 minutes, dark: a long take, streamed, that comes in anywhere each time they go in
-  // or a fight ends, and never jumps while it plays. It fades in and out by itself, so its end meets its top.
+  // The friends' missions (Logic's song-mazmorra-4; Uri's tower first), 11 minutes, dark: a long take,
+  // streamed, that comes in anywhere each time they go in or a fight ends, and never jumps while it
+  // plays. It fades in and out by itself, so its end meets its top.
   'mazmorra-oscuro': { src: 'music/song-mazmorra-oscuro.m4a', marks: { start: 0 }, stream: true, loudness: 'music/song-mazmorra-oscuro.loudness.json', wraps: true },
-  // A friend's mission: six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23),
-  // each starting on its downbeat, so any can follow any.
+  // Six versions of one 48 s cycle (88 beats at 110 BPM, Logic's bars 1 to 23), each starting on its
+  // downbeat, so any can follow any. Waiting for a place again since the missions took mazmorra-4.
   'mazmorra-2': { src: 'music/song-mazmorra-2.m4a', marks: { start: 0 }, cycle: 48, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // A boss room of the friends' missions and its fight (src/main.ts `BOSS_ROOM_FIGHTS`): 75 bars at 90 BPM
+  // that loop whole, the end running into the top. The file starts already sounding, so the loop runs
+  // from 104 samples in (at 48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014
+  // against .02 between neighbouring samples there), 2 ms short of the 75 bars.
+  'mazmorra-3': { src: 'music/song-mazmorra-3.m4a', marks: { start: 0, loop: 0.002167, end: 199.998771 }, loop: ['loop', 'end'], bpm: 90, beatsPerBar: 4, downbeat: 'start' },
   // Marta's mission (docs/quests/marta.md § The way in): «Izana dena geroa», recorded by her, as it
   // comes out at the piano in Alegia the first time. 21 s, played once, never looped.
   izana: { src: 'music/marta-izana.m4a', marks: { start: 0 } },
+  // The welcome screen (src/title.ts): Aitor's piano, 56 s, played once and again after a pause for as
+  // long as the screen waits. It opens on a second of silence; `piano` is its first note (silence ends
+  // at 1.017 s at −50 dB), so a press that turns the sound on brings it in at once.
+  'intro-piano': { src: 'music/intro-piano.m4a', marks: { start: 0, piano: .95 } },
+  // The same piano once Gerard has made the last choice (src/endings.ts), sadder: slower, so a little
+  // lower, and darker. Both are knobs to tune by ear.
+  'intro-triste': { src: 'music/intro-piano.m4a', marks: { start: 0 }, rate: .9, tone: 2200 },
+  // The last boss's song (Logic's battle-final, 90 BPM): the Queen's last fight, from the sixth note
+  // (src/main.ts `BOSS_SONG`). Two bars of intro, then three versions of its 16-bar A, 42.667 s each,
+  // back to back: once in order, then any of them. Measured on the bounce: bars 1–2 match nothing 16
+  // bars on, every bar from the 3rd matches its own 16 bars later; the file ends 64 ms past 50 bars.
+  reina: { src: 'music/battle-final.m4a', marks: { start: 0, a: 5.333333, end: 133.333333 }, cycle: 42.666667, intro: 'a', bpm: 90, beatsPerBar: 4, downbeat: 'start' },
 } satisfies Record<string, Track>;
 export type TrackId = keyof typeof TRACKS;
 export const isTrack = (id: string): id is TrackId => Object.hasOwn(TRACKS, id);
@@ -101,6 +120,22 @@ export function nextVersion(count: number, previous: number, random = Math.rando
   if (count < 3) return count - 1;
   const pick = 1 + Math.floor(random() * (count - (previous === 0 ? 1 : 2)));
   return previous > 0 && pick >= previous ? pick + 1 : pick;
+}
+
+/** Where a cycled song's versions begin: its `intro` mark, or the top of the file. */
+export function versionsAt(track: Track) {
+  return track.intro ? markTime(track, track.intro) : 0;
+}
+/**
+ * The version to play after `previous` (-1 for the intro) in a song with an intro: the next one in
+ * the file while the first pass is `ordered`, then any of them but the one just played.
+ */
+export function followingVersion(count: number, previous: number, ordered: boolean, random = Math.random) {
+  if (ordered && previous + 1 < count) return previous + 1;
+  if (previous < 0) return Math.floor(random() * count);
+  if (count < 2) return 0;
+  const pick = Math.floor(random() * (count - 1));
+  return pick >= previous ? pick + 1 : pick;
 }
 
 /** How many times a vamp plays its section, between its fewest and most laps. */
@@ -165,7 +200,7 @@ export function fadeCurve(from: number, to: number, steps = 32) {
  * from while that still plays out; a vamping one also its section in seconds and the timer that
  * lets go of it.
  */
-interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; media?: MediaElementAudioSourceNode; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice; vamp?: { from: number; to: number; laps: number }; cut?: ReturnType<typeof setTimeout> }
+interface Voice { track: TrackId; source?: AudioBufferSourceNode; element?: HTMLAudioElement; media?: MediaElementAudioSourceNode; gain: GainNode; startedAt: number; offset: number; loop?: [number, number]; timer?: ReturnType<typeof setTimeout>; handoff?: Voice; vamp?: { from: number; to: number; laps: number }; cut?: ReturnType<typeof setTimeout>; ordered?: boolean }
 /** Lead time for anything scheduled, so the first samples are never late. */
 const LEAD = .03;
 /** A streamed take crossfades into another random point (one that `wraps`, into its top) this many seconds before its file ends. */
@@ -217,8 +252,15 @@ export function createMusic(audio: GameAudio) {
     if (loop) { source.loop = true; source.loopStart = loop[0]; source.loopEnd = loop[1]; }
     if (vamp) { source.loop = vamp.laps > 1; source.loopStart = vamp.from; source.loopEnd = vamp.to; }
     gain.gain.value = fade > 0 ? 0 : 1;
-    source.connect(gain).connect(output(id));
-    const voice: Voice = { track: id, source, gain, startedAt: at, offset, loop, vamp };
+    if (track.rate) source.playbackRate.value = track.rate;
+    if (track.tone) {
+      const dark = context.createBiquadFilter();
+      dark.type = 'lowpass'; dark.frequency.value = track.tone; dark.Q.value = .5;
+      source.connect(dark).connect(gain);
+    } else source.connect(gain);
+    gain.connect(output(id));
+    // A song with an intro that starts in it plays its versions in order the first time round.
+    const voice: Voice = { track: id, source, gain, startedAt: at, offset, loop, vamp, ordered: !!track.intro && offset < versionsAt(track) };
     source.onended = () => { gain.disconnect(); if (current === voice) current = undefined; else if (current?.handoff === voice) current.handoff = undefined; };
     source.start(at, offset);
     if (fade > 0) ramp(gain.gain, 1, at, fade);
@@ -303,18 +345,27 @@ export function createMusic(audio: GameAudio) {
     if (level !== 1) gain.gain.setValueCurveAtTime(fadeCurve(level, 1), at + Math.max(0, fade) + .01, SETTLE);
     return voice;
   }
-  /** At the end of its version, the voice hands over to another one, sample-exact on the downbeat. */
+  /**
+   * At the end of its version, the voice hands over to another one, sample-exact on the downbeat. In a
+   * song with an intro, the version that follows in the file is no seam: the voice just plays on into it.
+   */
   function queue(voice: Voice, cycle: number, at: number) {
-    const version = Math.floor(voice.offset / cycle + 1e-6);
-    const seam = at + (version + 1) * cycle - voice.offset;
-    const buffer = voice.source!.buffer!;
-    voice.timer = setTimeout(() => {
+    const track: Track = TRACKS[voice.track], base = versionsAt(track), buffer = voice.source!.buffer!;
+    const count = cycleCount(buffer.duration - base, cycle);
+    // The version it is in (-1 in the intro) and the second that version ends.
+    let version = Math.floor((voice.offset - base) / cycle + 1e-6);
+    let seam = at + base + (version + 1) * cycle - voice.offset;
+    const schedule = () => { voice.timer = setTimeout(next, Math.max(0, seam - QUEUE - audio.buses!.context.currentTime) * 1000); };
+    function next() {
       if (current !== voice) return;
+      const following = track.intro ? followingVersion(count, version, !!voice.ordered) : nextVersion(count, version);
+      if (track.intro && following === version + 1) { version = following; seam += cycle; schedule(); return; }
       voice.handoff = undefined;
-      current = start(voice.track, buffer, nextVersion(cycleCount(buffer.duration, cycle), version) * cycle, seam, SEAM);
+      current = start(voice.track, buffer, base + following * cycle, seam, SEAM);
       current.handoff = voice;
       release(voice, seam, SEAM);
-    }, Math.max(0, seam - QUEUE - audio.buses!.context.currentTime) * 1000);
+    }
+    schedule();
   }
   function release(voice: Voice, at: number, fade: number) {
     clearTimeout(voice.timer); clearTimeout(voice.cut);
@@ -334,7 +385,7 @@ export function createMusic(audio: GameAudio) {
     if (voice.handoff && now < voice.startedAt) return position(voice.handoff, now);
     if (voice.element) return voice.element.currentTime;
     if (voice.vamp) return vampPosition(Math.max(0, now - voice.startedAt), voice.offset, voice.vamp);
-    return loopPosition(Math.max(0, now - voice.startedAt), voice.offset, voice.loop);
+    return loopPosition(Math.max(0, now - voice.startedAt) * ((TRACKS[voice.track] as Track).rate ?? 1), voice.offset, voice.loop);
   }
 
   return {
@@ -408,5 +459,12 @@ export function createMusic(audio: GameAudio) {
     get haunted() { return haunt; },
     /** Lowers and muffles the music while a menu is open. */
     duck(on: boolean) { audio.duck(on); },
+    /**
+     * Takes the music out over `fade` seconds, or brings it back: the song goes on underneath, so it
+     * comes back where it would be (the artilugio's notes in the Queen's last fight).
+     */
+    hush(on: boolean, { fade = .4 }: { fade?: number } = {}) { audio.hush(on, fade); },
+    /** Whether it is hushed now. */
+    get hushed() { return audio.hushed; },
   };
 }

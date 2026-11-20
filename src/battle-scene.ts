@@ -3,7 +3,7 @@ import { HeldArtilugio, PROP } from './artilugio-held';
 import { DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
+import { MINION_HEIGHT, castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
 import { createStamps } from './dice-stamp';
@@ -223,6 +223,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     minion: boolean;
     /** A castle pupil drawn from its own file (src/castle-models.ts): its clips, running when it moves. */
     figure?: FigureClips;
+    /** How high over its feet its plate hangs, when that is not the usual 1.45 m: a figure of its own, over its head. */
+    plateAt?: number;
     /**
      * A giant of tiles and ladders (Vertitrón): it does not wobble, stretch or squash like the gum
      * creatures. It leans in heavy and slow from where it stands, and a blow only makes it shudder.
@@ -234,6 +236,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     held?: HeldArtilugio;
     /** The Queen holds them (Aitor at her tenth): a violet bead glows over each eye while she does. */
     possessed?: pc.Entity[];
+    /**
+     * Held by the Queen, they cross to her side (`crossOver`): their place in the party (`home`), the
+     * one in front of her (`away`), how far across they are (0 home, 1 there) and which way they go.
+     */
+    cross?: { home: pc.Vec3; away: pc.Vec3; t: number; hers: boolean };
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
     plantFeet: ReturnType<typeof createGroundContact>;
@@ -1102,6 +1109,38 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   /** Where a foe called in mid-fight stands from its caller: metres to its side, and towards the party. */
   const SUMMON = { side: 2, ahead: .7 } as const;
+  /**
+   * Aitor held crosses to the Queen's side (docs/castle-bosses.md § Aitor, held): he stands `ahead`
+   * cells in front of her, towards Gerard, and `side` cells to his own side of the line, so the camera
+   * sees him whole between them; the walk over (or back, freed) takes `seconds`.
+   */
+  const CROSS = { ahead: 1.4, side: 1.4, seconds: 1.7 } as const;
+  /** Which side someone fights on now: the party's, or hers (Aitor once he is more than half way across). */
+  const partySide = (f: Fighter) => f.party && !(f.cross && f.cross.t > .5);
+  /**
+   * Whoever the Queen holds (`held: 'reina'`) walks over to stand in front of her, turns on Gerard,
+   * and from then on his blows start from there, as hers would; freed, he walks back to his place.
+   * It moves their `base`, so everything that measures from it (a blow's run-up, the cats round
+   * Papagato's wearer, the plate over his head) goes with him.
+   */
+  function crossOver(dt: number, animate: boolean) {
+    const queen = [...fighters].find(([id]) => state?.foes.some(u => u.id === id && u.kind === 'reina'))?.[1];
+    for (const [id, f] of fighters) {
+      if (!f.party) continue;
+      const hers = !!queen && state?.allies.find(a => a.id === id)?.castle?.held === 'reina';
+      if (!hers && !f.cross) continue;
+      if (!f.cross) {
+        const { ahead, side } = axes(layout), home = f.base.clone(), q = queen!.base;
+        const across = Math.sign((home.x - q.x) * side.x + (home.z - q.z) * side.z) || 1;
+        f.cross = { home, away: new pc.Vec3(q.x - ahead.x * CROSS.ahead + side.x * across * CROSS.side, home.y, q.z - ahead.z * CROSS.ahead + side.z * across * CROSS.side), t: 0, hers };
+      }
+      const c = f.cross, step = dt / CROSS.seconds;
+      c.hers = hers;
+      c.t = !animate ? (hers ? 1 : 0) : hers ? Math.min(1, c.t + step) : Math.max(0, c.t - step);
+      f.base.lerp(c.home, c.away, smooth(c.t));
+      if (!hers && c.t === 0) { f.base.copy(c.home); f.cross = undefined; }
+    }
+  }
   /** One of La Voz's notes as it starts (VOZ_NOTES): its beam at whom it reaches, as the fight's rules have just sung it (`runSong`). */
   function voiceBeam(voz: Fighter, unit: Combatant, tone: ToneId) {
     if (!state) return;
@@ -2449,7 +2488,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
-    if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); }
+    if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); built.plateAt = own.size * MINION_HEIGHT + .1; }
     if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.
     if (isCamping(unit.kind)) built.camp = unit.kind;
@@ -2645,7 +2684,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         id, visible: f.hp > 0 && entryTime >= ENTRY_SECONDS,
         position: f.bone ? f.model.getPosition().clone().add(new pc.Vec3(0, .85, 0))
           : f.part ? f.model.getPosition().clone().add(new pc.Vec3(right.x * 1.35, right.y * 1.35 - .25, right.z * 1.35))
-          : f.model.getPosition().clone().add(new pc.Vec3(0, f.party ? 1.65 : f.onion ? 1.6 * f.scale.y : 1.45, 0)),
+          : f.model.getPosition().clone().add(new pc.Vec3(0, f.plateAt ?? (f.party ? 1.65 : f.onion ? 1.6 * f.scale.y : 1.45), 0)),
       }));
       const robot = [...fighters.values()].find(f => f.robot);
       if (robot?.robot?.uri) list.push({ id: 'uri', visible: !!state && entryTime >= ENTRY_SECONDS, position: robot.robot.uri.getPosition().clone().add(new pc.Vec3(0, 1.75, 0)) });
@@ -2884,10 +2923,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
       if (selected) marker.setPosition(selected.base.x, groundHeight(selected.base.x, selected.base.z) + .025, selected.base.z);
       if (mass) sobremesaFrame(dt);
+      crossOver(dt, animate);
       for (const [id, f] of fighters) {
         if (f.part) { eyeFrame(id, f, dt); continue; }
         updateOnion(id, f, dt, blows, animate, actor);
-        const opponents = [...fighters.values()].filter(other => other.party !== f.party && other.hp > 0);
+        const opponents = [...fighters.values()].filter(other => partySide(other) !== partySide(f) && other.hp > 0);
         const opponent = opponents[0];
         // At rest everyone squares up to the middle of the other side; the active ally turns toward whatever is being picked.
         const center = opponents.length ? opponents.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / opponents.length) : undefined;
@@ -2897,7 +2937,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Vertitrón sweeping or firing faces the middle of everyone it reaches.
         const reached = f.robot && id === effect?.actor && (effect.ability?.id === 'barrido' || effect.ability?.id === 'rayo') ? [target, ...(effect.splash ?? []).map(h => fighters.get(h.target))].filter((o): o is Fighter => !!o) : [];
         const reachFor = reached.length ? reached.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / reached.length) : undefined;
-        const lookAt = reachFor ?? ((id === effect?.actor || dualing) && target ? target.base : id === effect?.target && actor && !f.rigid && !dual ? actor.base : aiming ? selected!.base : center);
+        // Crossing to her side (or back), they look where they are going until they are nearly there.
+        const goingTo = f.cross && f.cross.t > 0 && f.cross.t < 1 ? (f.cross.hers ? f.cross.away : f.cross.home) : undefined;
+        const crossing = !!goingTo && Math.hypot(goingTo.x - f.base.x, goingTo.z - f.base.z) > .25;
+        const lookAt = reachFor ?? ((id === effect?.actor || dualing) && target ? target.base : id === effect?.target && actor && !f.rigid && !dual ? actor.base : crossing ? goingTo : aiming ? selected!.base : center);
         // With nobody left to face, each side looks the way its line faces.
         const { ahead } = axes(layout), facingAhead = Math.atan2(ahead.x, ahead.z) * 180 / Math.PI;
         // Everyone faces what they face, the party too, even with their backs to the camera (decided:
@@ -2921,7 +2964,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         let lean = -notice * (f.rigid ? 1.5 : 6), roll = 0, strike = 0;
         const movingIn = animate && entryMove > 0 && entryMove < 1;
         const attacking = !!motion && id === effect?.actor;
-        const stepping = attacking ? (t > .12 && t < CONTACT_SECONDS) || (t > .62 && t < 1.06) : movingIn || pivoting;
+        const stepping = attacking ? (t > .12 && t < CONTACT_SECONDS) || (t > .62 && t < 1.06) : movingIn || pivoting || (animate && crossing);
         const gait = f.walk.update(dt, stepping, animate, attacking ? .3 : .38);
         // A pupil's own figure runs while it runs up and back, and holds its pose standing.
         f.figure?.play(stepping && animate ? 'running' : 'rest', animate ? 1 : 0);

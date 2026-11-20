@@ -1,0 +1,168 @@
+{
+  "title": "The Queen's last fight and the end: the music",
+  "description": "docs/audio.md § The last fight: the battle song plays until the artilugio sounds; each note takes it out (the real board sounds on its own speaker; here the keys stand in, so the game plays the notes) and it comes back where it would be once the artilugio is put away, six seconds later. The sixth note brings in the last boss's song from its intro: its versions once in order, then any earlier one. The boss song is battle-final: two bars of intro, then three 16-bar A's. Her fall fades it into the last choice: no music, only the wind, then the welcome screen's piano, sadder, which keeps any place's song out until it has played. The overlay is the scenario's. Run with --chrome: just screenshots reina-music --chrome.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(2) ?? '—'} s${m.hushed ? ' · apartada' : ''}\\nnotas que suenan en el juego: ${window.notes.join(' ') || '—'}${note ? `\\n${note}` : ''}`; }; window.notes = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (String(id).startsWith('artilugio')) window.notes.push(id.slice(10)); return play(id, options); }; } window.key = (...keys) => keys.forEach(key => window.dispatchEvent(new KeyboardEvent('keydown', { key })));"
+    },
+    {
+      "until": "window.gerard.music.playing === 'battle' && window.gerard.music.position() > 3",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('reina-aitor')"
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && window.gerard.battleUI.live?.foes.find(f => f.kind === 'reina')?.castle?.stage === 'aitor'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic()"
+    },
+    {
+      "shot": "batalla",
+      "delay": 800,
+      "caption": "She has Aitor: the battle song, as in every fight"
+    },
+    {
+      "eval": "window.key('1')"
+    },
+    {
+      "until": "window.gerard.music.hushed && window.notes.includes('0')",
+      "timeout": 5000
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.showMusic('Sol: la canción se aparta para que se oiga el artilugio')"
+    },
+    {
+      "shot": "nota-aparta",
+      "caption": "The first note (Sol): the song goes out so the artilugio is heard"
+    },
+    {
+      "until": "!window.gerard.music.hushed && window.gerard.music.playing === 'battle'",
+      "timeout": 12000
+    },
+    {
+      "eval": "window.showMusic('seis segundos sin tocarlo: vuelve donde estaría')"
+    },
+    {
+      "shot": "vuelve",
+      "delay": 1500,
+      "caption": "Six seconds untouched: it is put away and the song comes back where it would be"
+    },
+    {
+      "eval": "[['1', '2'], ['2', '3'], ['4', '1'], ['4'], ['3']].forEach((keys, i) => setTimeout(() => window.key(...keys), 500 * (i + 1)))"
+    },
+    {
+      "until": "window.gerard.battleUI.live?.castle?.freed && window.gerard.music.playing === 'reina' && !window.gerard.music.hushed",
+      "timeout": 15000
+    },
+    {
+      "until": "window.gerard.music.position() > 6",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic('las seis: entra la canción del jefe (battle-final) desde su intro, y sigue sin corte a su primera A')"
+    },
+    {
+      "shot": "cancion-entera",
+      "caption": "All six (La♭, Do, Sol up, Fa and Re after Sol): Aitor is free and the last boss's song (battle-final) comes in from its two-bar intro, playing on into its first A"
+    },
+    {
+      "eval": "window.gerard.music.jump(128, { at: 'now' }); setTimeout(() => window.showMusic('en la última versión…'), 300)"
+    },
+    {
+      "until": "window.gerard.music.position() > 128.5",
+      "timeout": 5000
+    },
+    {
+      "until": "window.gerard.music.position() < 91",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic('…y al acabarla vuelve a una anterior (la primera A o la segunda), nunca la misma')"
+    },
+    {
+      "shot": "vuelve-a-una-anterior",
+      "delay": 600,
+      "caption": "Past the last version it goes back to an earlier one, never the same twice in a row"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "window.gerard.battleUI.live?.phase === 'won'",
+      "timeout": 30000
+    },
+    {
+      "until": "!window.gerard.music.playing",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic('su caída: la canción se va en 4 s, hacia el silencio de la decisión')"
+    },
+    {
+      "shot": "cae",
+      "delay": 600,
+      "caption": "Her fall: the song fades into silence"
+    },
+    {
+      "open": "/?story=artilugio&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.has('artilugio')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "press": "Escape",
+      "times": 2
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.showMusic = (note = '') => { let el = document.querySelector('#music-check'); if (!el) { el = document.createElement('div'); el.id = 'music-check'; el.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;padding:8px 12px;border-radius:8px;background:#000c;color:#ffd6ec;font:14px/1.5 monospace;white-space:pre'; document.body.append(el); } const m = window.gerard.music; el.textContent = `♪ ${m.playing ?? 'silencio'} · ${m.position()?.toFixed(2) ?? '—'} s${m.hushed ? ' · apartada' : ''}\\nnotas que suenan en el juego: ${window.notes.join(' ') || '—'}${note ? `\\n${note}` : ''}`; }; window.notes = []; { const play = window.gerard.sfx.play; window.gerard.sfx.play = (id, options) => { if (String(id).startsWith('artilugio')) window.notes.push(id.slice(10)); return play(id, options); }; } window.key = (...keys) => keys.forEach(key => window.dispatchEvent(new KeyboardEvent('keydown', { key }))); window.beds = []; { const bed = window.gerard.sfx.bed; window.gerard.sfx.bed = (id, level, ease) => { window.beds.push(level ? id : `${id} fuera`); return bed(id, level, ease); }; } window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'reina-vuelta', worn: [], xp: 0 })"
+    },
+    {
+      "until": "document.querySelector('#ending[data-on=\"true\"]') && window.beds.includes('wind') && !window.gerard.music.playing",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.showMusic('la decisión: sin música, solo el viento')"
+    },
+    {
+      "shot": "decision-viento",
+      "delay": 1800,
+      "caption": "The last choice: no music, only the wind through the balcony"
+    },
+    {
+      "eval": "document.querySelector('#ending [data-choice=\"acabar\"]').click()"
+    },
+    {
+      "until": "window.gerard.music.playing === 'intro-triste' && window.beds.includes('wind fuera')",
+      "timeout": 15000
+    },
+    {
+      "until": "window.gerard.music.position() > 3",
+      "timeout": 15000
+    },
+    {
+      "eval": "window.showMusic('elegido: vuelve el piano del inicio, más lento, más grave y más oscuro')"
+    },
+    {
+      "shot": "piano-triste",
+      "delay": 400,
+      "caption": "Chosen: the welcome screen's piano comes back, sadder (slower, lower, darker)"
+    }
+  ]
+}

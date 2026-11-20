@@ -83,9 +83,38 @@ The question has three parts:
 
 ## La Reina Bubbaloo
 
-She is nobody: what is left of being a kid (lore.md). Her motive is good and her means are cruel.
-The fight is the whole game asked again, in the throne room, with everything the party has: stage
-3, the definitivas, three ánimas each. No joke, no cartoon monster.
+She is nobody: what is left of being a kid (lore.md), wearing Nuria Mendoza's face. Her motive is
+good and her means are cruel. The fight is the whole game asked again, in the throne room, with
+everything the party has: stage 3, the definitivas, three ánimas each. No joke, no cartoon monster.
+
+- **Her figure** (2026-11-20): `[reina]` in tools/figures.toml, drawn from Nuria Mendoza's face
+  photos (a mix of two drafts Aitor chose), Meshy's skeleton and clips (src/monsters/reina.json),
+  2.8 m; her portrait, public/portraits/reina.png. The bestiary shows both.
+- **Where**: her stage (src/throne-arena.ts). As she comes down from the throne the picture breaks
+  into glass and the fight goes up onto the sala d'actes' stage, built for it: the boards with their
+  gold edge and footlights over the dark rows of chairs, the indigo velvet in pleats with the
+  school's banner, the balcony open onto the night city, and her throne beside her (the gum seat,
+  the bubble she blows with her core beating in it, the crown of five flavours on top), her gum
+  spreading from it over the boards and climbing the velvet, bubbles rising and popping. One warm
+  spotlight on her, her core's pink, the city's cold glow, the footlights' wash. It keeps the throne
+  room's card (places/palace-zones.md).
+- **Her camera** (Aitor, 2026-11-20: «Aitor y Gerard algo más atrás y ella en el fondo»): the fight
+  lines up along the stage (layout `z`, `THRONE_SPREAD`), the party near the footlights with their
+  backs to the camera and she far up it before the balcony; the view is a little lower and wider
+  than other fights' (`THRONE_VIEW`), to take in her throne.
+- **Her entrance** (`THRONE_INTRO`, 7.5 s, skipped with Enter, Space or Escape): the stage dark;
+  low along the front the footlights come on one by one while the party walks on; the camera glides
+  up the dark stage to the throne, her core beating fast in the bubble, she a shape beside it; her
+  spotlight slams on (a flash, a shake) and the camera is close on her from below; her crown's
+  flavours light one after another and her name comes up («La Reina Bubbaloo. Lo que dejasteis en
+  el patio.»); the camera pulls back over the party's shoulders into the fight and the bars open.
+  The game drives the camera and light (`throneShot` in src/game.ts, the stage's `update`), the
+  fight's screen the bars and the name in time with it (battle-ui `entrance`). Her figure and the
+  stage's textures load as the party comes into the throne room, so it starts without waiting.
+- **While she holds Aitor** her spotlight turns possession's violet, her core beats faster and the
+  footlights falter; freed, the warm light comes back.
+- **The rules are preliminary, on purpose**: Aitor (2026-11-20) leaves the fight's real design for
+  last, once every ánima's mechanics exist; until then it is the version below.
 
 | Phase | PV | What it tests |
 | --- | --- | --- |
@@ -102,8 +131,11 @@ The fight is the whole game asked again, in the throne room, with everything the
 At about a tenth of her PV she **takes control of Aitor** (decided, story-outline.md § The end, in
 order).
 
-- His eyes go violet, as Uri's did. **His dock crosses to the enemy side**, and **player 2 keeps
-  driving him, against Gerard**, with all of his kit.
+- His eyes go violet, as Uri's did. **He crosses to her side**: he walks over to stand in front of
+  her, turns on Gerard and from then on attacks from there, as a foe would; **his card crosses
+  too**, out of the party's docks onto her side in possession's violet («Del lado de la Reina»), and
+  **player 2 keeps driving him, against Gerard**, with all of his kit (built 2026-11-20).
+  Freed, he walks back to his place and his card comes home.
 - **The music does not change** when she takes him (Aitor, 2026-11-19, replacing the motif-only
   idea): it only fades out, for good, when the artilugio is played at her (`silenced` in `src/main.ts`).
 - **By default there is no way out.** Without the artilugio they kill Gerard. It happens once, and
@@ -117,8 +149,9 @@ order).
   can pay for, or Defender, and what he picks runs as his own action against Gerard (`heldAct` in
   `src/battle.ts`), growing as hers did; picked something that does not hurt Gerard, the thread of
   gum pulls his arm anyway, so the first time there is still no way out. His eyes go violet in the
-  fight. Without a choice (the simulators) she moves him herself, as before. Still to come: his card
-  crossing too. Then Bernat calls, the salón de juegos is played, and they come back with it.
+  fight. Without a choice (the simulators) she moves him herself, as before. He and his card cross to
+  her side (`crossOver` in `src/battle-scene.ts`, `.held-side` in `src/battle-ui.ts`, built 2026-11-20).
+  Then Bernat calls, the salón de juegos is played, and they come back with it.
 - **The artilugio survives a rewind** (decided 2026-11-19): her castle covering everything takes the
   day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
   (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed
@@ -131,12 +164,15 @@ The real one, in Gerard's hands: the board, four buttons and four pairs, eight n
 (story-outline.md § The device). Nobody says what it is for. It wakes as she takes Aitor: its four
 lights go round on their own, on the real board and on the one in Gerard's hands on screen.
 
-- **Every button sounds in the game.** At the first note she starts: her intent clears. That is
-  how Gerard learns it does something.
+- **Every button sounds.** The real board on its own speaker, in the room (the game only plays the
+  keys' and the pad's notes, when they stand in), and the battle song steps aside while it does,
+  coming back once the artilugio is put away (docs/audio.md § The last fight). At the first note she
+  starts: her intent clears. That is how Gerard learns it does something.
 - **Notes in the right order** light six marks on Aitor's plate, from violet to his cyan. A wrong
   one puts them out (the melody's first starts it again). Aitor keeps attacking all the while.
-- **All six**: the final boss's song comes in whole, Aitor is free, his dock comes back, every
-  ánima's maná is full. What is left is to finish her.
+- **All six**: the final boss's song comes in whole (an intro and three versions of its A, in order
+  and then any of them; Aitor composes it), Aitor is free, his dock comes back, every ánima's maná is
+  full. What is left is to finish her.
 - It does **not calm her**. It takes Aitor from her. (Rejected already: a melody that soothes a
   tantrum.)
 - How a press reaches the game (built 2026-11-19): the board sends each note over Wi-Fi to the
@@ -151,9 +187,10 @@ today); `aitor-poseido` in `src/battle.ts` and `src/story.ts`, as docs/progress.
 
 At 0 PV she does not die.
 
-- The fight's clock slows (`FightClock.slow`, as a dual does), the music holds one chord, and the
-  camera closes on Gerard: the Foc Binari forming in his hand, the numbers turning round it. She
-  is on the floor, small.
+- The fight's clock slows (`FightClock.slow`, as a dual does), the music goes silent (decided
+  2026-11-19, replacing a held chord: only the wind through the open balcony), and the camera closes
+  on Gerard: the Foc Binari forming in his hand, the numbers turning round it. She is on the floor,
+  small. Once he chooses, the welcome screen's piano comes back, sadder (docs/audio.md § The last fight).
 - In Gerard's dock, two commands and no clock. **Only Gerard chooses**; Aitor answers with one
   line.
 

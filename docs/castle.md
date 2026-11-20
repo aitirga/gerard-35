@@ -187,7 +187,8 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
 | The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), Aurelià, Dirección, the Queen |
 | The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings nightfall and moves the way in, lights for the jar, the third slot after Aurelià |
-| Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts` | She takes him at a tenth (down or not); lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
+| Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts`, `src/battle-scene.ts` | She takes him at a tenth (down or not): he walks over to her side and fights from there, his card with him, player 2 choosing his moves; lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
+| The Queen's figure and stage | `src/monsters/reina.json`, `public/portraits/reina.png`, `src/throne-arena.ts` | Nuria Mendoza's face made cruel; her fight goes up onto the sala d'actes' stage, built for it |
 | The last scene | `src/endings.ts` | Acabar or Bajar la mano, an epilogue over black, the Monday after |
 
 Placeholders and decisions taken for now (each one Aitor's to change):
@@ -196,7 +197,8 @@ Placeholders and decisions taken for now (each one Aitor's to change):
   src/creatures/, loaded by `src/castle-models.ts` the first time a fight or a floor needs it), at
   its own height, El Repetidor by his year; in a fight it runs on Meshy's clip when it runs up and
   holds its pose standing, and on the floor it walks its round and runs the chase. Until its figure
-  lands it is the palace minion's model at its own size, as Aurelià, Dirección and the Queen are.
+  lands it is the palace minion's model at its own size, as Aurelià and Dirección are (the Queen has
+  hers since 2026-11-20).
 - One hour a fight inside the castle (`COSTS.castle`); a boss beaten ends the day at nightfall.
 - The Queen comes back at 40 % of her PV (`CASTLE.reinaVuelta`).
 - Bernat's phone call stands in for the salón de juegos mission that finds the artilugio.
@@ -215,8 +217,8 @@ Placeholders and decisions taken for now (each one Aitor's to change):
     leaves them in shock (a turn lost), a wound bleeds; a blow on everyone comes back on everyone.
     Its plate says what it will give back. Shapeless, it only leans on one, lightly.
 - Not built: the definitivas, the outer rings and level caps (`levelCap` exists, unused), the snow
-  globe inside, zones turning back into school once won, player 2 playing Aitor, the six-note motif
-  in the music, the ESP32.
+  globe inside, zones turning back into school once won, the six-note motif in the music, the
+  Queen's final rules (left for last, docs/castle-bosses.md).
 
 Measured with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`): with the dual
 party at Papagato 3 and Atacar's three elements, playing the answer wins Aurelià 82 %, Dirección

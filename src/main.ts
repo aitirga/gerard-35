@@ -16,7 +16,9 @@ import { MAX_LEVEL, toNextLevel, topOf } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
+import { createTitle } from './title';
 import { LINES_CASTLE } from './castle-story';
+import { onThroneStage } from './throne-arena';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
 import { nightMight } from './night';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
@@ -41,6 +43,7 @@ import { createAudio } from './audio';
 import { createMusic, isTrack, type TrackId } from './music';
 import { createVozSong } from './voz-song';
 import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
+import { PLACES_NURIA } from './friends/nuria';
 import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
@@ -78,6 +81,9 @@ const homeLights = createHomeLights();
 const audio = createAudio();
 const music = createMusic(audio);
 const sfx = createSfx(audio);
+/** The welcome screen (src/title.ts): the release always opens on it, development only with ?title. */
+const title = createTitle(hud, { ready: () => !audio.buses || audio.running, wake: () => audio.tryStart() });
+let titleOpen = !import.meta.env.DEV || new URLSearchParams(location.search).has('title');
 // La Voz's song: Marta's recording, held to her fight's clock (src/voz-song.ts).
 const vozSong = createVozSong(audio);
 // Registered before the menus so Escape is heard before they take it.
@@ -86,48 +92,111 @@ const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#con
 const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
  * Each place's song, coming in slowly from anywhere in it (a vamping or cycled one from the top);
- * a place without one fades to silence.
+ * a place without one fades to silence. Walking between two places with the same song keeps it going.
  * The castle's song is haunted as much as the castle is threatening right now (src/haunt.ts).
  */
-const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', alegia: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
+const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
+  // Childhood and the towns: the house and its street (the game opens in the house), and every town
+  // plays the same, triste (Aitor, 2026-11-20): Cardedeu (Nuria's street and the street that never
+  // ends) and Alegia as Sant Quirze.
+  'home-floor-2': 'triste', 'home-floor-1': 'triste', 'home-entrance': 'triste', maresme: 'triste', cardedeu: 'triste', 'cardedeu-calle': 'triste', alegia: 'triste',
+  meridiana: 'home',
+  // The friends' missions start on the dark mazmorra song (Logic's song-mazmorra-4), sad and plain;
+  // three of their boss rooms change it for mazmorra-3 (`inBossRoom`). Marta's has her own voice.
+  'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-oscuro', 'poble-sec': 'mazmorra-oscuro', 'piso-emilie': 'mazmorra-oscuro', modelo: 'mazmorra-oscuro',
+  'sagrada-familia': 'mazmorra-oscuro', 'sagrada-familia-interior': 'mazmorra-oscuro',
+  palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo',
+};
 let place: EnvironmentId | undefined;
-/** The song a place plays now: the Meridiana's street turns to its dark section at night (the way home, hunted). */
-const songFor = (id: EnvironmentId): TrackId | undefined => id === 'meridiana-calle' && story.night ? 'concrete-noche' : PLACE_SONGS[id];
-/** Whether a track is some place's own (so a story song, such as Marta's Izana at the piano, is never cut for one). */
-const placeSong = (track: TrackId | undefined) => !!track && (Object.values(PLACE_SONGS).includes(track) || track === 'concrete-noche');
+/**
+ * The end of the game (docs/audio.md § The last fight): from the Queen's fall until the sad piano
+ * after the last choice has played out, no place's song comes in. `won` as she falls, `choosing`
+ * while the wind blows, `piano` once Gerard has chosen.
+ */
+let finale: 'won' | 'choosing' | 'piano' | undefined;
+/**
+ * The boss rooms of three friends' missions (Vertitrón's summit, La Sobremesa's merendero, El que no
+ * converge's bottom of the model; Aitor, 2026-11-19): there the place's song gives way to mazmorra-3,
+ * which goes on into the boss's fight (`BOSS_ROOM_FIGHTS`). Set once the game is there.
+ */
+let inBossRoom: () => boolean = () => false;
+const BOSS_ROOM_SONG: TrackId = 'mazmorra-3';
+const BOSS_ROOM_FIGHTS: readonly string[] = ['uri-vertigo', 'sobremesa', 'no-converge'];
+/**
+ * Barcelona's streets (Aitor, 2026-11-19): concrete by day, mazmorra-2 by night, when the palace's
+ * monsters are out and the party walks home (src/night.ts); a fight there at night is fought to it.
+ * Not the flat (home's own song), El Nucli (inside), Rec Comtal (the castle) or the missions' places.
+ */
+const CITY: readonly EnvironmentId[] = ['meridiana-calle', 'sants', 'placa-espanya', 'bunkers-carmel', 'barceloneta'];
+const CITY_DAY: TrackId = 'concrete', CITY_NIGHT: TrackId = 'mazmorra-2';
+/** The song a place plays now: its boss room's, the city's by the hour, or its own. */
+function songHere(id: EnvironmentId): TrackId | undefined {
+  if (inBossRoom()) return BOSS_ROOM_SONG;
+  if (CITY.includes(id)) return story.night ? CITY_NIGHT : CITY_DAY;
+  return PLACE_SONGS[id];
+}
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
   place = id;
-  if (battlePhase || devSong) return;
+  if (battlePhase || devSong || titleOpen || finale) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
-  const song = songFor(id);
+  // A boss room's song comes in from its top, quicker than a place's.
+  const room = inBossRoom(), song = songHere(id);
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
-  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
-  else if (placeSong(music.playing)) music.stop({ fade: 2 });
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale) void music.play(song, room ? { from: 'start', fade: 2 } : { from: 'random', fade: 4 }); });
+  else if (music.playing && [...Object.values(PLACE_SONGS), BOSS_ROOM_SONG, CITY_DAY, CITY_NIGHT].includes(music.playing)) music.stop({ fade: 2 });
 }
 /**
  * The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an
  * escape or leaving. La Voz sings her own (src/voz-song.ts), with nothing under it.
  */
 let battlePhase: BattleState['phase'] | undefined;
-/** The artilugio played in the Queen's last fight: her music fades out and stays gone (Aitor, 2026-11-19). */
-let silenced = false;
+/**
+ * The Queen's last fight (docs/castle-bosses.md § With the artilugio) and its song. Holding Aitor her
+ * music does not change; the first note of the artilugio played at her fades it out for good (Aitor,
+ * 2026-11-19), and once its six notes free Aitor the last boss's own song comes in, whole (`reina`
+ * in src/music.ts: an intro and three versions of its A). Without it in `TRACKS`, silence stays.
+ */
+const LAST_FIGHT = 'reina-vuelta', BOSS_SONG = 'reina';
+const isQueen = (encounter?: string) => encounter === 'reina' || encounter === 'reina-vuelta';
+let bossSong = false, silenced = false;
+/** A note of the artilugio at her: her song goes, and stays gone. */
+function scoreNote(state: BattleState | undefined, atHer: boolean) {
+  if (scoreFreed(state) || silenced || !atHer) return;
+  silenced = true;
+  music.stop({ fade: 2.5 });
+}
+/** The sixth note: the last boss's song comes in from its intro, over the silence the artilugio left. */
+function scoreFreed(state: BattleState | undefined) {
+  if (state?.encounter !== LAST_FIGHT || !state.castle?.freed) return false;
+  if (bossSong) return true;
+  bossSong = true;
+  if (isTrack(BOSS_SONG)) void music.play(BOSS_SONG, { from: 'start', restart: true, fade: .3 });
+  return true;
+}
 /** The fight going on, for the day log: the party's moves (skill or action → times) and its round. */
 let fightMoves: Record<string, number> = {}, fightRounds = 0;
 function scoreBattle(state: BattleState | undefined) {
   const was = battlePhase;
   battlePhase = state?.phase;
+  if (state && was === undefined) bossSong = false;
+  else scoreFreed(state);
   if (battlePhase === was) return;
-  const sung = !!state?.song;
+  const sung = !!state?.song, over = !state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped';
+  // A boss of a boss room, or a fight in the city at night, is fought to the place's own song, which
+  // goes on from where it was.
+  const keep = !state ? undefined : BOSS_ROOM_FIGHTS.includes(state.encounter) ? BOSS_ROOM_SONG : place && CITY.includes(place) && story.night ? CITY_NIGHT : undefined;
   // A fight that is not hers takes over from her song far off; it comes back where it left off after.
   if (state && was === undefined && !sung) vozSong.stop(.8);
-  if (!state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped') vozSong.stop(battlePhase === 'won' ? 2 : 1);
+  if (over) vozSong.stop(battlePhase === 'won' ? 2 : 1);
   if (!state) { silenced = false; if (music.playing === 'battle') music.stop({ fade: 1.5 }); if (place) scorePlace(place); }
-  else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
-  if (battlePhase === 'won' && !sung && !silenced) void music.jump('ending', { at: 'bar', loop: false });
+  else if (was === undefined) { if (sung) music.stop({ fade: .4 }); else if (keep) void music.play(keep, { fade: .4 }); else void music.play('battle', { restart: true, fade: .4 }); }
+  // Her fall ends the game: its song fades into the silence of the last choice.
+  if (battlePhase === 'won' && isQueen(state?.encounter)) { finale = 'won'; music.stop({ fade: 4 }); }
+  else if (battlePhase === 'won' && !sung && !keep && !silenced) void music.jump('ending', { at: 'bar', loop: false });
   else if (battlePhase === 'lost') music.stop({ fade: 2.5 });
   else if (battlePhase === 'escaped') music.stop({ fade: 1 });
 }
@@ -238,6 +307,8 @@ const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control
 const progress = () => JSON.stringify([story.saved, story.days]);
 let savedStory = progress();
 let startStory: (() => void) | undefined;
+/** The welcome screen before the story starts (src/title.ts); nothing in development without ?title. */
+let welcome: (continuing: Promise<boolean>) => Promise<void> = async () => {};
 /**
  * What Gerard does each day, kept on the server for a future boss (src/day-log.ts,
  * docs/day-log.md). Development jumps log too, into the local save, to check it while building.
@@ -344,13 +415,14 @@ try {
   const carried = () => story.has('artilugio') || battleUI.artilugioLive;
   /** Gerard holding it (src/artilugio-held.ts): his copy in a fight, his figure anywhere else. */
   const heldNow = () => game.battleArtilugio ?? game.artilugio;
-  artilugio.onNote(({ note }) => {
+  artilugio.onNote(({ note, source }) => {
     if (!carried()) return;
-    sfx.play(`artilugio-${note}` as SoundId);
+    // The real board sounds on its own speaker, in the room and on time; the game sounds only the
+    // keys and the pad standing in for it.
+    if (source !== 'board') sfx.play(`artilugio-${note}` as SoundId);
     heldNow().play(note);
-    // Holding Aitor her music does not change; the artilugio, once played at her, fades it out for good.
-    if (battleUI.artilugioLive && !silenced) { silenced = true; music.stop({ fade: 2.5 }); }
     battleUI.note(note);
+    scoreNote(battleUI.live, battleUI.artilugioLive);
     syncArtilugio();
   });
   artilugio.onMotion(() => { if (carried()) heldNow().takeOut(); });
@@ -380,6 +452,8 @@ try {
     solo: () => playing().mode === 'solo',
   });
   let currentLocation: EnvironmentId = story.resume.environment;
+  /** The cell Gerard stands on, for the boss rooms (`inBossRoom`). */
+  let here: { x: number; z: number } | undefined;
   // Story beats play one after another: a dialogue waits for its last line, a card for its fade.
   let beats = Promise.resolve();
   /** Lights won but still on their way into Gerard and Aitor: not counted yet. */
@@ -401,9 +475,11 @@ try {
     else if (effect.kind === 'gate') await game.popGate();
     // The story takes them somewhere else: under its own dark or snow if there is one, through a fade if not.
     else if (effect.kind === 'travel') { if (storyUI.covered) game.setEnvironment(effect.environment, effect.cell); else await game.travel(effect.environment, effect.cell); }
+    // A recording that comes out in the scene (Marta's at the piano) starts at once, and the place's
+    // song fades out under it; once it has played, the place's own song comes back.
     else if (effect.kind === 'song') void audio.unlocked.then(async () => {
+      music.stop({ fade: 1.5 });
       await music.play(effect.track, { restart: true, fade: 0 });
-      // Once it has played (Marta's Izana at the piano), the place's own song comes back.
       const back = () => { if (music.playing === effect.track) setTimeout(back, 500); else if (place && !battlePhase && !music.playing) scorePlace(place); };
       setTimeout(back, 500);
     });
@@ -439,7 +515,15 @@ try {
     // The last scene: the game holds still until Gerard chooses, and the story hears which.
     else if (effect.kind === 'ending') {
       exploration.close(); storyPaused = true; game.setPaused(true);
+      // The choice is made in silence, with only the wind through the balcony; once it is made, the
+      // welcome screen's piano comes back, sadder, and plays out before any place's song comes in.
+      finale = 'choosing'; music.stop({ fade: 2 }); sfx.bed('wind', { volume: 1 }, 1.5);
       const choice = await endings.choose(LINES_CASTLE.lastScene);
+      sfx.bed('wind', undefined, 1.2);
+      finale = 'piano';
+      void audio.unlocked.then(() => music.play('intro-triste', { from: 'start', restart: true, fade: 3 })).then(() => {
+        const out = setInterval(() => { if (music.playing === 'intro-triste') return; clearInterval(out); finale = undefined; if (place) scorePlace(place); }, 1000);
+      });
       storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
       storyEvent({ type: 'ending', choice });
     }
@@ -504,6 +588,22 @@ try {
     for (const effect of effects) await play(effect);
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
   }
+  /**
+   * The ending as the fight tester shows it (docs/dev-tools.md): what `castleEnding` plays once Gerard
+   * has chosen (src/castle-story.ts), the last scene, his choice, what it does, the Monday's words and
+   * the credits, but nothing is raised and no morning comes: the save is the same afterwards.
+   */
+  async function previewEnding() {
+    storyPaused = true; game.setPaused(true);
+    const choice = await endings.choose(LINES_CASTLE.lastScene), lines = LINES_CASTLE[choice];
+    await play({ kind: 'dialogue', dialogue: { left: 'gerard35', right: 'aitor', lines: [lines.aitor] } });
+    await play({ kind: 'epilogue', choice, text: lines.scene });
+    // No morning comes here to lift the black (the story's wakes them at home): the Monday's words are said where they stand.
+    await storyUI.blackout(false, 1600);
+    await play({ kind: 'dialogue', dialogue: lines.epilogue });
+    await play({ kind: 'credits' });
+    storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
+  }
   /** Down into a station: pick a destination on the network map, ride, and come up its entrance. */
   async function ride(from: string) {
     exploration.close(); storyPaused = true; game.setPaused(true);
@@ -539,8 +639,6 @@ try {
   function storyChanged() {
     game.refreshStory();
     syncArtilugio();
-    // Night falling where they stand changes its song (the Meridiana's dark section).
-    if (place && !battlePhase && !devSong && songFor(place) && (!music.playing || placeSong(music.playing)) && music.playing !== songFor(place)) scorePlace(place);
     showAnimas();
     // An ánima gained takes some of the castle's power, and of its song's haunt.
     if (!devSong) music.haunt(castleHaunt(story));
@@ -576,7 +674,7 @@ try {
       const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
       go();
     },
-    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
@@ -739,14 +837,23 @@ try {
       if (!testing && !leaving && (phase === 'won' || phase === 'lost' || phase === 'escaped')) dayLog.add({ kind: 'fight', encounter, outcome: phase, rounds: fightRounds, moves: fightMoves, worn });
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
+      // The Queen beaten in the fight tester: the ending plays on, as the story would, with the save left as it was.
+      if (testing && !leaving && phase === 'won' && onThroneStage(encounter)) { testing = undefined; game.refreshStory(); void previewEnding(); return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
-      if (testing || leaving) { testing = undefined; leaving = false; game.refreshStory(); return; }
+      if (testing || leaving) {
+        testing = undefined; leaving = false; game.refreshStory();
+        // A test win over the Queen ends nothing: the place's song comes back.
+        if (finale === 'won') { finale = undefined; if (place) scorePlace(place); }
+        return;
+      }
       if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),
+    onEntrance: moment => battleUI.entrance(moment),
     onCompanionScreen: at => storyUI.bubble(dialogue.open || exploration.active ? undefined : story.bubble ?? game.partnerLine, at),
     onShout: shout => storyUI.shout(dialogue.open || exploration.active ? undefined : shout),
     onStep: (steps, cell) => {
+      here = cell;
       sessionSteps = steps;
       exploration.update(currentLocation, cell);
       dirty = true;
@@ -754,6 +861,7 @@ try {
       saveTimer = setTimeout(() => { void save(); }, 700);
     },
     onLocation: (id, cell) => {
+      here = cell;
       currentLocation = id;
       dayLog.enter(id);
       homeLights.setPlace(id);
@@ -786,8 +894,9 @@ try {
     },
   }, story);
   const lampPicker = createLampPicker(hud, homeLights, paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
-  /** Bernat's box (src/portal-ui.ts): its sums of lights on the flat's lamps, then the artilugio sent home, awake. */
-  const portalUI = createPortalUI(hud, homeLights, lampPicker, () => { artilugio.setMode('alive'); artilugio.listen(); }, cue => sfx.play(cue === 'right' ? 'unlock' : 'denied'));
+  /** Bernat's model of the flat (src/portal-ui.ts): its riddle of lights played on the model from above, then the artilugio sent home, awake. */
+  const portalUI = createPortalUI(hud, homeLights, () => game.maqueta, () => { artilugio.setMode('alive'); artilugio.listen(); }, id => sfx.play(id),
+    paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
   const jarUI = createJarUI(hud, story, {
     pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
     sound: id => sfx.play(id),
@@ -822,8 +931,24 @@ try {
   const followMood = () => homeLights.setMood({ tone: game.lightTone, dusk: story.dusk });
   followMood();
   const moodTimer = setInterval(followMood, 1000);
-  const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
+  /**
+   * The boss rooms (`inBossRoom`): Vertitrón's summit once the third ring is behind them, the walled
+   * merendero north of the steel door (the camping's rows 3–19, columns 2–17) once Las parcelas has
+   * opened it, and the bottom of Emilie's model; each until its boss has fallen. Looked at twice a
+   * second (`songTimer`), so walking in or out changes the song.
+   */
+  inBossRoom = () => {
+    if (!story.adult) return false;
+    if (currentLocation === 'cardedeu-laberinto') return story.nuria.lent && story.nuria.stage >= PLACES_NURIA.uri.length && !story.has('nuria-uri');
+    if (currentLocation === 'camping') return story.has('parcelas') && !story.has('sobremesa') && !!here && here.x >= 2 && here.x <= 17 && here.z >= 3 && here.z <= 19;
+    if (currentLocation === 'modelo') return game.modelo.run.zone === 'fondo' && !story.has('converge');
+    return false;
+  };
+  // The song a place asks for changes as Gerard walks into a boss room or out of it, and as night falls.
+  let songNow: TrackId | undefined;
+  const songTimer = setInterval(() => { const song = place && songHere(place); if (song === songNow) return; songNow = song; if (place) scorePlace(place); }, 500);
+  const controllerContext = () => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -836,7 +961,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
@@ -851,12 +976,15 @@ try {
     // In a fight the D-pad's left and right do not walk: they open the summary.
     dpadApart: () => !jumpMenu.isOpen && battleUI.controllerContext !== 'world',
     action: (action, player) => {
+      // The welcome screen reads the pad itself (src/title.ts).
+      if (title.isOpen) return;
       // Player 2 plays Aitor: his turns in battle, the dialogue, and using things where he stands.
       if (jumpMenu.isOpen) { if (action === 'cancel') jumpMenu.close(); return; }
       if (credits.open) { if (action === 'confirm') credits.confirm(); return; }
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
+      if (portalUI.isOpen) { if (action !== 'overview' && action !== 'character') portalUI.control(action); return; }
       if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action, player === 2 ? 2 : 1); return; }
       if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
       if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }
@@ -907,6 +1035,8 @@ try {
     const { environment, cell } = (!fight && (nightJump ?? (devJump?.home ? story.home : devJump?.spot))) || story.resume;
     if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
     storyChanged();
+    // Out of the welcome screen, the place's song comes over its piano.
+    scorePlace(currentLocation);
     storyEvent({ type: 'start' });
     if (fight) { try { startFight(validFight(JSON.parse(fight))); } catch { /* A broken link starts no fight. */ } }
     // A mission's part can play its moment on arrival: coming up from the R4, or Vertitrón beaten.
@@ -916,6 +1046,24 @@ try {
       // Scripted checks wait for this: Gerard stands where the story starts (moving him is not undone) and the picture is clear.
       if (import.meta.env.DEV) (window as unknown as { gerard?: { started?: boolean } }).gerard!.started = true;
     })));
+  };
+  /**
+   * The welcome screen, with Aitor's piano from its first note as soon as sound is on, and again after
+   * a breath if it plays out while the screen still waits. «Continuar» once a game is under way.
+   */
+  welcome = async continuing => {
+    if (!titleOpen) return;
+    storyPaused = true; game.setPaused(true);
+    audio.tryStart();
+    const piano = () => { if (titleOpen) void music.play('intro-piano', { from: 'piano', restart: true, fade: .05 }); };
+    void audio.unlocked.then(piano);
+    let quiet = 0;
+    const again = setInterval(() => { if (!audio.running || music.playing === 'intro-piano') quiet = 0; else if (++quiet >= 8) { quiet = 0; piano(); } }, 500);
+    await title.open(continuing);
+    clearInterval(again);
+    titleOpen = false; storyPaused = false;
+    game.setPaused(!!exploration.active || menuOpen());
+    canvas.focus({ preventScroll: true });
   };
   // Repeatable desktop battle checks without affecting production or saved progress.
   if (import.meta.env.DEV) {
@@ -951,9 +1099,9 @@ try {
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
     // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong } });
+    Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); clearInterval(songTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;
@@ -961,4 +1109,6 @@ try {
   void storyUI.open();
 }
 // Wait briefly for saved progress, so a returning player resumes where they left off.
-void load().then(() => startStory?.());
+// The welcome screen opens at once and its button waits for the save, which says whether to continue.
+const progressRead = load();
+void Promise.all([progressRead, welcome(progressRead.then(() => story.started))]).then(() => startStory?.());

@@ -1,13 +1,17 @@
 /**
- * Bernat at 35 (docs/quests/bernat.md, round 5): the confidant at El Nucli, his call after the first
- * fall at the Queen, and the portal whose puzzle sends the artilugio to the real flat. Data and the
- * puzzle's own rule only; `src/story.ts` decides when each line plays, `src/portal-ui.ts` shows the
- * puzzle. No ánima and no fight: he is the one who sees that all this is a game.
+ * Bernat at 35 (docs/quests/bernat.md, rounds 5 and 6): the confidant at El Nucli, his call after
+ * the first fall at the Queen, and the model of the flat whose riddle sends the artilugio to the real
+ * one. Data and the riddle's own rule only; `src/story.ts` decides when each line plays,
+ * `src/portal-ui.ts` shows the riddle over the model. No ánima and no fight: he is the one who sees
+ * that all this is a game.
  *
- * The puzzle (decided by Aitor): his notebook draws a sum of the flat's lamps, *the moon = the table
- * in green + the kitchen in blue*; the game lights the lamps of the sum, and the answer is the moon
- * (the `luna` lamp, real and in the game) set to the colour of light that results, held 5 s. Four
- * levels: a sum, a subtraction, a harder sum with a subtraction, the three primaries at once.
+ * The riddle (Aitor): a sheet with no words, each lamp drawn as its name (the moon as a moon, the
+ * table as a table: the bulbs are called so at home), joined by + − =; Gerard has to see that the
+ * shape is the bulb and that the moon is the other two mixed. Their colours he sees on the model on
+ * the table and on the real bulbs, which follow it. The model only shows (Aitor, 2026-11-20): the
+ * answer is the moon (the `luna` lamp, real and in the game) set **at home** to the colour of light
+ * that results (Siri, the LIFX app, the lamp in the game's flat), held 5 s while he leans over the
+ * model. Four levels: a sum, a subtraction, a harder sum with a subtraction, the three primaries.
  */
 import type { Dialogue, DialogueLine, SpeakerId } from '../dialogue';
 import type { EnvironmentId } from '../environments';
@@ -16,13 +20,15 @@ import { hex, white, type Lamp, type LightId } from '../home-lights.ts';
 import type { Cell } from '../movement';
 
 export const NUCLI: EnvironmentId = 'el-nucli';
-/** Where things are in El Nucli (docs/places/nucli.md): his chair at the back room's round table, and the box he opens. */
+/** Where things are in El Nucli (docs/places/nucli.md): his chair at the back room's round table, and his model of the flat. */
 export const PLACES_BERNAT = {
   /** Where he stands, at the end of the round table by his chair (`NUCLI_BERNAT_SEAT` is the table's own cell). */
   seat: { x: NUCLI_BERNAT_SEAT.x - 1, z: NUCLI_BERNAT_SEAT.z } as Cell,
-  /** The box on the table, at the place's own `nucli-mesa`: once he opens it, the portal. */
+  /** Before the table, at the place's own `nucli-mesa`: where Gerard leans over the model. */
   portal: { x: 8, z: 4 } as Cell,
 } as const;
+/** The model of the Meridiana flat on his table: this much of the real one's size (it stands on a 1.3 m table). */
+export const MAQUETA_SCALE = 1 / 22;
 /**
  * His figure, a stand-in until his own (`just character-3d bernat`): a heavy-set man, a bit of a
  * geek look (docs/quests/bernat.md § Protagonist).
@@ -36,18 +42,16 @@ export type LightColour = 'rojo' | 'verde' | 'azul' | 'amarillo' | 'cian' | 'mag
 export const RGB: Record<LightColour, readonly [number, number, number]> = {
   rojo: [1, 0, 0], verde: [0, 1, 0], azul: [0, 0, 1], amarillo: [1, 1, 0], cian: [0, 1, 1], magenta: [1, 0, 1], blanco: [1, 1, 1],
 };
-/** How a lamp of that colour is lit, in the game and at home. */
+/**
+ * How a lamp of that colour is lit, in the game and at home. The blue leans to the sky's side and
+ * shines brighter: a deeper one read violet on the flat's warm floors (violet is possession's).
+ */
 export const LAMPS: Record<LightColour, Lamp> = {
-  rojo: hex('#ff2a1f', .8), verde: hex('#2bd94a', .75), azul: hex('#3a5bff', .75), amarillo: hex('#ffd23a', .8),
+  rojo: hex('#ff2a1f', .8), verde: hex('#2bd94a', .75), azul: hex('#2f7bff', .9), amarillo: hex('#ffd23a', .8),
   cian: hex('#2fe0e0', .75), magenta: hex('#ff3fe0', .75), blanco: white(5000, .9),
 };
 /** Where each colour sits on the lamps' wheel (degrees), to read what the moon shows. */
 const HUES: [LightColour, number][] = [['rojo', 0], ['amarillo', 55], ['verde', 125], ['cian', 180], ['azul', 230], ['magenta', 300]];
-/** Words for a colour on a lamp of either gender, as the notebook writes them. */
-export const COLOUR_WORDS: Record<LightColour, { f: string; m: string }> = {
-  rojo: { f: 'roja', m: 'rojo' }, verde: { f: 'verde', m: 'verde' }, azul: { f: 'azul', m: 'azul' }, amarillo: { f: 'amarilla', m: 'amarillo' },
-  cian: { f: 'cian', m: 'cian' }, magenta: { f: 'magenta', m: 'magenta' }, blanco: { f: 'blanca', m: 'blanco' },
-};
 export interface PortalTerm { lamp: LightId; colour: LightColour; sign: 1 | -1 }
 export interface PortalLevel { kind: string; terms: PortalTerm[]; answer: LightColour }
 /** The four levels, in order (decided by Aitor; the colours are a proposal). */
@@ -59,6 +63,19 @@ export const PORTAL_LEVELS: readonly PortalLevel[] = [
 ];
 /** The lamp the answer goes on. */
 export const ANSWER_LAMP: LightId = 'luna';
+/**
+ * How the sheet draws each lamp of the sums: as its name, the way the bulbs are called at home
+ * (`HOUSE_LIGHTS` labels): Luna a moon, Mesa a table, Cocina a pot, Sofá a sofa. Ink shapes on a
+ * 24 × 24 box, no colour and no word.
+ */
+export const SHEET_ICONS: Partial<Record<LightId, string>> = {
+  luna: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  mesa: '<path d="M1.8 8.2h20.4v2.3H1.8z"/><path d="M3.8 10.5h2.2v9.7H3.8zM18 10.5h2.2v9.7H18z"/><path d="M6 10.5h12v1.5H6z"/>',
+  cocina: '<rect x="10.6" y="3.2" width="2.8" height="2.4" rx="1"/><path d="M3.8 9.4c0-2.3 3.7-3.7 8.2-3.7s8.2 1.4 8.2 3.7z"/>'
+    + '<path d="M4.6 10.6h14.8v7a2.9 2.9 0 0 1-2.9 2.9H7.5a2.9 2.9 0 0 1-2.9-2.9z"/><rect x="1.4" y="11.8" width="3.6" height="1.9" rx=".95"/><rect x="19" y="11.8" width="3.6" height="1.9" rx=".95"/>',
+  sofa: '<path d="M6 6.2h12a2 2 0 0 1 2 2v2.6H4V8.2a2 2 0 0 1 2-2z"/>'
+    + '<path d="M1.4 10.6a1.8 1.8 0 0 1 3.6 0V13h14v-2.4a1.8 1.8 0 0 1 3.6 0V18h-1.7v2h-2.2v-2H6.3v2H4.1v-2H1.4z"/>',
+};
 /** Seconds the moon must hold a colour before the house answers. */
 export const HOLD_SECONDS = 5;
 /** The room where the artilugio is hidden in the real flat, and the light that marks it at the end. */
@@ -117,12 +134,14 @@ export const LINES_BERNAT = {
   ),
   /** The look at the camera: said over the stare, then the box. */
   stare: group('bernat35', bernat('…Nos está mirando. ¿Lo notáis?'), gerard('Sí.'), aitor('Sí.')),
+  /** He shows them the model on his table, and the sheet that came with it. */
   box: group('bernat35',
-    bernat('Esta caja la abrí anoche y dentro estaba vuestro piso. Las luces se encienden si las tocas.'),
-    bernat('En la libreta hay cuatro sumas de luces. No sé quién las escribió. Mi letra no es.'),
+    bernat('Esto apareció anoche en mi mesa. Es vuestro piso, Gerard. Entero, hasta el último cajón.'),
+    bernat('Las luces son las vuestras. Si allí cambia una, aquí cambia también. Y al revés no: desde aquí no se tocan, lo he intentado.'),
+    bernat('Debajo había una hoja. Ni una palabra, solo dibujos. Es un acertijo, de los que hacía yo de crío. Pero no lo he hecho yo.'),
   ),
-  /** Before the box is solved, at his table. */
-  waiting: group('bernat35', bernat('La caja sigue abierta. Las sumas, en la libreta.')),
+  /** Before the riddle is solved, at his table. */
+  waiting: group('bernat35', bernat('La maqueta sigue en la mesa. La hoja, con ella. Lo que cambiéis en vuestra casa, ella lo enseña.')),
   /** The portal solved: the performance has run, the artilugio is there. */
   solved: group('bernat35',
     bernat('Ya está. Ha cruzado.'),

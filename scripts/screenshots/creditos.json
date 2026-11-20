@@ -9,7 +9,7 @@
     { "shot": "roll-start", "delay": 9000, "caption": "Over black, the roll begins: a game by Aitor for Gerard" },
     { "shot": "roll-friends", "delay": 14000, "caption": "The friends, as themselves" },
     { "hold": ["Enter"], "until": "document.querySelector('#credits .credits-last')?.dataset.on === 'true'", "timeout": 120000 },
-    { "shot": "last-card", "delay": 3500, "caption": "The last card, alone: the false lead closed" },
+    { "shot": "last-card", "delay": 8500, "caption": "The last card: the false lead closed, Nuria Mendoza's holiday photos dropping in round it (local only: public/private/)" },
     { "press": "Enter" },
     { "until": "window.creditsDone", "timeout": 20000 },
     { "shot": "home", "delay": 1200, "caption": "And the game goes on at home" }

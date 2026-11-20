@@ -454,6 +454,8 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const placed = environment.props.map(prop => ({ prop, holder: props.place(prop, root, new pc.Vec3(x(prop.x), 0, z(prop.z)), batch.id) }));
   /** Other places laid into this one (`overlay`). */
   const overlays: ReturnType<typeof buildGeo>[] = [];
+  /** Houses built small inside this one (`model`). */
+  const models: { holder: pc.Entity; group: number; home: ReturnType<typeof buildHome> }[] = [];
   // A real street with painted lanes has cars driving them, and its traffic lights change.
   const traffic = environment.geo?.look?.markings ? createTraffic(root, props, environment.geo, x, z) : undefined;
   return {
@@ -526,9 +528,64 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     },
     /** Rain (0–1) and the evening (0–1) on a real street: wet asphalt and puddles, light spilling from the shops (src/geo-scenery.ts). */
     setStreet(rain: number, dusk: number) { geo?.setStreet(rain, dusk); },
-    /** A lamp in the Meridiana flat (src/home-lights.ts); other scenes have none. */
-    setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); },
+    /** A lamp in the Meridiana flat (src/home-lights.ts), and in any model of it standing here; other scenes have none. */
+    setLamp(id: LightId, lamp: Lamp) { home?.setLamp(id, lamp); for (const model of models) model.home.setLamp(id, lamp); },
     lampPosition(id: LightId) { return home?.lampPosition(id); },
+    /** El Nucli's back room: Bernat's table, what lies on it and the bulb over it (src/nucli-scenery.ts). */
+    get nucli() { return home?.nucli; },
+    /**
+     * A house built small inside this place (Bernat's model of the Meridiana flat on his table,
+     * docs/quests/bernat.md): the same builder as the real one, on a board, its floor's centre on
+     * `at` and `scale` of its size. Its lamps are the flat's, so `setLamp` reaches them too. It is
+     * built full size where nothing stands and then shrunk into place, its lights' reach with it,
+     * in its own batch group so the scene's merged draws are left as they are.
+     */
+    model(house: Environment, at: pc.Vec3, scale: number) {
+      const holder = new pc.Entity(`Maqueta: ${house.id}`); root.addChild(holder);
+      const group = app.batcher.addGroup(`Maqueta: ${house.id}`, false, 16);
+      const hx = (house.grid[0].length - 1) / 2, hz = (house.grid.length - 1) / 2;
+      const built = buildHome({ app, root: holder, props, mat, texture, x: v => v - hx, z: v => v - hz, batch: group.id, surface: () => {}, model: { lampGain: 1.9 } }, house);
+      // The board it stands on, a little wider than the flat all round.
+      const board = new pc.Entity('Base de la maqueta');
+      board.addComponent('render', { type: 'box', material: mat('Cartón pluma', '#e9e2d2', 0.15), castShadows: true, receiveShadows: true, batchGroupId: group.id });
+      holder.addChild(board); board.setLocalPosition(0, -0.3, 0); board.setLocalScale(house.grid[0].length + 1.4, 0.6, house.grid.length + 1.4);
+      holder.setPosition(at.x, at.y + 0.6 * scale, at.z); holder.setLocalScale(scale, scale, scale);
+      for (const light of holder.findComponents('light') as pc.LightComponent[]) light.range *= scale;
+      // Nothing in a model folds (its walls never stand between Gerard and the camera), so every
+      // solid piece joins the merged draws, the walls and tall furniture too. Only its board casts
+      // the room's shadow: the sun's on pieces this small would be a second set of draws for specks.
+      // The house makes a material for every piece; pieces made alike share one here, so the merged
+      // draws are one per look instead of one per piece. The lamps' glass and the light they leave
+      // on the floor stay their own, since `setLamp` changes them.
+      const alike = new Map<string, pc.Material>(), maps = new Map<pc.Texture, number>();
+      const mapKey = (t: pc.Texture | null) => t ? maps.get(t) ?? maps.set(t, maps.size + 1).get(t)! : 0;
+      const look = (m: pc.StandardMaterial) => [m.diffuse, m.specular, m.emissive].map(c => c.toString(false)).concat(
+        [m.gloss, m.reflectivity, m.emissiveIntensity, m.opacity, m.blendType, m.useLighting, m.depthWrite, m.cull, m.alphaTest].map(String),
+        [m.diffuseMap, m.emissiveMap, m.normalMap, m.opacityMap].map(t => String(mapKey(t))), [m.diffuseMapTiling, m.emissiveMapTiling].map(v => v.toString())).join('|');
+      for (const render of holder.findComponents('render') as pc.RenderComponent[]) {
+        if (render.entity !== board) render.castShadows = false;
+        for (const instance of render.meshInstances) {
+          const m = instance.material;
+          if (!(m instanceof pc.StandardMaterial) || /^(Luz en el suelo|Bombilla: )/.test(m.name)) continue;
+          const key = look(m), same = alike.get(key);
+          if (same) instance.material = same; else alike.set(key, m);
+        }
+        if (render.meshInstances.every(m => m.material?.blendType === pc.BLEND_NONE)) render.batchGroupId = group.id;
+      }
+      const model = { holder, group: group.id, home: built };
+      models.push(model);
+      return {
+        root: holder,
+        setLamp: built.setLamp,
+        /** Where a lamp's bulb is, in the world. */
+        lampPosition: built.lampPosition,
+        destroy() {
+          const i = models.indexOf(model);
+          if (i < 0) return;
+          models.splice(i, 1); app.batcher.removeGroup(group.id); holder.destroy(); built.destroy();
+        },
+      };
+    },
     /** Places with buildings: how many of these focus points a building hides from a camera along a direction (src/camera-orbit.ts). */
     sight: geo?.sight,
     /** A building of a real place by its id, standing on the ground as one entity (it can rise, sink or hide). */
@@ -551,6 +608,6 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     },
     /** Static pieces hidden or shown since the scene was built: their merged draw calls are made again. */
     rebatch() { app.batcher.markGroupDirty(batch.id); },
-    destroy() { overlays.forEach(o => o.destroy()); traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
+    destroy() { models.forEach(m => { app.batcher.removeGroup(m.group); m.home.destroy(); }); overlays.forEach(o => o.destroy()); traffic?.destroy(); app.batcher.removeGroup(batch.id); root.destroy(); props.destroy(); home?.destroy(); palace?.destroy(); geo?.destroy(); basilica?.destroy(); materials.forEach(m => m.destroy()); textures.forEach(t => t.destroy()); meshes.forEach(m => m.destroy()); },
   };
 }

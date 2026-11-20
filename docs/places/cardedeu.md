@@ -127,7 +127,7 @@ group).
 | Light and mood | `cardedeu` look: a calm Vallès afternoon, warm (temperature +.07), `day` sky; the mountain hazy blue |
 | Props kit | Cars along the east kerb, garden walls with railings and iron gates, front patios with pots, hedges, cedars, stone pines, olives, cypresses, plane trees, cone-topped platform lamps, lattice catenary gantries, the platform's name boards, benches on *sauló* |
 | Air | Pollen (the default outside) |
-| Sound | Not built: Santa Maria's bell at the quarters and a Rodalies train passing would be its own (`docs/audio.md`) |
+| Sound | `triste`, the song of every town (Aitor, 2026-11-20), on Nuria's street and the street that never ends (`PLACE_SONGS` in `src/main.ts`). Its own ambience is still to make: Santa Maria's bell at the quarters and a Rodalies train passing (`docs/audio.md`) |
 | Only here | Borregos in the Fleca Vella's window (in Gerard's line), the white-roofed corner house in its garden |
 | Text | Catalan: *Passeig de Pau Gesa*, *Av. del Rei En Jaume*, *Plaça de Sant Joan* on the ground; *Cardedeu* on the platform boards; *Fleca Vella* on its real front |
 

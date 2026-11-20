@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_AUDIO, levelGain, validAudioSettings } from '../src/audio.ts';
-import { TRACKS, cycleCount, evenStart, fadeCurve, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition } from '../src/music.ts';
+import { TRACKS, cycleCount, evenStart, fadeCurve, followingVersion, loopPosition, loopRange, loudnessAt, markTime, matchGain, medianLoudness, nextVersion, randomStart, untilBoundary, vampLaps, vampPosition, versionsAt } from '../src/music.ts';
+import { SOUNDS, STEPS } from '../src/sfx.ts';
 import { readFileSync, statSync } from 'node:fs';
 import { DREAM_HAUNT, HAUNT, castleHaunt, hauntMix, swing } from '../src/haunt.ts';
 import { castleThreat } from '../src/animas.ts';
@@ -190,4 +191,50 @@ test('a vamp repeats its section for its laps, then the song goes on', () => {
     if (range) assert.ok(range[0] <= from && to <= range[1], `${id} vamps outside its loop`);
     if (track.bpm) { const bars = (to - from) * track.bpm / 60 / (track.beatsPerBar ?? 4); assert.ok(Math.abs(bars - Math.round(bars)) < .01, `${id}'s vamp is ${bars} bars`); }
   }
+});
+
+test('a song with an intro plays its versions once in order, then any of them, never one twice in a row', () => {
+  assert.equal(followingVersion(3, -1, true), 0, 'the intro goes into the first version');
+  assert.equal(followingVersion(3, 0, true), 1);
+  assert.equal(followingVersion(3, 1, true), 2);
+  const after = new Set();
+  for (let i = 0; i < 10; i++) {
+    const next = followingVersion(3, 2, true, () => i / 10);
+    assert.ok(next === 0 || next === 1, 'after the last, back to an earlier one');
+    after.add(next);
+  }
+  assert.equal(after.size, 2, 'any earlier one can come back, the first included');
+  for (let previous = 0; previous < 3; previous++) {
+    const picks = new Set();
+    for (let i = 0; i < 10; i++) picks.add(followingVersion(3, previous, false, () => i / 10));
+    assert.ok(!picks.has(previous), 'never the same twice in a row');
+    assert.equal(picks.size, 2);
+  }
+  assert.equal(followingVersion(1, 0, false), 0, 'a single version repeats');
+  assert.equal(versionsAt({ src: '', marks: { start: 0, a: 12.5 }, cycle: 30, intro: 'a' }), 12.5, 'the versions begin at the intro mark');
+  assert.equal(versionsAt(TRACKS['mazmorra-2']), 0, 'without an intro, at the top');
+  for (const [id, track] of Object.entries(TRACKS)) if ('intro' in track) assert.ok('cycle' in track && track.intro in track.marks, `${id}: an intro needs a cycle and its mark`);
+});
+
+test('the welcome screen\'s piano ships, and its sad turn after the last choice is the same file, slower and darker', () => {
+  const welcome = TRACKS['intro-piano'], sad = TRACKS['intro-triste'];
+  assert.ok(statSync(`public/${welcome.src}`).size > 5e5, 'its file is served');
+  assert.ok(welcome.marks.piano > .5 && welcome.marks.piano < 1.1, 'it comes in on its first note, past the opening second of silence');
+  assert.equal(sad.src, welcome.src);
+  assert.ok(sad.rate < 1 && sad.rate >= .8, 'slower, so a little lower');
+  assert.ok(sad.tone > 800 && sad.tone < 8000, 'darker');
+  for (const [id, track] of Object.entries(TRACKS)) if ('rate' in track) assert.ok(!('cycle' in track || 'vamp' in track || 'loop' in track || 'stream' in track), `${id}: a rate is for a song played straight`);
+});
+
+test('every footstep a place asks for is a sound', () => {
+  for (const [place, id] of Object.entries(STEPS)) assert.ok(id === null || id in SOUNDS, `${place}: ${id}`);
+  assert.ok('step' in SOUNDS, 'the plain step is the default');
+});
+
+test('the boss rooms\' song ships and loops whole, 2 ms short of its 75 bars at 90 BPM', () => {
+  const track = TRACKS['mazmorra-3'];
+  assert.ok(statSync(`public/${track.src}`).size > 1e6, 'its file is served');
+  const [from, to] = loopRange(track), bars = 75 * 4 * 60 / track.bpm;
+  assert.ok(from < .01, 'the loop starts at the top, past a few samples');
+  assert.ok(to - from < bars && bars - (to - from) < .005, `${to - from} s against ${bars} s`);
 });

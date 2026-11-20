@@ -25,6 +25,7 @@
 #   about            What it is and what it looks like.
 #   height           Metres in the game.
 # view_notes         Optional, by view (left, right, back): something only that side shows.
+# look               On a monster that has a face (the Queen): how it looks, in place of the faceless family's look.
 
 [gerard-adult]
 name = "Gerard"
@@ -471,3 +472,23 @@ about = """A monster of a groundwater model gone wrong, in a dark world of soil,
 height = 1.1
 [atomo.view_notes]
 back = "From behind the same round cluster of slate and teal spheres with amber cracks; the drip hangs from its underside."
+
+# La Reina Bubbaloo with the face she took: Nuria Mendoza's, the false lead (docs/lore.md). From her
+# photos as the castle's pupils are from words: a monster of the castle with Meshy's own skeleton, but
+# with a face, so `look` replaces the faceless family's. Only her face photos go; the vacation shots
+# with other people stay out (the credits use them, cropped, locally).
+[reina]
+name = "La Reina Bubbaloo"
+kind = "monster"
+# Aitor chose a mix of two drafts (2026-11-20): b's face, make-up and dress, c's hollows and gum strands.
+art = ["output/characters/3d/reina/toy-b.png", "output/characters/3d/reina/toy-c.png"]
+face_photos = ["nuria-mendoza/cara-guatemala.jpg", "nuria-mendoza/cara-sigiriya.jpg", "nuria-mendoza/cara-zaragoza.jpg"]
+about = """THE FIRST IMAGE is this same figure, approved: keep its face, its smile, its make-up, its hair, its crown, its collar, its candy-wrapper sleeves and its gown exactly as they are. Take from THE SECOND IMAGE only its darker look and put it on the first: the deeper hollows under the cheekbones and round the eyes, the colder grey-pink skin, and the thin strands of pink gum stretching from the crown down into her hair and from the corners of her smile. The photos after them are the real woman whose face she wears: she must stay recognisable as her.
+La Reina Bubbaloo, the final boss of the game: a tall, theatrical queen of bubble gum who has taken the face of the woman in the photos. She is not that woman: she wears her face. Anyone who knows the woman must recognise her at once, through large simple shapes: a soft oval face with full rounded cheeks and a rounded chin, dark arched brows, dark brown eyes, her wide smile showing many teeth, small round pearl stud earrings, and her long, straight, very dark brown hair parted in the middle, falling smooth and heavy well past her shoulders down to her chest.
+What makes her the Queen, and frightening: a gaunt, hungry version of that face, the cheeks hollowed under sharp cheekbones, the skin a cold sickly grey-pink like old chewed gum. Her eyes half-closed, heavy-lidded and smug, sunk in deep black-plum hollows, small hard pupils looking down on whoever faces her. Thin strands of pink gum stretch from the crown down into her dark hair and from the corners of her smile. A tall crown of five big glossy gum balls on dark twisted spikes sits on top of her hair: strawberry pink, mint green, grape violet, lemon yellow, liquorice black. A long gown of bubble-gum wrapper paper in hot pink and black, stiff and pleated, flaring to the floor, with a high stiff collar fanning behind her head, and the wrapper's twisted ends as two huge puffed sleeves. Long gloves of stretched hot pink gum up to the elbows, with thick strands of gum hanging from the fingertips. Black blisters the size of a fist burst through the pink gown here and there, like the rot of old gum. Her hands are empty and open. Nothing hangs in front of her chest."""
+look = """HOW SHE LOOKS: one sculpted figure of matte material for a dark game for adults, the final boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong regal silhouette that reads from a high camera. She must frighten: cold, cruel, imperious, looming, but still that woman, recognisable by her face. Her smile is the woman's own wide smile held too long, a little too wide and frozen, cold, never reaching her half-closed eyes. Never cute, never a cartoon, no big eyes, no joke, no food. No gore, no blood, no realistic skin.
+
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, stiff wrapper paper, a blister), and in big shapes: no fine noise, no glossy highlights except the crown's gum balls, no painted light or shadow."""
+height = 2.8
+[reina.view_notes]
+back = "Her long dark hair falls down her back to the waist, the stiff collar fanning above it and the crown on top."

@@ -42,3 +42,6 @@ output/
 # The artilugio's Wi-Fi and key (firmware/artilugio/secrets.example.h), and the binaries that carry them
 firmware/**/secrets.h
 firmware/**/build/
+
+# Personal photos the game shows only on this machine (the credits' album): never committed, never deployed.
+public/private/

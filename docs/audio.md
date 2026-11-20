@@ -4,8 +4,8 @@ The game plays music and effects with the Web Audio API and no library. Everythi
 the first key, click or pad button, because browsers keep sound off until then.
 
 ```
-music voices → duck → muffle (lowpass) → Música level ┐
-effects                                → Efectos level ┴→ master (Silenciar) → speakers
+music voices → duck → hush → muffle (lowpass) → Música level ┐
+effects                                       → Efectos level ┴→ master (Silenciar) → speakers
 ```
 
 | File | What it holds |
@@ -14,6 +14,7 @@ effects                                → Efectos level ┴→ master (Silencia
 | [src/music.ts](../src/music.ts) | `TRACKS` (songs and their marks) and the director that plays, crossfades, jumps and stops them. |
 | [src/sfx.ts](../src/sfx.ts) | `SOUNDS` (effects, from a file or a synth recipe) and the menu sounds every menu shares. |
 | [src/sound-ui.ts](../src/sound-ui.ts) | The pause menu's Configuración → Sonido page. |
+| [src/title.ts](../src/title.ts) | The welcome screen the game opens on, under Aitor's piano. |
 | [tools/music_loop.py](../tools/music_loop.py) | Finds where a song loops and renders the seam to listen to. |
 
 ## Songs
@@ -56,6 +57,13 @@ battle: { src: 'music/battle.m4a', marks: { start: 0, loop: 2.398, ending: 131.9
   the one before it in the file, so going back to it would cut that tail and drop the sound. The next
   version is queued 2 s before the seam and starts sample-exact on it, with a 20 ms crossfade. The
   number of versions comes from the file's length. `from: 'random'` opens it from the first version.
+- `intro: '<mark>'` with a `cycle` puts the versions after an **intro**: the file is the intro, then
+  the versions back to back from that mark. The song plays the intro once and the versions once in
+  order, straight from the file (no seam), then any of them, never the same twice in a row, the first
+  included (it follows the intro, so it carries the intro's tail, not silence). The last boss's song
+  is made this way (§ The last fight).
+- `rate` plays a song straight through slower (and so lower) or faster, and `tone` darkens it through
+  a lowpass at that many Hz. Only for a song played straight: no loop, cycle or vamp.
 
 The director, `music` in [src/main.ts](../src/main.ts):
 
@@ -66,32 +74,68 @@ The director, `music` in [src/main.ts](../src/main.ts):
 | `music.stop({ fade: 1 })` | Fades the song out. |
 | `music.moveOn()` | Ends a vamp: the song finishes the lap it is in and goes on. |
 | `music.duck(true)` | Lowers and muffles the music, as the menus do. |
+| `music.hush(true, { fade: .4 })` | Takes the music out altogether; the song goes on underneath, so `hush(false)` brings it back where it would be. |
 | `music.position()`, `music.playing` | Where the song is (following its loop), and which song it is. |
 
 ### Where music plays now
 
+- **The welcome screen** ([src/title.ts](../src/title.ts)): the release opens on it (development only
+  with `?title`): the game's name and one button, «Començar el joc» for a new game and «Continuar»
+  once one is under way, nothing else. Aitor's piano (`intro-piano`, 56 s) plays under it from its
+  first note (the `piano` mark, past the file's opening second of silence) as soon as sound is on,
+  and again after a four-second breath if it plays out while the screen waits. A browser keeps sound
+  off until a key, click or pad button, unless it lets the page play (Chrome does once a site has
+  played sound often enough, `audio.tryStart()`): otherwise the press that turns sound on only brings
+  the piano in, and the next one starts the game, where the place's song comes over the piano.
+  `just screenshots title --chrome` checks both cases and «Continuar».
 - **Places**: `PLACE_SONGS` in [src/main.ts](../src/main.ts). In the Meridiana flat, `home`
   (`song-home`, 18 min) comes in over 4 s from a random point and plays on; leaving for a place
   without a song fades it over 2 s. A fight takes over, and the place's song comes back, from
-  somewhere else, when the fight is over.
-- **Uri's tower**: `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11 min) the same way, from a different
-  point every time they go in and every time a fight there ends, and never at any other moment: at
-  the end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
-- **Streets**: `triste` in Passatge Maresme and on Nuria's street in Cardedeu (Jacint Verdaguer, not
-  the street that never ends nor Uri's tower), and `concrete` on Meridiana street, each from the top
-  over 4 s (`triste` from a random point). `just screenshots street-music --chrome` checks both and the
-  vamp. **At night** the Meridiana's street plays `concrete-noche` (2026-11-19): the same file's dark
-  section only, in on the break of bars 19–20 and looping bars 21–36 (43.607 → 78.510 s), so the way
-  home hunted never hears the happy opening; night falling where they stand changes it (`songFor` in
-  `src/main.ts`).
-- **The artilugio in her last fight**: her music does not change when she takes Aitor; the first note
-  of the artilugio fades it out for good (`silenced` in `src/main.ts`).
+  somewhere else, when the fight is over. Walking between two places with the same song keeps it
+  going. `just screenshots place-sounds --chrome` checks the places below that got their song on
+  2026-11-19, and their footsteps.
+- **Childhood and the towns**: `triste` in the house the game opens in (its three floors), out in
+  Passatge Maresme, and in every town, the same song always (Aitor, 2026-11-20): Cardedeu (Nuria's
+  street and the street that never ends, not Uri's tower) and Alegia, as in Sant Quirze. The first time Aitor plays the piano there, Marta's «Izana»
+  starts at once and `triste` fades out under it over 1.5 s.
+- **The friends' missions** start on the dark mazmorra song, sad and plain (`mazmorra-oscuro`,
+  Logic's `song-mazmorra-4`): Uri's tower, the university friends' camping, Emilie's (Poble Sec, her
+  flat and her model) and Luca's (the Sagrada Família, outside and inside, Fran's salon included).
+  Marta's Las cuerdas has her own voice instead (below). The beach where the university friends'
+  mission starts is Barcelona's (below).
+- **Boss rooms** (Aitor, 2026-11-19): in three of those missions, reaching the boss's room changes the
+  song for `mazmorra-3`, from its top over 2 s, and the boss is fought to it, going on from where it
+  was (`inBossRoom` and `BOSS_ROOM_FIGHTS` in [src/main.ts](../src/main.ts)). Any other fight there
+  still has the battle song, and the room's song comes back after it. Each room counts until its boss
+  falls; then the place's song comes back:
+  - Vertitrón (Nuria's mission, Papagato's): Uri's tower once its third ring is behind them, the last
+    climb to the summit.
+  - La Sobremesa (the university friends'): the walled merendero north of the steel door (the
+    camping's rows 3–19, columns 2–17), once Las parcelas has opened it.
+  - El que no converge (Emilie's): the bottom of her model (`fondo`).
+
+  Luca's Fran, Marta's La Voz and the castle's bosses keep their own music (the battle song; La Voz
+  her recording; the Queen's last fight § The last fight). Looked at twice a second, so walking in or
+  out changes it. `just screenshots boss-rooms --chrome` checks all three.
+- **How the missions' take plays** (`mazmorra-oscuro`, 11 min), as in Uri's tower: from a different
+  point every time they go in and every time a fight there ends, never jumping while it plays: at the
+  end of the file it goes on from the top. `just screenshots tower-music --chrome` checks it.
+- **Barcelona by day and by night** (Aitor, 2026-11-19): its streets (the Avinguda Meridiana, Sants,
+  Plaça d'Espanya, the Carmel bunkers and the Barceloneta) play `concrete` by day, whole (its vamp and
+  the rest), and `mazmorra-2` by night (`story.night`, from 21 h), when the palace's monsters are out
+  and the party walks home from the station (src/night.ts). A fight there at night (a palace guard
+  catching them on the way home) goes on to `mazmorra-2`, with no battle song; nightfall changes the
+  song where they stand (`CITY` and `songHere` in [src/main.ts](../src/main.ts), looked at twice a
+  second). Not the flat (home's own song), El Nucli (inside), Rec Comtal (the castle's) or the
+  missions' places. `just screenshots city-music --chrome` checks day, night, a night fight and the
+  Barceloneta; `street-music` the vamp.
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
-- **Fights**: the battle song comes in with the fight from its intro. On a win it jumps to its
-  ending on the next bar and plays it out; on a fall it fades over 2.5 s; on an escape over 1 s;
-  leaving the result screen fades whatever is left.
+- **Fights**: the battle song comes in with the fight from its intro, in every fight but La Voz's
+  and, once its six notes are played, the Queen's last. On a win it jumps to its ending on the next
+  bar and plays it out; on a fall it fades over 2.5 s; on an escape over 1 s; leaving the result
+  screen fades whatever is left.
 - **Las cuerdas and La Voz** (docs/quests/marta.md § Final boss): Marta's own recording
   (`public/music/marta-voz.m4a`, 87 s, her eight-note phrase sung eight times). In Las cuerdas it
   loops far off, from a random point: quiet, low-passed at 650 Hz and mostly a 3 s room echo with no
@@ -105,28 +149,65 @@ The director, `music` in [src/main.ts](../src/main.ts):
   time Aitor plays the piano in Alegia, under the dialogue, and plays out into Las cuerdas.
 - **Menus**: the pause menu, the user menu and the lamp dial duck the music while open.
 
+### The last fight
+
+The Queen's last fight (`reina-vuelta`, docs/castle-bosses.md § With the artilugio) and the end,
+in `scoreNote`, `scoreFreed` and `scoreBattle` in [src/main.ts](../src/main.ts) (Aitor, 2026-11-19):
+
+1. **The battle song**, as in any fight.
+2. **Holding Aitor her music does not change; the first note of the artilugio fades it out for
+   good** over 2.5 s (Aitor, 2026-11-19), so the artilugio is heard. The real board sounds on its own
+   speaker, in the room and with no delay; the game only sounds the notes of the keys and the pad
+   standing in for it (anywhere in the game, not only here).
+3. **The sixth note** frees Aitor and brings in, over that silence, **the last boss's song** (`reina`, Logic's
+   `battle-final`, 90 BPM), whole, from its intro: two bars of intro and three versions of its 16-bar A
+   (42.667 s each, from 5.333 s), played once in order, then any of them until the fight ends (`intro`
+   above). Its marks were measured on the bounce: bars 1–2 match nothing 16 bars on, and every bar from
+   the 3rd matches its own 16 bars later.
+4. **Her fall** fades it over 4 s into silence, and no place's song comes in from then until the end
+   has played (`finale`).
+5. **The last choice** (src/endings.ts): no music, only the wind through the throne room's open
+   balcony (`BEDS.wind`). Once Gerard chooses, the wind goes and the welcome screen's piano comes back,
+   sadder (`intro-triste`: the same file at 0.9 of its speed, so slower and a little lower, through a
+   lowpass at 2.2 kHz). It plays out over Aitor's line, the epilogue and the morning after, and only
+   then does the place's song come in.
+
+`just screenshots reina-music --chrome` plays all of it. `just dev-music reina 128` plays the end of
+the third A going back to an earlier one.
+
 ### The mazmorra, concrete and triste songs
 
-The first two are at 110 BPM, measured with `just music-loop` and a self-similarity check of the files.
+`mazmorra-2` and `concrete` are at 110 BPM, measured with `just music-loop` and a self-similarity
+check of the files; `mazmorra-3` at 90.
 
 - `mazmorra-2` (`song-mazmorra-2`, 4:48) holds six versions of one 48 s cycle: 88 beats, Logic's
   bars 1 to 23. Each starts on its downbeat at 0, 48, 96, 144, 192 and 240 s, and the file ends on
   the sixth's seam at 288 s. Version 1 opens it, then 2–6 mix. Version 1 is also the quietest
-  (−17.9 dB against −16.6 to −17.2 for the rest). It is for friends' missions, one song per mission, picked among the
-  mazmorra songs; none plays it yet.
-- `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Uri's tower's: a long take, streamed, with its
-  loudness map (−26.8 to −16.9 dB, median −20.7).
+  (−17.9 dB against −16.6 to −17.2 for the rest). Barcelona's streets play it by night, and their
+  fights then (2026-11-19).
+- `mazmorra-oscuro` (`song-mazmorra-oscuro`, 11:14) is Logic's `song-mazmorra-4`, the friends'
+  missions' song: a long take, streamed, with its loudness map (−26.8 to −16.9 dB, median −20.7). A
+  new bounce of `song-mazmorra-4` (2026-11-19) is the same audio (correlation .99999, the difference
+  −47 dB of encoding), so the game keeps its file.
+- `mazmorra-3` (`song-mazmorra-3`, 3:20) is the boss rooms': 75 bars at 90 BPM, played as three
+  versions of a 25-bar part (bars 1, 26 and 51 match within .94–1.00), and its end runs back into its
+  top, so it loops whole. The file starts already sounding, so cutting at exactly 0 → 200 s clicked (a
+  step of .10 against .02 between neighbouring samples there); the loop runs from 104 samples in (at
+  48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014), 2 ms short of 75 bars.
 - `concrete` (`song-concrete`, 1:40) is 46 bars from its first downbeat at 0 s to 100.364 s.
-  Bars 1 to 9 open; bars 10 to 17 (19.635 → 37.090 s, Logic's locators 10 to 18) vamp three to
+  Bars 1 to 9 open; bars 10 to 17 (19.594 → 37.049 s, Logic's locators 10 to 18) vamp three to
   seven times; then bar 18, the break at bars 19 and 20 (40–43.6 s) and the rest play, and at
   100.364 s it starts over from bar 1. The song runs in 8-bar phrases (bars 2–9 and 10–17), each
   ending on the same drum fill, so bar 10 starts with the tail of bar 9's fill just as bar 18 does
   with bar 17's. Going back to bar 2 instead cut that tail off: bar 2 follows the quiet bar 1, so
   the cymbals stopped dead, with a click (a jump of .25 at the cut, against at most .055 between
-  neighbouring samples there). Both marks sit 58 samples (1.2 ms) before the downbeat, where the
-  two waveforms meet within a natural step. Bar 19 starts the break, so the section stops before
-  it. It is for the concrete, robot-like places: Meridiana street (`meridiana-calle`) for now; the
-  school on Rec Comtal plays the castle's song.
+  neighbouring samples there). It was bounced again on 2026-11-19: bars 1–17 are as before, bars
+  18–20 (bar 18 now opens like bar 10, .99 alike against .94) and 34–36 were rewritten. On the new
+  bounce the old marks (58 samples before the downbeats) jumped .05 against a step of .029, so both
+  now sit 2035 samples (42.4 ms) before the downbeats of bars 10 and 18, inside the fill bars 9 and
+  17 share, where the two waveforms meet (a step of .007), exactly 8 bars apart. Bar 19 starts the
+  break, so the section stops before it. It is Barcelona's by day (above); the school on Rec Comtal plays the castle's
+  song.
 
 - `triste` (`song-triste`, 1:36) loops whole: 80 beats (20 bars) at 50 BPM, playing at full level
   to the last sample. The file starts already sounding, so cutting at exactly 0 → 96 s clicked (a
@@ -169,12 +250,12 @@ game; if a browser places them differently (the AAC priming is 44 ms), check by 
 
 ### Songs waiting for their place
 
-Masters in `assets/music/`, not exported or played yet (`mazmorra-2` is exported and waits for
-a friend's mission, above):
-
-| Song | Length | Idea |
-| --- | --- | --- |
-| `intro-piano` | 0:56 | The game's welcome screen, when it exists. |
+Each master in `assets/music/` is named after its
+Logic project in `~/Music/Logic/G-35/` (`song-triste`'s is still called `song-sad`, and
+`song-mazmorra-4` is exported as `song-mazmorra-oscuro`). Projects not bounced yet have no master:
+`intro-final`, `intro-light`, `song-1`, `song-concrete-recovered` and `song-mazmorra-1` (`intro-piano`
+came from one of the two intros). Bounce into `assets/music/`, not `dist/`: `just build` empties
+`dist/`.
 
 ### The castle's haunt
 
@@ -228,7 +309,8 @@ that draws it with oscillators and noise. Each has a `gap` (no replay sooner tha
 `voices` cap (no more at once) and `jitter` (random detune in cents, so repeats don't sound
 mechanical). `sfx.play(id, { volume, pan })` plays one.
 
-There are no sound files yet: every effect is a synth recipe. `just dev-fx` has a button for each
+There are no sound files yet: every effect is a synth recipe, and the artilugio's notes from the
+real board are not played here at all (its own speaker plays them; § The last fight). `just dev-fx` has a button for each
 under *Sonidos*, to hear them, and `just screenshots sfx` measures them all (and the beds) and
 checks a fight's. `just screenshots calle-sounds` logs what Nuria's street asks for as it turns into
 La calle, and the bubble's hiss at each distance.
@@ -274,6 +356,7 @@ the fight's screen knows, the screen does (`sound`).
 | `unlock`, `pickup` | A new ánima or a skill learned; an item gained. Out of fights too. |
 | `level-up`, `skill-learned` | On a fight's victory screen: an ánima's level stamping in; a skill it learned taking the screen. |
 | `rise`, `sink`, `stretch` | Nuria's street turning into La calle que no acaba (src/street-shift.ts): a house born out of the ground (a rumble, stone grinding and cracking up, a thud as it settles), what stood beyond the corner going down, and the corner stretching out into the street's start. |
+| `step`, `step-floor`, `step-sand`, `step-water` | A foot landing (the walk cycle's `landed`, src/game.ts): Gerard's at half (more running), whoever walks with him quieter and from their side. Which one, by place, is `STEPS` in [src/sfx.ts](../src/sfx.ts): `step` on hard ground (streets, stone, marble) where it says nothing, `step-floor` on floors indoors (the house, the flat, El Nucli), `step-sand` on the beach and the camping's gravel, `step-water` in Emilie's flooded flat, and none in Las cuerdas. About .01 RMS, under a menu's tick. |
 | `luz-azul`, `luz-verde`, `luz-naranja`, `luz-rojo`, `luz-oro`, `luz-blanca` | Fran's salon: the windows' light turns to that colour in a fight. A pane of stained glass rings once, quiet and short; the cold lights higher than the warm, the white one plain. |
 
 A sound from somewhere in the street (the shift's houses) comes from where it stands: quieter the
@@ -291,6 +374,11 @@ bus, so the Efectos slider applies.
 | --- | --- |
 | `hiss` | The bubble at the end of La calle que no acaba (src/fear-portal.ts). A sharp hiss breathing on two slow swells, a narrower whirl of air going up and down and round from side to side at the bubble's own pace, and a low draught pulling into its well. Silent down the street, it comes up from about 32 m away to its full at the bubble (`hiss` in src/game.ts); `drive` is how close the party is, so the whirl turns faster and louder as the bubble does. Quiet in a menu or a fight, it fades out through the bubble into the tower. |
 
+| `wind` | The last choice (src/endings.ts, § The last fight): gusts of air through the throne room's open balcony on two swells that never line up, wandering from side to side, a thin whistle now and then, and the city's far hum under it. About .033 RMS, by the hiss's level; its knobs are `WIND` in src/sfx.ts. |
+
+`sfx.bed(id, level, ease)` eases to each level over `ease` seconds (a time constant, .15 by default):
+the wind comes in over 1.5 and goes over 1.2.
+
 Its layers' levels, far (`drive` 0) and at the bubble (1), are knobs in `HISS` in
 [src/sfx.ts](../src/sfx.ts), heard the next time the hiss starts:
 `const { HISS } = await import('/src/sfx.ts'); HISS.whirl = [.06, .35]`, then go back into La calle.
@@ -301,8 +389,8 @@ The menu sounds come from `watchMenuSounds`, which listens to focus and clicks f
 Keyboard, pad and mouse all go through them, so the menus need no sound code of their own.
 Buttons in the street (talk, walk, centre the view) are left quiet.
 
-Still to do: footsteps (from the walk cycle's foot plants), ambiences per place, and real recorded
-sounds where a recipe falls short (`src` in `SOUNDS` takes a file under `public/`).
+Still to do: ambiences per place (each place card in docs/visual-style.md says its own in words), and
+real recorded sounds where a recipe falls short (`src` in `SOUNDS` takes a file under `public/`).
 
 ## MIDI, later
 

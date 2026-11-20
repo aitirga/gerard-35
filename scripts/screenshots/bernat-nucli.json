@@ -1,6 +1,6 @@
 {
-  "title": "Chapter 2 · Bernat at El Nucli and his box",
-  "description": "After the Queen took Aitor, Bernat calls them to El Nucli: at his table he says they are inside a game, and the three of them look at the camera. His box shows the Meridiana flat and a page of his notebook with a sum of its lamps; the moon set to the colour of light they make and held five seconds, the house blinks green. After the four sums every lamp goes off but the bedroom's, pink, and the artilugio wakes.",
+  "title": "Chapter 2 · Bernat at El Nucli and his model of the flat",
+  "description": "After the Queen took Aitor, Bernat calls them to El Nucli: on his table stands a model of the Meridiana flat, the real one built small. At his table he says they are inside a game, and the three of them look at the camera. Leaning over the model, the camera looks down at it from above and Bernat's bulb goes off; over it, his sheet: no words, each lamp drawn as its name (the moon a moon, the table a table, the kitchen a pot, the sofa a sofa), + − = and a question mark on the moon. The model, and the real bulbs, show the colours of the sum's lamps; Gerard picks a lamp on the model and changes its colour, and once the moon holds one five seconds every lamp blinks green or red. After the four sums every lamp goes off but the bedroom's, pink, and the artilugio wakes.",
   "steps": [
     {
       "open": "/?story=bernat-llama&solo=1"
@@ -16,7 +16,7 @@
       "eval": "window.gerard.game.setEnvironment('el-nucli', { x: 3, z: 5 })"
     },
     {
-      "until": "document.title.startsWith('El Nucli')",
+      "until": "document.title.startsWith('El Nucli') && window.gerard.game.maqueta.here",
       "timeout": 60000
     },
     {
@@ -24,7 +24,18 @@
     },
     {
       "shot": "nucli",
-      "caption": "El Nucli's back room: Bernat at his table (a stand-in figure until his own)"
+      "caption": "El Nucli's back room: Bernat at his table, and on it a model of the Meridiana flat (his figure is a stand-in until his own)"
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.world(5.5, 3.5); window.gerard.game.frame({ x: p.x, y: .85, z: p.z }, 1.1); })()"
+    },
+    {
+      "shot": "maqueta-mesa",
+      "delay": 2500,
+      "caption": "The model on the round table: the flat's own builder at 1/22, its lamps lit as the flat's are"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
     },
     {
       "eval": "window.gerard.storyEvent({ type: 'interact', id: 'talk-bernat35' })"
@@ -63,62 +74,135 @@
       "timeout": 20000
     },
     {
-      "shot": "sum-1",
-      "delay": 1200,
-      "caption": "His notebook: the moon = the table in green + the kitchen in blue. The moon's dial open"
+      "eval": "window.lamp = (id, type = 'pointerdown', button = 0) => { const p = window.gerard.game.maqueta.screen(id), c = document.querySelector('#game').getBoundingClientRect(); document.querySelector('#portal-box').dispatchEvent(new PointerEvent(type, { clientX: c.left + p.x, clientY: c.top + p.y, button, bubbles: true })); }; import('/src/friends/bernat.ts').then(b => { window.bernatLamps = b.LAMPS; }) && undefined"
     },
     {
-      "eval": "import('/src/friends/bernat.ts').then(b => { window.bernatLamps = b.LAMPS; setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...b.LAMPS.cian }), 700); }) && undefined"
+      "shot": "sum-1",
+      "delay": 3000,
+      "caption": "Over the model, from above: his sheet, with no words. Each lamp drawn as its name: the moon (?) = the table + the kitchen (a pot). Only the model (and the real bulbs) say what colour each is: the table green, the kitchen blue, every other lamp off; the moon as the house has it"
+    },
+    {
+      "eval": "window.lamp('mesa')"
+    },
+    {
+      "shot": "sum-1-locked",
+      "delay": 300,
+      "caption": "A lamp pressed on the model (the table): only its drawing on the sheet stirs. Nothing on the model can be changed"
+    },
+    {
+      "eval": "window.lamp('luna')"
+    },
+    {
+      "shot": "sum-1-moon-locked",
+      "delay": 400,
+      "caption": "The moon pressed: the same. Its colour is set at home, not here"
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.rojo })"
+    },
+    {
+      "shot": "sum-1-wrong-try",
+      "delay": 900,
+      "caption": "At home, «Oye Siri, pon Luna en rojo»: the real moon turns red and the model shows it (the moon set at home, as Siri or the LIFX app would (the house's reading reaches the flat))"
+    },
+    {
+      "eval": "new Promise(done => { const box = document.querySelector('#portal-box'); const check = () => box.dataset.answer === 'wrong' ? setTimeout(done, 80) : requestAnimationFrame(check); check(); })"
+    },
+    {
+      "shot": "sum-1-wrong",
+      "delay": 60,
+      "caption": "Held five seconds on the wrong colour: every lamp of the model blinks red, the sheet shakes"
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('mesa', { ...window.bernatLamps.rojo })"
+    },
+    {
+      "shot": "sum-1-term-changed",
+      "delay": 500,
+      "caption": "Someone at home changes the table, part of the sum: for a moment the model shows it red…"
+    },
+    {
+      "shot": "sum-1-term-back",
+      "delay": 1600,
+      "caption": "…and it goes back to its green on its own, its drawing stirring: the sum's lamps are not his"
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.cian })"
     },
     {
       "shot": "sum-1-held",
-      "delay": 3000,
-      "caption": "The moon set to cyan, held"
+      "delay": 1500,
+      "caption": "«Pon Luna en cian»: the model's moon turns cyan, held"
+    },
+    {
+      "eval": "new Promise(done => { const box = document.querySelector('#portal-box'); const check = () => box.dataset.answer === 'right' ? setTimeout(done, 80) : requestAnimationFrame(check); check(); })"
     },
     {
       "shot": "sum-1-right",
-      "delay": 3600,
-      "caption": "Five seconds: the house blinks green, and the next sum"
+      "delay": 60,
+      "caption": "Five seconds: every lamp of the model blinks green (the house too, connected), the first dot fills"
     },
     {
-      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 1 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 1",
       "timeout": 30000
     },
     {
-      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.amarillo }), 900)"
+      "wait": 3200
     },
     {
-      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 2 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "shot": "sum-2",
+      "delay": 400,
+      "caption": "The second sheet: a subtraction (the moon = the sofa − the table); the model shows the sofa white and the table blue"
+    },
+    {
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.amarillo })"
+    },
+    {
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 2",
       "timeout": 30000
+    },
+    {
+      "wait": 3200
     },
     {
       "shot": "sum-3",
-      "delay": 800,
-      "caption": "The third: a sum and a subtraction (yellow + cyan − green)"
+      "delay": 400,
+      "caption": "The third: a sum and a subtraction (the table yellow + the kitchen cyan − the sofa green)"
     },
     {
-      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.magenta }), 900)"
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.magenta })"
     },
     {
-      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 3 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 3",
       "timeout": 30000
     },
     {
+      "wait": 3200
+    },
+    {
       "shot": "sum-4",
-      "delay": 800,
-      "caption": "The last: the three primaries at once"
+      "delay": 400,
+      "caption": "The last: the three at once (the table red + the kitchen green + the sofa blue)"
     },
     {
-      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.blanco }), 900)"
+      "eval": "window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.blanco })"
     },
     {
-      "until": "/apagando/.test(document.querySelector('#portal-box')?.textContent ?? '')",
+      "until": "!!document.querySelector('#portal-box .portal-sheet[data-gone]')",
       "timeout": 30000
     },
     {
       "shot": "performance",
-      "delay": 2500,
-      "caption": "Every lamp goes off, one after another; only the bedroom, pink, is left"
+      "delay": 3200,
+      "caption": "Every lamp of the model goes off, one after another"
+    },
+    {
+      "shot": "performance-pink",
+      "delay": 2600,
+      "caption": "Only the bedroom is left, pink: where the artilugio is, in the real flat"
     },
     {
       "until": "window.gerard.story.has('artilugio')",

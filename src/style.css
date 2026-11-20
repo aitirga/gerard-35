@@ -2328,7 +2328,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 
 /* Aitor held (battle-ui `chooseHeld`): his commands cross to her side of the fight, in possession's
    violet, for player 2 to play against Gerard. */
-.held-menu { position: absolute; right: 40px; bottom: 140px; z-index: 6; width: 280px; padding: 16px 18px 14px; border: 1px solid #b07aff88; border-radius: 3px; background: linear-gradient(160deg, #2a1544f2, #170c29f2); box-shadow: 6px 6px 0 #0b0414aa, 0 0 34px #7d3fd855; color: #efe6ff; animation: held-in .35s cubic-bezier(.2, .8, .25, 1) both; }
+.held-menu { position: absolute; right: 40px; bottom: 40px; z-index: 6; width: 280px; padding: 16px 18px 14px; border: 1px solid #b07aff88; border-radius: 3px; background: linear-gradient(160deg, #2a1544f2, #170c29f2); box-shadow: 6px 6px 0 #0b0414aa, 0 0 34px #7d3fd855; color: #efe6ff; animation: held-in .35s cubic-bezier(.2, .8, .25, 1) both; }
 @keyframes held-in { from { opacity: 0; transform: translateX(40px); } }
 .held-menu .held-kicker { margin: 0; font-size: 9px; font-weight: 600; letter-spacing: .2em; color: #c9a8ff; }
 .held-menu h2 { margin: 2px 0 10px; font-size: 22px; font-weight: 600; }
@@ -2337,3 +2337,38 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .held-menu button small { font-size: 11px; font-weight: 500; color: #c9a8ffbb; }
 .held-menu button.is-cursor, .held-menu button:hover { background: #b07aff3d; border-color: #d4b8ff; box-shadow: inset 3px 0 0 #d4b8ff; }
 .held-menu .held-hint { margin: 10px 0 0; font-size: 11px; color: #c9a8ffcc; }
+/* His card crosses too (battle-ui `renderScreen`): out of the party's docks, onto her side, over his
+   commands, in the same violet; his plate over his head turns violet with it. */
+.held-side { position: absolute; right: 200px; top: 92px; z-index: 6; width: 280px; display: grid; gap: 10px; pointer-events: none; }
+.held-side > .held-kicker { margin: 0 0 -4px; font-size: 9px; font-weight: 600; letter-spacing: .2em; color: #c9a8ff; text-shadow: 0 0 14px #7d3fd8; }
+.held-side .party-card { border-radius: 18px 46px 46px 18px; padding: 12px 12px 12px 18px; background: linear-gradient(260deg, #2a1544f5, #1d0f33d9 60%, #170c29c0); border-color: #b07aff88; box-shadow: 6px 6px 0 #0b0414aa, 0 0 34px #7d3fd855; opacity: 1; animation: held-in .6s cubic-bezier(.2, .8, .25, 1) both; }
+.held-side .party-card::after { background: #b07aff; }
+.held-side .party-card .vitals-avatar { filter: saturate(.55) hue-rotate(-18deg) brightness(.9); box-shadow: 0 0 0 2px #b07aff, 0 0 16px #b07aff99; }
+.battle-target[data-hers] .enemy-health i { background: #b07aff; }
+
+/* La Reina Bubbaloo's entrance (src/throne-arena.ts THRONE_INTRO): black bars close in as her fight
+   opens; the game says when it has started (`data-intro-run`: the skip hint), when her name comes up
+   (`data-intro-name`, as her crown lights) and when the camera pulls back (`data-intro-pull`: the name
+   goes, the bars open), so they keep time with the camera however fast the machine runs. The HUD
+   stays away until it is over, then comes in. */
+.boss-intro { display: none; position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+#battle[data-intro] .boss-intro { display: block; }
+#battle[data-intro] :is(.battle-heading, .round-badge, .battle-bottom, .battle-targets, .summary-key, .dev-badge, .held-side, .battle-pops) { visibility: hidden; }
+#battle[data-intro-end] :is(.battle-heading, .round-badge, .battle-bottom, .battle-targets, .summary-key) { animation: boss-ui-in .8s ease both; }
+@keyframes boss-ui-in { from { opacity: 0; } }
+.boss-bar { position: absolute; left: 0; right: 0; height: 11vh; background: #000; animation: boss-bar-in .6s cubic-bezier(.7, 0, .3, 1) both; }
+.boss-bar:first-child { top: 0; --from: -100%; }
+.boss-bar:nth-child(2) { bottom: 0; --from: 100%; }
+#battle[data-intro-pull] .boss-bar { animation: boss-bar-out 1.3s .4s cubic-bezier(.7, 0, .3, 1) both; }
+@keyframes boss-bar-in { from { transform: translateY(var(--from)); } }
+@keyframes boss-bar-out { to { transform: translateY(var(--from)); } }
+.boss-name { position: absolute; left: 7vw; bottom: 16vh; margin: 0; display: grid; gap: 6px; color: #f5ecf2; text-shadow: 0 0 28px #ff3d8b88, 3px 3px 0 #1a0912;
+  opacity: 0; transform: translateX(12px); filter: blur(4px); transition: opacity .5s ease, transform .6s ease, filter .5s ease; }
+#battle[data-intro-name] .boss-name { opacity: 1; transform: none; filter: none; transition: opacity .45s ease, transform .9s cubic-bezier(.16, 1, .3, 1), filter .45s ease; }
+.boss-name small { font: 600 11px/1 system-ui, sans-serif; letter-spacing: .32em; text-transform: uppercase; color: #ff9cc9; }
+.boss-name span { font-size: clamp(44px, 6vw, 92px); font-weight: 900; letter-spacing: -.05em; line-height: .9; }
+.boss-name em { color: #ff6fae; font-style: italic; }
+.boss-name .boss-sub { font: italic 500 clamp(15px, 1.4vw, 21px)/1.2 Georgia, 'Times New Roman', serif; letter-spacing: 0; text-transform: none; color: #e9d9e2; }
+.boss-skip { position: absolute; right: 3vw; bottom: 3.6vh; margin: 0; font: 600 11px/1 system-ui, sans-serif; letter-spacing: .14em; color: #ffffff88; opacity: 0; transition: opacity .4s ease; }
+#battle[data-intro-run]:not([data-intro-pull]) .boss-skip { opacity: 1; transition-delay: .8s; }
+@media (prefers-reduced-motion: reduce) { .boss-intro { display: none !important; } }

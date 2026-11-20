@@ -1549,8 +1549,8 @@ export class Story {
     if (this.adult && this.has('metro') && environment === POBLE_SEC) list.push({ id: 'poble-sec-emilie', label: 'Llamar al portal', hint: 'Llamar', cell: { ...PLACES_EMILIE.door } });
     if (this.adult && environment === NUCLI && this.metBernat) {
       list.push({ id: 'talk-bernat35', label: 'Hablar con Bernat', cell: { ...PLACES_BERNAT.seat } });
-      // The box on his table, open once he has told them: through it, the flat (src/portal-ui.ts).
-      if (this.has('bernat-juego')) list.push({ id: 'nucli-mesa', label: this.has('portal-nucli') ? 'La caja, vacía' : 'La caja abierta', hint: this.has('portal-nucli') ? 'Mirar' : 'Asomarse', cell: { ...PLACES_BERNAT.portal } });
+      // The model of the flat on his table, once he has told them: its riddle is played on it from above (src/portal-ui.ts).
+      if (this.has('bernat-juego')) list.push({ id: 'nucli-mesa', label: this.has('portal-nucli') ? 'La maqueta, a oscuras' : 'La maqueta del piso', hint: this.has('portal-nucli') ? 'Mirar' : 'Asomarse', cell: { ...PLACES_BERNAT.portal } });
     }
     if (this.adult && environment === PISO) {
       list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });

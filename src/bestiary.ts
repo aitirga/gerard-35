@@ -22,6 +22,7 @@ import { NOTES_ENDPOINT, REDO, isoNow, newNote, type Note, type NotesFile, type 
 import PORTRAIT_EXPRESSIONS from './portraits.json';
 import { MODEL_URL as SOBREMESA_URL } from './sobremesa';
 import { PROFILES, STAT_LABELS, type ProfileId, type Stats } from './stats';
+import { isCastle } from './castle';
 
 /**
  * The bestiary (development, `just bestiario`): everyone in the game, allies, foes, people and the
@@ -392,10 +393,12 @@ async function start() {
   const speakerOfFoe = (seen: FoeKindSeen) => speakers[seen.kind] ?? speakers[seen.meetings[0].foe.id] ?? speakers[seen.kind.replace(/^sobremesa-/, '')];
   for (const seen of foes) {
     const template = fears.templates.has(seen.kind);
-    const status = modelStatusOf(seen.kind, template);
     const speaker = speakerOfFoe(seen), designs = figureLinks(seen.kind), monster = MONSTERS.find(m => m.id === seen.kind);
+    // A castle foe with a figure of its own fights with it (src/castle-models.ts): that is what the fight draws.
+    const fightsWithIt = !!monster && isCastle(seen.kind);
+    const status: ModelStatus = fightsWithIt ? { tone: 'own', label: `Modelo propio: su figura de Meshy (src/monsters/${monster!.id}.json)` } : modelStatusOf(seen.kind, template);
     const family = familyOf(seen.kind, template);
-    const inGame: View = seen.kind.startsWith('sobremesa-') ? { type: 'glb', url: SOBREMESA_URL }
+    const inGame: View = fightsWithIt ? { type: 'monster', spec: monster! } : seen.kind.startsWith('sobremesa-') ? { type: 'glb', url: SOBREMESA_URL }
       : template ? { type: 'template', kind: seen.kind, layers: seen.meetings[0].foe.layers ?? 0 }
       : status.tone === 'placeholder' || seen.kind === 'minion' ? { type: 'minion', kind: seen.kind }
       : seen.kind === 'dog' ? { type: 'dogs' }
@@ -403,11 +406,11 @@ async function start() {
       : seen.kind === 'vertigo-ojo' && fears.templates.has('vertigo') ? { type: 'template', kind: 'vertigo', layers: 0 }
       : { type: 'none', why: status.label };
     const views = [{ label: `En el combate: ${status.label}`, button: 'En el juego', view: inGame },
-      ...monster ? [{ label: 'Modelo nuevo (sin conectar al combate)', button: 'Nuevo', view: { type: 'monster', spec: monster } as View }] : []];
+      ...monster && !fightsWithIt ? [{ label: 'Modelo nuevo (sin conectar al combate)', button: 'Nuevo', view: { type: 'monster', spec: monster } as View }] : []];
     const fights = seen.meetings.map(m => m.fight);
     entries.push({
       key: `enemigo:${seen.kind}`, filter: 'enemigos', name: seen.name, sub: seen.aka.length ? `También: ${seen.aka.join(', ')}` : '', group: seen.place.name,
-      status: monster ? { tone: 'placeholder', label: 'Modelo nuevo hecho, el combate aún usa el provisional' } : status,
+      status: monster && !fightsWithIt ? { tone: 'placeholder', label: 'Modelo nuevo hecho, el combate aún usa el provisional' } : status,
       portrait: speaker?.portrait, art: [...portraitArt(speaker), ...designs.flatMap(f => figureArt(f).map(a => ({ ...a, label: `${f.id} · ${a.label}` })))],
       views,
       search: `${seen.name} ${seen.aka.join(' ')} ${seen.kind} ${seen.place.name} ${fights.join(' ')} enemigo`,
@@ -418,7 +421,7 @@ async function start() {
         const cached = moveCache.get(seen.kind);
         const moves = cached ? cached.moves.length ? cached.moves.map(m => `<div class="move"><span>${m.card ? '<b>' : ''}${html(m.name)}${m.card ? '</b>' : ''}</span><small>${m.times} veces en ${cached.runs} combates</small></div>`).join('') : `<p>Solo golpes sin nombre (en ${cached.runs} combates simulados).</p>`
           : '<p id="moves-wait">Simulando sus combates…</p>';
-        return `<p>${badge(status)}${monster ? badge({ tone: 'own', label: 'Modelo nuevo listo: src/monsters/' + monster.id + '.json' }) : ''}</p>
+        return `<p>${badge(status)}${monster && !fightsWithIt ? badge({ tone: 'own', label: 'Modelo nuevo listo: src/monsters/' + monster.id + '.json' }) : ''}</p>
           ${section('Rasgos', `${statsGrid(seen.meetings[0].foe.stats, first.pv)}${table}`)}
           ${section('Ataques (los que usa, simulados con el bot del simulador)', moves + (cached?.failed.length ? `<p><small>${cached.failed.map(html).join('<br>')}</small></p>` : ''))}
           ${section('Truco del combate', answer(seen.kind) + targets.map(t => `<p class="why">${html(t.why)} <small>${t.id} · ${t.policy}${t.win ? ` · gana ${Math.round(t.win[0] * 100)}–${Math.round(t.win[1] * 100)} %` : ''}</small></p>`).join(''))}

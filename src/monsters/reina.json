@@ -1,0 +1,10 @@
+{
+  "id": "reina",
+  "name": "La Reina Bubbaloo",
+  "glb": "models/monsters/reina.glb",
+  "clips": {
+    "walking": "models/monsters/reina-walking.glb",
+    "running": "models/monsters/reina-running.glb"
+  },
+  "height": 2.8
+}

@@ -51,13 +51,14 @@ export const SPEAKERS = {
   agente: { name: 'Agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
   /**
    * The castle (docs/castle-bosses.md): Aurelià and the management team, her violet for accent while she
-   * holds them; the Queen, who has no face; and Bernat at 35, on the phone. No portraits yet.
+   * holds them; the Queen, in the face she took (Nuria Mendoza's, the false lead: docs/lore.md); and
+   * Bernat at 35, on the phone. Only the Queen has a portrait yet.
    */
   aurelia: { name: 'Aurelià', skin: '#dcae8a', hair: '#8a8a88', top: '#3f4a5a', accent: '#b07aff' },
   mar: { name: 'Mar', skin: '#e6bb98', hair: '#5a3a2a', top: '#7a3f4a', accent: '#b07aff' },
   montse: { name: 'Montse', skin: '#e2b48e', hair: '#c9c2b8', top: '#4a6a7a', accent: '#b07aff' },
   pilar: { name: 'Pilar', skin: '#e9bf9c', hair: '#2e2420', top: '#8a7a4a', accent: '#b07aff' },
-  reina: { name: 'La Reina Bubbaloo', skin: '#f2a8c8', hair: '#e86aa6', top: '#c8306e', accent: '#ff6fae' },
+  reina: { name: 'La Reina Bubbaloo', portrait: 'reina', skin: '#f2a8c8', hair: '#e86aa6', top: '#c8306e', accent: '#ff6fae' },
   bernat35: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#4a5560', accent: '#9fc3d9' },
 } satisfies Record<string, Speaker>;
 
