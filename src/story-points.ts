@@ -4,6 +4,7 @@
  * the one they hang from, and each ánima mission stands on its own. Pure: `main.ts` turns a
  * point into the flags to start with and where to stand.
  */
+import { NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
 import { ANIMA_IDS, type AnimaId } from './animas.ts';
 import type { ClassId } from './battle.ts';
 import { castleEntry } from './castle.ts';
@@ -108,12 +109,19 @@ export const STORY_ARCS = [
     // Beating Fran gives Luca everything back at once, and his ánima and light with it.
     { flags: ['fran', 'anima-luca', 'luz-luca'], label: 'Fran vencido: Luca, a todo color', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
   ] },
+  // Bernat the first time (docs/quests/bernat.md): the confidant at his table in El Nucli.
+  { id: 'bernat', chapter: 2, title: 'Bernat', detail: 'El Nucli · Sants', after: 'metro', steps: [
+    { flags: ['bernat-nucli'], label: 'Bernat en El Nucli: es el castillo de su libreta', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
+  ] },
   // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.
   { id: 'castillo', chapter: 2, title: 'El castillo', detail: 'Tres plantas, tres jefes y el final', after: 'castle', steps: [
     { flags: ['aurelia', 'luz-aurelia'], label: 'Aurelià vencido: la entrada pasa al gimnasio', spot: castleEntry(new Set(['aurelia'])) },
     { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a Direcció', spot: castleEntry(new Set(['direccion'])) },
     { flags: ['aitor-poseido'], label: 'La Reina toma a Aitor: Gerard cae' },
-    { flags: ['artilugio'], label: 'El artilugio: llama Bernat', spot: castleEntry(new Set(['direccion'])) },
+    // Bernat's part (docs/quests/bernat.md, round 5): his call, the game told and his box, the portal solved.
+    { flags: ['bernat-llama'], label: 'Llama Bernat: venid a El Nucli', spot: { environment: 'meridiana' } },
+    { flags: ['bernat-juego'], label: 'En El Nucli: «estamos dentro de un juego»; la caja abierta', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
+    { flags: ['portal-nucli', 'artilugio'], label: 'Las sumas de luces resueltas: el artilugio, en casa', spot: { environment: 'meridiana' } },
     { flags: ['reina'], label: 'La Reina, vencida' },
   ] },
   // Only one of the two is ever set: each ending hangs from her fall on its own.

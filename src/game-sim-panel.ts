@@ -12,7 +12,7 @@ import { STORY_FLAGS, type StoryFlag } from './story.ts';
 export const GAME_REPORT = './output/reports/game/data.json';
 export const GAME_PAGE = './output/reports/game/index.html';
 /** The mission each finishing flag closes: what a jump from the simulated game starts with done. */
-const CLOSES: Partial<Record<StoryFlag, AnimaId>> = { 'nuria-uri': 'nuria', sobremesa: 'universidad', voz: 'marta' };
+const CLOSES: Partial<Record<StoryFlag, AnimaId>> = { 'nuria-uri': 'nuria', sobremesa: 'universidad', voz: 'marta', converge: 'emilie', fran: 'luca' };
 
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 const pc = (x: number | null | undefined) => x == null ? '–' : `${Math.round(x * 100)} %`;

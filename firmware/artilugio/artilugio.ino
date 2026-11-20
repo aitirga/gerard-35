@@ -15,8 +15,8 @@
     awake   the Queen's last fight: its four lights go round on their own, the LCD changes
     free    after it
 
-  The answer also says how many times the game asked it to sound (Escuchar), so it can be found by
-  ear. The last mode is kept in flash: switched off and on again, it is what it was.
+  The answer also says how many times the game asked it to sound (Escuchar, or the end of Bernat's
+  box), so it can be found by ear: random notes of its scale for a while. The last mode is kept in flash: switched off and on again, it is what it was.
 
   Board: ESP32 Dev Module on the Keyestudio FKS0001 inventor board (`just artilugio-build`).
   Library: "LiquidCrystal_I2C" by Frank de Brabander (`just artilugio-setup`).
@@ -245,19 +245,23 @@ void setMode(Mode next) {
   }
 }
 
-// Escuchar: so it can be found by ear. Its four buttons alone, up and down: never the melody.
+// Escuchar, and the end of Bernat's box: so it can be found by ear, it beeps random notes of its
+// scale for a while (docs/quests/bernat.md, round 5), each with its LEDs. Never the melody in order.
+static const unsigned long SEARCH_MS = 6000;
+
 void sounding(uint8_t times) {
   if (mode == ASLEEP) return;
-  for (uint8_t t = 0; t < times && t < 3; t++) {
-    for (uint8_t i = 0; i < 7; i++) {
-      const uint8_t b = i < 4 ? i : 6 - i;
-      digitalWrite(PIN_LED[b], HIGH);
-      tone(PIN_BUZZER, (unsigned int)NOTE_HZ[b]);
-      delay(140);
-      digitalWrite(PIN_LED[b], LOW);
-    }
+  const unsigned long until = millis() + SEARCH_MS * (times < 3 ? times : 3);
+  while ((long)(millis() - until) < 0) {
+    const uint8_t note = random(NOTES);
+    const uint8_t a = note < BUTTONS ? note : PAIRS[note - BUTTONS][0], b = note < BUTTONS ? note : PAIRS[note - BUTTONS][1];
+    digitalWrite(PIN_LED[a], HIGH); digitalWrite(PIN_LED[b], HIGH);
+    tone(PIN_BUZZER, (unsigned int)NOTE_HZ[note]);
+    delay(160 + random(220));
+    digitalWrite(PIN_LED[a], LOW); digitalWrite(PIN_LED[b], LOW);
     noTone(PIN_BUZZER);
-    delay(350);
+    delay(60 + random(260));
+    server.handleClient();
   }
 }
 
@@ -359,6 +363,7 @@ void connectWiFi() {
 
 void setup() {
   Serial.begin(115200);
+  randomSeed(esp_random());
   for (uint8_t b = 0; b < BUTTONS; b++) {
     pinMode(PIN_BUTTON[b], INPUT);
     pinMode(PIN_LED[b], OUTPUT);

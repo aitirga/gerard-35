@@ -6,6 +6,7 @@
 import type { Dialogue } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.ts';
+import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
 import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
@@ -65,9 +66,12 @@ export const STORY_FLAGS = [
   'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
   // Memory tickets (src/tickets.ts): a station opens once Gerard writes its person in its place.
   'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-alegia', 'ticket-espanya',
+  // Bernat (docs/quests/bernat.md): met at El Nucli, the confidant who recognises her castle.
+  'bernat-nucli',
   // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
-  // theirs, Gerard fallen to Aitor's hand, the artilugio, the Queen beaten, and which of the two endings.
-  'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
+  // theirs, Gerard fallen to Aitor's hand, Bernat's call, his game told and the box opened, the portal
+  // solved (docs/quests/bernat.md), the artilugio, the Queen beaten, and which of the two endings.
+  'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'bernat-llama', 'bernat-juego', 'portal-nucli', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -115,6 +119,8 @@ export type StoryEvent =
   | { type: 'parcelas'; outcome: 'lit' | 'tent' | 'black'; board: Board; solved: boolean }
   /** Words tried on the pool gate's padlock (src/candado-ui.ts). */
   | { type: 'candado'; numbers: number[] }
+  /** Bernat's box solved (src/portal-ui.ts): the artilugio crosses to the real flat. */
+  | { type: 'portal' }
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
   | { type: 'home' }
   /** Something used from the Objetos panel (src/items.ts `use`). */
@@ -206,7 +212,11 @@ export type StoryEffect =
   /** What the choice does, told over black before the Monday after. */
   | { kind: 'epilogue'; choice: EndingChoice; text: string }
   /** After the Monday of either ending: who made it and who is in it, and the false lead closed (src/credits.ts). */
-  | { kind: 'credits' };
+  | { kind: 'credits' }
+  /** Bernat's box opened: its puzzle with the flat's lamps (src/portal-ui.ts). */
+  | { kind: 'nucli-box' }
+  /** The fourth wall: Gerard, Aitor and whoever is with them look at the camera a while (docs/quests/bernat.md). */
+  | { kind: 'stare' };
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
@@ -226,7 +236,7 @@ export type GerardClass = Exclude<ClassId, 'tecnopata'>;
 
 /** Someone standing in a scene: a character model, or one of the cats (`cat`). */
 export interface StoryNpc {
-  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | 'emilie' | 'luca' | 'fran' | 'capellan' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
+  id: 'mama' | 'jan' | 'nuria' | 'uri' | 'haru' | 'yuki' | 'marta' | 'emilie' | 'luca' | 'fran' | 'capellan' | 'bernat' | UniFriend; character: string; environment: EnvironmentId; cell: Cell; scale: number; cat?: CatId;
   /** The Queen holds them: violet eyes, and they keep looking where they face. */
   possessed?: boolean;
   /** Standing in the sea this deep (m): Anna in the shallows. */
@@ -842,6 +852,32 @@ export class Story {
    */
   get salon() { return this.adult && this.has('sagrada-luca') && !this.has('fran'); }
   /** By the pond, Luca; inside, while the salon stands, the chaplain who keeps the presbytery and Fran under the canopy. */
+  /**
+   * Bernat at his table (docs/quests/bernat.md, round 5): the confidant the first time; after his
+   * call, the game told and the three of them looking at the player, and his box opened; then the
+   * box's puzzle until it is solved.
+   */
+  private talkBernat(): StoryEffect[] {
+    const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
+    if (!this.adult) return [];
+    if (this.has('portal-nucli')) return [say(LINES_BERNAT.after)];
+    if (this.has('bernat-juego')) return [say(LINES_BERNAT.waiting)];
+    if (this.has('bernat-llama')) { this.set('bernat-juego'); return [say(LINES_BERNAT.game), { kind: 'stare' }, say(LINES_BERNAT.stare), say(LINES_BERNAT.box)]; }
+    return [say(this.set('bernat-nucli') ? LINES_BERNAT.first : LINES_BERNAT.again)];
+  }
+  /** The box's puzzle solved (src/portal-ui.ts, after its performance): the artilugio is in the real flat. */
+  private portalSolved(): StoryEffect[] {
+    if (!this.has('bernat-juego') || !this.set('portal-nucli')) return [];
+    this.set('artilugio');
+    return [{ kind: 'dialogue', dialogue: LINES_BERNAT.solved }];
+  }
+  /** Whether Bernat is at El Nucli: once Gerard remembers him there, or anything of his part has happened. */
+  private get metBernat() { return this.has('ticket-placa-de-sants') || this.has('bernat-nucli') || this.has('bernat-llama'); }
+  /** Bernat at 35 at his table at the back of El Nucli (docs/quests/bernat.md), once Gerard remembers him there. */
+  private bernatNpcs(): StoryNpc[] {
+    if (!this.metBernat) return [];
+    return [{ id: 'bernat', character: BERNAT_STANDIN, environment: NUCLI, cell: { ...PLACES_BERNAT.seat }, scale: BERNAT_SCALE, facing: 90 }];
+  }
   private lucaNpcs(): StoryNpc[] {
     const won = this.has('fran'), lost = won ? 0 : 1 - this.luca.beaten.length / (ZONES.length + 1);
     const list: StoryNpc[] = [{ id: 'luca', character: 'luca', environment: SAGRADA, cell: { ...PLACES_LUCA.luca }, scale: LUCA_SCALE, facing: 180, faded: lost, reflection: { ...PLACES_LUCA.water } }];
@@ -1211,7 +1247,8 @@ export class Story {
     if (!target) return [];
     // The artilugio, once Bernat has put it in Gerard's hands, is not taken back by going back a day
     // (decided 2026-11-19), nor is the night that brought it: the Queen is met again with it.
-    const kept = (['aitor-poseido', 'artilugio'] as const).filter(flag => this.has(flag));
+    // Nor Bernat's call and his portal: what the fall set going is kept.
+    const kept = (['aitor-poseido', 'bernat-llama', 'bernat-juego', 'portal-nucli', 'artilugio'] as const).filter(flag => this.has(flag));
     this.flags.clear(); this.merge(target.story); this.merge(kept);
     this.globe = {}; this.recall();
     this.days = { epoch: this.days.epoch + 1, clock: { day: target.day, hour: DAY_START }, mornings: this.days.mornings.filter(m => m.day <= target.day) };
@@ -1358,7 +1395,7 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs(), ...this.lucaNpcs()].filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs(), ...this.lucaNpcs(), ...this.bernatNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
@@ -1434,6 +1471,11 @@ export class Story {
     }
     // Emilie's door rings in chapter 2 instead of being looked at; in her flat, her and her laptop; in her model, the way back out.
     if (this.adult && this.has('metro') && environment === POBLE_SEC) list.push({ id: 'poble-sec-emilie', label: 'Llamar al portal', hint: 'Llamar', cell: { ...PLACES_EMILIE.door } });
+    if (this.adult && environment === NUCLI && this.metBernat) {
+      list.push({ id: 'talk-bernat35', label: 'Hablar con Bernat', cell: { ...PLACES_BERNAT.seat } });
+      // The box on his table, open once he has told them: through it, the flat (src/portal-ui.ts).
+      if (this.has('bernat-juego')) list.push({ id: 'nucli-mesa', label: this.has('portal-nucli') ? 'La caja, vacía' : 'La caja abierta', hint: this.has('portal-nucli') ? 'Mirar' : 'Asomarse', cell: { ...PLACES_BERNAT.portal } });
+    }
     if (this.adult && environment === PISO) {
       list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });
       list.push({ id: 'portatil-emilie', label: 'Su portátil', hint: this.has('modelo') && !this.has('converge') ? 'Entrar' : 'Mirar', cell: { ...PLACES_PISO.laptop }, anchor: { ...PLACES_PISO.screen } });
@@ -1564,6 +1606,8 @@ export class Story {
         return this.spend('metro');
       case 'parcelas':
         return this.choosePitch(event);
+      case 'portal':
+        return this.portalSolved();
       case 'candado':
         return this.tryLock(event.numbers);
       case 'south':
@@ -1602,6 +1646,11 @@ export class Story {
         if (this.has('converge')) return [say(LINES_EMILIE.doorAfter), inside];
         return [say(this.emilie.told.includes('door') ? LINES_EMILIE.doorAgain : (this.emilie.told.push('door'), LINES_EMILIE.door)), inside];
       }
+      case 'talk-bernat35': return this.talkBernat();
+      case 'nucli-mesa':
+        // His box (docs/quests/bernat.md): open after he has told them, its puzzle until it is solved.
+        if (!this.adult || !this.has('bernat-juego')) return [];
+        return this.has('portal-nucli') ? [say(LINES_BERNAT.after)] : [{ kind: 'nucli-box' }];
       case 'talk-emilie': {
         if (!this.adult) return [];
         if (this.has('converge')) return [say(LINES_EMILIE.after)];

@@ -176,7 +176,7 @@ export const SWATCHES: { name: string; lamp: Lamp }[] = [
   { name: 'Fría', lamp: white(4500, .85) }, { name: 'Día', lamp: white(6500, .9) },
   { name: 'Rojo', lamp: hex('#ff3b2f', .75, .9) }, { name: 'Atardecer', lamp: hex('#ff9a4a', .8, .75) }, { name: 'Ámbar', lamp: hex('#ffc24a', .8, .7) },
   { name: 'Verde', lamp: hex('#48d07a', .7, .7) }, { name: 'Turquesa', lamp: hex('#2fd0c8', .7, .75) }, { name: 'Azul noche', lamp: hex('#4a6cff', .6, .75) },
-  { name: 'Violeta', lamp: hex('#9a5bff', .65, .7) }, { name: 'Rosa', lamp: hex('#ff6fae', .7, .6) },
+  { name: 'Violeta', lamp: hex('#9a5bff', .65, .7) }, { name: 'Magenta', lamp: hex('#ff3fe0', .75, .75) }, { name: 'Rosa', lamp: hex('#ff6fae', .7, .6) },
 ];
 /** The swatch a lamp shows (or the closest one), and the one `step` places along. Brightness is kept. */
 export function stepSwatch(lamp: Lamp, step: number): { index: number; lamp: Lamp } {
@@ -431,13 +431,15 @@ export function createHomeLights() {
     effect.lights.forEach(id => { told[id] = Date.now(); });
     void call('POST', '/effect', { lights, kind: effect.kind, color: toBulb(effect.color).color, brightness: effect.color.brightness, period: effect.period, cycles: effect.cycles, peak: effect.peak });
   }
-  const mirroring = () => place === 'meridiana' && !fight && !holding;
+  /** Bernat's box open (src/portal-ui.ts): the real flat follows the game's from El Nucli, as if Gerard were home. */
+  let portal = false;
+  const mirroring = () => (place === 'meridiana' || portal) && !fight && !holding;
   /** Whatever the bulbs should show now: the fight, the flat, or the place. */
   function settle(duration = 1.2, force = false) {
     if (!active() || holding) return;
     if (fight) { show(battleLook(fight, settings.scope, settings.intensity), duration, force); return; }
-    const look = place ? placeLook(place, mood, settings.scope, settings.intensity) : undefined;
-    const touched = show(look ?? (place === 'meridiana' ? flat : {}), duration, force);
+    const look = portal ? undefined : place ? placeLook(place, mood, settings.scope, settings.intensity) : undefined;
+    const touched = show(look ?? (place === 'meridiana' || portal ? flat : {}), duration, force);
     // The palace's fountain, the Corazón Líquido, beats slowly on the table lamp (a new colour stops it).
     if (place === 'palacio' && look?.mesa && touched.includes('mesa')) flash({ lights: ['mesa'], kind: 'breathe', color: hex('#ff5fae', look.mesa.brightness + .15, .7), period: 5, cycles: 120, peak: .5 });
   }
@@ -607,9 +609,15 @@ export function createHomeLights() {
       }
       return hold;
     },
-    /** Story moments the room takes part in. */
-    moment(kind: 'fall' | 'tv' | 'tv-off' | 'doom') {
+    /** Bernat's box opened or closed: while open, the real flat is the game's (the portal's puzzle is played on its lamps). */
+    portal(open: boolean) { if (open === portal) return; portal = open; settle(.6, true); },
+    /** Story moments the room takes part in; `right` and `wrong` blink the whole house green or red (the portal's answer). */
+    moment(kind: 'fall' | 'tv' | 'tv-off' | 'doom' | 'right' | 'wrong') {
       if (!active()) return;
+      if (kind === 'right' || kind === 'wrong') {
+        flash({ lights: [...SALON, ...ELSEWHERE], kind: 'pulse', color: kind === 'right' ? hex('#2bff6a', 1) : hex('#ff2a1f', 1), period: .45, cycles: 3 });
+        return;
+      }
       if (kind === 'fall') {
         holding++;
         show(Object.fromEntries(SALON.map(id => [id, hex('#ff3f9a', .35, .8)])), .4, true);

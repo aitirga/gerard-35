@@ -4,6 +4,9 @@ import { CURVE_STEPS, PLAYERS, Playing, pathOn, summarise } from '../src/game-si
 
 /** A game cut short after `fights` fights: the whole route is `just game-sim`'s, too long for a test. */
 const playTo = (fights, seed = 35, player = PLAYERS.pensando) => new Playing(player, seed, { days: 60, seconds: 1e9, fights }).playAll();
+/** The thinking player's game through every friend's mission and into the castle, played once for the tests that read it. */
+let thinking;
+const thinkingGame = () => thinking ??= playTo(55);
 
 test('a walk takes the grid\'s shortest way round walls and blocked cells, or none', () => {
   const grid = ['.....', '.###.', '.....'];
@@ -13,15 +16,26 @@ test('a walk takes the grid\'s shortest way round walls and blocked cells, or no
 });
 
 test('the thinking player walks the story through the friends\' missions into the castle, the same every time with the same seed', () => {
-  const game = playTo(40);
-  for (const flag of ['first-fight', 'wrapper-room', 'caught', 'tv-news', 'metro', 'palace-tried', 'nuria-uri', 'sobremesa', 'voz']) assert.ok(game.flags.includes(flag), `${flag} is reached`);
+  const game = thinkingGame();
+  for (const flag of ['first-fight', 'wrapper-room', 'caught', 'tv-news', 'metro', 'palace-tried', 'nuria-uri', 'sobremesa', 'converge', 'fran', 'voz']) assert.ok(game.flags.includes(flag), `${flag} is reached`);
   assert.ok(game.fights.every(f => f.rounds > 0));
   assert.ok(game.seconds > 0 && Object.values(game.time).every(t => t >= 0));
   assert.ok(game.moments.some(m => m.kind === 'level' && m.anima === 'papagato'), 'Papagato grows with the EXP of its fights');
+  for (const fight of ['modelo-celdas', 'modelo-oscilacion', 'modelo-pluma', 'no-converge', 'luca-recepcion', 'luca-sillones', 'luca-carta', 'luca-abside', 'fran']) assert.ok(game.fights.some(f => f.encounter === fight && f.won), `${fight} is won`);
   assert.ok(game.fights.some(f => f.encounter.startsWith('alumnos-')), 'after the friends it goes into the castle, through a generated floor');
-  const again = playTo(40);
+  assert.deepEqual(game.gaps, [], 'nothing is bridged');
+  const again = playTo(55);
   assert.equal(again.seconds, game.seconds);
   assert.deepEqual(again.fights.map(f => f.encounter), game.fights.map(f => f.encounter));
+});
+
+test('a station that needs a ticket gets its memory written before the first trip there; one open from the start, none', () => {
+  const game = thinkingGame();
+  const when = flag => game.moments.findIndex(m => m.kind === 'flag' && m.flag === flag);
+  for (const [ticket, there] of [['ticket-cardedeu', 'cardedeu'], ['ticket-barceloneta', 'barceloneta-uni'], ['ticket-poble-sec', 'poble-sec-emilie'], ['ticket-sagrada-familia', 'sagrada-luca'], ['ticket-alegia', 'alegia-marta']]) {
+    assert.ok(when(ticket) >= 0 && when(ticket) < when(there), `${ticket} is written before ${there}`);
+  }
+  assert.ok(!game.flags.includes('ticket-trinitat-vella') && !game.flags.includes('ticket-fabra-i-puig'));
 });
 
 test('many games add up per player: length, the difficulty curve by tenths, levels and every fight met', () => {

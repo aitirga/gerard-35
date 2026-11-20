@@ -21,7 +21,7 @@ export const CASTLE_PLACES = ['castillo-1', 'castillo-2', 'castillo-3'] as const
 export type CastlePlace = (typeof CASTLE_PLACES)[number];
 export const isCastlePlace = (id?: string): id is CastlePlace => !!id && (CASTLE_PLACES as readonly string[]).includes(id);
 /** The flags the castle sets, in the order the story reaches them. */
-export const CASTLE_FLAGS = ['aurelia', 'direccion', 'aitor-poseido', 'artilugio', 'reina', 'final-acabar', 'final-bajar'] as const;
+export const CASTLE_FLAGS = ['aurelia', 'direccion', 'aitor-poseido', 'bernat-llama', 'artilugio', 'reina', 'final-acabar', 'final-bajar'] as const;
 /** The castle's bosses: each one beaten holds her back as an ánima does (src/days.ts, `Story.heldBack`). */
 export const CASTLE_BOSSES = ['aurelia', 'direccion'] as const;
 export type CastleFlag = (typeof CASTLE_FLAGS)[number];

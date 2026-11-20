@@ -85,14 +85,11 @@ export const LINES_CASTLE = {
     reina('Entonces sabes cómo acaba.'),
     aitor('Esta vez no.'),
   ),
-  /** The morning after Gerard fell to Aitor's hand: Bernat calls. Stands in for the salón de juegos. */
+  /** The morning after Gerard fell to Aitor's hand: Bernat calls them to El Nucli (docs/quests/bernat.md, round 5). */
   bernatCall: withThem('bernat35',
-    aitor('Te suena el móvil. Pone «Bernat». ¿Bernat no era…?'),
-    gerard('Hace quince años que no hablamos.'),
-    bernat('Gerard. No preguntes cómo lo sé. Anoche soñé con la libreta.'),
-    bernat('Te he dejado una cosa en el buzón. La hicimos de pequeños, en el salón de juegos. Cuatro botones.'),
-    gerard('¿Para qué sirve?'),
-    bernat('No me acuerdo. Pero la canción te la sabes. La silbabas siempre.'),
+    aitor('Te suena el móvil. Pone «Bernat».'),
+    bernat('Gerard. Os vi caer anoche. No me preguntes cómo: lo vi.'),
+    bernat('Venid a El Nucli. Ya. Tengo que enseñaros algo, y por teléfono no.'),
     aitor('…Gerard. Ayer. Yo te…'),
     gerard('No eras tú. Coge la chaqueta.'),
   ),
@@ -222,11 +219,13 @@ export function castleBattle(host: CastleHost, event: { won: boolean; encounter?
   if (encounter === 'reina' || encounter === 'reina-vuelta') {
     // She does not die at 0: the picture closes on Gerard, and he chooses (src/endings.ts).
     if (event.won) return [{ kind: 'look', cell: { ...castlePhase(3).bossAt }, height: 4.5 }, { kind: 'ending' }];
-    // The once it has to happen: Aitor hers, Gerard down. The morning after, Bernat calls.
-    if (event.taken && !host.has('artilugio')) {
+    // The once it has to happen: Aitor hers, Gerard down. The morning after, Bernat calls them to
+    // El Nucli, where the portal sends the artilugio home (docs/quests/bernat.md); until it has, a
+    // fall to her is an ordinary one.
+    if (event.taken && !host.has('artilugio') && !host.has('bernat-llama')) {
       host.raise('aitor-poseido');
       const morning = host.fall();
-      host.raise('artilugio');
+      host.raise('bernat-llama');
       return [...morning, say(LINES_CASTLE.bernatCall)];
     }
     return undefined;

@@ -88,7 +88,9 @@ export function createArtilugio(standIns: () => boolean): Artilugio {
   window.addEventListener('keydown', keydown, { capture: true });
 
   // The real board, through the server: notes and movement as they happen, and whether it is there.
-  const send = (next: ArtilugioMode) => fetch('/api/artilugio', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: next }) }).catch(() => undefined);
+  /** The last word sent to the server, so what follows it (Escuchar) arrives after it. */
+  let sent: Promise<unknown> = Promise.resolve();
+  const send = (next: ArtilugioMode) => (sent = sent.then(() => fetch('/api/artilugio', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: next }) }).catch(() => undefined)));
   let source: EventSource | undefined;
   let retry: ReturnType<typeof setTimeout> | undefined;
   function connect() {
@@ -117,7 +119,7 @@ export function createArtilugio(standIns: () => boolean): Artilugio {
     onBoard(listener) { boards.add(listener); return () => boards.delete(listener); },
     get board() { return board; },
     setMode(next) { if (next === mode) return; mode = next; void send(next); },
-    listen() { void fetch('/api/artilugio/listen', { method: 'POST' }).catch(() => undefined); },
+    listen() { sent = sent.then(() => fetch('/api/artilugio/listen', { method: 'POST' }).catch(() => undefined)); },
     pad(pad) {
       const held = !!pad?.connected && !!pad.buttons[PAD_HOLD]?.pressed && standIns();
       const down = PAD_FACES.map(face => held && !!pad!.buttons[face]?.pressed);

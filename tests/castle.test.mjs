@@ -112,10 +112,16 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   story.handle({ type: 'battle', won: true, encounter: 'direccion' });
   assert.ok(['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'].every(f => story.has(f)));
   assert.equal(story.redirect('secretaria-direccio').environment, 'castillo-3');
-  // Lost with Aitor hers: the once it happens. The morning after, the artilugio.
+  // Lost with Aitor hers: the once it happens. The morning after, Bernat calls them to El Nucli.
   const fall = story.handle({ type: 'battle', won: false, encounter: 'reina', taken: true });
-  assert.ok(story.has('aitor-poseido') && story.has('artilugio'));
+  assert.ok(story.has('aitor-poseido') && story.has('bernat-llama') && !story.has('artilugio'));
   assert.ok(fall.some(e => e.kind === 'dialogue'));
+  // At his table: the game told, the look at the camera, his box; its puzzle solved, the artilugio is home.
+  const told = story.handle({ type: 'interact', id: 'talk-bernat35' });
+  assert.ok(story.has('bernat-juego') && told.some(e => e.kind === 'stare'));
+  assert.deepEqual(story.handle({ type: 'interact', id: 'nucli-mesa' }).map(e => e.kind), ['nucli-box']);
+  story.handle({ type: 'portal' });
+  assert.ok(story.has('portal-nucli') && story.has('artilugio'));
   const won = story.handle({ type: 'battle', won: true, encounter: 'reina-vuelta' });
   assert.ok(won.some(e => e.kind === 'ending'));
   const end = story.handle({ type: 'ending', choice: 'bajar' });

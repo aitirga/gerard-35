@@ -216,6 +216,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** Metres ahead of Gerard, while he walks, that the camera also keeps in sight (about a third of a second). */
   const LOOK_AHEAD = 1.8;
   const player = new pc.Entity('Jugador');
+  /** Until when (on the game's clock) everyone looks at the camera (`stare`). */
+  let staringUntil = -1;
+  /** The way from a point in the world to the camera, as a facing. */
+  const toCamera = (at: pc.Vec3) => { const eye = camera.getPosition(); return facingToward(eye.x - at.x, eye.z - at.z); };
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
   await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES)]);
@@ -2836,6 +2840,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     const idle = idlePose(clock);
     const resting = animate && !walking && !battle ? 1 - pose.weight : 0;
+    // The fourth wall (docs/quests/bernat.md): for a while they all look at the camera, at whoever plays.
+    if (clock < staringUntil) facing = toCamera(player.getPosition());
     const turn = ((facing - visualFacing + 540) % 360) - 180;
     visualFacing += turn * (reducedMotion.matches ? 1 : 1 - Math.exp(-delta / .065));
     visualFacing = ((visualFacing + 180) % 360 + 360) % 360 - 180;
@@ -2872,7 +2878,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const hop = driven && free!.bouncing && animate ? Math.sin(free!.progress * Math.PI) * .18 : 0;
       mate.entity.setPosition(p.x, 0.09 + hop, p.z);
       const facingGerard = !driven && !mate.follower.walking && story.companion !== 'stalled';
-      const yaw = driven ? partnerFacing : facingGerard ? facingToward(movement.position.x - at.x, movement.position.z - at.z) : mate.follower.facing;
+      const yaw = clock < staringUntil ? toCamera(mate.entity.getPosition()) : driven ? partnerFacing : facingGerard ? facingToward(movement.position.x - at.x, movement.position.z - at.z) : mate.follower.facing;
       const mateIdle = idlePose(clock, 1.7), mateRest = animate && !battle ? 1 - matePose.weight : 0;
       const mateCarried = carriage(matePose), mateSettle = animate ? Math.sin(clock * .47 + 2) * 1.1 * mateRest : 0;
       mate.rig.body.setLocalEulerAngles(mateCarried.pitch, yaw + mateCarried.twist, mateCarried.roll + mateSettle);
@@ -2888,7 +2894,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     for (const npc of npcs) {
       const dx = movement.position.x - npc.cell.x, dz = movement.position.z - npc.cell.z;
       // Held by the Queen, they keep staring where they stare; anyone else turns to Gerard.
-      if (!npc.still && Math.hypot(dx, dz) < 4) npc.body.setLocalEulerAngles(0, facingToward(dx, dz), 0);
+      if (clock < staringUntil) npc.body.setLocalEulerAngles(0, toCamera(npc.body.getPosition()), 0);
+      else if (!npc.still && Math.hypot(dx, dz) < 4) npc.body.setLocalEulerAngles(0, facingToward(dx, dz), 0);
       npc.ripple?.children.forEach((band, i) => {
         const t = ((animate ? clock : 0) * .4 + i * .5) % 1, r = .85 + t * 1.3;
         (band as pc.Entity).setLocalScale(r, 1, r);
@@ -3122,6 +3129,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     lighting: lighting(app),
     /** Development and screenshots: whoever is leading the party now (Haru to Nuria's door), if anyone. */
     get guide(): Readonly<Guide> | undefined { return guiding?.walk; },
+    /** The fourth wall (docs/quests/bernat.md): Gerard, Aitor and whoever is there look at the camera for `seconds`. */
+    stare(seconds = 3.5) { staringUntil = clock + seconds; return new Promise<void>(resolve => setTimeout(resolve, seconds * 1000)); },
     /** The artilugio in Gerard's hands: his figure's in the street, his copy's in a fight (src/artilugio-held.ts). */
     get artilugio(): HeldArtilugio { return heldArtilugio; },
     get battleArtilugio(): HeldArtilugio | undefined { return battle ? battleScene.artilugio : undefined; },

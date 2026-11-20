@@ -1,0 +1,133 @@
+{
+  "title": "Chapter 2 · Bernat at El Nucli and his box",
+  "description": "After the Queen took Aitor, Bernat calls them to El Nucli: at his table he says they are inside a game, and the three of them look at the camera. His box shows the Meridiana flat and a page of his notebook with a sum of its lamps; the moon set to the colour of light they make and held five seconds, the house blinks green. After the four sums every lamp goes off but the bedroom's, pink, and the artilugio wakes.",
+  "steps": [
+    {
+      "open": "/?story=bernat-llama&solo=1"
+    },
+    {
+      "until": "!!window.gerard && window.gerard.story.has('bernat-llama')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('el-nucli', { x: 3, z: 5 })"
+    },
+    {
+      "until": "document.title.startsWith('El Nucli')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "nucli",
+      "caption": "El Nucli's back room: Bernat at his table (a stand-in figure until his own)"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'talk-bernat35' })"
+    },
+    {
+      "until": "!!document.querySelector('#hud[data-dialogue]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "game",
+      "delay": 1500,
+      "caption": "«Estamos dentro de un juego.»"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "stare",
+      "delay": 900,
+      "caption": "The fourth wall: the three of them look at the camera"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'nucli-mesa' })"
+    },
+    {
+      "until": "!!document.querySelector('#portal-box:not([hidden])')",
+      "timeout": 20000
+    },
+    {
+      "shot": "sum-1",
+      "delay": 1200,
+      "caption": "His notebook: the moon = the table in green + the kitchen in blue. The moon's dial open"
+    },
+    {
+      "eval": "import('/src/friends/bernat.ts').then(b => { window.bernatLamps = b.LAMPS; setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...b.LAMPS.cian }), 700); }) && undefined"
+    },
+    {
+      "shot": "sum-1-held",
+      "delay": 3000,
+      "caption": "The moon set to cyan, held"
+    },
+    {
+      "shot": "sum-1-right",
+      "delay": 3600,
+      "caption": "Five seconds: the house blinks green, and the next sum"
+    },
+    {
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 1 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "timeout": 30000
+    },
+    {
+      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.amarillo }), 900)"
+    },
+    {
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 2 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "timeout": 30000
+    },
+    {
+      "shot": "sum-3",
+      "delay": 800,
+      "caption": "The third: a sum and a subtraction (yellow + cyan − green)"
+    },
+    {
+      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.magenta }), 900)"
+    },
+    {
+      "until": "document.querySelectorAll('#portal-box .portal-steps i[data-done]').length >= 3 && !/parpadea en verde/.test(document.querySelector('#portal-box').textContent)",
+      "timeout": 30000
+    },
+    {
+      "shot": "sum-4",
+      "delay": 800,
+      "caption": "The last: the three primaries at once"
+    },
+    {
+      "eval": "setTimeout(() => window.gerard.homeLights.setLamp('luna', { ...window.bernatLamps.blanco }), 900)"
+    },
+    {
+      "until": "/apagando/.test(document.querySelector('#portal-box')?.textContent ?? '')",
+      "timeout": 30000
+    },
+    {
+      "shot": "performance",
+      "delay": 2500,
+      "caption": "Every lamp goes off, one after another; only the bedroom, pink, is left"
+    },
+    {
+      "until": "window.gerard.story.has('artilugio')",
+      "timeout": 30000
+    },
+    {
+      "shot": "solved",
+      "delay": 1500,
+      "caption": "«Ha cruzado. En vuestra habitación. La de verdad.»"
+    }
+  ]
+}

@@ -11,7 +11,8 @@
  * does the next thing, so a fall, a lost day or a rewind is picked up where it left the story.
  * Pure and seeded: the same player and seed play the same game.
  */
-import { DUALS, createEncounter, improve, palaceGuards, type ClassId, type Encounter } from './battle.ts';
+import { HOLD_SECONDS, NUCLI, PLACES_BERNAT, PORTAL_LEVELS } from './friends/bernat.ts';
+import { DUALS, calibrate, createEncounter, dazzle, improve, palaceGuards, type ClassId, type Encounter } from './battle.ts';
 import { BUILDS, MISSIONS, playOut, seeded, type MissionId, type Policy } from './battle-sim.ts';
 import { createChaser, rest, updateChaser, type Chaser, type ChaserSpec } from './chasers.ts';
 import { PLACES } from './chapter-1.ts';
@@ -23,6 +24,11 @@ import { ENVIRONMENTS, type EnvironmentId, type Interaction } from './environmen
 import { CAMP, CAMP_HUNTERS, PLACES_CAMP, PLACES_UNI, BEACH, TAG } from './friends/universidad.ts';
 import { ALEGIA, CUERDAS_PLACE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
 import { CALLE, MAZE, PLACES_NURIA, STREET } from './friends/nuria.ts';
+import { MODELO_PLACE, PISO, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
+import { BEAM, DOOR as LUCA_DOOR, INTERIOR, MIRRORS, MIRRORS_SEEN, PLACES_LUCA, SAGRADA } from './friends/luca.ts';
+import { trace as beamThrough, turned, type Facing } from './espejos.ts';
+import { GALLERY, SECTION, WELLS, beat, calibration, charged, descend, measure, roaming, shake, stakeAt, tick, type ModeloState, type PatrolSpec } from './modelo.ts';
+import { isTicketStation, ticketFlag, type TicketStation } from './tickets.ts';
 import { LEVELLED, MAX_LEVEL, fightXp, participants } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
 import { FIRST_CLEAR, HIDING_KINDS, hiddenAt, hunterSpec, huntersGrid, isLit, litLamps, nightTier, risingAt, sightOf, type NightTier } from './night.ts';
@@ -73,15 +79,16 @@ export interface Player {
 }
 export const PLAYERS: Record<string, Player> = {
   pensando: {
-    id: 'pensando', name: 'Pensando', policy: 'smart', order: ['nuria', 'universidad', 'marta'], castleFirst: true, build: 'mixto',
+    id: 'pensando', name: 'Pensando', policy: 'smart', order: ['nuria', 'universidad', 'emilie', 'luca', 'marta'], castleFirst: true, build: 'mixto',
     carrier: 'aitor', engage: 'fight', grind: 1, seekLevel: 2, patience: 2, learnAfter: 0, think: 4, pace: 1.5, explore: 40, read: 18, slip: .15, ending: 'bajar',
   },
   casual: {
-    id: 'casual', name: 'Sin pensar', policy: 'casual', order: ['nuria', 'universidad', 'marta'], castleFirst: true, build: 'nada',
+    id: 'casual', name: 'Sin pensar', policy: 'casual', order: ['nuria', 'universidad', 'emilie', 'luca', 'marta'], castleFirst: true, build: 'nada',
     carrier: 'gerard', engage: 'fight', grind: 0, seekLevel: 1, patience: 3, learnAfter: 3, think: 3, pace: 1.6, explore: 30, read: 22, slip: .3, ending: 'acabar',
   },
+  // The short missions first, straight after Nuria's: Emilie's and Luca's are met with a party that has grown little.
   corredor: {
-    id: 'corredor', name: 'Con prisa', policy: 'smart', order: ['nuria', 'marta', 'universidad'], castleFirst: false, build: 'elementos',
+    id: 'corredor', name: 'Con prisa', policy: 'smart', order: ['nuria', 'emilie', 'luca', 'marta', 'universidad'], castleFirst: false, build: 'elementos',
     carrier: 'aitor', engage: 'avoid', grind: 0, seekLevel: 1, patience: 2, learnAfter: 0, think: 2.5, pace: 1.25, explore: 10, read: 30, slip: .1, ending: 'acabar',
   },
 };
@@ -106,7 +113,21 @@ const RESPAWN = 40;
 /** How far from the straight walk a hunted walk may go before the player is put where they were going (a stuck bot, logged). */
 const LOST_AFTER = 420;
 /** Story interactions that take the party to another place (src/story.ts), walked through like doors. */
-const STORY_WAYS: Record<string, EnvironmentId> = { 'salir-laberinto': CALLE, 'calle-tornar': STREET, 'salir-cuerdas': ALEGIA, 'enter-school': 'palacio' };
+const STORY_WAYS: Record<string, EnvironmentId> = {
+  'salir-laberinto': CALLE, 'calle-tornar': STREET, 'salir-cuerdas': ALEGIA, 'enter-school': 'palacio',
+  // Emilie's door on Margarit rings and takes them up; *Volver* out of her model is back at her desk.
+  'poble-sec-emilie': PISO, 'salir-modelo': PISO,
+};
+/** The station each mission is reached by, for the first trip down the metro. */
+const MISSION_STATIONS: Record<MissionId, string> = { nuria: 'cardedeu', universidad: 'barceloneta', marta: 'alegia', emilie: 'poble-sec', luca: 'sagrada-familia' };
+/** Seconds a memory takes to write on a station's tablet for its ticket (src/tickets.ts); a faraway one asks for a moment too, half as long again. */
+const MEMORY = 30;
+/** A step of Emilie's section, as src/game.ts steps its patrols (`stepModelo`, 50 ms at a time). */
+const SECTION_STEP = .05;
+/** Seconds stopped at one of Emilie's stakes to measure it («Medir»). */
+const MEASURE = 2;
+/** Seconds the lift takes down one zone of her model, the section rising past them. */
+const LIFT = 3;
 /** Places whose grid changes as they are played (the strings over the void): walked as the crow flies, a little longer. */
 const APPROXIMATE: ReadonlySet<EnvironmentId> = new Set([CUERDAS_PLACE]);
 /** Running speed in cells a second (src/movement.ts WALK_SPEED, ×1.5 with the shoes). */
@@ -210,6 +231,8 @@ export class Playing {
   private tries: Partial<Record<MissionId, number>> = {};
   /** The guards before the curtain beaten once: the castle's hall is crossed from then on (not a flag: the story only brings night). */
   private guardsBeaten = false;
+  /** Whether each of Emilie's stakes is measured, for each run through her model, by whoever does not always stop for them (decided once). */
+  private stakeChoices = new WeakMap<ModeloState, Map<string, boolean>>();
   readonly player: Player;
   readonly seed: number;
   readonly limits: { days: number; seconds: number; fights: number };
@@ -279,6 +302,14 @@ export class Playing {
         // The last scene: two commands, no clock, and Gerard chooses (docs/castle-bosses.md § The last scene).
         case 'ending': this.spend('scene', 15); this.note('end', `Final: ${this.player.ending === 'acabar' ? 'Acabar' : 'Bajar la mano'}`); this.send({ type: 'ending', choice: this.player.ending }); break;
         case 'candado': this.padlock(); break;
+        // Bernat's box (docs/quests/bernat.md): four sums of lights worked out on the moon, each held
+        // five seconds, a wrong colour now and then, then the house's lamps going off one by one.
+        case 'nucli-box': {
+          const sums = PORTAL_LEVELS.length, tries = Math.round(sums * (1 + this.player.slip * 2 + this.random() * .5));
+          this.spend('puzzle', sums * this.player.think * 12 + tries * (HOLD_SECONDS + 4) + 8);
+          this.send({ type: 'portal' });
+          break;
+        }
         case 'parcelas': this.board(); break;
         default: this.spend('scene', BEAT[effect.kind] ?? 0);
       }
@@ -296,9 +327,14 @@ export class Playing {
   private place(environment: EnvironmentId) { return this.story.place(environment); }
   private get grid() { return this.place(this.at.environment).grid; }
   private blocked() { return new Set(this.story.blocked(this.at.environment).map(key)); }
-  /** Everything that can be used in a place now: its doors and things, and the story's own. */
+  /**
+   * Everything that can be used in a place now: its doors and things, and the story's own. The story's
+   * version of a thing replaces the place's, as in src/game.ts `interactions` (her portal on Margarit
+   * is rung in chapter 2, not looked at).
+   */
   private usable(environment: EnvironmentId): Interaction[] {
-    return [...this.place(environment).interactions, ...this.story.interactions(environment)];
+    const told = this.story.interactions(environment);
+    return [...this.place(environment).interactions.filter(i => !told.some(t => t.id === i.id)), ...told];
   }
   /** Where a door leads now, if it opens: the story may hold it shut or send it elsewhere. */
   private doorTo(interaction: Interaction): Spot | undefined {
@@ -365,13 +401,14 @@ export class Playing {
   /**
    * Walks to `goal` in this place. With nobody hunting it is the grid's shortest way at running speed
    * (times `pace`); with chasers about, it is played in small steps, dodging, and one that reaches the
-   * party is its fight (or the game of tag's catch). Returns whether it got there.
+   * party is its fight (or the game of tag's catch). `avoid`: cells kept off when there is another way
+   * (a story trigger not to set off yet). Returns whether it got there.
    */
-  walk(goal: Goal): boolean {
+  walk(goal: Goal, avoid?: ReadonlySet<string>): boolean {
     this.refreshHunters();
     const speed = this.story.canRun ? RUN_SPEED : WALK_SPEED;
     if (!this.hunters.length) {
-      const path = APPROXIMATE.has(this.at.environment) ? undefined : pathOn(this.grid, this.at.cell, goal, this.blocked());
+      const path = APPROXIMATE.has(this.at.environment) ? undefined : pathOn(this.grid, this.at.cell, goal, this.blocked(), avoid);
       const cells = path ? path.length - 1 : dist(this.at.cell, goal.cell) * 1.3;
       if (!path && !APPROXIMATE.has(this.at.environment)) this.gap(`Sin camino en ${ENVIRONMENTS[this.at.environment].name}: se estima en línea recta`);
       this.spend('walk', cells / speed * this.player.pace);
@@ -535,6 +572,10 @@ export class Playing {
     });
     state.levels = story.levels;
     improve(state, story.improved);
+    // What was measured on the way down Emilie's model calibrates El que no converge (src/game.ts `setBattle`);
+    // the light the nave's mirrors bring to the chairs dazzles the chaplains (src/main.ts `onEncounter`).
+    if (encounter === 'no-converge' && this.at.environment === MODELO_PLACE) calibrate(state, calibration(story.modeloRun()));
+    if (story.dazzled(encounter)) dazzle(state);
     state.seed = Math.floor(this.random() * 2 ** 32) >>> 0;
     const learnt = this.player.learnAfter > 0 && (this.losses[encounter] ?? 0) >= this.player.learnAfter;
     const run = playOut(state, { fight: encounter, party: '', policy: learnt ? 'smart' : this.player.policy, think: this.player.think, maxRounds: 80 }, this.random);
@@ -602,20 +643,35 @@ export class Playing {
     const place = STATION_PLACES[station];
     return { ...ENVIRONMENTS[place.environment].interactions.find(i => i.id === entranceId(station))!.cell };
   }
-  /** The metro map: the trip chosen beforehand (`trip`), its blackout and the hour it takes. */
+  /** The metro map: the trip chosen beforehand (`trip`), its ticket if it has none yet, its blackout and the hour it takes. */
   private ride(from: string) {
     const to = this.trip;
     this.trip = undefined;
     this.spend('travel', RIDE);
     if (!to || to === from) return;
+    // A station no memory has opened is not a destination yet (src/travel-ui.ts): its memory is written under the map first.
+    if (isTicketStation(to) && !this.has(ticketFlag(to))) this.remember(to);
     this.moveTo({ environment: STATION_PLACES[to].environment, cell: this.entrance(to) });
     this.send({ type: 'arrive', station: to, from });
+  }
+  /**
+   * A memory written on the station's tablet (src/tickets.ts): its person in its place, and for a
+   * faraway one a moment with them. A slip is a blank or half a ticket and another try. The server's
+   * judgement is not played: the memory the route needs is taken as written.
+   */
+  private remember(station: TicketStation) {
+    let tries = 1;
+    while (this.random() < this.player.slip && tries < 4) tries++;
+    this.spend('puzzle', MEMORY * tries * (station === 'alegia' ? 1.5 : 1));
+    this.send({ type: 'ticket', station });
   }
   /** Home from wherever: the metro to Fabra i Puig and the walk to the portal (at night, hunted). */
   private goHome() {
     if (this.at.environment === 'meridiana') return;
     // Out of Las cuerdas the party is back in Alegia's street; the long-distance train brings it home.
     if (this.at.environment === CUERDAS_PLACE) this.moveTo({ environment: ALEGIA, cell: { x: PLACES_MARTA.back.x + 4, z: PLACES_MARTA.back.z + 2 } });
+    // Out of Emilie's model by *Volver*, behind where they landed, past whatever roams El suelo.
+    if (this.at.environment === MODELO_PLACE && !this.leaveModelo()) return;
     if (this.at.environment !== 'meridiana-calle') this.travelTo('fabra-i-puig');
     if (this.at.environment !== 'meridiana-calle') { this.gap('Sin camino a casa: se le pone en casa'); this.moveTo({ environment: 'meridiana', cell: { ...PLACES.wakeUp.cell } }); return; }
     const environment = this.at.environment, day = this.story.clock.day;
@@ -664,13 +720,17 @@ export class Playing {
     if (!this.has('got-wrapper')) return step('El envoltorio', () => this.interact('take-envoltorio'));
     if (!this.has('got-bola')) return step('La bola de nieve', () => this.interact('take-bola'));
     if (!this.has('tv-news')) return step('Las noticias', () => { if (this.goTo('meridiana', { cell: PLACES_2.tv.cell, radius: PLACES_2.tv.radius })) this.send({ type: 'near', id: 'tv' }); });
+    // Below El suelo in Emilie's model there is no way out but down (src/game.ts offers *Volver* only up there): the night goes on to its bottom.
+    if (s.night && this.at.environment === MODELO_PLACE && s.modeloRun().zone !== 'suelo') return step(MISSIONS.emilie.name, () => this.mission('emilie'));
     if (s.night) return step('Vuelta a casa de noche', () => { this.stageName = 'Vuelta a casa'; this.goHome(); });
     if (this.at.environment === 'meridiana' && s.ecosFree > 0 && this.shoppedOn !== s.clock.day) return step('El bote', () => this.interact('meridiana-luces'));
+    // Looking round the flat on a morning, the photo in the dining corner with Luca gone grey: with the ticker, Aitor puts them together.
+    if (this.at.environment === 'meridiana' && this.player.order.includes('luca') && !this.has('clue-luca-foto') && !this.has('sagrada-luca')) return step('La foto de Luca', () => this.interact('meridiana-foto-luca'));
     this.dress();
     if (!this.has('metro')) return step('Primer metro', () => {
       this.stageName = 'La ciudad';
       const first = this.player.order[0];
-      this.trip = this.player.castleFirst ? 'trinitat-vella' : first === 'nuria' ? 'cardedeu' : first === 'universidad' ? 'barceloneta' : undefined;
+      this.trip = this.player.castleFirst ? 'trinitat-vella' : first ? MISSION_STATIONS[first] : undefined;
       this.interact(entranceId('fabra-i-puig'));
     });
     if (this.player.castleFirst && !this.has('palace-tried')) return step('El castillo, la primera vez', () => this.castleTry());
@@ -680,7 +740,10 @@ export class Playing {
     if (s.clock.hour >= NIGHT - 1 || s.clock.hour >= DAY_END) return step('A casa a dormir', () => this.sleep());
     return this.castle();
   }
-  private missionDone(id: MissionId) { return id === 'nuria' ? this.has('nuria-uri') : id === 'universidad' ? this.has('sobremesa') : this.has('voz'); }
+  /** Whether a friend's mission is won: the flag its win sets (src/story.ts `winNuria`, `winUni`, `winMarta`, `winEmilie`, `winLuca`). */
+  private missionDone(id: MissionId) {
+    return this.has(({ nuria: 'nuria-uri', universidad: 'sobremesa', marta: 'voz', emilie: 'converge', luca: 'fran' } as const satisfies Record<MissionId, StoryFlag>)[id]);
+  }
   /** Chapter 1, the childhood prologue: its beats in order (tests/story.test.mjs plays the same). */
   private chapter1() {
     const step = (name: string, run: () => void) => ({ name, run });
@@ -721,9 +784,7 @@ export class Playing {
   private mission(id: MissionId) {
     this.stageName = MISSIONS[id].name;
     const lost = this.out.fights.filter(f => !f.won).length;
-    if (id === 'nuria') this.nuria();
-    else if (id === 'universidad') this.uni();
-    else this.marta();
+    ({ nuria: () => this.nuria(), universidad: () => this.uni(), marta: () => this.marta(), emilie: () => this.emilie(), luca: () => this.luca() } satisfies Record<MissionId, () => void>)[id]();
     // A fight lost is a go lost at this mission (the day ends, or her castle takes it back). Won, every mission's count starts again.
     if (this.missionDone(id)) this.failures = {};
     else if (this.out.fights.filter(f => !f.won).length > lost) { this.failures[id] = (this.failures[id] ?? 0) + 1; this.tries[id] = (this.tries[id] ?? 0) + 1; }
@@ -850,17 +911,183 @@ export class Playing {
     this.spend('walk', 15);
     this.send({ type: 'near', id: 'cuerdas-voz' });
   }
+  /** Whether the player plays `encounter` (and what leads to it) as someone who reads it: `smart`, or after losing to it `learnAfter` times. */
+  private understands(encounter: string) {
+    return this.player.policy === 'smart' || (this.player.learnAfter > 0 && (this.losses[encounter] ?? 0) >= this.player.learnAfter);
+  }
+  /**
+   * Emilie's mission (docs/quests/emilie.md § The mission, as built): her door on Margarit, her flooded
+   * flat, her laptop once she has been spoken to, and through its whirlpool her model, zone by zone.
+   */
+  private emilie() {
+    if (!this.has('clue-emilie') && !this.has('poble-sec-emilie')) this.gap('Nadie ha dicho aún lo de Emilie: se va igualmente');
+    if (![POBLE_SEC, PISO, MODELO_PLACE].includes(this.at.environment)) this.travelTo('poble-sec');
+    if (this.at.environment === POBLE_SEC) { this.interact('poble-sec-emilie'); return; }
+    if (this.at.environment === PISO) { this.interact(this.has('poble-sec-emilie') ? 'portatil-emilie' : 'talk-emilie'); return; }
+    if (this.at.environment === MODELO_PLACE) this.section();
+  }
+  /**
+   * One zone of her model (src/modelo.ts, docs/quests/emilie.md § The section, as built) as src/game.ts
+   * plays it: along the gallery to the zone's well, its patrols walking and coming for the party
+   * meanwhile, a stake measured on the way by whoever stops for it, and down the lift once one of the
+   * zone's patrols is beaten (while it has no power, at the nearest of them: they are all in the way).
+   * At the bottom, up to El que no converge.
+   */
+  private section() {
+    const run = this.story.modeloRun(), zone = run.zone;
+    if (zone === 'fondo') {
+      if (this.sectionWalk(() => ({ x: GALLERY.boss, reach: GALLERY.bossReach }), true)) this.send({ type: 'near', id: 'modelo-jefe' });
+      return;
+    }
+    const well = WELLS[zone];
+    const aim = () => {
+      if (charged(run)) return { x: well, reach: SECTION.reach };
+      const patrol = roaming(run).sort((a, b) => Math.abs(a.x - this.at.cell.x) - Math.abs(b.x - this.at.cell.x))[0];
+      // Walked at until it is met (it comes for them as soon as it sees them).
+      return patrol ? { x: patrol.x, reach: -1 } : { x: well, reach: SECTION.reach };
+    };
+    if (!this.sectionWalk(aim, true)) return;
+    if (!charged(run)) { this.send({ type: 'interact', id: 'modelo-pozo-apagado' }); this.gap('Un pozo del modelo de Emilie sin corriente ni patrullas que la den'); return; }
+    const landed = descend(run);
+    if (!landed) return;
+    this.spend('scene', LIFT);
+    this.at.cell = { x: landed.x, z: GALLERY.row };
+    // Emilie says a little more of the why, from outside, the first time they reach each zone.
+    this.send({ type: 'near', id: `modelo-zona-${landed.zone}` });
+  }
+  /**
+   * Walks the section towards `aim()` (metres along the party's zone, aimed again each step) in steps
+   * of SECTION_STEP, its patrols walking meanwhile (`tick`); one that reaches the party is met
+   * (`meetPatrol`). `stakes`: stops at a stake on the way to measure it, if the player does. False if a
+   * fight took the party out of the model.
+   */
+  private sectionWalk(aim: () => { x: number; reach: number }, stakes: boolean): boolean {
+    const speed = this.story.canRun ? RUN_SPEED : WALK_SPEED;
+    let stood = 0;
+    for (let t = 0; t < 240; t += SECTION_STEP) {
+      const run = this.story.modeloRun(), x = this.at.cell.x, goal = aim();
+      const stake = stakes ? stakeAt(run, x) : undefined;
+      if (stake && this.measures(run, stake.id)) {
+        if (stood >= MEASURE) { measure(run, stake.id); stood = 0; continue; }
+        stood += SECTION_STEP; this.spend('puzzle', SECTION_STEP);
+      } else if (Math.abs(goal.x - x) <= goal.reach + 1e-6) return true;
+      else {
+        this.at.cell = { x: x + Math.sign(goal.x - x) * Math.min(speed * SECTION_STEP, Math.abs(goal.x - x)), z: GALLERY.row };
+        this.spend('walk', SECTION_STEP * this.player.pace);
+      }
+      const hit = tick(run, SECTION_STEP, this.at.cell.x);
+      if (hit && !this.meetPatrol(hit)) return false;
+    }
+    this.gap('Atascado en el modelo de Emilie: se le pone donde iba');
+    this.at.cell = { x: aim().x, z: GALLERY.row };
+    return true;
+  }
+  /**
+   * Whether the player stops to measure this stake: whoever reads the model does (Aitor and Emilie say
+   * the stakes were her plan); whoever does not, now and then, deciding once for each run through it.
+   */
+  private measures(run: ModeloState, id: string) {
+    if (run.placed.includes(id)) return false;
+    if (this.understands('no-converge')) return true;
+    const choices = this.stakeChoices.get(run) ?? new Map<string, boolean>();
+    this.stakeChoices.set(run, choices);
+    if (!choices.has(id)) choices.set(id, this.random() < .5);
+    return choices.get(id)!;
+  }
+  /**
+   * A patrol of her model reached the party: its fight, the story's as the game sends it, and beaten it
+   * is gone and its power is in the zone's lift (src/game.ts). Whoever runs past everything backs off
+   * once the lift has power: it stands still a while and they go by, and nothing reaches the story.
+   * False if the fight was lost.
+   */
+  private meetPatrol(spec: PatrolSpec): boolean {
+    const run = this.story.modeloRun();
+    if (this.player.engage === 'avoid' && charged(run)) { shake(run, spec.id); this.spend('fight', FIGHT_FRAME + this.player.think); return true; }
+    const n = this.out.fights.length;
+    this.send({ type: 'near', id: `modelo-${spec.id}` });
+    const won = this.out.fights[n]?.won === true && this.at.environment === MODELO_PLACE;
+    if (won) beat(run, spec.id);
+    return won;
+  }
+  /** Out of her model by *Volver*, only from El suelo, behind where they landed. False if something on the way took them elsewhere. */
+  private leaveModelo(): boolean {
+    if (this.story.modeloRun().zone !== 'suelo') { this.gap('Sin salida del modelo de Emilie desde abajo: se le pone en su piso'); this.moveTo({ environment: PISO, cell: { ...PLACES_PISO.laptop } }); return true; }
+    if (!this.sectionWalk(() => ({ x: PLACES_MODELO.exit.x, reach: SECTION.reach }), false)) return false;
+    this.send({ type: 'interact', id: 'salir-modelo' });
+    return this.at.environment === PISO;
+  }
+  /**
+   * Luca's mission (docs/quests/luca.md § Beats), once the photo gone grey at home has been looked at
+   * (`next`): Luca by the pond (the door first, where Aitor sees him), and inside Fran's salon zone by
+   * zone round the crossing, the nave's mirrors turned on the way by whoever reads them, then the
+   * chaplain and Fran.
+   */
+  private luca() {
+    const s = this.story;
+    if (!this.has('clue-luca-foto') && !this.has('clue-sagrada-cartel') && !this.has('sagrada-luca')) this.gap('Nada ha llevado aún a Luca: se va igualmente');
+    if (this.at.environment !== SAGRADA && this.at.environment !== INTERIOR) this.travelTo('sagrada-familia');
+    if (this.at.environment === SAGRADA) {
+      if (!this.has('sagrada-luca')) { this.interact(LUCA_DOOR); this.interact('talk-luca'); return; }
+      this.interact(LUCA_DOOR);
+      return;
+    }
+    if (this.at.environment !== INTERIOR || !s.salon) return;
+    const run = s.luca;
+    if (!run.told.includes('dentro')) { this.near('luca-dentro', { x: PLACES_LUCA.inside.x, z: PLACES_LUCA.inside.z - 1 }, 1.2); return; }
+    const next = s.lucaNext;
+    if (!next) { this.interact('talk-capellan'); return; }
+    if (next.id === 'sillones') {
+      // Into the nave the window's light is seen going from mirror to mirror; whoever reads it brings it to the chairs first.
+      if (!run.told.includes('espejos')) this.near('luca-espejos', MIRRORS_SEEN, 2);
+      if (this.at.environment !== INTERIOR) return;
+      if (this.understands('luca-sillones') && !s.beam.hit) this.turnMirrors(next.cell, next.radius);
+      if (this.at.environment !== INTERIOR) return;
+    }
+    this.near(`luca-${next.id}`, next.cell, next.radius);
+  }
+  /**
+   * The nave's mirrors (src/espejos.ts): the fewest turns that bring the window's light to the
+   * chaplains' chairs, worked out (a wrong idea or two when the player slips) and turned one by one,
+   * walking round the chairs so as not to set their fight off first.
+   */
+  private turnMirrors(chairs: Cell, radius: number) {
+    const from = this.story.luca.mirrors as Facing[], grid = ENVIRONMENTS[INTERIOR].grid;
+    let turns: number[] | undefined;
+    for (let mask = 1; mask < 1 << MIRRORS.length; mask++) {
+      const pick = MIRRORS.map((_, i) => i).filter(i => mask & 1 << i);
+      if (beamThrough(grid, MIRRORS, pick.reduce<Facing[]>((f, i) => turned(f, i), from), BEAM).hit && (!turns || pick.length < turns.length)) turns = pick;
+    }
+    if (!turns) { this.gap('Los espejos de la nave no llevan la luz a los sillones'); return; }
+    let slips = 0;
+    while (this.random() < this.player.slip && slips < 3) slips++;
+    this.spend('puzzle', 20 + 15 * slips);
+    const avoid = new Set<string>();
+    for (let x = Math.floor(chairs.x - radius - 1); x <= chairs.x + radius + 1; x++) for (let z = Math.floor(chairs.z - radius - 1); z <= chairs.z + radius + 1; z++) if (dist({ x, z }, chairs) <= radius + .5) avoid.add(key({ x, z }));
+    for (const i of turns) {
+      const mirror = this.usable(INTERIOR).find(m => m.id === `luca-espejo-${i}`);
+      if (!mirror || !this.walk({ cell: mirror.cell, radius: 1.5 }, avoid)) return;
+      this.use(mirror);
+    }
+  }
   /**
    * After the friends: the castle (docs/castle.md). The guards before the curtain once; then each
    * day from the checkpoint the story enters at (the hall, the gym, the secretaría) through that
    * day's generated floor, its pupils hunting the party, out of it into the boss's room and up to
-   * the boss. The Queen the first time takes Aitor and Gerard falls; the morning after Bernat's
-   * call brings the artilugio, and the second time ends the game.
+   * the boss. The Queen the first time takes Aitor and Gerard falls; the morning after Bernat calls,
+   * his box at El Nucli brings the artilugio home, and the second time ends the game.
    */
   private castle(): { name: string; run: () => void } | undefined {
     this.stageName = 'El castillo';
     if (this.has('reina')) return undefined;
     if (!this.guardsBeaten) return { name: 'Los guardianes', run: () => this.castleTry() };
+    // Bernat called after she took Aitor: to El Nucli, his game told, his box solved, the artilugio home.
+    if (this.has('bernat-llama') && !this.has('artilugio')) return { name: 'Bernat y su caja', run: () => {
+      this.stageName = 'Bernat';
+      if (this.at.environment !== NUCLI) this.travelTo('placa-de-sants');
+      if (!this.goTo(NUCLI, { cell: PLACES_BERNAT.seat, radius: 2 })) return;
+      if (!this.has('bernat-juego')) this.interact('talk-bernat35');
+      if (this.has('bernat-juego')) this.interact('nucli-mesa');
+    } };
     const phase = CASTLE_PHASES[castlePhaseAt(this.story) - 1];
     this.stageName = phase.name;
     return { name: phase.name, run: () => {
@@ -897,6 +1124,8 @@ export const ENCOUNTER_NAMES: Record<string, string> = {
   plato: 'El Plato Misterioso', escolta: 'La Cebolla y los suyos', 'uri-vertigo': 'Vertitrón',
   'camping-magos': 'Magos', 'camping-dados': 'Dados', 'camping-agentes': 'Agentes', 'camping-tienda': 'Tienda equivocada', 'camping-negra': 'Parcela negra',
   campeon: 'El Campeón', sobremesa: 'La Sobremesa', 'cuerdas-lealtad': 'La Lealtad', 'cuerdas-cristalino': 'Lo Cristalino', 'cuerdas-directo': 'Lo Directo', voz: 'La Voz',
+  'modelo-celdas': 'Celdas secas', 'modelo-oscilacion': 'Oscilaciones', 'modelo-pluma': 'La pluma', 'no-converge': 'El que no converge',
+  'luca-recepcion': 'La recepción', 'luca-sillones': 'Los sillones', 'luca-carta': 'La carta de colores', 'luca-abside': 'El ábside', fran: 'Fran',
   // The castle (docs/castle.md): a room of pupils per letter, La Delegada, and its three bosses.
   ...Object.fromEntries([1, 2, 3].flatMap(year => [...['a', 'b', 'c'].map(room => [`alumnos-${year}${room}`, `Alumnos · ${year}.º ${room.toUpperCase()}`]), [`delegada-${year}`, `La Delegada · ${year}.º curso`]])),
   aurelia: 'Aurelià', direccion: 'Mar, Montse y Pilar', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',

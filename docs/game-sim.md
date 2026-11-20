@@ -28,8 +28,11 @@ which the picker's **Partida** tab reads ([dev-tools.md](dev-tools.md) § Partid
 
 | Part | What it uses |
 | --- | --- |
-| The story | `Story` from `src/story.ts`, sent the same events the game sends (`interact`, `near`, `room`, `arrive`, `battle`, `home`…), its effects played as `src/main.ts` plays them (a `minion` sends `minion`, an `ambush` sends `caught`, a `doom` rewinds a day…) |
-| The places | Each place's grid (`ENVIRONMENTS`), walked by the shortest way; doors and stairs from place to place (`to`, `story.gate`, `story.redirect`), the story's own ways out (the tower, Las cuerdas) and the metro (`STATION_PLACES`) |
+| The story | `Story` from `src/story.ts`, sent the same events the game sends (`interact`, `near`, `room`, `ticket`, `arrive`, `battle`, `home`…), its effects played as `src/main.ts` plays them (a `minion` sends `minion`, an `ambush` sends `caught`, a `doom` rewinds a day…) |
+| The places | Each place's grid (`ENVIRONMENTS`), walked by the shortest way; doors and stairs from place to place (`to`, `story.gate`, `story.redirect`; the story's version of a thing replaces the place's, as in `src/game.ts`), the story's own ways (the tower, Las cuerdas, Emilie's door and her model) and the metro (`STATION_PLACES`) |
+| Tickets | The first trip to a station that needs one (`isTicketStation`, `ticketFlag` in `src/tickets.ts`) writes its memory under the map first: the `ticket` event, before `arrive`. What the server would make of the text is not played: the memory is taken as right, after a wrong try or two when the player slips. Stations open from the start (`OPEN_STATIONS`) need none. A rewind takes back a ticket written that day, as in the game |
+| Emilie's model | Her section's own rules (`src/modelo.ts`) stepped as `src/game.ts` steps them (`stepModelo`, 50 ms at a time): along the gallery to each zone's well, the patrols walking and coming for the party (`tick`), a patrol beaten gone and its power in the lift (`beat`, `charged`, `descend`), the stakes measured on the way (`measure`), and El que no converge calibrated by them before its fight (`calibrate`) |
+| Fran's salon | The zones in their order round the crossing (`story.lucaNext`), the queues kept off by `story.blocked`, and the nave's mirrors (`src/espejos.ts`): whoever reads them turns the fewest that bring the light to the chairs, walking round the chaplains so as not to set their fight off first, and they start it dazzled (`dazzle`) |
 | Chasers | `src/chasers.ts` with the story's own lists: Uri's fears and their young (`story.fears`), the campsite's rounds, the friends' game of tag (`story.uniChasers`), and at night her guards out of the grates, with lamps, the portal's light and trains (`src/night.ts`) |
 | Fights | `createEncounter` (`src/battle.ts`, the one the fight screen opens) and `playOut` (`src/battle-sim.ts`), the fight simulator's bots on the real rules; its EXP and who took part (`fightXp`, `participants`) go back to the story as the game sends them |
 | The jar | At home in the morning, the ecos go where the player's build says (`BUILDS`), through `story.improve` |
@@ -47,13 +50,26 @@ fight (`playOut`); when she falls the player picks its ending (`Player.ending`).
 is picked up where it left the story. A mission lost `patience` times running is left for another one
 first, as the city is open.
 
+The five friends' missions, as each is played:
+
+| Mission | Reached by | What the route does | Won when |
+| --- | --- | --- | --- |
+| Nuria and Uri | Cardedeu | Haru, Nuria, the street, the portal, the tower ring by ring (its young for EXP, its fears), Vertitrón on top | `nuria-uri` |
+| The uni friends | Barceloneta | The talk on the sand, the game of tag, the spiral, the campsite's patrols for the padlock's words, El Campeón, Las parcelas, La Sobremesa | `sobremesa` |
+| Emilie | Poble Sec | Her door on Margarit, her in the flat, the laptop's whirlpool; in her model each zone along to its well, a patrol beaten for the lift's power (whoever runs past everything backs off from the second once there is power), her stake measured on the way, and El que no converge at the bottom | `converge` |
+| Luca | Sagrada Família | The photo at home, looked at on the first morning after the news (the ticker and the photo together are Aitor's lead); the door (Aitor sees him), Luca by the pond, in; the recepción, the nave's mirrors and Los sillones, La carta de colores, El ábside, the chaplain and Fran | `fran` |
+| Marta | Alegia, by the long-distance train | Marta, the piano, Las cuerdas' three mazes and their qualities, La Voz | `voz` |
+
+Inside her model, below El suelo, there is no way back out but down (*Volver* is only up there), so a
+night that falls in it is spent going on to its bottom; anywhere else the night sends the party home.
+
 ### The simulated players
 
 | Player | Fights (`policy`) | Route | Plays |
 | --- | --- | --- | --- |
-| `pensando` | `smart` | Castle first, Nuria, the uni friends, Marta | Goes for the foes in the way, brings Papagato to level 2 with the tower's young before the fears, buys `mixto` at the jar, Aitor carries the shared ánima |
-| `casual` | `casual` | The same | Goes for what is in the way, never grinds, buys nothing; **learns**: after losing three times to a fight it plays that fight as `smart` (`learnAfter`) |
-| `corredor` | `smart` | Nuria, Marta, the uni friends; no early castle | Runs past everything it can, buys `elementos`, reads fast |
+| `pensando` | `smart` | Castle first, Nuria, the uni friends, Emilie, Luca, Marta | Goes for the foes in the way, brings Papagato to level 2 with the tower's young before the fears, buys `mixto` at the jar, Aitor carries the shared ánima; measures every stake in Emilie's model and turns the nave's mirrors |
+| `casual` | `casual` | The same | Goes for what is in the way, never grinds, buys nothing; measures one stake in two and leaves the mirrors; **learns**: after losing three times to a fight it plays that fight as `smart` (`learnAfter`), and then also measures every stake before El que no converge and turns the mirrors before Los sillones |
+| `corredor` | `smart` | Nuria, Emilie, Luca, Marta, the uni friends; no early castle | Runs past everything it can (in Emilie's model it fights one patrol a zone, for the lift, and backs off from the other), buys `elementos`, reads fast |
 
 People learn, so every player also grinds one level more in the tower after two falls in it
 (`seekLevel` and the mission's tries), and gives a foe that beat them a wide berth until a level up
@@ -69,7 +85,7 @@ A person's time is estimated, not measured: it is for comparing, not a promise.
 | Leer | Every dialogue line: 0.8 s plus its characters at `read` characters a second |
 | Combatir | The fight's own clock (`Run.seconds`: each turn's thinking, every blow and every foe's turn) and 11 s of way in and result screen |
 | Escenas, metro | Each story beat's seconds on screen (`BEAT`), the metro map and its blackout (10 s) |
-| Puzles | The padlock (15 s a try), Las parcelas (two minutes, and a wrong pitch's fight for each slip), Las cuerdas' mazes (a minute or two, and a fall for each slip) |
+| Puzles | The padlock (15 s a try), Las parcelas (two minutes, and a wrong pitch's fight for each slip), Las cuerdas' mazes (a minute or two, and a fall for each slip), a ticket's memory (30 s a try, Alegia's 45, another try for each slip), the nave's mirrors (20 s, and 15 s for each slip), each stake in Emilie's model (2 s stopped, its patrols walking) |
 | Mirar alrededor | `explore` seconds the first time in a place |
 
 Walking in Las cuerdas is as the crow flies (its strings change as the song plays).
@@ -129,6 +145,44 @@ With the castle as tuned the same day (36 games, 12 per player, seed 35 on):
 - **The artilugio survives a rewind** (decided 2026-11-19, `rewind` in `src/story.ts`): before that,
   the Queen's death on the last day sent the party to a doomed morning and took it back.
 
+With Emilie's and Luca's missions played and the memory tickets written (same day, 72 games, 24 per
+player, seed 35 on; before them, in brackets):
+
+| Player | Finish | Length (p10–p90) | Days | Rewinds (max.) | Fights (lost) |
+| --- | --- | --- | --- | --- | --- |
+| `pensando` | 100 % (100 %) | 176 min, 160–207 (145) | 13.1 (13) | 0, max. 0 (0.3, max. 7) | 66 (4.1) |
+| `corredor` | 100 % (100 %) | 353 min, 177–845 (334) | 19.1 (17.2) | 25.2, max. 106 (26.1, max. 144) | 151 (35.3) |
+| `casual` | 33 % (42 %), the rest cut at 450 fights | 1,325 min | 25.9 (21.5) | 116.5 (120.7) | 426 (134) |
+
+| Fight | `pensando`: first win · PV left · rounds | `corredor` | `casual` |
+| --- | --- | --- | --- |
+| Celdas secas | 100 % · 57 % · 4.9 | 100 % · 53 % · 6.3 | 46 % · 51 % · 6.3 |
+| Oscilaciones | 100 % · 80 % · 4 | 100 % · 75 % · 4.3 | 100 % · 57 % · 5.3 |
+| La pluma | 100 % · 61 % · 4.9 | 83 % · 30 % · 7.3 | 29 % · 35 % · 7 (wall) |
+| El que no converge | 100 % · 84 % · 7.8 | 100 % · 87 % · 9.5 | 0 % · 80 % · 10 (wall) |
+| La recepción | 100 % · 100 % · 1 | 100 % · 87 % · 3.2 | 88 % · 73 % · 4.2 |
+| Los sillones | 100 % · 57 % · 3.1 | 4 % · 46 % · 5 (wall) | 0 % · 56 % · 4.8 (wall) |
+| La carta de colores | 100 % · 51 % · 5.1 | 100 % · 44 % · 6.7 | 17 % · 56 % · 7 (wall) |
+| El ábside | 96 % · 51 % · 9.6 | 58 % · 47 % · 10.5 | 0 % · 36 % · 10.8 (wall) |
+| Fran | 100 % · 68 % · 6.8 | 100 % · 56 % · 10.1 | 71 % · 31 % · 7.3 |
+
+- **Two more ánimas end the rewinds for whoever reads the fights**: six more days of grace, and the
+  first Queen takes Aitor in 36 % of the meetings (22 % before). The 7 rewinds `pensando` had in one
+  game (seed 56) were 21 falls running to the first Queen before she took Aitor, days 7 to 21, until
+  her countdown ran out; the Alegia train's three hours only moved which games drew that run.
+- **Los sillones is a wall for a party that comes to Luca before Nuria's mission is won.** The city
+  opens before it, and whoever leaves the tower for later (`corredor` after two falls to El Cebollón)
+  meets the chaplains with Matemágico and Tecnópata at level 1, and Tecnópata with only its first
+  skill (Explosión, Confusión and Rayo encogedor come from the jar, and `elementos` buys none): lost
+  even dazzled and played well, until Papagato is theirs at level 2. The fight simulator does not see
+  it, as its parties get Tecnópata's three skills for free (`nodesFor`; with them the same pair wins
+  82 %) and its story points have Nuria's mission done first. El ábside is the same, less so.
+  Emilie's model does not have this: El que no converge is won with that party (as its
+  `no-converge-primer-dia` target asks).
+- Emilie's and Luca's fights are no wall for `pensando`; La recepción is trivial for it (it teaches).
+- `casual` finishes less (33 %): it cycles through five missions it cannot win yet, and more of its
+  games reach the 450-fight cut.
+
 ## Trying a rule: without her countdown
 
 `just game-sim report --sin-cuenta-atras` plays the same games with no end to her countdown (the
@@ -148,9 +202,13 @@ back by the rewind; with every friend's ánima already won nothing pushes her ba
 
 ## Extending it
 
-- A new mission: its goals in `mission()` (`src/game-sim.ts`), from wherever its run can be, and its
-  fights' names in `ENCOUNTER_NAMES`. A new story flag needs nothing here unless the route has to set it.
+- A new mission: its route in `mission()` (`src/game-sim.ts`), from wherever its run can be; the flag
+  its win sets in `missionDone()`; its station in `MISSION_STATIONS`; its place in each player's
+  `order`; its fights' names in `ENCOUNTER_NAMES`. A new story flag needs nothing here unless the route
+  has to set it; a new station's ticket needs nothing (`ride` writes it the first time).
 - A new place reached on foot needs nothing: doors are followed. One reached by a story interaction
   that travels goes in `STORY_WAYS`.
+- Rules a place plays by on its own (a section like Emilie's, a puzzle that moves the party) are
+  stepped with the same pure functions the game uses, not walked on the grid (`section`, `sectionWalk`).
 - A new kind of chaser goes where `refreshHunters` asks the story for them.
 - Anything the route has to bridge goes through `gap()`, so the report lists it.

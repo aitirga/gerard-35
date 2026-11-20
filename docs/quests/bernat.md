@@ -1,6 +1,6 @@
 # Bernat · (working title)
 
-Status: designing (round 4: the confidant), paused · Last updated: 2026-11-19
+Status: designed (round 5), being built · Last updated: 2026-11-19
 
 ## Summary
 
@@ -14,6 +14,45 @@ in the physical world**: the artilugio. Through him the game **breaks the fourth
 fall at the Queen he calls and the portal there sends the artilugio to the real flat
 (`docs/story-outline.md` § From the salón de juegos to the real flat). Where the lines below speak
 of Jessica, his ánima or a boss, round 4 replaces them.
+
+## Round 5 (Aitor, 2026-11-19): the game knows it is a game
+
+**Decided.**
+
+- **The Queen is sensitive to music**, for a reason nobody gives, and it already shows during the
+  game before Bernat says it (to seed: places and fights where a song makes her minions falter, her
+  castle's song haunted, La Voz). Bernat puts it into words.
+- **Bernat realises he is living inside a game**, and says so to Gerard and Aitor plainly; at that
+  moment the three of them look at the camera, at the player. The fourth wall breaks once, here.
+  To beat her **the game has to be controlled from outside**: the artilugio is the way to use her
+  sensitivity to music from the real world and reach into the game.
+- **A first visit, as the confidant** (before the first fall at the Queen): with the Sants ticket,
+  Bernat waits at his table at the back of El Nucli. He recognises the castle as the one in his
+  childhood notebook, is worried, and does not know where Nuria Mendoza is (the false lead). A
+  conversation, no fight. Flag `bernat-nucli`.
+- **After the first fall he calls** (flag `bernat-llama`) and they meet at El Nucli again. There he
+  says it is a game, and opens the portal: through it, the Meridiana flat.
+- **The portal's puzzle: colours of light that mix.** Bernat's notebook page draws a sum of lamps
+  of the flat, a little diagram: *the moon = the table in red + the kitchen in green*. The answer
+  is to set the moon (the `luna` lamp, real and in the game) to the colour that results, and hold
+  it: after 5 s on a colour the whole house blinks green (right) or red (wrong). The other lamps
+  of the sum are lit by the game in their colours. Four levels:
+  1. a sum (red + green = yellow);
+  2. a subtraction (white − red = cyan);
+  3. a harder sum with a subtraction (yellow + cyan − green = magenta);
+  4. the three primaries at once (red + green + blue = white).
+- **Then the performance**: every lamp goes off, one after another, while a pink, Bubbaloo light
+  comes on in the room where the artilugio is hidden (Gerard and Aitor's bedroom), and the
+  artilugio, awake for the first time, beeps random notes of its scale until it is found. Flag
+  `portal-nucli`, which brings `artilugio`.
+- **Bernat has no ánima and no fight**, and Jessica is left out (round 4).
+- **Built (2026-11-19)**: `src/friends/bernat.ts` (lines, places, the sums and their rule),
+  `src/portal-ui.ts` (the notebook page, the moon's dial, the five-second hold, the performance),
+  the call in `src/castle-story.ts`, the look at the camera (`stare`, `src/game.ts`), the real flat
+  following the game's while the box is open (`portal` in `src/home-lights.ts`), and the board
+  beeping random notes of its scale (`firmware/artilugio`). Picker: the arc *Bernat* (`bernat-nucli`)
+  and the castle's steps `bernat-llama`, `bernat-juego`, `portal-nucli`. Still a stand-in: his figure
+  (`BERNAT_STANDIN`), until `just character-3d bernat`. The colours of the four sums are a proposal.
 
 ## Protagonist
 

@@ -43,6 +43,7 @@ import { castleHaunt } from './haunt';
 import { createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
 import { createCredits } from './credits';
+import { createPortalUI } from './portal-ui';
 import { impactSounds, startSounds, type Cue } from './battle-sounds';
 import { mountSoundPage } from './sound-ui';
 
@@ -431,6 +432,10 @@ try {
       game.shout(effect.speaker, effect.text);
       if (effect.beat) await new Promise(resolve => setTimeout(resolve, effect.beat! * 1000));
     }
+    // The fourth wall (docs/quests/bernat.md): everyone looks at the camera a while.
+    else if (effect.kind === 'stare') await game.stare(3.5);
+    // Bernat's box: its puzzle; solved, the story hears it (the artilugio crosses home).
+    else if (effect.kind === 'nucli-box') { if (await portalUI.open()) storyEvent({ type: 'portal' }); }
     else { storyPaused = true; game.setPaused(true); await storyUI.card(effect.id); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
   }
   /**
@@ -738,6 +743,8 @@ try {
     },
   }, story);
   const lampPicker = createLampPicker(hud, homeLights, paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
+  /** Bernat's box (src/portal-ui.ts): its sums of lights on the flat's lamps, then the artilugio sent home, awake. */
+  const portalUI = createPortalUI(hud, homeLights, lampPicker, () => { artilugio.setMode('alive'); artilugio.listen(); }, cue => sfx.play(cue === 'right' ? 'unlock' : 'denied'));
   const jarUI = createJarUI(hud, story, {
     pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
     sound: id => sfx.play(id),
