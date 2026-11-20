@@ -944,6 +944,43 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-dock[data-anima="papagato"] .skill-list button:hover, .battle-dock[data-anima="papagato"] .skill-list button:is(:focus, .is-cursor-2) { background: #5a463b; }
 .battle-dock[data-anima="papagato"] .command-back { color: var(--ui-paper); }
 
+/* Freática (docs/animas/freatica/): Emilie's, held water. The interface is a column of water read
+   on a staff gauge: green at the top where it is shallow, blue to near black at the bottom, each
+   command a mark of the gauge and the open one filled to its line. */
+#hud[data-class="freatica"] {
+  --ui-ink: #06202b;
+  --ui-surface: #082733ee;
+  --ui-gold: #2fd0aa;
+  --ui-paper: #e6f6f0;
+  --ui-muted: #9cbfc2;
+  --ui-line: #2fd0aa3d;
+  --ui-shadow: 5px 5px 0 #0b3f6f66;
+}
+#hud[data-class="freatica"] #battle { background: linear-gradient(180deg, #0d4a45a6, transparent 29%, transparent 48%, #051629e8); transition: background .6s; }
+#hud[data-class="freatica"] .battle-heading h1 em { color: var(--ui-gold); }
+/* Commands: marks on the gauge. A spine down the left with a long tick and short ones, as on the cell's own. */
+.battle-dock[data-anima="freatica"] .command { background: linear-gradient(90deg, #0b3f6f 0 3px, transparent 3px), linear-gradient(#0b3f6f, #0b3f6f) 3px 50% / 13px 2px no-repeat, repeating-linear-gradient(180deg, #0b3f6f73 0 1px, transparent 1px 7px) 3px 0 / 6px 100% no-repeat, linear-gradient(180deg, #eefaf5, #d9f0ea); box-shadow: 5px 5px 0 #05162999; }
+.battle-dock[data-anima="freatica"] .command:has(.command-trigger:hover), .battle-dock[data-anima="freatica"] .command:has(.command-trigger:is(:focus, .is-cursor-2)) { background: linear-gradient(90deg, #0b3f6f 0 3px, transparent 3px), linear-gradient(#0b3f6f, #0b3f6f) 3px 50% / 19px 2px no-repeat, repeating-linear-gradient(180deg, #0b3f6f73 0 1px, transparent 1px 7px) 3px 0 / 6px 100% no-repeat, linear-gradient(180deg, #d9fbef, #a9ecd9); box-shadow: 7px 6px 0 #05162999, 0 0 22px #2fd0aa44; }
+/* The open one is under water: green at its surface, blue below, a white line where the surface is. */
+.battle-dock[data-anima="freatica"] .command.expanded { background: linear-gradient(90deg, #f4fffc 0 3px, transparent 3px), linear-gradient(#f4fffc, #f4fffc) 3px 50% / 19px 2px no-repeat, linear-gradient(180deg, #f4fffccc 0 2px, #1fae90 2px, #14599c); color: #f4fffc; box-shadow: 7px 6px 0 #051629aa, 0 0 0 1px #2fd0aa66; }
+.battle-dock[data-anima="freatica"] .command-number { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0b3f6f; opacity: .85; }
+.battle-dock[data-anima="freatica"] .command.expanded .command-number { color: #f4fffc; }
+.battle-dock[data-anima="freatica"] .command[data-command="skill"]::after { border-left-color: var(--ui-gold); }
+/* The skills: the column itself, shallow to deep, with the gauge's short ticks down its edge. */
+.battle-dock[data-anima="freatica"] .skill-sheet { background: repeating-linear-gradient(180deg, #f4fffc40 0 1px, transparent 1px 9px) 0 0 / 7px 100% no-repeat, linear-gradient(180deg, #11655fee, #0b3f6fee 55%, #051629f2); border-left-color: #f4fffc; box-shadow: 6px 6px 0 #05162999, 0 0 0 1px #2fd0aa33; }
+.battle-dock[data-anima="freatica"] .skill-sheet > .battle-kicker { font-family: 'JetBrains Mono', monospace; letter-spacing: .06em; }
+.battle-dock[data-anima="freatica"] .skill-list button { background: #06202b99; border-bottom: 1px solid #f4fffc26; }
+.battle-dock[data-anima="freatica"] .skill-list button:hover, .battle-dock[data-anima="freatica"] .skill-list button:is(:focus, .is-cursor-2) { background: #1fae9055; box-shadow: inset 0 2px 0 #f4fffcaa, 0 0 18px #2fd0aa33; }
+.battle-dock[data-anima="freatica"] .skill-key { font-family: 'JetBrains Mono', monospace; }
+.battle-dock[data-anima="freatica"] .skill-name small { color: var(--ui-muted); }
+.battle-dock[data-anima="freatica"] .command-back { color: var(--ui-paper); }
+#hud[data-class="freatica"] .skill-info { background: linear-gradient(180deg, #eefaf5, #d9f0ea); border-top-color: var(--ui-gold); box-shadow: 7px 7px 0 #05162999, 0 0 0 1px #2fd0aa55; }
+#hud[data-class="freatica"] .battle-result { background: linear-gradient(180deg, #0f5a56, #0b3f6f 55%, #051629); box-shadow: 12px 12px 0 #2fd0aa22, 0 0 0 1px #2fd0aa44; }
+.class-banner[data-anima="freatica"] { background: linear-gradient(180deg, #11655f, #0b3f6f 55%, #051629); border-top-color: #f4fffc; box-shadow: 14px 14px 0 #00000066, 0 0 0 1px #2fd0aa55, 0 0 60px #2fd0aa33; }
+.class-banner[data-anima="freatica"] h2 { color: #f4fffc; text-shadow: 0 0 30px #2fd0aa66; }
+.class-banner[data-anima="freatica"] .battle-kicker { color: #2fd0aa; }
+.class-banner[data-anima="freatica"] p { color: #e6f6f0; }
+
 /* The end of a dream: everything goes black, even the HUD, then comes back elsewhere. */
 #blackout { position: absolute; inset: 0; z-index: 50; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
 #blackout[data-on="true"] { opacity: 1; pointer-events: auto; }

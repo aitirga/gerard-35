@@ -479,3 +479,24 @@ its rules are in the game:
 
 `window.powderLab.act('lanzar')` drives it from the console, and `just screenshots polvo-fx --gpu`
 catches each moment. It never touches the fight's numbers.
+
+**Freática · agua contenida** is another section ([src/freatica-lab.ts](../src/freatica-lab.ts),
+[src/freatica-fx.ts](../src/freatica-fx.ts)). It shows the water Freática holds under the foes
+before the ánima is in the game. Every foe has its own cell; *Enemigo* chooses whose:
+- *Subir marca* raises its water a mark (I, II, III; at III the foe is under it);
+- *Corriente* runs a current through every foe's water and *Vapor* turns its top mark to steam;
+- *Bajar marca* takes a mark off and *Drenar rápido* runs the waters' clocks ten times faster;
+- *Romper celdas* breaks them all, as when their wearer falls;
+- *Color* switches the edges and the gauges between grey (first round) and their own;
+- *Secuencia* plays everything in order and *Quitar agua* clears it.
+
+A second row plays each skill's own look: *Recarga*, *Sondeo eléctrico*, *Bombeo*, *Riada*,
+*Golpe de ariete* and its definitiva, *Bajo cero* (it needs a foe at III), with *Golpe al hielo*
+(a blow from outside: the ice cracks, and breaks at the third) and *Pasa un turno* (every ice
+comes down a mark).
+
+A line under the buttons shows each foe's level, the seconds left on its top mark, its current
+and its ice.
+`window.freaticaLab.act('subir')` drives it from the console, and `window.freaticaLab.fx` is the
+field itself (`foes()`, `set(2)`, `set(3, id)`, `bolt(id)`, `cast.riada()`, `cast.bajoCero()`). `just screenshots freatica-fx --gpu` catches each
+moment.

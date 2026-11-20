@@ -8,11 +8,12 @@ import type { ClassId } from './battle';
  * one Yuki's white), a tail that sways and a collar with a bell. Matemágico: ones and zeros of gold
  * light circling the wearer, turning to whoever looks. Tecnópata: a thin HUD visor (a cyan film on
  * a graphite frame), an earpiece with a short antenna whose tip blinks, and two thin cyan circuit
- * lines down the shirt. Dadista: a red bow tie at the throat and a monocle on a cord. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
+ * lines down the shirt. Dadista: a red bow tie at the throat and a monocle on a cord. Freática: a staff
+ * gauge down the jacket and a water level meter at the hip. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
  * every character and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
-const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21', BOW = '#d9422b', BRASS = '#c9a24a', IVORY = '#efe6cf';
+const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21', BOW = '#d9422b', BRASS = '#c9a24a', IVORY = '#efe6cf', GAUGE_WHITE = '#f4fffc', SHALLOW = '#27c2a0';
 /** The binary ring: its height on the body, radius, tilt and the digits round it. */
 const RING = { y: .78, radius: .58, tilt: 12, digits: '10110' } as const;
 const reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
@@ -183,6 +184,30 @@ function dadaista(body: pc.Entity, head: pc.Entity | null): Look {
   return { root, time: 0, motion: { kind: 'still' } };
 }
 
+/**
+ * Freática: a staff gauge of white light down the left of the jacket, with its three marks (a long
+ * tick each, longer the higher) and short ticks between, and a water level meter at the hip:
+ * the reel a hydrogeologist lowers down a borehole, its tape hanging with the probe at the end, whose
+ * tip is lit in the green of shallow water.
+ */
+function freatica(body: pc.Entity): Look {
+  const root = pivot(body, [0, 0, 0]);
+  const [, chest, front] = bodyFit(body, 'chest'), [wide] = bodyFit(body, 'collar');
+  const white = glow(GAUGE_WHITE, .92, 1.1), x = -.085, base = chest - .15;
+  part(root, 'box', white, [x, chest, front], [.008, .32, .004], [0, 0, 0], false);
+  for (let i = 0; i < 3; i++) part(root, 'box', white, [x + .008 + (.03 + i * .012) / 2, base + .05 + i * .1, front], [.03 + i * .012, .009, .004], [0, 0, 0], false);
+  for (let i = 0; i < 6; i++) part(root, 'box', white, [x + .013, base + .025 + i * .05, front], [.018, .004, .004], [0, 0, 0], false);
+  // On the side the fight's camera sees, behind the arm.
+  const hip = pivot(root, [-(wide + .02), chest - .25, -.07], [0, 180, 0]);
+  part(hip, 'cylinder', solid('#16303c', .55), [0, 0, 0], [.13, .034, .13], [0, 0, 90]);
+  part(hip, 'cylinder', glow(SHALLOW, .9, .9), [.019, 0, 0], [.1, .004, .1], [0, 0, 90], false);
+  part(hip, 'cylinder', solid('#0f2029', .7), [.022, 0, 0], [.036, .012, .036], [0, 0, 90]);
+  part(hip, 'box', solid('#e9f3ee', .25), [.004, -.13, .05], [.004, .2, .012]);
+  part(hip, 'cylinder', solid('#c7d3d1', .85), [.004, -.25, .05], [.02, .06, .02]);
+  const tip = part(hip, 'sphere', glow(SHALLOW, 1, 1.8), [.004, -.288, .05], [.022, .022, .022], [0, 0, 0], false);
+  return { root, time: Math.random() * 10, motion: { kind: 'blink', tip } };
+}
+
 /** Puts on what the ánima `id` adds (or takes it all off). Safe to call again and again. */
 export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   const body = model.findByName(RIG.body) as pc.Entity | null;
@@ -191,7 +216,7 @@ export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   for (const look of looks) if (!look.root.parent || look.root.parent === body) looks.delete(look);
   body.find(node => node.name === NAME && node.parent?.name !== NAME).forEach(node => (node as pc.Entity).destroy());
   const head = (body.findByName(RIG.mount) ?? body.findByName(RIG.head)) as pc.Entity | null;
-  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : id === 'dadaista' ? dadaista(body, head) : undefined;
+  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : id === 'dadaista' ? dadaista(body, head) : id === 'freatica' ? freatica(body) : undefined;
   if (!look) return;
   looks.add(look);
   if (!ticking) { ticking = true; pc.AppBase.getApplication()?.on('update', tick); }

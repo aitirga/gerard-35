@@ -14,8 +14,8 @@ export type BattlePhase = 'player' | 'enemy' | 'beat' | 'won' | 'lost' | 'escape
  * person: once unlocked, anyone in the party but Bernat can wear one, and it adds its stats and
  * its skills to whoever wears it. In a fight the active fighter swaps them with L and R.
  */
-export type ClassId = 'matemagico' | 'papagato' | 'tecnopata' | 'dadaista';
-export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', papagato: 'Papagato', tecnopata: 'Tecnópata', dadaista: 'Dadista' };
+export type ClassId = 'matemagico' | 'papagato' | 'tecnopata' | 'dadaista' | 'freatica';
+export const ANIMA_NAMES: Record<ClassId, string> = { matemagico: 'Matemágico', papagato: 'Papagato', tecnopata: 'Tecnópata', dadaista: 'Dadista', freatica: 'Freática' };
 export const CLASS_STATS: Record<ClassId, StatBonus> = {
   // Counting everything twice sharpens the mind a little.
   matemagico: { magia: 1, espiritu: 1 },
@@ -23,6 +23,8 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   papagato: { fuerza: 2, critico: 15, espiritu: -1 },
   // Aitor's own ánima: a placeholder, still to design (no stats, no skills).
   tecnopata: {},
+  // Emilie's: water held on the foes' side (docs/animas/freatica/). Its look only so far: no skills, and these are a first guess.
+  freatica: { magia: 3, espiritu: 2, fuerza: -1 },
   // The university friends' ánima: dice, luck and the astral. It hits with both hands, finds the soft
   // spot more often (Crítico) and stands worse (docs/animas/dadaista/ § Stats; Aitor 2026-11-20).
   dadaista: { fuerza: 2, magia: 2, critico: 10, defensa: -1 },

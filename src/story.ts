@@ -107,7 +107,7 @@ export type StoryEvent =
   /** Gerard stepped into a named room of the scene. */
   | { type: 'room'; id: string }
   /** An ánima woke up in Gerard, mid-fight (Matemágico, in the palace). */
-  | { type: 'class'; id: Exclude<GerardClass, 'dadaista'> }
+  | { type: 'class'; id: 'matemagico' | 'papagato' }
   /** The Queen's hands have caught Gerard and Bernat: the screen is black. */
   | { type: 'caught' }
   /** Gerard walked up to one of the story's triggers (`story.triggers`). */

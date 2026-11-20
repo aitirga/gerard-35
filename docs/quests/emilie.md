@@ -464,7 +464,8 @@ Proposals filed with it, to confirm (all invented, none of them a fact about the
   (*Mirar la terraza*) before she can say it.
 - **Her figure is a stand-in** (Marta's toy figure in her own colours, `src/characters/emilie.json`): her photos,
   her cues and `/character-3d` are still to do, and her portrait.
-- **Her ánima is a placeholder** (`ANIMAS.emilie`: Magia +1, Defensa +1, PV +10, grey `#a3aea2`), to design with `/anima`.
+- **Her ánima is a placeholder** (`ANIMAS.emilie`: Magia +1, Defensa +1, PV +10, grey `#a3aea2`); the wearable ánima is designed, not built
+  ([`docs/animas/freatica/README.md`](../animas/freatica/README.md)).
 - **The choir clue** is not there: the choir is not built (`docs/quests/coro.md`). Until then Aitor's word
   one morning and the flood on the news lead to her (above), and the mission starts at her door.
 
@@ -499,7 +500,8 @@ Proposals filed with it, to confirm (all invented, none of them a fact about the
 
 - Her lines, and why the flat flooded (§ The mission, as built): to confirm.
 - Her photos and cues, her figure with `/character-3d`, her portrait.
-- Her ánima (`/anima`) and the second round (the kid's *why?*).
+- Her ánima: designed whole 2026-11-20 as **Freática**, *La crecida*, waiting for Aitor's yes
+  ([`docs/animas/freatica/README.md`](../animas/freatica/README.md)); only its look is built, in the effects lab. The second round (the kid's *why?*).
 - The choir clue, once the choir exists.
 - Landing in Las gravas by El suelo's first stake puts the party in an Oscilación's sight at once: whether that
   is the dodge the zone asks for or a stake to move.

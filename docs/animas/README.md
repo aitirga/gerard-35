@@ -66,6 +66,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | Designed whole 2026-11-20 round Aitor's direction (floating ecos that work for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), waiting for his yes. Nothing built: a field entity on the clock is missing |
 | [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
 | [**Prismático**](prismatico/README.md) | Luca's mission (the Sagrada Família), `docs/quests/luca.md` | `#617ce2` dusty blue (built, to confirm) | Defensa +3, Espíritu +2, Fuerza −1 (built, a first guess) | Dry coloured powder, by the handful. Empolvado does nothing and waits for an element: fire blows it up (and every foe burns a level more), water poisons (blows on it land harder), electricity leaves shards (every blow does a fixed amount more). *Cortina* and *Telón* raise the party's Defensa and stand a screen of powder that halves the next blow; whoever breaks it is powdered | Redesigned 2026-11-20 (Aitor's fifth round: no paint, the puff), waiting for his yes on the skill list. Playable under their paint names: Brochazo, Pintado with no reactions, and the dual Reserva de color. The powder's look is built in the effects lab. The name is open again |
+| [**Freática**](freatica/README.md) | Emilie's mission (Poble Sec, her model), `docs/quests/emilie.md` | Blue with green (Aitor): the water is green where thin (`#27c2a0`), blue where deep (`#1f5fd8`) | Proposal: Magia +3, Espíritu +2, Fuerza −1 | *La crecida*: water held in a cell under each foe that rises to three marks. With water a foe is wet; electricity stays in it as a current, fire turns it to steam and blinds, and at the third mark it sinks. Its definitiva, *Bajo cero*, freezes every foe that has water | Designed whole 2026-11-20 round Aitor's direction (La crecida; agua contenida, the mathematical part; electricity that electrifies the water; fire that blinds; sunk at three, losing a share of PV over time; each foe its own water; the definitiva *Bajo cero*), waiting for his yes. Its look is built: the cells and each skill in the effects lab (`src/freatica-fx.ts`), its colours and pieces on the wearer and its interface (the fight tester can put it on). No rule and no skill yet |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
 **Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
@@ -250,7 +251,7 @@ things: skills, a **passive**, or **Maná +1**. Each level costs more than the o
   Definitiva asleep. Decided 2026-11-14: for a shared ánima the jar adds only **the Definitiva**
   (never learned by level); its Maná and its sleeping Pasiva there go, levels give them. The
   own ánimas' trees keep the rest. § Definitivas, § Two ways to grow.
-- Proposed tables: Papagato, Dadista and Sincopante below.
+- Proposed tables: Papagato, Dadista, Sincopante and Freática below.
 
 | Level | Papagato |
 | --- | --- |
@@ -302,6 +303,18 @@ Its whole table: [sincopante/README.md](sincopante/README.md) § Skills per leve
 
 Its whole table: [prismatico/README.md](prismatico/README.md) § Skills per level.
 
+| Level | Freática (proposal 2026-11-20; only its look built) |
+| --- | --- |
+| 1 | Its rule, *Crecida*: water held under each foe, up to three marks (§ Agua contenida). *Recarga*: a light water blow that raises its target's a mark |
+| 2 | *Sondeo eléctrico*: a light electric blow; the current it leaves in the water lasts twice as long |
+| 3 | *Bombeo*: a light cure for the whole party that takes a mark from the foe with the most water |
+| 4 | Maná +1 |
+| 5 | Passive · *Nivel de base*: while it is worn, a foe's water never drains below the first mark by itself |
+| 6 | *Riada*: light water on every foe; each one's water rises a mark |
+| 7 | *Golpe de ariete*: medium water on every foe, a blow for each mark of its own water, which is spent |
+
+Its whole table: [freatica/README.md](freatica/README.md) § Skills per level.
+
 ### Passives
 
 A passive is always on while its ánima is worn: no cost, no button. **Few and influential**: one
@@ -310,7 +323,7 @@ need one from the start** (Aitor 2026-11-20): a passive is something it grows in
 
 | Where it comes from | Ánimas | Example |
 | --- | --- | --- |
-| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Prismático's *Remolino* |
+| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Prismático's *Remolino*, Freática's *Nivel de base* |
 | **A node at the jar** (2 ecos) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* |
 
 A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it
@@ -403,6 +416,7 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
 | Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
 | Prismático | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado (proposal 2026-11-20) | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once |
+| Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, a turn a mark of its own. Frozen they do not act and take little; breaking the ice with blows lands a very large one, larger the sooner. Designed; its look built |
 | Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
 
 ## Combined skills
@@ -635,6 +649,137 @@ Atacar with water once Capilaridad is bought.
 Water on a burning foe is still Humo (it puts the fire out, it does not wet). By kind of blow,
 never by who wears what: any fire and any electricity do it.
 
+### Agua contenida (the water held under each foe)
+
+Proposal 2026-11-20, round Aitor's direction for Freática ([freatica/README.md](freatica/README.md):
+*La crecida*; water held between something on the foes' side, as if its wearer controlled it; three
+of water sinks them; and, later that day, **each foe carries its own water**). Its look is built
+in the effects lab (`src/freatica-fx.ts`); no rule. Numbers are first guesses.
+
+**The rule**
+
+- **A cell a foe**: each foe can have water of its own under it, with a **level of 0 to 3
+  marks**. Raising one foe's does nothing to another's. The party never has any.
+- **It rises** with a blow that says so (Freática's *Recarga* on its target, *Riada* on every
+  foe), a mark at a time. At the third mark such a blow only starts that water's clock over.
+- **It drains on the fight's clock**: a water's top mark goes in **20 s**, then the next one
+  starts its own 20 s. **Any water blow on that foe, from anyone, starts its top mark's clock
+  over** (Atacar with water, a skill, a dual). Nobody but a blow that says so raises it.
+- **A foe with water is Mojado**, with no clock of its own: it lasts as long as its water.
+  Everything that asks whether a foe is wet finds it wet: Vapor, Conducción, Shock, and whether
+  powder thrown into it is poisoned (§ Empolvado: to settle, since powder now only reacts to a
+  blow of an element).
+- **A water's level is the level of what happens in it**: the current (§ Corriente) and the
+  steam (below) are of level I, II or III with it, read at the moment they act.
+- **Vapor**: any fire on a foe with water does not light it (as on any wet foe). Its water
+  **loses its top mark** and **that foe is Cegado at the level its water had** (its blows at
+  70 / 50 / 30 %), for Cegado's time. Electricity on it afterwards is Tormenta, as always.
+- **At the third mark** the foe is Hundido (§ Hundido). Freática's definitiva turns the water to
+  ice (§ Congelado).
+- **Who holds it**: the water stands while whoever raised it stands, whatever ánima they wear
+  then (worn or not, it drains the same; unworn, nobody can raise it). **If they fall, every cell
+  breaks**: the water runs over the whole floor and is gone, and everyone standing on **both
+  sides** is Mojado for 20 s, the ordinary status.
+- **By kind of blow, never by who wears what**: any water holds it, any electricity charges it,
+  any fire steams it, a foe's move too. A boss has its own like anyone; a part of a boss can have
+  water and is never sunk.
+
+**How it shows.** A straight prism of clear water with a little of its ánima's colour, on the
+GPU. It is drawn as what it is, a control volume: exact edges, a gauge, a level.
+
+| Beat | What happens |
+| --- | --- |
+| **The cell appears** (0.5 s, with a foe's first mark) | Four thin lines of white light draw a rectangle on the floor round the foe, a hand out from it, then rise as the prism's vertical edges. Up the corner nearest the camera, a **staff gauge**: three long ticks numbered I, II, III with short ticks between |
+| **A mark rises** (0.6 s) | The water wells up from the floor, never poured from above: a slow dome in the middle that flattens out to the walls. Mark I is at the foe's ankles (0.25 m), II at the waist (0.9 m), III a hand over its head (2 m at least). The gauge's tick lights as the surface reaches it, with *Agua I* / *II* / *III* over the cell |
+| **While it stands** | A flat surface with slow ripples and a ring round each foe that moves (the flat's `wake`); a faint square mesh on it that bends with the ripples; caustics on the floor; the foes seen through it, a little bent. The walls are only their edges: the water ends in a clean plane, as if cut |
+| **It drains** | **The surface is the clock**: it sinks without stopping from its mark towards the one below over the 20 s, and the gauge keeps a small notch where it was. In the last 3 s the edge of the surface blinks. A water blow that starts the clock over brings it back up to its mark in 0.3 s |
+| **Vapor** (0.6 s) | The slab between the surface and the mark below flashes white and goes up as steam in 0.3 s; the surface is at the lower mark at once. A white cloud stays over the cell at the height of the foes' heads for as long as they are Cegado, thicker with its level. *Vapor* in fire's colour over the cell, the Cegado icon on each plate |
+| **The cells break** (0.8 s) | The edges go out from the top down; the water falls outwards in a sheet that runs across the whole floor, past the party's feet, and thins to nothing. *Mojado* over everyone standing |
+| **On the plates** | On each foe with water, one continuous status icon, *Agua*: a small gauge with three ticks, filled to its level, with the ring of its top mark's clock |
+
+- *Movimiento reducido*: no dome and no falling sheet; the surface is simply at its level, and the
+  steam is the cloud without the flash.
+- A translucent volume and its surface a foe, four at most: to measure against the 120 Hz budget
+  (`just perf`).
+
+### Corriente (current in the water, timed)
+
+Proposal 2026-11-20, with Agua contenida (Aitor: electric attacks electrify the water and it hurts
+the foes over time). Its look is built in the effects lab; no rule.
+
+- **Any electric blow on a foe with water** is Conducción as always: magic through every wet foe
+  (`REACTION_RULES.conduct`), and every foe with water is wet; Shock on a coin for the one
+  struck. But **the water does not go**: each water it ran through keeps the current.
+- **A timed state of a foe's water**: **10 s**, pulsing every **2 s** on its foe. The pulse is
+  Quemado's base (1 PV plus 1 % of the carrier's PV counted up to 100) at **×1, ×2, ×3** with
+  that water's mark at that moment: on a foe of 260 PV, 2 / 4 / 6 a pulse.
+- **Electricity while it runs only starts its 10 s over**: no second Conducción and no Shock until
+  the current has gone out. So a water gives one coin for a lost turn each time it is charged.
+- It ends with its 10 s or with the last of that water. A blow can say its current lasts longer
+  (Freática's *Sondeo eléctrico*: twice).
+- Like Quemado's, its pulses pass over the foes' own rules and are never a golpe crítico.
+
+**How it shows**: on the bolt's contact, a yellow flash through the whole volume (0.15 s) and
+*Corriente* in electricity's colour over the cell. While it runs, thin arcs travel along the
+prism's edges and skate over the surface, more of them with the level, and a low hum that steps
+up with it. Each pulse: the water flickers yellow once, its foe jerks, and its number
+comes out in electricity's colour. On that foe's *Agua* icon, a bolt with the 10 s ring and a
+notch for each pulse to come.
+
+### Hundido (sunk)
+
+Proposal 2026-11-20, with Agua contenida (Aitor: at three of water it sinks them and they start
+losing a share of their PV over time). Nothing built.
+
+- **Not laid by a blow: it is where the water is.** While a foe's water stands at the third
+  mark, that foe is Hundido; the moment it drops below, it is not.
+- **Every 2 s it loses 2 % of its PV**, of all it has, 1 at least. A pure share on purpose: the
+  one pulse that does not count PV only up to a top (`pulseDamage`), so it weighs the same on a
+  boss as on anything else. To watch in the balance.
+- It does nothing else: a sunk foe acts as before. Its pulses pass over the foes' own rules, are
+  never a golpe crítico, and a part of a boss is not sunk.
+
+**How it shows**: as the surface closes over the tallest head, the scene's sound loses its high
+end for the foes (0.4 s), *¡Hundidos!* over the cell, larger than a status pop, and a short burst
+of bubbles from each. While it lasts they move a little slower and heavier in their idle (the
+look only; their turns are their own), their colours cooler behind the water. Each pulse: a
+string of bubbles from the foe to the surface, where they break in a small ring, and the number
+in the water's colour. Its icon on each foe's plate, a figure under a line, with no ring: the
+water's own surface says how long.
+
+### Congelado (frozen, by turns)
+
+Aitor's, 2026-11-20, for Freática's definitiva *Bajo cero*: **frozen foes cannot attack and take
+little damage; if the ice is broken, a very large blow; cracks show, and it splits more as it takes
+damage from outside; it lasts as many turns as water there was, a turn less each turn.** The
+numbers are first guesses. Its look is built in the effects lab (`src/freatica-fx.ts`); no rule.
+
+**The rule**
+
+- **Laid on every foe that has water**, when one of them has it at the third mark (Freática's
+  *Bajo cero*). A dry foe is not frozen.
+- **By turns, not on the clock**: each has its own count, 1 to 3, the marks its water had. At
+  the end of each round the count drops one; at 0 the foe is free.
+- **A frozen foe does not act**, and **takes a quarter** of every blow.
+- **Its ice cracks**: each blow from outside (each strike of a flurry; never a pulse or a
+  reaction) cracks it a third of the way. **The third breaks it**: the foe takes magic water damage by the count
+  its ice still has (Aitor: huge broken at the start, less as it melts, still a lot; proposed
+  base 90 at 3, 70 at 2, 50 at 1, all *muy alto*), and is free at once.
+- The break is nobody's blow: never a golpe crítico, and it spends no wound.
+- Fire does not crack it: it takes a count off at once, with its steam. Electricity does nothing.
+- **A boss can be frozen too** (Aitor), and takes as little as anyone while its ice holds.
+
+**How it shows** (built as a look: the lab's *Bajo cero*, *Golpe al hielo*, *Pasa un turno*)
+
+| Beat | What is seen |
+| --- | --- |
+| It freezes | A white flash through the water (0.12 s). The water is gone and stands as a block of pale blue-green ice round each foe, as tall as the water stood, set in 0.3 s; a low breath of cold round its foot. Seen through it the foe is darker and greener, never pink |
+| While it lasts | The foe holds its pose. The cell's edges stay, brighter, and its gauge shows the count as its lit marks |
+| A blow from outside | The block flashes white (0.3 s), a few chips fly, and cracks open from the middle of each face outwards: a third of the way with the first blow, two thirds with the second. Each piece the cracks cut off catches the light its own way. The number is small |
+| It breaks | 0.1 s after the third blow the block bursts: 150 shards that fly, fall and skid, a flash of cold light, a breath of cold. «¡ROTO!» and the largest number the ánima shows, with the hold of a golpe crítico |
+| A turn goes by | The ice sinks a mark (0.6 s) with cold coming off its top; the gauge's pointer goes down with it and leaves a notch. With the last it is gone |
+| On the plate | A crystal with the count as a number; the crystal splits once and twice as the ice cracks |
+
 ### Empolvado (powdered, timed)
 
 Aitor's, 2026-11-20 (fifth round), for Prismático: dry coloured powder, as at a Holi, that **does
@@ -773,6 +918,10 @@ Sanación (15 s, a cure in five pulses) stays: it pulses, it does not wait for a
 | Cristalizado (proposal) | Electricity on Empolvado | Whoever hits often: every blow does a fixed amount more (flurries, ecos, *Traca*) |
 | Envenenado (proposal) | Water on Empolvado; Prismático (*Rociada*) | Whoever hits hard: every blow lands 25 % harder. Whatever stretches a clock (Tecnópata's *Rayo de energía*, *Telemetría*) |
 | Cortina de polvo (proposal) | Prismático (*Cortina*, *Telón*, *Remolino*) | Whoever stands behind it: the next blow at half |
+| Agua contenida, on each foe (proposal) | Freática (*Recarga*, *Riada*); any water blow keeps it from draining | Any electricity (Corriente), any fire (Vapor on that foe, at its water's level), powder (Envenenado, to settle); Freática (*Bombeo*, *Golpe de ariete*) |
+| Corriente (proposal) | Any electricity on a foe with water, through every foe that has some; Freática (*Sondeo eléctrico*, twice as long) | The water's level: its pulse is ×1, ×2, ×3 |
+| Hundido (proposal) | A foe's water at its third mark | Whoever keeps it there |
+| Congelado (Aitor's; numbers a proposal) | Freática's definitiva, *Bajo cero*, on every foe with water when one has it at the third mark | Whoever breaks the ice: three blows from outside, a flurry at once (Papagato) |
 | The astral | Tecnópata (*Rayo de energía*), Dadista (its astral skills), Sincopante (every blow and eco; proposals) | Nothing on purpose: it is the damage nothing resists |
 
 ## How an ánima is built

@@ -45,6 +45,11 @@ export const CLASSES: Record<ClassId, { name: string; motto: string; look: Recor
   // The university friends' ánima: it fights with dice, its maná (src/dice.ts). A black waistcoat over
   // ivory shirtsleeves, a red bow tie and a monocle (anima-looks.ts): a dada soirée, or a croupier
   // (docs/animas/dadaista/).
+  // Emilie's, a hydrogeologist's: water held on the foes' side that she raises mark by mark
+  // (docs/animas/freatica/). Field clothes in the water's own two colours, the blue of the deep
+  // and the green of the shallows, a staff gauge down the front and a water level meter at the hip
+  // (anima-looks.ts). Only its look so far.
+  freatica: { name: ANIMA_NAMES.freatica, motto: 'No echa agua. La sube.', colour: '#27c2a0', look: { jacket: '#1d5266', navy: '#27c2a0', cream: '#dcefe6', trousers: '#1a2c3a' } },
   dadaista: {
     name: ANIMA_NAMES.dadaista,
     motto: 'Primero se tira. Luego se piensa.',

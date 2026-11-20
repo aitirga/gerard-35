@@ -306,7 +306,7 @@ try {
     aimDie: (unit, index) => game.aimDie(unit, index),
     shakeDice: unit => game.shakeDice(unit),
     sound: id => sfx.play(id),
-    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as Exclude<ClassId, 'tecnopata' | 'dadaista'> }); },
+    awaken: id => { sfx.play('awaken'); game.awaken(id); if (!testing) storyEvent({ type: 'class', id: id as 'matemagico' | 'papagato' }); },
     driver: id => battleDriver(playing(), id),
     waiting: id => waitingForPlayer2(playing(), id),
     // Each fighter's pick in the fight is their pick for the adventure too.

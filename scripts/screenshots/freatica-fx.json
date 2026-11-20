@@ -1,6 +1,6 @@
 {
   "title": "Freática · el agua contenida en el motor",
-  "description": "The contained water of Emilie's ánima in the effects lab over a fight at the campsite (?fxlab, src/freatica-fx.ts, src/freatica-lab.ts; docs/animas/freatica/README.md § Look and interface, docs/animas/README.md § Agua contenida). A straight cell round the foes with a staff gauge, water that wells up to three marks and whose colour is its depth, the current, the steam, the sinking and the cell breaking, and then each of the ánima's skills as it shows on the cell (Recarga, Sondeo eléctrico, Bombeo, Riada, Golpe de ariete, and its definitiva, Bajo cero: the ice, its cracks, its break and its turns). Only the look, never a fight's numbers. Run it with --gpu.",
+  "description": "The contained water of Emilie's ánima in the effects lab over a fight at the campsite (?fxlab, src/freatica-fx.ts, src/freatica-lab.ts; docs/animas/freatica/README.md § Look and interface, docs/animas/README.md § Agua contenida). Every foe has its own cell: a straight prism with a staff gauge, water that wells up to three marks and whose colour is its depth, the current, the steam, the sinking and the cells breaking; then each of the ánima's skills as it shows on them (Recarga, Sondeo eléctrico, Bombeo, Riada, Golpe de ariete) and its definitiva, Bajo cero: the ice, its cracks, its break and its turns. Only the look, never a fight's numbers. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fxlab&battle=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-magos%22%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -15,8 +15,8 @@
     {
       "record": "sube",
       "seconds": 6.4,
-      "each": "if (frame === 4 || frame === 66 || frame === 128) window.freaticaLab.act('subir')",
-      "caption": "The cell draws itself in round the foes (its floor, its uprights, its top, then the gauge) and the water wells up from the ground, a mark at a time: I to the ankles and green, II to the waist, III over their heads and blue. At the third they are sunk and let go of bubbles",
+      "each": "if (frame === 4 || frame === 66 || frame === 128) window.freaticaLab.fx.raise(window.freaticaLab.fx.foes()[0]); if (frame === 40) window.freaticaLab.fx.raise(window.freaticaLab.fx.foes()[1])",
+      "caption": "Every foe has its own cell. Each draws itself in round its foe (its floor, its uprights, its top, then the gauge) and the water wells up from the ground, a mark at a time: one foe is taken to III, over its head and blue, where it is sunk and lets go of bubbles; the other is left at I, to the ankles and green",
       "clip": [
         860,
         130,
@@ -30,7 +30,7 @@
     {
       "shot": "marca-1",
       "delay": 700,
-      "caption": "Agua I: a film of green water to the ankles, a ring round each foe, her model's mesh on the surface",
+      "caption": "Agua I on both: a film of green water to the ankles, her model's mesh on the surface",
       "clip": [
         860,
         130,
@@ -58,7 +58,21 @@
     {
       "shot": "marca-3",
       "delay": 1400,
-      "caption": "Agua III, Hundidos: the surface a hand over the tallest head, the gauge's three marks lit, strings of bubbles from each foe",
+      "caption": "Agua III, Hundidos: the surface a hand over each head, the gauges' three marks lit, strings of bubbles",
+      "clip": [
+        860,
+        130,
+        560,
+        560
+      ]
+    },
+    {
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
+    },
+    {
+      "shot": "cada-uno-la-suya",
+      "delay": 1200,
+      "caption": "Each its own water: one sunk at III, the other at I. Each gauge reads its own foe",
       "clip": [
         860,
         130,
@@ -69,8 +83,8 @@
     {
       "record": "corriente",
       "seconds": 5,
-      "each": "if (frame === 4) window.freaticaLab.act('corriente')",
-      "caption": "Corriente: the bolt flashes through the whole volume, arcs skate over the surface and run along the cell's edges, and every two seconds the water flickers and sparks jump off each foe",
+      "each": "if (frame === 4) window.freaticaLab.fx.bolt(window.freaticaLab.fx.foes()[0])",
+      "caption": "Corriente: a bolt on one foe runs through every foe that has water and stays in each one's: arcs skate over the surfaces and along the edges, and every two seconds the water flickers and sparks jump. The deeper water carries more of it",
       "clip": [
         860,
         130,
@@ -81,7 +95,7 @@
     {
       "shot": "corriente",
       "delay": 300,
-      "caption": "The water carrying current at the third mark",
+      "caption": "Both waters carrying current, each at its own level",
       "clip": [
         860,
         130,
@@ -90,25 +104,25 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(3)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "vapor",
       "seconds": 4.5,
-      "warmup": 1,
-      "each": "if (frame === 4) window.freaticaLab.act('vapor')",
-      "caption": "Vapor: fire on the water. The slab between the surface and the mark below flashes white and goes up as steam; the water is at II at once and a cloud stays over the foes",
+      "each": "if (frame === 4) window.freaticaLab.fx.steam(window.freaticaLab.fx.foes()[0])",
+      "caption": "Vapor: fire on a foe's water. The slab between its surface and the mark below flashes white and goes up as steam; its water is a mark lower at once and a cloud stays over it. The other foe's water is untouched",
       "clip": [
         860,
         130,
         560,
         560
-      ]
+      ],
+      "warmup": 1
     },
     {
       "shot": "vapor",
       "delay": 600,
-      "caption": "After the steam: the water a mark lower, a notch on the gauge where it stood, the cloud at the height of their heads",
+      "caption": "After the steam: that water a mark lower, a notch on its gauge where it stood",
       "clip": [
         860,
         130,
@@ -117,13 +131,13 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(2); window.freaticaLab.fx.setRate(10)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.setRate(10)"
     },
     {
       "record": "reloj",
       "seconds": 6,
       "each": "",
-      "caption": "The surface is the clock (ten times as fast here): within a mark it sinks from full to the mark's own tick, the pointer riding it down the gauge; the edge blinks at the end and it drops to the mark below, and from the first it drains out",
+      "caption": "The surface is the clock (ten times as fast here), each water its own: within a mark it sinks from full to the mark's tick, the pointer riding it down the gauge; the edge blinks at the end and it drops to the mark below, and from the first it drains out",
       "clip": [
         860,
         130,
@@ -132,28 +146,28 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.fx.setRate(1); window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(3)"
+      "eval": "window.freaticaLab.fx.setRate(1); window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "rota",
       "seconds": 3,
-      "warmup": 1,
-      "each": "if (frame === 4) window.freaticaLab.act('romper')",
-      "caption": "The cell breaks (whoever held it has fallen): the edges go out from the top, the water falls and runs out over the floor",
+      "each": "if (frame === 4) window.freaticaLab.fx.break()",
+      "caption": "The cells break (whoever held them has fallen): the edges go out from the top, the water falls and runs out over the floor",
       "clip": [
         860,
         130,
         560,
         560
-      ]
+      ],
+      "warmup": 1
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.setGrey(true); window.freaticaLab.fx.set(2)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.setGrey(true); window.freaticaLab.fx.set(2)"
     },
     {
       "shot": "gris",
       "delay": 700,
-      "caption": "The first round: the cell's edges and its gauge in grey. The water is the same in both",
+      "caption": "The first round: the cells' edges and gauges in grey. The water is the same in both",
       "clip": [
         860,
         130,
@@ -162,105 +176,105 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.setGrey(false)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.setGrey(false)"
     },
     {
       "record": "recarga",
       "seconds": 3.2,
-      "warmup": 0.6,
-      "each": "if (frame === 4) window.freaticaLab.act('recarga')",
-      "caption": "Recarga: the tape runs out along the floor from whoever casts to the foe, water wells up through it and the level rises a mark",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.recarga(window.freaticaLab.fx.foes()[0])",
+      "caption": "Recarga: the tape runs out along the floor from whoever casts to the foe, water wells up through it and its level rises a mark",
       "clip": [
         430,
         150,
         990,
         560
-      ]
+      ],
+      "warmup": 0.6
     },
     {
-      "eval": "window.freaticaLab.fx.set(2)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "sondeo-electrico",
       "seconds": 4,
-      "warmup": 0.8,
-      "each": "if (frame === 4) window.freaticaLab.act('sondeo')",
-      "caption": "Sondeo eléctrico: a bolt from the caster's hands to the foe and down it into the water, which keeps the current",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.sondeo(window.freaticaLab.fx.foes()[0])",
+      "caption": "Sondeo eléctrico: a bolt from the caster's hands to the foe and down it into its water, and through the other's",
       "clip": [
         430,
         150,
         990,
         560
-      ]
+      ],
+      "warmup": 0.8
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(2)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "bombeo",
       "seconds": 3.4,
-      "warmup": 0.8,
-      "each": "if (frame === 4) window.freaticaLab.act('bombeo')",
-      "caption": "Bombeo: the water gives a mark up; it runs back along the floor and comes up round each of the party as green beads",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.bombeo()",
+      "caption": "Bombeo: the foe with the most water gives a mark up; it runs back along the floor and comes up round each of the party as green beads",
       "clip": [
         430,
         150,
         990,
         560
-      ]
+      ],
+      "warmup": 0.8
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(1)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[0])"
     },
     {
       "record": "riada",
       "seconds": 3.4,
-      "warmup": 0.8,
-      "each": "if (frame === 4) window.freaticaLab.act('riada')",
-      "caption": "Riada: a wave crosses the cell from the party's side, breaking on each foe, and the level rises two marks behind it",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.riada()",
+      "caption": "Riada: a wave crosses every cell from the party's side, breaking on its foe, and each one's water rises a mark: the foe that had some goes to II, the dry one to I",
       "clip": [
         860,
         130,
         560,
         560
-      ]
+      ],
+      "warmup": 0.8
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(3)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "golpe-de-ariete",
       "seconds": 3.2,
-      "warmup": 1,
-      "each": "if (frame === 4) window.freaticaLab.act('ariete')",
-      "caption": "Golpe de ariete: the water is spent in blows, one a mark. Each is a white flash through the cell from its walls in as the level slams down a mark",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.ariete()",
+      "caption": "Golpe de ariete: each foe is struck once a mark of its own water, which is spent: three white flashes through the deep cell, one through the shallow",
       "clip": [
         860,
         130,
         560,
         560
-      ]
+      ],
+      "warmup": 1
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(3)"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
     },
     {
       "record": "bajo-cero",
       "seconds": 3,
-      "warmup": 1,
-      "each": "if (frame === 4) window.freaticaLab.act('bajoCero')",
-      "caption": "Bajo cero, the definitiva: a white flash and the water is ice, a block round each foe to where the water stood. The cell is left empty between them, its edges brighter",
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.bajoCero()",
+      "caption": "Bajo cero, the definitiva: one foe has its water at the third mark, so every foe with water freezes, each in a block as tall as its own water stood",
       "clip": [
         860,
         130,
         560,
         560
-      ]
+      ],
+      "warmup": 1
     },
     {
       "shot": "bajo-cero",
       "delay": 900,
-      "caption": "Frozen at the third mark: neither can act. The gauge keeps the three marks: three turns of ice",
+      "caption": "Frozen: three turns of ice for the one that was sunk, one for the other. Neither can act",
       "clip": [
         860,
         130,
@@ -271,7 +285,7 @@
     {
       "record": "hielo-se-rompe",
       "seconds": 4.6,
-      "each": "if (frame === 4 || frame === 50 || frame === 96) window.freaticaLab.act('golpe')",
+      "each": "if (frame === 4 || frame === 50 || frame === 96) window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0])",
       "caption": "Blows from outside: each opens cracks from the middle of every face out, and at the third the ice breaks in shards. The other foe is still in its own",
       "clip": [
         860,
@@ -281,12 +295,18 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.act('golpe')"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.cast.bajoCero()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1])"
     },
     {
       "shot": "hielo-agrietado",
       "delay": 700,
-      "caption": "One foe broken out of its ice, the other with its first cracks",
+      "caption": "Each ice cracks on its own: one blow on the tall block, two on the other",
       "clip": [
         860,
         130,
@@ -297,8 +317,8 @@
     {
       "record": "hielo-baja",
       "seconds": 5,
-      "each": "if (frame === 4 || frame === 70) window.freaticaLab.act('turno')",
-      "caption": "A turn goes by and the ice comes down a mark: to the waist, then to the ankles. With the next it is gone, and the water with it",
+      "each": "if (frame === 4 || frame === 70) window.freaticaLab.fx.turn()",
+      "caption": "A turn goes by and every ice comes down a mark; the one that had two is gone with the second, and its water with it",
       "clip": [
         860,
         130,
@@ -307,15 +327,12 @@
       ]
     },
     {
-      "eval": "window.freaticaLab.act('quitar'); window.freaticaLab.fx.set(2)"
-    },
-    {
-      "eval": "window.freaticaLab.fx.setGrey(false); window.freaticaLab.fx.set(3); window.freaticaLab.act('corriente')"
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.bolt(window.freaticaLab.fx.foes()[0])"
     },
     {
       "shot": "plano-general",
       "delay": 900,
-      "caption": "The whole fight: the party dry on its side, the foes sunk in live water on theirs"
+      "caption": "The whole fight: the party dry on its side, each foe in its own live water on theirs"
     }
   ]
 }

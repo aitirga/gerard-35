@@ -632,10 +632,41 @@ title = "Prismático: el aspecto del polvo de color, en el laboratorio de efecto
 grep = "createPowderFx"
 in = "src/*-lab.ts"
 
-# The friends' wearable ánimas (src/classes.ts), each designed first with /anima. Emilie's has no
-# name yet: give it its check when it is built.
+# The friends' wearable ánimas (src/classes.ts), each designed first with /anima.
+# Emilie's: designed whole 2026-11-20, waiting for Aitor's yes (docs/animas/freatica/README.md):
+# water held on the foes' side that rises to three marks.
 [[block.item]]
-title = "La ánima de Emilie, vestible"
+title = "Freática, la de Emilie: se desbloquea al acabar su misión"
+grep = "'freatica' as const"
+in = "src/story.ts"
+
+# Its look on the wearer and its interface, ahead of its rules (src/classes.ts, src/anima-looks.ts,
+# src/style.css; just screenshots freatica --gpu).
+[[block.item]]
+title = "Freática: su aspecto puesto y su interfaz"
+grep = "freatica"
+in = "src/classes.ts"
+
+# The cell's look, built in the effects lab ahead of the ánima (src/freatica-fx.ts; just screenshots freatica-fx --gpu).
+[[block.item]]
+title = "Freática: el aspecto del agua contenida y de cada habilidad, en el laboratorio de efectos"
+grep = "createFreaticaField"
+in = "src/freatica-lab.ts"
+
+[[block.item]]
+title = "Freática: La crecida (el agua de cada enemigo y sus tres marcas, Corriente, Vapor, Hundido; Recarga, Sondeo eléctrico, Bombeo)"
+grep = "id: 'recarga'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Freática: niveles 4 a 7 (Maná +1, Nivel de base, Riada, Golpe de ariete)"
+grep = "id: 'golpe-de-ariete'"
+in = "src/battle.ts"
+
+[[block.item]]
+title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se rompe a golpes)"
+grep = "id: 'bajo-cero'"
+in = "src/battle.ts"
 
 [[block.item]]
 title = "Prismático, la de Luca"
