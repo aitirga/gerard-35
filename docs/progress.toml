@@ -761,6 +761,12 @@ weight = 2
 priority = "final"
 file = "src/throne-arena.ts"
 
+[[block.item]]
+title = "La entrada de la Reina: la película corta antes de su combate"
+priority = "final"
+grep = "export const THRONE_INTRO"
+in = "src/throne-arena.ts"
+
 # Aitor's own rewrite (2026-11-20): the fight's rules stay preliminary until every ánima's mechanics exist.
 [[block.item]]
 title = "Combate de la Reina: diseño definitivo, con todas las ánimas hechas"

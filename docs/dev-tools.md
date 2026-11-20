@@ -161,7 +161,7 @@ The fight tester. Choose:
   **Castillo** has every fight of the castle (docs/castle.md): each room's pupils by year, La
   Delegada, Aurelià, El Equipo de dirección, La Reina Bubbaloo (the first meeting, which cannot be
   won) and La Reina with the artilugio; rooms on their floor, bosses in their own room, the Queen
-  up on her stage (src/throne-arena.ts). Her fight's *Momentos* jump to each phase (*El chicle*,
+  up on her stage (src/throne-arena.ts), after her entrance (Enter, Space or Escape skip it). Her fight's *Momentos* jump to each phase (*El chicle*,
   *Las manos*, *La pompa*, *Tiene a Aitor*; *Suyo* in the first meeting), and the keyboard's 1–4
   are the artilugio's buttons there. **Beating her here plays the ending on**: the last scene,
   Acabar or Bajar la mano, what it does, the Monday's words and the credits, as the story would,

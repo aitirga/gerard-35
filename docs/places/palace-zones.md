@@ -196,8 +196,10 @@ dropped (a hard-edged cone in the dark).
 
 The Queen's fight does not stay among the chairs: as she comes down from the throne the picture
 breaks into glass (as into a pocket) and the fight goes up onto the stage, built for it in metres
-round the fight (the party at -x, she at +x, the camera from +z). Same card as the room, so no new
-identity: indigo velvet and old gold, her pink the only saturated colour.
+round the fight, along it: the party near the footlights, she far up the stage, the camera from
+beyond the footlights. Same card as the room, so no new identity: indigo velvet and old gold, her
+pink the only saturated colour. Her entrance (docs/castle-bosses.md) is played on it: the
+footlights one by one, her core in the dark, her spotlight's slam.
 
 | | |
 | --- | --- |
@@ -207,7 +209,8 @@ identity: indigo velvet and old gold, her pink the only saturated colour.
 | Landmark | Her throne beside her, behind the line: the gum seat on its dais, the bubble she blows for a back, swelling and shrinking, her core beating inside it, and the crown of five flavours (strawberry, mint, grape, lemon, liquorice) on dark twisted spikes on top |
 | Her pink | Puddles of spilt gum spreading from the throne towards her, tongues of it climbing the velvet, bubbles rising from the puddles and popping |
 | Light | One warm spotlight on her (the only shadow-casting lamp), her core's pink pulsing, the city's cold glow through the balcony, the footlights' warm wash, a pool on the party |
-| Framing | The fight's camera sees the back wall's lowest three metres only, so everything that matters stands below that: the throne is low and forward, the crown sits on the bubble, the banner hangs at 2 m |
+| Framing | The fight's camera looks up the stage, a little lower than other fights', and sees the back wall's lowest metres: everything that matters stands below that, the throne low beside her on the camera's right so her silhouette stands against the dark balcony, the crown on the bubble, the banner at 2 m |
+| Smoothness | 120 Hz through her entrance (measured 2026-11-20: 8.4 ms a frame on average, no long frame once the stage is up). Every stage light stays above 0 (a shadow-casting light coming back into the clustered lighting recompiled every shader at the slam); her figure and textures load before the fight |
 
 ### Five moods, one palace
 

@@ -98,6 +98,21 @@ everything the party has: stage 3, the definitivas, three ánimas each. No joke,
   spreading from it over the boards and climbing the velvet, bubbles rising and popping. One warm
   spotlight on her, her core's pink, the city's cold glow, the footlights' wash. It keeps the throne
   room's card (places/palace-zones.md).
+- **Her camera** (Aitor, 2026-11-20: «Aitor y Gerard algo más atrás y ella en el fondo»): the fight
+  lines up along the stage (layout `z`, `THRONE_SPREAD`), the party near the footlights with their
+  backs to the camera and she far up it before the balcony; the view is a little lower and wider
+  than other fights' (`THRONE_VIEW`), to take in her throne.
+- **Her entrance** (`THRONE_INTRO`, 7.5 s, skipped with Enter, Space or Escape): the stage dark;
+  low along the front the footlights come on one by one while the party walks on; the camera glides
+  up the dark stage to the throne, her core beating fast in the bubble, she a shape beside it; her
+  spotlight slams on (a flash, a shake) and the camera is close on her from below; her crown's
+  flavours light one after another and her name comes up («La Reina Bubbaloo. Lo que dejasteis en
+  el patio.»); the camera pulls back over the party's shoulders into the fight and the bars open.
+  The game drives the camera and light (`throneShot` in src/game.ts, the stage's `update`), the
+  fight's screen the bars and the name in time with it (battle-ui `entrance`). Her figure and the
+  stage's textures load as the party comes into the throne room, so it starts without waiting.
+- **While she holds Aitor** her spotlight turns possession's violet, her core beats faster and the
+  footlights falter; freed, the warm light comes back.
 - **The rules are preliminary, on purpose**: Aitor (2026-11-20) leaves the fight's real design for
   last, once every ánima's mechanics exist; until then it is the version below.
 
