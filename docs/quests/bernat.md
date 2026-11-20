@@ -1,6 +1,6 @@
 # Bernat · (working title)
 
-Status: designed (round 5), being built · Last updated: 2026-11-19
+Status: designed (round 6), built · Last updated: 2026-11-19
 
 ## Summary
 
@@ -54,6 +54,48 @@ of Jessica, his ánima or a boss, round 4 replaces them.
   beeping random notes of its scale (`firmware/artilugio`). Picker: the arc *Bernat* (`bernat-nucli`)
   and the castle's steps `bernat-llama`, `bernat-juego`, `portal-nucli`. Still a stand-in: his figure
   (`BERNAT_STANDIN`), until `just character-3d bernat`. The colours of the four sums are a proposal.
+
+## Round 6 (Aitor, 2026-11-19): a riddle on a model of the flat
+
+**Decided** (replaces the notebook page and the moon's dial of round 5; the four sums, the
+five-second hold, the blink and the performance stay).
+
+- **A riddle, not instructions**: nothing on screen says a colour or a word. It is drawn, and the
+  colours are only seen on the model.
+- **Bernat has a model of the flat** on his round table: the real Meridiana flat, built by the
+  same code as the one Gerard walks (`buildHome`), at 1/22, on a foam board. It is there from his
+  call on (`bernat-llama`); the game half set up on the table is cleared for it. Its lamps are the
+  flat's, so it lights as the flat does, and it stays after the riddle (dark, the bedroom pink).
+  He shows it: *«Esto apareció anoche en mi mesa. Es vuestro piso… Las luces se encienden si las
+  tocas. Las de aquí y, creo, las de allí.»* and *«Debajo había una hoja. Ni una palabra, solo
+  dibujos. Es un acertijo…»*.
+- **Seen from above**: leaning over it (`nucli-mesa`, *La maqueta del piso · Asomarse*), the camera
+  comes down over the model, steep (62°) and north at the top as on the plan, and Bernat's bare
+  bulb goes off and its cord out of the way, so the model's own lamps light it. The tilt-shift
+  keeps the model sharp and the room soft.
+- **The sheet at the top: each bulb drawn as its name** (Aitor: *«la forma es el nombre de la
+  bombilla»*). The bulbs at home are called Luna, Mesa, Cocina and Sofá, so the sheet draws a
+  moon, a table, a pot and a sofa in ink (`SHEET_ICONS`), joined by `=`, `+`, `−`; the moon is
+  dashed, with a `?`. Under it, four dots for the four sums. No text and no colour. Gerard has to
+  see that the shape is the bulb and that the moon is the mix of the others.
+- **The model gives the colours**: the game lights the sum's lamps on the model in their colours,
+  and the real bulbs follow (synchronised); Gerard reads them there.
+- **The subtraction stays to be tried** (Aitor is not sure it makes sense; he will play it).
+- **Played on the model**: the pointer over a lamp takes it (a ring round it), a click changes its
+  colour and the right button goes back one; on keys or a pad, the arrows go from lamp to lamp on
+  the screen and confirm (or Q / E, LB / RB) changes the colour. Each lamp goes round off → red →
+  yellow → green → cyan → blue → magenta → white (`CYCLE`). The sum's own lamps are not his to
+  change: pressing one makes its drawing on the sheet stir. Every other lamp can be played with,
+  which is how mixing can be tried out.
+- **The answer**: the moon held five seconds on a colour; every lamp of the model blinks green (the
+  dot fills, the next sheet comes) or red (the sheet shakes), and so does the real house.
+- **Built (2026-11-19)**: `scenery.model` (`src/scenery.ts`, the house built small in its own batch
+  group, `HomeKit.model`: no street across, lamps 1.9× brighter), `furnishNucli`'s table, things and
+  bulb (`src/nucli-scenery.ts`), `game.maqueta` (`src/game.ts`: the model on the table, the camera
+  from above, lamps on screen, the blink), `src/portal-ui.ts` (the sheet, the ring, the input, the
+  hold, the performance), `SHEET_ICONS`/`CYCLE`/`stepColour`/`MAQUETA_SCALE` and the lines in
+  `src/friends/bernat.ts`. The blue lamp became lighter (`#2f7bff`): the deeper one read violet on
+  the flat's warm floors. Screenshots: `just screenshots bernat-nucli --gpu`.
 
 ## Protagonist
 

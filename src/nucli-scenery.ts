@@ -19,6 +19,9 @@ const TITLES = [
 const BOX_COLOURS = ['#8c3b32', '#2f4a6b', '#d1a54a', '#3f6b4f', '#e7dcc6', '#5a3f5f', '#c8643f', '#1f2a33', '#b9c4c9',
   '#7a8f4a', '#a64b2a', '#d9b25a', '#2e5e6e', '#6b2f3a', '#f0ead8', '#3d3d3d', '#c9a27a', '#567d9c', '#8a6a3f', '#4d6b6b'];
 const FELT = '#2f4a3a', WINE = '#5d0e11', CREAM = '#f3e6d0', LAMP = '#ffcf8a';
+/** The back room's round table: its centre in the shop's cells and the height of its top. */
+export const TABLE = { x: 5.5, z: 3.5, top: 0.74 } as const;
+export type NucliTable = ReturnType<typeof furnishNucli>;
 
 export function furnishNucli(r: RoomKit) {
   const { box, cyl, ball, cone, canvas, painted, onWall, chair, jitter, root, face: FACE } = r;
@@ -93,7 +96,20 @@ export function furnishNucli(r: RoomKit) {
     box('Caja de juego', mat(`Caja ${colour}`, BOX_COLOURS[colour % BOX_COLOURS.length], 0.3), px, pz, y0, w, h, d).setEulerAngles(0, yaw, 0);
   }
 
+  /** What Bernat's model needs of the back room: what lies on his table, the bulb over it. */
+  const tableThings: pc.Entity[] = [], hanging: pc.Entity[] = [];
+  let bareBulb: (on: boolean) => void = () => {};
   shop(); hall(); backRoom(); street();
+  return {
+    /** The round table's centre (grid) and the height of its top. */
+    table: TABLE,
+    /** The game half set up on it, the decks and the notebook. */
+    tableThings: tableThings as readonly pc.Entity[],
+    /** The bulb and its cord, right over the table. */
+    hanging: hanging as readonly pc.Entity[],
+    /** The bare bulb switched on or off, its light and its pool with it. */
+    bulb: (on: boolean) => bareBulb(on),
+  };
 
   // ——— La tienda: hydraulic tiles, the wall of boxes, the counter before the wine wall ———
   function shop() {
@@ -348,25 +364,34 @@ export function furnishNucli(r: RoomKit) {
     for (const dx of [-0.26, 0.26]) cyl('Rueda', black, 12.4 + dx, 4.5, 0.075, 0.2, 0.05, 0.2).setEulerAngles(0, 0, 90);
 
     // The round table and its two chairs: Bernat's on the west, its back to the cartons and the curtain in sight; the other one empty.
-    const cx = 5.5, cz = 3.5, top = 0.74;
+    const cx = TABLE.x, cz = TABLE.z, top = TABLE.top;
     cyl('Mesa redonda', walnut, cx, cz, top - 0.05, 1.3, 0.05, 1.3);
     cyl('Pie de la mesa', black, cx, cz, 0.04, 0.1, top - 0.09, 0.1);
     cyl('Base de la mesa', black, cx, cz, 0, 0.55, 0.04, 0.55);
     const seat = mat('Asiento gastado', '#6e4a33', 0.25);
     chair(4.35, 3.3, 'east', seat, black);
     chair(6.65, 3.7, 'west', seat, black);
-    // On it, a game half set up, two decks, a closed notebook with a pencil.
-    box('Tablero a medio montar', painted('Tablero de la trastienda', boardArt(9), 0.2), cx + 0.05, cz - 0.1, top, 0.62, 0.01, 0.46).setEulerAngles(0, 8, 0);
-    for (let k = 0; k < 5; k++) cone('Ficha', pieceColours[k % 4], cx - 0.2 + jitter(k * 19) * 0.4, cz - 0.25 + jitter(k * 23) * 0.3, top + 0.01, 0.045, 0.07, 0.045);
-    box('Mazo', mat('Dorso de carta', '#2f4a6b', 0.3), cx - 0.4, cz + 0.32, top, 0.07, 0.035, 0.1);
-    box('Mazo', mat('Dorso rojo', '#8c3b32', 0.3), cx + 0.42, cz + 0.28, top, 0.07, 0.03, 0.1).setEulerAngles(0, 25, 0);
-    box('Libreta', mat('Tapa de la libreta', '#1f2a33', 0.3), cx - 0.18, cz + 0.4, top, 0.2, 0.02, 0.27).setEulerAngles(0, -10, 0);
-    box('Lápiz', mat('Lápiz', '#e0b23a', 0.3), cx + 0.02, cz + 0.42, top + 0.02, 0.012, 0.012, 0.18).setEulerAngles(0, 20, 0);
-    // The bare bulb on its cord: the room's only light.
-    box('Cable', black, cx, cz, 1.95, 0.012, r.wallHeight - 1.95, 0.012);
-    ball('Bombilla desnuda', bulb, cx, cz, 1.83, 0.11, 0.13, 0.11);
-    r.light(cx, 1.85, cz, '#ffd59a', 0.95, 4.5);
-    r.pool(cx, cz, 1.8, '#ffd59a', 0.3);
+    // On it, a game half set up, two decks, a closed notebook with a pencil: cleared away when
+    // Bernat's model of the flat stands there (docs/quests/bernat.md).
+    const turned = (e: pc.Entity, yaw: number) => { e.setEulerAngles(0, yaw, 0); return e; };
+    tableThings.push(
+      turned(box('Tablero a medio montar', painted('Tablero de la trastienda', boardArt(9), 0.2), cx + 0.05, cz - 0.1, top, 0.62, 0.01, 0.46), 8),
+      ...Array.from({ length: 5 }, (_, k) => cone('Ficha', pieceColours[k % 4], cx - 0.2 + jitter(k * 19) * 0.4, cz - 0.25 + jitter(k * 23) * 0.3, top + 0.01, 0.045, 0.07, 0.045)),
+      box('Mazo', mat('Dorso de carta', '#2f4a6b', 0.3), cx - 0.4, cz + 0.32, top, 0.07, 0.035, 0.1),
+      turned(box('Mazo', mat('Dorso rojo', '#8c3b32', 0.3), cx + 0.42, cz + 0.28, top, 0.07, 0.03, 0.1), 25),
+      turned(box('Libreta', mat('Tapa de la libreta', '#1f2a33', 0.3), cx - 0.18, cz + 0.4, top, 0.2, 0.02, 0.27), -10),
+      turned(box('Lápiz', mat('Lápiz', '#e0b23a', 0.3), cx + 0.02, cz + 0.42, top + 0.02, 0.012, 0.012, 0.18), 20),
+    );
+    // The bare bulb on its cord: the room's only light. Its own glass, so switching it off leaves the pendants lit.
+    const bare = r.mat('Bombilla desnuda', '#ffe3b3', 0.2, 1.6);
+    hanging.push(box('Cable', black, cx, cz, 1.95, 0.012, r.wallHeight - 1.95, 0.012), ball('Bombilla desnuda', bare, cx, cz, 1.83, 0.11, 0.13, 0.11));
+    const light = r.light(cx, 1.85, cz, '#ffd59a', 0.95, 4.5), lit = light.intensity;
+    const pool = r.pool(cx, cz, 1.8, '#ffd59a', 0.3), glow = pool.emissiveIntensity;
+    bareBulb = on => {
+      light.enabled = on; light.intensity = on ? lit : 0;
+      bare.emissiveIntensity = on ? 1.6 : 0; bare.diffuse.fromString(on ? '#ffe3b3' : '#8a8378'); bare.update();
+      pool.emissiveIntensity = on ? glow : 0; pool.update();
+    };
   }
 
   // ——— Outside the window: a strip of Sants pavement, so the shop sits on its street ———
