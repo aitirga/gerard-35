@@ -4,7 +4,7 @@ import type { PropKit } from './props';
 import { lampRgb, type Lamp, type LightId } from './home-lights';
 import { MERIDIANA_BED } from './bed';
 import { shine } from './lighting';
-import { furnishNucli } from './nucli-scenery';
+import { furnishNucli, type NucliTable } from './nucli-scenery';
 import { furnishEmilie } from './emilie-flat-scenery';
 
 /** What `buildScenery` lends the house, so everything is tracked and destroyed with the scene. */
@@ -21,6 +21,11 @@ export interface HomeKit {
   surface: (px: number, pz: number, w: number, d: number, top: number) => void;
   /** The scene's static batch group, for every part that never folds. */
   batch: number;
+  /**
+   * A model of the house (Bernat's, src/scenery.ts `model`): the house alone, nothing across the
+   * street, and its lamps `lampGain` times brighter, so their colours read from above in a lit room.
+   */
+  model?: { lampGain: number };
 }
 
 /** Heights and thickness in world units; one grid cell is one unit. */
@@ -133,6 +138,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   }
   /** The flat's lamps are the bulbs at home (src/home-lights.ts): their light and their glowing parts. */
   const lamps = new Map<LightId, { lights: { light: pc.LightComponent; intensity: number }[]; glows: pc.StandardMaterial[]; pools: pc.StandardMaterial[] }>();
+  const lampGain = kit.model?.lampGain ?? 1;
   let poolTexture: pc.Texture | undefined;
   /** A soft patch of the lamp's colour on the floor under it: daylight would wash out the light alone. */
   function pool(px: number, pz: number, radius: number, tint?: string, strength = 0) {
@@ -157,7 +163,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     lamps.set(id, entry);
     // The lamps carry the flat's light: a wide, gentle reach fills the room instead of a hot spot
     // around the bulb (the falloff is linear to `range`).
-    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 2), intensity: intensity * 1.15 });
+    entry.lights.push({ light: light(px, y, pz, '#ffe4bd', intensity, range * 2), intensity: intensity * 1.15 * lampGain });
     if (floor) entry.pools.push(pool(px, pz, floor * 1.6));
     const glow = mat(`Bombilla: ${id}`, '#ffe3b3', 0.2, 1.6);
     entry.glows.push(glow);
@@ -181,7 +187,7 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     }
     for (const patch of entry.pools) {
       patch.emissive.set(r, g, b);
-      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim * POOL_GAIN : 0;
+      patch.emissiveIntensity = look.on ? (0.15 + 0.35 * look.brightness) * dim * POOL_GAIN * lampGain : 0;
       patch.update();
     }
   }
@@ -624,11 +630,13 @@ export function buildHome(kit: HomeKit, environment: Environment) {
   }
 
   // ——— Rooms ———
+  /** El Nucli's back room, for Bernat's model of the flat on its table. */
+  let nucli: NucliTable | undefined;
   if (environment.id === 'home-entrance') entrance();
   else if (environment.id === 'home-floor-1') floorOne();
   else if (environment.id === 'home-floor-2') floorTwo();
   else if (apartment) meridiana();
-  else if (shop) furnishNucli({
+  else if (shop) nucli = furnishNucli({
     kit, wallHeight, face: FACE, box, cyl, ball, cone, solid, d20: d20Mesh, mat,
     light, pool, canvas, painted, picture, onWall, standing, chair, jitter, glass, root,
   });
@@ -1399,6 +1407,8 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     box('Toldo recogido', mat('Toldo crema', '#efe6cf', 0.1), 22.5, north + 0.12, 2.42, 3.0, 0.14, 0.2);
 
     // ——— Across the Meridiana: peach blocks with green awnings, clear of the camera's view of the flat ———
+    // A model of the flat is the flat alone.
+    if (kit.model) return;
     const facades = [mat('Fachada salmón', '#e3b192', 0.1), mat('Fachada crema', '#e9dcc4', 0.1)];
     const awning = mat('Toldo verde', '#2f7d73', 0.2), windowDark = mat('Ventana de enfrente', '#3b4449', 0.5);
     for (const [i, [z0, z1, top]] of ([[-8, 5, 4.6], [-19, -8.4, 5.4]] as const).entries()) {
@@ -1779,5 +1789,6 @@ export function buildHome(kit: HomeKit, environment: Environment) {
     destroy() { meshes.forEach(m => m.destroy()); },
     setLamp,
     lampPosition(id: LightId) { return lamps.get(id)?.lights[0]?.light.entity.getPosition().clone(); },
+    nucli,
   };
 }

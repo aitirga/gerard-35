@@ -224,6 +224,9 @@ z 0 ##############
 **Bernat's anchor**: `NUCLI_BERNAT_SEAT` (cell 4, 3) is his chair at the back room's round table,
 its back to the cartons and the curtain in sight; `nucli-mesa` is the hook his mission takes over (its `story` answers it once he
 is there). No story flags were added; the shopkeeper belongs to the mission, not the place.
+From his call on, his **model of the Meridiana flat** stands on the round table (`TABLE` in
+`src/nucli-scenery.ts`, which also hands over what lies on the table, cleared for it, and the bare
+bulb, switched off while the camera looks down at the model): `docs/quests/bernat.md` § Round 6.
 
 Two floor kinds joined `FloorKind` for it, painted in `src/home-scenery.ts`: `hydraulic` and
 `terrazzo`. `RoomKit` lends `src/nucli-scenery.ts` the house builder's parts, lights, pictures and

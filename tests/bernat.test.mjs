@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ANSWER_LAMP, LAMPS, PORTAL_LEVELS, RGB, colourOf, lampColour, mix } from '../src/friends/bernat.ts';
+import { ANSWER_LAMP, CYCLE, LAMPS, PORTAL_LEVELS, RGB, SHEET_ICONS, colourOf, lampColour, mix, stepColour } from '../src/friends/bernat.ts';
 import { HOUSE_LIGHTS } from '../src/home-lights.ts';
 import { Story } from '../src/story.ts';
 import { flagsAt } from '../src/story-points.ts';
@@ -33,7 +33,28 @@ test('Bernat the first time is the confidant at El Nucli, with his table and not
   assert.deepEqual(story.handle({ type: 'portal' }), [], 'no portal before his call');
 });
 
-test('every answer can be reached from the dial\'s own colours, so keys and a pad can solve the box', async () => {
-  const { SWATCHES } = await import('../src/home-lights.ts');
-  for (const level of PORTAL_LEVELS) assert.ok(SWATCHES.some(s => lampColour({ ...s.lamp, on: true }) === level.answer), level.answer);
+test('a lamp of the model goes round off, the six colours and white, and back, so a key or a click can reach every answer', () => {
+  let lamp = { ...LAMPS.rojo, on: false };
+  const seen = [];
+  for (let i = 0; i < CYCLE.length; i++) { lamp = stepColour(lamp, 1); seen.push(lampColour(lamp)); }
+  assert.deepEqual(seen, [...CYCLE.slice(1), undefined], 'one press each, off at the end');
+  for (const level of PORTAL_LEVELS) assert.ok(CYCLE.includes(level.answer), level.answer);
+  assert.equal(lampColour(stepColour(LAMPS.amarillo, -1)), 'rojo', 'back one');
+  assert.equal(lampColour(stepColour({ ...LAMPS.rojo, on: false }, -1)), 'blanco', 'back from off');
+  // A lamp the house turned to any colour at home steps on from the colour it reads as.
+  assert.equal(lampColour(stepColour({ on: true, hue: 200, saturation: .8, brightness: .6, kelvin: 3500 }, 1)), 'azul');
+});
+
+test('the sheet draws every lamp of the sums, and the moon, as its name: shapes only, no word', () => {
+  for (const id of new Set([ANSWER_LAMP, ...PORTAL_LEVELS.flatMap(l => l.terms.map(t => t.lamp))])) {
+    assert.ok(SHEET_ICONS[id], `${id} has its drawing`);
+    assert.doesNotMatch(SHEET_ICONS[id], /<text/, `${id} is drawn, not written`);
+  }
+});
+
+test('the model stands on his table from his call on, and leaning over it is the riddle until it is solved', () => {
+  const story = new Story([...flagsAt('bernat-juego')]);
+  const table = story.interactions('el-nucli').find(i => i.id === 'nucli-mesa');
+  assert.match(table?.label ?? '', /maqueta/i);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'nucli-mesa' }).map(e => e.kind), ['nucli-box']);
 });

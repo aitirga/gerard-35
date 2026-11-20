@@ -79,7 +79,8 @@ import { createNewsTV, type NewsTV } from './news-tv';
 import { stage } from './days';
 import { palaceKit } from './palace';
 import { buildSchoolDoor } from './palace-zones';
-import { lampInteraction, type Lamp, type LightId } from './home-lights';
+import { HOUSE_LIGHTS, OFF, lampInteraction, type Lamp, type LightId } from './home-lights';
+import { MAQUETA_SCALE, NUCLI } from './friends/bernat';
 import { MERIDIANA_BED, SITTING_SECONDS, WAKE_SECONDS, wakePhase, wakePose, type Sleeper } from './bed';
 import { separateFlushFaces, separateFlushFacesOnArrival } from './flush-faces';
 import { improvementOf } from './ecos';
@@ -259,8 +260,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   // La Reina Bubbaloo's palace past the north end of the street, and the street's own changes.
   const palace = createPalace(app, effects);
   let approach: PalaceApproach | undefined;
-  /** A cut-scene camera: what to look at and how much to frame, instead of following Gerard. */
-  let cinematic: { target: pc.Vec3; height: number } | undefined;
+  /**
+   * A cut-scene camera: what to look at and how much to frame, instead of following Gerard;
+   * `offset` (from what it looks at to the camera) when it looks from its own angle, not the street's,
+   * and `sharp`, what the tilt-shift must keep in focus when it is more than that one point.
+   */
+  let cinematic: { target: pc.Vec3; height: number; offset?: pc.Vec3; sharp?: ParticleBody[] } | undefined;
   /** Development framing (`frame`): it holds the camera even in a fight, where story framings never do. */
   let framed = false;
   /**
@@ -1724,7 +1729,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       placeOnGround(entity, p.cell, .75);
       return { entity, cell: p.cell, spot: p.spot, materials: pickupModel(p.id, entity) };
     });
-    spiralInWater(); dressCamp(); standSalon();
+    spiralInWater(); dressCamp(); standSalon(); placeMaqueta();
     dress(story.adult);
     backpack.forEach(part => { part.enabled = story.has('got-backpack'); });
     if (!cutscene) {
@@ -2079,6 +2084,66 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** A foe far taller than the party (Vertitrón, with Uri on top): the fight's camera looks up to take it in. */
   function tallLift() { return Math.max(0, battleScene.foeTop - 4) * .75; }
+  /**
+   * Bernat's model of the Meridiana flat on his table at El Nucli (docs/quests/bernat.md): there from
+   * his call on, the real flat's builder at `MAQUETA_SCALE`, its lamps the flat's. The game half set
+   * up on the table is cleared for it.
+   */
+  let maqueta: ReturnType<typeof scenery.model> | undefined;
+  /** The camera is looking down at it, the bulb over the table off and out of the way. */
+  let maquetaLooking = false;
+  function placeMaqueta() {
+    const nucli = scenery.nucli;
+    const wanted = environment.id === NUCLI && story.adult && story.has('bernat-llama') && !!nucli;
+    if (wanted === !!maqueta) return;
+    if (!wanted || !nucli) { lookAtMaqueta(false); maqueta?.destroy(); maqueta = undefined; return; }
+    const at = scenery.toWorld(nucli.table.x, nucli.table.z); at.y = nucli.table.top;
+    maqueta = scenery.model(ENVIRONMENTS.meridiana, at, MAQUETA_SCALE);
+    for (const thing of nucli.tableThings) thing.enabled = false;
+    scenery.rebatch();
+    for (const light of HOUSE_LIGHTS) maqueta.setLamp(light.id, lamps[light.id] ?? OFF);
+  }
+  /**
+   * The camera looks down at the model from above and close, north at the top as on the flat's
+   * plan, leaving room over it for the sheet (src/portal-ui.ts); Bernat's bulb goes off and its
+   * cord out of the way, so the model's own lamps light it. `false` gives the camera back.
+   */
+  function lookAtMaqueta(on: boolean) {
+    const nucli = scenery.nucli;
+    if (!on || !maqueta || !nucli) {
+      if (!maquetaLooking) return;
+      maquetaLooking = false;
+      if (nucli) { nucli.bulb(true); for (const part of nucli.hanging) part.enabled = true; scenery.rebatch(); }
+      release();
+      return;
+    }
+    maquetaLooking = true;
+    holdStill();
+    nucli.bulb(false); for (const part of nucli.hanging) part.enabled = false; scenery.rebatch();
+    const centre = maqueta.root.getPosition(), pitch = 62 * pc.math.DEG_TO_RAD, distance = 14;
+    const depth = (ENVIRONMENTS.meridiana.grid.length + 1.4) * MAQUETA_SCALE;
+    cinematic = {
+      // A little north of its centre, so the model sits under the sheet.
+      target: new pc.Vec3(centre.x, centre.y, centre.z - depth * .1),
+      height: depth * .8,
+      offset: new pc.Vec3(0, Math.sin(pitch) * distance, Math.cos(pitch) * distance),
+      // All of it sharp, from its near edge to its far one and up to the top of its walls; the table and the room round it soft.
+      sharp: [-1, 1].map(side => ({ x: centre.x, y: centre.y, z: centre.z + side * depth / 2, radius: 0, height: 2.6 * MAQUETA_SCALE })),
+    };
+  }
+  /** Every lamp of the model blinks `lamp` (`times`, each `period` seconds), then shows the flat's again. */
+  function blinkMaqueta(lamp: Lamp, times = 3, period = .7) {
+    const model = maqueta;
+    if (!model) return;
+    let step = 0;
+    const next = () => {
+      if (maqueta !== model) return;
+      const lit = step % 2 === 0;
+      for (const light of HOUSE_LIGHTS) model.setLamp(light.id, step >= times * 2 ? lamps[light.id] ?? OFF : lit ? lamp : OFF);
+      if (step++ < times * 2) setTimeout(next, period * 500);
+    };
+    next();
+  }
   /** The camera comes close to the TV (`on`), or goes back to Gerard. */
   function watchTV(on: boolean) {
     watchingTV = on && !!tv;
@@ -2606,6 +2671,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     shift = undefined;
     tv?.destroy(); tv = undefined; overgrowth?.destroy(); overgrowth = undefined;
     nightLights?.destroy(); nightLights = undefined;
+    // Bernat's model goes with El Nucli's scenery (and comes back with it, `placeMaqueta`).
+    maqueta = undefined; maquetaLooking = false;
     // Each time they come out onto the street at night is a new hunt, round where they come out.
     nightHunt = undefined;
     scenery.destroy();
@@ -3028,7 +3095,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // A fight looks from the party's side, a little off it, from the south (over their shoulders at a
     // giant); along a street, down it from the party's end (src/arena.ts `fightCamera`, which also
     // decides where a fight has room to be seen).
-    const offset = !battle ? vec(cameraOffset(orbit.pose)) : vec(fightCamera(fightStage.layout, standing(battle.foes.filter(f => !f.part).map(f => f.kind))));
+    const offset = battle ? vec(fightCamera(fightStage.layout, standing(battle.foes.filter(f => !f.part).map(f => f.kind)))) : cinematic?.offset ? cinematic.offset.clone() : vec(cameraOffset(orbit.pose));
     if (battle) {
       const { stick, click } = rightStick();
       if (click) battleAim.set(0, 0);
@@ -3078,6 +3145,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // The tilt-shift's sharp band runs through what the camera follows: the fighters, a cut-scene's subject, Gerard (and his partner).
     framing.length = 0;
     if (battle) battleScene.framing(framing);
+    else if (cinematic?.sharp) framing.push(...cinematic.sharp);
     else if (cinematic) framing.push({ x: cinematic.target.x, y: cinematic.target.y, z: cinematic.target.z, radius: 0, height: 0 });
     else {
       if (player.enabled) framing.push(bodyOf(player, .3, 1.5));
@@ -3195,6 +3263,19 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, flyColour, intoPortal, unmaskSobremesa, emerge, watchTV, releaseLights, shout,
+    /** Bernat's model of the flat on his table (src/portal-ui.ts plays its riddle on it), while it stands here. */
+    maqueta: {
+      get here() { return !!maqueta; },
+      view: lookAtMaqueta,
+      /** Where a lamp of the model is on the canvas now (CSS pixels from its corner). */
+      screen(id: LightId) {
+        const p = maqueta?.lampPosition(id);
+        if (!p) return undefined;
+        camera.camera!.worldToScreen(p, screen);
+        return { x: screen.x, y: screen.y };
+      },
+      blink: blinkMaqueta,
+    },
     /** Gerard's class woke up mid-fight: the fight shows it now, the street model wears it after. */
     awaken(id: ClassId) { battleScene.awaken(id); },
     /** Someone swapped ánima in a fight (L / R): the fight shows it, and the boy's street outfit follows. */

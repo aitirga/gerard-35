@@ -553,7 +553,7 @@ try {
       const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
       go();
     },
-    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
@@ -751,8 +751,9 @@ try {
     },
   }, story);
   const lampPicker = createLampPicker(hud, homeLights, paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
-  /** Bernat's box (src/portal-ui.ts): its sums of lights on the flat's lamps, then the artilugio sent home, awake. */
-  const portalUI = createPortalUI(hud, homeLights, lampPicker, () => { artilugio.setMode('alive'); artilugio.listen(); }, cue => sfx.play(cue === 'right' ? 'unlock' : 'denied'));
+  /** Bernat's model of the flat (src/portal-ui.ts): its riddle of lights played on the model from above, then the artilugio sent home, awake. */
+  const portalUI = createPortalUI(hud, homeLights, () => game.maqueta, () => { artilugio.setMode('alive'); artilugio.listen(); }, id => sfx.play(id),
+    paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); });
   const jarUI = createJarUI(hud, story, {
     pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
     sound: id => sfx.play(id),
@@ -788,7 +789,7 @@ try {
   followMood();
   const moodTimer = setInterval(followMood, 1000);
   const controllerContext = () => jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -801,7 +802,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
@@ -821,6 +822,7 @@ try {
       if (isDpad(action)) { battleUI.toggleSummary(); return; }
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
+      if (portalUI.isOpen) { if (action !== 'overview' && action !== 'character') portalUI.control(action); return; }
       if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action, player === 2 ? 2 : 1); return; }
       if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
       if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }

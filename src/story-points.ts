@@ -118,10 +118,10 @@ export const STORY_ARCS = [
     { flags: ['aurelia', 'luz-aurelia'], label: 'Aurelià vencido: la entrada pasa al gimnasio', spot: castleEntry(new Set(['aurelia'])) },
     { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a Direcció', spot: castleEntry(new Set(['direccion'])) },
     { flags: ['aitor-poseido'], label: 'La Reina toma a Aitor: Gerard cae' },
-    // Bernat's part (docs/quests/bernat.md, round 5): his call, the game told and his box, the portal solved.
+    // Bernat's part (docs/quests/bernat.md, rounds 5 and 6): his call, the game told and his model of the flat, its riddle solved.
     { flags: ['bernat-llama'], label: 'Llama Bernat: venid a El Nucli', spot: { environment: 'meridiana' } },
-    { flags: ['bernat-juego'], label: 'En El Nucli: «estamos dentro de un juego»; la caja abierta', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
-    { flags: ['portal-nucli', 'artilugio'], label: 'Las sumas de luces resueltas: el artilugio, en casa', spot: { environment: 'meridiana' } },
+    { flags: ['bernat-juego'], label: 'En El Nucli: «estamos dentro de un juego»; la maqueta del piso', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
+    { flags: ['portal-nucli', 'artilugio'], label: 'El acertijo de la maqueta resuelto: el artilugio, en casa', spot: { environment: 'meridiana' } },
     { flags: ['reina'], label: 'La Reina, vencida' },
   ] },
   // Only one of the two is ever set: each ending hangs from her fall on its own.
