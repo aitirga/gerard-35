@@ -32,6 +32,10 @@ export const TRACKS = {
   // the song starts over from bar 1 at its end. Bar 17 ends on the same fill as bar 9, so going back
   // to bar 10 keeps its tail; both marks sit 58 samples before the downbeat, where the waveforms meet.
   concrete: { src: 'music/song-concrete.m4a', marks: { start: 0, vamp: 19.635146, on: 37.089708, end: 100.364 }, loop: ['start', 'end'], vamp: { from: 'vamp', to: 'on', laps: [3, 7] }, bpm: 110, beatsPerBar: 4, downbeat: 'start' },
+  // The same street at night, the way home hunted: the song's dark section only. It comes in on the
+  // break of bars 19 and 20, then loops bars 21 to 36 (16 bars, the second break at their end leads
+  // back in as the first did), measured with `just music-loop`: 43.607 → 78.510 s, match 0.92.
+  'concrete-noche': { src: 'music/song-concrete.m4a', marks: { start: 39.273, loop: 43.607, end: 78.51 }, loop: ['loop', 'end'], bpm: 110, beatsPerBar: 4, downbeat: 'loop' },
   // Passatge Maresme, where the game starts: the whole song loops, 80 beats (20 bars) at 50 BPM.
   // The file starts already sounding, so a cut at exactly 0 → 96 s clicked; the loop runs 43
   // samples (at 48 kHz) after the start to 61 before 96 s, where the waveforms meet, 2 ms short.

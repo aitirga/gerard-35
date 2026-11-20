@@ -89,6 +89,8 @@ const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.p
  */
 const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = { maresme: 'triste', cardedeu: 'triste', meridiana: 'home', 'meridiana-calle': 'concrete', 'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-2', palacio: 'bubbaloo', 'rec-comtal': 'bubbaloo', 'palacio-patio': 'bubbaloo', 'palacio-gimnasio': 'bubbaloo', 'palacio-secretaria': 'bubbaloo', 'palacio-trono': 'bubbaloo', 'castillo-1': 'bubbaloo', 'castillo-2': 'bubbaloo', 'castillo-3': 'bubbaloo' };
 let place: EnvironmentId | undefined;
+/** The song a place plays now: the Meridiana's street turns to its dark section at night (the way home, hunted). */
+const songFor = (id: EnvironmentId): TrackId | undefined => id === 'meridiana-calle' && story.night ? 'concrete-noche' : PLACE_SONGS[id];
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
 function scorePlace(id: EnvironmentId) {
@@ -96,11 +98,11 @@ function scorePlace(id: EnvironmentId) {
   if (battlePhase || devSong) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
-  const song = PLACE_SONGS[id];
+  const song = songFor(id);
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
   if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase) void music.play(song, { from: 'random', fade: 4 }); });
-  else if (music.playing && Object.values(PLACE_SONGS).includes(music.playing)) music.stop({ fade: 2 });
+  else if (music.playing && (Object.values(PLACE_SONGS).includes(music.playing) || music.playing === 'concrete-noche')) music.stop({ fade: 2 });
 }
 /**
  * The fight's song: it comes in with the fight, plays its ending on a win and fades on a fall, an
@@ -514,6 +516,8 @@ try {
   function storyChanged() {
     game.refreshStory();
     syncArtilugio();
+    // Night falling where they stand changes its song (the Meridiana's dark section).
+    if (place && !battlePhase && !devSong && songFor(place) && music.playing !== songFor(place)) scorePlace(place);
     showAnimas();
     // An ánima gained takes some of the castle's power, and of its song's haunt.
     if (!devSong) music.haunt(castleHaunt(story));

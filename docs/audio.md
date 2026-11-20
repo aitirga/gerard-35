@@ -80,7 +80,12 @@ The director, `music` in [src/main.ts](../src/main.ts):
 - **Streets**: `triste` in Passatge Maresme and on Nuria's street in Cardedeu (Jacint Verdaguer, not
   the street that never ends nor Uri's tower), and `concrete` on Meridiana street, each from the top
   over 4 s (`triste` from a random point). `just screenshots street-music --chrome` checks both and the
-  vamp.
+  vamp. **At night** the Meridiana's street plays `concrete-noche` (2026-11-19): the same file's dark
+  section only, in on the break of bars 19–20 and looping bars 21–36 (43.607 → 78.510 s), so the way
+  home hunted never hears the happy opening; night falling where they stand changes it (`songFor` in
+  `src/main.ts`).
+- **The artilugio in her last fight**: her music does not change when she takes Aitor; the first note
+  of the artilugio fades it out for good (`silenced` in `src/main.ts`).
 - **La Reina Bubbaloo's castle**: `bubbaloo` (`bubbaloo-light`, 13 min) the same way, at the Rec
   Comtal school and inside the palace (chapter 1's too), haunted as below. Walking from the school
   into the palace keeps the same take going.
