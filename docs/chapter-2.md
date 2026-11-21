@@ -35,7 +35,10 @@ replaced by **open progression**, as decided on 2026-10-18:
 - **Anywhere else a fall costs nothing** (decided on 2026-11-05): in the missions and the city the
   lost screen offers *Reintentar el combate* (the same fight from the start) and *Volver a antes
   del combate* (as if it never began), `forgiving` and `fallen` in `src/battle-ui.ts`, decided in
-  `src/main.ts`.
+  `src/main.ts`. Stepping back leaves whoever caught the party resting a while (`steppedBack` in
+  `src/game.ts`: a patrol of Emilie's model; El que no converge waits until Gerard walks off). The
+  exception is the Meridiana at night: caught and beaten there, only *Despertar*, and they wake late
+  (§ Night and the way home).
 - **But the days count** (decided on 2026-10-18, see *The Queen's advance* below): an unspoken
   countdown gives time a meaning and keeps side activities from eating the game.
 

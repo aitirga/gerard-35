@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
 import { flagsAt } from '../src/story-points.ts';
+import { LINES_2 } from '../src/chapter-2.ts';
 import { BEACH, LINES_UNI, PLACES_UNI, UNI_FRIENDS } from '../src/friends/universidad.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
@@ -206,6 +207,7 @@ test('La Sobremesa beaten: it comes apart at the table, the photo, five lights, 
   assert.ok(story.npcs(BEACH).every(n => !n.possessed), 'and themselves again on the beach');
   assert.deepEqual(story.triggers(BEACH), []);
   assert.ok(story.jar.includes('anna-alvaro'));
+  assert.ok(story.night && won.some(e => e.kind === 'dialogue' && e.dialogue === LINES_2.night), 'as every friend\'s mission, it brings the night: the way home is the night\'s walk');
 });
 
 test('freed, the seven face Gerard and Aitor: round the table from its far side, and in a half ring on the beach away from the camera', () => {

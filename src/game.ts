@@ -718,7 +718,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   function huntAtNight(dt: number) {
     if (isCastlePlace(environment.id)) { huntIndoors(dt); return; }
-    if (environment.id !== 'meridiana-calle' || !story.night) { if (nightHunt) endNightHunt(); return; }
+    if (environment.id !== 'meridiana-calle' || !story.nightOut) { if (nightHunt) endNightHunt(); return; }
     if (!nightHunt) {
       const base = nightTier(stage(story.spread)), tier = { ...base, ...base.every ? { every: base.every / NIGHT_DEV.crowd } : {} };
       const cellOf = (p: { x: number; z: number }) => ({ x: p.x, z: p.z });
@@ -1080,7 +1080,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * measured, where its patrols are), the figures of those patrols and which one's fight is on.
    */
   let modelo: ModeloScene | undefined;
-  const section = { run: createModelo(), figures: new Map<string, pc.Entity>(), fighting: undefined as string | undefined };
+  const section = { run: createModelo(), figures: new Map<string, pc.Entity>(), fighting: undefined as string | undefined,
+    /** Stepped back from a fall to El que no converge: it waits until Gerard has walked out of its reach (`steppedBack`). */
+    bossWait: false };
   /** What stands in the section: each patrol as the foes it fights as, or El que no converge. */
   function modeloFigure(id: string, kinds: readonly (keyof typeof MODELO_SIZES)[]) {
     const group = new pc.Entity(id);
@@ -1104,7 +1106,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (!battle && !cutscene && !paused && !section.fighting && !document.querySelector('#hud[data-dialogue]')) {
       let hit: ReturnType<typeof tickModelo>;
       for (let left = Math.min(dt, .5); left > 0 && !hit; left -= .05) hit = tickModelo(run, Math.min(.05, left), x);
-      const boss = run.zone === 'fondo' && !run.won && Math.abs(x - GALLERY.boss) <= GALLERY.bossReach;
+      const reach = run.zone === 'fondo' && !run.won && Math.abs(x - GALLERY.boss) <= GALLERY.bossReach;
+      if (!reach) section.bossWait = false;
+      const boss = reach && !section.bossWait;
       if (hit || boss) {
         section.fighting = hit ? hit.id : 'jefe';
         clearInput(); movement.walking = false;
@@ -1142,7 +1146,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     lastPrompt = '\0';
   }
   function dressScene() {
-    section.figures.clear(); section.fighting = undefined;
+    section.figures.clear(); section.fighting = undefined; section.bossWait = false;
     modelo?.destroy(); modelo = undefined;
     if (environment.id === 'modelo') { modelo = buildModelo(app, scenery.toWorld); section.run = story.modeloRun(); }
     cuerdas?.destroy(); cuerdas = undefined; strung.waiting?.destroy(); strung.waiting = undefined; strung.key = ''; strung.fall = undefined; strung.land = undefined; strung.sink = 0; strung.on = undefined;
@@ -3686,6 +3690,18 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** The artilugio in Gerard's hands: his figure's in the street, his copy's in a fight (src/artilugio-held.ts). */
     get artilugio(): HeldArtilugio { return heldArtilugio; },
     get battleArtilugio(): HeldArtilugio | undefined { return battle ? battleScene.artilugio : undefined; },
+    /**
+     * The players stepped back from a fall (battle-ui «Volver a antes del combate»): as if the fight never
+     * began, so nothing is left waiting on it. Whoever caught them lets them be a while (a patrol of
+     * Emilie's model, a group in the street), and El que no converge waits until Gerard walks off and back.
+     */
+    steppedBack() {
+      if (section.fighting === 'jefe') section.bossWait = true;
+      else if (section.fighting) shakePatrol(section.run, section.fighting);
+      section.fighting = undefined;
+      if (fightingGroup !== undefined && nightHunt) restGroup(nightHunt.street, fightingGroup);
+      fightingHunter = undefined; fightingGroup = undefined; fearStage = undefined;
+    },
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);

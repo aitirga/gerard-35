@@ -144,7 +144,7 @@ const CITY_DAY: TrackId = 'concrete', CITY_NIGHT: TrackId = 'mazmorra-2';
 /** The song a place plays now: its boss room's, the city's by the hour, or its own. */
 function songHere(id: EnvironmentId): TrackId | undefined {
   if (inBossRoom()) return BOSS_ROOM_SONG;
-  if (CITY.includes(id)) return story.night ? CITY_NIGHT : CITY_DAY;
+  if (CITY.includes(id)) return story.nightOut ? CITY_NIGHT : CITY_DAY;
   return PLACE_SONGS[id];
 }
 /** `just dev-music` plays its own song, which a place's song must not cover. */
@@ -200,7 +200,7 @@ function scoreBattle(state: BattleState | undefined) {
   const sung = !!state?.song, over = !state || battlePhase === 'won' || battlePhase === 'lost' || battlePhase === 'escaped';
   // A boss of a boss room, or a fight in the city at night, is fought to the place's own song, which
   // goes on from where it was.
-  const keep = !state ? undefined : BOSS_ROOM_FIGHTS.includes(state.encounter) ? BOSS_ROOM_SONG : place && CITY.includes(place) && story.night ? CITY_NIGHT : undefined;
+  const keep = !state ? undefined : BOSS_ROOM_FIGHTS.includes(state.encounter) ? BOSS_ROOM_SONG : place && CITY.includes(place) && story.nightOut ? CITY_NIGHT : undefined;
   // A fight that is not hers takes over from her song far off; it comes back where it left off after.
   if (state && was === undefined && !sung) vozSong.stop(.8);
   if (over) vozSong.stop(battlePhase === 'won' ? 2 : 1);
@@ -432,8 +432,10 @@ try {
     paused: () => menuOpen(),
     pulse: (id, status, by) => game.statusPulse(id, status, by),
     ecos: news => game.ecoNews(news),
-    // A fall wakes Gerard up at home only in chapter 2's castle; anywhere else it can be fought again or stepped back from.
-    forgiving: () => !(story.adult && (currentLocation.startsWith('palacio') || currentLocation.startsWith('castillo'))),
+    // A fall wakes Gerard up at home in chapter 2's castle, and on the Meridiana at night (late, docs/chapter-2.md
+    // § Night and the way home: stepping back would leave the pupil that caught him touching him, and the fight again);
+    // anywhere else it can be fought again or stepped back from.
+    forgiving: () => !(story.adult && (currentLocation.startsWith('palacio') || currentLocation.startsWith('castillo') || battleUI.live?.encounter === 'night-guard')),
     fallen: choice => { fallen = choice; },
     // The development build puts the Dual command in the fight's menu (docs/dev-tools.md).
     dev: () => import.meta.env.DEV,
@@ -926,7 +928,7 @@ try {
     onBattleEnd: (phase, encounter, worn, xp, taken) => {
       if (!testing && !leaving && (phase === 'won' || phase === 'lost' || phase === 'escaped')) dayLog.add({ kind: 'fight', encounter, outcome: phase, rounds: fightRounds, moves: fightMoves, worn });
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
-      if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
+      if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.steppedBack(); game.refreshStory(); } return; }
       // The Queen beaten in the fight tester: the ending plays on, as the story would, with the save left as it was.
       const ending = phase === 'won' && onThroneStage(encounter) ? chosen : undefined;
       chosen = undefined;

@@ -570,6 +570,8 @@ export class Story {
   get dusk() { return this.adult ? dusk(this.days.clock.hour) : 0; }
   /** Night outside (docs/chapter-2.md § Night and the way home): the palace's monsters are out on the Meridiana. */
   get night() { return this.adult && isNight(this.days.clock.hour); }
+  /** Her castle's pupils are out on the Meridiana at night (docs/chapter-2.md § Night and the way home): until she has fallen. */
+  get nightOut() { return this.night && !this.has('reina'); }
   /** Days loaded from the server: a newer epoch (a rewind elsewhere) replaces the flags too. */
   loadDays(value: unknown, story?: Iterable<string>) {
     const days = readDays(value);
@@ -754,7 +756,7 @@ export class Story {
       { kind: 'unmask' }, say(LINES_UNI.won), { kind: 'look', anchor: 'merendero-mesa', height: 8.5 }, { kind: 'photo', caption: LINES_UNI.photo },
       { kind: 'lights', people: friendLights(['anna', 'sarah', 'soraya', 'nico', 'joan']) },
       { kind: 'portal', who: 'everyone', open: { ...PLACES_CAMP.vuelta } },
-      beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), say(LINES_UNI.coro), ...this.spend('fight'),
+      beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), say(LINES_UNI.coro), ...this.spend('fight'), ...this.nightfall(),
     ];
   }
   /**
@@ -1398,7 +1400,7 @@ export class Story {
   private spend(activity: Activity): StoryEffect[] {
     const before = this.days.clock.hour, after = Math.min(DAY_END, before + COSTS[activity]);
     this.days.clock = { ...this.days.clock, hour: after };
-    if (!isNight(before) && isNight(after)) return [{ kind: 'dialogue', dialogue: LINES_2.night }];
+    if (!isNight(before) && isNight(after)) return [{ kind: 'dialogue', dialogue: this.nightLine }];
     if (before < LATE && after >= LATE) return [{ kind: 'dialogue', dialogue: LINES_2.late }];
     if (before < EVENING && after >= EVENING) return [{ kind: 'dialogue', dialogue: LINES_2.evening }];
     return [];
@@ -1415,8 +1417,10 @@ export class Story {
   private nightfall(): StoryEffect[] {
     if (!this.adult || isNight(this.days.clock.hour)) return [];
     this.days.clock = { ...this.days.clock, hour: NIGHT };
-    return [{ kind: 'dialogue', dialogue: LINES_2.night }];
+    return [{ kind: 'dialogue', dialogue: this.nightLine }];
   }
+  /** Aitor's word that night has come; once she has fallen, without Gerard's warning that she never sleeps. */
+  private get nightLine(): Dialogue { return this.has('reina') ? { ...LINES_2.night, lines: LINES_2.night.lines.slice(0, 1) } : LINES_2.night; }
   private endDay(why: 'home' | 'sleep' | 'fall' | 'night-fall' | 'flash'): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     // Whatever the missions had reached is undone (the cats went back to Nuria; the friends are on the sand again), back to what the snow globe keeps.
@@ -1430,6 +1434,8 @@ export class Story {
     // After her scream the picture is already white: no fall into the dark.
     const dark: StoryEffect[] = why === 'flash' ? [] : [{ kind: 'fall' }];
     if (this.doomed) return [...before, ...dark, home, { kind: 'wake' }, say(LINES_2.doom), { kind: 'rise' }, { kind: 'doom' }];
+    // After her (the Monday on), a morning is only a morning: no shout, no castle on the news, no clue to follow.
+    if (this.has('reina')) return [...before, ...dark, home, { kind: 'wake' }, { kind: 'rise' }];
     const morning = firstFall ? LINES_2.wakeFirst : why === 'night-fall' ? LINES_2.wokeLate : why === 'flash' ? LINES_2.wokeFlash : LINES_2.morning[stage(this.spread)];
     return [...before, ...dark, home, { kind: 'wake' }, say(this.withClue(morning)), { kind: 'rise' }];
   }
@@ -1812,7 +1818,7 @@ export class Story {
         if (event.id.startsWith('luca-')) return this.nearLuca(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
         if (event.id.startsWith('night-')) {
-          if (!this.night) return [];
+          if (!this.nightOut) return [];
           const group = Number(event.id.slice('night-'.length));
           const strong = this.strongGroup === group;
           this.castle.strongFight = strong;

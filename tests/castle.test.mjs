@@ -179,6 +179,17 @@ test('her last scene played in the fight: the choice comes with the win, Aitor h
   }
 });
 
+test('after her, the Meridiana at night is only a street and a morning is only a morning', () => {
+  const story = new Story(flagsAt('artilugio'));
+  story.handle({ type: 'battle', won: true, encounter: 'reina-vuelta', ending: 'bajar' });
+  assert.ok(story.has('reina'));
+  story.days.clock = { ...story.days.clock, hour: 21 };
+  assert.ok(story.night && !story.nightOut, 'night still falls, but her pupils are not out');
+  assert.deepEqual(story.handle({ type: 'near', id: 'night-0' }), [], 'nobody to catch them');
+  const home = story.handle({ type: 'home' });
+  assert.deepEqual(home.map(e => e.kind), ['dialogue', 'fall', 'travel', 'wake', 'rise'], 'home and to bed; the morning after, nothing shouted, no castle on the news');
+});
+
 test('each castle boss beaten holds her back as an ánima does, so a castle begun late can be finished', () => {
   const story = new Story(flagsAt('castle'));
   story.days.clock = { day: 6, hour: 9 };

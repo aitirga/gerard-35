@@ -1,0 +1,145 @@
+{
+  "title": "Continuidad · noche, caídas y vuelta a casa",
+  "description": "The joins between blocks (docs/chapter-2.md § Night and the way home, § What changed from the loop design): caught on the Meridiana at night and beaten, the lost screen only offers Despertar, and they wake at eleven the next morning; at the bottom of Emilie's model, Volver a antes del combate leaves El que no converge waiting until Gerard walks off and comes back, and then its fight starts again.",
+  "steps": [
+    {
+      "open": "/?story=metro&solo=1&day=2"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.story.days.clock.hour = 21"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        225,
+        75
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 20000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'near', id: `night-${window.gerard.game.nightHunters[0].group}` })"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "void window.gerard.battleUI.jumpTo('lost')"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden && !document.querySelector('#battle [data-after=\"close\"]').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "if (!document.querySelector('#battle [data-after=\"retry\"]').hidden || !document.querySelector('#battle [data-after=\"rewind\"]').hidden) throw Error('Beaten on the Meridiana at night: no fighting it again, no stepping back'); if (document.querySelector('#battle [data-after=\"close\"]').textContent !== 'Despertar') throw Error('Despertar')"
+    },
+    {
+      "shot": "noche-caida",
+      "delay": 1200,
+      "caption": "Caught on the Meridiana at night and beaten: Demasiado fuertes, and only Despertar"
+    },
+    {
+      "eval": "document.querySelector('#battle [data-after=\"close\"]').click()"
+    },
+    {
+      "until": "window.gerard.story.clock.day === 3 && window.gerard.game.environmentId === 'meridiana'",
+      "timeout": 30000
+    },
+    {
+      "eval": "if (window.gerard.story.clock.hour !== 11) throw Error('they wake late: ' + window.gerard.story.clock.hour)"
+    },
+    {
+      "shot": "las-once",
+      "delay": 7000,
+      "caption": "The next morning at eleven, in bed: «Las once… Nos han dejado KO en la Meridiana»"
+    },
+    {
+      "open": "/?mission=emilie&part=fondo&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && document.querySelector('#environment .place-name').textContent === 'El modelo de Emilie'",
+      "timeout": 120000
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "eval": "window.gerard.game.modelo.walk(20)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.phase === 'player' && !window.gerard.battleUI.fight.busy && document.activeElement?.matches('.command-trigger')",
+      "timeout": 60000
+    },
+    {
+      "eval": "void window.gerard.battleUI.jumpTo('lost')"
+    },
+    {
+      "until": "!document.querySelector('#battle .battle-result').hidden && !document.querySelector('#battle [data-after=\"rewind\"]').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "document.querySelector('#battle [data-after=\"rewind\"]').click()"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-battle]') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "if (document.querySelector('#hud[data-battle]') || window.gerard.game.modelo.fighting) throw Error('stepped back: nothing waits on that fight, and it does not start again where they stand')"
+    },
+    {
+      "shot": "fondo-volver",
+      "delay": 600,
+      "caption": "Volver a antes del combate at the bottom of Emilie's model: still before El que no converge, which waits for Gerard to walk off"
+    },
+    {
+      "eval": "window.gerard.game.modelo.walk(8)"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.game.modelo.walk(20)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "document.querySelector('#hud[data-battle]') && window.gerard.battleUI.fight?.encounter === 'no-converge'",
+      "timeout": 30000
+    },
+    {
+      "shot": "fondo-otra-vez",
+      "delay": 1500,
+      "caption": "Walked off and back: its fight starts again (before, after stepping back nothing ever caught them again, and the model's only way out is through it)"
+    }
+  ]
+}
