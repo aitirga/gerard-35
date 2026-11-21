@@ -1,6 +1,6 @@
 {
-  "title": "Hoja de ánimas · notas",
-  "description": "The ánimas' sheet as just animas serves it (output/reports/animas/, written again on each load by animasSheet in vite.config.ts): an ánima's design beside what the game has, with its notes in the rail on the right, written, edited and closed there; the Notas page gathers them all. It writes to output/reports/animas/notes-scratch.json (?notas=scratch), never to docs/anima-notes.json, and empties it at the end.",
+  "title": "Hoja de ánimas · notas y escenario",
+  "description": "The ánimas' sheet as just animas serves it (output/reports/animas/, written again on each load by animasSheet in vite.config.ts): an ánima's design beside what the game has, with its notes in the rail on the right, written, edited and closed there, about the whole page or one row (✎) and with what they ask to change; the Notas page gathers them all. Above the notes, the stage: ▶ on a skill, a dual, a status or a reaction plays it in a real fight in a frame (/?anima-demo, src/anima-demo.ts). It writes to output/reports/animas/notes-scratch.json (?notas=scratch), never to docs/anima-notes.json, and empties it at the end. Run it with --gpu.",
   "steps": [
     {
       "open": "/__animas/notas?archivo=scratch",
@@ -58,6 +58,99 @@
       "shot": "todas",
       "delay": 400,
       "caption": "Notas: every open note on the sheet, by ánima and page, each linking to its page (Todas also shows the closed ones)"
+    },
+    {
+      "eval": "location.hash = 'papagato'"
+    },
+    {
+      "eval": "document.querySelector('[data-item=\"skill:zarpazos\"] .pen').click()"
+    },
+    {
+      "eval": "document.querySelector('#notes [data-change=\"animación\"]').click()"
+    },
+    {
+      "eval": "(() => { const t = document.querySelector('#notes [data-draft]'); t.focus(); t.value = 'Los arañazos se leen poco desde lejos: que cada zarpa deje una estela más larga.'; t.dispatchEvent(new Event('input', { bubbles: true })); })()"
+    },
+    {
+      "shot": "nota-de-fila",
+      "delay": 300,
+      "caption": "✎ on Zarpazos: the note is about that skill (× makes it about the page again) and asks to change its animation"
+    },
+    {
+      "press": "Control+Enter"
+    },
+    {
+      "until": "window.animaNotes.notes().some(n => n.item === 'skill:zarpazos')",
+      "timeout": 10000
+    },
+    {
+      "eval": "document.querySelector('[data-item=\"skill:zarpazos\"] .play').click()"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('▶ Zarpazos') && !window.animaNotes.said().includes('preparando')",
+      "timeout": 120000
+    },
+    {
+      "shot": "escenario",
+      "delay": 900,
+      "caption": "▶ on Zarpazos plays it in the stage: the game in a frame, Gerard at 35 and Aitor against three dogs, the skill done by the fight's own rules; the row is lit, its note marked ✎ 1 and tagged in the rail"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('✓')",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('#duos [data-item=\"dual:zarpazos-de-fuego\"] .play').click(); document.querySelector('#stage .zoom').click()"
+    },
+    {
+      "eval": "location.hash = 'duos'"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('▶ Zarpazos de fuego')",
+      "timeout": 30000
+    },
+    {
+      "shot": "dual-ampliado",
+      "delay": 2200,
+      "caption": "A click on the stage enlarges it over the page, playing the dual Zarpazos de fuego (Matemágico on Gerard, Papagato on Aitor) with its banner; another click or Esc gives the page back"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('✓')",
+      "timeout": 30000
+    },
+    {
+      "press": "ArrowRight"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('▶ ') && !window.animaNotes.said().includes('Zarpazos de fuego') && !window.animaNotes.said().includes('preparando')",
+      "timeout": 30000
+    },
+    {
+      "shot": "siguiente-ampliado",
+      "delay": 2200,
+      "caption": "→ in the enlarged stage plays the next dual of the page (← the one before), without leaving it"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('✓')",
+      "timeout": 30000
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "location.hash = 'mecanicas'"
+    },
+    {
+      "eval": "document.querySelector('[data-item=\"reaccion:vapor\"] .play').click()"
+    },
+    {
+      "until": "window.animaNotes.said().startsWith('✓')",
+      "timeout": 30000
+    },
+    {
+      "shot": "reaccion",
+      "delay": 1400,
+      "caption": "Mecánicas compartidas: how each status and reaction looks in the game, ▶ puts it on the middle dog (here Vapor: Mojado, then fire)"
     },
     {
       "eval": "fetch('/__animas/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: [] }) })"

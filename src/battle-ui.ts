@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -12,7 +12,7 @@ import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
 import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_REVEAL, DUAL_SLOW, holdAfter } from './battle-motion';
-import { award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
+import { MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
@@ -2570,7 +2570,91 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     render();
     if (state.phase === 'player') focusFirst();
   }
+  /**
+   * Development (the ánimas' sheet's stage, `?anima-demo`, src/anima-demo.ts): one skill or dual
+   * played by the fight's own rules and shown as the fight shows it (banner, callout, the scene's
+   * effects, numbers, sounds), on a fight that never ends. Whoever can wear its ánima puts it on, at
+   * its top level with its maná full and no limits of use (`unbound`); everyone stands again, the foes
+   * with PV to spare, and the turn comes back after. Returns what was played, or why it could not be.
+   */
+  async function demo(move: { skill?: SkillId; dual?: DualId }): Promise<{ ok: boolean; text: string }> {
+    if (!state) return { ok: false, text: 'No hay combate.' };
+    if (busy || state.phase !== 'player') return { ok: false, text: 'Espera: el combate aún se mueve.' };
+    const s = state, token = generation, all = Object.keys(ANIMA_NAMES) as ClassId[];
+    collapse();
+    s.unbound = true; s.animas = all; s.levels = Object.fromEntries(all.map(id => [id, MAX_LEVEL]));
+    // Every tree's skills and every dúo mayor bought; the passives stay off, so each skill is seen as it is.
+    s.improved = { ...s.improved, skills: SKILLS.filter(x => 'node' in x).map(x => x.id as SkillId), duals: DUALS.filter(d => d.major).map(d => d.id) };
+    s.spent = []; delete s.queued;
+    const stand = () => {
+      for (const c of s.allies) { c.hp = c.maxHp; c.kit = all.filter(id => canWear(c.id, id)); }
+      for (const f of s.foes) { f.maxHp = Math.max(f.maxHp, 600); f.hp = f.maxHp; }
+    };
+    stand();
+    /** Puts `cls` on `ally`: whoever else has it on changes to another first. */
+    const wear = (ally: Combatant, cls: ClassId) => {
+      if (ally.classId !== cls) {
+        const other = s.allies.find(a => a !== ally && a.classId === cls);
+        if (other) { s.active = s.allies.indexOf(other); const spare = kitIn(s, other).find(id => id !== cls && free(s, other, id)); if (spare) wearAnima(s, spare); }
+        s.active = s.allies.indexOf(ally);
+        if (!wearAnima(s, cls)) return false;
+      }
+      ally.secondary = ally.maxSecondary;
+      for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(s.improved, id, s.levels);
+      return true;
+    };
+    const middle = (list: Combatant[]) => list[Math.floor((list.length - 1) / 2)]?.id;
+    const named = (c: Combatant) => `${c.name} con ${ANIMA_NAMES[c.classId!]}`;
+    let effect: BattleEffect | undefined, text = '';
+    if (move.dual) {
+      const d = DUALS.find(x => x.id === move.dual);
+      if (!d) return { ok: false, text: `No hay dúo ${move.dual}.` };
+      const [a, b] = d.parts.map(p => SKILLS.find(x => x.id === p)!.class as ClassId);
+      const [x, y] = s.allies.filter(c => c.hp > 0);
+      const pair = x && y ? canWear(x.id, a) && canWear(y.id, b) ? [x, y] : canWear(y.id, a) && canWear(x.id, b) ? [y, x] : undefined : undefined;
+      if (!pair) return { ok: false, text: `Nadie en el grupo puede llevar ${ANIMA_NAMES[a]} y ${ANIMA_NAMES[b]} a la vez.` };
+      // The second half first, so the first's ánima is put on last and its wearer is the one acting.
+      if (!wear(pair[1], b) || !wear(pair[0], a)) return { ok: false, text: 'No se pudieron poner las dos ánimas.' };
+      if (d.parts.some(p => SKILLS.find(x => x.id === p)?.kind === 'heal')) for (const c of s.allies) c.hp = Math.ceil(c.maxHp / 2);
+      const target = middle(dualTargets(s, d));
+      takeTurn(s, pair[0].id);
+      effect = holdBack(() => actDual(s, d.id, target));
+      text = `${d.name} · ${named(pair[0])} y ${named(pair[1])}`;
+    } else if (move.skill) {
+      const spec = SKILLS.find(x => x.id === move.skill);
+      if (!spec) return { ok: false, text: `No hay habilidad ${move.skill}.` };
+      const cls = spec.class as ClassId;
+      const who = s.allies.filter(c => canWear(c.id, cls)).sort((p, q) => Number(ANIMA_OWNERS[cls] === q.id) - Number(ANIMA_OWNERS[cls] === p.id))[0];
+      if (!who || !wear(who, cls)) return { ok: false, text: `Nadie en el grupo puede llevar ${ANIMA_NAMES[cls]}.` };
+      // What it needs to be there: someone hurt for a cure, the die of its face, the meteor at its size.
+      if (spec.kind === 'heal') for (const c of s.allies) c.hp = Math.ceil(c.maxHp / 2);
+      // Agitar is no action: the hand is thrown again and the turn goes on (`shakeHand`).
+      if ('free' in spec) { takeTurn(s, who.id); shakeHand(); return { ok: true, text: `${spec.name} · ${named(who)}` }; }
+      let skill = spec.id as SkillId, die: number | undefined;
+      if ('face' in spec) { who.dice = [spec.face as DieFace]; skill = 'tirar-dado'; die = 0; }
+      if ('meteor' in spec) who.meteor = spec.meteor as number;
+      takeTurn(s, who.id);
+      const targets = validTargets(s, 'skill', skill, die);
+      const target = spec.side === 'allies' ? (s.allies.find(c => c !== who && targets.includes(c)) ?? targets[0])?.id : middle(targets);
+      effect = holdBack(() => act(s, 'skill', target, skill, die));
+      text = `${spec.name} · ${named(who)}`;
+    }
+    if (!effect) { const why = s.message; stand(); s.phase = 'player'; render(); return { ok: false, text: `${text || 'Eso'} no se puede ahora${why ? `: ${why}` : '.'}` }; }
+    busy = true; render();
+    try {
+      await play(effect, token);
+      if (token !== generation || !state) return { ok: false, text: 'El combate se cerró.' };
+      await flushNews(token);
+    } finally {
+      if (token === generation && state === s) {
+        s.phase = 'player'; s.spent = []; delete s.queued; s.active = 0;
+        stand(); busy = false; void callbacks.change(s); render();
+      }
+    }
+    return { ok: true, text };
+  }
   const ui = {
+    demo,
     /** Development: what the picker needs to offer this fight's moments. */
     get fight() { return state && { encounter: state.encounter, phase: state.phase, awakened: state.awakened, busy, song: songLabel(state), light: lightNow(state) }; },
     /** Development and screenshots: the fight itself, to set a moment no picker entry stages (it shows on the next thing drawn). */

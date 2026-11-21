@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ANIMA_NOTES_ENDPOINT, ANIMA_NOTES_FILES, SHEET_PAGES } from '../src/anima-notes.ts';
+import { ANIMA_NOTES_ENDPOINT, ANIMA_NOTES_FILES, CHANGES, SHEET_PAGES } from '../src/anima-notes.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, DUALS, MANA_POINTS, PASSIVES, SKILLS } from '../src/battle.ts';
 import { IMPROVEMENTS } from '../src/ecos.ts';
 import { LEVELLED, LEVEL_XP, topOf } from '../src/levels.ts';
@@ -93,10 +93,28 @@ function identity(id) {
   const block = classesSource.match(new RegExp(`\\n  ${id}: \\{[\\s\\S]*?\\n  \\},`))?.[0] ?? '';
   return { motto: block.match(/motto: '([^']*)'/)?.[1], colour: block.match(/colour: '(#[0-9a-fA-F]+)'/)?.[1] };
 }
-const STATS = { pv: 'PV', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', velocidad: 'Velocidad' };
+// How the statuses and reactions look in a fight: src/status-fx.ts draws with PlayCanvas too, so its two catalogues are read as text.
+const statusSource = await readFile(resolve(root, 'src/status-fx.ts'), 'utf8');
+const catalogue = name => { const at = statusSource.indexOf(`export const ${name}`); return statusSource.slice(at, statusSource.indexOf('\n};', at)); };
+const text = t => t.replace(/\\'/g, "'");
+const STRING = String.raw`'((?:[^'\\]|\\.)*)'`;
+const LOOKS = [...catalogue('STATUS_LOOKS').matchAll(new RegExp(String.raw`^  '?([\w-]+)'?: \{\s*name: ${STRING}, family: ${STRING}[^\n]*\n\s*shows: ${STRING}`, 'gm'))]
+  .map(([, id, name, family, shows]) => ({ id, name: text(name), family: text(family), shows: text(shows) }));
+const REACTION_LOOKS = [...catalogue('REACTIONS').matchAll(new RegExp(String.raw`^  '?([\w-]+)'?: \{ name: ${STRING}, status: '([\w-]+)', element: ${STRING}, leaves: ${STRING}, shows: ${STRING} \}`, 'gm'))]
+  .map(([, id, name, status, element, leaves, shows]) => ({ id, name: text(name), status, element: text(element), leaves: text(leaves), shows: text(shows) }));
+for (const [name, list] of [['STATUS_LOOKS', LOOKS], ['REACTIONS', REACTION_LOOKS]]) {
+  const keys = (catalogue(name).match(/^  '?[\w-]+'?: \{/gm) ?? []).length;
+  if (list.length !== keys) throw new Error(`scripts/animas.mjs: leídos ${list.length} de ${keys} en ${name} (src/status-fx.ts): ¿ha cambiado su forma?`);
+}
+const STATS = { pv: 'PV', fuerza: 'Fuerza', magia: 'Magia', defensa: 'Defensa', espiritu: 'Espíritu', critico: 'Crítico' };
 const SIDES = { foes: 'un enemigo', 'all-foes': 'todos los enemigos', allies: 'un aliado', party: 'todo el equipo' };
 const KINDS = { physical: 'físico', magic: 'mágico', heal: 'cura', boost: 'sube atributos', debuff: 'baja atributos', guard: 'protege' };
 const PEOPLE = { gerard: 'Gerard', aitor: 'Aitor' };
+/**
+ * A row's tools: ▶ plays it on the stage (a real fight in a frame, `/?anima-demo`, src/anima-demo.ts;
+ * only served), ✎ writes a note about it in the rail, and how many open notes it has.
+ */
+const tools = (item, name, play) => `<span class="tools">${play ? `<button type="button" class="play" data-play="${esc(JSON.stringify(play))}" data-play-name="${esc(name)}" title="Verlo en un combate">▶</button>` : ''}<button type="button" class="pen" data-about="${item}" data-about-name="${esc(name)}" title="Una nota sobre ${esc(name)}">✎</button><span class="mark" data-item-mark="${item}"></span></span>`;
 const pips = n => `<span class="pips" title="${n} de maná">${'<i></i>'.repeat(n)}</span>`;
 const skillOf = id => SKILLS.find(s => s.id === id);
 /** What a skill is, in a line of chips read from its own data. */
@@ -111,7 +129,7 @@ function chips(skill) {
   if (skill.abstract) list.push('abstracta');
   return [...list, SIDES[skill.side] ?? skill.side].map(c => `<span class="chip">${esc(c)}</span>`).join('');
 }
-const skillRow = (skill, when) => `<tr><td class="when">${when}</td><td><strong>${esc(skill.name)}</strong></td><td>${pips(skill.cost)}</td><td>${chips(skill)}</td><td class="say">${esc(skill.description)}</td></tr>`;
+const skillRow = (skill, when) => `<tr data-item="skill:${skill.id}"><td>${tools(`skill:${skill.id}`, skill.name, { skill: skill.id })}</td><td class="when">${when}</td><td><strong>${esc(skill.name)}</strong></td><td>${pips(skill.cost)}</td><td>${chips(skill)}</td><td class="say">${esc(skill.description)}</td></tr>`;
 /** What the game has of an ánima today, all from the code. */
 function built(id) {
   const stats = Object.entries(CLASS_STATS[id] ?? {}).map(([stat, n]) => `<span class="stat" data-sign="${n < 0 ? 'down' : 'up'}">${STATS[stat] ?? stat} ${n > 0 ? '+' : '−'}${Math.abs(n)}</span>`).join('') || '<span class="none">Ninguno</span>';
@@ -120,10 +138,10 @@ function built(id) {
   const levelled = LEVELLED.includes(id);
   const when = s => 'face' in s ? 'Cara' : s.node ? `Bote · ${nodes.find(n => n.skill === s.id)?.cost ?? '?'} eco` : `Nv ${s.level ?? 1}`;
   const order = s => s.node ? 100 : s.level ?? 1;
-  const skills = mine.length ? `<div class="table"><table><thead><tr><th>Viene con</th><th>Habilidad</th><th>Maná</th><th>Qué es</th><th>Descripción en el juego</th></tr></thead><tbody>${[...mine].sort((a, b) => order(a) - order(b)).map(s => skillRow(s, when(s))).join('')}</tbody></table></div>` : '<p class="none">Ninguna habilidad en el juego todavía.</p>';
+  const skills = mine.length ? `<div class="table"><table><thead><tr><th></th><th>Viene con</th><th>Habilidad</th><th>Maná</th><th>Qué es</th><th>Descripción en el juego</th></tr></thead><tbody>${[...mine].sort((a, b) => order(a) - order(b)).map(s => skillRow(s, when(s))).join('')}</tbody></table></div>` : '<p class="none">Ninguna habilidad en el juego todavía.</p>';
   // The rule an ánima has from level 1 (Dadista's Racha) goes first, with what the game says of it.
-  const rule = ANIMA_RULES[id] ? `<li><strong>${esc(ANIMA_RULES[id].name)}</strong> <small>regla · nivel 1</small><br>${esc(ANIMA_RULES[id].description)}</li>` : '';
-  const passives = Object.values(PASSIVES).filter(p => p.anima === id).map(p => { const node = nodes.find(n => n.kind === 'passive' && n.name === p.name); return `<li><strong>${esc(p.name)}</strong>${node ? ` <small>bote · ${node.cost} ecos</small><br>${esc(node.description)}` : ''}</li>`; }).join('');
+  const rule = ANIMA_RULES[id] ? `<li data-item="regla:${id}"><strong>${esc(ANIMA_RULES[id].name)}</strong> <small>regla · nivel 1</small> ${tools(`regla:${id}`, ANIMA_RULES[id].name)}<br>${esc(ANIMA_RULES[id].description)}</li>` : '';
+  const passives = Object.entries(PASSIVES).filter(([, p]) => p.anima === id).map(([key, p]) => { const node = nodes.find(n => n.kind === 'passive' && n.name === p.name); return `<li data-item="pasiva:${key}"><strong>${esc(p.name)}</strong>${node ? ` <small>bote · ${node.cost} ecos</small>` : ''} ${tools(`pasiva:${key}`, p.name)}${node ? `<br>${esc(node.description)}` : ''}</li>`; }).join('');
   const duals = DUALS.filter(d => d.parts.some(part => skillOf(part)?.class === id)).map(dualRow).join('');
   const jar = nodes.filter(n => n.kind !== 'skill' && n.kind !== 'passive').map(n => `<span class="chip">${n.kind === 'dual' ? 'Dúo mayor · ' : ''}${esc(n.name)} · ${n.cost} eco${n.cost > 1 ? 's' : ''}${n.veiled ? ' · duerme' : ''}</span>`).join('');
   return `
@@ -138,12 +156,12 @@ function built(id) {
     <h4>Dúos de los que es mitad</h4>${duals ? dualTable(duals) : '<p class="none">Ninguno.</p>'}
     <h4>En el bote</h4><p>${jar || '<span class="none">Nada.</span>'}</p>`;
 }
-const dualTable = rows => `<div class="table"><table><thead><tr><th>Dúo</th><th>Pareja</th><th>Mitades</th><th>Qué es</th><th>Descripción en el juego</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+const dualTable = rows => `<div class="table"><table><thead><tr><th></th><th>Dúo</th><th>Pareja</th><th>Mitades</th><th>Qué es</th><th>Descripción en el juego</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 function dualRow(dual) {
   const halves = dual.parts.map(skillOf);
   const pair = halves.map(s => `<a href="#${s.class}">${esc(ANIMA_NAMES[s.class])}</a>`).join(' + ');
   const parts = halves.map(s => `${esc(s.name)} ${pips(s.cost)} <small>${s.node ? 'bote' : `nv ${s.level ?? 1}`}</small>`).join('<br>');
-  return `<tr><td><strong>${esc(dual.name)}</strong></td><td>${pair}</td><td>${parts}</td><td>${chips(dual)}</td><td class="say">${esc(dual.description)}</td></tr>`;
+  return `<tr data-item="dual:${dual.id}"><td>${tools(`dual:${dual.id}`, dual.name, { dual: dual.id })}</td><td><strong>${esc(dual.name)}</strong></td><td>${pair}</td><td>${parts}</td><td>${chips(dual)}</td><td class="say">${esc(dual.description)}</td></tr>`;
 }
 
 // ——— The page ———
@@ -186,10 +204,11 @@ function definitiva(a) {
     const told = row[2].match(/^\*([^*]+)\*:?\s*(.*)$/);
     name = told?.[1] ?? row[2]; facts = [['Wakes in a fight when', row[1]], ['What it does', told?.[2] ?? '']];
   }
-  const inGame = SKILLS.some(s => s.name === name);
-  return `<article class="card ult" style="--c:${a.colour}">
+  const skill = SKILLS.find(s => s.name === name), inGame = !!skill;
+  const item = skill ? `skill:${skill.id}` : `definitiva:${a.id}`;
+  return `<article class="card ult" style="--c:${a.colour}" data-item="${item}">
     <h2>Definitiva <small>una vez por combate · gasta el turno · sin maná · se compra en el bote</small></h2>
-    <div class="ult-head"><h3>${esc(name)}</h3><span class="state${inGame ? ' on' : ''}">${inGame ? 'En el juego' : own ? 'Diseñada · todavía no está en el juego' : 'Solo la idea · su ánima aún no se ha repasado'}</span></div>
+    <div class="ult-head"><h3>${esc(name)}</h3>${tools(item, name, skill && { skill: skill.id })}<span class="state${inGame ? ' on' : ''}">${inGame ? 'En el juego' : own ? 'Diseñada · todavía no está en el juego' : 'Solo la idea · su ánima aún no se ha repasado'}</span></div>
     ${text ? `<p class="ult-text">${esc(text)}</p>` : ''}
     <dl>${facts.map(([label, value]) => `<dt>${esc(ULT_LABELS[label] ?? label)}</dt><dd>${inline(value, a.dir)}</dd>`).join('')}</dl>
     ${more ? `<details><summary>Cómo funciona</summary>${markdown(more, a.dir, 2)}</details>` : ''}
@@ -207,18 +226,23 @@ const animaView = a => view(a.id, a.name, `
     <article class="card"><h2>Diseño <small>lo que se quiere que sea · su doc</small></h2>${a.doc.list.filter(s => !/^Definitiva\b/.test(s.title)).map((s, i) => fold(s, a.dir, i < 6)).join('')}</article>
     <article class="card game"><h2>En el juego hoy <small>leído del código</small></h2>${a.inGame ? built(a.id) : '<p class="none">Todavía no existe en el juego: solo su diseño.</p>'}</article>
   </div>`);
-const catalogue = rule('Catalogue'), combined = rule('Combined skills'), shared = rule('Shared mechanics');
+const catalogueRule = rule('Catalogue'), combined = rule('Combined skills'), shared = rule('Shared mechanics');
 const grow = ['Two ways to grow', 'Levels', 'Ecos de luz', 'Growth opens with the castle', 'Definitivas', 'Ánima points'].map(rule).filter(Boolean);
 const mark = id => `<span class="mark" data-mark="${id}"></span>`;
 const views = [
   view('catalogo', SHEET_PAGES.catalogo, `<header class="hero"><h1>Ánimas</h1><p class="status">Cada ánima con su diseño al lado de lo que el juego tiene hoy. Se escribe de nuevo con <code>just animas</code> (al recargar) o <code>just animas-report</code>.</p></header>
     <div class="tiles">${animas.map(a => `<a class="tile" href="#${a.id}" style="--c:${a.colour}"><strong>${esc(a.name)}</strong><span>${a.motto ? `«${esc(a.motto)}»` : ''}</span><small>${a.inGame ? `${SKILLS.filter(s => s.class === a.id).length} habilidades en el juego` : 'Solo diseño'} ${mark(a.id)}</small></a>`).join('')}</div>
-    <article class="card">${catalogue ? markdown(catalogue.body, docs, 2) : ''}</article>`),
+    <article class="card">${catalogueRule ? markdown(catalogueRule.body, docs, 2) : ''}</article>`),
   ...animas.map(animaView),
   view('duos', SHEET_PAGES.duos, `<header class="hero"><h1>Dúos</h1><p class="status">Dos habilidades de dos ánimas, una de cada jugador, que se vuelven una sola acción.</p></header>
     <article class="card game"><h2>En el juego hoy <small>leído del código</small></h2>${dualTable(DUALS.map(dualRow).join(''))}</article>
     <article class="card"><h2>Diseño <small>reglas, parejas e ideas</small></h2>${combined ? markdown(combined.body, docs, 2) : ''}</article>`),
-  view('mecanicas', SHEET_PAGES.mecanicas, `<header class="hero"><h1>Mecánicas compartidas</h1><p class="status">Estados y reglas que más de un ánima puede poner o aprovechar.</p></header><article class="card">${shared ? markdown(shared.body, docs, 2) : ''}</article>`),
+  view('mecanicas', SHEET_PAGES.mecanicas, `<header class="hero"><h1>Mecánicas compartidas</h1><p class="status">Estados y reglas que más de un ánima puede poner o aprovechar.</p></header>
+    <article class="card game"><h2>En el juego hoy <small>cómo se ven · ▶ los pone en el perro del medio</small></h2>
+      <h4>Estados</h4><div class="table"><table><thead><tr><th></th><th>Estado</th><th>De</th><th>Cómo se ve</th></tr></thead><tbody>${LOOKS.map(l => `<tr data-item="estado:${l.id}"><td>${tools(`estado:${l.id}`, l.name, { status: l.id })}</td><td><strong>${esc(l.name)}</strong></td><td class="when">${esc(l.family)}</td><td class="say">${esc(l.shows)}</td></tr>`).join('')}</tbody></table></div>
+      <h4>Reacciones</h4><div class="table"><table><thead><tr><th></th><th>Reacción</th><th>Sobre</th><th>Con</th><th>Deja</th><th>Cómo se ve</th></tr></thead><tbody>${REACTION_LOOKS.map(r => `<tr data-item="reaccion:${r.id}"><td>${tools(`reaccion:${r.id}`, r.name, { reaction: r.id })}</td><td><strong>${esc(r.name)}</strong></td><td class="when">${esc(LOOKS.find(l => l.id === r.status)?.name ?? r.status)}</td><td class="when">${esc(r.element)}</td><td>${esc(r.leaves)}</td><td class="say">${esc(r.shows)}</td></tr>`).join('')}</tbody></table></div>
+    </article>
+    <article class="card"><h2>Diseño <small>docs/animas/README.md</small></h2>${shared ? markdown(shared.body, docs, 2) : ''}</article>`),
   view('reglas', SHEET_PAGES.reglas, `<header class="hero"><h1>Cómo crecen</h1><p class="status">Niveles, el bote, los ecos de luz y las definitivas.</p></header><article class="card">${grow.map((s, i) => fold(s, docs, i === 0)).join('')}</article>`),
   view('notas', 'Notas', `<header class="hero"><h1>Notas</h1><p class="status">Lo anotado en cada ánima y página de la hoja, en <code>docs/anima-notes.json</code>. Las abiertas las lee <code>/anima</code>, que contesta debajo de cada una.</p></header><div id="all-notes"></div>`),
 ];
@@ -243,15 +267,42 @@ const page = `<!doctype html>
   a { color: var(--gold); text-decoration: none; } a:hover { text-decoration: underline; }
   code { background: #ffffff10; border-radius: 3px; padding: 0 4px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--soft); }
   pre { background: #0e100b; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; overflow: auto; font: 12px/1.45 ui-monospace, Menlo, monospace; color: var(--soft); }
-  #app { display: grid; grid-template-columns: 230px minmax(0, 1fr) 340px; min-height: 100vh; }
-  #app[data-view="notas"] { grid-template-columns: 230px minmax(0, 1fr); } #app[data-view="notas"] #notes { display: none; }
+  #app { display: grid; grid-template-columns: 230px minmax(0, 1fr) clamp(520px, 40vw, 820px); min-height: 100vh; }
+  #app[data-view="notas"] { grid-template-columns: 230px minmax(0, 1fr); } #app[data-view="notas"] #rail { display: none; }
   nav { position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto; border-right: 1px solid var(--line); padding: 16px 10px; }
   nav h3 { margin: 16px 8px 4px; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
   nav a { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 3px; color: var(--soft); }
   nav a:hover { background: #ffffff0d; text-decoration: none; } nav a[aria-current="true"] { background: #f3cf7826; color: var(--text); }
   nav a .right { margin-left: auto; display: flex; gap: 6px; align-items: baseline; } nav a small { color: var(--dim); font-size: 11px; }
   .mark { color: var(--open); font-size: 11px; font-weight: 600; white-space: nowrap; } .mark:empty { display: none; }
-  #notes { position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto; border-left: 1px solid var(--line); background: #171a12; padding: 18px 14px 40px; }
+  #rail { position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto; border-left: 1px solid var(--line); background: #171a12; padding: 14px 14px 40px; }
+  #rail > h2, #notes > h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+  /* The stage: the game in a frame, in a fight that never ends (src/anima-demo.ts). */
+  #stage { margin-bottom: 16px; }
+  #stage .stage-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; } #stage .stage-head h2 { margin: 0 auto 0 0; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--game); }
+  #stage .screen { position: relative; aspect-ratio: 16 / 9; background: #0b0d08; border: 1px solid #7fc88f55; border-radius: 4px; overflow: hidden; }
+  /* The game is drawn at 1280 × 720, as on a screen, and scaled to the box (\`fit\`), so its HUD keeps its proportions. */
+  #stage iframe { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; }
+  /* A layer over the frame: a click enlarges the stage (or shrinks it back), and keeps the keys on the page for ← / →. */
+  #stage .screen .zoom { position: absolute; inset: 0; z-index: 1; cursor: zoom-in; } #stage.big .screen .zoom { cursor: zoom-out; }
+  #stage .stage-keys { margin: 0 0 6px; font-size: 11px; color: var(--dim); white-space: nowrap; }
+  #stage .screen p { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 16px; text-align: center; color: var(--dim); font-size: 12px; }
+  #stage .stage-say { min-height: 1.5em; margin: 6px 0 0; font-size: 12px; color: var(--soft); } #stage .stage-say.bad { color: var(--bad); }
+  #stage.big { position: fixed; z-index: 10; inset: 4vh 4vw; margin: 0; padding: 12px 14px; background: #171a12; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 0 0 100vmax #000000b0; display: flex; flex-direction: column; }
+  #stage.big .screen { flex: 1; aspect-ratio: auto; } #stage.big .screen iframe { left: 50%; top: 50%; }
+  body:not([data-served]) .play, body:not([data-served]) #stage { display: none; }
+  .tools { display: inline-flex; gap: 3px; align-items: center; vertical-align: middle; white-space: nowrap; }
+  .tools button { padding: 0 7px; font-size: 12px; line-height: 20px; }
+  .tools .play { color: var(--game); border-color: #7fc88f66; } .tools .play:hover { background: #7fc88f26; }
+  [data-item].playing { background: #7fc88f14; } [data-item].flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { from { background: #f3cf7840; } to { background: transparent; } }
+  .ult-head .tools { align-self: center; }
+  .about { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+  .about .chip { cursor: default; } .about .chip button { all: unset; cursor: pointer; margin-left: 4px; color: var(--dim); } .about .chip button:hover { color: var(--text); }
+  .change-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 6px; font-size: 12px; color: var(--dim); }
+  .change-chips button { font-size: 11px; padding: 1px 8px; border-radius: 99px; }
+  .tag { display: inline-block; padding: 0 7px; border-radius: 99px; font-size: 11px; background: #ffffff10; border: 1px solid #ffffff1c; color: var(--soft); }
+  .tag.item { cursor: pointer; color: var(--gold); border-color: #f3cf7855; } .tag.change { color: var(--open); border-color: #f0a35a66; }
   #notes > h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
   #notes > h2 small { color: var(--dim); letter-spacing: 0; text-transform: none; font-weight: 400; margin-left: 6px; font-size: 12px; }
   button { padding: 4px 10px; border: 1px solid #ffffff2a; border-radius: 3px; background: #ffffff0d; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
@@ -316,7 +367,13 @@ const page = `<!doctype html>
 </style>
 </head>
 <body>
-<div id="app"><nav>${nav}</nav><main>${views.join('\n')}</main><aside id="notes"></aside></div>
+<div id="app"><nav>${nav}</nav><main>${views.join('\n')}</main><aside id="rail">
+  <section id="stage"><div class="stage-head"><h2>Escenario</h2><button type="button" data-stage="again" disabled>Repetir</button><button type="button" data-stage="big" aria-pressed="false">Ampliar</button></div>
+    <p class="stage-keys" hidden>← → otra habilidad · clic para ampliar · Esc para cerrar</p>
+    <div class="screen"><p>Pulsa ▶ en una habilidad, un dúo, un estado o una reacción para verlo en un combate de verdad: Gerard y Aitor contra tres perros, con todo desbloqueado y sin que nadie caiga.</p></div>
+    <p class="stage-say"></p></section>
+  <div id="notes"></div>
+</aside></div>
 <script type="application/json" id="notes-at-write">${JSON.stringify(notesAtWrite).replace(/</g, '\\u003c')}</script>
 <script>
   // ——— Notes (src/anima-notes.ts): written through the dev server when there is one (just animas) ———
@@ -324,10 +381,16 @@ const page = `<!doctype html>
   const endpoint = '${ANIMA_NOTES_ENDPOINT}' + (query.get('notas') === 'scratch' ? '?archivo=scratch' : '');
   const VIEWS = Object.fromEntries([...document.querySelectorAll('.view')].map(v => [v.id, v.dataset.title]));
   const STATES = { abierta: 'Abierta', hecha: 'Hecha', descartada: 'Descartada' };
+  const CHANGES = ${JSON.stringify(CHANGES)};
+  const served = location.protocol.startsWith('http');
+  if (served) document.body.dataset.served = '';
   let notes = JSON.parse(document.getElementById('notes-at-write').textContent).notes;
   let writable = false, loaded = false, error = '', current = 'catalogo', showAll = false;
-  /** What is being typed: a new note per page, the note whose text is being changed, the one whose Borrar was pressed once. */
-  const drafts = {};
+  /**
+   * What is being typed: a new note per page, with what on it it is about (✎ on a row) and what it
+   * asks to change; the note whose text is being changed, the one whose Borrar was pressed once.
+   */
+  const drafts = {}, abouts = {}, changing = {};
   let editing, confirming;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const lines = s => esc(s).replace(/\\n/g, '<br>');
@@ -360,11 +423,11 @@ const page = `<!doctype html>
     render();
   }
   function add() {
-    const entry = current, text = (drafts[entry] ?? '').trim();
-    if (!writable || !text || !VIEWS[entry] || entry === 'notas') return;
+    const entry = current, text = (drafts[entry] ?? '').trim(), about = abouts[entry], asks = changing[entry] ?? [];
+    if (!writable || (!text && !asks.length) || !VIEWS[entry] || entry === 'notas') return;
     const now = new Date();
-    const note = { id: 'n-' + now.getTime().toString(36), entry, name: VIEWS[entry], text, status: 'abierta', created: isoNow() };
-    change(list => { list.push(note); }, () => { drafts[entry] = ''; });
+    const note = { id: 'n-' + now.getTime().toString(36), entry, name: VIEWS[entry], ...about ? { item: about.item, itemName: about.name } : {}, ...asks.length ? { change: [...asks] } : {}, text, status: 'abierta', created: isoNow() };
+    change(list => { list.push(note); }, () => { drafts[entry] = ''; delete abouts[entry]; delete changing[entry]; });
   }
   function act(id, action) {
     if (action === 'editar') { editing = { id, text: notes.find(n => n.id === id)?.text ?? '' }; confirming = undefined; render(); focus(here() + ' [data-edit]'); return; }
@@ -392,13 +455,18 @@ const page = `<!doctype html>
         + (writable ? '<div class="note-actions"><button data-act="editar">Editar</button>'
           + (n.status === 'abierta' ? '<button data-act="hecha">Hecha</button><button data-act="descartada">Descartar</button>' : '<button data-act="abierta">Reabrir</button>')
           + '<button data-act="borrar"' + (confirming === n.id ? ' class="danger">¿Borrar?' : '>Borrar') + '</button></div>' : '');
-    return '<div class="note ' + n.status + '" data-note="' + n.id + '"><div class="note-head">' + head + '</div>' + body + '</div>';
+    const tags = n.item || n.change ? '<div class="about">' + (n.item ? '<span class="tag item" data-goto="' + esc(n.item) + '" title="Ir a ' + esc(n.itemName) + '">' + esc(n.itemName) + '</span>' : '') + (n.change ?? []).map(c => '<span class="tag change">Cambiar · ' + esc(c) + '</span>').join('') + '</div>' : '';
+    return '<div class="note ' + n.status + '" data-note="' + n.id + '"><div class="note-head">' + head + '</div>' + tags + body + '</div>';
   }
   function renderRail() {
     const rail = document.getElementById('notes');
     if (current === 'notas') { rail.innerHTML = ''; return; }
+    const about = abouts[current], asks = changing[current] ?? [];
     const form = writable
-      ? '<div class="note-form"><textarea data-draft rows="3" placeholder="Una nota sobre ' + esc(VIEWS[current]) + '…">' + esc(drafts[current] ?? '') + '</textarea><div class="note-save"><small>Ctrl/⌘ + Enter</small><button class="primary" data-save>Guardar nota</button></div></div>'
+      ? '<div class="note-form">'
+        + '<div class="about">' + (about ? '<span class="chip">Sobre ' + esc(about.name) + '<button type="button" data-about-clear title="Que sea sobre toda la página">×</button></span>' : '<small>Sobre toda la página · ✎ en una fila para que sea sobre ella</small>') + '</div>'
+        + '<div class="change-chips"><span>Cambiar ·</span>' + CHANGES.map(c => '<button type="button" data-change="' + c + '" aria-pressed="' + asks.includes(c) + '">' + c + '</button>').join('') + '</div>'
+        + '<textarea data-draft rows="3" placeholder="' + (about ? 'Una nota sobre ' + esc(about.name) : 'Una nota sobre ' + esc(VIEWS[current])) + '…">' + esc(drafts[current] ?? '') + '</textarea><div class="note-save"><small>Ctrl/⌘ + Enter</small><button class="primary" data-save>Guardar nota</button></div></div>'
       : '<p class="ro">' + (loaded ? 'Solo lectura. Para escribir, editar o cerrar notas, ábrela con <code>just animas</code>: el servidor de desarrollo las guarda en docs/anima-notes.json.' : 'Cargando…') + '</p>';
     const mine = newestOpenFirst(notes.filter(n => n.entry === current));
     rail.innerHTML = '<h2>Notas<small>' + esc(VIEWS[current]) + '</small></h2>' + form + (error ? '<p class="err">' + esc(error) + '</p>' : '')
@@ -415,6 +483,7 @@ const page = `<!doctype html>
   function renderMarks() {
     document.querySelectorAll('[data-mark]').forEach(m => { const k = open(m.dataset.mark).length; m.textContent = k ? '✎ ' + k : ''; m.title = k ? k + (k > 1 ? ' notas abiertas' : ' nota abierta') : ''; });
     document.getElementById('open-count').textContent = open().length ? '✎ ' + open().length : '';
+    document.querySelectorAll('[data-item-mark]').forEach(m => { const k = notes.filter(n => n.status === 'abierta' && n.item === m.dataset.itemMark).length; m.textContent = k ? '✎ ' + k : ''; m.title = k ? k + (k > 1 ? ' notas abiertas' : ' nota abierta') : ''; });
   }
   /** Draws the notes again, keeping the place in whatever was being typed. */
   function render() {
@@ -424,8 +493,96 @@ const page = `<!doctype html>
   }
   function focus(selector) { const t = document.querySelector(selector); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }
 
+  // ——— The stage (src/anima-demo.ts): the game in a frame, in a fight that never ends, asked for one thing at a time ———
+  const stageEl = document.getElementById('stage'), say = stageEl.querySelector('.stage-say');
+  let frame, lastPlay, playing = 0;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  function tell(text, bad = false) { say.textContent = text; say.classList.toggle('bad', bad); }
+  async function play(move, name, row) {
+    if (!served) return;
+    const mine = ++playing;
+    lastPlay = { move, name, row }; stageEl.querySelector('[data-stage="again"]').disabled = false;
+    document.querySelectorAll('.playing').forEach(r => r.classList.remove('playing')); row?.classList.add('playing');
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.src = '/?anima-demo'; frame.allow = 'autoplay'; frame.title = 'Escenario';
+      frame.addEventListener('load', () => frame.contentWindow.addEventListener('keydown', stageKeys, true));
+      const zoom = document.createElement('div'); zoom.className = 'zoom'; zoom.dataset.stage = 'big'; zoom.title = 'Ampliar';
+      stageEl.querySelector('.screen').replaceChildren(frame, zoom);
+      stageEl.querySelector('.stage-keys').hidden = false;
+      fit();
+    }
+    tell('▶ ' + name + ' · preparando el combate…');
+    const start = Date.now();
+    while (mine === playing) {
+      const demo = frame.contentWindow?.animaDemo;
+      if (demo?.ready()) {
+        tell('▶ ' + name);
+        const result = await demo.play(move);
+        if (mine !== playing) return;
+        if (result.ok || !/^Espera/.test(result.text)) { tell((result.ok ? '✓ ' : '') + result.text, !result.ok); row?.classList.remove('playing'); return; }
+      }
+      if (Date.now() - start > 120000) { tell('El combate no ha cargado: mira la consola del escenario.', true); return; }
+      await sleep(150);
+    }
+  }
+  /** Scales the frame to its box: whole, centred when the stage is enlarged. */
+  function fit() {
+    if (!frame) return;
+    const box = stageEl.querySelector('.screen').getBoundingClientRect(), k = Math.min(box.width / 1280, box.height / 720);
+    frame.style.transform = stageEl.classList.contains('big') ? 'translate(-50%, -50%) scale(' + k + ')' : 'scale(' + k + ')';
+  }
+  new ResizeObserver(fit).observe(stageEl.querySelector('.screen'));
+  function goTo(item) {
+    const row = document.querySelector('.view.on [data-item="' + item + '"]') ?? document.querySelector('[data-item="' + item + '"]');
+    if (!row) return;
+    const view = row.closest('.view');
+    if (!view.classList.contains('on')) location.hash = view.id;
+    requestAnimationFrame(() => { row.closest('details')?.setAttribute('open', ''); row.scrollIntoView({ block: 'center', behavior: 'smooth' }); row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash'); });
+  }
+  function enlarge(big) {
+    stageEl.classList.toggle('big', big);
+    stageEl.querySelector('button[data-stage="big"]').setAttribute('aria-pressed', big);
+    const zoom = stageEl.querySelector('.zoom'); if (zoom) zoom.title = big ? 'Reducir' : 'Ampliar';
+    stageEl.querySelector('.stage-keys').textContent = '← → otra habilidad · clic para ' + (big ? 'reducir' : 'ampliar') + ' · Esc para cerrar';
+  }
+  /** ← / →: the previous or next thing to play on the page being read, from the one playing. */
+  function step(by) {
+    const buttons = [...document.querySelectorAll('.view.on [data-play]')];
+    if (!buttons.length) return;
+    const at = buttons.findIndex(b => b.closest('[data-item]') === lastPlay?.row);
+    const next = buttons[at < 0 ? (by > 0 ? 0 : buttons.length - 1) : (at + by + buttons.length) % buttons.length];
+    const row = next.closest('[data-item]');
+    row?.closest('details')?.setAttribute('open', '');
+    if (!stageEl.classList.contains('big')) row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    void play(JSON.parse(next.dataset.play), next.dataset.playName, row);
+  }
+  // The game in the frame takes the focus as it loads, so its keys are heard there too.
+  function stageKeys(ev) {
+    if (ev.key === 'Escape' && stageEl.classList.contains('big')) { enlarge(false); return; }
+    if ((ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && frame && !ev.altKey && !ev.metaKey && !ev.ctrlKey && !ev.target.matches?.('input, textarea, select, [contenteditable]')) {
+      ev.preventDefault(); ev.stopPropagation(); step(ev.key === 'ArrowRight' ? 1 : -1);
+    }
+  }
+  addEventListener('keydown', stageKeys);
+
   document.addEventListener('click', ev => {
     const t = ev.target;
+    const playButton = t.closest('[data-play]');
+    if (playButton) { void play(JSON.parse(playButton.dataset.play), playButton.dataset.playName, playButton.closest('[data-item]')); return; }
+    const stageButton = t.closest('[data-stage]');
+    if (stageButton) {
+      if (stageButton.dataset.stage === 'again' && lastPlay) void play(lastPlay.move, lastPlay.name, lastPlay.row);
+      if (stageButton.dataset.stage === 'big') { enlarge(!stageEl.classList.contains('big')); stageButton.blur(); }
+      return;
+    }
+    const pen = t.closest('[data-about]');
+    if (pen) { if (!writable) return; abouts[current] = { item: pen.dataset.about, name: pen.dataset.aboutName }; render(); focus('#notes [data-draft]'); document.getElementById('rail').scrollTo({ top: document.getElementById('notes').offsetTop - 8, behavior: 'smooth' }); return; }
+    if (t.closest('[data-about-clear]')) { delete abouts[current]; render(); return; }
+    const chip = t.closest('[data-change]');
+    if (chip) { const list = changing[current] ??= [], c = chip.dataset.change; list.includes(c) ? list.splice(list.indexOf(c), 1) : list.push(c); render(); return; }
+    const goto = t.closest('[data-goto]');
+    if (goto) { goTo(goto.dataset.goto); return; }
     if (t.closest('[data-save]')) { add(); return; }
     const action = t.closest('[data-act]');
     if (action) { act(action.closest('[data-note]').dataset.note, action.dataset.act); return; }
@@ -459,7 +616,7 @@ const page = `<!doctype html>
   };
   addEventListener('hashchange', show); show();
   load();
-  window.animaNotes = { notes: () => notes, writable: () => writable, ready: () => loaded };
+  window.animaNotes = { notes: () => notes, writable: () => writable, ready: () => loaded, stage: () => frame?.contentWindow?.animaDemo, said: () => say.textContent };
 </script>
 </body>
 </html>

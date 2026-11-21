@@ -495,8 +495,28 @@ screenshots <id>`) when there is one. `just animas-report` puts it in herdr's as
 elsewhere it opens (`GERARD_OPEN=0` to not open it). The page a design is checked on while ánimas
 are designed one by one (`/anima`, `docs/animas/README.md` § Order of work).
 
+**The stage.** Served (`just animas`), every skill, dual and definitiva in the game has ▶ on its
+row, and *Mecánicas compartidas* lists how every status and reaction looks in a fight (src/status-fx.ts
+`STATUS_LOOKS` and `REACTIONS`, read as text), each with its ▶. ▶ plays it in *Escenario*, at the top
+of the right column: the game in a frame (`/?anima-demo`, [src/anima-demo.ts](../src/anima-demo.ts)),
+drawn at 1280 × 720 and scaled to fit, in a fight that never ends, Gerard at 35 and Aitor against three
+dogs, with no commands on screen. A skill or a dual is done by the fight's own rules and shown as the
+fight shows it, banner, callout, numbers and sounds (`battleUI.demo` in src/battle-ui.ts): whoever can
+wear its ánima puts it on (its owner first), every ánima at its top level with maná full, every tree's
+skills and dúo mayor bought, passives off, no limits of use (`unbound`); someone hurt for a cure, the
+die of a face, the meteor at its size; and after it everyone stands again and the turn comes back. A
+status is put on the middle dog, a reaction too after its status, as the effects lab does. *Repetir*
+plays the last again; *Ampliar*, or a click on the stage, puts it over the page (another click or Esc
+gives it back); ← / → play the previous or next ▶ of the page being read, in the stage or enlarged. The frame loads the
+first time ▶ is pressed (a few seconds); opened as a file the sheet has no stage.
+
 **Notes.** Every page of the sheet (each ánima, *Catálogo*, *Dúos*, *Mecánicas compartidas*, *Cómo
-crecen*) has its notes in a column on the right: write one and *Guardar nota* (or Ctrl/⌘ + Enter),
+crecen*) has its notes in a column on the right, under the stage. A note is about the whole page, or,
+pressing ✎ on a row (a skill, a dual, a passive, the rule, the definitiva, a status, a reaction),
+about that one thing: the form says *Sobre <name>* (× makes it about the page again), the note shows
+it as a tag that leads back to the row, and the row counts its open notes. *Cambiar ·* marks what it
+asks to change (*mecánica*, *números*, *texto*, *animación*, *sonido*): a mark alone, with no words,
+is a note too. Write one and *Guardar nota* (or Ctrl/⌘ + Enter),
 then on each *Editar* (Ctrl/⌘ + Enter saves, Esc leaves it as it was), *Hecha*, *Descartar*,
 *Reabrir* and *Borrar* (pressed twice). The list on the left shows ✎ and how many are open beside
 each page, and *Notas* gathers them all, open or every one. They live in `docs/anima-notes.json`,
@@ -515,6 +535,9 @@ was written and cannot change them. The format (`src/anima-notes.ts`, checked by
       "id": "n-<Date.now() in base 36>",
       "entry": "papagato",
       "name": "Papagato",
+      "item": "skill:zarpazos (optional: what on the page it is about)",
+      "itemName": "Zarpazos (with item)",
+      "change": ["animación"],
       "text": "the comment",
       "status": "abierta",
       "created": "2026-11-20T09:10:00Z",
@@ -527,9 +550,13 @@ was written and cannot change them. The format (`src/anima-notes.ts`, checked by
 ```
 
 `entry` is the ánima's folder in docs/animas/ (its `ClassId`) or one of the sheet's pages
-(`catalogo`, `duos`, `mecanicas`, `reglas`), `status` `abierta`, `hecha` or `descartada`. The `anima`
+(`catalogo`, `duos`, `mecanicas`, `reglas`); `item`, when it is about one row, `<kind>:<id>` with kind
+`skill`, `dual`, `pasiva`, `regla`, `definitiva` (one not in the game yet, by its ánima), `estado` or
+`reaccion` (src/status-fx.ts ids); `change`, when it asks for one, any of the five (`CHANGES` in
+src/anima-notes.ts); `text` may be empty only then; `status` `abierta`, `hecha` or `descartada`. The `anima`
 skill reads the open ones on what it works on and writes its `reply` under each, which the page
-shows. `just screenshots animas-hoja` uses `?notas=scratch`
+shows. `just screenshots animas-hoja --gpu` writes a page note and a row note, plays a skill, a
+dual enlarged and a reaction on the stage; it uses `?notas=scratch`
 (output/reports/animas/notes-scratch.json), so it never leaves a real note.
 
 ## Effects lab

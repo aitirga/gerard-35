@@ -44,10 +44,15 @@ in `docs/animas/README.md` first, and both sides link to it.
 answer each in what you propose. `git pull` first if they may come from the other machine. Once a
 note is dealt with, write its `reply` (one or two plain Spanish sentences: what changed and where,
 or what it waits for) and set `status` `hecha` (or `descartada`, with the reason) and `closed` to now
-(ISO, to the second); keep it `abierta` while it waits for his OK. Never delete a note or rewrite his
-`text`; keep the file two-space pretty-printed, the notes in their order, and no other fields
-(`animaNotesProblem` in `src/anima-notes.ts` refuses it otherwise). The open page shows replies
-when he comes back to it.
+(ISO, to the second); keep it `abierta` while it waits for his OK. A note with `item` is about that
+one thing on the page (`skill:<id>`, `dual:<id>`, `pasiva:<id>`, `regla:<ánima>`,
+`definitiva:<ánima>`, `estado:<id>`, `reaccion:<id>`; `itemName` is its name); `change` says what he
+wants changed in it (`mecánica`, `números`, `texto`, `animación`, `sonido`), and with a change its
+`text` may be empty: then do what the mark asks, and for `animación` or `sonido` look at it first on
+the sheet's stage (▶ plays it in a real fight, `/?anima-demo`). Never delete a note or rewrite his
+`text`, `item` or `change`; keep the file two-space pretty-printed, the notes in their order, and no
+other fields (`animaNotesProblem` in `src/anima-notes.ts` refuses it otherwise). The open page shows
+replies when he comes back to it.
 
 ## 1 · Show where it stands (an ánima that already exists)
 

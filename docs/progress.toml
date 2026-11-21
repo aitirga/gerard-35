@@ -186,6 +186,10 @@ title = "Bestiario: cada personaje, monstruo y jefe con su modelo, retrato y mov
 file = "src/bestiary.ts"
 
 [[block.item]]
+title = "Hoja de ánimas: diseño junto al juego, notas por fila y cada habilidad en un combate de verdad (just animas)"
+file = "src/anima-demo.ts"
+
+[[block.item]]
 title = "Versión final publicada y a 120 Hz"
 priority = "pruebas"
 note = "Publicar la versión final y medir con just perf que cabe en 8,3 ms por fotograma. Se marca a mano."

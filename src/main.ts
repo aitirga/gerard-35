@@ -1093,6 +1093,9 @@ try {
     // ?fxlab adds the effects lab (src/fx-lab.ts) over a fight: chapter 1's boys against three dogs unless ?battle says otherwise.
     const fxLab = params.has('fxlab');
     if (fxLab && !params.has('battle')) { params.set('battle', '3'); params.set('allies', '2'); }
+    // ?anima-demo is the ánimas' sheet's stage (src/anima-demo.ts): Gerard at 35 and Aitor against three dogs, in a fight that never ends.
+    const animaDemo = params.has('anima-demo');
+    if (animaDemo) { params.set('battle', '3'); params.set('party', 'adult'); }
     const foes = Number(params.get('battle'));
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     // &animas=matemagico,papagato unlocks those ánimas (Matemágico alone by default); Gerard wears the last.

@@ -12,6 +12,14 @@ export interface AnimaNote {
   id: string;
   /** What it is about: an ánima's folder in docs/animas/ (its `ClassId`) or one of `SHEET_PAGES`, and its name as shown. */
   entry: string; name: string;
+  /**
+   * What on that page it is about, when it is one thing: `skill:<SkillId>`, `dual:<DualId>`,
+   * `pasiva:<PassiveId>`, `regla:<ClassId>`, `definitiva:<ClassId>` (one not in the game yet),
+   * `estado:<StatusLookId>` or `reaccion:<ReactionId>`; and its name as shown.
+   */
+  item?: string; itemName?: string;
+  /** What Aitor asks to change about it (`CHANGES`); none: just a comment. */
+  change?: Change[];
   text: string;
   status: NoteStatus;
   /** ISO dates, to the second; `edited`: the last time its text was changed. */
@@ -21,6 +29,12 @@ export interface AnimaNote {
 }
 export interface AnimaNotesFile { notes: AnimaNote[] }
 
+/** What a note can ask to change: how it works, its numbers, its name or text, how it looks, how it sounds. */
+export const CHANGES = ['mecánica', 'números', 'texto', 'animación', 'sonido'] as const;
+export type Change = (typeof CHANGES)[number];
+/** The kinds of thing a note can be about inside a page (`item`). */
+export const ITEM_KINDS = ['skill', 'dual', 'pasiva', 'regla', 'definitiva', 'estado', 'reaccion'] as const;
+
 /** The sheet's pages that are not an ánima. */
 export const SHEET_PAGES = { catalogo: 'Catálogo', duos: 'Dúos', mecanicas: 'Mecánicas compartidas', reglas: 'Cómo crecen' } as const;
 /** Where the notes live: the real file, and a scratch one the screenshots write to (`?notas=scratch`). */
@@ -29,11 +43,11 @@ export const ANIMA_NOTES_ENDPOINT = '/__animas/notas';
 /** Where the dev server serves the sheet, written again each time it is asked for. */
 export const ANIMAS_PAGE = '/output/reports/animas/';
 
-export function newAnimaNote(entry: string, name: string, text: string, now = new Date()): AnimaNote {
-  return { id: `n-${now.getTime().toString(36)}`, entry, name, text: text.trim(), status: 'abierta', created: isoNow(now) };
+export function newAnimaNote(entry: string, name: string, text: string, now = new Date(), about: { item?: string; itemName?: string; change?: Change[] } = {}): AnimaNote {
+  return { id: `n-${now.getTime().toString(36)}`, entry, name, ...about.item ? { item: about.item, itemName: about.itemName ?? about.item } : {}, ...about.change?.length ? { change: [...about.change] } : {}, text: text.trim(), status: 'abierta', created: isoNow(now) };
 }
 
-const FIELDS = ['id', 'entry', 'name', 'text', 'status', 'created', 'edited', 'closed', 'reply'];
+const FIELDS = ['id', 'entry', 'name', 'item', 'itemName', 'change', 'text', 'status', 'created', 'edited', 'closed', 'reply'];
 /** What is wrong with a notes file, if anything: the dev server refuses to write one that is not this shape. */
 export function animaNotesProblem(data: unknown): string | undefined {
   if (!data || typeof data !== 'object' || !Array.isArray((data as AnimaNotesFile).notes)) return 'Se esperaba { "notes": [...] }.';
@@ -46,7 +60,12 @@ export function animaNotesProblem(data: unknown): string | undefined {
     if (ids.has(note.id)) return `${at}.id repetido: ${note.id}.`;
     ids.add(note.id);
     if (!/^[a-z][a-z0-9-]*$/.test(note.entry)) return `${at}.entry debe ser el id de un ánima o una página de la hoja: ${note.entry}.`;
-    if (!note.text.trim()) return `${at}.text está vacío.`;
+    if (note.item !== undefined) {
+      if (typeof note.item !== 'string' || !new RegExp(`^(${ITEM_KINDS.join('|')}):[a-z0-9-]+$`).test(note.item)) return `${at}.item debe ser <${ITEM_KINDS.join('|')}>:<id>: ${String(note.item)}.`;
+      if (typeof note.itemName !== 'string' || !note.itemName.trim()) return `${at}.itemName debe ser el nombre de ${note.item}.`;
+    } else if (note.itemName !== undefined) return `${at}.itemName sin item.`;
+    if (note.change !== undefined && (!Array.isArray(note.change) || !note.change.length || note.change.some(c => !(CHANGES as readonly string[]).includes(c)) || new Set(note.change).size !== note.change.length)) return `${at}.change: una lista sin repetir de ${CHANGES.join(', ')}.`;
+    if (!note.text.trim() && !note.change?.length) return `${at}.text está vacío.`;
     if (!(NOTE_STATUS as readonly string[]).includes(note.status)) return `${at}.status: ${NOTE_STATUS.join(', ')}.`;
     for (const key of ['edited', 'closed', 'reply'] as const) if (note[key] !== undefined && typeof note[key] !== 'string') return `${at}.${key} debe ser texto.`;
     const extra = Object.keys(note).filter(k => !FIELDS.includes(k));
