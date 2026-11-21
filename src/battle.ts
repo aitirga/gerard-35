@@ -73,6 +73,16 @@ export const SKILLS = [
   // Fin de fiesta, its definitiva (`ulti`): bought at the jar, it wakes in a fight once the powder has been all three
   // things in it (`finaleReady`), and goes off once, for the turn and no maná.
   { id: 'fin-de-fiesta', name: 'Fin de fiesta', cost: 0, side: 'all-foes', power: 0, kind: 'magic', ulti: true, node: true, abstract: true, class: 'prismatico', description: 'Empolva a todos los enemigos. Su polvo estalla, envenena y cristaliza a la vez.' },
+  // Freática (docs/animas/freatica/): La crecida, the water held under each foe (`CRECIDA`). A blow that raises (`raises`) puts a
+  // mark under whom it reaches; Sondeo's current lasts `current` times as long; Bombeo spends a mark as a cure (`pumps`);
+  // Golpe de ariete spends every mark of each foe in blows (`hammer`); Bajo cero freezes the water (`freezes`).
+  { id: 'recarga', name: 'Recarga', cost: 1, side: 'foes', power: 16, kind: 'magic', element: 'agua', raises: 1, class: 'freatica', description: 'Daño mágico de agua leve a un enemigo. Sube su agua una marca.' },
+  { id: 'sondeo', name: 'Sondeo eléctrico', cost: 1, side: 'foes', power: 18, kind: 'magic', element: 'electrico', current: 2, level: 2, class: 'freatica', description: 'Daño mágico eléctrico leve a un enemigo. La corriente que deja en el agua dura el doble.' },
+  { id: 'bombeo', name: 'Bombeo', cost: 1, side: 'party', power: 16, kind: 'heal', pumps: true, level: 3, class: 'freatica', description: 'Cura leve a todo el equipo. Baja una marca el agua del enemigo que más tiene.' },
+  { id: 'riada', name: 'Riada', cost: 2, side: 'all-foes', power: 12, kind: 'magic', element: 'agua', raises: 1, level: 6, class: 'freatica', description: 'Daño mágico de agua leve a todos los enemigos. Sube el agua de cada uno una marca.' },
+  { id: 'golpe-de-ariete', name: 'Golpe de ariete', cost: 2, side: 'all-foes', power: 26, kind: 'magic', element: 'agua', hammer: true, level: 7, class: 'freatica', description: 'Daño mágico de agua medio a todos los enemigos. Gasta el agua de cada uno: un golpe por cada marca.' },
+  // Bajo cero, its definitiva: bought at the jar, it wakes once a foe's water reaches the third mark while Freática is worn (`coldReady`).
+  { id: 'bajo-cero', name: 'Bajo cero', cost: 0, side: 'all-foes', power: 0, kind: 'magic', freezes: true, ulti: true, node: true, abstract: true, class: 'freatica', description: 'Congela a los enemigos que tienen agua, más tiempo cuanta más tengan. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto, menor cuanto más derretido esté.' },
   // Matemágico's first spell: two streams of fire. It sets the foe on fire (`burn`, a timed status:
   // again while it burns, the fire goes up a level); fire also melts the palace minion's gum.
   // Foc Binari: a zero and a one, two streams that land one after the other (`split`).
@@ -196,7 +206,7 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal' | 'nivel-de-base';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
@@ -217,6 +227,8 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   // Sincopante's, with its levels 3 and 6 (`contratiempoOf`, `pedalOf`), while it is worn.
   'a-contratiempo': { name: 'A contratiempo', anima: 'sincopante', level: 3, description: 'Si quien la lleva actúa justo entre dos pulsos, todos sus ecos suenan una vez más.' },
   pedal: { name: 'Pedal', anima: 'sincopante', level: 6, description: 'Mientras quien la lleva se defiende, el reloj de sus ecos se para. Siguen sonando.' },
+  // Freática's, with its level 5 (`baseOf`): while its wearer stands wearing it, no foe's water drains below the first mark by itself.
+  'nivel-de-base': { name: 'Nivel de base', anima: 'freatica', level: 5, description: 'Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.' },
 };
 export const RESCOLDO = 15, TELEMETRIA = 3;
 /** The level at which an ánima that grows by level gains a point of maná (docs/animas/README.md § Levels). */
@@ -719,7 +731,10 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
   electrico: { name: 'Eléctrico', colour: '#ffe45c' },
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
-export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus';
+export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus' | WaterId;
+/** La crecida's states (`CRECIDA`): the water under a foe, its current, the foe sunk in it, and the water frozen round it. */
+export type WaterId = 'agua' | 'corriente' | 'hundido' | 'congelado';
+export const WATER_IDS: readonly WaterId[] = ['agua', 'corriente', 'hundido', 'congelado'];
 export interface TimedSpec {
   /** `element`: the one that lights it, for the reactions; `heal`: its pulses give PV back instead of taking it. */
   name: string; element?: Element; heal?: boolean; seconds: number; every: number;
@@ -753,6 +768,14 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   volcan: { name: 'Volcán', element: 'fuego', seconds: 20, every: 5, levels: [1], flat: 6, share: 0, cap: 0 },
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  // La crecida (Freática, `CRECIDA`). Agua: its level is the marks (1–3), its clock the top mark's 20 s (`runWater` drains it).
+  // Corriente: a bolt left in the water, Quemado's base pulse at ×1, ×2, ×3 with the water's mark. Hundido: while the water
+  // stands at the third mark, 2 % of all the foe's PV every 2 s (the one pure share: no cap). Congelado (Bajo cero): the water
+  // frozen, its level the marks of ice left, its clock all of them (`seconds`: three marks).
+  agua: { name: 'Agua', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  corriente: { name: 'Corriente', element: 'electrico', seconds: 10, every: 2, levels: [1, 2, 3], flat: 1, share: .01, cap: 100 },
+  hundido: { name: 'Hundido', seconds: 20, every: 2, levels: [1], flat: 0, share: .02, cap: Infinity },
+  congelado: { name: 'Congelado', seconds: 60, every: 60, levels: [], flat: 0, share: 0, cap: 0 },
 };
 const TIMED_IDS = Object.keys(TIMED) as TimedId[];
 /**
@@ -1013,8 +1036,11 @@ export const finaleReady = (state: BattleState) => skillKnown('fin-de-fiesta', s
 /** Whether Siete vidas is awake in this fight: bought, a wound of five stacks or more spent while Papagato was worn (`wakeLives`), and not used yet. */
 export const livesReady = (state: BattleState) => skillKnown('siete-vidas', state.levels, state.improved)
   && (state.unbound || (!!state.lives?.woke && !state.lives.used));
+/** Whether Bajo cero is awake in this fight: bought, a foe's water has reached the third mark while Freática was worn (`raiseWater`), and not used yet. */
+export const coldReady = (state: BattleState) => skillKnown('bajo-cero', state.levels, state.improved)
+  && (state.unbound || (!!state.cold?.woke && !state.cold.used));
 /** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
-export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : false;
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whoever wears Colorista with Remolino learned, standing. */
@@ -1246,6 +1272,8 @@ export interface Combatant {
   stage?: 1 | 2 | 3; brillo?: number;
   /** One of the canopy's lamps (a part of Fran's fight): the lights it drinks. */
   lamp?: LampId;
+  /** Bajo cero: the blows from outside its ice has taken, counted as `CRECIDA.blows` counts them (it breaks at that many). */
+  cracks?: number;
 }
 /** Whom a move is aimed at when it is not one ally: everyone. */
 export type Aim = 'todos';
@@ -1338,6 +1366,10 @@ export interface BattleState {
   compas?: number;
   /** Da capo in this fight: whether a chord has sounded while Sincopante was worn (`woke`), and whether it went off. */
   dacapo?: { woke?: true; used?: true };
+  /** La crecida: who holds the foes' water (whoever raised it last); if they fall, every cell breaks (`holdWater`). */
+  water?: { by: string };
+  /** Bajo cero in this fight: whether a foe's water has reached the third mark while Freática was worn, whether it went off, and whose Magia its ice breaks with. */
+  cold?: { woke?: true; used?: true; by?: string };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1804,6 +1836,20 @@ export interface BattleEffect {
   stunned?: true;
   /** El que no converge saw the party wait its water out, the first time: its figures stop for a moment (src/modelo-foes.ts). */
   wary?: true;
+  /** La crecida: each foe's water this action moved, from one mark to another (a raise, Bombeo, Golpe de ariete, Vapor). */
+  water?: { target: string; from: number; to: number }[];
+  /** La crecida: the waters a bolt charged (`renewed`: it only started their current over), and for how long. */
+  current?: { targets: string[]; seconds: number; renewed?: true };
+  /** Golpe de ariete: each blow of the water hammer in the order it landed, one a mark on each foe, and each one's golpe crítico. */
+  hammer?: { target: string; amount: number; crit?: true }[];
+  /** Bajo cero: who froze, and with how many marks of ice. */
+  frozen?: { target: string; marks: number }[];
+  /** Blows on a frozen foe's ice: the cracks it has now, a flame that melted a mark (`melted`), or the break and its blow (`broke`, its PV). */
+  ice?: { target: string; cracks?: number; added?: number; melted?: true; broke?: number }[];
+  /** Whoever held the water fell: every cell broke, and these were left Mojado on both sides. */
+  cells?: { broke: string[]; wetted: string[] };
+  /** This foe's turn was lost to its ice (Bajo cero). */
+  iced?: true;
 }
 /** Whether this action spent a Punto débil on its target (it landed WEAK_SPOT times as hard). */
 export const markSpent = (e: BattleEffect) => e.weakSpot === 'spent' || e.weakSpot === 'renewed';
@@ -2365,6 +2411,12 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if (ability.kind === 'eco') return 'raise' in ability && !ecosOf(state, state.allies[state.active]).length ? [] : state.allies.filter(a => a.hp > 0);
   // Corchete: anyone standing who is not protected already.
   if (ability.kind === 'guard') return state.allies.filter(a => a.hp > 0 && !a.guarding);
+  // La crecida: Bombeo needs some water to pump; Golpe de ariete reaches whoever has water; Bajo cero freezes whoever has
+  // it, once one of them has it at the third mark.
+  const watered = state.foes.filter(f => f.hp > 0 && waterOf(f) > 0);
+  if ('pumps' in ability && !watered.length) return [];
+  if ('hammer' in ability) return watered;
+  if ('freezes' in ability) return watered.some(f => waterOf(f) >= CRECIDA.marks) ? watered : [];
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
   if (state.unbound && (ability.kind === 'heal' || ability.kind === 'boost')) return state.allies.filter(a => a.hp > 0);
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);
@@ -2481,6 +2533,8 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
     if (target.dish === 'sorpresa') out *= blow === 'dual' ? FEAR_RULES.sorpresaDual : FEAR_RULES.sorpresaSingle;
   }
   if (target.layers) out /= 2;
+  // Bajo cero: a foe in its ice takes a quarter of every blow (`CRECIDA.frozen`), a boss too.
+  if (frozenOf(target)) out *= CRECIDA.frozen;
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
   foil(target, blow);
   out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element) * lucaTaken(state, target);
@@ -2666,8 +2720,10 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     effect.reaction = { id: 'cauterizado', stacks: bleeding, hits: [{ target: target.id, amount }] };
     state.message += ` ¡Cauteriza la herida! −${amount} PV.`;
   } else if (target.hp > 0 && element === 'fuego' && target.timed?.mojado) {
-    effect.reaction = { id: 'vapor', level: steam(target) };
-    state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} I.`;
+    const held = waterOf(target), level = steam(target);
+    effect.reaction = { id: 'vapor', level };
+    if (held) effect.water = [...effect.water ?? [], { target: target.id, from: held, to: held - 1 }];
+    state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(level)}.`;
   } else if (target.hp > 0 && element === 'electrico' && target.timed?.cegado) {
     const hits = state.foes.filter(f => f.hp > 0 && f.timed?.cegado).map(f => {
       delete f.timed!.cegado;
@@ -2677,13 +2733,25 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     state.message += ` ¡La descarga salta por el humo! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
   } else if (element === 'electrico' && wet.length && (reach || (target.hp > 0 && target.timed?.mojado))) {
     // Conducción: the water carries it to everyone wet (a skill's reaches them wherever it landed), and dries.
-    const struck = target.hp > 0 && !!target.timed?.mojado;
-    const hits = wet.map(f => {
-      delete f.timed!.mojado;
-      return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
-    });
-    effect.reaction = { id: 'conduccion', hits };
-    state.message += ` ¡La corriente corre por el agua! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    // Water held under a foe (La crecida) does not go: it keeps the current; one already charged only starts it over.
+    const seconds = currentFor(effect), running = wet.filter(f => f.timed?.agua && f.timed.corriente);
+    for (const f of running) charge(f, seconds);
+    const through = wet.filter(f => !running.includes(f));
+    const struck = target.hp > 0 && !!target.timed?.mojado && through.includes(target);
+    if (through.length) {
+      const hits = through.map(f => {
+        if (!f.timed!.agua) delete f.timed!.mojado;
+        return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.conduct, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
+      });
+      effect.reaction = { id: 'conduccion', hits };
+      state.message += ` ¡La corriente corre por el agua! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    }
+    const charged = through.filter(f => f.hp > 0 && waterOf(f) > 0);
+    for (const f of charged) charge(f, seconds);
+    if (charged.length || running.length) {
+      effect.current = { targets: [...charged, ...running].map(f => f.id), seconds, ...!charged.length ? { renewed: true as const } : {} };
+      state.message += charged.length ? ` ¡${TIMED.corriente.name}! Se queda en el agua ${seconds} s.` : ` La ${TIMED.corriente.name.toLowerCase()} del agua vuelve a empezar.`;
+    }
     if (struck) shock(state, target, effect);
   }
   if (effect.reaction) ground(state, actor, effect);
@@ -2694,8 +2762,18 @@ function smoke(c: Combatant) {
   c.timed = { ...rest, cegado: { level: fire!.level, left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
   return fire!.level;
 }
-/** Vapor: the water on `c` goes up and leaves Cegado I (a longer or higher smoke stays). Returns its level. */
+/**
+ * Vapor: the water on `c` goes up and leaves Cegado I (a longer or higher smoke stays). Returns its level. Water held
+ * under it (La crecida, `CRECIDA`) loses only its top mark, and blinds at the level the water had.
+ */
 function steam(c: Combatant) {
+  const held = waterOf(c);
+  if (held) {
+    lowerWater(c, 1);
+    const on = c.timed?.cegado && c.timed.cegado.until === undefined ? c.timed.cegado : undefined;
+    c.timed = { ...c.timed, cegado: { level: Math.max(held, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
+    return c.timed.cegado!.level;
+  }
   const { mojado: _out, ...rest } = c.timed!;
   const on = rest.cegado && rest.cegado.until === undefined ? rest.cegado : undefined;
   c.timed = { ...rest, cegado: { level: Math.max(1, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
@@ -2737,7 +2815,9 @@ function spread(state: BattleState, effect: BattleEffect) {
   for (const host of state.foes) {
     if (!host.timed?.virus || !host.virusSeen || host.hp <= 0) { delete host.virusSeen; continue; }
     const before = host.virusSeen, others = state.foes.filter(f => f !== host && f.hp > 0 && !f.part);
-    const fresh = TIMED_IDS.filter(id => id !== 'virus' && !TIMED[id].heal && host.timed![id] && (host.timed![id] !== before.timed[id] || host.timed![id]!.level > (before.timed[id]?.level ?? 0)));
+    // La crecida's states belong to each foe's own water (its Mojado too, while the water stands): they never spread.
+    const held = (id: TimedId) => (WATER_IDS as readonly TimedId[]).includes(id) || (id === 'mojado' && !!host.timed?.agua);
+    const fresh = TIMED_IDS.filter(id => id !== 'virus' && !held(id) && !TIMED[id].heal && host.timed![id] && (host.timed![id] !== before.timed[id] || host.timed![id]!.level > (before.timed[id]?.level ?? 0)));
     const piled = STATUS_IDS.filter(id => stacks(host, id) > (before.statuses[id] ?? 0));
     host.virusSeen = seen(host);
     if (!others.length || (!fresh.length && !piled.length)) continue;
@@ -2787,9 +2867,209 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
 }
 /** Reinicio: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
 function restartClocks(foe: Combatant) {
-  const statuses = TIMED_IDS.filter(id => !TIMED[id].heal && foe.timed?.[id] && foe.timed[id]!.until === undefined);
+  // Bajo cero's ice is not a clock that starts over: it melts.
+  const statuses = TIMED_IDS.filter(id => id !== 'congelado' && !TIMED[id].heal && foe.timed?.[id] && foe.timed[id]!.until === undefined);
   for (const id of statuses) { const on = foe.timed![id]!; on.left = Math.max(on.left, TIMED[id].seconds); }
   return statuses;
+}
+/**
+ * La crecida (docs/animas/freatica/README.md § Signature; docs/animas/README.md § Agua contenida, § Corriente, § Hundido,
+ * § Congelado), every number in one book (`crecida.rules`). Each foe carries its own water, 0 to `marks` marks
+ * (`TIMED.agua`); its top mark drains in `mark` seconds, and any water blow on that foe starts it over. A foe with water is
+ * Mojado for as long as it stands, so it is wet for everything that asks. A bolt runs through the water as always
+ * (Conducción) and stays in it as Corriente for `current` seconds, pulsing every `pulse`; while it runs a bolt only starts
+ * it over. Fire takes the top mark as Vapor and blinds at the water's level. At the third mark the foe is Hundido. Bajo cero
+ * freezes the water: `ice` seconds a mark; a frozen foe acts not and takes `frozen` of every blow; its ice holds `blows`
+ * blows from outside (one of power `hard` or more counts two, each strike of a flurry one), and cracked through it breaks
+ * for magic water damage from `breakLow` to `breakTop` by the ice left. A flame melts a mark of it; electricity does nothing.
+ */
+export const CRECIDA = { marks: 3, mark: 20, current: 10, pulse: 2, ice: 20, frozen: .25, blows: 8, hard: 35, breakTop: 90, breakLow: 40 };
+/** The marks of water under `c` (0: dry). */
+export const waterOf = (c: Pick<Combatant, 'timed'>) => c.timed?.agua?.level ?? 0;
+/** Whether `c` stands in Bajo cero's ice. */
+export const frozenOf = (c: Pick<Combatant, 'timed'>) => !!c.timed?.congelado;
+/** Who brings Nivel de base: someone standing who wears a Freática grown enough. */
+export const baseOf = (state: BattleState) => (state.levels?.freatica ?? 1) >= PASSIVES['nivel-de-base'].level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'freatica') : undefined;
+/** The break's blow at average stats with `left` marks of ice still there (Aitor: huge at the start, less as it melts, still a lot). */
+export const iceBreakPower = (left: number) => CRECIDA.breakLow + (CRECIDA.breakTop - CRECIDA.breakLow) * Math.min(1, Math.max(0, left) / CRECIDA.marks);
+/** A foe's water gone: no Mojado, no current, not sunk. */
+function dry(c: Combatant) {
+  if (!c.timed) return;
+  delete c.timed.agua; delete c.timed.mojado; delete c.timed.corriente; delete c.timed.hundido;
+}
+/** What standing water keeps on its foe: Mojado with no clock of its own, the current at the water's mark, Hundido at the third. */
+function settleWater(c: Combatant) {
+  const water = c.timed?.agua;
+  if (!water || water.level <= 0) { dry(c); return; }
+  const timed = c.timed!;
+  timed.mojado = { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every };
+  if (timed.corriente) timed.corriente.level = water.level;
+  // A part of a boss can have water, and is never sunk.
+  if (water.level >= CRECIDA.marks && !c.part) timed.hundido = { level: 1, left: TIMED.hundido.seconds, next: timed.hundido?.next ?? TIMED.hundido.every };
+  else delete timed.hundido;
+}
+/** A mark more under `foe` (`n`, up to the third), raised by `actor`, who holds it from now on. A frozen foe has no water to raise. */
+function raiseWater(state: BattleState, actor: Combatant, foe: Combatant, effect: BattleEffect, n = 1) {
+  if (foe.hp <= 0 || frozenOf(foe)) return;
+  const from = waterOf(foe), to = Math.min(CRECIDA.marks, from + n);
+  foe.timed = { ...foe.timed, agua: { level: to, left: CRECIDA.mark, next: CRECIDA.mark } };
+  settleWater(foe);
+  state.water = { by: actor.id };
+  (effect.water ??= []).push({ target: foe.id, from, to });
+  if (to >= CRECIDA.marks) wakeCold(state, effect);
+  return to;
+}
+/** `n` marks off `foe`'s water (spent, not drained): the next one starts its own clock. */
+function lowerWater(foe: Combatant, n: number, effect?: BattleEffect) {
+  const from = waterOf(foe);
+  if (!from) return 0;
+  const to = Math.max(0, from - n);
+  if (to) { foe.timed!.agua = { level: to, left: CRECIDA.mark, next: CRECIDA.mark }; settleWater(foe); } else dry(foe);
+  if (effect) (effect.water ??= []).push({ target: foe.id, from, to });
+  return to;
+}
+/** A water blow on `foe`, from anyone: its top mark's clock starts over. */
+function refill(foe: Combatant) {
+  if (foe.timed?.agua) foe.timed.agua.left = CRECIDA.mark;
+}
+/** A foe's water at the third mark while someone standing wears Freática: Bajo cero wakes for the rest of the fight. */
+function wakeCold(state: BattleState, effect: BattleEffect) {
+  if (!state.allies.some(a => a.hp > 0 && a.classId === 'freatica')) return;
+  const was = coldReady(state);
+  (state.cold ??= {}).woke = true;
+  if (!was && coldReady(state) && !state.unbound) effect.awoken = 'bajo-cero';
+}
+/** How long the current a bolt leaves lasts: Sondeo eléctrico's, twice. */
+const currentFor = (effect: BattleEffect) => { const spec = SKILLS.find(s => s.id === effect.skill); return CRECIDA.current * (spec && 'current' in spec ? spec.current : 1); };
+/** The water on `foe` keeps a bolt for `seconds` (one already running there only starts over, never shorter). */
+function charge(foe: Combatant, seconds: number) {
+  const water = foe.timed?.agua;
+  if (!water) return;
+  const on = foe.timed!.corriente;
+  foe.timed!.corriente = { level: water.level, left: Math.max(seconds, on?.left ?? 0), next: on?.next ?? CRECIDA.pulse };
+}
+/** The ice goes, melted or broken: the foe is free, and its cell empty. */
+function thaw(c: Combatant) {
+  if (c.timed) delete c.timed.congelado;
+  delete c.cracks;
+}
+/**
+ * The water and the ice on the fight's clock (`runClock`, before the statuses pulse): each top mark drains and the one below
+ * starts its own (Nivel de base holds the first while its wearer stands in Freática), and what stands keeps its foe wet,
+ * charged at its mark and sunk at the third. The ice melts all the while, a mark every `CRECIDA.ice` seconds.
+ */
+function runWater(state: BattleState, seconds: number) {
+  const base = baseOf(state);
+  for (const c of state.foes) {
+    const water = c.timed?.agua;
+    if (water && c.hp <= 0) dry(c);
+    else if (water) {
+      water.left -= seconds;
+      while (water.left <= 1e-6 && water.level > 0) {
+        if (water.level === 1 && base) { water.left = CRECIDA.mark; break; }
+        water.level--; water.left += CRECIDA.mark;
+      }
+      settleWater(c);
+    }
+    const ice = c.timed?.congelado;
+    if (!ice) continue;
+    ice.left -= seconds;
+    if (c.hp <= 0 || ice.left <= 1e-6) thaw(c); else ice.level = Math.ceil(ice.left / CRECIDA.ice);
+  }
+}
+/**
+ * Whoever held the water fell (`state.water`): every cell breaks. The water runs over the whole floor and is gone, and
+ * everyone standing on both sides is Mojado for its ordinary 20 s. Said on `effect` when there is one.
+ */
+function holdWater(state: BattleState, effect?: BattleEffect) {
+  const by = state.water?.by;
+  if (!by || state.allies.some(a => a.id === by && a.hp > 0)) return;
+  delete state.water;
+  const broke = state.foes.filter(f => waterOf(f) > 0).map(f => { dry(f); return f.id; });
+  if (!broke.length) return;
+  const wetted = [...state.foes, ...state.allies].filter(c => c.hp > 0 && !c.part && !frozenOf(c)).map(c => {
+    c.timed = { ...c.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+    return c.id;
+  });
+  if (!effect) return;
+  effect.cells = { broke, wetted };
+  if (state.phase !== 'lost') state.message += ' Las celdas se rompen: el agua corre por el suelo y moja a todos.';
+}
+/** A blow from outside on a frozen foe: how many strikes reached it, each worth `weight` of the ice's blows, and of what kind. */
+interface IceBlow { target: string; strikes: number; weight: number; magic: boolean; element?: Element }
+/**
+ * The blows of an action on each foe, as the ice counts them: a flurry's strikes (`flurry`, a rain, a volley, the claws, the
+ * hammer) one each; any other blow one, or two when it is hard (power `CRECIDA.hard` or more). Only blows that reached.
+ */
+function iceBlows(effect: BattleEffect, kind: string | undefined, power: number, element?: Element, flurry = false): IceBlow[] {
+  const counts = new Map<string, number>(), add = (id: string | undefined, n: number) => { if (id && n > 0) counts.set(id, (counts.get(id) ?? 0) + n); };
+  const seq = effect.rain ?? effect.volley ?? effect.hunt ?? effect.hammer;
+  if (seq?.length) for (const s of seq) add(s.amount > 0 ? s.target : undefined, 1);
+  else if (effect.hits?.length) for (const h of effect.hits) add(h.amount > 0 ? h.target : undefined, 1);
+  else if (effect.amount) add(effect.target, flurry && effect.strikes ? effect.strikes.filter(n => n > 0).length : 1);
+  const weight = seq?.length || flurry ? 1 : power >= CRECIDA.hard ? 2 : 1;
+  return [...counts].map(([target, strikes]) => ({ target, strikes, weight, magic: kind === 'magic', element }));
+}
+/**
+ * Bajo cero's ice takes the blows of an action (`iceBlows`). A flame melts a mark of it at once, with its steam (Cegado at
+ * the ice's level), and cracks nothing; electricity does nothing to it; any other blow cracks it. Cracked through, it
+ * breaks: the foe takes magic water damage by the ice still there, with the Magia of whoever froze it (a blow: a weakness
+ * to water counts, never a golpe crítico), and is free.
+ */
+function chill(state: BattleState, actor: Combatant, effect: BattleEffect, blows: IceBlow[]) {
+  for (const b of blows) {
+    const foe = state.foes.find(f => f.id === b.target), ice = foe?.timed?.congelado;
+    if (!foe || !ice || foe.hp <= 0) continue;
+    if (b.magic && b.element === 'electrico') continue;
+    if (b.magic && b.element === 'fuego') {
+      const level = ice.level, on = foe.timed!.cegado;
+      ice.left -= CRECIDA.ice;
+      foe.timed!.cegado = { level: Math.max(level, on && on.until === undefined ? on.level : 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every };
+      delete foe.timed!.quemado;
+      if (ice.left <= 1e-6) thaw(foe); else ice.level = Math.ceil(ice.left / CRECIDA.ice);
+      (effect.ice ??= []).push({ target: foe.id, melted: true });
+      state.message += ` El fuego derrite una marca de hielo: ${TIMED.cegado.name} ${roman(level)}.`;
+      continue;
+    }
+    const added = b.strikes * b.weight;
+    foe.cracks = Math.min(CRECIDA.blows, (foe.cracks ?? 0) + added);
+    if (foe.cracks < CRECIDA.blows) { (effect.ice ??= []).push({ target: foe.id, cracks: foe.cracks, added }); continue; }
+    const left = ice.left / CRECIDA.ice;
+    thaw(foe);
+    const caster = state.allies.find(a => a.id === state.cold?.by) ?? actor;
+    const amount = hurt(state, foe, fearDamage(state, foe, magical(iceBreakPower(left), current(state, caster), current(state, foe)) * affinityScale(foe, 'agua'), 'magic', 'agua'));
+    (effect.ice ??= []).push({ target: foe.id, cracks: CRECIDA.blows, added, broke: amount });
+    state.message += ` ¡El hielo de ${foe.name} se rompe! −${amount} PV.`;
+  }
+}
+/** Bajo cero: every foe standing with water freezes in it, as many marks of ice as it had of water; the water is gone. */
+function freeze(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  const cold = state.cold ??= {};
+  cold.used = true; cold.by = actor.id;
+  effect.frozen = state.foes.filter(f => f.hp > 0 && waterOf(f) > 0).map(foe => {
+    const marks = waterOf(foe);
+    dry(foe);
+    foe.timed = { ...foe.timed, congelado: { level: marks, left: marks * CRECIDA.ice, next: TIMED.congelado.every } };
+    foe.cracks = 0;
+    return { target: foe.id, marks };
+  });
+  const names = effect.frozen.map(f => state.foes.find(foe => foe.id === f.target)!.name);
+  state.message = `${actor.name} usa Bajo cero. ${names.length === 1 ? `${names[0]} se congela` : `Se congelan ${names.join(', ')}`}: no actúan mientras dure el hielo.`;
+}
+/**
+ * Development (the fight tester's «Agua»): every foe standing has `marks` of water now (0: dry), held by whoever wears
+ * Freática (the active fighter otherwise). A frozen one thaws first. Returns whether it fits this fight.
+ */
+export function stageWater(state: BattleState, marks: number) {
+  if (state.phase !== 'player' && state.phase !== 'enemy') return false;
+  const holder = state.allies.find(a => a.hp > 0 && a.classId === 'freatica') ?? state.allies[state.active];
+  const effect: BattleEffect = { kind: 'skill', actor: holder.id };
+  for (const foe of state.foes.filter(f => f.hp > 0)) {
+    thaw(foe); dry(foe);
+    if (marks > 0) raiseWater(state, holder, foe, effect, marks);
+  }
+  state.message = marks > 0 ? `Depuración: agua ${roman(marks)} bajo cada enemigo.` : 'Depuración: sin agua.';
+  return true;
 }
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId, die?: number): BattleEffect | undefined {
   if (state.phase !== 'player') return;
@@ -2901,6 +3181,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     effect.cures = targets.map(ally => ({ target: ally.id, amount: changeHealth(ally, healing(ability!.power, current(state, actor))) }));
     effect.amount = effect.cures[0]?.amount;
     state.message = `${actor.name} usa ${ability!.name}. ${effect.cures.map(c => `+${c.amount}`).join(', ')} PV para el equipo.`;
+    // Bombeo: the cure is a mark of water, taken from the foe that has the most (the first of them on a tie).
+    if ('pumps' in ability!) {
+      const source = state.foes.filter(f => f.hp > 0 && waterOf(f) > 0).sort((x, y) => waterOf(y) - waterOf(x))[0];
+      if (source) { const left = lowerWater(source, 1, effect); state.message += left ? ` El agua de ${source.name} baja a ${roman(left)}.` : ` El agua de ${source.name} se acaba.`; }
+    }
   } else if (party && ability && 'bits' in ability) {
     // Escudo de bits: one wall in front of everyone standing (a new one replaces the old).
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = actor.id;
@@ -3062,6 +3347,37 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.crit) state.message += ' ¡Golpe crítico!';
     for (const foe of targets) if ((effect.hits.find(h => h.target === foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
+  } else if (everyone && 'freezes' in ability!) {
+    // Bajo cero: no blow; every foe with water stands in its ice (`freeze`).
+    effect.skill = skill; effect.target = target!.id;
+    freeze(state, actor, effect);
+  } else if (everyone && 'hammer' in ability!) {
+    // Golpe de ariete: on each foe with water (`targets`: only they), a blow a mark of its own water, one foe after another,
+    // each its own golpe crítico; then the water is spent, and with it the current and the sinking.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target!.id; effect.element = 'agua';
+    const hammer: NonNullable<BattleEffect['hammer']> = effect.hammer = [];
+    effect.hits = targets.map(foe => {
+      const marks = waterOf(foe), found = affinityOf(foe, 'agua');
+      let amount = 0, crit = false, marked = false;
+      for (let i = 0; i < marks && foe.hp > 0; i++) {
+        const blocked = foe.shell || singing(state, foe), weak = weakScale(state, foe);
+        const hard = !blocked && critical(state, actor, foe);
+        const dealt = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * (1 + (hard ? CRIT_RULES.bonus : 0)) * weak * affinityScale(foe, 'agua'), 'magic', 'agua'));
+        if (weak > 1 && dealt > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; marked = true; }
+        spendShield(state, foe, dealt, effect);
+        if (foe.layers && !blocked && !--foe.layers) bare(foe);
+        amount += dealt;
+        if (hard && dealt > 0) { crit = true; effect.crit = true; }
+        hammer.push({ target: foe.id, amount: dealt, ...hard && dealt > 0 ? { crit: true as const } : {} });
+      }
+      lowerWater(foe, marks, effect);
+      iterate(state, foe, 'agua', effect);
+      return { target: foe.id, amount, ...crit ? { crit: true as const } : {}, ...marked ? { weakSpot: true as const } : {}, ...found && amount > 0 ? { affinity: found } : {} };
+    });
+    effect.amount = hammer.reduce((sum, blow) => sum + blow.amount, 0);
+    state.message = `${actor.name} usa ${ability.name}. ${hammer.length === 1 ? 'Un golpe de agua' : `${hammer.length} golpes de agua`}: −${effect.amount} PV${targets.length > 1 ? ' entre todos' : ''}. El agua se gasta.`;
+    if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    if (effect.crit) state.message += ' ¡Golpe crítico!';
   } else if (everyone && skill === 'fin-de-fiesta') {
     // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.
     effect.skill = skill; effect.target = target!.id;
@@ -3171,6 +3487,22 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         else if ('wets' in ability!) { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; hitOf(foe).burn = { id: 'mojado', level: 1 }; }
       }
       if (smoked) { if (!effect.reaction) effect.reaction = { id: 'humo', level: smoked }; ground(state, actor, effect); }
+      // La crecida: water on each one's water starts its clock over; Riada raises every foe's a mark.
+      for (const foe of targets.filter(f => f.hp > 0)) {
+        refill(foe);
+        if ('raises' in ability!) raiseWater(state, actor, foe, effect, ability.raises);
+      }
+    }
+    // Fire on everyone (Explosión): any water held under a foe goes up as Vapor (Factor común does it below).
+    if (landing === 'fuego' && !('evens' in ability!)) {
+      let steamed = 0;
+      for (const foe of targets.filter(f => f.hp > 0 && waterOf(f) > 0)) {
+        const held = waterOf(foe);
+        steamed = Math.max(steamed, steam(foe));
+        effect.water = [...effect.water ?? [], { target: foe.id, from: held, to: held - 1 }];
+        Object.assign(hitOf(foe), { burn: { id: 'cegado', level: foe.timed!.cegado!.level }, smoked: true });
+      }
+      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
     }
     // Factor común: the highest fire among them is everyone's (wet layers never catch; on water it is Vapor).
     if ('evens' in ability!) {
@@ -3197,6 +3529,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (effect.blinded?.length) state.message += ' ¡Cegados hasta que acabe la ronda!';
     if ('wets' in ability!) state.message += smoked ? ' El agua apaga los fuegos y moja al resto.' : powdered.size === targets.length ? '' : ' ¡Mojados!';
     else if (smoked) state.message += ' El agua apaga los fuegos.';
+    if ('raises' in ability! && effect.water?.length) state.message += ` El agua sube: ${effect.water.map(w => roman(w.to)).join(', ')}.${effect.water.some(w => w.to >= CRECIDA.marks && w.from < CRECIDA.marks) ? ' ¡Hundidos!' : ''}`;
+    if (landing === 'fuego' && effect.reaction?.id === 'vapor' && !('evens' in ability!)) state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(effect.reaction.level ?? 1)}.`;
     if ('powders' in ability! && effect.hits.some(h => h.burn?.id === 'empolvado')) state.message += ` ¡${TIMED.empolvado.name}s!`;
     if ('evens' in ability! && effect.hits.some(h => h.burn?.id === 'quemado')) state.message += ` El fuego de todos: ${TIMED.quemado.name} ${roman(Math.max(...effect.hits.map(h => h.burn?.id === 'quemado' ? h.burn.level : 0)))}.`;
     if ('restart' in ability!) state.message += effect.restarted?.length ? ' Sus relojes vuelven a empezar.' : ' No llevan nada con reloj.';
@@ -3306,7 +3640,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       const telemetry = action === 'attack' && effect.amount > 0 && passive(state, actor, 'telemetria');
       const extend = action === 'skill' && ability && 'extend' in ability ? ability.extend : telemetry ? TELEMETRIA : 0;
       if (extend && target.hp > 0) {
-        const longer = TIMED_IDS.filter(id => !TIMED[id].heal && target.timed?.[id]);
+        // The water's own Mojado and Hundido last as long as it does: the water's clock is the one that grows.
+        const longer = TIMED_IDS.filter(id => !TIMED[id].heal && target.timed?.[id] && !(target.timed.agua && (id === 'mojado' || id === 'hundido')));
         for (const id of longer) target.timed![id]!.left += extend;
         if (longer.length) {
           effect.extended = { statuses: longer, seconds: extend };
@@ -3316,6 +3651,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       }
       // An absorbed bolt still finds the water (Conducción), and a blow that took nothing still counts for El que no converge's Error.
       iterate(state, target, landing, effect);
+      // La crecida: a water blow starts its target's top mark over; Recarga raises it a mark (`raises`).
+      if (landing === 'agua') refill(target);
+      if (action === 'skill' && ability && 'raises' in ability) {
+        const was = waterOf(target), to = raiseWater(state, actor, target, effect, ability.raises);
+        if (to !== undefined) state.message += to > was ? ` Agua ${roman(to)}.${to >= CRECIDA.marks ? ' ¡Hundido!' : ''}` : ' El agua vuelve a su marca.';
+        else if (frozenOf(target)) state.message += ' Su agua es hielo: no sube.';
+      }
       if (element) react(state, actor, target, element, effect, action === 'skill');
       // A Celda seca takes water in by its own rule, whoever throws it: Mojado, and switched on.
       if (target.kind === 'celda-seca' && landing === 'agua' && !effect.reaction && target.hp > 0 && !target.timed?.mojado) {
@@ -3370,6 +3712,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   // side repeats the blow (Acompañamiento); acted in the off-beat, their ecos sound once more (A contratiempo).
   if (target && state.foes.includes(target) && target.hp > 0) for (const e of ecosOf(state, actor)) if (e.kind === 'ostinato' && !state.foes.some(f => f.id === e.target && f.hp > 0)) e.target = target.id;
   accompany(state, actor, effect); offbeatNotes(state, actor, effect);
+  // Bajo cero's ice takes the blows that reached it, and whoever held the water may have fallen (reflected magic).
+  if (action === 'attack' || (action === 'skill' && ability && ability.kind !== 'heal' && !('freezes' in ability))) {
+    chill(state, actor, effect, iceBlows(effect, action === 'attack' ? 'physical' : ability!.kind, action === 'attack' ? 18 : ability!.power, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'skill' && !!ability && 'strikes' in ability));
+  }
+  holdWater(state, effect);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
   livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
@@ -3550,6 +3897,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
     if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
     if (d.bits) { raiseBits(state, d.bits); effect.bits = { raised: d.bits }; state.message += ' Lo que queda de la cúpula se cierra sobre el equipo.'; }
+    chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
     spread(state, effect); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
@@ -3613,6 +3961,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
       target.weakSpot = state.round + 1; effect.weakSpot = spent ? 'renewed' : 'set';
       state.message += ' ¡Punto débil! El siguiente golpe que reciba hará el triple de daño.';
     }
+    chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   }
   amplify(effect); checkEye(state, effect);
   settle(state);
@@ -3693,11 +4042,14 @@ function release(state: BattleState, holder: Combatant) {
     const peeled = foe.layers ? 1 : undefined;
     if (foe.layers && !--foe.layers) bare(foe);
     // Fire never catches on wet layers.
+    // Water held under a foe goes up as Vapor instead (La crecida).
+    if (d.burn && foe.hp > 0 && waterOf(foe) > 0) { const level = steam(foe); return { target: foe.id, amount, burn: { id: 'cegado' as const, level }, smoked: true as const }; }
     const burn = d.burn && foe.hp > 0 && !foe.layers ? { id: d.burn, level: kindle(foe, d.burn, d.burnLevel ?? 1).level } : undefined;
     return { target: foe.id, amount, ...peeled ? { peeled } : {}, ...spends ? { weakSpot: true as const } : {}, ...burn ? { burn } : {}, ...found && amount > 0 ? { affinity: found } : {} };
   });
   if (elementOf(d)) for (const foe of state.foes) powder(state, striker, foe, elementOf(d)!, effect);
   effect.target = effect.hits[0]?.target; effect.amount = effect.hits[0]?.amount;
+  chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   const said = `¡${d.name}! ${holder.name} barre a todos: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.${effect.hits.some(h => h.burn) ? ` ¡${TIMED[d.burn!].name} ${roman(d.burnLevel ?? 1)}!` : ''}`;
   amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
@@ -3740,6 +4092,7 @@ function pounce(state: BattleState, holder: Combatant) {
     said = `¡${ability.name}! Cae sobre ${target.name}: −${effect.amount} PV.${spent ? ' ¡Punto débil!' : ''}${bled ? ` La herida se abre: +${Math.round((scale - 1) * 100)} %.` : ''} ¡Golpe crítico!`;
     iterate(state, target, undefined, effect);
     if (effect.amount > 0) combust(state, holder, target, effect);
+    chill(state, holder, effect, iceBlows(effect, 'physical', ability.power));
   }
   spread(state, effect); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
@@ -3817,6 +4170,8 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   screenTook.length = 0; livesTook.length = 0;
   const effect = enemyMove(state, id, targetId);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
+  // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
+  if (effect) holdWater(state, effect); else holdWater(state);
   if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); livesSay(state, effect); wallSay(state, effect); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; screenTook.length = 0; livesTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
@@ -3833,6 +4188,12 @@ function enemyMove(state: BattleState, id: string, targetId?: string): BattleEff
   if (!actor || !target) return;
   // A part (Vertitrón's eye) has no turn of its own: it is through at once, with nothing to show.
   if (actor.part || castleIdle(actor)) { state.enemyActions.push(id); return; }
+  // In Bajo cero's ice: this turn is lost, and whatever it had announced waits for it to come out.
+  if (frozenOf(actor)) {
+    state.enemyActions.push(id);
+    state.message = `${actor.name} está congelado: pierde el turno.`;
+    return { actor: actor.id, kind: 'enemy', stunned: true, iced: true };
+  }
   // In Shock: this turn is lost, whatever it had announced waits for the next one.
   if (actor.shock) {
     delete actor.shock; state.enemyActions.push(id);
@@ -4537,7 +4898,8 @@ function runSong(state: BattleState, seconds: number) {
       delete voz.struck;
       if (next && next.id !== voz.facing) { voz.facing = next.id; news.push({ kind: 'mira', target: next.id }); }
     }
-    if (state.allies.some(a => a.hp > 0)) news.push(voiceNote(state, voz, onset.tone));
+    // In Bajo cero's ice she cannot sing: the notes go by unsung.
+    if (state.allies.some(a => a.hp > 0) && !frozenOf(voz)) news.push(voiceNote(state, voz, onset.tone));
   }
   song.t += seconds;
   voz.silent = !songAt(VOZ_SONG, song.t).sounding;
@@ -5406,6 +5768,7 @@ export function nextRound(state: BattleState): StatusTick[] {
     }
   }
   checkEye(state);
+  holdWater(state);
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); return ticks; }
   if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); return ticks; }
   for (const f of state.foes) {
@@ -5474,7 +5837,10 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   const lit = runLight(state, seconds), sung = runSong(state, seconds) || lit, lapped = runCastle(castleKit, state, seconds);
   // Sincopante's ecos sound on their compás (`runEcos`), what they did kept as news (`takeEcoNews`).
   const echoed = runEcos(state, seconds);
+  // La crecida: the water drains and the ice melts on their own clocks (`runWater`); the current and the sinking pulse below.
+  runWater(state, seconds);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
+    if (id === 'agua' || id === 'congelado') continue;
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.
     if (!on || waiting?.(c)) continue;
@@ -5506,6 +5872,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
     }
   }
   if (!pulses.length && !sung && !lapped && !echoed) return pulses;
+  holdWater(state);
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); }
   // Whoever was choosing fell to the song (an Eco): the turn passes to the next one standing, or to the foes.

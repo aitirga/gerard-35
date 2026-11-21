@@ -29,7 +29,7 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.skill ? [i.skill] : []).sort(), SKILLS.filter(s => s.node).map(s => s.id).sort());
   // A passive is a node too, unless it comes with a level of its ánima (Olor a sangre, Papagato's).
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.passive ? [i.passive] : []).sort(), Object.keys(PASSIVES).filter(id => !PASSIVES[id].level).sort());
-  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level).sort(), ['a-contratiempo', 'olor-a-sangre', 'pedal', 'remolino']);
+  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level).sort(), ['a-contratiempo', 'nivel-de-base', 'olor-a-sangre', 'pedal', 'remolino']);
   // A definitiva whose move is built is awake: it is that skill, bought here (Colorista's Fin de fiesta, the first).
   const fiesta = IMPROVEMENTS.find(i => i.id === 'prismatico:definitiva');
   assert.equal(fiesta.veiled, undefined); assert.equal(fiesta.skill, 'fin-de-fiesta'); assert.equal(fiesta.name, 'Fin de fiesta');
@@ -42,7 +42,10 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   const capo = IMPROVEMENTS.find(i => i.id === 'sincopante:definitiva');
   assert.equal(capo.veiled, undefined); assert.equal(capo.skill, 'da-capo'); assert.equal(capo.name, 'Da capo');
   assert.deepEqual(improvedBy(['sincopante:definitiva']).skills, ['da-capo']);
-  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['papagato', 'sincopante', 'prismatico']);
+  // Freática's Bajo cero, the third.
+  const cold = IMPROVEMENTS.find(i => i.id === 'freatica:definitiva');
+  assert.equal(cold.veiled, undefined); assert.equal(cold.skill, 'bajo-cero'); assert.equal(cold.name, 'Bajo cero');
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['papagato', 'sincopante', 'prismatico', 'freatica']);
   for (const item of IMPROVEMENTS) {
     if (item.skill) assert.equal(SKILLS.find(s => s.id === item.skill).class, item.anima, item.id);
     if (item.passive) assert.equal(PASSIVES[item.passive].anima, item.anima, item.id);

@@ -29,6 +29,14 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   // Traca's first puff lands here, the rest from the scene.
   traca: { impact: [{ id: 'hit', volume: .5 }] },
   'fin-de-fiesta': { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'hit', volume: .6 }, { id: 'fire-hit', delay: .35 }, { id: 'splash', delay: .8 }, { id: 'zap', delay: 1.25 }] },
+  // Freática's water is low and close, heard as under water: a mark rising is a swell, not a splash; the current a
+  // bolt that sinks into it; the water hammer a pipe's knock, once a mark (the rest from the scene); the ice a crack and a sink.
+  recarga: { start: [{ id: 'cast-soft', volume: .5 }], impact: [{ id: 'rise', volume: .55 }, { id: 'splash', volume: .35, delay: .3 }] },
+  sondeo: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap' }, { id: 'sink', volume: .5, delay: .12 }] },
+  bombeo: { start: [{ id: 'sink', volume: .5 }], impact: [{ id: 'heal' }, { id: 'splash', volume: .3, delay: .1 }] },
+  riada: { start: [{ id: 'rise', volume: .6 }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .25 }] },
+  'golpe-de-ariete': { start: [{ id: 'charge', volume: .35 }], impact: [{ id: 'thump' }, { id: 'splash', volume: .5, delay: .05 }] },
+  'bajo-cero': { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'crack', volume: .7 }, { id: 'glass-tick', delay: .15 }, { id: 'sink', volume: .5, delay: .3 }] },
   'foc-binari': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }] },
   // A boost's stats going up sound on their own (`stat-up`, from the scene).
   analisis: { start: [{ id: 'think' }], impact: [] },

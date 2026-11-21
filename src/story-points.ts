@@ -155,6 +155,11 @@ export const STORY_ARCS = [
     { flags: ['sincopante-4'], label: 'Sincopante, nivel 4' }, { flags: ['sincopante-5'], label: 'Sincopante, nivel 5' },
     { flags: ['sincopante-6'], label: 'Sincopante, nivel 6' }, { flags: ['sincopante-7'], label: 'Sincopante, nivel 7' },
   ] },
+  { id: 'freatica', chapter: 2, title: 'Freática crece', detail: 'Experiencia de combate', after: 'anima-emilie', steps: [
+    { flags: ['freatica-2'], label: 'Freática, nivel 2' }, { flags: ['freatica-3'], label: 'Freática, nivel 3' },
+    { flags: ['freatica-4'], label: 'Freática, nivel 4' }, { flags: ['freatica-5'], label: 'Freática, nivel 5' },
+    { flags: ['freatica-6'], label: 'Freática, nivel 6' }, { flags: ['freatica-7'], label: 'Freática, nivel 7' },
+  ] },
 ] as const satisfies readonly Arc[];
 
 /**

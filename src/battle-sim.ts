@@ -12,7 +12,7 @@ import { animaBonus, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
@@ -186,6 +186,7 @@ const BOOKS = {
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
   powder: { rules: POWDER_RULES },
+  crecida: { rules: CRECIDA },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
@@ -304,6 +305,12 @@ const MANA_WORTH = 5;
 const MODELO_WET = 14, ERROR_WORTH = 16, CONVERGED_WORTH = 30, ELECTRON_WORTH = 18;
 /** What `smart` thinks a PV off Vertitrón's eye is worth (it brings no win closer, but every Rayo it has left), and breaking it. */
 const EYE_WORTH = .8, EYE_BROKEN = 30;
+/**
+ * What `smart` thinks of La crecida (Freática): a mark of water raised (a wet foe for every bolt, and the next mark closer
+ * to the sinking), the sinking itself (the pulses it expects a mark's 20 s to bring), a current set in the water (its
+ * pulses to come), and a foe frozen in Bajo cero's ice: the blows it would have dealt, for the rounds its ice lasts.
+ */
+const WATER_WORTH = 6, SUNK_PULSES = 6, CURRENT_PULSES = 4, ICE_ROUNDS_PER_MARK = 1.2;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
 /** Fran's canopy: a lamp broken is a Brillo he will never drink again, a light that eats nothing more and a lighter Aspersión; each Brillo off, the blows that land whole. */
@@ -374,6 +381,12 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     }
     // Punto débil: what the next blow on it will add.
     if (now.hp > 0 && now.weakSpot !== undefined && foe.weakSpot === undefined) value += weakSpotWorth(after, now.id, ban);
+    // La crecida: water raised, the third mark reached, a current set in it.
+    if (now.hp > 0) {
+      value += Math.max(0, waterOf(now) - waterOf(foe)) * WATER_WORTH;
+      if (waterOf(now) >= CRECIDA.marks && waterOf(foe) < CRECIDA.marks) value += pulseDamage('hundido', 1, now.maxHp) * SUNK_PULSES;
+      if (now.timed?.corriente && !foe.timed?.corriente) value += pulseDamage('corriente', waterOf(now), now.maxHp) * CURRENT_PULSES;
+    }
     // El Ausente the round it is there: the window.
     if (foe.kind === 'ausente' && !foe.castle?.away) value += (foe.hp - now.hp) * PRESENT_WORTH;
     // El Castigado: each point of Rabia, and the one that fills it, unless nothing is left to wait for (its the last, and the party's maná is full).
@@ -396,6 +409,9 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i]?.timed?.cegado?.level ?? 0))) {
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
+  // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
+  const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
+  if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));
   // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still;
   // what the foes would no longer do, the real rules on a copy.
   const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i]?.still !== before.round);
