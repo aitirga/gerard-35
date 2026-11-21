@@ -28,7 +28,8 @@ test('grade III comes into the sky after Aurelià, with whatever hangs from it; 
   assert.ok(!inSky(combustion, 1) && inSky(combustion, 2), 'until then the constellation simply has fewer stars');
   assert.ok(inSky(fiesta, 1) && asleep(fiesta, 1) && asleep(fiesta, 2), 'a definitiva is a place kept, asleep');
   assert.ok(!asleep(fiesta, 3), 'Fin de fiesta wakes with Dirección');
-  assert.ok(asleep(improvementOf('papagato:definitiva'), 3), 'one whose move is not built sleeps on');
+  assert.ok(!asleep(improvementOf('papagato:definitiva'), 3), 'Siete vidas wakes with Dirección too');
+  assert.ok(asleep(improvementOf('dadaista:definitiva'), 3), 'one whose move is not built sleeps on');
   assert.deepEqual(withinEcos(FIRE, 20, 1), FIRE.slice(0, 3), 'before Aurelià the fire line ends at Rescoldo');
   assert.deepEqual(withinEcos(FIRE, 20, 2), FIRE);
   assert.deepEqual(withinEcos(['prismatico:definitiva'], 5, 2), []);
@@ -38,7 +39,8 @@ test('grade III comes into the sky after Aurelià, with whatever hangs from it; 
 
 test('the castle\'s cap holds a shared ánima, keeps the EXP it earns and gives its levels once it rises', () => {
   assert.equal(reachOf('dadaista', 4), 4);
-  assert.equal(reachOf('papagato', 6), 3, 'never past its own top');
+  assert.equal(reachOf('papagato', 6), 6);
+  assert.equal(reachOf('sincopante', 6), 1, 'never past its own top');
   const [held] = award(['dadaista'], LEVEL_XP[4], {}, {}, 4);
   assert.equal(held.levelAfter, 4);
   assert.equal(held.reach, 4);
@@ -48,7 +50,7 @@ test('the castle\'s cap holds a shared ánima, keeps the EXP it earns and gives 
   const [ripe] = award(['dadaista'], 0, { dadaista: more.xpAfter }, { dadaista: 4 }, 6);
   assert.equal(ripe.levelAfter, 6);
   assert.ok(ripe.learned.includes('ases-en-duo'), 'what levels 5 and 6 teach comes with them');
-  const [top] = award(['papagato'], 500, { papagato: LEVEL_XP[1] }, { papagato: 3 }, 6);
+  const [top] = award(['papagato'], 500, { papagato: LEVEL_XP.at(-1) }, { papagato: 7 }, 7);
   assert.equal(top.xpAfter, top.xpBefore, 'at its own top an ánima keeps still, as ever');
 });
 
