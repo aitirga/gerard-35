@@ -43,9 +43,14 @@ export interface LandmarkKit {
   texture(canvas: HTMLCanvasElement): pc.Texture;
 }
 
+/** What a landmark that changes with the hour gives back: told when night falls (1) or lifts (0) outside. */
+export interface LandmarkLife {
+  setNight?(k: number): void;
+}
+
 export interface LandmarkModule {
   kind: string;
-  build(kit: LandmarkKit, landmark: GeoLandmark): void;
+  build(kit: LandmarkKit, landmark: GeoLandmark): LandmarkLife | void;
 }
 
 const modules = import.meta.glob<LandmarkModule>('./landmarks/*.ts', { eager: true });

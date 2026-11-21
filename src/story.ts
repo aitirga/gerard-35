@@ -1699,7 +1699,8 @@ export class Story {
     }
     if (this.adult && environment === PLACES_2.gym.environment) {
       list.push({ id: 'meridiana-gimnasio', label: 'Entrenar en VivaGym', hint: EVENINGS.gimnasio.label, cell: { ...PLACES_2.gym.cell } });
-      list.push({ id: 'meridiana-coro', label: 'Ensayar con el coro', hint: EVENINGS.coro.label, cell: { ...PLACES_2.choir.cell } });
+      // At night the shutter is down (src/landmarks/local-coro.ts): nothing to rehearse, only the shutter to look at.
+      list.push({ id: 'meridiana-coro', label: this.night ? 'Mirar la persiana' : 'Ensayar con el coro', hint: this.night ? 'Mirar' : EVENINGS.coro.label, cell: { ...PLACES_2.choir.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });

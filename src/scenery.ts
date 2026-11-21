@@ -504,7 +504,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     setNight(k: number) {
       const next = outdoor ? k : 0;
       if (next === nightfall) return;
-      nightfall = next; this.setTone(tone);
+      nightfall = next; geo?.setNight(next); this.setTone(tone);
     },
     get night() { return nightfall; },
     /** Before anyone is up (1): the lamps are off and only a little daylight comes in; 0 is the scene's normal light. */

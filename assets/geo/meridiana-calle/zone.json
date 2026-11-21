@@ -1033,6 +1033,21 @@
       "params": {
         "building": "way/644309392"
       }
+    },
+    {
+      "kind": "local-coro",
+      "id": "local-coro",
+      "x_m": -188.25,
+      "z_m": -41.85,
+      "rotation_deg": -1.84,
+      "size_m": [
+        6.0,
+        0.6
+      ],
+      "solid": false,
+      "params": {
+        "building": "way/644309445"
+      }
     }
   ]
 }

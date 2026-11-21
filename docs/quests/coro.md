@@ -54,8 +54,13 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
   from home's portal) spends the afternoon, brings the night at once and leaves **Afinados** (Magia
   up a little for the whole party, that night and the next day). The first rehearsal is where they
   learn Emilie is missing (`clue-emilie`). Coming out it is night, and the way home is a real walk
-  with the castle's pupils out. For now the door is an interaction on the pavement: the room
-  itself, with Marta, Ferran and Darío in it, is not built.
+  with the castle's pupils out. **Its front is built** (2026-11-21, `src/landmarks/local-coro.ts`,
+  `local-coro` in the zone): brick piers, the shutter's box, the grey steel shutter the choir
+  painted (their logo, a stave with a phrase, *A cop de diapasó* lettered by hand along its foot)
+  and a blade sign with the tuning fork in cyan neon out over the pavement. By day the shutter is
+  rolled up and the room shows under it (warm work lamps, chairs that never match, stands, a
+  keyboard, the neon on the back wall); at night it is down, and the door only offers *Mirar la
+  persiana*. The room itself, with Marta, Ferran and Darío in it, is not built.
 
 - **Who runs it** (decided round 3, real): **Aitor directs the choir**; **Gerard sings in it**. In
   the game Aitor stands at the front with the tuning fork, and Gerard takes his chair in a row.

@@ -5,7 +5,7 @@ import { BUILDING_CUT_LEAN, BUILDING_CUT_NEAR, buildingHidesGround, buildingHide
 import { HOME_POSE } from './camera-orbit';
 import { occlusion, type OcclusionStyle } from './occlusion';
 import { gpuTexture, grainOf, greyOf, loadTextures, tintColour, type LoadedTexture } from './materials';
-import { LANDMARKS, type LandmarkKit } from './landmarks';
+import { LANDMARKS, type LandmarkKit, type LandmarkLife } from './landmarks';
 import { buildSea } from './geo-sea';
 
 /** What `buildScenery` lends a generated place, so everything is tracked and destroyed with the scene. */
@@ -2130,12 +2130,14 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       texture: c => kit.texture(c),
     };
   }
+  /** The landmarks that change with the hour (a shutter down at night). */
+  const lives: LandmarkLife[] = [];
   for (const lm of scene.landmarks ?? []) {
     const pivot = new pc.Entity(`Monumento ${lm.id}`);
     pivot.setLocalPosition(x(lm.x), 0, z(lm.z)); pivot.setLocalEulerAngles(0, lm.angle, 0); pivot.setLocalScale(1 / cellM, 1 / cellM, 1 / cellM);
     root.addChild(pivot);
     const builder = LANDMARKS.get(lm.kind);
-    if (builder) { builder.build(landmarkKit(pivot, pivots.get(String(lm.params.building))), lm); continue; }
+    if (builder) { const life = builder.build(landmarkKit(pivot, pivots.get(String(lm.params.building))), lm); if (life) lives.push(life); continue; }
     // A kind without its module yet (data merged before code): a plain block on its footprint.
     console.warn(`Monumento sin constructor: ${lm.kind} (src/landmarks/${lm.kind}.ts)`);
     if (lm.solid) landmarkKit(pivot).part('Monumento pendiente', 'box', mat('Monumento pendiente', '#9a948a'), [0, 0.5, 0], [lm.w * cellM, 1, lm.d * cellM]);
@@ -2437,6 +2439,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
     },
     /** A building by its id in the scene, as one entity standing on the ground (it can rise, sink or hide). */
     building(id: string) { return pivots.get(id); },
+    /** Night outside (0 by day, 1 at night), for the landmarks that change with it. */
+    setNight(k: number) { for (const life of lives) life.setNight?.(k); },
     /** How hard it rains now (0–1; the street stays wet a while after) and how far the evening has come (0–1). */
     setStreet(raining: number, evening: number) {
       // A scene built under rain starts wet.

@@ -1,0 +1,105 @@
+{
+  "title": "El coro en la Meridiana · A cop de diapasó",
+  "description": "docs/quests/coro.md § The choir room. The choir's room on the avenue (src/landmarks/local-coro.ts, PLACES_2.choir, meridiana-calle 104,42, home's side, some 115 m from the portal towards the metro): its front by day with the shutter up and the room under it, what is said going in to rehearse, the night it brings and where they learn Emilie is missing, and the door at night with the shutter down. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        97,
+        44
+      ]
+    },
+    {
+      "shot": "acera",
+      "delay": 2500,
+      "caption": "Coming from home along its side of the avenue: the choir's front among the shop windows, its neon tuning fork out over the pavement"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        100,
+        46
+      ]
+    },
+    {
+      "shot": "fachada-de-dia",
+      "delay": 2500,
+      "caption": "The choir's front by day, the party a step back: brick piers, the box lettered by hand «A cop de diapasó», the shutter rolled up over the room (warm work lamps, chairs that never match, the neon tuning fork on the back wall), and the blade sign out over the pavement"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "shot": "puerta-de-dia",
+      "delay": 2500,
+      "caption": "At the choir's door by day: the shutter rolled up, the room under it, «Ensayar con el coro» offered like anything within reach"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "ensayo",
+      "delay": 900,
+      "caption": "Going in: Aitor, who directs it, says what they rehearse today"
+    },
+    {
+      "until": "(() => { if (window.gerard.story.night) return true; const d = document.querySelector('#dialogue:not([hidden])'); if (d && d.dataset.typing === 'false') d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); return !!d && d.dataset.typing === 'false'; })()",
+      "timeout": 20000
+    },
+    {
+      "shot": "salida",
+      "delay": 600,
+      "caption": "Out of the rehearsal it is night, and Afinados is the party's"
+    },
+    {
+      "until": "(() => { const d = document.querySelector('#dialogue:not([hidden])'); if (!d || d.dataset.typing !== 'false') return false; if (d.querySelector('.text').textContent.includes('Emilie')) return true; d.querySelector('.next').click(); return false; })()",
+      "timeout": 30000
+    },
+    {
+      "shot": "emilie-falta",
+      "delay": 400,
+      "caption": "The first rehearsal is where they learn Emilie is missing"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "puerta-de-noche",
+      "delay": 2500,
+      "caption": "The same door at night: the shutter down, painted by the choir, the neon still on; the prompt now only looks at it («Mirar la persiana»)"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        100,
+        46
+      ]
+    },
+    {
+      "shot": "fachada-de-noche",
+      "delay": 2500,
+      "caption": "At night, a step back: the shutter down as the choir painted it (the stave with its phrase, their logo), the cold neon the one blue light among the avenue's warm windows"
+    }
+  ]
+}

@@ -283,7 +283,9 @@ Gerard's right (its lit window runs on into the next block, where 333 really is)
 (stone jambs, the bronze-framed glass door with the lobby lit behind it, the intercom, the canopy
 with *335*), and on his left **Bluespace**'s ramp down into the basement. VivaGym's door is where
 an afternoon at the gym is spent (*Entrenar en VivaGym*, `PLACES_2.gym`), and the choir's is further
-along the same pavement (`PLACES_2.choir`): both bring the night (chapter-2.md § Spending the
+along the same pavement (`PLACES_2.choir`, its front the `local-coro` landmark,
+`src/landmarks/local-coro.ts`: the shutter they painted, up by day and down at night, and the neon
+tuning fork): both bring the night (chapter-2.md § Spending the
 afternoon), neither has an interior yet. At night the portal has
 its own warm light and is the brightest thing on the street. The way home at night now crosses
 the avenue: out of the stair on the even side, along under the near blocks (seen through their

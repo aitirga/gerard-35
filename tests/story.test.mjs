@@ -364,6 +364,8 @@ test('an afternoon on the sofa, cooking, at the gym or with the choir brings the
     for (const member of story.battleParty(true)) assert.deepEqual(member.evening?.shifts, { [stat]: by }, `${what}: the whole party carries it into a fight`);
     // Spent already: at night there is no afternoon left, anywhere.
     assert.deepEqual(story.handle({ type: 'interact', id }).map(e => e.kind), ['dialogue']);
+    // The choir's shutter is down at night (src/landmarks/local-coro.ts): its door no longer offers a rehearsal.
+    if (what === 'coro') assert.deepEqual(['Mirar la persiana', 'Mirar'], (({ label, hint }) => [label, hint])(story.interactions(place).find(i => i.id === id)));
     assert.equal(story.boost, what);
     // It is theirs the day after, and gone the morning after that.
     if (place === 'meridiana') toBed(story); else story.handle({ type: 'home' });

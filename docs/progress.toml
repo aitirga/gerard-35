@@ -267,6 +267,11 @@ weight = 2
 grep = "export const EVENINGS"
 in = "src/days.ts"
 
+# docs/quests/coro.md § The choir room: the workshop with the shutter they painted, the neon logo.
+[[block.item]]
+title = "La fachada del coro en la Meridiana: persiana pintada por ellos, el local a la vista de día, el diapasón de neón"
+file = "src/landmarks/local-coro.ts"
+
 [[block.item]]
 title = "El gimnasio y el coro por dentro (hoy son una puerta en la acera)"
 absent = "no interior of their own yet"
