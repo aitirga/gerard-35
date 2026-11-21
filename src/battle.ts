@@ -585,6 +585,9 @@ export const CAMPING = {
  * silence is an Acorde, `acorde` times as hard. From `allegro` of her PV down she sings Allegro and
  * calls a second voice of `coro` PV, once (Coro); from `capela` down A capela, where she takes a
  * breath and holds a Calderón on everyone (`calderon`) unless an Acorde breaks it first (src/song.ts).
+ * A blow that goes through her while she sings angers her (Enfado, up to `enfadoMost` grades, Aitor
+ * 2026-11-21): her next note goes at whoever angered her last, `enfado` times as hard more for each
+ * grade, and spends it. Holding on still takes two thirds off.
  */
 export const MARTA = {
   juramento: 46, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
@@ -595,7 +598,7 @@ export const MARTA = {
   // blow, the other way round. Each Crescendo is a quarter point of Magia (2026-11-20, `just fight-sim`).
   vozDo: 2, vozSol: 1, vozFa: 2, vozConduce: 6, vozRe: 4, vozSib: 1, vozLa: 1, hueco: .1,
   crescendo: .25, acorde: 1.5, coro: 32, calderon: 30,
-  allegro: .6, capela: .25,
+  allegro: .6, capela: .25, enfado: 3, enfadoMost: 3,
 };
 /**
  * Emilie's model (docs/quests/emilie.md § Fights), every number in one book (`modelo.rules`); PV are
@@ -1356,6 +1359,8 @@ export interface Combatant {
   stuck?: boolean;
   /** La Voz: an Acorde broke the Calderón she was holding her breath for; her next turn is lost to it. */
   winded?: boolean;
+  /** La Voz's Enfado: blows that went through her while she sang; her next note goes at `at` and spends it (MARTA.enfado). */
+  enfado?: { at: string; level: number };
   /** The castle's rules on this fighter (src/castle.ts `CastleMark`). */
   castle?: CastleMark;
   /** What this one is weak to or resists, when it is its own and not its kind's (`AFFINITIES`). The castle's are worked out from what each one is now (`castleAffinity`). */
@@ -1556,9 +1561,9 @@ export type SongNews =
 /**
  * What one of La Voz's notes did to one of the party: the PV it took, whether they held on (a third,
  * and nothing left on them), and what it left: wet, a fire at that level, dried by the fire, or the
- * bolt run through the water.
+ * bolt run through the water; `angry`, the grade of the Enfado it spent.
  */
-export interface NoteHit { target: string; amount: number; guarded?: true; wet?: true; burn?: number; dried?: true; conducted?: true }
+export interface NoteHit { target: string; amount: number; guarded?: true; wet?: true; burn?: number; dried?: true; conducted?: true; angry?: number }
 /** A choice queued ahead by an ally later in the round (`queue`). */
 export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string; die?: number }
 /**
@@ -1912,6 +1917,8 @@ export interface BattleEffect {
   reflected?: number;
   /** A blow on La Voz while a note sounds: it went through her. */
   sung?: true;
+  /** La Voz's Enfado after this action: the grade it left her at (it went through her while she sang). */
+  angered?: number;
   /** A blow of the element the light on now cancels (Fran's salon): it did nothing. */
   annulled?: LightId;
   /** Fran's salon: the chaplains the freshly styled one's fall left mid-gesture. */
@@ -5227,6 +5234,14 @@ function checkCuerdas(state: BattleState, effect?: BattleEffect) {
   const voz = state.foes.find(f => f.kind === 'voz' && f.hp > 0);
   if (voz && effect && effect.kind !== 'enemy' && state.allies.some(a => a.id === effect.actor && a.hp > 0)
     && ((effect.target === voz.id && (effect.amount ?? 0) > 0) || effect.hits?.some(h => h.target === voz.id && h.amount > 0))) voz.struck = effect.actor;
+  // A blow that went through her while she sang angers her: her next note goes at whoever did it, harder (Enfado).
+  if (voz && effect && effect.kind !== 'enemy' && effect.angered === undefined && state.allies.some(a => a.id === effect.actor && a.hp > 0)
+    && (effect.sung || (singing(state, voz) && effect.hits?.some(h => h.target === voz.id && h.amount === 0)))) {
+    const level = Math.min(MARTA.enfadoMost, (voz.enfado?.level ?? 0) + 1);
+    voz.enfado = { at: effect.actor, level };
+    effect.angered = level;
+    state.message = `${state.message} ${voz.name} se enfada${level > 1 ? ' más' : ''}: su siguiente nota irá a por ${state.allies.find(a => a.id === effect.actor)!.name}.`;
+  }
   if (voz && !state.allies.some(a => a.id === voz.facing && a.hp > 0)) voz.facing = state.allies.find(a => a.hp > 0)?.id;
   const glass = state.foes.find(f => f.kind === 'cristalino' && f.hp > 0 && !f.cracked);
   if (glass && glass.hp <= glass.maxHp * MARTA.crack) crack(state, glass);
@@ -5369,21 +5384,28 @@ export function vozMove(state: BattleState, voz: Combatant, turn = voz.turns ?? 
 function voiceNote(state: BattleState, voz: Combatant, tone: ToneId): SongNews {
   const note = vozNote(tone), alive = state.allies.filter(a => a.hp > 0);
   const news: Extract<SongNews, { kind: 'nota' }> = { kind: 'nota', tone, ability: note.ability, ...note.element ? { element: note.element } : {}, hits: [] };
-  const who = alive.find(a => a.id === voz.facing) ?? alive[0];
+  // Angry, her next note goes at whoever angered her, and spends it.
+  const angry = voz.enfado && alive.find(a => a.id === voz.enfado!.at), grade = angry ? voz.enfado!.level : 0;
+  delete voz.enfado;
+  const who = angry || (alive.find(a => a.id === voz.facing) ?? alive[0]);
   if (!who) return news;
   const power = MARTA[note.power];
   const strike = (at: Combatant) => {
-    const raw = sighted(voz, note.physical ? physical(power, current(state, voz), current(state, at)) : magical(power, current(state, voz), current(state, at)));
-    return changeHealth(at, -(at.guarding ? Math.ceil(raw / 3) : raw));
+    const raw = sighted(voz, note.physical ? physical(power, current(state, voz), current(state, at)) : magical(power, current(state, voz), current(state, at)))
+      * (at === angry ? 1 + MARTA.enfado * grade : 1);
+    return changeHealth(at, -Math.round(at.guarding ? Math.ceil(raw / 3) : raw));
   };
-  const plain = (at: Combatant): NoteHit => ({ target: at.id, amount: strike(at), ...at.guarding ? { guarded: true } : {} });
+  const plain = (at: Combatant): NoteHit => ({ target: at.id, amount: strike(at), ...at.guarding ? { guarded: true } : {}, ...at === angry ? { angry: grade } : {} });
   if (note.all) { news.hits = alive.map(plain); return news; }
   if (note.element === 'electrico' && !who.guarding && who.timed?.mojado) {
     // The bolt finds the water: it runs through everyone wet (whoever holds on takes a third) and dries them.
     const effect: BattleEffect = { actor: voz.id, kind: 'enemy' }, said = state.message;
     const hits = conduct(state, voz, who, MARTA.vozConduce, effect);
     state.message = said;
-    news.hits = hits.map(h => ({ ...h, conducted: true as const, ...state.allies.find(a => a.id === h.target)?.guarding ? { guarded: true as const } : {} }));
+    // Angry, the bolt lands that much harder on whoever angered her.
+    const mad = angry && hits.find(h => h.target === angry.id);
+    if (mad) mad.amount += changeHealth(angry, -Math.round(mad.amount * MARTA.enfado * grade), false, true);
+    news.hits = hits.map(h => ({ ...h, conducted: true as const, ...state.allies.find(a => a.id === h.target)?.guarding ? { guarded: true as const } : {}, ...h === mad ? { angry: grade } : {} }));
     news.conducted = true;
     if (effect.shocked) news.shocked = effect.shocked;
     return news;
@@ -6535,7 +6557,7 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
     // La Voz at the start of her song, nothing announced, no Crescendo yet: whole in Andante, at its mark in the others.
     const voz = state.foes.find(f => f.kind === 'voz'), first = state.allies.find(a => a.hp > 0);
     if (!voz || !state.song || !first) return false;
-    delete voz.intent; delete voz.shielded; delete voz.lasting; delete voz.crescendo; delete voz.winded; voz.turns = 0; voz.facing = first.id; delete voz.struck;
+    delete voz.intent; delete voz.shielded; delete voz.lasting; delete voz.crescendo; delete voz.winded; delete voz.enfado; voz.turns = 0; voz.facing = first.id; delete voz.struck;
     state.foes = state.foes.filter(f => f.id !== SECOND_VOICE);
     const share = moment === 'voz-allegro' || moment === 'voz-coro' ? MARTA.allegro : moment === 'voz-a-capela' || moment === 'voz-calderon' ? MARTA.capela : 1;
     voz.hp = Math.max(1, Math.floor(voz.maxHp * share));

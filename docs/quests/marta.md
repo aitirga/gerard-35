@@ -210,7 +210,11 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
 ### The fight (built 2026-11-20, `MARTA`, `VOZ_NOTES` and `voiceNote` in `src/battle.ts`)
 
 - **She is only hurt in her silences.** While a note sounds she is all voice: a blow goes through her
-  (nothing, and the maná is spent), and a fire or a wound on her takes nothing. A blow pressed in the
+  (nothing, and the maná is spent), and a fire or a wound on her takes nothing.
+- **A blow that goes through her angers her** (Enfado, Aitor 2026-11-21): «Se enfada» over her and a
+  status on her plate, and her next note goes at whoever angered her, whomever she was singing at,
+  `enfado` times as hard more for each grade (three blows through her before a note at most), and
+  spends it. Its number says «· Enfado»; holding on still takes two thirds off. A blow pressed in the
   first tenth of a second of a note that came after a silence still counts as that silence (`hueco`,
   the ear hears her start a little late). **A blow is judged when it is pressed**, not when it plays:
   a blow confirmed in a silence lands even if it waits behind the partner's (`song.aim`).
@@ -260,10 +264,11 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
   donde canta deprisa* (`voz-deprisa`), her song just before its fast turns.
 - **Numbers** (`just fight-sim`, 2026-11-20): Do 2, Sol 1, Fa 2 (6 through the water), Re 4, Si♭ 1,
   La 1, a Crescendo a quarter point. Since 2026-11-21 she is hard to hit but soft once hit: Defensa 5
-  and Espíritu 7 (were 12 and 14), so what finds her in a silence hurts, and 680 PV to keep the
-  fight as long. Reading the song (`voz-bien`) wins 97 %; striking well but never holding on
-  (`voz-sin-cubrirse`) 97 %; without duals 91 %; striking while she sings (`voz-sin-pensar`) 13 %;
-  only Atacar 0 %; with two magic ánimas 27 %.
+  and Espíritu 7 (were 12 and 14) and 620 PV (were 460), so each blow that finds her in a silence
+  takes a bigger share of her; and her Enfado makes each note after a blow through her four times
+  as hard (`enfado` 3) at whoever struck. Reading the song (`voz-bien`) wins 99 % in 7.8 rounds;
+  striking well but never holding on (`voz-sin-cubrirse`) 100 %; without duals 95 %; striking while
+  she sings (`voz-sin-pensar`) 14 %; only Atacar 0 %; with two magic ánimas 57 %.
 - How the friend helps: _open_ (she is beside them and gets nothing back until it is over).
 - What the party's ánimas do against it: nothing special by ánima (rules by kind): fire keeps
   burning in her silences, a mark (Ángulo exacto, Punto débil) waits for one.

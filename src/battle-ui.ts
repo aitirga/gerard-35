@@ -58,7 +58,7 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas' | 'encarnado';
+type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
   // An Encarnado (src/castle.ts `STRONG`): an ember inside a ring, its halo.
@@ -75,6 +75,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.
   cargado: '<path d="M.8 7.1h4.4v1.8H.8zM10.8 7.1h4.4v1.8h-4.4z" fill="currentColor"/><rect x="5" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/><rect x="9" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/>',
+  // La Voz's Enfado: her voice gone sharp, a wave with a spike in it.
+  enfado: '<path d="M.8 9.2h3.1l1.5-3.4 2.1 8.4 2.4-12.6 1.9 7.6h3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).
   cancion: '<path d="M6 2.2v8.1a2.3 2 0 1 1-1.4-1.8V3.6l6.8-1.5v6.6a2.3 2 0 1 1-1.4-1.8V4.1L6 5" fill="currentColor"/>',
   // The light through the salon's windows (docs/quests/luca.md): a pointed window, its colour the light on now.
@@ -437,6 +439,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       ...c.castle?.strong ? [{ id: 'encarnado' as const, name: 'Encarnado: más entero y pega más. Vencido, suelta un Eco de luz.', mark: '', timed: false, lasts: 'todo el combate' }] : [],
       ...light ? [{ id: 'luz' as const, name: lightText(state!, light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
+      // La Voz angered by blows that went through her while she sang: whom her next note goes at, and how hard.
+      ...c.kind === 'voz' && c.enfado && state ? [{ id: 'enfado' as const, name: `Enfado: su siguiente nota va a por ${state.allies.find(a => a.id === c.enfado!.at)?.name ?? 'quien la enfadó'} y pega más`, mark: c.enfado.level > 1 ? String(c.enfado.level) : '', timed: false, lasts: 'su siguiente nota' }] : [],
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
       ...c.converged ? [{ id: 'converge' as const, name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` }] : [],
@@ -780,7 +784,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const name = FOE_ABILITIES[item.ability].name, kind = item.element ? `${name} · ${ELEMENTS[item.element].name}` : vozNote(item.tone).physical ? `${name} · Físico` : name;
         const token = generation;
         item.hits.forEach((hit, i) => {
-          if (hit.amount) { pop(hit.target, `−${hit.amount}`, 'damage', hit.conducted && item.hits.length > 1 && i ? 'Conducción' : hit.guarded ? `${kind} · Protegido` : kind, undefined, i * 16); callbacks.pulse(hit.target); }
+          if (hit.amount) { pop(hit.target, `−${hit.amount}`, 'damage', hit.conducted && item.hits.length > 1 && i ? 'Conducción' : hit.angry ? `${kind} · Enfado${hit.guarded ? ' · Protegido' : ''}` : hit.guarded ? `${kind} · Protegido` : kind, undefined, i * 16); callbacks.pulse(hit.target); }
           // What it left on them, a beat after the number, in its colour.
           const left = hit.wet ? { id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: '' } : hit.burn ? { id: 'quemado', text: `¡${TIMED.quemado.name}${hit.burn > 1 ? ` ${roman(hit.burn)}` : ''}!`, detail: hit.burn > 1 ? 'El fuego sube' : '' }
             : hit.dried ? { id: 'mojado', text: 'Seco', detail: 'El fuego se lleva el agua' } : hit.conducted && !i ? { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' } : undefined;
@@ -2230,6 +2234,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }, 420);
       if (effect.stopped) setTimeout(() => { if (token === generation) effect.stopped!.forEach(id => pop(id, 'Quieto', 'status', 'Sin nadie a quien copiar', 'clavado')); }, 420);
       if (effect.kind === 'enemy' && effect.shielded && isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind)) pop(effect.actor, 'Guardia', 'guard');
+      // A blow went through La Voz while she sang: she is angered, over her, as it goes through (her next note may be close).
+      if (effect.angered) { const voz = state.foes.find(f => f.kind === 'voz'); if (voz) pop(voz.id, 'Se enfada', 'status', effect.angered > 1 ? `Enfado ${roman(effect.angered)}` : 'Su siguiente nota, más fuerte', 'enfado'); }
       if (effect.kind === 'enemy' && effect.telegraph?.id === 'calderon') pop(effect.actor, 'Toma aire', 'status', 'Calderón en su próximo turno', 'crescendo');
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       // Estrella fugaz spent the Racha for dice: said over whoever threw it, a beat after the blow.

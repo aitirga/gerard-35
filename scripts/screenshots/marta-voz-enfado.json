@@ -1,0 +1,35 @@
+{
+  "title": "La Voz: el enfado",
+  "description": "docs/quests/marta.md § The fight. A blow that goes through La Voz while she sings angers her: «Se enfada» over her, the Enfado status on her plate, and her next note goes at whoever angered her, harder («· Enfado» on its number). Fight tester: Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22voz%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.song = () => ui.fight && ui.fight.song; window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.sleep = ms => new Promise(r => setTimeout(r, ms)); window.round = async (id, what = 'attack') => { for (let i = 0; i < 2; i++) { while (!ready()) await sleep(100); cmd(what); await sleep(450); document.querySelector('.battle-target[data-target=\"' + id + '\"]')?.click(); await sleep(500); } }; const st = document.createElement('style'); st.textContent = '.shot-frozen * { animation-play-state: paused !important; }'; document.head.append(st); window.frozen = ''; window.catchNote = (test, after = 120) => { window.frozen = ''; const o = new MutationObserver(() => { const hit = [...document.querySelectorAll('.damage-pop small, .damage-pop strong')].find(el => test(el.textContent)); if (hit) { o.disconnect(); setTimeout(() => { window.gerard.game.app.timeScale = 0; document.documentElement.classList.add('shot-frozen'); window.frozen = hit.textContent; }, after); } }); o.observe(document.body, { childList: true, subtree: true }); }; window.thaw = () => { window.gerard.game.app.timeScale = 1; document.documentElement.classList.remove('shot-frozen'); window.frozen = ''; };"
+    },
+    {
+      "until": "window.ready() && (window.t0 ??= performance.now())",
+      "timeout": 180000
+    },
+    {
+      "eval": "window.hitWhileSinging = async () => { while (!(ready() && song() && song().startsWith('Nota'))) await sleep(30); cmd('attack'); await sleep(120); document.querySelector('.battle-target')?.click(); }; catchNote(t => / · Enfado/.test(t), 120); hitWhileSinging(); 0"
+    },
+    {
+      "until": "window.frozen !== ''",
+      "timeout": 60000
+    },
+    {
+      "shot": "nota-enfadada",
+      "delay": 150,
+      "caption": "A blow pressed while a note sounds goes through her and angers her («Se enfada» over her); her next note goes at whoever angered her, harder, and its number says «· Enfado»"
+    },
+    {
+      "eval": "thaw(); 0"
+    }
+  ]
+}
