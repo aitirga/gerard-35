@@ -304,6 +304,29 @@ night it does nothing** (*"De noche se queda quieta"*): the way home at night is
 
 Try it: `just dev-chapter got-bola`, `just screenshots bola --gpu`.
 
+## Trophies
+
+Asked for by Aitor 2026-11-21; built in `src/items.ts` (`TROPHIES`, `trophyBonus`), `src/story.ts`
+(`trophies`, the note at the end of `handle`) and `src/battle.ts` (`PartySlot.trophies`, `statsWith`).
+
+Each friend's mission won leaves a small trophy in Objetos, and each boss of her castle a bigger one
+(Aurelià; Dirección, for Mar, Montse and Pilar together). A trophy is kept for good (kind *Trofeo*)
+and adds a few points to everyone's stats in every fight, as its *Siempre* line says: the missions'
+one point each (Crítico 5, PV 5), the bosses' two. The points are part of who the party is, so no
+arrow over them shows it; the status screen counts them in its bars.
+
+| Trofeo | Given by | Adds |
+|---|---|---|
+| de la torre | `nuria-uri` | Crítico +5 |
+| de la sobremesa | `sobremesa` | PV +5 |
+| de la voz | `voz` | Espíritu +1 |
+| del modelo | `converge` | Magia +1 |
+| de la peluquería | `fran` | Fuerza +1 |
+| de Aurelià | `aurelia` | Defensa +2 |
+| de Dirección | `direccion` | Fuerza +1, Magia +1 |
+
+Try it: `just dev-chapter voz` (or any mission's end), then Objetos.
+
 ## Getting around
 
 - **On foot** inside each place (a playable scene: a street, a square, a friend's house).

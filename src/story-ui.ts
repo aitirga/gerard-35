@@ -108,7 +108,7 @@ export function createStoryUI(hud: HTMLElement) {
       el.innerHTML = `<svg class="story-note-icon" viewBox="0 0 24 24" aria-hidden="true">${item.icon}</svg><span class="battle-kicker"></span><strong></strong><p></p>`;
       el.querySelector('span')!.textContent = `HAS CONSEGUIDO · ${ITEM_KIND_LABELS[item.kind].toUpperCase()}`;
       el.querySelector('strong')!.textContent = item.name;
-      el.querySelector('p')!.textContent = item.description;
+      el.querySelector('p')!.textContent = item.effect ? `${item.description} ${item.effect}` : item.description;
       notes.append(el);
       setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS);
     },

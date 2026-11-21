@@ -169,7 +169,9 @@ const SHOW_STEP = 0.25;
 const SCHOOL_PALACE_SCALE = 1.3;
 /** The palace guards are minions grown to the size of a wardrobe. */
 const GUARD_SCALE = 1.9;
-const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'], bola: ['#3a2c22', '#e7c9a1'] };
+const PICKUP_COLOURS: Record<ItemId, [string, string]> = { pocion: ['#a77ad6', '#f0d36b'], mochila: ['#527e6e', '#355b50'], zapatillas: ['#dfd9bd', '#e9ad48'], chicle: ['#ff6fae', '#fbeef3'], envoltorio: ['#ff6fae', '#fbeef3'], bola: ['#3a2c22', '#e7c9a1'],
+  // Trophies are never picked up off the floor; their colours only keep the map whole.
+  'trofeo-nuria': ['#f0954a', '#fbeef3'], 'trofeo-universidad': ['#efe6cf', '#3a2c22'], 'trofeo-marta': ['#8fe3c4', '#293d46'], 'trofeo-emilie': ['#27c2a0', '#1a2c3a'], 'trofeo-luca': ['#617ce2', '#ddd5bc'], 'trofeo-aurelia': ['#c9a86a', '#3a2c22'], 'trofeo-direccion': ['#b9c3cc', '#293d46'] };
 
 /**
  * The right sticks of every standard pad, either player's (x right, y down), past a small dead

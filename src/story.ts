@@ -9,7 +9,7 @@ import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.t
 import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
 import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { canWalk, facingToward, type Cell } from './movement.ts';
-import type { ItemId } from './items';
+import { trophiesFor, trophyBonus, type ItemId } from './items.ts';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
@@ -1314,7 +1314,7 @@ export class Story {
   }
   get items(): ItemId[] {
     // Waking up at 35, the dream's things stay in the dream; only the wrapper came back.
-    if (this.adult) return [...this.has('got-wrapper') ? ['envoltorio' as const] : [], ...this.has('got-bola') ? ['bola' as const] : []];
+    if (this.adult) return [...this.has('got-wrapper') ? ['envoltorio' as const] : [], ...this.has('got-bola') ? ['bola' as const] : [], ...this.trophies];
     const items: ItemId[] = [];
     if (this.has('got-shoes')) items.push('zapatillas');
     if (this.has('got-backpack')) items.push('mochila');
@@ -1322,6 +1322,8 @@ export class Story {
     if (this.has('got-chicle')) items.push('chicle');
     return items;
   }
+  /** The trophies won: one for each ánima mission finished, one for each boss of her castle (src/items.ts `TROPHIES`). */
+  get trophies(): ItemId[] { return this.adult ? trophiesFor(flag => this.has(flag as StoryFlag)) : []; }
   get companion(): Companion {
     if (!this.has('bernat-joined') || this.adult) return 'none';
     return this.has('bernat-stalled') && !this.has('dejavu') ? 'stalled' : 'follow';
@@ -1337,12 +1339,13 @@ export class Story {
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
   }
-  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, and so does what their last afternoon left them. */
+  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, what their last afternoon left them and the trophies won. */
   battleParty(withPartner: boolean): PartySlot[] {
     const grown = this.animas.length ? animaGrowth(this.animas) : undefined;
     const left = this.boost && boostOf(this.boost), evening = left && { shifts: { ...left.stats }, from: left.name };
+    const won = this.trophies, trophies = won.length ? trophyBonus(won) : undefined;
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(grown ? { grown } : {}), ...(evening ? { evening } : {}) }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(grown ? { grown } : {}), ...(evening ? { evening } : {}), ...(trophies ? { trophies } : {}) }));
   }
   /** What the last afternoon spent left the party, while it lasts: that night and the day after (src/days.ts `EVENINGS`). */
   get boost(): BoostId | undefined {
@@ -1739,8 +1742,12 @@ export class Story {
   get lockedStations() { return lockedStations(flag => this.has(flag)); }
   private set(flag: StoryFlag) { const fresh = !this.flags.has(flag); this.flags.add(flag); return fresh; }
 
-  /** Applies one event; returns what the player should see, in order. Unknown events do nothing. */
+  /** Applies one event; returns what the player should see, in order, ending with a note for each trophy it won. Unknown events do nothing. */
   handle(event: StoryEvent): StoryEffect[] {
+    const before = this.trophies, effects = this.apply(event);
+    return [...effects, ...this.trophies.filter(id => !before.includes(id)).map(item => ({ kind: 'item' as const, item }))];
+  }
+  private apply(event: StoryEvent): StoryEffect[] {
     this.remember();
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     switch (event.type) {

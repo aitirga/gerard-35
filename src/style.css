@@ -878,6 +878,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .item-detail .battle-kicker { color: var(--tint); }
 .item-detail h2 { margin: 4px 0 0; font: italic 900 clamp(26px, 3.4cqi, 40px)/1 'Manrope', sans-serif; letter-spacing: -.05em; color: color-mix(in srgb, var(--tint) 60%, white); text-shadow: 3px 3px 0 #0006; }
 .journal-content .item-detail-text { font-size: 14px; line-height: 1.6; color: var(--ui-paper); }
+.journal-content .item-detail-effect { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--tint); }
 .journal-content .item-detail-use { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 8px; background: var(--tint); color: #10201b; font-size: 12px; font-weight: 700; }
 .story-note-icon { float: right; width: 30px; height: 30px; margin: 0 0 6px 10px; color: var(--note-accent, #a5cf8f); }
 @media (prefers-reduced-motion: reduce) { .story-note, .key-hint, #story-card { animation: none; transition: none; } }
