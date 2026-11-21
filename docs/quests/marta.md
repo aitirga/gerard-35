@@ -259,9 +259,11 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
 - **Parts**, by her PV, each a `FightMoment`: *Andante*, *Allegro* and *A capela*; and *Andante,
   donde canta deprisa* (`voz-deprisa`), her song just before its fast turns.
 - **Numbers** (`just fight-sim`, 2026-11-20): Do 2, Sol 1, Fa 2 (6 through the water), Re 4, Si♭ 1,
-  La 1, a Crescendo a quarter point, her PV 430. Reading the song (`voz-bien`) wins 91 %; striking
-  well but never holding on (`voz-sin-cubrirse`) 73 %; without duals 77 %; striking while she sings
-  (`voz-sin-pensar`) 2 %; only Atacar 0 %; with two magic ánimas 46 %.
+  La 1, a Crescendo a quarter point. Since 2026-11-21 she is hard to hit but soft once hit: Defensa 5
+  and Espíritu 7 (were 12 and 14), so what finds her in a silence hurts, and 680 PV to keep the
+  fight as long. Reading the song (`voz-bien`) wins 97 %; striking well but never holding on
+  (`voz-sin-cubrirse`) 97 %; without duals 91 %; striking while she sings (`voz-sin-pensar`) 13 %;
+  only Atacar 0 %; with two magic ánimas 27 %.
 - How the friend helps: _open_ (she is beside them and gets nothing back until it is over).
 - What the party's ánimas do against it: nothing special by ánima (rules by kind): fire keeps
   burning in her silences, a mark (Ángulo exacto, Punto débil) waits for one.
