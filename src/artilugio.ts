@@ -95,20 +95,21 @@ export function createArtilugio(standIns: () => boolean): Artilugio {
   let retry: ReturnType<typeof setTimeout> | undefined;
   function connect() {
     if (typeof EventSource === 'undefined') return;
-    source = new EventSource('/api/artilugio/events');
+    // `game=1`: while this stream is open the board knows someone is playing, and only then calls out.
+    source = new EventSource('/api/artilugio/events?game=1');
     /** The stream's first word is what the server holds now; after it, a change is another tab's say. */
     let first = true;
     source.onmessage = message => {
-      let event: { type: string; note?: number; mode?: ArtilugioMode; connected?: boolean };
+      let event: { type: string; note?: number; mode?: ArtilugioMode | null; connected?: boolean };
       try { event = JSON.parse(message.data); } catch { return; }
       if (event.type === 'note' && typeof event.note === 'number') emit(event.note, 'board');
       else if (event.type === 'motion') for (const listener of motions) listener();
       else if (event.type === 'board') {
         board = { mode: event.mode ?? board.mode, connected: !!event.connected };
         for (const listener of boards) listener(board);
-        // A server started again forgets what the story said: tell it again, once per stream. Answering
+        // A server started again knows no mode (null) until told: tell it again, once per stream. Answering
         // every change would set two open tabs arguing over the board for ever; the tab in view wins (`shown`).
-        if (first && mode && board.mode !== mode) send(mode);
+        if (first && mode && event.mode !== mode) send(mode);
         first = false;
       }
     };

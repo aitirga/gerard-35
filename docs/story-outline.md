@@ -312,7 +312,9 @@ colours that burst* are its four LEDs.
   buttons (`src/artilugio-held.ts`), in the street and in the fight.
 - **It calls out until it is found** (Aitor, 2026-11-20): from the moment Bernat sends it, the board
   in its hiding place plays short bursts of random notes of its scale now and then, closer together
-  while its PIR sees someone; before that it stays mute. **Found** is someone in front of it for a
+  while its PIR sees someone; before that it stays mute. It calls out only while the game is open
+  and the server has just said so (Aitor, 2026-11-21): with nobody playing, or no server, it is
+  silent whatever mode it kept, and a restarted server never loses it again. **Found** is someone in front of it for a
   few seconds, or a button pressed: it falls quiet and Gerard takes it out. Until then, people
   walking past do not make him take it out. **Once found**, he holds it out while it is pressed or
   the PIR keeps seeing someone, and puts it away a few seconds after neither (`firmware/artilugio`).

@@ -23,7 +23,7 @@ class ArtilugioTest(unittest.TestCase):
     def test_the_board_needs_its_key(self):
         self.assertEqual(self.client.get("/api/artilugio/board").status_code, 403)
         self.assertEqual(self.client.post("/api/artilugio/note?n=1", headers={"x-artilugio-key": "otra"}).status_code, 403)
-        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "asleep 0\n")
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "unknown 0 0\n")
 
     def test_no_key_on_fly_takes_no_board(self):
         with mock.patch.dict(os.environ, {"FLY_APP_NAME": "gerard-35-aitirga"}):
@@ -35,19 +35,29 @@ class ArtilugioTest(unittest.TestCase):
         self.assertEqual(self.client.post("/api/artilugio/note?n=7", headers=KEY).status_code, 204)
 
     def test_the_story_sets_the_mode_and_escuchar_waits_for_the_board(self):
+        self.client.put("/api/artilugio", json={"mode": "asleep"})
         self.client.post("/api/artilugio/listen")
-        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "asleep 0\n", "asleep, it never sounds")
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "asleep 0 0\n", "asleep, it never sounds")
         self.assertEqual(self.client.put("/api/artilugio", json={"mode": "alive"}).status_code, 204)
         self.client.post("/api/artilugio/listen")
         self.client.post("/api/artilugio/listen")
-        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 2\n")
-        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 0\n", "each time is heard once")
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 2 0\n")
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 0 0\n", "each time is heard once")
         self.assertEqual(self.client.put("/api/artilugio", json={"mode": "dormant"}).status_code, 422)
 
     def test_the_game_is_told_it_is_there(self):
         self.assertFalse(self.client.get("/api/artilugio").json()["connected"])
         self.client.get("/api/artilugio/board", headers=KEY)
-        self.assertEqual(self.client.get("/api/artilugio").json(), {"type": "board", "mode": "asleep", "connected": True})
+        self.assertEqual(self.client.get("/api/artilugio").json(), {"type": "board", "mode": None, "connected": True})
+
+    def test_a_restarted_server_keeps_the_board_as_it_was(self):
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "unknown 0 0\n", "never asleep before the game says so: that would lose it again")
+
+    def test_it_calls_out_only_while_a_game_is_open(self):
+        self.client.put("/api/artilugio", json={"mode": "alive"})
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 0 0\n", "nobody playing: silent")
+        artilugio.board.games = 1
+        self.assertEqual(self.client.get("/api/artilugio/board", headers=KEY).text, "alive 0 1\n")
 
     def test_cross_site_pages_cannot_drive_it(self):
         self.assertEqual(self.client.put("/api/artilugio", json={"mode": "awake"}, headers={"sec-fetch-site": "cross-site"}).status_code, 403)

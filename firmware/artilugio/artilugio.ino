@@ -7,7 +7,9 @@
   and goes to the game's server, which passes it to the browser.
 
   Once the story sends it, it calls out from its hiding place until it is found: a burst of random
-  notes now and then, closer together while its PIR sees someone. Someone in front of it for a few
+  notes now and then, closer together while its PIR sees someone. It calls out only while the server
+  has just said "alive" and a game is open: without the server, or with nobody playing, it is silent
+  whatever mode it kept. Someone in front of it for a few
   seconds, or a button pressed, and it is found. From then on, while it is pressed or the PIR keeps
   seeing someone, Gerard holds it out in the game, wherever he is.
 
@@ -20,7 +22,8 @@
     free    after it
 
   The answer also says how many times the game asked it to sound (the end of Bernat's box): a few
-  seconds of random notes of its scale. The mode, and whether it has been found, are kept in flash:
+  seconds of random notes of its scale; and whether a game is open (`<mode> <times> <1|0>`). A
+  server that has not heard from the game yet says "unknown", and the board keeps its mode. The mode, and whether it has been found, are kept in flash:
   switched off and on again, it is what it was. Put to sleep by the story, it is lost again.
 
   Board: ESP32 Dev Module on the Keyestudio FKS0001 inventor board (`just artilugio-build`).
@@ -85,6 +88,8 @@ static const unsigned long PIR_WARMUP_MS = 30000, PIR_GAP_MS = 1500;
 // out; he puts it away after src/artilugio-held.ts PUT_AWAY_AFTER without a word).
 static const unsigned long MOTION_EVERY_MS = 2000;
 static const unsigned long WIFI_WAIT_MS = 15000;
+// The server's last "alive, and a game is open" counts for this long: unanswered past it, it goes quiet.
+static const unsigned long HEARD_MS = 3000;
 static const uint16_t HTTP_TIMEOUT_MS = 400;
 
 enum Mode : uint8_t { ASLEEP, ALIVE, AWAKE, FREE };
@@ -98,6 +103,8 @@ HTTPClient http;
 Mode mode = ASLEEP;
 bool online = false;
 bool found = false;  // someone has found it since the story sent it
+// When the server last said "alive" with a game open: the only time it calls out to be found.
+unsigned long calledForAt = 0;
 
 // ——— The 4-digit tube (TM1650 on Wire1): kept dark ————————————————————————————————————————
 static const uint8_t TUBE_DATA_BASE = 0x34, TUBE_CTRL_BASE = 0x24;
@@ -242,7 +249,10 @@ void ask() {
   for (uint8_t m = 0; m < 4; m++) {
     if (name == MODE_NAMES[m]) setMode((Mode)m);
   }
+  const int second = answer.indexOf(' ', space + 1);
   const int times = space > 0 ? answer.substring(space + 1).toInt() : 0;
+  const bool playing = second > 0 && answer.substring(second + 1).toInt() == 1;
+  if (name == "alive" && playing) calledForAt = millis();
   if (times > 0) beepFor(SEARCH_MS * (times < 3 ? times : 3));
 }
 
@@ -306,7 +316,8 @@ void setFound(const char *how) {
 void serviceSearch() {
   const unsigned long now = millis();
   const unsigned long gap = someoneThere ? SEARCH_NEAR_MS : SEARCH_EVERY_MS;
-  if (mode == ALIVE && !found && now - calledAt >= gap * (1 + callJitter)) {
+  const bool calledFor = calledForAt && now - calledForAt < HEARD_MS;
+  if (mode == ALIVE && !found && calledFor && now - calledAt >= gap * (1 + callJitter)) {
     calledAt = now;
     callJitter = random(500) / 1000.0f;
     beepFor(700 + random(900));
