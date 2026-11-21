@@ -1,0 +1,62 @@
+{
+  "title": "Two players aiming",
+  "description": "A split fight, Gerard on player 1 and Aitor (Tecnópata) on player 2's controller: each player's aim shows in their own colour, Gerard's gold and Aitor's cyan, on the foe's plate, on the ring on the floor, on the party card a cure is aimed at and on the name in their target picker. On the same foe the two rings stack, Aitor's as a cyan rim round Gerard's gold; while Aitor aims a cure, Gerard's foes stay pickable. Two standard gamepads are faked in the page.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads;"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .45); }))"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 1)"
+    },
+    {
+      "shot": "gerard-aims",
+      "delay": 600,
+      "caption": "Gerard aims Atacar: gold on the plate, the ring on the floor and his picker's name"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 2)"
+    },
+    {
+      "shot": "same-foe",
+      "delay": 600,
+      "caption": "Aitor aims at the same foe: his cyan rim round Gerard's gold ring, both colours on the plate"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('right', 2)"
+    },
+    {
+      "shot": "two-foes",
+      "delay": 600,
+      "caption": "Each on their own foe: gold for Gerard, cyan for Aitor, each picker naming theirs in their colour"
+    },
+    {
+      "eval": "(() => { const ui = window.gerard.battleUI; ui.control('cancel', 2); ui.control('down', 2); ui.control('confirm', 2); for (let i = 0; i < 12 && !/sanaci/i.test(document.querySelector('.battle-dock[data-dock=\"2\"] .is-cursor-2')?.textContent ?? ''); i++) ui.control('down', 2); ui.control('confirm', 2); })()"
+    },
+    {
+      "shot": "aitor-heals",
+      "delay": 800,
+      "caption": "Aitor aims Rayo de sanación at a party card: it lights up in cyan, while Gerard's foe stays aimed in gold"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('down', 2)"
+    },
+    {
+      "shot": "aitor-heals-next",
+      "delay": 600,
+      "caption": "Player 2's pad walks the cure to the other card"
+    }
+  ]
+}
