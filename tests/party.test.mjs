@@ -12,9 +12,9 @@ test('average stats leave every base amount as it is; stats above or below move 
   const kid = PROFILES.gerard, dog = PROFILES.dog;
   assert.equal(physical(18, kid, dog), 18);
   assert.equal(magical(40, kid, PROFILES.minion), 40);
-  assert.equal(healing(24, kid), 24);
+  assert.equal(healing(30, 200), 100, 'a cure is a share of whoever gets it: power 30 is half their PV');
+  assert.equal(healing(15, 200), 50);
   assert.equal(physical(18, PROFILES.aitor, dog), 21, 'Aitor hits harder');
-  assert.equal(healing(24, PROFILES.gerard35), 27, 'Gerard at 35 heals better');
   assert.equal(physical(1, kid, { ...dog, defensa: 40 }), 1, 'a hit always does something');
   assert.deepEqual(withBonus(kid, { magia: 2, defensa: -20 }).defensa, 1, 'no stat drops below 1');
 });

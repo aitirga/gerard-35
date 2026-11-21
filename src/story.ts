@@ -17,7 +17,7 @@ import { award, levelFlag, levelOf, type Growth, type Level, LEVELLED, LIGHT_LEV
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
-import { ANIMA_IDS, animaBonus, castleThreat, type AnimaId } from './animas.ts';
+import { ANIMA_IDS, animaGrowth, castleThreat, type AnimaId } from './animas.ts';
 import { stationOf } from './transit.ts';
 import { lockedStations, ticketFlag, type TicketStation } from './tickets.ts';
 import { ALEGIA, CUERDAS_PLACE, LINES_MARTA, MARTA_SCALE, PLACES_CUERDAS, PLACES_MARTA, QUALITIES } from './friends/marta.ts';
@@ -1339,10 +1339,10 @@ export class Story {
   }
   /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, and so does what their last afternoon left them. */
   battleParty(withPartner: boolean): PartySlot[] {
-    const bonus = this.animas.length ? animaBonus(this.animas) : undefined;
+    const grown = this.animas.length ? animaGrowth(this.animas) : undefined;
     const left = this.boost && boostOf(this.boost), evening = left && { shifts: { ...left.stats }, from: left.name };
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(bonus ? { bonus } : {}), ...(evening ? { evening } : {}) }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(grown ? { grown } : {}), ...(evening ? { evening } : {}) }));
   }
   /** What the last afternoon spent left the party, while it lasts: that night and the day after (src/days.ts `EVENINGS`). */
   get boost(): BoostId | undefined {

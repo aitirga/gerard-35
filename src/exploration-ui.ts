@@ -3,7 +3,7 @@ import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import type { Cell, Direction } from './movement';
 import { renderWorldMap, roomAt } from './world-map';
 import { renderExplorationWorldMap } from './exploration-world-map';
-import { ANIMAS, animaBonus } from './animas';
+import { ANIMAS, animaGrowth } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
 import { type MemberId, type PartyMember, type Story } from './story';
 import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, PASSIVES, SKILLS, canWear, skillKnown, type ClassId } from './battle';
@@ -203,8 +203,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** Chapter 2: the friends' ánimas the party carries, each a light of its own colour. */
   function friendAnimas() {
     const owned = story.animas.map(id => ANIMAS[id]);
-    const bonus = animaBonus(story.animas);
-    const total = (Object.entries(bonus) as [keyof Stats, number][]).map(([key, value]) => `${STAT_LABELS[key]} +${value}`).join(' · ');
+    const total = `+${Math.round(animaGrowth(story.animas) * 100)} % de PV, Fuerza, Magia, Defensa y Espíritu`;
     return `<section class="party-animas" aria-label="Ánimas de los amigos"><span class="battle-kicker">ÁNIMAS DE LOS AMIGOS</span>${owned.length
       ? `<ul>${owned.map(a => `<li style="--anima:${a.colour}"><i aria-hidden="true"></i><strong>${escape(a.name)}</strong><span>${escape(a.friend)}</span></li>`).join('')}</ul><p class="journal-muted">Todo el equipo: ${total}</p>`
       : '<p class="journal-muted">Ninguna todavía.</p>'}</section>`;

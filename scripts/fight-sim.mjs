@@ -319,7 +319,7 @@ async function command(options, play) {
     say(`\nCombates de la tabla, con todo: ${found.base.filter(r => r.win >= .99 && (r.hpLeftWon ?? 0) >= .85).length} de ${found.base.length} son triviales (se ganan siempre con más del 85 % de PV) y ${found.base.filter(r => r.win <= .2).length} casi nunca se ganan.`);
     say('«sin ella»: lo que cambian las victorias, las rondas de una victoria y los PV al ganar si se prohíbe, de media donde se usa.\nLos bots no son personas: una habilidad que «no se usa» puede sobrar, o puede que el bot no sepa valorarla (worth, src/battle-sim.ts).');
   } else if (options.command === 'progress') {
-    const runs = options.runs ?? 100, tried = options.tune ? tunings(options.tune) : [0, 1, 2].map(scale => ({ 'growth.rules.scale': scale }));
+    const runs = options.runs ?? 100, tried = options.tune ? tunings(options.tune) : [0, 1, 2].map(scale => ({ 'growth.rules.pct': Math.round(scale * tunables()['growth.rules.pct'] * 1000) / 1000 }));
     const now = tunables(), variants = [];
     for (const tuning of tried) {
       const points = pointsFrom({ ...options, builds: options.builds ?? ['mixto'] }, tuning), jobs = storyJobs(points, ['smart', 'casual'], { fights: options.fights, party: options.parties?.[0] });

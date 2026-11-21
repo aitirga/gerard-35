@@ -8,15 +8,15 @@
  * feels. `src/combat/simulator.ts` is a different thing: the generic engine's lab, on a synthetic fight.
  */
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
-import { ANIMAS, ANIMA_GROWTH, ANIMA_IDS, animaBonus, type AnimaId } from './animas.ts';
+import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  FOE_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
-import { PROFILES, type ProfileId } from './stats.ts';
+import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
 import { ARTILUGIO_NOTES, CASTLE, STRONG, CASTLE_LIGHTS, CASTLE_UNLOCKS, isCastle, levelCap, type GrowthStage, type MontonForm, type RoomEncounter } from './castle.ts';
 import { castleStrong } from './castle-fight.ts';
@@ -264,13 +264,14 @@ const BOOKS = {
   // Progression (docs/fight-sim.md § Progression): what wearing an ánima adds, what each friend's ánima adds to
   // everyone and how that grows, the EXP of each level (`level.xp.0` is level 2's) and of each foe, and the castle's caps.
   class: CLASS_STATS,
-  anima: Object.fromEntries(Object.values(ANIMAS).map(anima => [anima.id, anima.bonus])),
-  growth: { rules: ANIMA_GROWTH },
+  growth: { rules: ANIMA_GROWTH, level: LEVEL_GROWTH },
+  // What a cure gives back: the power that is half the PV of whoever gets it (src/stats.ts).
+  heal: { rules: HEAL },
   level: { xp: LEVEL_XP },
   xp: { foe: FOE_XP, rules: XP_RULES },
   stage: CASTLE_UNLOCKS,
   // How the open missions' foes grow with the ánimas gathered: the rule for all (`foes.growth`) and each fight's own (`foes.<fight>`).
-  foes: { growth: FOE_GROWTH, ...FIGHT_GROWTH },
+  foes: { growth: FOE_GROWTH, blow: FOE_BLOW, ...FIGHT_GROWTH },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
 /** Every number that can be tuned, as `book.id.field` and what it is now: what a balance report shows and `--tune` takes. */
 export function tunables(): Record<string, number> {
@@ -321,7 +322,7 @@ export function seeded(seed: number) {
 }
 
 function partySlots(party: string, friends: AnimaId[] = []): PartySlot[] {
-  const bonus = friends.length ? { bonus: animaBonus(friends) } : {};
+  const bonus = friends.length ? { grown: animaGrowth(friends) } : {};
   const slots = party.split('+').map(entry => {
     const [id, worn] = entry.split(':'), member = MEMBERS[id], [anima, ...extras] = (worn ?? '').split('/');
     if (!member) throw new Error(`Unknown party member "${id}": use ${Object.keys(MEMBERS).join(', ')}.`);
@@ -563,9 +564,14 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     // El Montón shaped by this blow: what it will give back, against what a plain Atacar would have shown it.
     if (foe.kind === 'monton' && !foe.castle?.form && now.castle?.form) value -= Math.max(0, shapeHarm(after, now) - shapeHarm(after, now, plainCopy(before, foe.id))) * MONTON_TURNS;
   });
-  // PV given back count nearly as much as PV taken away (Cardioide, Ronroneo), and a calmed mind a little.
+  // PV given back count nearly as much as PV taken away while they are the margin (up to half their PV, or to what two of the foes'
+  // turns would take from whoever gets them); past that, a quarter: a cure is for whoever is low, not for topping up. Pulling
+  // someone out of the blow that would bring them down is worth what holding on is. And a calmed mind a little.
   before.allies.forEach((ally, i) => {
-    value += Math.max(0, after.allies[i].hp - ally.hp) * .9;
+    const back = Math.max(0, after.allies[i].hp - ally.hp), coming = threat.hp.get(ally.id) ?? 0, margin = Math.min(back, Math.max(0, 2 * coming - ally.hp, ally.maxHp / 2 - ally.hp));
+    // A long fight is not won by curing: past the tenth round a cure counts less each round, so nobody holds on for ever behind Defender and a cure.
+    const tired = Math.max(.3, 1 - Math.max(0, before.round - 10) / 12);
+    value += (margin * .9 + (back - margin) * .25 + (back && ally.hp > 0 && coming >= ally.hp && after.allies[i].hp > coming ? 30 : 0)) * tired;
     for (const id of MENTAL_STATUSES) value += Math.max(0, (ally.statuses?.[id] ?? 0) - (after.allies[i].statuses?.[id] ?? 0)) * 4;
   });
   // Cegado: what the foes would no longer do this turn and about half the next, the real rules on a copy.
@@ -1109,7 +1115,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'cebollon-nivel-1-bien', fight: 'cebollon', party: MISSION_PARTY, levels: L1, policy: 'smart', win: [0, .2], roundsLost: [2, 9], why: 'A nivel 1 tampoco jugando bien: defenderse solo alarga la derrota, la respuesta es otra.' },
   { id: 'cebollon-nivel-2', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.5, 1], why: 'Con Zarpazos ya se le puede ganar sin darle muchas vueltas, aunque peleado.' },
   { id: 'cebollon-nivel-2-bien', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'smart', win: [.9, 1], hpLeftWon: [.35, 1], why: 'Zarpazos le quita las capas fácilmente: subir de nivel a Papagato es la respuesta.' },
-  { id: 'cebollon-lo-decide-zarpazos', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'smart', ban: ['zarpazos'], win: [0, .2], why: 'Es Zarpazos lo que lo cambia, no el nivel en sí: a nivel 2 sin usarlo se sigue perdiendo.' },
+  { id: 'cebollon-lo-decide-zarpazos', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'smart', ban: ['zarpazos'], win: [.6, 1], roundsWon: [10, 18], why: 'Sin Zarpazos, a nivel 2, se gana solo aguantando y curándose con Ronroneo, que devuelve una parte de los PV: el doble de rondas que con ellos y saliendo justo.' },
   { id: 'cebollon-nivel-3', fight: 'cebollon', party: MISSION_PARTY, levels: L3, policy: 'smart', win: [.9, 1], why: 'A nivel 3 sigue siendo la respuesta.' },
   // The young and the onions with the dual party (Aitor wearing Papagato from the loadout).
   { id: 'cebollon-duales-nivel-1', fight: 'cebollon', party: DUO, levels: L1, policy: 'smart', win: [0, .2], why: 'A nivel 1 no hay ataques duales: sin Zarpazos, ni a la vez se pela El Cebollón.' },
@@ -1138,19 +1144,19 @@ export const TARGETS: readonly Target[] = [
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },
   { id: 'vertigo-sin-duales', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', ban: ['duals'], win: [.85, 1], hpLeftWon: [.2, .55], roundsWon: [10, 15], why: 'Sin ataques duales también se gana: romper el ojo antes del rayo, agarrarse cuando carga. Cuesta vida y rondas, y cada grito pesa.' },
-  { id: 'vertigo-eco-mana', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', improved: ['papagato:mana-1'], win: [.05, .5], why: 'Dos ecos en más maná ayudan a quien no le da vueltas, pero no le dan el combate: sin romper el ojo ni agarrarse, pierde más de la mitad.' },
+  { id: 'vertigo-eco-mana', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', improved: ['papagato:mana-1'], win: [.05, .75], why: 'Dos ecos en más maná ayudan a quien no le da vueltas, pero no le dan el combate: sin romper el ojo ni agarrarse, pierde más de la mitad.' },
   { id: 'vertigo-eco-elementos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', improved: ['matemagico:agua', 'matemagico:fuego', 'matemagico:electrico'], hpLeftWon: [.5, .9], why: 'Los elementos son una respuesta más, no lo que decide el combate.' },
-  { id: 'vertigo-sin-pensar', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', win: [0, .2], why: 'Sin pensar, Vertitrón gana: quien no rompe el ojo ni se agarra al rayo llega al final sin fuerzas, grito a grito.' },
+  { id: 'vertigo-sin-pensar', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'casual', win: [0, .32], why: 'Sin pensar, Vertitrón gana: quien no rompe el ojo ni se agarra al rayo llega al final sin fuerzas, grito a grito.' },
   { id: 'vertigo-poco-matemagico', fight: 'uri-vertigo', party: DUO, levels: P2M1, policy: 'smart', win: [.9, 1], why: 'Con Matemágico a nivel 1 no hay Punto débil, pero basta Zarpazos de fuego.' },
   { id: 'vertigo-sin-gatos-aitor', fight: 'uri-vertigo', party: MISSION_PARTY, levels: P2M2, policy: 'smart', win: [.55, 1], hpLeftWon: [0, .45], why: 'Si Aitor no lleva a los gatos, se puede, pero sufriendo y no siempre: Gerard tiene que cambiar de ánima para todo y se gana con muy poca vida.' },
-  { id: 'vertigo-a-punetazos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: sus gritos y su rayo piden algo más.' },
+  { id: 'vertigo-a-punetazos', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'attack', win: [0, .08], why: 'Solo Atacar no llega: sus gritos y su rayo piden algo más.' },
   { id: 'vertigo-nivel-3', fight: 'uri-vertigo', party: DUO, levels: P3M2, policy: 'smart', win: [.95, 1], hpLeftWon: [.4, .9], why: 'Quien ha subido mucho lo nota, pero el jefe sigue pidiendo cabeza.' },
   { id: 'vertigo-pensando-despacio', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', think: 8, win: [.9, 1], hpLeftWon: [0, .9], why: 'Quien piensa despacio deja arder más el fuego, y aun así Vertitrón no se vuelve un trámite.' },
   // La Sobremesa (docs/quests/universidad.md § Final boss): seven friends, each their own target and move. Its numbers are
   // SOBREMESA (book sobremesa.boss) and each friend's PROFILES entry (foe.sobremesa-anna…). Many at once is what makes it:
   // anything that reaches every foe pays, focusing one at a time pays, and Cortafuegos taxes whoever focuses.
   // Held as the story's party meets it (2026-11-21): thinking wins it, long and with less than half the party's PV left; not thinking never does.
-  { id: 'sobremesa-duo-bien', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], roundsWon: [10, 16], why: 'El jefe de la uni: siete a la vez y la sopeta de Anna los recompone a todos. Pensando se gana, largo y con menos de la mitad de la vida.' },
+  { id: 'sobremesa-duo-bien', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], roundsWon: [8, 16], why: 'El jefe de la uni: siete a la vez y la sopeta de Anna los recompone a todos. Pensando se gana, largo y con menos de la mitad de la vida.' },
   { id: 'sobremesa-sin-pensar', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'casual', win: [0, .05], why: 'Sin pensar gana la mesa: el dúo de la carta negra deja a uno con 1 PV, Joan no para de subir y la sopeta deshace lo que se le quita a uno solo.' },
   { id: 'sobremesa-a-punetazos', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: son siete.' },
   { id: 'sobremesa-gatos-en-gerard', fight: 'sobremesa', party: MISSION_PARTY, ...AT_UNI, policy: 'smart', win: [.88, 1], why: 'Con los gatos en Gerard y Aitor con lo suyo también: lo que alcanza a todos decide, lo lleve quien lo lleve.' },
@@ -1185,23 +1191,23 @@ export const TARGETS: readonly Target[] = [
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
-  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.85, 1], hpLeftWon: [.22, .58], roundsWon: [10, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar.' },
-  { id: 'voz-sin-cubrirse', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['defend'], win: [.5, .92], why: 'Pegando bien pero sin cubrirse nunca, sus notas entran enteras y con el agua y el rayo encima: cuesta bastante más.' },
+  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.85, 1], hpLeftWon: [.22, .58], roundsWon: [7, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar.' },
+  { id: 'voz-sin-cubrirse', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['defend'], win: [.5, 1], why: 'Pegando bien pero sin cubrirse nunca, sus notas entran enteras y con el agua y el rayo encima: cuesta bastante más.' },
   { id: 'voz-sin-duales', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['duals'], win: [.6, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
   { id: 'voz-sin-pensar', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, ...AT_MARTA, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
   // The four open missions done last (2026-11-21, the final pass): each fight that asks a question, held at the other end of the story too.
   ...doneLast('camping-negra', 'La parcela negra', UNI_LAST, { win: [.85, 1], hpLeftWon: [.15, .6] }, NEW_WATER, [.7, 1], [0, .2]),
-  ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [5.5, 11] }, NEW_WATER, [.82, 1], [0, .15]),
-  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [10, 16] }, NEW_WATER, [.82, 1], [0, .15]),
+  ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [3, 11] }, NEW_WATER, [.82, 1], [0, .15]),
+  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [7, 16] }, NEW_WATER, [.82, 1], [0, .25]),
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
   ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.65, 1], [0, .3]),
-  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [7.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
-  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.9, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
+  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [5.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
+  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.75, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
   ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
-  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [7.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),
+  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [5.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),
   // The castle (docs/castle.md, docs/castle-bosses.md), measured 2026-11-21 with the party as the story leaves it
   // (`storyPoint`): on arriving with Nuria's ánima and one side mission's (ONE), with two (TWO), and with them all
   // at each of the castle's stages. Its bosses ask for ánimas (docs/fight-sim.md § Power and the castle).
@@ -1215,23 +1221,23 @@ export const TARGETS: readonly Target[] = [
   { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
   { id: 'castigado-sin-pensar', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Pegándole por el camino se le llena la Rabia y revienta sobre todos mientras el Empollón sigue: se pierde.' },
   { id: 'monton-bien', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'smart', win: [.8, 1], why: 'El Montón copia el primer golpe que recibe: abrir con uno flojo y sin nada (ni fuego, ni agua, ni corriente, ni sangrado, ni a todos), o darle una forma y pegarle con lo que la deshace; y la Chivata antes.' },
-  { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .5], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
+  { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .78], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
   { id: 'delegada-bien', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'smart', win: [.78, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par (una chispa en uno pasa al otro).' },
-  { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .4], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
+  { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .7], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
   // Each floor leaves one room soft, where its gum is met on pupils already known (`teaching` in CASTLE_STAGES): won without
   // thinking more often than not, and never for free.
   { id: 'gemelos-segundo', fight: 'alumnos-2c', party: DUO, ...FLOOR_2, policy: 'casual', win: [.5, .9], hpLeftWon: [.3, .65], why: 'La sala blanda del segundo curso: los Gemelos y el Repetidor, ya conocidos, con relleno. Sin pensar se gana más veces que no, y cuesta más de media vida.' },
   { id: 'chivatas-tercero', fight: 'alumnos-3a', party: DUO, ...FLOOR_3, policy: 'casual', win: [.5, .9], hpLeftWon: [.35, .7], why: 'La sala blanda del tercero: dos Chivatas y el Repetidor con chicle rancio y costra. Sin pensar se gana más veces que no, y se sale tocado.' },
   { id: 'delegada-primero-bien', fight: 'delegada-1', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [2.5, 6], why: 'La Delegada de primero: callarla o tumbarla antes que a nadie, y bajar a los Gemelos a la par. Es la primera sala del castillo que pide leer.' },
   { id: 'delegada-primero-sin-pensar', fight: 'delegada-1', party: DUO, ...FLOOR_1, policy: 'casual', win: [0, .5], why: 'Con ella mandando, los tres al mismo, y el Gemelo que cae vuelve a levantarse: sin orden se pierde más veces que se gana.' },
-  { id: 'trio-segundo-bien', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'smart', win: [.8, 1], hpLeftWon: [.25, .6], why: 'Chivata, Repetidor y Empollón con relleno: la Chivata antes de que su marca triplique el Empujón avisado, Defender ese Empujón, alternar físico y mágico contra el Empollón, y a cada relleno lo que lo deshace. La sala más justa del curso.' },
-  { id: 'trio-segundo-sin-pensar', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .5], why: 'Dejando a la Chivata marcar y sin cubrir el Empujón, el marcado cae de un golpe: se pierde más veces que se gana.' },
+  { id: 'trio-segundo-bien', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'smart', win: [.66, 1], hpLeftWon: [.25, .6], why: 'Chivata, Repetidor y Empollón con relleno: la Chivata antes de que su marca triplique el Empujón avisado, Defender ese Empujón, alternar físico y mágico contra el Empollón, y a cada relleno lo que lo deshace. La sala más justa del curso.' },
+  { id: 'trio-segundo-sin-pensar', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .7], why: 'Dejando a la Chivata marcar y sin cubrir el Empujón, el marcado cae de un golpe: se pierde más veces que se gana.' },
   { id: 'empollones-bien', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'smart', win: [.88, 1], why: 'Dos Empollones y la Chivata: no repetir clase de golpe sobre el mismo Empollón (lo que no se sabe le entra más), y la Chivata primero.' },
-  { id: 'empollones-sin-pensar', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .5], why: 'Repitiendo el mismo golpe los dos se lo aprenden y la pelea se alarga con la Chivata marcando: se pierde más veces que se gana.' },
+  { id: 'empollones-sin-pensar', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .7], why: 'Repitiendo el mismo golpe los dos se lo aprenden y la pelea se alarga con la Chivata marcando: se pierde más veces que se gana.' },
   { id: 'delegada-segundo-bien', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'smart', win: [.78, 1], why: 'La Delegada de segundo, con los Gemelos y la Chivata: ella primero (o cegada, o confusa), luego la Chivata, y los Gemelos a la par.' },
   { id: 'delegada-segundo-sin-pensar', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Cuatro al mismo y con marca: sin orden se pierde.' },
   { id: 'gemelos-tercero-bien', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'smart', win: [.82, 1], why: 'Los Gemelos de tercero con el Empollón: bajarlos a la par (un golpe a todos, o la chispa que pasa de uno al otro), con golpes físicos contra el chicle rancio, y alternar contra el Empollón.' },
-  { id: 'gemelos-tercero-sin-pensar', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .45], why: 'De uno en uno, el que cae se levanta y los dos siguen pegando: se pierde.' },
+  { id: 'gemelos-tercero-sin-pensar', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .8], why: 'De uno en uno, el que cae se levanta y los dos siguen pegando: se pierde.' },
   { id: 'aurelia-bien', fight: 'aurelia', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [7, 13], why: 'Aurelià con las ánimas de todos: romper el atril (fuego o chispa), defender la Pregunta, hacerle tropezar con un estado nuevo en cada vuelta, aguantar la Expulsión y guardarse un estado para tirarlo en la carrerilla del Récord.' },
   { id: 'aurelia-con-dos', fight: 'aurelia', party: DUO, ...TWO, policy: 'smart', win: [.75, 1], why: 'Con Nuria y dos misiones hechas ya se le puede: más justo y más largo, pero se gana.' },
   { id: 'aurelia-con-una', fight: 'aurelia', party: TECH, ...ONE, policy: 'smart', win: [0, .35], why: 'Con Nuria y una sola misión detrás falta fondo: el Dictado y la Pregunta se llevan al equipo antes de que caiga.' },
@@ -1240,12 +1246,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'direccion-con-dos', fight: 'direccion', party: TECH, ...TWO, policy: 'smart', win: [0, .35], why: 'Con solo dos misiones detrás las tres juntas son demasiado: la Circular y la Resolución acaban con el grupo antes.' },
   { id: 'direccion-sin-pensar', fight: 'direccion', party: DUO, ...THREE, policy: 'casual', win: [0, .15], why: 'Con tres de las cuatro misiones detrás, sin leer los avisos: mojados cuando llega la Circular y con el acta cerrada, se pierde.' },
   // Encarnados (docs/castle.md § Encarnados): the room's own question, with less room for mistakes.
-  { id: 'encarnados-bien', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'smart', win: [.85, 1], roundsWon: [4, 8], why: 'Encarnados: la misma sala y la misma respuesta, con más PV y golpes más duros. Jugando lo que la sala pide se les gana, y sueltan un Eco de luz.' },
+  { id: 'encarnados-bien', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'smart', win: [.62, 1], roundsWon: [4, 8], why: 'Encarnados: la misma sala y la misma respuesta, con más PV y golpes más duros. Jugando lo que la sala pide se les gana, y sueltan un Eco de luz.' },
   { id: 'encarnados-sin-pensar', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .25], why: 'Sin leer la sala, lo que antes se aguantaba ya no: se pierde.' },
   // The Queen (docs/castle-bosses.md § La Reina Bubbaloo). Her first fight cannot be won: its pair is whether the party gets her to her tenth,
   // where she takes Aitor (`suyo`, his blows on Gerard), or falls before. Held with the party as it comes, two of the friends' ánimas each.
   { id: 'reina-toma-a-aitor', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [2.5, 12] }, why: 'La Reina, con lo que pide cada fase: arrancarle las capas con lo que deshace cada una, aguantar la mano que sujeta y romperlas, reventar La Pompa a tiempo. Se la lleva hasta el décimo de sus PV; ahí toma a Aitor, y sin el artilugio Gerard cae.' },
-  { id: 'reina-con-el-duo', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [1.5, 12] }, why: 'Sin llevar puestas las ánimas de los amigos también se la lleva hasta ahí casi siempre: más largo y más justo.' },
+  { id: 'reina-con-el-duo', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [.6, 12] }, why: 'Sin llevar puestas las ánimas de los amigos también se la lleva hasta ahí casi siempre: más largo y más justo.' },
   { id: 'reina-sin-pensar', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, 0], happens: { suyo: [0, .5] }, why: 'Sin la respuesta de cada fase no se llega a su décimo: bajo el chicle todo entra a un cuarto, una mano se lleva a uno y La Pompa revienta entera. Es una caída cualquiera.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
@@ -1257,11 +1263,11 @@ export const TARGETS: readonly Target[] = [
   { id: 'celdas-a-punetazos', fight: 'modelo-celdas', party: DUO, ...AT_EMILIE, policy: 'attack', win: [0, .05], why: 'Secas, todo les entra a menos de la mitad: a puñetazos no da tiempo.' },
   { id: 'oscilacion-probando', fight: 'modelo-oscilacion', party: DUO, ...AT_EMILIE, policy: 'casual', win: [.95, 1], roundsWon: [3.5, 7], why: 'La oscilación enseña la regla del jefe en pequeño: probando elementos se encuentra, y se nota en el número.' },
   { id: 'oscilacion-a-punetazos', fight: 'modelo-oscilacion', party: DUO, ...AT_EMILIE, policy: 'attack', roundsWon: [8, 14], hpLeftWon: [0, .35], why: 'Sin elemento también cae, pero el doble de largo y por los pelos: la diferencia se ve.' },
-  { id: 'atomo-bien', fight: 'modelo-atomo', party: DUO, ...AT_EMILIE, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .8], why: 'Arrancarle el agua o el rayo antes de su Reacción, sin devolverle lo arrancado: la Reacción se queda en nada.' },
+  { id: 'atomo-bien', fight: 'modelo-atomo', party: DUO, ...AT_EMILIE, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .88], why: 'Arrancarle el agua o el rayo antes de su Reacción, sin devolverle lo arrancado: la Reacción se queda en nada.' },
   { id: 'atomo-probando', fight: 'modelo-atomo', party: DUO, ...AT_EMILIE, policy: 'casual', win: [.8, 1], why: 'Probando elementos se encuentra: el primer golpe que arranca un electrón lo dice, y el que se lo devuelve también.' },
   { id: 'atomo-primer-dia', fight: 'modelo-atomo', party: 'gerard:matemagico+aitor:-', levels: L1, improved: [], exact: true, policy: 'smart', win: [.85, 1], why: 'Sin fuego ni tarro: el modelo presta el agua y el rayo, y arrancar esos dos basta para que la Reacción solo queme.' },
   { id: 'atomo-a-punetazos', fight: 'modelo-atomo', party: DUO, ...AT_EMILIE, policy: 'attack', win: [0, .05], why: 'Sin elemento, cada Reacción os moja y la descarga os atraviesa a todos.' },
-  { id: 'no-converge-bien', fight: 'no-converge', party: DUO, ...AT_EMILIE, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [8, 15], why: 'El que no converge, leyendo la placa: el elemento en el que no está le quita Error, y convergido se le pega con todo.' },
+  { id: 'no-converge-bien', fight: 'no-converge', party: DUO, ...AT_EMILIE, policy: 'smart', win: [.82, 1], hpLeftWon: [.3, .7], roundsWon: [8, 15], why: 'El que no converge, leyendo la placa: el elemento en el que no está le quita Error, y convergido se le pega con todo.' },
   { id: 'no-converge-sin-pensar', fight: 'no-converge', party: DUO, ...AT_EMILIE, policy: 'casual', win: [0, .05], roundsLost: [4, 9], why: 'El golpe acertado no quita más PV que uno cualquiera: quien solo mira el número nunca lo hace converger, y su Descarga crece.' },
   { id: 'no-converge-a-punetazos', fight: 'no-converge', party: DUO, ...AT_EMILIE, policy: 'attack', win: [0, .02], why: 'Sin elementos no converge nunca.' },
   { id: 'no-converge-primer-dia', fight: 'no-converge', party: 'gerard:matemagico+aitor:-', levels: L1, improved: [], exact: true, policy: 'smart', win: [.85, 1], why: 'Al alcance de quien llega el primer día, sin tarro ni niveles y con Aitor sin ánima: el modelo presta el agua y la electricidad.' },
@@ -1269,13 +1275,13 @@ export const TARGETS: readonly Target[] = [
   // Fran's salon (docs/quests/luca.md). Its numbers are LUCA (book luca.rules) and each foe's PROFILES entry
   // (foe.polilla…). The light walks through every fight: the party's blows of its element do nothing.
   { id: 'recepcion-ensena', fight: 'luca-recepcion', party: DUO, ...AT_LUCA, policy: 'casual', win: [.85, 1], why: 'La recepción enseña la luz: el fuego deja de servir a mitad de combate. Se pasa igual, pero se nota.' },
-  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .6], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto.' },
+  { id: 'sillones-bien', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'smart', win: [.88, 1], hpLeftWon: [.25, .68], why: 'Los capellanes, pensando: primero el recién peinado, y los demás se quedan a medio gesto.' },
   { id: 'sillones-deslumbrados', fight: 'luca-sillones', dazzled: true, party: DUO, ...AT_LUCA, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .75], why: 'Con los espejos de la nave resueltos los capellanes empiezan deslumbrados: el mismo combate, con más vida al acabar.' },
   { id: 'sillones-sin-pensar', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .2], why: 'Sin mirar quién lleva el peinado nuevo, cada gesto se repite.' },
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
   { id: 'carta-bien', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Las camisas de Luca, pensando: pegar solo a la que está en su luz, y con otra cosa que el elemento que esa luz se come.' },
   { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes sin mirar la luz, la mayoría caen sobre una camisa apagada y no hacen nada.' },
-  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.82, 1], hpLeftWon: [.22, .7], roundsWon: [7.5, 12], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.82, 1], hpLeftWon: [.22, .7], roundsWon: [6, 12], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
   { id: 'fran-sin-pensar', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo, sigue comiéndose los elementos y la Aspersión llega teñida de todas.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];

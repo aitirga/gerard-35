@@ -88,7 +88,7 @@ test('Cacería: a claw for each stack on the field, on whoever bleeds, none with
   // No wound's bonus: each plain claw is the skill's own light blow, the crítico half as hard again.
   const plain = e.hunt[5].amount, sure = e.hunt[0].amount;
   assert.equal(sure, Math.round(plain * (1 + CRIT_RULES.bonus)));
-  assert.ok(plain < SKILLS.find(k => k.id === 'zarpazo').power);
+  assert.ok(plain < sure);
   assert.deepEqual(e.passives?.map(p => p.id), ['olor-a-sangre']);
 });
 

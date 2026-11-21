@@ -411,7 +411,7 @@ export type Hand = keyof typeof HANDS;
  * her way back she has `reinaVuelta` of her PV.
  */
 export const CASTLE = {
-  year1: 1.6, year2: 1.4, year3: 1.8,
+  year1: 1.7, year2: 1.5, year3: 1.9,
   empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 3, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
   salto: .5, derrame: 32,
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,

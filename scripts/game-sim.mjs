@@ -23,7 +23,7 @@ Opciones:
   --workers N        Hilos en paralelo (los núcleos menos uno)
   --tune p=a:b       Prueba números sin tocar el código, los mismos de just fight-sim (repetible, se combinan). Con
                      varios valores juega cada combinación y las compara en una tabla, sin escribir la página:
-                     --tune growth.rules.scale=0:1:2 (lo que suma cada ánima de amigo) · --tune level.xp.2=950:1290 · --tune xp.rules.castle=1:3
+                     --tune growth.rules.pct=0:.12:.24 (lo que suma cada ánima de amigo) · --tune level.xp.2=950:1290 · --tune xp.rules.castle=1:3
   --set campo=valor  Cambia cómo juegan los jugadores elegidos (repetible): order=nuria/marta/luca/emilie/universidad,
                      build=tronco, policy=casual, carrier=gerard, engage=avoid, grind=2, seekLevel=3, castleFirst=false
   --sin-cuenta-atras Juega sin el fin de la cuenta atrás de la Reina (para ver qué aporta); el informe va a output/reports/game-sin-cuenta-atras/
@@ -44,7 +44,7 @@ function parse(args) {
     else if (flag === '--workers') { options.workers = Number(value); i++; }
     else if (flag === '--tune') {
       const [path, list] = (value ?? '').split('='), values = (list ?? '').split(':').map(Number);
-      if (!path || !list || values.some(n => !Number.isFinite(n))) throw new Error(`--tune necesita algo como growth.rules.scale=0:1:2, no "${value}"`);
+      if (!path || !list || values.some(n => !Number.isFinite(n))) throw new Error(`--tune necesita algo como growth.rules.pct=0:.12:.24, no "${value}"`);
       (options.tune ??= {})[path] = values; i++;
     } else if (flag === '--set') {
       const [field, text] = (value ?? '').split('=');

@@ -263,8 +263,8 @@ test('ánimas strengthen the party and thin out the palace guards', () => {
   const one = new Story([...upTo('palace-tried'), 'anima-nuria']);
   assert.deepEqual(none.animas, []);
   assert.deepEqual(one.animas, ['nuria']);
-  assert.equal(none.battleParty(true)[0].bonus, undefined);
-  assert.deepEqual(one.battleParty(true).map(m => m.bonus), [{ fuerza: 1, magia: 2, defensa: 1, espiritu: 2, pv: 10 }, { fuerza: 1, magia: 2, defensa: 1, espiritu: 2, pv: 10 }]);
+  assert.equal(none.battleParty(true)[0].grown, undefined);
+  assert.deepEqual(one.battleParty(true).map(m => m.grown), [.12, .12], 'each ánima, 12 % more of every attribute');
   assert.equal(none.guarded.length, 3);
   assert.equal(one.guarded.length, 3, 'one ánima weakens them; it takes two to send one away');
   assert.ok(one.castleThreat < none.castleThreat, 'but the castle already feels it');

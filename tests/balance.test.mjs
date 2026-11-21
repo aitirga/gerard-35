@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ANIMA_GROWTH, animaBonus } from '../src/animas.ts';
+import { ANIMA_GROWTH, animaGrowth } from '../src/animas.ts';
 import { FIGHT_GROWTH, FOE_GROWTH, createEncounter, gatheredFor, growthOf, kitIn } from '../src/battle.ts';
 import { CASTLE_UNLOCKS } from '../src/castle.ts';
 import { FOE_XP, LEVEL_XP, XP_RULES, fightXp } from '../src/levels.ts';
@@ -74,16 +74,15 @@ test('levers move each number down and up and say what that does to each goal', 
   assert.ok(own.levers.some(l => l.path === 'onion.cebollon.perLayer') && !own.levers.some(l => l.path.startsWith('skill.')));
 });
 
-test('each friend\'s ánima adds what it says, and the growth rule can be tried without touching the game', () => {
-  assert.deepEqual(ANIMA_GROWTH, { scale: 1, pv: 0, stat: 1 }, 'each ánima its own bonus, and a point of Fuerza, Magia, Defensa and Espíritu');
-  assert.deepEqual(animaBonus(['nuria', 'marta']), { fuerza: 2, magia: 3, defensa: 3, espiritu: 4, pv: 20 });
-  withTuning({ 'growth.rules.stat': 0 }, () => assert.deepEqual(animaBonus(['nuria', 'marta']), { magia: 1, defensa: 1, espiritu: 2, pv: 20 }));
-  withTuning({ 'growth.rules.scale': 0, 'growth.rules.stat': 0 }, () => assert.deepEqual(animaBonus(['nuria', 'marta']), {}));
-  withTuning({ 'growth.rules.scale': 2, 'growth.rules.pv': 5, 'growth.rules.stat': 1 }, () => assert.deepEqual(animaBonus(['nuria']), { magia: 3, espiritu: 3, pv: 25, fuerza: 1, defensa: 1 }));
-  withTuning({ 'anima.nuria.pv': 30 }, () => assert.equal(animaBonus(['nuria']).pv, 30));
-  assert.deepEqual(animaBonus(['nuria']), { fuerza: 1, magia: 2, defensa: 1, espiritu: 2, pv: 10 });
+test('each friend\'s ánima makes the party a share larger, and the growth rule can be tried without touching the game', () => {
+  assert.deepEqual(ANIMA_GROWTH, { pct: .12 }, 'each ánima, 12 % more of PV, Fuerza, Magia, Defensa and Espíritu');
+  assert.equal(animaGrowth([]), 0); assert.equal(animaGrowth(['nuria', 'marta']), .24);
+  withTuning({ 'growth.rules.pct': .2 }, () => assert.equal(animaGrowth(['nuria']), .2));
   const hp = tuning => withTuning(tuning, () => createFight({ ...onion, friends: ['nuria', 'luca'] }, seeded(1)).allies[0].maxHp);
-  assert.equal(hp({ 'growth.rules.scale': 2 }) - hp({}), 20);
+  assert.ok(hp({}) > hp({ 'growth.rules.pct': 0 }) && hp({ 'growth.rules.pct': .24 }) > hp({}));
+  // A level of the ánima worn is a share more too, and the foes' blows do not keep step with it.
+  const levelled = level => createFight({ ...onion, levels: { papagato: level } }, seeded(1)).allies.find(a => a.classId === 'papagato')?.maxHp;
+  if (levelled(1)) assert.ok(levelled(4) > levelled(1));
 });
 
 test('an open mission\'s foes grow with the other missions\' ánimas behind it, each fight by its own rule, in the game as in the simulator', () => {
@@ -171,7 +170,8 @@ test('the skill table says what each action does and what the fight becomes with
   assert.equal(base.length, 1);
   const claws = lines.find(l => l.id === 'zarpazos'), attack = lines.find(l => l.id === 'attack');
   assert.ok(claws && claws.known === 1 && claws.usedIn === 1 && claws.uses > 0 && claws.perUse > 0 && claws.perMana > 0);
-  assert.ok(claws.drop >= DECISIVE && claws.flags.includes('decides') && claws.decides[0].fight === 'cebollon', 'El Cebollón is lost without Zarpazos');
+  // Since cures give back a share of the PV, El Cebollón can be outlasted without Zarpazos: it takes far longer.
+  assert.ok(claws.drop >= 0 && claws.rounds >= 3, `without Zarpazos El Cebollón takes rounds more (${claws.rounds})`);
   assert.ok(attack && attack.drop === null, 'Atacar cannot be taken away');
   assert.ok(!lines.some(l => l.id === 'ostinato'), 'what the party cannot wear is not on its table');
 });

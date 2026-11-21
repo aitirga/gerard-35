@@ -4,7 +4,7 @@
  * formula below adds or takes away from a fixed base by how far a stat is from 10.
  * Campaign names adapt the generic combat formulas. Pure: no DOM or presentation engine.
  */
-import { resolveAmount, resolveDamage } from './combat/engine.ts';
+import { resolveDamage } from './combat/engine.ts';
 export interface Stats {
   /** Puntos de vida. */
   pv: number;
@@ -53,7 +53,7 @@ export const PROFILES = {
   /**
    * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
    */
-  vertigo: base(484, 13, 13, 10, 12),
+  vertigo: base(440, 18, 18, 10, 12),
   'vertigo-ojo': base(100, 10, 10, 9, 9),
   /** Their young, in twos and threes up the tower (docs/quests/nuria.md § The tower): little PV. The cebollitas are the easy ones. */
   cebollita: base(34, 11, 8, 9, 8),
@@ -63,11 +63,11 @@ export const PROFILES = {
    * La Sobremesa's seven (docs/quests/universidad.md § Final boss), each a target of their own. Joan
    * and Soraya, who need each other, are the frailest; Nico, who shields the rest, the toughest.
    */
-  'sobremesa-alvaro': base(91, 12, 10, 10, 10),
-  'sobremesa-anna': base(84, 13, 10, 9, 10),
-  'sobremesa-sarah': base(84, 10, 12, 10, 11),
-  'sobremesa-miquel': base(95, 13, 10, 11, 10),
-  'sobremesa-joan': base(72, 10, 13, 9, 9),
+  'sobremesa-alvaro': base(78, 12, 10, 10, 10),
+  'sobremesa-anna': base(72, 13, 10, 9, 10),
+  'sobremesa-sarah': base(72, 10, 12, 10, 11),
+  'sobremesa-miquel': base(81, 13, 10, 11, 10),
+  'sobremesa-joan': base(62, 10, 13, 9, 9),
   'sobremesa-soraya': base(77, 10, 12, 9, 10),
   'sobremesa-nico': base(102, 10, 10, 13, 12),
   /**
@@ -86,8 +86,8 @@ export const PROFILES = {
   lealtad: base(260, 12, 9, 15, 12),
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
-  directo: base(440, 14, 10, 11, 10),
-  voz: base(500, 12, 14, 12, 14),
+  directo: base(440, 16, 10, 11, 10),
+  voz: base(460, 12, 15, 12, 14),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
@@ -105,12 +105,12 @@ export const PROFILES = {
   monton: base(250, 12, 12, 10, 10),
   // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
   // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
-  aurelia: base(560, 16, 11, 12, 12),
+  aurelia: base(500, 21, 11, 12, 12),
   atril: base(90, 1, 1, 10, 8),
   // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
   // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.
   directiva: base(245, 10, 20, 12, 14),
-  reina: base(620, 14, 14, 12, 13),
+  reina: base(620, 17, 17, 12, 13),
   mano: base(110, 12, 10, 11, 10),
   // La Pompa she blows: a thing to burst before it does. First guess.
   pompa: base(300, 1, 1, 9, 9),
@@ -144,6 +144,14 @@ export function withBonus(stats: Stats, bonus: StatBonus = {}): Stats {
   return out;
 }
 
+/** Every attribute but Crítico (a chance) `share` larger: what the friends' ánimas do to the party (`ANIMA_GROWTH`, src/animas.ts). */
+export function grown(stats: Stats, share = 0): Stats {
+  if (!share) return stats;
+  const out = { ...stats };
+  for (const key of ['pv', 'fuerza', 'magia', 'defensa', 'espiritu'] as const) out[key] = Math.max(1, Math.round(out[key] * (1 + share)));
+  return out;
+}
+
 /** A physical hit with `power` at average stats: Fuerza adds to it, the target's Defensa takes away. */
 export function physical(power: number, attacker: Stats, target: Stats) {
   return resolveDamage({ base: power, actorStat: 'fuerza', targetStat: 'defensa', minimum: 1 }, { ...attacker }, { ...target });
@@ -152,7 +160,13 @@ export function physical(power: number, attacker: Stats, target: Stats) {
 export function magical(power: number, attacker: Stats, target: Stats) {
   return resolveDamage({ base: power, actorStat: 'magia', targetStat: 'espiritu', minimum: 1 }, { ...attacker }, { ...target });
 }
-/** Healing grows with Magia. */
-export function healing(power: number, healer: Stats) {
-  return resolveAmount({ base: power - AVERAGE, actorStat: 'magia', minimum: 1 }, { ...healer });
+/**
+ * A cure gives back a share of the PV of whoever gets it, whoever casts it (Aitor, 2026-11-21: «haz la
+ * cura porcentual, un 50 %»): a skill of power `half` gives back half, and the rest in step with it
+ * (leve about a quarter to a third, media about half, alta two thirds). A share and not points, so
+ * that being cured is worth a turn at any point of the game: with few PV left, a cure is the margin.
+ */
+export const HEAL = { half: 30 };
+export function healing(power: number, maxHp: number) {
+  return Math.max(1, Math.round(maxHp * power / (2 * HEAL.half)));
 }

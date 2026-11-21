@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { ANIMAS } from './animas';
+import { ANIMAS, ANIMA_GROWTH } from './animas';
 import { ANIMA_OWNERS, CLASS_STATS, DUALS, ELEMENTS, MANA_POINTS, PASSIVES, SKILLS, type ClassId, type FoeKind } from './battle';
 import { buildStreetDogs, foeScale } from './battle-scene';
 import { MERIDIANA_BED } from './bed';
@@ -385,7 +385,7 @@ async function start() {
       status: { tone: 'part', label: 'Ánima de amigo: un bonus para todo el grupo, sin pieza que se vea' }, art: portraitArt(speakersById[anima.id]),
       views: [{ label: spec ? `${anima.friend}: de quien es` : '', view: spec ? { type: 'character', spec } : { type: 'none', why: `${anima.friend}: no se lleva puesta y no hay un solo modelo que la represente.` } }],
       search: `${anima.name} ${anima.friend} ánima amigo`,
-      detail: () => `<div class="swatches"><span><i style="--c:${anima.colour}"></i>${html(anima.colour)}</span></div>${section('Bonus para todo el grupo', `<p>${Object.entries(anima.bonus).map(([k, v]) => `${STAT_LABELS[k as keyof Stats] ?? k} +${v}`).join(' · ')}</p><p>${html(anima.note)}</p>`)}`,
+      detail: () => `<div class="swatches"><span><i style="--c:${anima.colour}"></i>${html(anima.colour)}</span></div>${section('Bonus para todo el grupo', `<p>+${Math.round(ANIMA_GROWTH.pct * 100)} % de PV, Fuerza, Magia, Defensa y Espíritu</p><p>${html(anima.note)}</p>`)}`,
     });
   }
 

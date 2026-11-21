@@ -2,7 +2,7 @@
 import { adjustResource } from './combat/engine.ts';
 import type { AnimaId } from './animas.ts';
 import { DOG_PROFILES } from './encounters.ts';
-import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
+import { PROFILES, grown, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
 import { castleAffinity, castleBlow, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
@@ -802,7 +802,8 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   // Cegado (Humo, below): it hurts nobody, the foe's blows land lighter while it lasts (`sighted`).
   cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0 },
   // Sanación (Rayo de sanación): Quemado's other side, a pulse of PV back every few seconds.
-  sanacion: { name: 'Sanación', heal: true, seconds: 15, every: 3, levels: [1, 2, 3], flat: 2, share: .015, cap: 150 },
+  // A share of the carrier's PV, as every cure is (`HEAL`, src/stats.ts): a fifth of them over its 15 seconds at level I.
+  sanacion: { name: 'Sanación', heal: true, seconds: 15, every: 3, levels: [1, 2, 3], flat: 0, share: .04, cap: 1000 },
   // Confusión (Tecnópata): it hurts nobody; while it lasts the foe's blows go to its own (`enemyAct`).
   confusion: { name: 'Confusión', seconds: 30, every: 30, levels: [], flat: 0, share: 0, cap: 0 },
   // Encogido (Rayo encogedor): smaller, and a quarter of its guard gone while it lasts.
@@ -915,7 +916,7 @@ function ecoNote(state: BattleState, e: Eco, scale = 1): EcoHit[] {
     const party = state.allies.filter(a => a.hp > 0);
     const most = party.reduce<Combatant | undefined>((low, a) => !low || a.hp / a.maxHp < low.hp / low.maxHp ? a : low, undefined);
     const reached = e.grade === 2 ? party : most ? [most] : [];
-    return reached.map(a => ({ target: a.id, amount: changeHealth(a, Math.max(1, Math.round(healing(ECOS.pulse, stats) * k))), heal: true as const }));
+    return reached.map(a => ({ target: a.id, amount: changeHealth(a, Math.max(1, Math.round(healing(ECOS.pulse, a.maxHp) * k))), heal: true as const }));
   }
   const power = e.kind === 'acompanamiento' ? SKILLS.find(s => s.id === 'acompanamiento')!.power : ECOS.pulse;
   const reached = e.grade === 2 ? state.foes.filter(f => f.hp > 0 && !f.part) : [ecoAim(state, e)].filter((f): f is Combatant => !!f);
@@ -1012,7 +1013,7 @@ export function ecoWorth(state: BattleState): number {
     const guard = current(state, aimed);
     if (e.kind === 'bordon') {
       const hurtNow = state.allies.filter(a => a.hp > 0).reduce((sum, a) => sum + (a.maxHp - a.hp), 0);
-      worth += Math.min(hurtNow, beats * healing(ECOS.pulse, stats) * k * (e.grade === 2 ? state.allies.filter(a => a.hp > 0).length : 1)) * .9;
+      worth += Math.min(hurtNow, beats * healing(ECOS.pulse, owner.maxHp) * k * (e.grade === 2 ? state.allies.filter(a => a.hp > 0).length : 1)) * .9;
     } else if (e.kind === 'acompanamiento') worth += beats * .7 * magical(SKILLS.find(s => s.id === 'acompanamiento')!.power, stats, guard) * k * (e.grade === 2 ? foes.length : 1);
     else worth += Math.min(e.grade === 2 ? Infinity : aimed.hp, beats * magical(ECOS.pulse, stats, guard) * k * (e.grade === 2 ? foes.length : 1));
   }
@@ -1215,6 +1216,8 @@ export interface Combatant {
   stats: Stats;
   /** Who the fighter is underneath (stats.ts), e.g. Gerard as a boy or at 35. */
   profile: ProfileId;
+  /** How much larger the friends' ánimas have made them (.24: 24 % more): the foes' blows keep step with it (`FOE_BLOW`). */
+  grown?: number;
   /** The class the fighter wears, if any. */
   classId?: ClassId;
   kind?: FoeKind;
@@ -1527,11 +1530,11 @@ export interface NoteHit { target: string; amount: number; guarded?: true; wet?:
 export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string; die?: number }
 /**
  * Someone who fights on the party's side: `id` names them in the fight, `profile` gives their
- * stats, `bonus` adds what the party has gathered (chapter 2's ánimas), `evening` what their last
+ * stats, `grown` is how much larger the friends' ánimas gathered make them (.24: 24 % more), `evening` what their last
  * afternoon left them (src/days.ts `EVENINGS`), by name.
  */
 export interface PartySlot {
-  id: string; name: string; profile: ProfileId; classId?: ClassId; bonus?: StatBonus;
+  id: string; name: string; profile: ProfileId; classId?: ClassId; grown?: number;
   evening?: { shifts: Partial<Record<keyof Stats, number>>; from: string };
   /** The ánimas they can switch between: their own and their extras. Missing: their own (if unlocked) and the one they wear. */
   kit?: ClassId[];
@@ -1585,7 +1588,7 @@ export function wearAnima(state: BattleState, id: ClassId) {
   // PV stay; the stats, the skills and the maná change with the ánima. The Racha goes with Dadista.
   delete actor.racha; delete actor.meteor;
   swapMana(state, actor, id);
-  actor.classId = id; actor.stats = withBonus(PROFILES[actor.profile], CLASS_STATS[id]);
+  actor.classId = id; actor.stats = statsWith(state, actor, id);
   return true;
 }
 /** What `actor` can switch between in this fight: their kit, as far as the party has it unlocked. */
@@ -1966,7 +1969,9 @@ export function statNames(stats: readonly (keyof Stats)[]) {
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names.at(-1)}` : names[0] ?? '';
 }
 /** Bridge the campaign's flat resources to the core; positive healing never revives. */
-function changeHealth(target: Combatant, delta: number, pulse = false) {
+function changeHealth(target: Combatant, delta: number, pulse = false, exact = false) {
+  // A blow on one of the party (never a pulse, never one measured to leave them standing) lands harder the more the party has grown.
+  if (delta < 0 && !pulse && !exact && !target.kind) delta = -Math.round(-delta * foeBlow(target));
   if (target.suture && delta < 0) {
     delete target.suture;
     delta = -Math.ceil(-delta / 2);
@@ -2286,9 +2291,9 @@ function spendSecondary(actor: Combatant, cost: number) {
   actor.secondary = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, -cost).resource.current;
 }
 function fighter(slot: PartySlot, unlocked: readonly ClassId[] = []): Combatant {
-  const stats = withBonus(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.bonus);
+  const stats = grown(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.grown);
   const points = slot.profile === 'bernat' ? 0 : MANA_POINTS;
-  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, worn: slot.classId ? [slot.classId] : [], kit: kitOf(slot, unlocked), ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
+  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, ...slot.grown ? { grown: slot.grown } : {}, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, worn: slot.classId ? [slot.classId] : [], kit: kitOf(slot, unlocked), ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
 }
 /** The fighter's maná goes with the ánima: the one taken off keeps what it had, the one put on brings its own, up to what it holds. */
 function swapMana(state: BattleState, actor: Combatant, to: ClassId | undefined) {
@@ -2311,7 +2316,23 @@ export function improve(state: BattleState, improved: Improved | undefined) {
     if (!wearsAnimas(ally)) continue;
     ally.maxSecondary = manaMax(improved, ally.classId, state.levels);
     if (ally.classId) ally.secondary = ally.maxSecondary;
+    // The levels come in here too: whoever wears an ánima starts as large as its level makes them (`LEVEL_GROWTH`).
+    const whole = ally.hp >= ally.maxHp;
+    ally.stats = statsWith(state, ally, ally.classId); ally.maxHp = ally.stats.pv; if (whole) ally.hp = ally.maxHp;
   }
+}
+/**
+ * What levelling an ánima gives besides its skills (Aitor, 2026-11-21: «que si farmeo y desbloqueo
+ * cosas, pues es más fácil»): whoever wears it is `pct` larger in PV, Fuerza, Magia, Defensa and
+ * Espíritu for each level past the first, added to what the friends' ánimas give (`ANIMA_GROWTH`).
+ * The foes' blows do not keep step with this share (`FOE_BLOW` only counts the ánimas): what is
+ * earned fighting makes the game easier. Tunable (`--tune growth.level.pct=0:.03:.05`).
+ */
+export const LEVEL_GROWTH = { pct: .03 };
+/** `ally`'s attributes wearing `id` in this fight: profile, ánima, and the share the friends' ánimas and its level add. */
+function statsWith(state: BattleState, ally: Combatant, id?: ClassId): Stats {
+  const level = id ? state.levels?.[id] ?? 1 : 1;
+  return grown(withBonus(PROFILES[ally.profile], id ? CLASS_STATS[id] : undefined), (ally.grown ?? 0) + LEVEL_GROWTH.pct * (level - 1));
 }
 /** The elements `actor`'s Atacar can carry now: those the ánima worn has, in the order X walks through them. */
 export function elementsFor(state: BattleState, actor: Combatant): Element[] {
@@ -2398,6 +2419,16 @@ export const OPEN_MISSIONS = {
  * Progression). Tunable (`just fight-sim`, book `foes`).
  */
 export const FOE_GROWTH = { pv: 0, stat: 1.25 };
+/**
+ * The foes keep step with the party's growth (Aitor, 2026-11-21: «que los enemigos peguen algo más,
+ * pero que los combates sean un poco más cortos»): every blow on someone of the party lands `share`
+ * of what the friends' ánimas have made them larger harder (`ANIMA_GROWTH`: five ánimas are 60 %
+ * more of everything, so a blow lands 24 % harder at .4). With no ánimas, nothing changes: the
+ * first fights are as they were. What the party keeps of its growth is the PV its cures give back
+ * (`HEAL`) and the harder blows of its own. Tunable (`--tune foes.blow.share=0:.25:.4`).
+ */
+export const FOE_BLOW = { share: .4 };
+const foeBlow = (target: Combatant) => 1 + FOE_BLOW.share * (target.grown ?? 0);
 /**
  * Each open fight's own growth (`pv`, `stat`, as `FOE_GROWTH`, which a fight not listed here takes): fights
  * do not lean on their foes' attributes alike (La Sobremesa's many small blows grow far more with a point of
@@ -3447,9 +3478,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     }
     callEco(state, actor, 'acompanamiento', target.id, effect);
   } else if (party && ability!.kind === 'heal') {
-    // Integral: everyone standing who is hurt gets back what the curve adds up, more with Magia.
+    // Integral: everyone standing who is hurt gets back a share of their own PV.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = actor.id; effect.healed = true;
-    effect.cures = targets.map(ally => ({ target: ally.id, amount: changeHealth(ally, healing(ability!.power, current(state, actor))) }));
+    effect.cures = targets.map(ally => ({ target: ally.id, amount: changeHealth(ally, healing(ability!.power, ally.maxHp)) }));
     effect.amount = effect.cures[0]?.amount;
     state.message = `${actor.name} usa ${ability!.name}. ${effect.cures.map(c => `+${c.amount}`).join(', ')} PV para el equipo.`;
     // Integral impropia: and the rest bit by bit on the fight's clock, on each of them (again while it lasts, a level up).
@@ -3498,7 +3529,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const on = inflict(target, ability.regen);
     effect.regen = { id: ability.regen, level: on.level };
     // Ronroneo: part of the cure comes at once, and what troubles the mind goes with it.
-    if ('instant' in ability) { effect.healed = true; effect.amount = changeHealth(target, healing(ability.power, current(state, actor))); }
+    if ('instant' in ability) { effect.healed = true; effect.amount = changeHealth(target, healing(ability.power, target.maxHp)); }
     if ('cleanse' in ability) {
       const gone = cleansable(target);
       for (const id of gone) delete target.statuses![id];
@@ -3522,9 +3553,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.guarding = true;
     state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. Protegido hasta el final de la ronda.`;
   } else if (ability?.kind === 'heal' && target) {
-    // Cardioide: a curve of light under a friend gives back PV, more with Magia.
+    // Cardioide: a curve of light under a friend gives back half their PV.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.healed = true;
-    effect.amount = changeHealth(target, healing(ability.power, current(state, actor)));
+    effect.amount = changeHealth(target, healing(ability.power, target.maxHp));
     state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. +${effect.amount} PV.`;
   } else if (ability && 'shrink' in ability && target) {
     // Rayo encogedor: smaller and much easier to hurt for a while; again, its clock starts over.
@@ -4136,7 +4167,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   const melts = parts.some(p => 'melts' in p) || elementOf(d) === 'fuego';
   if (d.kind === 'heal') {
     effect.healed = true;
-    effect.amount = changeHealth(target, healing(d.power, current(state, striker)));
+    effect.amount = changeHealth(target, healing(d.power, target.maxHp));
     target.suture = true;
     state.message = `Sutura de luz cura a ${target.name}. El hilo amortiguará el siguiente daño.`;
     settle(state);
@@ -5060,7 +5091,7 @@ function crack(state: BattleState, glass: Combatant) {
   const alive = state.allies.filter(a => a.hp > 0);
   const shard = (who: Combatant) => {
     const raw = sighted(glass, physical(MARTA.estallido, current(state, glass), current(state, who)));
-    return changeHealth(who, -Math.min(who.hp - 1, who.guarding ? Math.ceil(raw / 3) : raw));
+    return changeHealth(who, -Math.min(who.hp - 1, Math.round((who.guarding ? Math.ceil(raw / 3) : raw) * foeBlow(who))), false, true);
   };
   const news: BattleEffect = { kind: 'enemy', actor: glass.id, ability: foeAbility('estallido'), cracked: true };
   if (alive.length) {
@@ -5850,7 +5881,7 @@ function sobremesaTurn(state: BattleState, actor: Combatant, target: Combatant, 
       if (held(state, 'sarah') || state.enemyActions.includes('sarah')) {
         // The duo's blow: it leaves them at one PV, unless they hold on.
         use('duo-regla');
-        effect.amount = at.guarding ? hit(at, SOBREMESA.carta) : changeHealth(at, -Math.max(0, at.hp - 1));
+        effect.amount = at.guarding ? hit(at, SOBREMESA.carta) : changeHealth(at, -Math.max(0, at.hp - 1), false, true);
         state.message = at.guarding ? `La carta negra cae sobre ${at.name}, que la para. −${effect.amount} PV · Protegido.` : `La carta negra cae sobre ${at.name}. Se queda con 1 PV.`;
       } else {
         use('carta-negra'); effect.cancelled = 'duo-regla'; effect.amount = hit(at, SOBREMESA.carta);

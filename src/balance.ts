@@ -72,7 +72,9 @@ export function readsOf(setup: Setup, fights = 2): Set<string> {
  * and the rules every fight shares (the elements, EXP, the castle's caps).
  */
 export type Scope = 'fight' | 'party' | 'all';
-const PARTY_BOOKS = ['skill', 'dual', 'class', 'anima', 'growth'], SHARED_BOOKS = ['reaction', 'element', 'powder', 'crit', 'level', 'xp', 'stage', 'foes'];
+/** A target plays «without the answer» when it wins four in five at most (it was half until cures gave back half the PV, 2026-11-21: the careless last longer). */
+const WITHOUT = .8;
+const PARTY_BOOKS = ['skill', 'dual', 'class', 'growth', 'heal'], SHARED_BOOKS = ['reaction', 'element', 'powder', 'crit', 'level', 'xp', 'stage', 'foes'];
 const PARTY_PROFILES = ['foe.gerard.', 'foe.bernat.', 'foe.gerard35.', 'foe.aitor.'];
 export function inScope(path: string, scope: Scope) {
   const book = path.split('.')[0], party = PARTY_BOOKS.includes(book) || PARTY_PROFILES.some(prefix => path.startsWith(prefix));
@@ -331,7 +333,7 @@ export function pairsOf(targets: readonly Target[] = TARGETS) {
     return {
       fight, teaches: teaches(fight), held: mine.length,
       with: mine.filter(t => t.policy === 'smart' && !t.ban?.length && (t.win && t.win[0] >= .5 || reaches(t))).map(t => t.id),
-      without: mine.filter(t => t.policy !== 'attack' && t.win && t.win[1] <= .5 && !reaches(t)).map(t => t.id),
+      without: mine.filter(t => t.policy !== 'attack' && t.win && t.win[1] <= WITHOUT && !reaches(t)).map(t => t.id),
     };
   });
 }

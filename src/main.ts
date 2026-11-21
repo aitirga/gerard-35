@@ -30,7 +30,7 @@ import { createDayLog, sendLog } from './day-log';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
 import { ANIMA_NAMES, CLASS_STATS, ESCAPE, canWear, dazzle, kitOf, manaMax, palaceGuards, stageWater, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
-import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
+import { ANIMA_IDS, animaGrowth, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
 import { HOUSE_LIGHTS, createHomeLights, lampInteraction, lightById } from './home-lights';
@@ -832,7 +832,7 @@ try {
     exploration.close(); dialogue.close();
     const place = FIGHT_PLACES[setup.encounter];
     if (currentLocation !== place) game.setEnvironment(place);
-    const bonus = setup.adult && setup.friends.length ? { bonus: animaBonus(setup.friends) } : {};
+    const bonus = setup.adult && setup.friends.length ? { grown: animaGrowth(setup.friends) } : {};
     const party: PartySlot[] = [
       { id: 'gerard', name: 'Gerard', profile: setup.adult ? 'gerard35' : 'gerard', classId: setup.wear.gerard, ...bonus },
       ...!setup.partner ? [] : setup.adult ? [{ id: 'aitor', name: 'Aitor', profile: 'aitor' as const, classId: setup.wear.aitor, ...bonus }] : [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }],

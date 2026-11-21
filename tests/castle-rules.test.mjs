@@ -55,7 +55,8 @@ test('a second-year pupil shows its filling, hits with it, and spills it on the 
   const pinch = foeTurn(s, chivata, 'gerard');
   assert.equal(pinch.ability.id, 'pellizco');
   assert.ok(by(s, 'gerard').timed?.mojado, 'water inside: whoever it hits is left wet');
-  // El Empollón's fire burns.
+  // El Empollón's fire burns (on someone no longer marked: a marked one would not be standing to burn).
+  by(s, 'aitor').castle = {};
   foeTurn(s, empollon, 'aitor');
   assert.ok(by(s, 'aitor').timed?.quemado);
   // She falls: her water spills on the other two.
