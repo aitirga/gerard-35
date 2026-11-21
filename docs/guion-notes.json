@@ -1,3 +1,294 @@
 {
-  "notes": []
+  "notes": [
+    {
+      "id": "g-mwqdu2o1",
+      "entry": "chapter-1:LINES.jan",
+      "title": "LINES.jan",
+      "text": "Quiero que se haga referencia aquí al frasco de los ecos de luz",
+      "status": "hecha",
+      "created": "2026-11-21T12:26:43Z",
+      "line": 3,
+      "quote": "I mira quin frasc mes curios que tinc, es com que te llums a dins!",
+      "at": "src/chapter-1.ts:72",
+      "reply": "Reescrita: «I mira quin frasc més curiós que tinc: té llums a dins. Com ecos de llum, saps?». En src/chapter-1.ts (LINES.jan).",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqdv08v",
+      "entry": "chapter-1:LINES.pocion",
+      "title": "LINES.pocion",
+      "text": "El frasco sale después, se hace referencia",
+      "status": "hecha",
+      "created": "2026-11-21T12:27:27Z",
+      "line": 1,
+      "quote": "…Me lo llevo. Por si acaso.",
+      "at": "src/chapter-1.ts:76",
+      "change": "quitar",
+      "reply": "Quitada; Gerard solo dice «Un frasc amb llums a dins... serà un efecte òptic?». El Diario dice ahora «El frasco de Jan, con luces dentro. Me lo llevé.» (src/journal.ts).",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqdzg5r",
+      "entry": "chapter-1:LINES.mama",
+      "title": "LINES.mama",
+      "text": "Quiero que este comentario se haga laaargo, como si hablara mucho, si pulsamos varias veces el botón es como para interrumpirle",
+      "status": "hecha",
+      "created": "2026-11-21T12:30:54Z",
+      "line": 0,
+      "quote": "Aiii! Felicitats Gerard! Ja et fas graan! I mira, has de anar al metge perque no m'agrada aquesta tos, de fet, has de donar-li clas després el teu germà que crec que no està molt pendent de l'escola ultimament. Aiii, he vist a la teva cosina Helena just ahir, està molt petitona, i la teva avia vindrà després a dinar, recorda sobre tot, i molt important, que has de comprar pa quan tornis de l'escola. El teu pare no sé on s'ha quedat, em va dir que demanava un dia per asumptes propis pero al final..",
+      "at": "src/chapter-1.ts:78",
+      "reply": "Su monólogo es ahora diez frases que se encadenan sin pausa (doctor, tu hermano, Helena, la abuela, el pan, tu padre, la lavadora, la vecina…). Cada pulsación le corta la frase con «—» y sigue; a la tercera se rinde y habla Gerard (pace: 'rambling', src/dialogue.ts). Mira si el ritmo te va.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe38jv",
+      "entry": "chapter-1:LINES.mama",
+      "title": "LINES.mama",
+      "text": "Quiero la idea de que la mamá no para de parlar",
+      "status": "hecha",
+      "created": "2026-11-21T12:33:51Z",
+      "reply": "Hecho junto con la otra nota: si no pulsas, la mamá habla todo el rato sin parar; también el sermón del pan crujiente va encadenado.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe3ih5",
+      "entry": "chapter-1:LINES.mochila",
+      "title": "LINES.mochila",
+      "text": "Sense comentari aqui, treu",
+      "status": "hecha",
+      "created": "2026-11-21T12:34:03Z",
+      "reply": "Quitado el comentario de la mochila: al cogerla solo sale la nota del objeto (src/story.ts, LINES.mochila borrado).",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe5lkj",
+      "entry": "chapter-1:LINES.bernatJoins",
+      "title": "LINES.bernatJoins",
+      "text": "Añade como un poco de letras así más spooky aquí",
+      "status": "hecha",
+      "created": "2026-11-21T12:35:41Z",
+      "line": 4,
+      "quote": "Som-hi, encara que, no sé, he tingut un mal somni avui...",
+      "at": "src/chapter-1.ts:96",
+      "reply": "La línea sale lenta y con cada letra temblando (pace: 'spooky', src/dialogue.ts y src/style.css): «Som-hi... encara que, no sé, avui he tingut un mal somni...».",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe77gj",
+      "entry": "chapter-1:LINES.dejavu",
+      "title": "LINES.dejavu",
+      "text": "no aporta",
+      "status": "hecha",
+      "created": "2026-11-21T12:36:56Z",
+      "line": 2,
+      "quote": "Ayer estuve diseñando un juego. Empezaba así: un cumpleaños, unas zapatillas nuevas, dos amigos bajando la calle…",
+      "at": "src/chapter-1.ts:102",
+      "change": "quitar",
+      "reply": "Quitada la línea del juego que diseñaba Bernat.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe8lb7",
+      "entry": "chapter-1:LINES.dejavu",
+      "title": "LINES.dejavu",
+      "text": "Pon la palabra en catalan correcta",
+      "status": "hecha",
+      "created": "2026-11-21T12:38:00Z",
+      "line": 4,
+      "quote": "Esque es EXACTAMENT el somni que he tingut avui, tinc por Gerard, anem a casa, has vist la alcantarilla?",
+      "at": "src/chapter-1.ts:104",
+      "reply": "«alcantarilla» → «claveguera»: «És que és EXACTAMENT el somni que he tingut avui. Tinc por, Gerard, anem a casa. Has vist la claveguera?».",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqe8o97",
+      "entry": "chapter-1:LINES.dejavu",
+      "title": "LINES.dejavu",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:38:04Z",
+      "line": 5,
+      "quote": "Gerard… creo que la he cagado.",
+      "at": "src/chapter-1.ts:105",
+      "change": "quitar",
+      "reply": "Quitada «Gerard… creo que la he cagado.».",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqea835",
+      "entry": "chapter-1:LINES.minion",
+      "title": "LINES.minion",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:39:17Z",
+      "line": 3,
+      "quote": "Sus esbirros viven en las alcantarillas. Lo pringan todo… y lo que pringan, le obedece.",
+      "at": "src/chapter-1.ts:112",
+      "change": "quitar",
+      "reply": "Quitada la línea de los esbirros que pringan.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqeamaj",
+      "entry": "chapter-1:LINES.minion",
+      "title": "LINES.minion",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:39:35Z",
+      "line": 2,
+      "quote": "Esque es lo mateix... ho estic veient, perque penso tant, perque vaig parlar amb la llum",
+      "at": "src/chapter-1.ts:111",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "gerard",
+          "text": "Me estic preocupant Bernat, de que parles, que dius?"
+        }
+      ],
+      "reply": "Añadida tras la línea de Bernat, con el catalán corregido: «Em començo a preocupar, Bernat. De què parles? Què dius?».",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqeby0f",
+      "entry": "chapter-1:LINES.minion",
+      "title": "LINES.minion",
+      "text": "no quiero referencias de la reina bubbaloo aqui",
+      "status": "hecha",
+      "created": "2026-11-21T12:40:37Z",
+      "reply": "Ya no queda ninguna mención a la Reina en LINES.minion.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqeety8",
+      "entry": "chapter-1:LINES.afterFight",
+      "title": "LINES.afterFight",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:42:52Z",
+      "line": 3,
+      "quote": "No eres tú. En mi libreta, cuando alguien le gana a un esbirro, la Reina Bubbaloo se entera…",
+      "at": "src/chapter-1.ts:121",
+      "change": "quitar",
+      "reply": "Quitada.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqeevfn",
+      "entry": "chapter-1:LINES.afterFight",
+      "title": "LINES.afterFight",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:42:53Z",
+      "line": 4,
+      "quote": "…y tiñe el cielo de su color. Para que sepas que te está mirando.",
+      "at": "src/chapter-1.ts:122",
+      "change": "quitar",
+      "reply": "Quitada.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqefqo4",
+      "entry": "chapter-1:LINES.afterFight",
+      "title": "LINES.afterFight",
+      "text": "no quiero referencias a la libreta ni a la reina bubbaloo per ara",
+      "status": "hecha",
+      "created": "2026-11-21T12:43:34Z",
+      "reply": "LINES.afterFight ya no nombra la libreta ni a la Reina; queda «ella no pararà...». Ojo: palaceRises (justo después) sigue diciendo «El palacio de la Reina Bubbaloo»; no lo he tocado.",
+      "closed": "2026-11-21T12:48:32Z"
+    },
+    {
+      "id": "g-mwqes6af",
+      "entry": "chapter-1:LINES.palaceRises",
+      "title": "LINES.palaceRises",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:53:14Z",
+      "line": 2,
+      "quote": "Se está volviendo real, Gerard. Todo.",
+      "at": "src/chapter-1.ts:137",
+      "change": "quitar",
+      "reply": "Quitada «Se está volviendo real, Gerard. Todo.».",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqetv77",
+      "entry": "chapter-1:LINES.palaceRises",
+      "title": "LINES.palaceRises",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T12:54:33Z",
+      "line": 4,
+      "quote": "No m'ho puc creure, es com la meva imaginatzió plasmada a la vida real... es... magnific!",
+      "at": "src/chapter-1.ts:139",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "gerard",
+          "text": "Calla, Bernat, calla..."
+        }
+      ],
+      "reply": "Añadida «Calla, Bernat, calla...» después de «...és... magnífic!» (src/chapter-1.ts, LINES.palaceRises).",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqf11nn",
+      "entry": "chapter-1:LINES.afterMatemagico",
+      "title": "LINES.afterMatemagico",
+      "text": "Just entonces empieza la escena de la reina atrapándonos y matándonos, actualiza la escena para que se vea más realista los brazos, mas de miedo, genera el modelo de los brazos en meshy usando las referencas de la reina",
+      "status": "hecha",
+      "created": "2026-11-21T13:00:08Z",
+      "line": 5,
+      "quote": "I ella es real Gerard... ai no, esque em recordo perfectament, ara morirem Gerard, ens morim, mira, MIRA!",
+      "at": "src/chapter-1.ts:170",
+      "reply": "Línea corregida. Los brazos son ahora su figura de Meshy (just character-3d reina-brazo, tools/figures.toml): bajan del techo y los dedos en garra se cierran sobre ellos (src/queen-hands.ts). Capturas en just screenshots reina-brazos.",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqf79c8",
+      "entry": "chapter-1:LINES.janAfterPotion",
+      "title": "LINES.janAfterPotion",
+      "text": "Ya no tiene sentido ya que no se coge el bote",
+      "status": "hecha",
+      "created": "2026-11-21T13:04:58Z",
+      "line": 0,
+      "quote": "¿Has tocado mi mesa? …Da igual. Si te sale una cola, no me eches la culpa.",
+      "at": "src/chapter-1.ts:77",
+      "change": "quitar",
+      "reply": "Quitada: LINES.janAfterPotion ya no existe y Jan dice siempre «Venga, baixa ja, que la mama t'espera» (src/story.ts).",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqf7oto",
+      "entry": "chapter-1:LINES.mamaWaiting",
+      "title": "LINES.mamaWaiting",
+      "text": "Sigue un poco en la misma dinamica en catalan algo plasta, parlant molt",
+      "status": "hecha",
+      "created": "2026-11-21T13:05:18Z",
+      "reply": "Ahora son cinco frases encadenadas como en LINES.mama, en catalán y sin parar (motxilla, Bernat, el pa cruixent, la tos…); pulsar la corta igual.",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqfdikm",
+      "entry": "chapter-1:LINES.backDoorStuck",
+      "title": "LINES.backDoorStuck",
+      "text": "traducelo al catalan",
+      "status": "hecha",
+      "created": "2026-11-21T13:09:50Z",
+      "line": 0,
+      "quote": "Esta puerta está pegada con chicle. No se mueve ni un milímetro.",
+      "at": "src/chapter-1.ts:153",
+      "reply": "Traducida: «Aquesta porta està enganxada amb xiclet. No es mou ni un mil·límetre.»",
+      "closed": "2026-11-21T13:16:48Z"
+    },
+    {
+      "id": "g-mwqg057r",
+      "entry": "chapter-2:LINES_2.bola",
+      "title": "LINES_2.bola",
+      "text": "Esto ya no tiene sentido no? la bola de nieve no se usa en nada, para qué era?",
+      "status": "abierta",
+      "created": "2026-11-21T13:27:26Z"
+    }
+  ]
 }

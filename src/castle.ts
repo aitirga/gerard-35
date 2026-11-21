@@ -21,7 +21,7 @@ export const CASTLE_PLACES = ['castillo-1', 'castillo-2', 'castillo-3'] as const
 export type CastlePlace = (typeof CASTLE_PLACES)[number];
 export const isCastlePlace = (id?: string): id is CastlePlace => !!id && (CASTLE_PLACES as readonly string[]).includes(id);
 /** The flags the castle sets, in the order the story reaches them. */
-export const CASTLE_FLAGS = ['aurelia', 'direccion', 'aitor-poseido', 'bernat-llama', 'artilugio', 'reina', 'final-acabar', 'final-bajar'] as const;
+export const CASTLE_FLAGS = ['cortina', 'aurelia', 'direccion', 'aitor-poseido', 'bernat-llama', 'artilugio', 'reina', 'final-acabar', 'final-bajar'] as const;
 /** The castle's bosses: each one beaten holds her back as an ánima does (src/days.ts, `Story.heldBack`). */
 export const CASTLE_BOSSES = ['aurelia', 'direccion'] as const;
 export type CastleFlag = (typeof CASTLE_FLAGS)[number];
@@ -41,14 +41,15 @@ export type RoomEncounter = Exclude<CastleEncounter, 'aurelia' | 'direccion' | '
  * A phase: the floor generated between two fixed rooms. `rooms`: how many are on the main path;
  * `lattice`: the coarse grid they are laid on (columns × rows); `from` and `to`: the two zones its
  * art drifts between (visual-style.md's identity cards); `into`: where its way out leads, the boss's
- * room; `out`: where its way back leads; `flag`: set when its boss falls.
+ * room; `out`: where its way back leads (the first floor's, down the stair behind the hall's curtain);
+ * `flag`: set when its boss falls.
  */
 export interface CastlePhase {
   id: CastlePhaseId; environment: CastlePlace; name: string; rooms: number; lattice: readonly [number, number];
   from: 'patio' | 'gimnasio' | 'secretaria'; to: 'gimnasio' | 'secretaria' | 'trono';
   fights: readonly RoomEncounter[]; elite: RoomEncounter; boss: 'aurelia' | 'direccion' | 'reina'; flag: CastleFlag;
   into: { environment: 'palacio-gimnasio' | 'palacio-secretaria' | 'palacio-trono'; cell: Cell };
-  out: { environment: 'palacio-patio' | 'palacio-gimnasio' | 'palacio-secretaria'; cell: Cell };
+  out: { environment: 'palacio' | 'palacio-gimnasio' | 'palacio-secretaria'; cell: Cell };
   /** Where its boss waits in `into`, and how near the party gets before the fight starts. */
   bossAt: Cell; bossRadius: number;
 }
@@ -56,7 +57,7 @@ export const CASTLE_PHASES: readonly CastlePhase[] = [
   {
     id: 1, environment: 'castillo-1', name: 'Castillo · Primer curso', rooms: 8, lattice: [4, 3], from: 'patio', to: 'gimnasio',
     fights: ['alumnos-1a', 'alumnos-1b', 'alumnos-1c'], elite: 'delegada-1', boss: 'aurelia', flag: 'aurelia',
-    into: { environment: 'palacio-gimnasio', cell: { x: 13, z: 16 } }, out: { environment: 'palacio-patio', cell: { x: 6, z: 2 } },
+    into: { environment: 'palacio-gimnasio', cell: { x: 13, z: 16 } }, out: { environment: 'palacio', cell: { x: 16, z: 10 } },
     bossAt: { x: 13, z: 10 }, bossRadius: 3.2,
   },
   {

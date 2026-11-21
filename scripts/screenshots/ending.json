@@ -1,29 +1,42 @@
 {
   "title": "End of chapter 1 · Start of chapter 2",
-  "description": "In the palace after Foc Binari: minions burst out of everywhere, La Reina Bubbaloo's gelatine hands catch Gerard and Bernat, black, and Gerard wakes up at 35 in the Meridiana flat beside Aitor, with a Bubbaloo wrapper on the bedside shelf.",
+  "description": "In the palace after Foc Binari: minions burst out of everywhere, La Reina Bubbaloo's gelatine hands come down while she sings to herself, unseen («La, la, la-la, laaa…»: the castle's song gives way to her voice, docs/lore.md § Her music), they catch Gerard and Bernat, black, and Gerard wakes up at 35 in the Meridiana flat beside Aitor, with a Bubbaloo wrapper on the bedside shelf. A key press at the start lets the browser play sound, so the run checks that her song was asked for, that the music gave way to it and came back after. Run it with --chrome --gpu: --chrome for the castle's song, --gpu so the hands keep time with her voice (without a GPU the scene runs slow while her song runs on the clock).",
   "steps": [
     {
       "open": "/?story=wrapper-room"
+    },
+    {
+      "press": "Shift"
+    },
+    {
+      "eval": "const sfx = window.gerard.sfx, play = sfx.play; window.sfxAsked = []; sfx.play = (id, options) => { window.sfxAsked.push(id); return play(id, options); }; undefined"
     },
     {
       "until": "!!window.gerard.game.app.root.findByName('Mano izquierda')",
       "timeout": 60000
     },
     {
-      "wait": 2500
+      "wait": 900
     },
     {
       "shot": "minions-everywhere",
       "caption": "¡BAM! Minions come out of everywhere"
     },
     {
-      "until": "window.gerard.game.app.root.findByName('Mano izquierda')?.getPosition().y < 9",
-      "timeout": 120000
+      "until": "!document.querySelector('#queen-song').hidden",
+      "timeout": 60000
     },
     {
-      "shot": "hands-coming",
-      "delay": 300,
-      "caption": "La Reina Bubbaloo's hands: too big for the frame"
+      "eval": "window.hushedAsSheSings = window.gerard.music.hushed; undefined"
+    },
+    {
+      "shot": "she-sings",
+      "delay": 900,
+      "caption": "Her hands come down while she sings to herself, unseen: the castle's song gives way to her"
+    },
+    {
+      "until": "window.sfxAsked.includes('reina-la') && window.hushedAsSheSings",
+      "timeout": 5000
     },
     {
       "until": "document.querySelector('#blackout')?.dataset.on === 'true'",
@@ -32,7 +45,16 @@
     {
       "shot": "caught",
       "delay": 200,
-      "caption": "They close round Gerard and Bernat…"
+      "caption": "They close round Gerard and Bernat on her long last «laaa…»"
+    },
+    {
+      "until": "document.querySelector('#queen-song')?.dataset.leaving === 'true'",
+      "timeout": 60000
+    },
+    {
+      "shot": "her-words-in-the-dark",
+      "delay": 300,
+      "caption": "In the dark her words fade, and her echo with them, before they wake"
     },
     {
       "until": "document.title.startsWith('Meridiana')",
@@ -51,6 +73,10 @@
       "shot": "in-bed",
       "delay": 1600,
       "caption": "Gerard, 35, in bed in the Meridiana flat"
+    },
+    {
+      "until": "!window.gerard.music.hushed && document.querySelector('#queen-song').hidden",
+      "timeout": 10000
     },
     {
       "until": "!!document.querySelector('#hud[data-dialogue]')",

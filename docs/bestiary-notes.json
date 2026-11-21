@@ -106,7 +106,7 @@
       "text": "Este generalo con meshy basandote en el retrato, no esta mal pero mas duro, mas realista de boss, ,genera animacione y mejoras",
       "status": "abierta",
       "created": "2026-11-20T02:23:44Z",
-      "reply": "Hecho con Meshy desde su retrato (just character-3d fran-jefe): más alto y duro, ojos violeta, unas tijeras largas en cada mano, el hisopo al cinto. Tiene esqueleto y 6 animaciones de la biblioteca de Meshy (Idle, Left Slash, Double Combo Attack, Charged Spell Cast, Hit Reaction, Dead): míralas en su ficha de diseño. Falta tu OK al aspecto y meterlo en su combate, que necesita los monstruos con esqueleto en combate (llegan con feat/castle-pupils)."
+      "reply": "Hecho con Meshy desde su retrato (just character-3d fran-jefe): más alto y duro, ojos violeta, unas tijeras largas en cada mano, el hisopo al cinto. Tiene esqueleto y 6 animaciones de la biblioteca de Meshy (Idle, Left Slash, Double Combo Attack, Charged Spell Cast, Hit Reaction, Dead): míralas en su ficha de diseño. Falta tu OK al aspecto y meterlo en su combate, que necesita los monstruos con esqueleto en combate (llegan con feat/castle-pupils). Actualización (21 nov): ya pelea con él en su combate (BOSS_FIGURES en src/foe-bodies.ts, cargado como los alumnos del castillo); sus primitivas solo quedan mientras carga. Las animaciones de ataque aún no se usan en el combate: aguanta su pose y corre al arremeter."
     }
   ]
 }

@@ -310,7 +310,7 @@ Commands:
 - Everything marked _open_ above.
 - **Provisional, to settle with Aitor**: where the piano and Marta stand (now under the pergola of
   the square by the town hall, `PLACES_MARTA`); her figure (a stand-in); the bonus of her ánima in
-  `ANIMAS` (Magia +1, Velocidad +1, 10 PV, as the others'); every line in `LINES_MARTA`.
+  `ANIMAS` (Espíritu +1, Defensa +1, 10 PV since Velocidad went, 2026-11-21); every line in `LINES_MARTA`.
 - **The trip to Alegia** (built 2026-11-19): a harder memory on the station tablet, Marta in Alegia
   *and* a moment with her singing (`src/tickets.json`), opens the long-distance line from Sants
   Estació (`ld` in `src/geo/barcelona.json`); in Alegia its way is the street at the town's edge that

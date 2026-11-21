@@ -8,7 +8,6 @@ import { createCombat, stepCombat } from '../src/combat/engine.ts';
 function genericEncounter(campaign, action) {
   return {
     id: 'campaign-parity',
-    rules: { speedStat: 'velocidad' },
     actions: { move: action },
     combatants: [...campaign.allies, ...campaign.foes].map(actor => ({
       id: actor.id,

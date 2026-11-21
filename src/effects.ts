@@ -292,6 +292,18 @@ export const FIGHT_KINDS = {
     drag: .4, gravity: 9, curl: .1, response: .3, collide: true, bounce: .4, friction: .35, size: [.032, .02], sizeJitter: .5, stretch: .02, spin: 540, shape: 'shard',
     colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [3.2, 2, 1.2], middle: .3, fadeOut: .3, additive: .7, life: [.9, 1.6],
   },
+  // Sobrecalentamiento's dome (effects.fireDome): Bip's bits on fire, a node that flickers and heats
+  // along its life, deep red → orange → white-hot, growing, so the lattice's `hold` sets how hot it is.
+  firenode: {
+    drag: .2, gravity: 6, curl: .05, response: 1, collide: true, bounce: .35, friction: .35, size: [.02, .03], sizeJitter: .3, shape: 'dot',
+    colours: ['#b8260a', '#ff6a10', '#ffe2a8'], intensity: [1.8, 2.3, 4.2], middle: .45, fadeIn: .1, fadeOut: .1, additive: 1, flicker: .35,
+  },
+  // …and what it bursts into: streaks of fire, weightless, that fly where the dome is thrown
+  // (`throwAt`) and go off on whoever they reach as a fire's crackle.
+  firebit: {
+    drag: .3, gravity: 0, curl: .5, response: .2, size: [.034, .02], sizeJitter: .5, stretch: .035, aspect: .35, shape: 'streak',
+    colours: ['#ffb24a', '#ff6a14', '#c8300a'], intensity: [2.2, 1.9, 1.4], middle: .15, fadeOut: .2, additive: .9, flicker: .25, life: [1.4, 1.9], onDeath: 'crackle',
+  },
 } satisfies Record<string, GpuKind>;
 /** The fight effects to explore and give to skills (`effects.fightFx`, `window.gerard.game.fx`). */
 export const FIGHT_FX = ['shatter', 'arc', 'vortex', 'swarm', 'goo', 'heal', 'fireworks', 'needles', 'prison', 'orbit', 'gather', 'meteor', 'fireflies', 'ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb', 'binari'] as const;
@@ -1381,6 +1393,71 @@ export function createEffects(app: pc.Application) {
         },
         /** It melts back into nanites, quietly (its time is over). */
         fade() { if (end === Infinity && dome.alive) { end = ageOf(); how = 'fade'; } },
+        /** The middle of its floor, the middle of it, and its top. */
+        base: at, radius, centre: { x: at.x, y: at.y + height * .5, z: at.z }, top: { x: at.x, y: at.y + height, z: at.z },
+      };
+    },
+    /**
+     * Sobrecalentamiento (docs/animas/tecnopata/README.md § Duals of the shield): Bip's dome over the
+     * party, of fire this time, its rim on the floor round `base`. It rises burning, embers running up
+     * it; overheating (`heat`) it swells, boils and goes white-hot; and it bursts (`throwAt`): its own
+     * members break loose from the side facing the foes and fly, each at the foe on its side (the GPU
+     * lattice's `throwAt`), going off on them as a fire's crackle. Nothing where the engine cannot run.
+     */
+    fireDome(base: Vec, o: { radius?: number; height?: number } = {}) {
+      if (!gpu || !gpuOn) return undefined;
+      const radius = o.radius ?? 1.8, height = o.height ?? radius * .8, at = { x: base.x, y: base.y, z: base.z }, fire = '#ff8a2e';
+      // A little coarser than the bit dome, so it fits beside one still standing.
+      const round = Math.min(140, Math.max(56, Math.round(2 * Math.PI * radius / .065))), up = Math.min(40, Math.max(16, Math.round(Math.PI / 2 * Math.max(radius, height) / .07)));
+      const dome = gpu.lattice('firenode', {
+        grid: [round, up, 1], size: { x: .02, y: .02, z: .005 }, shape: 'dome', at, life: .7, hold: .32, scale: .6,
+        rigidity: 260, bonds: 480, damping: 9, viscosity: 2, toughness: 0, glow: 2.4, rim: 3.2, reform: 0,
+        opacity: .9, fresnel: .3, wave: { height: .015, length: .45, speed: 1.6 }, light: { intensity: 2.2, range: radius * 2, colour: fire },
+      });
+      let heatFrom = Infinity, heatFor = 1, thrownAt = Infinity, embers = 0, grown = 1;
+      const play = { lattice: dome, age: 0, seconds: 30, step: (t: number) => {
+        // It rises from the floor, its rim first, already burning.
+        const k = 1 - (1 - span(t, 0, .4)) ** 2;
+        // Burning orange (its members' life held a third of the way), overheating it swells (slowly,
+        // then fast), boils and ages on along its colours to white-hot.
+        const h = heatFrom === Infinity ? 0 : span(t, heatFrom, heatFrom + heatFor);
+        if (t < thrownAt) { grown = 1 + .3 * h * h; dome.size.set(radius * (.35 + .65 * k) * grown, (height * k + .02) * grown, .005); }
+        dome.hold = .32 + .56 * h;
+        dome.wave.height = .015 + .05 * h; dome.wave.speed = 1.6 + 5 * h;
+        // Embers run up it and off its top while it stands, more the hotter it is.
+        if (t < thrownAt && t >= embers) {
+          embers = t + .08;
+          gpu.burst('ember', { at: { x: at.x, y: at.y + .05, z: at.z }, count: Math.round(10 + 40 * h), shape: 'ring', spread: radius * grown * .92, up: height * grown * 1.4, speed: .5, around: .8, life: [.5, 1], colour: '#ffb84a' });
+        }
+        if (t >= thrownAt) dome.dissolve = span(t, thrownAt, thrownAt + .25);
+      } };
+      lattices.push(play);
+      const ageOf = () => play.age;
+      return {
+        get alive() { return dome.alive && thrownAt === Infinity; },
+        /** It overheats over `seconds`: swelling, boiling, white-hot. */
+        heat(seconds: number) { if (dome.alive && heatFrom === Infinity) { heatFrom = ageOf(); heatFor = Math.max(.05, seconds); } },
+        /**
+         * It bursts at `points` (each foe's chest and how near counts): its bits give way from the side
+         * facing them and stream at them, the last (off its far side) landing about `seconds` later.
+         */
+        throwAt(points: readonly { at: Vec; radius: number }[], seconds: number) {
+          if (!dome.alive || thrownAt !== Infinity || !points.length) return;
+          thrownAt = ageOf();
+          const mid = points.reduce((sum, p) => ({ x: sum.x + p.at.x / points.length, z: sum.z + p.at.z / points.length }), { x: 0, z: 0 });
+          const dx = mid.x - at.x, dz = mid.z - at.z, d = Math.hypot(dx, dz) || 1, r = radius * grown;
+          const far = Math.max(...points.map(p => Math.hypot(p.at.x - at.x, p.at.z - at.z)));
+          // Its front gives way first (the dissolve spreads from there), the bits there kicked towards the
+          // foes; the longest way is from its far side, over its top, once the dissolve reaches it.
+          const front = { x: at.x + dx / d * r, y: at.y + height * grown * .4, z: at.z + dz / d * r };
+          dome.breakInto = 'firebit'; dome.dissolveFrom = 'push';
+          dome.push(front, r * .8, -2.5);
+          dome.throwAt(points, { speed: Math.max(6, (far + r * 1.2) / Math.max(.3, seconds - .4)), steer: 9, arc: .35, blast: 4.5 });
+          gpu.burst('crackle', { at: { x: at.x, y: at.y + height * grown * .55, z: at.z }, count: 200, spread: r * .7, speed: 3.5, up: 1, life: [.3, .7], colour: '#ffb84a', light: { intensity: 4, range: r * 2.2, colour: fire } });
+          glint({ x: at.x, y: at.y + height * grown * .6, z: at.z }, '#ffb05a', 3.5, r * 2.4, .4);
+          // It lets go of its bits once the last of them has had time to land.
+          play.seconds = thrownAt + seconds + 1.6;
+        },
         /** The middle of its floor, the middle of it, and its top. */
         base: at, radius, centre: { x: at.x, y: at.y + height * .5, z: at.z }, top: { x: at.x, y: at.y + height, z: at.z },
       };

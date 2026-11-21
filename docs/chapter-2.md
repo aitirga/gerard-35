@@ -337,7 +337,8 @@ can walk through them. Each day it grows taller, never wider than the roof (`sea
   the first lesson of the chapter: go and see, lose, wake up, go and find the friends.
 - **Each ánima weakens them** (and strengthens the party), so every return is visibly different:
   fewer guards, smaller, slower. With enough ánimas the fight is fair, and the curtain parts onto
-  the castle's first phase (docs/castle.md), not the throne.
+  the castle's first phase (docs/castle.md), not the throne: beaten once they are gone for good
+  (`cortina`), the curtain stays tied back and its stair climbs to the generated first floor.
 - **Escape is allowed** from the guards (back to the hall), unlike the dream's fights: it is a
   place to probe, not a trap.
 - **Losing** wakes Gerard at home (see above). The palace remembers only its bosses beaten
@@ -345,7 +346,8 @@ can walk through them. Each day it grows taller, never wider than the roof (`sea
 - **Behind the hall's east door, the school.** At 35 the door shows the school's orange frame
   under her gum and opens onto the yard: the palace's zones (el patio, el gimnasio, la
   secretaría, el salón del trono), each with its own colour, the school transformed
-  (`docs/places/palace-zones.md`). Their doors stay shut until the story opens them.
+  (`docs/places/palace-zones.md`). Their doors stay shut until the story opens them: the gym's
+  until Aurelià falls (he is reached through the first floor, up the curtain's stair).
 
 **The castle itself shows it.** At first it is very, very threatening: twice the size of the
 dream's palace, a ring of twelve spiked towers with lit slits, thorns along the ramparts, glowing

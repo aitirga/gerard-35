@@ -49,22 +49,24 @@ Foc Binari is his from the start; every other skill is a node of his tree, bough
 | Line | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
 | Root | Foc Binari | 1 | 16 magic, fire, two streams | `Daño mágico de fuego leve a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
-| Fuego | Factor común | 2 | 24 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` |
-| Agua | Vasos comunicantes | 2 | 16 magic, water, all | `Daño mágico de agua leve a todos los enemigos. Los moja.` |
-| Eléctrico | Descarga | 2 | 26 magic, electric | `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` |
+| Fuego | Pirámide ígnea | 2 | 24 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` |
+| Agua | Cubo acuático | 2 | 16 magic, water, all | `Daño mágico de agua leve a todos los enemigos. Los moja.` |
+| Eléctrico | Punto eléctrico | 2 | 26 magic, electric | `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` |
+| Eléctrico | Cortocircuito | 2 | 14 magic, electric | `Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. No se repite hasta que vuelva a actuar.` |
+| Eléctrico | ∂Q/∂t Condensador | 1 | ×2 on the next electric blow; 20 magic, electric, to a foe that strikes first | `Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.` |
 | Cálculo | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
 | Cálculo | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
 | Cálculo | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
 
-- **Factor común**: binary fire in a stream to every foe, then a gold line joining them: every
-  fire on the field goes up to the highest one's level (it lights none where there is none).
-- **Vasos comunicantes**: water climbs each foe in rings to one and the same height, a level
-  line across them. All Mojado.
-- **Descarga**: a jagged bolt from the sky. On a wet foe it runs to every wet one (Conducción).
+- **Pirámide ígnea** (named *Factor común* until 2026-11-21): every fire on the field goes up to
+  the highest one's level (it lights none where there is none).
+- **Cubo acuático** (*Vasos comunicantes* until 2026-11-21): all Mojado.
+- **Punto eléctrico** (*Descarga* until 2026-11-21): on a wet foe it runs to every wet one
+  (Conducción).
+- Their ids stay the old ones (`factor-comun`, `vasos`, `descarga`), so saves and trees keep them.
 - Passives, one at the end of each element line: Rescoldo, Capilaridad, Toma de tierra
   (`../README.md` § The jar).
-- The three elemental skills are cast from his circle (`castElement`, `elementBurst` in
-  `src/battle-scene.ts`), GPU particles only.
+- Each is a figure drawn in his circle (§ How each skill looks).
 
 Cost is in maná (`docs/combat.md` § Maná, `docs/action-points.md`).
 
@@ -98,7 +100,7 @@ keeps its job: **fire piles up, water sets up, electricity cashes in**; grade II
 | --- | --- | --- | --- | --- | --- | --- |
 | Fuego | Passive · **Combustión** | 2 | — | 24 magic, fire, all | `Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.` | Built |
 | Fuego | Dúo mayor · **Vulcano**, with Sincopante's Ostinato | 2 | 1 + 2 | 28 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20 segundos, un volcán les sube el fuego un nivel cada 5 segundos.` | Built |
-| Cálculo | **Integral** | 2 | 3 | 26 heal, party | `Cura media a todo el equipo.` | Built |
+| Cálculo | **Integral impropia** | 2 | 3 | 26 heal, party, then Sanación | `Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.` | Built |
 | Agua | Passive · **Punto de congelación** | 2 | — | — | `Pasiva. El agua puede subir hasta un nivel III y, un nivel más, congela: el enemigo no actúa hasta que el hielo se rompe o se derrite.` | Designed |
 | Eléctrico | **Resonancia** | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Designed (Aitor liked it, 2026-11-20); built with the freezing rule |
 
@@ -109,8 +111,10 @@ keeps its job: **fire piles up, water sets up, electricity cashes in**; grade II
   beats. A wet foe steams instead. Only with its node bought, besides both halves known. It replaces
   the skill built that morning. In the jar its node is a gold star between Matemágico's fire and
   Sincopante, there once Combustión is lit and Ostinato learned (`../README.md` § The jar as one sky).
-- **Integral** (Aitor's yes, 2026-11-20): the sign drawn in gold over the party, then a cardioid of
-  light under each one it cures. The first cure for everyone in either own ánima.
+- **Integral impropia** (Aitor's yes, 2026-11-20; renamed and given its cure on the clock by Aitor,
+  2026-11-21): the first cure for everyone in either own ánima. Each one it cures also takes
+  **Sanación**, Rayo de sanación's cure on the fight's clock (15 s; again while it lasts, a level up).
+  Its numbers are a first guess: watch it with the balance.
 - **Combustión, fire IV** (the rule: `../README.md` § Combustión): with the passive in the fight,
   fire landing on Quemado III climbs once more. At IV it pulses ×7 (14 on a boss every 2 s), burns
   white with its own icon on the plate (the flame inside a burst, breathing), and **any physical
@@ -137,9 +141,57 @@ whose fire flares as they land; *¡Combustión!* over it and *PASIVA · Combusti
 
 ### Still proposed
 
-- **Marea** (Agua, 3 maná): `Daño mágico de agua leve a todos los enemigos. Los moja con agua de nivel III.`
-  Water's own Vulcano, waiting on Punto de congelación; or a dúo mayor with Freática's Recarga
-  (`../README.md` § Dúos mayores).
+- **Marea**: built 2026-11-21 as a dúo mayor with Freática's Recarga, with *Fulgurita* (Colorista's
+  Puñado) and *Suceso seguro* (Dadista's Ases en dúo); `../README.md` § Dúos mayores.
+
+## Cortocircuito and ∂Q/∂t Condensador (Aitor 2026-11-21, built)
+
+Two nodes of the electric line past Toma de tierra (2 ecos each, `src/ecos.ts`). Asked for as
+electricity that is not "hit everyone": the line cashes in, and these two decide **when**.
+
+- **Cortocircuito** (2 maná, 14): the current stays in its foe and jumps nowhere (no Conducción). On a
+  foe that is wet, or has a move announced, it is a sure Shock: they lose their next turn and what
+  they announced waits. Not again on the same foe until it has acted (`Combatant.shorted`): it delays
+  a move once and never locks anyone down. The water stays, for a Punto eléctrico after. It is the
+  opposite of Punto eléctrico, which spreads through the water and shocks half the time.
+- **∂Q/∂t Condensador** (1 maná; the name is the current, the charge's derivative in time): Gerard
+  stores charge, *Cargado* on his plate (the capacitor's icon, ×2) and on him (small sparks and short
+  arcs, `cargado` in `src/status-fx.ts`). His next electric blow (Atacar · Eléctrico, Punto eléctrico,
+  Cortocircuito) lands twice as hard (`CONDENSADOR.scale`; Conducción's own damage is not doubled).
+  A foe that strikes him first takes the charge instead: 20 of electric magic (`CONDENSADOR.jump`),
+  lightning from him to it. One charge at a time.
+- **Largest blow**: Punto eléctrico charged, about 52 at his stats today, plus Conducción apart.
+- **The sim** (`just fight-sim run`, smart, Gerard Matemágico + Aitor Tecnópata 3, the elements and
+  water bought): neutral against Vertitrón and the dogs; against El Campeón Cortocircuito is played
+  about seven times a fight and takes the win from 96 % to 100 %, ending with more PV (25 % → 35 %)
+  but in longer fights (14 → 21 rounds); against the camping's magos it delays the Bombona once. First
+  guesses, for the balance.
+
+**Look.** Cortocircuito: a resistor, a zigzag between two leads, drawn in his circle; it flies to the
+foe, lies across its chest and snaps in two in a flash, each half turning away, sparks from the break
+and arcs over the foe (many, and for a while, where it shorts). ∂Q/∂t Condensador: ∂Q over ∂t written
+in his circle as Leibniz wrote it, two plates sliding in either side with arcs jumping between them,
+and it all drawing into him. The charge let go (×2): the plates flash open over the target. Jumping
+back: two strokes of lightning from him to the foe that struck. `just screenshots matemagico-electrico --gpu`.
+
+## How each skill looks (Aitor's notes on the sheet, 2026-11-21)
+
+Every skill of his tree past Foc Binari is **a figure drawn in the middle of his circle**, which then
+does what it is (`src/math-figures.ts`, wired in `drawFigure` in `src/battle-scene.ts`). Gerard
+raises his hand, his circle opens (§ Casting) and, as it fades, the figure is drawn a little over and
+before it, a stretch at a time, with a pen of light at its tip. Strokes and edges are tubes of neon
+(white-hot in the middle, the figure's colour towards the edges); all the rest is GPU particles. Each
+lands at its own moment (`FIGURES` in `src/battle-motion.ts`), and the fight's numbers come then.
+
+| Skill | What is drawn | What it does | Lands |
+| --- | --- | --- | --- |
+| Cardioide | A small circle rolls round a fixed one of its size; a point on its rim traces the cardioid, cusp up, in green | The circles go; the curve comes apart from its cusp on into motes that flow in an arc to whoever it cures, and the cure rises up them | 1.5 s |
+| Pirámide ígnea | A triangle in fire, stroke by stroke, embers off the pen | An apex rises out of its middle into a burning pyramid that turns; it flies over the foes growing and trailing flame, draws in for a breath and blows up: flash, a ball of flame, sparks off its edges, a ring of fire on the floor, a gout to each foe. Then each fire rises to the highest, with its digit | 1.64 s |
+| Cubo acuático | A square in pale water light | Its back face slides out and the edges grow to it: a cube, turned to show its depth. It fills with water on its way to the middle of the foes (bubbles, the surface rocking with its speed; Freática's drops and bubbles), swells and bursts: water thrown all round that falls and splashes, a sheet on each foe | 1.96 s |
+| Integral impropia | ∫ from 0 to ∞, upright, its limits small | It turns a quarter as it goes to lie between the party at chest height, ends towards them; green light jets from each end into whoever is that side, and Sanación stays on them | 1.55 s |
+| Punto eléctrico | A point of charge in front of him: a white-hot bead in a yellow glow, crackling | It rises, slows at the top and falls on its foe as lightning: three strikes a breath apart along fresh jagged paths, each forking, arcs that run round the foe and down to the floor, sparks that bounce, a ring on the floor | 1.0 s |
+
+`just screenshots matemagico-figuras --gpu` plays the five.
 
 ## Foc Binari: the look
 

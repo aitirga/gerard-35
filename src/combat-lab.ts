@@ -186,7 +186,7 @@ function renderReplay() {
   }).join('');
   get('#arena').innerHTML = `<div><p class="team-heading">Equipo de prueba</p>${unitHTML(false)}</div><span class="versus">VS</span><div><p class="team-heading">Oposición</p>${unitHTML(true)}</div>`;
   const messages = replayEvents.slice(0, cursor + 1).flat().map(describe).filter((line): line is string => !!line).slice(-70);
-  get('#event-log').innerHTML = messages.length ? messages.map(line => `<li>${escape(line)}</li>`).join('') : '<li>Empieza el encuentro. La iniciativa depende de la velocidad.</li>';
+  get('#event-log').innerHTML = messages.length ? messages.map(line => `<li>${escape(line)}</li>`).join('') : '<li>Empieza el encuentro. Cada uno actúa en el orden del encuentro.</li>';
   const log = get('#event-log'); log.scrollTop = log.scrollHeight;
   get<HTMLOutputElement>('#replay-position').value = `Acción ${cursor} / ${replayStates.length - 1}`;
   get<HTMLInputElement>('#scrub').value = String(cursor);

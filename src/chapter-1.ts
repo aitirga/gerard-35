@@ -7,6 +7,8 @@ import { MERIDIANA_BED } from './bed.ts';
 
 const g = (text: string, expression?: string): DialogueLine => ({ speaker: 'gerard', text, expression });
 const mama = (text: string): DialogueLine => ({ speaker: 'mama', text });
+/** Mama going on: these lines run into each other and a press cuts her off. */
+const mamaRuns = (text: string): DialogueLine => ({ speaker: 'mama', text, pace: 'rambling' });
 const jan = (text: string): DialogueLine => ({ speaker: 'jan', text });
 const bernat = (text: string): DialogueLine => ({ speaker: 'bernat', text });
 /** Chapter 2: Gerard at 35, and Aitor. */
@@ -64,131 +66,143 @@ export const PLACES = {
 export const LEASH = 4;
 
 export const LINES = {
-  wake: solo(g('¡Hoy es mi cumpleaños!'), g('Huele a tostadas… Mamá ya debe de estar en la cocina.')),
+  wake: solo(g('Avui... és el meu aniversari! Yupi!'), g('Però quina merda, he de marxar al col·legi... a veure què m\'ha preparat la mama')),
   jan: withJan(
-    jan('Mira quién se ha despertado. ¡Felicidades, enano!'),
-    g('¡Gracias! ¿Me has comprado algo?'),
-    jan('Yo no, pero mamá lleva toda la semana escondiendo una caja de zapatos…'),
-    jan('Y si ves un frasco raro en mi mesa, ni lo toques. Es… experimental.'),
+    jan('Eii! Felicitats, Gerard!'),
+    g('Mercii, vaig corrents que arribo tard al cole'),
+    jan('OK, Gerard! Jo avui... crec que em quedo a caseta'),
+    jan('I mira quin frasc més curiós que tinc: té llums a dins. Com ecos de llum, saps?'),
   ),
-  janAgain: withJan(jan('Venga, baja ya, que mamá te espera.')),
-  janAfterPotion: withJan(jan('¿Has tocado mi mesa? …Da igual. Si te sale una cola, no me eches la culpa.')),
-  pocion: solo(g('Un frasco con una etiqueta: «POCIÓ. NO TOCAR». Es la letra de Jan.'), g('…Me lo llevo. Por si acaso.')),
+  janAgain: withJan(jan('Venga, baixa ja, que la mama t\'espera')),
+  pocion: solo(g('Un frasc amb llums a dins... serà un efecte òptic?')),
+  /** Mama does not stop talking: her `rambling` lines run into each other, and pressing cuts her off (src/dialogue.ts). */
   mama: withMama(
-    mama('Bon dia, campeón! Per molts anys, Gerard!'),
-    g('¡Gracias, mamá!'),
-    mama('Toma, ábrelo. Ya sé que no es una consola…'),
-    g('¡Unas zapatillas de correr! ¡Son chulísimas!'),
-    mama('Así llegarás a tiempo al cole, por una vez. Y no te olvides la mochila, que está en el recibidor.'),
-    mama('Ah, y pasa a buscar a Bernat, que vais juntos.'),
+    mamaRuns('Aiii! Felicitats, Gerard! Ja et fas graaan!'),
+    mamaRuns('I mira, has d\'anar al metge, que no m\'agrada gens aquesta tos.'),
+    mamaRuns('De fet, després li has de donar classe al teu germà, que crec que últimament no està gaire pendent de l\'escola.'),
+    mamaRuns('Aiii, ahir mateix vaig veure la teva cosina Helena, està tan petitona...'),
+    mamaRuns('I la teva àvia vindrà després a dinar, eh, que no se t\'oblidi.'),
+    mamaRuns('I recorda sobretot, i molt important, que has de comprar pa quan tornis de l\'escola.'),
+    mamaRuns('El teu pare no sé on s\'ha quedat, em va dir que demanava un dia per assumptes propis, però al final...'),
+    mamaRuns('...al final res, com sempre, i jo aquí amb tot: que si la rentadora, que si el forn, que si la teva tia...'),
+    mamaRuns('...i la veïna del tercer, que t\'ho he dit? S\'ha tornat a deixar les claus a dins, la pobra...'),
+    mamaRuns('...i el pa, eh, el pa, que l\'altre dia el vas portar tou i el teu pare...'),
+    g('Sii, ja ho seee, merciii, adeeeu'),
+    mama('Espeeera! Agafa aquest regalet que t\'he comprat.'),
+    mamaRuns('Però recorda sobretot que, quan vagis a comprar el pa, és molt important que tinguis en compte que el pa sempre ha d\'estar cruixent, vigila amb això, d\'acord?'),
+    g('Alaaa! Sabatilles! Amb això aniré súper ràpid'),
+    mama('Bueno, així aniràs més ràpid. Recorda agafar la motxilla i, sobretot, sobretot, has de comprar el pa després'),
+    mama('Ah, i passa a recollir el Bernat de camí'),
   ),
-  mamaWaiting: withMama(mama('¿Qué haces aún aquí? La mochila está en el recibidor. ¡Y a buscar a Bernat!')),
-  mamaBye: withMama(mama('Venga, que llegáis tarde. ¡Que tengas un día precioso, cariño!')),
-  mochila: solo(g('Mi mochila. Libros, estuche… y un bocadillo de fuet. Mamá piensa en todo.')),
-  leaveBeforeBreakfast: solo(g('Huele a tostadas… Primero, a la cocina.')),
-  leaveWithoutBackpack: withMama(mama('¡Gerard! ¿A dónde vas sin mochila? Está en el recibidor.')),
-  bernatNotYet: solo(g('Aún no tengo la mochila. Mejor vuelvo a casa primero.')),
+  /** Still going: the same run of sentences as `mama`, cut off by pressing. */
+  mamaWaiting: withMama(
+    mamaRuns('Encara ets aquí? Gerard, que faràs tard!'),
+    mamaRuns('La motxilla és al rebedor, on sempre, que no sé per què cada dia l\'has de buscar com si fos la primera vegada...'),
+    mamaRuns('I passa a buscar el Bernat, eh, que la seva mare em va dir que últimament s\'adorm, pobret, que no sé què li passa...'),
+    mamaRuns('...i el pa, recorda el pa, cruixent, eh, que tou no el vol ningú, i el teu pare encara menys...'),
+    mamaRuns('...i tapa\'t el coll, amb aquesta tos, que després tot són corredisses i qui va a la farmàcia? Jo...'),
+  ),
+  mamaBye: withMama(mama('Venga! Que arribaràs tard, vigila amb aquesta tos i mira d\'ajudar després el teu germà, pensa que diumenge sopem amb els tiets, així que no facis plans pel finde...')),
+  leaveBeforeBreakfast: solo(g('Hmmm quin bon dia que m\'espera! M\'encanta el meu cumple')),
+  leaveWithoutBackpack: withMama(mama('Gerard! Recorda! La motxilla! I sobretot, no t\'oblidis del pa, i com t\'he dit, o no sé si t\'ho he dit, el cap de setmana, diumenge, hem de marxar a Vilassar a fer un dinar, i recorda sobretot que no trepitgis res amb les sabatilles noves, que les has de cuidar')),
+  bernatNotYet: solo(g('La motxilla... torno')),
   bernatJoins: withBernat(
-    g('Ding-dong… ¡Bernat! ¡Que llegamos tarde!'),
-    bernat('¡Ya bajo, ya bajo!'),
-    bernat('¡Ey! ¡Per molts anys, Gerard! ¿Zapatillas nuevas? Qué fuerte.'),
-    g('¡Regalo de mamá! Venga, vamos al cole.'),
-    bernat('Vamos. Aunque hoy tengo una sensación rara… Bah, será el sueño.'),
+    g('Bernaaat, vaaa, que arribem tard'),
+    bernat('Ja vaig! Un moment!'),
+    bernat('Ei! Per molts anys, Gerard! Quines sabatilles més maques!'),
+    g('Just ara me les han regalat!'),
+    { speaker: 'bernat', text: 'Som-hi... encara que, no sé, avui he tingut un mal somni...', pace: 'spooky' },
   ),
-  bernatHere: withBernat(bernat('Que ya estoy aquí, hombre. ¡Calle abajo!')),
+  bernatHere: withBernat(bernat('Ei, torna cap aquí')),
   dejavu: withBernat(
-    g('¿Bernat? ¿Qué te pasa? Vamos, que llegamos tarde.'),
-    bernat('Espera. Esos perros de ahí abajo… y esa alcantarilla, que no para de hacer burbujas.'),
-    bernat('Ayer estuve diseñando un juego. Empezaba así: un cumpleaños, unas zapatillas nuevas, dos amigos bajando la calle…'),
-    g('¿Un déjà-vu?'),
-    bernat('Peor. Es igual. Igualito. Hasta el último detalle.'),
-    bernat('Gerard… creo que la he cagado.'),
+    g('Hmm, Bernat, per què et quedes quiet? Som-hi, que no hi arribem!'),
+    bernat('Ai... és que... és el mateix que en el somni d\'aquesta nit: tu amb les sabatilles, el cumple, els gossos allà baix, la bombolla...'),
+    g('Tens un... déjà-vu?'),
+    bernat('És que és EXACTAMENT el somni que he tingut avui. Tinc por, Gerard, anem a casa. Has vist la claveguera?'),
   ),
   /** After the minion's head pops its bubble and sinks; the dogs' eyes are pink and the fight starts right after. */
   minion: withBernat(
-    g('¿Has visto eso? ¡Ha salido algo rosa de la alcantarilla!'),
-    g('Parecía… un chicle. Con ojos.'),
-    bernat('Un esbirro de la Reina Bubbaloo. La mala de mi juego. Me la inventé yo.'),
-    bernat('Sus esbirros viven en las alcantarillas. Lo pringan todo… y lo que pringan, le obedece.'),
-    g('Bernat… los perros. Mírales los ojos.'),
-    bernat('¡Rosas! ¡Cuidado, Gerard, que vienen a por nosotros!'),
+    g('Això... què és això?'),
+    g('Sembla com un... xiclet'),
+    bernat('És que és el mateix... ho estic veient, perquè hi penso tant, perquè vaig parlar amb la llum'),
+    g('Em començo a preocupar, Bernat. De què parles? Què dius?'),
+    g('Bernat... mira els gossos... tenen els ulls... com rosa...'),
+    bernat('Gerard, compte! Ens ataquen!!'),
   ),
   /** The first fight is won: the light has turned. */
   afterFight: withBernat(
-    g('Se han ido corriendo… ¿Y el chicle ese?'),
-    bernat('Sigue ahí abajo, seguro. Escuchando.'),
-    g('¿Soy yo, o se ha puesto todo… rosa? Y oscuro.'),
-    bernat('No eres tú. En mi libreta, cuando alguien le gana a un esbirro, la Reina Bubbaloo se entera…'),
-    bernat('…y tiñe el cielo de su color. Para que sepas que te está mirando.'),
-    bernat('Gerard… mira las casas del fondo de la calle.'),
+    g('Han desaparegut... què està passant, Bernat?'),
+    bernat('És que és el meu somni, ara tot canviarà, ella no pararà...'),
+    g('Hmmm, ho veig tot més fosc... i més... rosa?'),
+    bernat('Gerard... mira els edificis...'),
   ),
   /** The palace has risen at the north end of the street. */
   palaceRises: withBernat(
-    g('¿Qué… qué es eso?'),
-    bernat('Es justo como en mi sueño. El palacio de la Reina Bubbaloo.'),
-    bernat('Se está volviendo real, Gerard. Todo.'),
-    g('¿Y qué hacemos? ¿Ir al cole como si nada?'),
-    bernat('En mi sueño entrábamos. Por la pompa de la puerta.'),
+    g('¿Qué… qué es això?'),
+    bernat('És justament el meu somni, Gerard, és el Palau... de la Reina Bubbaloo...'),
+    g('Però... si només era un joc, Bernat, és impossible'),
+    bernat('No m\'ho puc creure, és com la meva imaginació plasmada a la vida real... és... magnífic!'),
+    g('Calla, Bernat, calla...'),
   ),
-  bernatPalace: withBernat(bernat('La pompa de la puerta… En mi sueño se atravesaba sin más. Pegajosa, pero se atravesaba.')),
+  bernatPalace: withBernat(bernat('Hmm, crec que hem de continuar a dins d\'això... xiclós')),
   /** Through La Pompa for the first time. */
   inPalace: withBernat(
-    bernat('¡Puaj! Se me ha pegado chicle hasta en las orejas.'),
-    g('Bernat… estamos dentro.'),
-    bernat('Huele a fresa. Como en el sueño.'),
+    bernat('Puaj! Tinc xiclet fins i tot a les orelles'),
+    g('Quina bogeria...'),
+    bernat('Fa olor de maduixa... ho notes?'),
   ),
-  leaveLocked: solo(g('La pompa se ha cerrado detrás de nosotros. Está dura como una pared.')),
+  leaveLocked: solo(g('Ja no podem sortir... què és això, Bernat?')),
   curtain: withBernat(
-    g('Una cortina de chicle. Está pegajosa: no hay manera de pasar.'),
-    bernat('En mi sueño la reina estaba arriba. Pero aún no… aún no.'),
+    g('És com una cortina feta de xiclet...'),
+    bernat('Ai, ai, ai... al meu somni la reina estava a dalt, però encara no, encara no... la reina es pot materialitzar de moltes maneres'),
   ),
-  backDoorStuck: solo(g('Esta puerta está pegada con chicle. No se mueve ni un milímetro.')),
-  portrait1: withBernat(g('«La coronación». Se pone la corona ella sola.'), bernat('Es que nadie más se atrevía.')),
-  portrait2: solo(g('«En el trono». Sentada en una bola de chicle gigante… con cara de aburrirse muchísimo.')),
-  portrait3: withBernat(g('«La gran pompa». El marco está abollado por la pompa.'), bernat('Esa la dibujé yo. Igualita.')),
-  portrait4: solo(g('«Desde el balcón». Saluda a una ciudad de noche: una torre de colores, una avenida larguísima…'), g('No es Sant Quirze.')),
-  portrait5: withBernat(g('Este es… un dibujo con rotuladores. Firmado: «Bernat».'), bernat('…Esto estaba en mi libreta.')),
-  chicle: solo(g('Un bol de chicles de fresa. …Uno para el camino.')),
+  backDoorStuck: solo(g('Aquesta porta està enganxada amb xiclet. No es mou ni un mil·límetre.')),
+  portrait1: withBernat(g('«La coronació». Se l\'està ficant ella mateixa...'), bernat('És que ningú més s\'hi atrevia.')),
+  portrait2: solo(g('«Al tron». Asseguda en una bola de xiclet gegant… amb cara d\'avorrir-se moltíssim.')),
+  portrait3: withBernat(g('«La gran pompa». El marc està abonyegat per la pompa.'), bernat('Aquesta la vaig dibuixar jo. Igualeta.')),
+  portrait4: solo(g('«Des del balcó». Saluda una ciutat de nit: una torre de colors, una avinguda llarguíssima…'), g('No és Sant Quirze.')),
+  portrait5: withBernat(g('Aquest és… un dibuix amb retoladors. Signat: «Bernat».'), bernat('…Això ho tenia penjat a la meva habitació.')),
+  chicle: solo(g('Anda, quants xiclets hehe')),
   /** Stepping into the wrapper room: the drain gurgles, then the minion rises. */
-  drainGurgle: withBernat(g('¿Oyes eso? Viene del sumidero.')),
-  drainRises: withBernat(bernat('Ese no se va a esconder.'), g('¡Bernat, atrás!')),
+  drainGurgle: withBernat(g('Ho sents?... ve de la claveguera')),
+  drainRises: withBernat(bernat('És un esbirro de la reina, és tal com me l\'imaginava...! Compte, Gerard!'), g('Bernat, enrere!')),
   /** Matemágico's fire has burst the minion. */
   afterMatemagico: withBernat(
-    bernat('¿Qué… qué ha sido eso? ¿Le has tirado fuego con la mano?'),
-    g('No lo sé. He pensado en unos y ceros… y me ha salido solo.'),
-    bernat('Siempre lo calculas todo. Todo. Y hoy… hoy nos ha salvado.'),
-    g('Bernat… ¿qué está pasando aquí? De verdad.'),
-    bernat('Creo… creo que estamos en el castillo de la Reina. Mi sueño no era un sueño, Gerard.'),
-    bernat('Ella es real. Y si nos ha traído hasta aquí, es porque quiere algo de nosotros. Quiere…'),
+    bernat('Què… què ha sigut això? Has fet foc amb les mans...?'),
+    g('No ho sé. He pensat en números, en mates, i m\'ha sortit sol...'),
+    bernat('Que fort'),
+    g('A veure, Bernat, què collons està passant aquí? En serio, ara...'),
+    bernat('Doncs crec que som al castell, al palau de la Reina Bubbaloo... i no saps totes les coses que m\'he imaginat d\'ella...'),
+    bernat('I ella és real, Gerard... ai no, és que me\'n recordo perfectament, ara morirem, Gerard, ens morim, mira, MIRA!'),
   ),
   /** Chapter 2: Gerard wakes up with a start in the Meridiana flat, and Aitor is there. */
   waking: withAitor(
     gerard35('¡NO!'),
-    aitor('Ey, ey… tranquilo. Estás en casa. Soy yo.'),
+    aitor('Ey, que pasa Gerard? Tranqui, soy yo'),
     aitor('Estabas gritando «¡no!» en sueños. Llevándome la contraria hasta dormido.'),
-    gerard35('He soñado con Bernat. Con la calle de mis padres… y unas manos de chicle enormes.'),
+    gerard35('He tingut un somni rarísim... amb el Bernat. Amb Sant Quirze, amb un castell... unas manos de chicle enormes.'),
     aitor('¿Manos de chicle? Eso te pasa por cenar pizza a las once.'),
     aitor('Venga, despierta del todo. Felicidades, Gerard. Treinta y cinco, ¿eh?'),
     gerard35('…Treinta y cinco. Sí.'),
-    aitor('Y hoy no me despego de ti. Donde vayas tú, voy yo.'),
+    aitor('Venga, el meu regal, 35 horas de rascado! jeje'),
   ),
   aitorAgain: withAitor(aitor('Feliz cumpleaños, dormilón. El café está en la cocina… si te lo haces tú.')),
   envoltorio: withAitor(
     gerard35('Un envoltorio de chicle. Bubbaloo, de fresa.'),
     gerard35('…Estaba en mi mesilla. Y huele igual que en el sueño.'),
   ),
-  bernatInPalace: withBernat(bernat('No te separes. En mi sueño, este sitio no acababa nunca.')),
-  bernatAfterMatemagico: withBernat(bernat('Matemágico. Así te voy a llamar. El que hace magia con la cabeza.')),
-  bernatFight: withBernat(bernat('¡Gerard, los perros! ¡Hay que quitarles ese rosa de los ojos!')),
-  bernatAfter: withBernat(bernat('No me mires así. Esos perros no estaban ayer en la calle… estaban en mi libreta.')),
-  bernatAfterFight: withBernat(bernat('La Reina Bubbaloo era solo un dibujo. Un dibujo, Gerard. Con corona de chicle.')),
+  bernatInPalace: withBernat(bernat('No et separis. Al meu somni, aquest lloc no s\'acabava mai.')),
+  bernatAfterMatemagico: withBernat(bernat('Matemágico. Així et diré. El que fa màgia amb el cap.')),
+  bernatFight: withBernat(bernat('Gerard, els gossos! Els hem de treure aquest rosa dels ulls!')),
+  bernatAfter: withBernat(bernat('No em miris així. Aquests gossos ahir no eren al carrer… eren al meu somni.')),
+  bernatAfterFight: withBernat(bernat('La Reina Bubbaloo només era un joc. Un joc, Gerard. Amb corona de xiclet.')),
 } satisfies Record<string, Dialogue>;
 
 /** Said inside the palace fight, as speech over their heads (the rest of the HUD is shut during fights). */
 export const BATTLE_LINES = {
-  aboutToDie: { speaker: 'bernat', text: '¡Gerard, me va a matar!' },
+  aboutToDie: { speaker: 'bernat', text: 'Gerard, em matarà' },
   /** Bernat, on his knees, says it in Catalan: it is what wakes Matemágico. */
-  think: { speaker: 'bernat', text: 'Pensa, Gerard! Fes la màgia amb la teva ment!' },
+  think: { speaker: 'bernat', text: 'Pensa, Gerard! Pensa, ho fas molt bé això, fes la màgia amb la teva ment!' },
 } as const satisfies Record<string, DialogueLine>;
 
 /**
@@ -206,15 +220,15 @@ export const HINTS = {
 export type HintId = keyof typeof HINTS;
 
 export const CARDS = {
-  intro: { kicker: 'CAPÍTULO 1 · SANT QUIRZE DEL VALLÈS', title: 'Una mañana de otoño', text: 'Hoy es tu cumpleaños.' },
+  intro: { kicker: 'PROLOGO · SANT QUIRZE DEL VALLÈS', title: '22 de noviembre del 19XX', text: 'Hoy es tu cumpleaños.' },
 } as const;
 export type CardId = keyof typeof CARDS;
 
 /** What Bernat mutters over his head while he stalls, one more line each time Gerard pulls away. */
 export const BUBBLES = {
-  stalled: ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.'],
+  stalled: ['Gerard…?', 'Espera.', 'Això… ja ho he vist.'],
   /** Heading back south once the palace has risen. */
-  away: ['Es por el otro lado.'],
+  away: ['És per l\'altre costat.'],
   /** Aitor, when two players pull apart further than the camera can follow. */
   tether: ['¡Eh, espérame!', '¿A dónde vas tan rápido?'],
 } as const;

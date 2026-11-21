@@ -25,14 +25,20 @@ his power: **changing class by changing mood**, fast.
   thinks "primero, a la cocina"; without the backpack Mum calls him back; while Bernat stalls the
   street itself won't let him leave his friend (a leash of four cells).
 - **The world tells you something is wrong.** When Bernat stalls, he mutters over his head, one
-  more line each time Gerard pulls away: "¿Gerard…?" → "Espera." → "Esto… ya lo he visto." The
+  more line each time Gerard pulls away: "Gerard…?" → "Espera." → "Això… ja ho he vist." The
   player turns back because a friend sounds off, not because a panel says so.
 - **Seeds pay off within the chapter.** The potion from Jan's desk is the first common item and
   is meant to be used in block 2's fights; the dogs are on screen from the moment Gerard steps
   into the street, and every so often a small pink bubble rises through the manhole beside them,
   easy to miss, long before Bernat mentions it.
-- **Catalan at home, Spanish on screen.** Dialogue is in Spanish, with the family's Catalan where
-  it is natural: "Per molts anys", "Bon dia", "POCIÓ".
+- **Catalan with his people.** Gerard speaks Catalan with his family and with Bernat, Nuria and Uri,
+  Luca, the university friends, Aurelià, Mar, Montse and Pilar, and with the Queen in the castle's
+  last part: an everyday Catalan with its Spanish words. Aitor speaks Spanish, and so do Fran, the
+  capellán, the TV, the Diario and the interface; Gerard alone with Aitor speaks Spanish.
+- **Mum does not stop talking.** Her lines run into each other with no pause (`pace: 'rambling'` in
+  `src/dialogue.ts`); each press cuts her sentence off with a dash and she carries on, and on the third
+  she gives up and Gerard gets a word in. Bernat's bad dream comes out slowly, its letters trembling
+  (`pace: 'spooky'`).
 - **Desktop first.** Keyboard prompts (Shift, I, C, E) are written into the notes; the controller
   equivalent follows in brackets.
 
@@ -41,14 +47,14 @@ his power: **changing class by changing mood**, fast.
 | # | Beat | Teaches | Budget |
 | --- | --- | --- | --- |
 | 1 | Title card "Una mañana de otoño · Hoy es tu cumpleaños", Gerard wakes by his bed | Walking (W A S D), looking (E) at the shelves | 1:30 |
-| 2 | Jan in his room: "¡Felicidades, enano!", a hint about a shoebox and a "frasco experimental" | Talking | 0:45 |
-| 3 | Mum in the kitchen: "Bon dia, campeón! Per molts anys!" → **Zapatillas de correr** | First item; running (Shift / hold B) | 2:00 |
+| 2 | Jan in his room: "Felicitats, Gerard!", and a jar of his with lights inside, "com ecos de llum" | Talking | 0:45 |
+| 3 | Mum in the kitchen, who does not stop talking (doctor, brother, cousin, grandmother, bread…) until Gerard cuts her off → **Zapatillas de correr** | First item; running (Shift / hold B) | 2:00 |
 | 4 | Optional: the **Poción** on Jan's desk | Common items | 1:30 |
 | 5 | The **Mochila** in the hall; the doors out stay shut until then | Key items vs common (I) | 1:00 |
 | 6 | Bernat's doorbell: he congratulates Gerard and joins as a non-playable companion | Party and equipment (C): "modo escuela" | 1:45 |
 | 7 | Down the street: dogs below, a faint pink bubble in their manhole; Bernat slows, stops and mutters | Noticing a friend | 1:00 |
-| 8 | "¿Un déjà-vu?" "Peor. Es igual… creo que la he cagado." | — | 0:30 |
-| 9 | A gum head pokes out of the manhole for a moment, pops a bubble over the dogs and sinks back: their eyes turn dark pink. "¡Ha salido algo rosa de la alcantarilla!" Bernat: "Un esbirro de la Reina Bubbaloo." | — | 0:45 |
+| 8 | "Tens un... déjà-vu?" "És EXACTAMENT el somni que he tingut avui. Has vist la claveguera?" | — | 0:30 |
+| 9 | A gum head pokes out of the manhole for a moment, pops a bubble over the dogs and sinks back: their eyes turn dark pink. "Sembla com un... xiclet." Bernat, lost: "ho estic veient… perquè vaig parlar amb la llum". Nobody names the Queen yet | — | 0:45 |
 | 10 | The dogs attack: **first fight**, straight away and with no tutorial. Huir is greyed out (the dogs surround them); losing lets them try again | Fighting | 2:00 |
 | 11 | Won: the light over Sant Quirze turns dark, pink and strange while they are inside Bernat's game; the houses at the north end start to change → block 2 | — | 0:45 |
 

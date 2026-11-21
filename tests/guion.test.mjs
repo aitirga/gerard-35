@@ -54,6 +54,24 @@ test('notes: a comment, a suggestion and a closed one pass the check; anything e
   assert.equal(guionNotesProblem(JSON.parse(readFileSync(new URL('../docs/guion-notes.json', import.meta.url), 'utf8'))), undefined, 'docs/guion-notes.json keeps the format');
 });
 
+test('notes: a block of lines to add and a line to take out keep where they go; a half-made change is refused', () => {
+  const now = new Date('2026-11-21T03:00:00Z');
+  const where = { entry: 'chapter-1:LINES.wake', title: 'LINES.wake', line: 1, quote: 'Otro año.', at: 'src/chapter-1.ts:40' };
+  const add = newGuionNote({ ...where, text: 'Que Jan conteste.', change: 'añadir', place: 'despues', block: [{ speaker: 'jan', text: ' Felicidades. ' }, { speaker: 'gerard', text: '' }] }, now);
+  assert.deepEqual(add.block, [{ speaker: 'jan', text: 'Felicidades.' }], 'rows are trimmed and empty ones dropped');
+  assert.equal(add.at, 'src/chapter-1.ts:40');
+  const cut = newGuionNote({ ...where, text: '', change: 'quitar' }, new Date(now.getTime() + 1000));
+  assert.equal(cut.place, undefined);
+  assert.equal(guionNotesProblem({ notes: [add, cut] }), undefined);
+  assert.match(guionNotesProblem({ notes: [{ ...add, block: [] }] }), /block/);
+  assert.match(guionNotesProblem({ notes: [{ ...add, place: 'encima' }] }), /place/);
+  assert.match(guionNotesProblem({ notes: [{ ...add, line: undefined }] }), /line/);
+  assert.match(guionNotesProblem({ notes: [{ ...add, block: [{ speaker: 'jan', text: 'x', mood: 1 }] }] }), /campos/);
+  assert.match(guionNotesProblem({ notes: [{ ...cut, block: add.block }] }), /quitar/);
+  assert.match(guionNotesProblem({ notes: [{ ...cut, change: 'mover' }] }), /change/);
+  assert.match(guionNotesProblem({ notes: [{ ...newGuionNote({ entry: 'x', title: 'x', text: 'y' }, now), place: 'antes' }] }), /añadir/);
+});
+
 test('the script has every line of the story, each with who says it and where it is written', async () => {
   const { entries } = await collect();
   const speakers = new Set([...readFileSync(new URL('../src/dialogue.ts', import.meta.url), 'utf8').matchAll(/^ {2}(\w+): \{ name:/gm)].map(m => m[1]));

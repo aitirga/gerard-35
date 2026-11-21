@@ -11,7 +11,13 @@ export const FOE_BODIES: Partial<Record<FoeKind, string>> = {
   plato: 'plato', platito: 'plato',
   fantasmita: 'fantasmita',
   lealtad: 'lealtad', eco: 'eco', directo: 'directo',
-  campeon: 'campeon',
+  mago: 'mago', agente: 'agente', campeon: 'campeon',
   polilla: 'polilla',
   atomo: 'atomo',
 };
+/**
+ * Foes outside the castle who fight as a figure of `just character-3d` with Meshy's skeleton, loaded
+ * and moved like the castle's pupils (src/castle-models.ts `foeFigure`): Fran as the boss of Luca's
+ * mission (tools/figures.toml `[fran-jefe]`). His primitives (src/luca-foes.ts) stand in while it loads.
+ */
+export const BOSS_FIGURES: Partial<Record<FoeKind, string>> = { fran: 'fran-jefe' };

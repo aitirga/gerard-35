@@ -20,7 +20,8 @@ of Jessica, his ánima or a boss, round 4 replaces them.
 **Decided.**
 
 - **The Queen is sensitive to music**, for a reason nobody gives, and it already shows during the
-  game before Bernat says it (to seed: places and fights where a song makes her minions falter, her
+  game before Bernat says it (seeded first in her first scene: she sings to herself as her hands come
+  down, `docs/lore.md` § Her music; still to seed: places and fights where a song makes her minions falter, her
   castle's song haunted, La Voz). Bernat puts it into words.
 - **Bernat realises he is living inside a game**, and says so to Gerard and Aitor plainly; at that
   moment the three of them look at the camera, at the player. The fourth wall breaks once, here.

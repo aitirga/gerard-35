@@ -82,9 +82,9 @@ ecos strike and cure with their wearer's Magia (curing grows with Magia, `healin
 `src/stats.ts`). Defensa and Espíritu are for a wearer who spends turns holding on (*Pedal*). The
 trade-off is Fuerza: Atacar is weak in it.
 
-Marta's light (`ANIMAS` in `src/animas.ts`, the party bonus) still has the placeholder Magia +1,
-Velocidad +1 and 10 PV, and Velocidad no longer exists. Proposal: **Espíritu +1, Defensa +1, 10 PV**.
-No other light has that pair yet, and it fits a friend who holds on.
+Marta's light (`ANIMAS` in `src/animas.ts`, the party bonus) is **Espíritu +1, Defensa +1, 10 PV**
+(2026-11-21, in place of the placeholder Magia +1, Velocidad +1 when Velocidad was removed). No
+other light has that pair, and it fits a friend who holds on.
 
 ## Signature: the ecos and the compás
 
@@ -295,6 +295,8 @@ maná and four or five rounds. For comparison: Rayo solar is 40 on each foe, Bom
 and Dados astrales about 140 at random.
 
 ## What it offers a dual
+
+**Built (2026-11-21):** *Idea fija* (dúo mayor, Confusión + Ostinato), *Seiche* (Recarga + Ostinato) and *Staccato* (Zarpazo sangriento + Ostinato); `../README.md` § Combined skills.
 
 The duals are designed after every ánima is ([`../README.md`](../README.md) § Order of work). What
 Sincopante brings to a pair:

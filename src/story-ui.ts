@@ -89,7 +89,11 @@ export function createStoryUI(hud: HTMLElement) {
   const scream = document.createElement('div');
   scream.id = 'queen-scream'; scream.setAttribute('role', 'status'); scream.dataset.on = 'false';
   scream.innerHTML = '<p></p>';
-  hud.append(notes, hint, bubble, shout, card, banner, black, white, scream, doom, photo);
+  // La Reina Bubbaloo singing to herself, unseen (docs/lore.md § Her music): her words come down from the top of the picture.
+  const song = document.createElement('p');
+  song.id = 'queen-song'; song.setAttribute('role', 'status'); song.hidden = true;
+  let songGeneration = 0;
+  hud.append(notes, hint, bubble, shout, card, banner, black, white, scream, song, doom, photo);
   let endDoom: (() => void) | undefined;
   doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -131,6 +135,28 @@ export function createStoryUI(hud: HTMLElement) {
       return new Promise<void>(resolve => setTimeout(resolve, ms));
     },
     unflash() { scream.dataset.on = 'false'; },
+    /**
+     * La Reina Bubbaloo sings to herself, unseen (the end of chapter 1): each word comes down from the
+     * top of the picture as she sings it, for as long as she holds it, and they stay, over the dark
+     * too, until `unsing`.
+     */
+    sing(words: readonly { word: string; seconds: number }[]) {
+      songGeneration++;
+      let at = 0;
+      song.replaceChildren(...words.map(({ word, seconds }) => {
+        const span = document.createElement('span');
+        span.textContent = word; span.style.setProperty('--at', `${at}s`); at += seconds;
+        return span;
+      }));
+      delete song.dataset.leaving; song.hidden = false;
+    },
+    /** Her words fade away (in the dark, before they wake); resolves once they have gone. */
+    unsing() {
+      if (song.hidden) return Promise.resolve();
+      const generation = songGeneration, ms = reducedMotion.matches ? 0 : 1500;
+      song.dataset.leaving = 'true';
+      return new Promise<void>(resolve => setTimeout(() => { if (generation === songGeneration) song.hidden = true; resolve(); }, ms));
+    },
     /** An ánima woke up outside a fight (Nuria lends the cats): a note, ÁNIMA DESBLOQUEADA. */
     unlocked(classId: ClassId) {
       const el = document.createElement('article');
@@ -301,6 +327,6 @@ export function createStoryUI(hud: HTMLElement) {
     get doomOpen() { return !doom.hidden; },
     /** A controller's confirm on the end screen. */
     confirmDoom() { endDoom?.(); },
-    destroy() { hintGeneration++; clearTimeout(shoutLeaving); notes.remove(); hint.remove(); bubble.remove(); shout.remove(); card.remove(); banner.remove(); count.remove(); doom.remove(); },
+    destroy() { hintGeneration++; clearTimeout(shoutLeaving); notes.remove(); hint.remove(); bubble.remove(); shout.remove(); card.remove(); banner.remove(); count.remove(); song.remove(); doom.remove(); },
   };
 }

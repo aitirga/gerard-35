@@ -20,7 +20,7 @@ export function validateCombatDefinition(input: unknown, runtime?: CombatRuntime
   if (input.statuses !== undefined && !record(input.statuses)) errors.push('statuses must be an object');
   const rules = record(input.rules) ? input.rules : {};
   if (input.rules !== undefined && !record(input.rules)) errors.push('rules must be an object');
-  for (const key of ['healthResource', 'speedStat']) if (!optional(rules[key], safeId)) errors.push(`rules.${key} must be a nonempty string`);
+  if (!optional(rules.healthResource, safeId)) errors.push('rules.healthResource must be a nonempty string');
   const health = typeof rules.healthResource === 'string' ? rules.healthResource : 'hp';
   if (!optional(rules.affinityPolicy, value => ['product', 'geometric-mean', 'lowest', 'highest'].includes(String(value)))) errors.push('rules.affinityPolicy is unknown');
   for (const key of ['maxRounds', 'maxActions', 'maxReactionDepth', 'maxEffectsPerAction']) {

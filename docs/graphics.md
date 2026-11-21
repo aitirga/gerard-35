@@ -562,9 +562,20 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
 - **Mending and assembling.** With `reform` (1/s²), loose members are drawn home, carrying their own
   weight, and bond again within 0.4 of a cell. With `from: { at, spread, shape }` the members are born
   loose there and fly in to build the lattice.
+- **Throwing.** `throwAt(points, { speed, steer, arc, blast })` sends its loose members at up to six
+  points (`MAX_AIMS`), each a place and how near counts as landing. Each member flies at the point on
+  its side of the lattice: the points are sorted by their angle round its middle, and the lattice is
+  cut into as many wedges, from straight behind (`latticeAim`, `aimOf` in WGSL, by the angle of the
+  member's home), so each side streams at the points on its side and no two streams cross. It steers
+  at `speed` m/s (`steer` 1/s), weightless, arcing up by `arc` while it still has 3 m or more to go;
+  within the point's radius it leaves the lattice and goes off, scattering at up to `blast` m/s as its
+  kind's `onDeath`. Break it loose with `dissolve` from the side facing the points (`dissolveFrom:
+  'push'`) and it pours out as a stream. Sobrecalentamiento's dome does this (`effects.fireDome`).
 - **Life.** A member's life (`life`) stops at `hold` of it while bonded (or on its way home); once
-  loose it ages through the rest and fades as its kind. `remove()` frees every member that way.
-  Nothing is lost when a lattice goes: its members are plain particles again.
+  loose it ages through the rest and fades as its kind. `hold` can change while it stands: lowering
+  it takes its members back along their kind's colours, raising it lets them age on to it (the fire
+  dome heating to white). `remove()` frees every member that way. Nothing is lost when a lattice goes:
+  its members are plain particles again.
 - **See-through.** `opacity` (0–1) dims every member, loose ones too. With `fresnel` (0–1) the
   draw turns each member see-through as far as its surface faces the camera (its direction from the
   lattice's middle, or for a shield from a point well behind it), keeping the outline bright: a body
@@ -578,14 +589,16 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
   lattice texture's last column (`LOOK_COL`, src/lattice.ts) and act in the draw only.
   `strands: 'y'` joins a lattice's strands along y instead of x: a sphere's meridians.
 - **State.** Members use band E's spare channel (lattice slot + 1, negative when loose) and, while
-  bonded, band D's first channel for their strain. Each lattice is a row of 22 texels in a data
+  bonded, band D's first channel for their strain. Each lattice is a row of texels in a data
   texture (`LATTICE_COLS` in src/lattice.ts lists them). The ring allocator never puts a burst on a
   living lattice's slots. Drawn as `strand`, a member ribbons to its row neighbour while both are
   bonded, so a lattice reads as threads (`thread`, `veil`).
 
 `FIGHT_KINDS` adds `node` (a dot of light with a little weight, so loose bits fall), `pane` (the same
 dot, of glass), `facet` (flat diamonds of glass that fill between bands), `thread`, `veil` and `chip`
-(what a lattice breaks into). The `fightFx` presets are `ward` (a wall between the
+(what a lattice breaks into), and the fire dome's `firenode` (a flickering dot that heats along its
+life, deep red → orange → white-hot, so `hold` sets how hot it is) and `firebit` (the weightless fire
+streaks it is thrown as, which go off as `crackle`). The `fightFx` presets are `ward` (a wall between the
 target and the blows: sparks dent it, hole it and knock bits loose, it mends, then crumbles),
 `morph` (a ball → crystal → ring → column → ball, shaken by pushes), `current` (a ring of threads
 streaming round the target), `veil` (cloth that drapes over them) and `forge` (embers assembling a
@@ -1078,6 +1091,124 @@ Gerard; frame ms uncapped, average and frames over 60 ms in 4 s):
 | PCF 5×5 | 5.9 | 0 |
 | PCF 3×3 | 5.8 | 0 |
 | No sun shadows | 4.6 | 0 |
+
+## The newer duals' own looks (`src/duo-fx/`)
+
+The duals added on 2026-11-21 (six dúos mayores and six plain duals, docs/animas/README.md
+§ Combined skills) each draw their own picture from their own file, `src/duo-fx/<dual-id>.ts`, so
+none shares another's look. Each exports a `DuoStaging` (`src/duo-fx/types.ts`):
+
+- `timing`: when its blow lands (`contact`, the numbers come) and when it is over (`end`).
+- `start(stage, e, reached)`: everything it draws, set going on the fight's clock (`stage.fx.after`).
+- `land`: the landing's camera answer (shake, bloom, punch, the flash on whoever it reached, a sound).
+- `hold`: every frame, what the timed status it leaves keeps drawing on whoever has it, with a beat
+  on each pulse (the scene's own pulse flash is pale for these, not fire's orange).
+- `struck`: any action's blow landing, at its exact contact, for a lasting look that answers blows
+  (Fulgurita's crack, Metralla's splinters, Caleidoscopio's reflection).
+
+The scene (`startDuo`, `contactBurst`, `holdTells` in src/battle-scene.ts) hands each a `DuoStage`:
+the fighters as plain points (`DuoFighter`: chest, feet, hand, size, its GPU `index` for
+`shape: 'surface'` bursts) and a few levers. Each file defines its own GPU particle kinds lazily,
+named after the dual (`metralla-shard`), falling back to a tinted shared kind if the engine is full
+(`MAX_KINDS`, 256 since then); the shared staging they first played (`DUO_LOOKS`) is gone. Duals over
+every foe get a wide lens (`duoLens`); Géiser a lens that pulls back for its column.
+`just screenshots duos-nuevos --gpu` plays the twelve.
+
+**Marea.** Gerard chalks communicating vessels onto the field in gold: a cylinder round each foe, a
+double pipe along the floor from each to the next, a gold `=` between each pair at the height the water
+will reach. Freática's water wells up under every foe at once, teal beads settling at one shared height
+and a surface climbing in each vessel from its own level to it (the driest rises most), current running
+out along the pipes from the fullest. On landing the surfaces become one body, joined along the pipes, a
+gold tick and a binary `1` marking the mark more. While `marea` holds, a faint tide line joins the foes'
+water at their levels; when water rises on one, a pulse lights every surface and pipe.
+
+**Seiche.** Sincopante's doubled nácar rings and Freática's teal thread make the field a basin between
+two faint nácar walls; a surface of water rocks about its still middle as a standing wave, a nácar ring
+opening at the still point and drops thrown from the high end on each turn. On the third, widest swing
+it breaks on every foe at once (spray, a closing ring, teal light), then rocks smaller until still.
+While `seiche` holds, a short line of water over each foe rocks two swings a beat; on each beat it
+sloshes wide, a doubled nácar ring under the foe.
+
+**Géiser.** Gerard's braided binary fire goes into the water at the foe's feet; orange heat rings close
+in, each mark of its water lights as a teal ring at its own height with a glass tick (one per blow to
+come), bubbles and steam quicken, the floor shakes. At contact a column of scalding water bursts up
+from under it, one jet per mark spent in time with the numbers, white and teal with orange only at the
+root, its drops falling and settling. A low sheet of steam rolls out to every foe it blinds and hangs
+over each, dripping; while they stay blinded, a wisp curls off each now and then.
+
+**A escala.** Bip frames the foe in a square sight (four cyan corners, a dimension line with ten ticks,
+a scan sweeping down) while Freática runs its tape to it and stands a staff gauge marked I, II, III, a
+teal waterline at the water's level. Bip's ray goes in through a train of shrinking sights; the frame,
+the dimension line and a scale bar on the floor shrink together to the foe's new size as the waterline
+climbs to the next mark. While it stays shrunk, faint cyan corners tick round it with its level on a
+short stretch of gauge, faster in the last 3 s.
+
+**Fulgurita.** Colorista throws matte ultramarine at each foe; Gerard's comet lights a point of charge
+over them, ringed with gold digits, that comes down as forked lightning into each cloud. Where it
+strikes, a white-hot line runs out through the sand in branching roots leaving glass beads, and glass
+tendrils climb each foe. At contact the glass sets: a crust of shards on each foe, and jagged links of
+glassy lightning join them in a loop. While it lasts the crust glints and the lattice shows about once
+a second; a blow that digs into one foe's shards sends a crack of light along the lattice to every
+other, each flashing and shedding chips.
+
+**Cadáver exquisito.** Three stars rise from Dadista and come down 0.3 s apart on the feet, the body and
+the head; Colorista's handful meets each and lands as a band of matte powder round that third, tinted by
+the blow's element (fire char-dark with a white-gold seam, so it reads on a foe already burning; dusty teal water with drops, mustard electric with arcs,
+grey and white none), with scraps of cut paper stuck on. After the first two, an ivory fold is drawn
+across the foe with the ends of two lines crossing it, all the next hand sees. As the numbers come, each
+band goes off bottom to top, the folds flash, and a thin line runs through all three, one figure.
+
+**Suceso seguro.** Gerard chalks a distribution in the air in gold, a bell that narrows and climbs in
+six strokes, while Dadista throws a die of cold light for each ally, tumbling wireframes. At about
+0.66 s the bell is a single white spike with «P = 1» beside it and every die stops dead at its ally's
+shoulder, all turned the same way, the Comodín's star in gold. At contact each drops into its ally and
+leaves a sharp gold cut crossed by ice and a gold «1» overhead. While the criticals are sure
+(`state.certain`), a small still die with the star stays beside each ally.
+
+**Caleidoscopio.** Bip sends twelve threads of cyan bits up round the party like a kaleidoscope's
+spokes; Colorista's ultramarine hangs along them, a rosette is laid on the floor, and the dome is drawn
+in triangular mirror panes, band by band, edges alternating cyan and blue so each column mirrors the
+next. At contact the panes flash and turn as the bit dome rises under them. While it stands three panes
+at a time catch the light, a third of the way round from each other, turning slowly; when a blow is
+sent back, a small rosette opens where it met the shell and a mirrored fan of shards flies back at the
+striker (`struck`, also for a blow the dome stops whole), turning to blue powder on its body.
+
+**Metralla.** Bip dives in a cyan comet into the middle of the foes with three of Haru's claw strokes
+behind it; its sights lock on each foe and the core packs tight over four quickening beats. It goes off
+in a cyan flash and a ball of thin orange slivers (Haru's claws as shrapnel) with Bip's sparks, grit
+along the floor, a ring of air. Each foe is torn by two claws at odd angles and bleeds away from the
+blast, splinters biting into its body all over. While `metralla` holds, five amber splinters stay
+lodged in each foe's front, glinting in turn; when a physical blow cashes in its Sangrado (`struck`, at
+the blow's contact), every splinter in its body lights at once, the lodged ones draw into the wound, and
+its edges are drawn apart instead of closing. When it ends, they fall out.
+
+**Staccato.** Beside the foe, clear of its plate, Sincopante's eco is drawn: a seafoam ring with five
+nácar arcs, a metronome arm ticking left and right; on the third tick Haru's claw makes one clean
+diagonal cut. A line of nácar carries it up into the eco, where the same stroke hangs small and bright.
+While `staccato` holds, the arcs fill one a second with the arm ticking; on each beat the stroke flashes
+and drops onto the foe as a shorter, thinner cut. On the last beat the eco goes up as motes.
+
+**Idea fija.** Bip's signal goes into the foe as a cyan sine wave drawn as it travels, a pale second
+wave half a turn behind; Sincopante's ostinato carries it in four doubled nácar rings on a steady beat,
+each further along and smaller. The picture tears across the foe's head in short cyan lines and a small
+Lissajous figure (an oscilloscope's closed 3:2 loop) draws itself there; at contact two rings snap shut
+on it. While `idea-fija` lasts, two pens keep tracing that loop in front of the foe's head, Bip's cyan
+and its nácar echo a third of a turn behind, never finished. On each beat the loop pulls tight and a
+doubled wave runs from it to the foe it makes strike (a ring into its own chest when alone); when the
+eco runs out, the loop lets go in a ring of nácar.
+
+**Trampantojo.** Colorista throws blue powder up a step beside the ally, away from the foes; Bip draws
+projector lines to its corners and a cyan bar sweeps down it, and as it passes each row of powder takes
+the ally's shape: a double made of horizontal lines of powder, like an image on a screen. While the
+painted cortina stands the double stays faintly, a rolling bar renewing its rows and a few now and then
+slipping sideways. When a foe goes through the cortina (`struck`), a force field carries the figure's
+own powder over to it with cyan static, a blue cloud and a turning ring over its head; if the cortina
+just runs out, the figure sifts down as dust.
+
+**Open** (2026-11-21): the bit dome shows before Caleidoscopio's contact the first time it is found (its
+unlock pause); Seiche's water reads more as a band of light than a heavy body; Idea fija's hold infers
+whom each beat struck from their PV (runClock's pulses do not reach `struck`); Cadáver's fire band is
+hard to pick out on foes already burning.
 
 ## What next
 

@@ -92,8 +92,7 @@ serious way of fighting with depth (combos, trade-offs, decisions), never a cute
 2. **Role**: a table against the other ánimas (what it hurts with, the resource it leaves on the
    foe, how it pays off), what it is good and bad at, and the decision it adds to every turn. It
    should change how a fight is played, not add numbers.
-3. **Stats**: the wearer's `CLASS_STATS` (sum near +4, at least one trade-off; Velocidad no longer
-   exists) and, if it comes from a friend, the party bonus in `ANIMAS`.
+3. **Stats**: the wearer's `CLASS_STATS` (sum near +4, at least one trade-off; there is no Velocidad) and, if it comes from a friend, the party bonus in `ANIMAS`.
 4. **Signature and passives**: the loop in two or three numbered steps, built from shared rules
    where it can (`docs/animas/README.md` § Shared mechanics). **A new shared rule is defined
    there, twice over: the rule, and how it shows** (the effect on screen, beat by beat, with

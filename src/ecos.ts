@@ -99,14 +99,21 @@ const MATEMAGICO: Improvement[] = [
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
   passiveNode('matemagico', 'agua', 'capilaridad', 2, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
+  // The dúo mayor past each of the other lines (docs/animas/README.md § Dúos mayores), after Aurelià as Vulcano.
+  dualNode('matemagico', 'agua', 'marea', 'freatica', 2, 'capilaridad'),
   { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados.' },
   skillNode('matemagico', 'electrico', 'descarga', 1, 'electrico'),
   passiveNode('matemagico', 'electrico', 'toma-de-tierra', 2, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
+  // Aitor 2026-11-21: past Toma de tierra, the current that stays in one foe and the charge he stores.
+  skillNode('matemagico', 'electrico', 'cortocircuito', 2, 'toma-de-tierra'),
+  skillNode('matemagico', 'electrico', 'condensador', 2, 'cortocircuito'),
+  dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 2, 'condensador'),
   skillNode('matemagico', 'calculo', 'angulo', 1),
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
   gradeIII(skillNode('matemagico', 'calculo', 'integral', 2, 'mana-1')),
+  dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 2, 'integral'),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [
@@ -114,13 +121,16 @@ const TECNOPATA: Improvement[] = [
   passiveNode('tecnopata', 'bip', 'telemetria', 2, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
   // Grade III (docs/animas/tecnopata/README.md § Grade III): each line's top, after Aurelià.
   gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria')),
+  dualNode('tecnopata', 'bip', 'metralla', 'papagato', 2, 'reinicio'),
   skillNode('tecnopata', 'mente', 'confusion', 1),
   skillNode('tecnopata', 'mente', 'control-remoto', 2, 'confusion'),
   gradeIII(skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto')),
+  dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 2, 'virus'),
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
   passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
   gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos')),
   passiveNode('tecnopata', 'taller', 'redundancia', 2, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
+  dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 2, 'redundancia'),
   manaNode('tecnopata'),
 ];
 /** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */

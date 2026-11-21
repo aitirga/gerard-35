@@ -48,7 +48,7 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas';
+type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
   // Dadista's Racha: a four-point star, the astral's own, with the dice spent in its corner.
@@ -61,6 +61,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   reaccion: '<circle cx="8" cy="8" r="2.1" fill="currentColor"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(-35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/>',
   // Shock: a bolt.
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
+  // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.
+  cargado: '<path d="M.8 7.1h4.4v1.8H.8zM10.8 7.1h4.4v1.8h-4.4z" fill="currentColor"/><rect x="5" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/><rect x="9" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).
   cancion: '<path d="M6 2.2v8.1a2.3 2 0 1 1-1.4-1.8V3.6l6.8-1.5v6.6a2.3 2 0 1 1-1.4-1.8V4.1L6 5" fill="currentColor"/>',
   // The light through the salon's windows (docs/quests/luca.md): a pointed window, its colour the light on now.
@@ -85,6 +87,14 @@ const STATUS_ICONS: Record<IconId, string> = {
   bits: '<path d="M6.5 2.2h3v2.6h-3zM3.4 4.2h2.6v2.6H3.4zM10 4.2h2.6v2.6H10zM1.8 7.6h2.6v2.6H1.8zM11.6 7.6h2.6v2.6h-2.6zM1.2 11.1h2.6v2.6H1.2zM12.2 11.1h2.6v2.6h-2.6z"/><path d="M.8 14.8h14.4" stroke="currentColor" stroke-width="1.2"/>',
   // Volcán (the dúo mayor Vulcano): a cone with fire out of its mouth. Virus (Virus atómico): a swarm, three small Bips round a core.
   volcan: '<path d="M1.5 14.5 6 7.2h4l4.5 7.3z"/><path d="M8 1.2c.3 1.3 1.8 1.9 1.8 3.6a1.8 1.8 0 0 1-3.6 0c0-.9.5-1.5 1-2 0 .7.2 1.1.6 1.3C7.6 3.4 7.6 2.3 8 1.2z"/>',
+  // The newer duals (docs/animas/README.md § Combined skills). Marea: two vessels joined by a pipe, level. Fulgurita: a branching
+  // tube of glass. Metralla: splinters round a wound. Idea fija: a note that turns on itself. Seiche: a basin, its water tilted. Staccato: a note cut short.
+  marea: '<path d="M2 2.5v9.2h3.4V9.4h5.2v2.3H14V2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.8 6.2h1.8v4.7H2.8zM11.4 6.2h1.8v4.7h-1.8z"/><path d="M1 14.3h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+  fulgurita: '<path d="M8.6 1 6.4 5.6l2.4 1L5.2 11l1.9.9L5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.8 6.6 12.4 8M7.1 11.9l3.6 1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  metralla: '<path d="M8 5.4 9.3 8 8 10.6 6.7 8z"/><path d="M8 .8 9 3.6H7zM15.2 8l-2.8 1V7zM8 15.2 7 12.4h2zM.8 8l2.8-1v2zM13 3l-1.2 2.6-1.4-1.4zM3 3l2.6 1.2-1.4 1.4zM3 13l1.2-2.6 1.4 1.4zM13 13l-2.6-1.2 1.4-1.4z"/>',
+  'idea-fija': '<path d="M13.4 8A5.4 5.4 0 1 1 8 2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 .6 11 2.6 8 4.6z"/><circle cx="7.2" cy="9.6" r="1.7"/><path d="M8.7 9.6V5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  seiche: '<path d="M1.8 3v10.6h12.4V3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.6 6.2 13.4 9.4v3.4H2.6z"/>',
+  staccato: '<circle cx="5.4" cy="11.6" r="2.3"/><path d="M7.4 11.6V2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="4" r="1.4"/><path d="M10 14.6 14.4 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
   virus: '<circle cx="8" cy="8" r="2.2"/><circle cx="8" cy="2.6" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12.7" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="3.3" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.1v1.7M11.4 9.9 9.9 9M4.6 9.9 6.1 9" stroke="currentColor" stroke-width="1.1"/>',
   // Combustión (fire at IV, docs/animas/README.md § Combustión): the flame inside a burst, ready to go off.
   combustion: '<path d="M8.0 1.0L9.5 3.6L12.3 2.4L12.0 5.4L14.9 6.0L12.9 8.3L14.9 10.6L12.0 11.2L12.3 14.2L9.5 13.0L8.0 15.6L6.5 13.0L3.7 14.2L4.0 11.2L1.1 10.6L3.1 8.3L1.1 6.0L4.0 5.4L3.7 2.4L6.5 3.6z" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/><path d="M8 4.4c.4 1.6 2.3 2.4 2.3 4.8a2.3 2.3 0 0 1-4.6 0c0-1.2.6-2 1.2-2.5 0 1 .3 1.6.8 1.8C7.4 7 7.4 5.7 8 4.4z"/>',
@@ -128,6 +138,11 @@ const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;
 /** What a light eats, as the party's window says it. */
 const lightEats = (state: BattleState, light: keyof typeof LIGHTS) => { const element = lightEatsNow(state, light); return element === 'fisico' ? 'Anula los golpes físicos' : element ? `Anula ${ELEMENTS[element].name.toLowerCase()}` : cancels(light) ? 'Ya no anula nada' : 'No anula nada'; };
 const lightText = (state: BattleState, light: keyof typeof LIGHTS) => `Luz ${LIGHTS[light].name.toLowerCase()}: ${lightEats(state, light).toLowerCase()} del equipo.`;
+/** What each status a newer dual leaves does, in the few words under its name as it lands. */
+const DUAL_LEFT: Partial<Record<TimedId, string>> = {
+  marea: 'El agua sube en todos a la vez', fulgurita: 'Las esquirlas cuentan juntas', metralla: 'La herida no se gasta',
+  'idea-fija': 'Golpea a los suyos cada 5 s', seiche: 'Golpea y sostiene el agua', staccato: 'Corta de nuevo cada 5 s',
+};
 const statusSvg = (id: IconId) => `<svg viewBox="0 0 16 16" aria-hidden="true">${STATUS_ICONS[id]}</svg>`;
 /** A stat up or down in words: «Defensa +4», or «Defensa ▼» for an onion's broken defence, which has no number. */
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
@@ -170,7 +185,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Whether the fight's clock is stopped (the pause menu is open). */
   paused: () => boolean;
   /** A timed status pulsed on a fighter (Quemado): the 3D fight shows it land. */
-  pulse: (id: string) => void;
+  pulse: (id: string, status?: string, by?: string) => void;
   /** Whether a fall here can be fought again or stepped back from: everywhere but chapter 2's castle, where it wakes Gerard up at home. */
   forgiving?: () => boolean;
   /** On the lost screen the players chose to fight again or go back to just before the fight: the end that follows is no fall. */
@@ -181,6 +196,17 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   dev?: () => boolean;
   /** A dual's banner: the 3D fight runs at `scale` for `seconds` of real time, then eases back (the scene's FightClock); 0 stops it. */
   slowmo?: (scale: number, seconds: number) => void;
+  /**
+   * The action about to play, before anything holds it up (a dual's unlock, a foe's move named): the
+   * rules have already changed the fight, and the scene must not show what it did before it plays.
+   */
+  upcoming?: (effect: BattleEffect) => void;
+  /**
+   * La Reina Bubbaloo at 0 on her stage (docs/castle-bosses.md § The last scene): the fight does not
+   * end on its victory screen. Its HUD goes, this plays the last scene in it (`say` puts a line over a
+   * fighter's head), and once it resolves the fight closes.
+   */
+  lastScene?: (say: (speaker: keyof typeof SPEAKERS, text: string, ms: number) => Promise<void>) => Promise<void>;
   /**
    * Whether the players have found this dual already (`Story.duals`). One not found is never armed
    * while it is aimed: it can only happen by chance, and the first time it does time stops to unlock it.
@@ -328,6 +354,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let levelCap: number | undefined;
   /** The victory screen's ánimas are shown once per fight. */
   let rewarded = false;
+  /** The Queen's last scene has started in this fight (`lastScene`): no victory screen, and no key or button reaches the fight. */
+  let finale = false;
   let rewardFrame = 0;
   const outside = () => [...hud.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el !== root);
   const articles = () => [...scope().querySelectorAll<HTMLElement>('.command')];
@@ -398,6 +426,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // El Átomo: its turns to its Reacción, in the corner; at 1 its next turn throws every electron it has at once.
       ...reactionIn(c) ? [{ id: 'reaccion' as const, name: reactionIn(c) === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${reactionIn(c)} turnos`, mark: String(reactionIn(c)), timed: false, lasts: `${reactionIn(c)} ${reactionIn(c) === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
+      // ∂Q/∂t Condensador: the charge he carries, until his next electric blow or a foe's on him.
+      ...c.capacitor ? [{ id: 'cargado' as const, name: 'Cargado: su siguiente golpe eléctrico hace el doble; si le golpean antes, salta al que le golpee', mark: '×2', timed: false, lasts: 'su siguiente golpe eléctrico' }] : [],
       // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
       ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
       ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
@@ -674,8 +704,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Siete vidas took the pulse that would have killed them: it turns into a cure.
       else if (p.saved) livesPop(p.target, p.saved);
       // La crecida's pulses come off in their own colour: the current's yellow, the sinking's blue-green.
-      else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target); }
-      else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target); }
+      else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target, p.status, p.by); }
+      else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
     }
@@ -785,7 +815,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     el.querySelector('span')!.textContent = line.text;
     el.style.setProperty('--accent', SPEAKERS[line.speaker].accent);
     // Never off the top of the screen (Uri up on Vertitrón): a bubble that would be stays just under the heading.
-    if (at) el.style.transform = `translate(${at.x}px, ${Math.max(at.y - 40, shout ? 130 : 90)}px) translate(-50%, -100%)`;
+    // Nor off its sides (Aitor out of the last scene's close shot): it comes in from the side he is on.
+    const side = Math.min(160, root.clientWidth / 4), x = at && Math.min(root.clientWidth - side, Math.max(side, at.x));
+    if (at) el.style.transform = `translate(${x}px, ${Math.min(root.clientHeight * .8, Math.max(at.y - 40, shout ? 130 : 90))}px) translate(-50%, -100%)`;
     get('.battle-speech').append(el);
     await wait(ms);
     el.dataset.leaving = 'true';
@@ -1136,9 +1168,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       plate.classList.toggle('is-down', shownHp(foe) === 0);
       plate.classList.toggle('is-acting', root.dataset.actor === foe.id);
     }
+    // She is down on her stage: the last scene plays in the fight instead of its victory screen.
+    if (ended && state.phase === 'won' && (state.encounter === 'reina' || state.encounter === 'reina-vuelta') && callbacks.lastScene && !finale) { finale = true; void playLast(); }
     get('.battle-bottom').hidden = ended;
-    get('.battle-result').hidden = !ended;
-    if (ended) {
+    get('.battle-result').hidden = !ended || finale;
+    if (ended && !finale) {
       get('.battle-result h2').textContent = state.phase === 'won' ? '¡Camino libre!' : state.phase === 'escaped' ? 'Seguimos.' : state.encounter === 'palace-guards' || state.encounter === 'night-guard' ? 'Demasiado fuertes.' : 'Un respiro.';
       // A fall can be fought again or stepped back from, except in chapter 2's castle, where it wakes Gerard up at home.
       const again = state.phase === 'lost' && !!callbacks.forgiving?.();
@@ -1702,6 +1736,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   /** One action on screen: a dual's banner or a foe's move named up top, Uri's shout from up on Vertitrón, then the action itself. */
   async function play(effect: BattleEffect, token: number) {
+    callbacks.upcoming?.(effect);
     // A banner aimed for a dual that did not happen (its half no longer there) goes.
     if (!effect.dual && get('.dual-banner').dataset.armed) hideDualBanner();
     // A dual nobody had found: time stops first, to unlock it.
@@ -2169,6 +2204,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.healed && effect.target) { if (effect.amount || !effect.bits?.mended) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label); }
       // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) or raises the bit dome says so below, with no number.
       else if (effect.regen || (effect.afflicted && !effect.amount) || (effect.bits?.raised && !effect.dual)) { /* its status pops below */ }
+      // A dual that deals no blow (a boost, a dome, a cortina, an eco left in a foe): what it left pops below, with no number.
+      else if (effect.dual && ['boost', 'guard', 'eco'].includes(DUALS.find(d => d.id === effect.dual!.id)?.kind ?? '')) { /* its pops below */ }
       // Sincopante's that strike nobody (Crescendo, Acompañamiento, Da capo): what they did pops below, with no number.
       else if (effect.ecosRaised || effect.dacapo || (effect.ecoCalled?.kind === 'acompanamiento')) { /* its pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
@@ -2223,7 +2260,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.burn && effect.target && !effect.burns) landed.push(fireSays(effect.target, effect.burn.id, effect.burn.level));
       if (effect.status && effect.target) landed.push({ target: effect.target, id: effect.status.id, text: `¡${STATUSES[effect.status.id].name}!`, detail: `× ${effect.status.stacks}` });
       // Tecnópata's: a cure or a status on the clock, seconds added to what was running, the blinding, the fire Rayo solar leaves.
-      for (const on of [effect.regen, effect.afflicted]) if (on && effect.target) landed.push({ target: effect.target, id: on.id, text: `¡${TIMED[on.id].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!`, detail: `${TIMED[on.id].seconds} s` });
+      // Integral impropia's cure on the clock lands on each one it cured.
+      for (const on of [effect.regen, effect.afflicted]) if (on && effect.target) for (const id of on === effect.regen && effect.cures ? effect.cures.map(c => c.target) : [effect.target]) landed.push({ target: id, id: on.id, text: `¡${TIMED[on.id].name}${on.level > 1 ? ` ${roman(on.level)}` : ''}!`, detail: `${TIMED[on.id].seconds} s` });
       if (effect.extended && effect.target) effect.extended.statuses.forEach(id => landed.push({ target: effect.target!, id, text: `+${effect.extended!.seconds} s`, detail: TIMED[id].name }));
       effect.blinded?.forEach(id => landed.push({ target: id, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: '1 ronda' }));
       if (!sweep) effect.hits?.forEach(h => { if (h.burn) landed.push(h.burn.id === 'quemado' && h.burn.level >= COMBUSTION.level ? fireSays(h.target, 'quemado', h.burn.level) : { target: h.target, id: h.burn.id, text: `¡${TIMED[h.burn.id].name}${TIMED[h.burn.id].levels.length ? ` ${roman(h.burn.level)}` : ''}!`, detail: h.smoked ? h.burn.id === 'cegado' && effect.reaction?.id === 'vapor' ? 'El agua se va en vapor' : 'Se apaga el fuego' : '' }); });
@@ -2267,7 +2305,17 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // El Átomo's fire: a burn on whoever was dry, Vapor on whoever was wet.
       effect.burnt?.forEach(id => landed.push({ target: id, id: 'quemado', text: `¡${TIMED.quemado.name}!`, detail: '' }));
       effect.steamed?.forEach(id => landed.push({ target: id, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }));
-      effect.shocked?.forEach(id => landed.push({ target: id, id: 'shock', text: '¡Shock!', detail: 'Pierde su siguiente turno' }));
+      // Cortocircuito: a move announced has to wait; on a foe it shorted last time, nothing.
+      // Its own pop says the turn is lost, so no ¡Shock! on top of it.
+      if (effect.shorted?.why === 'anuncio') landed.push({ target: effect.shorted.target, id: 'shock', text: '¡Cortocircuito!', detail: `Pierde su turno: ${effect.shorted.move} espera` });
+      else if (effect.shorted?.why === 'mojado') landed.push({ target: effect.shorted.target, id: 'shock', text: '¡Cortocircuito!', detail: 'Pierde su siguiente turno' });
+      else if (effect.shorted?.why === 'again') landed.push({ target: effect.shorted.target, id: 'shock', text: 'Aguanta', detail: 'Aún no se ha repuesto' });
+      effect.shocked?.filter(id => !(effect.shorted && effect.shorted.target === id)).forEach(id => landed.push({ target: id, id: 'shock', text: '¡Shock!', detail: 'Pierde su siguiente turno' }));
+      // ∂Q/∂t Condensador: the charge stored, or let go on this blow.
+      if (effect.capacitor === 'stored') landed.push({ target: effect.actor, id: 'cargado', text: '¡Cargado!', detail: 'Su siguiente golpe eléctrico, el doble' });
+      if (effect.capacitor === 'spent' && effect.target) landed.push({ target: effect.target, id: 'cargado', text: '×2', detail: 'Suelta la carga' });
+      // A foe struck whoever carried it: the charge jumps back, a beat after the blow.
+      if (effect.discharge) { const d = effect.discharge; setTimeout(() => { if (token === generation) pop(d.target, `−${d.amount}`, 'damage', 'La carga salta'); }, 420); }
       const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
       if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);
       else if (boss && effect.diverged) setTimeout(() => { if (token === generation) pop(boss.id, 'Diverge', 'status', `Error ${effect.error?.left ?? boss.error ?? 0}`, 'error'); }, 420);
@@ -2295,6 +2343,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.bits?.took && effect.target) landed.push({ target: effect.target, id: 'bits', text: effect.bits.broke ? '¡Cúpula rota!' : `Cúpula −${effect.bits.took}`, detail: effect.bits.broke ? 'El resto pasa' : 'Para el golpe' });
       if (effect.bits?.mended && effect.target) landed.push({ target: effect.target, id: 'bits', text: `Cúpula +${effect.bits.mended}`, detail: 'Se recompone' });
       // Vulcano: the volcano under each of them.
+      // The newer duals: what each leaves, named over whoever carries it.
+      if (effect.left) for (const id of effect.left.targets) landed.push({ target: id, id: effect.left.id, text: `¡${TIMED[effect.left.id].name}!`, detail: DUAL_LEFT[effect.left.id] ?? `${TIMED[effect.left.id].seconds} s` });
+      if (effect.vapour) for (const id of effect.vapour) landed.push({ target: id, id: 'cegado', text: 'Vapor', detail: `${TIMED.cegado.name} ${roman(state!.foes.find(f => f.id === id)?.timed?.cegado?.level ?? 1)}` });
+      if (effect.mirrored) landed.push({ target: effect.mirrored.target, id: 'bits', text: `Caleidoscopio −${effect.mirrored.amount}`, detail: 'Devuelve el golpe' });
+      if (effect.fooled) landed.push({ target: effect.fooled, id: 'confusion', text: '¡Trampantojo!', detail: `${TIMED.confusion.name} · 20 s` });
+      if (effect.dual?.id === 'suceso-seguro') for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'racha', text: 'Suceso seguro', detail: 'Crítico seguro' });
+      if (effect.dual?.id === 'trampantojo' && effect.target) landed.push({ target: effect.target, id: 'cortina', text: 'Trampantojo', detail: 'Confunde a quien la rompa' });
       if (effect.dual?.id === 'vulcano') effect.hits?.forEach(h => { if (state!.foes.find(f => f.id === h.target)?.timed?.volcan) landed.push({ target: h.target, id: 'volcan', text: '¡Volcán!', detail: '20 s' }); });
       // A passive that did something: its name on a plate over whoever has it, in their ánima's colour.
       effect.passives?.forEach((p, i) => setTimeout(() => {
@@ -2436,6 +2491,17 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (pending.length && state.phase === 'player') { await run(); return; }
     if (state.phase === 'player') for (const p of [1, 2] as PlayerId[]) withPlayer(p, () => { if (!selected && canAct(state!.allies[state!.active])) focusFirst(); });
   }
+  /**
+   * The last scene (`callbacks.lastScene`): every part of the fight's HUD goes but the lines said in
+   * it, what is outside the fight (the two commands) can be reached, and the fight closes after.
+   */
+  async function playLast() {
+    const token = generation;
+    root.dataset.finale = 'true'; collapse();
+    outside().forEach(el => { el.inert = false; });
+    try { await callbacks.lastScene!((speaker, text, ms) => speak({ speaker, text }, ms)); }
+    finally { if (token === generation) { delete root.dataset.finale; close(); } }
+  }
   /** The fight as it was opened, to fight it again from the start (`close('retry')`). */
   let reopen: (() => void) | undefined;
   /** Ends the fight; after a fall, `retry` opens it again from the start and `rewind` leaves it as if it never began. */
@@ -2519,7 +2585,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Who the click being handled comes from: the mouse and keyboard, unless `control` is pressing for a controller. */
   let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
-    if (!state || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (!state || finale || event.metaKey || event.ctrlKey || event.altKey) return;
     // Aitor held, played from the keyboard (alone, or with no second pad): its arrows and Enter.
     if (heldChoice && heldDriver() === 1) {
       const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm' } as Record<string, ControlAction>)[event.key];
@@ -2803,6 +2869,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     /** A controller press; `player` is whose controller it is. Only the turn's own player is heard. */
     control(action: ControlAction | 'prev' | 'next', player: PlayerId = 1) {
       if (!state) return;
+      if (finale) return;
       if (heldChoice) { if (player === heldDriver() && action !== 'prev' && action !== 'next') heldControl(action); return; }
       if (action === 'cancel' && summaryOpen) { toggleSummary(false); return; }
       const ended = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -2856,7 +2923,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night }); busy = true;
       state.levels = options.levels;
       improve(state, options.improved);
-      xpBefore = { ...options.xp }; levelCap = options.cap; rewarded = false; resetRewards();
+      xpBefore = { ...options.xp }; levelCap = options.cap; rewarded = false; finale = false; delete root.dataset.finale; resetRewards();
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;

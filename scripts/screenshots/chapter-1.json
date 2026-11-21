@@ -197,7 +197,7 @@
         "KeyS",
         "KeyA"
       ],
-      "until": "window.gerard.story.bubble === 'Esto… ya lo he visto.'",
+      "until": "window.gerard.story.bubble === 'Això… ja ho he vist.'",
       "timeout": 180000
     },
     {

@@ -17,12 +17,20 @@ bosses and no flags. It **replaces** three things the docs held until now:
 
 ```
 Rec Comtal → the hall (the guards, the curtain)
-  → PATIO ─ phase 1, generated ─ GIMNASIO · Aurelià                      ⟶ stage 2 of growth
+  → the curtain's stair ─ phase 1, generated ─ GIMNASIO · Aurelià        ⟶ stage 2 of growth
   → (entry: Aurelià's room) ─ phase 2 ─ DIRECCIÓ · Mar, Montse, Pilar     ⟶ the definitivas
   → (entry: Direcció) ─ phase 3 ─ TRONO · La Reina Bubbaloo
 ```
 
-- **The built zones are the fixed rooms.** The patio is where phase 1 starts, the gym is Aurelià's
+- **The way in, the first time** (decided with Aitor 2026-11-21, `cortina` in `src/story.ts`). The
+  hall's guards stand before the gum curtain; without ánimas they cannot be beaten, and the fall is
+  the chapter's first lesson. Beaten once, they are **gone for good**: the hall is drawn again with
+  the curtain tied back, and its stair, which in the dream climbed to the throne, climbs to the
+  school's first floor, phase 1's generated floor (Gerard: *"Esto es el primer piso de la escuela. O
+  lo era"*). Its way back comes down the same stair. The hall's east door still opens onto the patio,
+  to look round the school, but the gym's door is held shut from inside (`gymShut`) until Aurelià
+  falls: he is reached through the floor. After him the stair comes out by his gym, a school again.
+- **The built zones are the fixed rooms.** The hall's curtain is where phase 1 starts, the gym is Aurelià's
   room, the secretaría's *Direcció* is the management team's, the throne room is hers. What is
   generated lies between them.
 - **Checkpoints.** A boss beaten stays beaten, and from then on every entry to the castle starts in
@@ -34,8 +42,8 @@ Rec Comtal → the hall (the guards, the curtain)
   `src/story.ts`, `LINES_CASTLE.screams`, `#queen-scream` in `src/story-ui.ts`). No night follows a
   castle boss and nobody walks home: with the boss's last words said, the Queen screams through the
   whole building, her words across the screen in her pink, shaking, more afraid with each boss
-  (Aurelià: *"No. ¡NO! ¡Devolvédmelo! ¡Era mío!"*; Dirección, bigger: *"¡Otra vez no! ¡No os
-  vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!"*), the picture goes to white, and out of the white they are in
+  (Aurelià: *"No. NO! Torneu-me'l! Era meu!"*; Dirección, bigger: *"Un altre cop no! No us
+  n'aneu! NO EM DEIXEU AQUÍ SOLA!"*), the picture goes to white, and out of the white they are in
   bed in the morning: the 22nd again, as every morning of the loop (the day's count goes on, as it
   does after any night). The night is for coming back from the friends' missions and for the
   afternoons spent (chapter-2.md § Night and the way home), not for her castle.
@@ -43,7 +51,7 @@ Rec Comtal → the hall (the guards, the curtain)
   boss goes back to being a school, what lies ahead is more hers than before, and the door that
   leads on is clotted with her gum.
 - **Flags** (they replace the proposed `zona-patio`, `zona-gimnasio`, `zona-secretaria`):
-  `aurelia`, `direccion`, and the ending's (`aitor-poseido`, `artilugio`, `reina`). Each gets its
+  `cortina` (the guards beaten), `aurelia`, `direccion`, and the ending's (`aitor-poseido`, `artilugio`, `reina`). Each gets its
   step in `STORY_ARCS`, its dot on the picker's timeline and its place in `dev-chapter`.
 - **Gates stay diegetic**: the door past the gym says why it will not open until Aurelià has
   fallen, and Direcció's the same. No panel says where to go.

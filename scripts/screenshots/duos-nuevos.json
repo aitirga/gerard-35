@@ -1,0 +1,486 @@
+{
+  "title": "Los dúos mayores que faltaban y los dúos de las parejas sin dúo",
+  "description": "docs/animas/README.md § Dúos mayores, § Combined skills. From the fight tester's «Probar un dúo»: the six dúos mayores (Marea, Fulgurita, Suceso seguro, Metralla, Idea fija, Caleidoscopio), each with its node bought, and Géiser, A escala, Seiche, Staccato, Cadáver exquisito and Trampantojo. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22marea%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('marea'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"marea\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"marea\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "marea",
+      "caption": "Marea, dúo mayor (Cubo acuático + Recarga): el agua de los tres sube a la del que más tiene y una marca más, y las celdas quedan comunicadas.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "marea-despues",
+      "delay": 1100,
+      "caption": "Después: los tres con Agua II y el icono de Vasos comunicantes; lo que suba en uno sube en todos."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22fulgurita%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('fulgurita'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"fulgurita\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"fulgurita\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "fulgurita",
+      "caption": "Fulgurita, dúo mayor (Punto eléctrico + Puñado): el rayo funde el polvo en vidrio sobre los tres.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "fulgurita-despues",
+      "delay": 1100,
+      "caption": "Después: los tres cristalizados y unidos; cada golpe sobre uno hace crecer las esquirlas de todos."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22suceso-seguro%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('suceso-seguro'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"suceso-seguro\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"suceso-seguro\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "suceso-seguro",
+      "caption": "Suceso seguro, dúo mayor (Análisis Parálisis + Ases en dúo): Fuerza, Magia y Crítico suben, y hasta el final de la ronda siguiente cada golpe es crítico.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "suceso-seguro-despues",
+      "delay": 1100,
+      "caption": "Después: las subidas sobre los dos."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22metralla%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('metralla'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"metralla\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"metralla\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "metralla",
+      "caption": "Metralla, dúo mayor (Explosión + Zarpazo sangriento): esquirlas sobre los tres, que quedan sangrando.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "metralla-despues",
+      "delay": 1100,
+      "caption": "Después: sangrado y el icono de Metralla; las heridas se cobran sin gastarse."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22idea-fija%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('idea-fija'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"idea-fija\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"idea-fija\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "idea-fija",
+      "caption": "Idea fija, dúo mayor (Confusión + Ostinato): un eco queda sonando dentro de un perro.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "idea-fija-despues",
+      "delay": 1100,
+      "caption": "Después: el icono de Idea fija en su placa; cada 5 segundos golpea a uno de los suyos."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22caleidoscopio%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('caleidoscopio'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"caleidoscopio\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"caleidoscopio\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "caleidoscopio",
+      "caption": "Caleidoscopio, dúo mayor (Escudo de bits + Telón): una cúpula sobre el equipo que devuelve lo que para.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "caleidoscopio-despues",
+      "delay": 1100,
+      "caption": "Después: la cúpula en pie sobre los dos."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22geiser%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('geiser'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"geiser\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"geiser\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "geiser",
+      "caption": "Géiser (Foc Binari + Recarga): el agua del perro, tres marcas, se va entera en tres golpes y el vapor ciega a todos.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "geiser-despues",
+      "delay": 1100,
+      "caption": "Después: sin agua el primero, y los tres cegados."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22a-escala%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('a-escala'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"a-escala\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"a-escala\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "a-escala",
+      "caption": "A escala (Rayo encogedor + Recarga): el perro encoge y el agua le sube una marca.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "a-escala-despues",
+      "delay": 1100,
+      "caption": "Después: encogido, el agua lo cubre con dos marcas."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22seiche%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('seiche'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"seiche\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"seiche\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "seiche",
+      "caption": "Seiche (Recarga + Ostinato): agua sobre los tres y un eco que la sigue meciendo.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "seiche-despues",
+      "delay": 1100,
+      "caption": "Después: el icono de Seiche en cada placa."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22staccato%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('staccato'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"staccato\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"staccato\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "staccato",
+      "caption": "Staccato (Zarpazo sangriento + Ostinato): un corte, y un eco que vuelve a cortar a cada compás.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "staccato-despues",
+      "delay": 1100,
+      "caption": "Después: sangrado y el icono de Staccato."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22cadaver-exquisito%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('cadaver-exquisito'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"cadaver-exquisito\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"cadaver-exquisito\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "cadaver-exquisito",
+      "caption": "Cadáver exquisito (Puñado + Estrella fugaz): tres puñados, cada uno con un elemento al azar.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "cadaver-exquisito-despues",
+      "delay": 1100,
+      "caption": "Después: lo que el polvo ha sido en ese perro."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22trampantojo%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('trampantojo'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"trampantojo\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"trampantojo\"]').click()"
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "trampantojo",
+      "caption": "Trampantojo (Confusión + Cortina): una cortina con una figura pintada delante de Gerard.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 10,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "trampantojo-despues",
+      "delay": 1100,
+      "caption": "Después: la cortina en pie; quien la rompa quedará confundido."
+    }
+  ]
+}

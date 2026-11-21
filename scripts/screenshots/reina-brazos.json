@@ -1,0 +1,16 @@
+{
+  "title": "Brazos de la Reina",
+  "description": "The ambush that ends chapter 1 (src/queen-hands.ts): La Reina Bubbaloo's arms, her own Meshy figure (just character-3d reina-brazo), come down from above the frame and close round Gerard and Bernat in the palace.",
+  "steps": [
+    { "open": "/?story=matemagico" },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "until": "window.gerard && document.title.startsWith('Palacio')", "timeout": 90000 },
+    { "wait": 2500 },
+    { "eval": "if (document.querySelector('#hud[data-dialogue]')) document.querySelector('#dialogue .next')?.click()" },
+    { "eval": "window.gerard.game.ambush(() => new Promise(r => setTimeout(r, 8000))).catch(e => console.error(e)), 0" },
+    { "shot": "esbirros", "delay": 2300, "caption": "Minions burst out of the floor all round them" },
+    { "shot": "bajan", "delay": 1500, "caption": "Her arms come down from above the frame" },
+    { "shot": "abajo", "delay": 1000, "caption": "The hands reach the boys, open" },
+    { "shot": "agarre", "delay": 900, "caption": "The hands close round them" }
+  ]
+}

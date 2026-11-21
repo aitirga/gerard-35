@@ -341,6 +341,7 @@ the fight's screen knows, the screen does (`sound`).
 | `bleed` | A wound spent as the blow lands, and Sangrado at the end of a round: wet, a splash more than a note. |
 | `crit` | A golpe crítico, on the frame the fight stops, before anything else of the blow: a dry crack, its weight below and a thin ring left over the hold. A flurry's later ones as each claw lands. |
 | `peel` | A layer comes off an onion. |
+| `reina-la` | La Reina Bubbaloo singing to herself as her hands come down at the end of chapter 1 (`docs/lore.md` § Her music): a woman's voice on «la», the playground's chant (sol mi la sol mi, `QUEEN_LA`). A sawtooth and its fundamental through the four bands of an «a», each syllable opening from an «l», a vibrato on the notes she holds, a breath under it, and mostly a high hall's echo (a 3 s convolution, darker as it dies), so she sounds far above. The castle's song is hushed for it (`music.hush`) and gone in the dark that follows, so home's song comes in from silence. A recording can replace it (`src`). About 6.5 s with its echo, peak .27. |
 | `slam` | A big onion or a palace guard coming down (an Aplastón too); Vertitrón's blows on both (Barrido, and with `crack` its Rayo terrorífico). |
 | `bark`, `spit`, `splash`, `glitch`, `gust` | A dog; the minion; the dishes; the arcade ghosts; Vertitrón. |
 | `zap` | Atacar · Eléctrico landing, and its Tormenta. Agua and Fuego use `splash` and `fire-hit`, softer; their reactions, `fizzle` and `burn`. |

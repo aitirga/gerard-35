@@ -387,9 +387,17 @@ priority = "historia"
 grep = "MAQUETA_SCALE"
 in = "src/friends/bernat.ts"
 
-# Decided (docs/quests/bernat.md § Round 5), not seeded yet: places and fights where a song makes
-# her minions falter, so Bernat only puts into words what the player has already seen. Generic hints
-# only: the Queen and music, never the melody or the device (docs/story-outline.md § The device).
+# The first seed (Aitor, 2026-11-21; docs/lore.md § Her music): as her hands come down at the end of
+# chapter 1 she sings to herself, unseen, and the castle's song falls silent for her voice.
+[[block.item]]
+title = "A la Reina le gusta la música desde su primera escena: canta para sí mientras bajan sus manos"
+priority = "historia"
+grep = "sfx\\.play\\('reina-la'\\)"
+in = "src/main.ts"
+
+# Decided (docs/quests/bernat.md § Round 5), seeded only by her singing above: places and fights where
+# a song makes her minions falter, so Bernat only puts into words what the player has already seen.
+# Generic hints only: the Queen and music, never the melody or the device (docs/story-outline.md § The device).
 [[block.item]]
 title = "Que se note antes de Bernat que la Reina es sensible a la música"
 priority = "historia"
@@ -398,7 +406,7 @@ note = "Antes de Bernat el jugador ha tenido que ver que la música la afecta: u
 [[block.item]]
 title = "Bernat a los 35: su figura y su retrato (hoy usa la de Joan)"
 priority = "historia"
-note = "Aitor pasa las fotos; después just character para la figura y el retrato."
+note = "El retrato ya está hecho (public/portraits/bernat-adult.png) pero bernat35 aún habla sin él; falta su figura con just character-3d en lugar de la de Joan."
 absent = "BERNAT_STANDIN"
 in = "src/friends/bernat.ts"
 file = "public/portraits/bernat-adult.png"
@@ -519,13 +527,17 @@ title = "Amigos de la universidad: monstruos del càmping"
 grep = "camping-negra"
 in = ["src/battle.ts"]
 
-# 2026-11-21: they speak in SPEAKERS (src/dialogue.ts) with drawn faces only; the audit lists them.
+# The word each shouts as it falls is said under its own portrait (SPEAKERS, src/dialogue.ts).
 [[block.item]]
 title = "Amigos de la universidad: retratos del mago de camping y el agente (just character)"
-priority = "historia"
-note = "Hablan con la cara dibujada; hacerles el retrato con just character."
 grep = "(?s)(?=.*portrait: 'mago')(?=.*portrait: 'agente')"
 in = "src/dialogue.ts"
+
+# Their bodies are figures of their own (tools/figures.toml `[mago]`, `[agente]`), their rule in code on top (src/camping-foes.ts).
+[[block.item]]
+title = "Amigos de la universidad: el mago de camping y el agente, figuras de Meshy (just character-3d)"
+grep = "(?s)(?=.*mago: 'mago')(?=.*agente: 'agente')"
+in = "src/foe-bodies.ts"
 
 [[block.item]]
 title = "Amigos de la universidad: La Sobremesa y el final"
@@ -661,6 +673,19 @@ title = "Matemágico: grado III (Combustión, el fuego IV, e Integral)"
 grep = "id: 'integral'"
 in = "src/battle.ts"
 
+# Aitor's notes on the ánimas' sheet, 2026-11-21 (docs/animas/matemagico/README.md § How each skill looks):
+# each skill past Foc Binari a figure drawn in his circle that does what it is.
+[[block.item]]
+title = "Matemágico: sus figuras (Cardioide, Pirámide ígnea, Cubo acuático, Integral impropia, Punto eléctrico)"
+grep = "createMathFigures"
+in = "src/battle-scene.ts"
+
+# Aitor 2026-11-21: the electric line past Toma de tierra (docs/animas/matemagico/README.md § Cortocircuito and ∂Q/∂t Condensador).
+[[block.item]]
+title = "Matemágico: Cortocircuito y ∂Q/∂t Condensador"
+grep = "id: 'condensador'"
+in = "src/battle.ts"
+
 # Designed 2026-11-20 (docs/animas/matemagico/README.md § Grade III): water's levels and a fourth that
 # freezes, on the shared Congelado rule (not built yet either).
 [[block.item]]
@@ -676,6 +701,16 @@ in = "src/battle.ts"
 title = "Dúos mayores: Vulcano (Foc Binari + Ostinato), desbloqueado en el bote"
 grep = "major: true"
 in = "src/battle.ts"
+
+[[block.item]]
+title = "Dúos mayores: Marea, Fulgurita, Suceso seguro, Metralla, Idea fija y Caleidoscopio"
+grep = "id: 'caleidoscopio'"
+in = "src/battle.ts"
+note = "Hechos con sus reglas, su nodo en el bote, su prueba y su aspecto propio (src/duo-fx/, uno por dúo); los números son un primer tanteo."
+
+[[block.item]]
+title = "Dúos nuevos: Géiser, A escala, Seiche, Staccato, Cadáver exquisito y Trampantojo"
+file = "scripts/screenshots/duos-nuevos.json"
 
 # Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
 # the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).
@@ -830,6 +865,17 @@ note = "Hecho: cada enemigo con agua tiene su celda, que sube, baja, se carga, s
 grep = "createFreaticaFight"
 in = "src/battle-scene.ts"
 
+# Not built yet (docs/animas/freatica/README.md § Implementation): marked by hand once built.
+[[block.item]]
+title = "Freática: su lanzamiento puesto (la sonda que baja, las varillas)"
+priority = "animas"
+note = "Al lanzar, quien la lleva deja caer la sonda y la cinta corre hasta el suelo. Propuesta en freatica/README § Look; por construir."
+
+[[block.item]]
+title = "Freática: Contener en el mundo (el agua que corta el paso se abre en dos)"
+priority = "animas"
+note = "Propuesta (freatica/README § In the world): en una calle o un paso inundado, quien la lleva abre el agua en dos paredes rectas. Qué sitios y qué hay detrás: por diseñar con la ciudad."
+
 [[block.item]]
 title = "Colorista, la de Luca"
 grep = "prismatico"
@@ -860,6 +906,14 @@ in = "src/environments.ts"
 title = "Diseño del bloque del castillo"
 priority = "historia"
 file = "docs/castle.md"
+
+# Decided with Aitor 2026-11-21 (docs/castle.md § Structure): the guards beaten once are gone for good,
+# the curtain tied back, and its stair climbs to the first floor; the gym is shut until Aurelià.
+[[block.item]]
+title = "La primera entrada: los guardianes abren la cortina y su escalera sube a la primera planta"
+priority = "historia"
+grep = "export const CURTAIN_WAY"
+in = "src/castle-story.ts"
 
 [[block.item]]
 title = "Planta procedural: salas y pasillos por semilla"
@@ -1116,6 +1170,13 @@ title = "Escena final y los dos finales"
 weight = 2
 priority = "historia"
 file = "src/endings.ts"
+
+# Aitor, 2026-11-21: she does not come apart at 0; Gerard's hand at her neck, the choice in her fight.
+[[block.item]]
+title = "Escena final en su combate: mano al cuello, Foc Binari o el sueño acaba"
+priority = "historia"
+grep = "function lastFrame"
+in = "src/battle-scene.ts"
 
 # The last fight's music (docs/audio.md § The last fight).
 [[block.item]]

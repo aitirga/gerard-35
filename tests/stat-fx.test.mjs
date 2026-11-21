@@ -123,7 +123,7 @@ test('Llorera landing and Grito liberador say what they lower and raise; a blow 
 test('stats read in plain words', () => {
   assert.equal(statNames(['defensa']), 'Defensa');
   assert.equal(statNames(['fuerza', 'magia']), 'Fuerza y Magia');
-  assert.equal(statNames(['velocidad', 'defensa', 'espiritu']), 'Velocidad, Defensa y Espíritu');
+  assert.equal(statNames(['critico', 'defensa', 'espiritu']), 'Crítico, Defensa y Espíritu');
   assert.equal(statNames([]), '');
 });
 
@@ -154,7 +154,7 @@ test('what is up or down now: a boost while it runs, Llorera and Mareo by their 
   assert.deepEqual(statShifts(s, aitor), [{ stat: 'fuerza', way: 'up', amount: 3, rounds: 3, from: ['Análisis Parálisis'] }, { stat: 'magia', way: 'up', amount: 3, rounds: 3, from: ['Análisis Parálisis'] }]);
   assert.deepEqual(statShifts(s, s.foes[0]), [], 'a party boost is only the party\'s');
   addStatus(aitor, 'mareo', 2);
-  assert.deepEqual(statShifts(s, aitor).map(shift => [shift.stat, shift.way, shift.amount]), [['fuerza', 'up', 3], ['magia', 'up', 3], ['defensa', 'down', 2], ['espiritu', 'down', 2], ['velocidad', 'down', 4]], 'in the fight\'s order');
+  assert.deepEqual(statShifts(s, aitor).map(shift => [shift.stat, shift.way, shift.amount]), [['fuerza', 'up', 3], ['magia', 'up', 3], ['defensa', 'down', 2], ['espiritu', 'down', 2]], 'in the fight\'s order');
   // Llorera takes two Fuerza a stack: with the boost's three, it is still up, by less, for both reasons.
   addStatus(gerard, 'llorera', 1);
   const strength = statShifts(s, gerard).find(shift => shift.stat === 'fuerza');

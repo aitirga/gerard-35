@@ -273,6 +273,8 @@ that hurts nobody. At level 3, as built, it is the same without turns 3's doubli
 
 ## What it offers a dual
 
+**Built (2026-11-21):** *Suceso seguro* (dúo mayor, Análisis + Ases en dúo) and *Cadáver exquisito* (Puñado + Estrella fugaz); `../README.md` § Combined skills.
+
 Relevo de sangre pairs Estrella fugaz with Papagato’s Zarpa en la llaga. Other pairings to explore:
 
 - **Luck for two** (Ases en dúo) and **a Racha** to spend on a partner's blow.

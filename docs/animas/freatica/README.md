@@ -290,7 +290,9 @@ choice between keeping it under, widening the water to the others and spending i
 
 ## What it offers a dual
 
-Hooks, for when the duals are chosen (none exists with it):
+**Built (2026-11-21):** *Marea* (dúo mayor, Vasos comunicantes + Recarga), *Géiser* (Foc Binari + Recarga), *A escala* (Rayo encogedor + Recarga) and *Seiche* (Recarga + Ostinato); `../README.md` § Combined skills.
+
+Hooks, for the duals still to choose:
 
 - **Standing water under a foe**: a partner's electric half charges it and every other foe's
   water; a fire half blinds it at its water's level.

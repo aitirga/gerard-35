@@ -1,0 +1,494 @@
+{
+  "title": "El castillo: cómo se entra, cómo se genera y cómo cambia",
+  "description": "docs/castle.md. The castle's way from the school door to the throne: the guards before the curtain, the curtain parted for good (cortina) and its stair up to the generated first floor, the floor whole and its rooms, another day's floor, the gym shut until Aurelià, and the castle after each boss. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "rec-comtal",
+      "cell": [
+        86,
+        67
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "1-escuela",
+      "delay": 3000,
+      "caption": "Trinitat Vella: el castillo ha crecido sobre la escuela Rec Comtal. La Pompa ocupa la puerta; entrar es «Entrar en la escuela»."
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'enter-school' })"
+    },
+    {
+      "until": "document.title.startsWith('Palacio de la Reina')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        11
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 16, z: p.z - 11 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (16) + o.x, y: 1.0, z: (9) + o.z }, 5.5); })()"
+    },
+    {
+      "shot": "2-guardianes",
+      "delay": 1500,
+      "caption": "El vestíbulo, la primera vez: los guardianes de chicle ante la cortina. Sin ánimas son tres y no se les puede ganar; cada ánima quita fuerza (y guardianes)."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "teleport": "palacio",
+      "cell": [
+        16,
+        10
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "3-combate-guardianes",
+      "caption": "«Cruzar la cortina» es el combate contra los guardianes. Perder aquí es la primera caída del capítulo: despertar en casa al día siguiente."
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "document.querySelector('.battle-result button')?.click()"
+    },
+    {
+      "until": "!window.gerard.battleUI.fight && window.gerard.story.has('cortina') && document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "4-cortina-abierta",
+      "caption": "Ganados una vez, se van para siempre (bandera cortina): el vestíbulo vuelve a dibujarse con la cortina recogida y el grupo delante de su escalera."
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 16, z: p.z - 10 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (16) + o.x, y: 1.6, z: (6) + o.z }, 4.2); })()"
+    },
+    {
+      "shot": "5-escalera",
+      "delay": 1500,
+      "caption": "La cortina, recogida a los lados: detrás sube la escalera que en el sueño llevaba al trono. «Subir por la escalera»."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "until": "document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "6-primer-piso",
+      "caption": "Arriba no está el trono: es el primer piso de la escuela, y ya no es un pasillo con seis aulas. La planta generada del día (Primer curso)."
+    },
+    {
+      "open": "/?story=cortina&solo=1&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-1').palace.floor.spawn; window.__c = c; window.gerard.game.setEnvironment('castillo-1', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: ((() => { const g = window.gerard.story.place('castillo-1').palace.floor.grid; return (g[0].length - 1) / 2; })()) + o.x, y: 0, z: ((() => { const g = window.gerard.story.place('castillo-1').palace.floor.grid; return (g.length - 1) / 2; })()) + o.z }, 26); })()"
+    },
+    {
+      "shot": "7-planta-dia-1",
+      "delay": 2000,
+      "caption": "La planta entera (día 1): 8 salas en el camino principal sobre una rejilla 4×3, unidas por pasillos de dos casillas, más salas laterales. El suelo pasa del verde del patio al azul del gimnasio según lo lejos que está cada sala en el camino."
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'fight').cell.x) + o.x, y: 0.6, z: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'fight').cell.z) + o.z }, 7); })()"
+    },
+    {
+      "shot": "8-alumnos",
+      "delay": 1500,
+      "caption": "Una sala de combate: sus alumnos de chicle hacen su ronda por la sala. Si ven a Gerard lo persiguen; si lo alcanzan, es el combate de esa sala. Ganado, la sala queda vacía el resto del día."
+    },
+    {
+      "record": "8b-alumnos-ronda",
+      "seconds": 3,
+      "caption": "Los alumnos de esa sala, dando su ronda"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'elite').cell.x) + o.x, y: 0.6, z: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'elite').cell.z) + o.z }, 8); })()"
+    },
+    {
+      "shot": "9-delegada",
+      "delay": 1500,
+      "caption": "La sala de La Delegada (élite), la penúltima del camino: espera en su sala hasta ver a Gerard."
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'rest').cell.x) + o.x, y: 0.6, z: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'rest').cell.z) + o.z }, 6); })()"
+    },
+    {
+      "shot": "10-sala-profesores",
+      "delay": 1500,
+      "caption": "La sala de profesores (lateral): el único sitio seguro de la planta. Sentarse cura a cambio de una hora."
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'antechamber').cell.x) + o.x, y: 0.6, z: (window.gerard.story.place('castillo-1').palace.floor.rooms.find(r => r.kind === 'antechamber').cell.z) + o.z }, 6); })()"
+    },
+    {
+      "shot": "11-antesala",
+      "delay": 1500,
+      "caption": "La antesala, al final del camino: su puerta da al gimnasio de Aurelià."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.gerard.story.days.clock = { ...window.gerard.story.days.clock, day: window.gerard.story.days.clock.day + 1 }"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-1').palace.floor.spawn; window.__c = c; window.gerard.game.setEnvironment('castillo-1', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "until": "document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "12-otro-dia",
+      "caption": "Al día siguiente la planta es otra (semilla = partida + día + fase): «Ayer esto no estaba así.» Caer termina el día, así que cada intento tras una caída encuentra una planta nueva."
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: ((() => { const g = window.gerard.story.place('castillo-1').palace.floor.grid; return (g[0].length - 1) / 2; })()) + o.x, y: 0, z: ((() => { const g = window.gerard.story.place('castillo-1').palace.floor.grid; return (g.length - 1) / 2; })()) + o.z }, 26); })()"
+    },
+    {
+      "shot": "13-planta-dia-2",
+      "delay": 2000,
+      "caption": "La planta del día 2: mismas reglas, otra distribución."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-1').palace.floor.exit; window.__c = c; window.gerard.game.setEnvironment('castillo-1', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Primer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El gimnasio')",
+      "timeout": 60000
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 13, z: p.z - 16 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (13) + o.x, y: 1.0, z: (12) + o.z }, 6.5); })()"
+    },
+    {
+      "shot": "14-aurelia",
+      "delay": 1500,
+      "caption": "La puerta de la antesala da al gimnasio (sala fija): Aurelià espera tras su atril. Acercarse empieza su combate."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "teleport": "palacio-patio",
+      "cell": [
+        6,
+        2
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "15-gimnasio-cerrado",
+      "caption": "Desde el patio, la puerta del gimnasio está sujeta por dentro hasta que cae Aurelià: a él se llega por la planta."
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "open": "/?story=aurelia&solo=1&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "palacio-gimnasio",
+      "cell": [
+        13,
+        16
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 13, z: p.z - 16 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (16) + o.x, y: 1.0, z: (5) + o.z }, 9); })()"
+    },
+    {
+      "shot": "16-gimnasio-ganado",
+      "delay": 1500,
+      "caption": "Tras Aurelià (su grito, un flash y a la cama): la entrada pasa a su gimnasio, que vuelve a ser escuela (gris, sin chicle), y la puerta de los vestuarios, el camino a la siguiente planta, está tapada con su chicle."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-2').palace.floor.spawn; window.__c = c; window.gerard.game.setEnvironment('castillo-2', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Segundo curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: ((() => { const g = window.gerard.story.place('castillo-2').palace.floor.grid; return (g[0].length - 1) / 2; })()) + o.x, y: 0, z: ((() => { const g = window.gerard.story.place('castillo-2').palace.floor.grid; return (g.length - 1) / 2; })()) + o.z }, 30); })()"
+    },
+    {
+      "shot": "17-planta-2",
+      "delay": 2000,
+      "caption": "Segundo curso: 10 salas, luz de emergencia, del azul del gimnasio al manila de la secretaría; los alumnos de segundo año (con relleno)."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=direccion&solo=1&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "palacio-secretaria",
+      "cell": [
+        4,
+        19
+      ]
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 4, z: p.z - 19 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: (6) + o.x, y: 1.0, z: (8) + o.z }, 9); })()"
+    },
+    {
+      "shot": "18-secretaria-ganada",
+      "delay": 1500,
+      "caption": "Tras Mar, Montse y Pilar: la secretaría es escuela otra vez; la puerta de Direcció lleva a la última planta."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-3').palace.floor.spawn; window.__c = c; window.gerard.game.setEnvironment('castillo-3', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Tercer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: ((() => { const g = window.gerard.story.place('castillo-3').palace.floor.grid; return (g[0].length - 1) / 2; })()) + o.x, y: 0, z: ((() => { const g = window.gerard.story.place('castillo-3').palace.floor.grid; return (g.length - 1) / 2; })()) + o.z }, 32); })()"
+    },
+    {
+      "shot": "19-planta-3",
+      "delay": 2000,
+      "caption": "Tercer curso: 12 salas casi a oscuras, hacia el índigo del trono, con su rosa viejo; el chicle con podredumbre negra tras dos gritos."
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "(() => { const c = window.gerard.story.place('castillo-3').palace.floor.exit; window.__c = c; window.gerard.game.setEnvironment('castillo-3', { ...c }); })()"
+    },
+    {
+      "until": "window.gerard && document.title.startsWith('Castillo · Tercer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - window.__c.x, z: p.z - window.__c.z }; })()"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El salón del trono') || document.title.startsWith('Palacio · El trono')",
+      "timeout": 60000
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "eval": "(() => { const p = window.gerard.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: p.x - 1, z: p.z - 16 }; })()"
+    },
+    {
+      "eval": "(() => { const o = window.__o; window.gerard.game.frame({ x: 11 + o.x, y: 1.2, z: 11 + o.z }, 8.5); })()"
+    },
+    {
+      "shot": "20-trono",
+      "caption": "La puerta de la última planta da al salón del trono, el escenario de la sala d'actes: la Reina espera allí arriba.",
+      "delay": 1500
+    }
+  ]
+}

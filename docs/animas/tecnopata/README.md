@@ -160,20 +160,21 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   under a big blow on its way: heal the one who is hurt or keep the dome standing.
 - **Redundancia** (Aitor 2026-11-21: *con una pasiva en el árbol permite sobrecurarlo por x3*): the
   Taller line's last node, after Escudo de bits (2 ecos). With it bought, a dome raised by the party
-  can be patched up to three times its PV (120 for Escudo de bits, 60 for what Sobrecalentamiento
-  leaves; `BITS.redundancia`, `cap`). No fight-sim target plays the shield yet.
+  can be patched up to three times its PV (120 for Escudo de bits; `BITS.redundancia`, `cap`). No fight-sim target plays the shield yet.
 
 **Duals of the shield** (Aitor: *otro dual que hace que el escudo explote al combinarlo con Foc
 Binari, etc.*). *Cortafuegos* is taken (the Sobremesa's foes' shield), so the fire one is:
 
 | Dual | Halves | Maná | Description | State |
 | --- | --- | --- | --- | --- |
-| **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 + 2 | `Daño mágico de fuego alto a todos los enemigos. Los quema con fuego de nivel II. Lo que queda del escudo protege a todo el equipo durante 2 rondas.` | Built |
+| **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 + 2 | `Daño mágico de fuego alto a todos los enemigos. Los quema con fuego de nivel II.` | Built |
 | *Jaula de Faraday* | Descarga + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo recibe una descarga y puede quedar en shock.` | Idea |
 | *Muro de agua* | Vasos comunicantes + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo queda mojado.` | Idea |
 
-Sobrecalentamiento: Bip raises the dome, Gerard's binary fire runs into it, it glows and goes off over
-the foes (36 of fire on each, Quemado II), and what is left (20 PV) closes again over the party.
+Sobrecalentamiento (a plain dual, Aitor 2026-11-21): Bip raises the dome over the party, of fire this
+time (`effects.fireDome`); Gerard's binary fire runs into it, it swells white-hot and bursts, and its
+own bits fly at the foes, each at the one on its side (the GPU lattice's `throwAt`), and go off on
+them: 36 of fire on each and Quemado II. Nothing of the dome is left.
 The two ideas make the wall a trap of the element that meets it; with Shock and Mojado they feed
 Matemágico's reactions. Not built: to choose.
 
@@ -182,6 +183,12 @@ Matemágico's reactions. Not built: to choose.
 | With | Dual | Halves | What it does |
 | --- | --- | --- | --- |
 | Matemágico | **Rayo solar** | Rayo de energía + Foc Binari | Its turn Gerard's fire streams into Bip, which turns sun yellow; as the next round starts, before anyone chooses, Bip sweeps every foe with a sun-yellow ray: high magic damage and Quemado II on each. `Daño mágico de fuego alto a todos los enemigos. Se carga un turno y sale al empezar el siguiente. Los quema con fuego de nivel II.` |
+
+**Built 2026-11-21** (`../README.md` § Combined skills and § Dúos mayores): the dúos mayores
+*Metralla* (Explosión + Papagato's Zarpazo sangriento, node after Reinicio), *Idea fija* (Confusión +
+Sincopante's Ostinato, after Virus atómico) and *Caleidoscopio* (Escudo de bits + Colorista's Telón,
+after Redundancia), and the plain dual *Trampantojo* (Confusión + Colorista's Cortina). The tree
+costs 25 ecos with them.
 
 ## In the world
 

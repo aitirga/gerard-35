@@ -109,7 +109,7 @@
     {
       "shot": "vertitron",
       "delay": 1800,
-      "caption": "A foe with a procedural model of its own: Vertitrón, its moves and its targets"
+      "caption": "Vertitrón: its Meshy figure over the joints the fight poses (src/fears.ts dressVertitron), the eye in its chest window and Uri on its roof"
     },
     {
       "eval": "window.bestiary.select('enemigo:campeon')"
@@ -122,6 +122,42 @@
       "shot": "campeon",
       "delay": 1500,
       "caption": "El Campeón, Càmping Eurosport's mini-boss, redone: the board game's villain as a Meshy figure, the furnace grate in his chest, his Plan and his Rayo"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:mago')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "mago",
+      "delay": 1800,
+      "caption": "A mago de camping, a Meshy figure (tools/figures.toml [mago]): tent-canvas robe, flysheet hood with no face, head torch, tent pole and gas canister; its portrait"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:agente')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "agente",
+      "delay": 1800,
+      "caption": "An agente, a Meshy figure ([agente]): a gaunt figure cut from card, a struck-out word on its chest; its back of dark teal lattice built on it in code; its portrait"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:fran')"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "fran-combate",
+      "delay": 1800,
+      "caption": "Fran in his fight: now his boss figure (fran-jefe, Meshy's skeleton), as the castle pupils"
     },
     {
       "eval": "window.bestiary.select('enemigo:lealtad')"

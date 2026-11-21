@@ -1,6 +1,6 @@
 {
   "title": "Uri's shouts · into the tower, up it and onto the top without stopping",
-  "description": "La torre de Uri (docs/quests/nuria.md § The tower): every time Uri speaks from the top of Vertitrón it is a jagged violet shout bubble (#shout-bubble, story effect `shout`) and the game goes on: going in (¡NIVEL UNO!), up out of each ring while the party keeps climbing, and onto the platform, where he calls for his boss a moment before the fight comes in. Over his head when he is in sight; from lower down, where he is above the screen, it hangs from the top edge with its tail pointing up at him.",
+  "description": "La torre de Uri (docs/quests/nuria.md § The tower): every time Uri speaks from the top of Vertitrón it is a jagged violet shout bubble (#shout-bubble, story effect `shout`) and the game goes on: going in (NIVELL U!), up out of each ring while the party keeps climbing, and onto the platform, where he calls for his boss a moment before the fight comes in. Over his head when he is in sight; from lower down, where he is above the screen, it hangs from the top edge with its tail pointing up at him.",
   "steps": [
     {
       "open": "/?mission=nuria&part=portal&solo=1"
@@ -22,7 +22,7 @@
     {
       "shot": "shout-in",
       "delay": 600,
-      "caption": "Through the bubble: «¡NIVEL UNO!…» from the top of the tower, no conversation, they can walk straight on"
+      "caption": "Through the bubble: «NIVELL U!…» from the top of the tower, no conversation, they can walk straight on"
     },
     {
       "open": "/?mission=nuria&part=ring-2&solo=1"

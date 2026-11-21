@@ -1,6 +1,6 @@
 {
   "title": "La Reina Bubbaloo: su escenario, Aitor de su lado y el final",
-  "description": "docs/castle-bosses.md § La Reina Bubbaloo. Her entrance (src/throne-arena.ts THRONE_INTRO), her figure (Nuria Mendoza's face, src/monsters/reina.json) and portrait, her stage (src/throne-arena.ts), Aitor crossing to her side when she takes him and fighting from there with player 2's commands, the six notes bringing him back, and the last scene from the fight tester. Run it with --gpu.",
+  "description": "docs/castle-bosses.md § La Reina Bubbaloo. Her entrance (src/throne-arena.ts THRONE_INTRO), her figure (Nuria Mendoza's face, src/monsters/reina.json) and portrait, her stage (src/throne-arena.ts), Aitor crossing to her side when she takes him and fighting from there with player 2's commands, the six notes bringing him back,. Run it with --gpu. Then her last scene, in the fight, for each choice: she sinks to the floor small, Gerard walks up and takes her by the neck, the two commands over it; Acabar charges the Foc Binari and she comes apart pink to grey, then the classroom over black; Bajar la mano lowers the hand and the dream ends in white; each to its Monday.",
   "steps": [
     {
       "open": "/?story=castle&solo=1"
@@ -16,7 +16,7 @@
       "eval": "window.gerard.game.setEnvironment('palacio-trono', { x: 13, z: 9 }); setTimeout(() => window.gerard.storyEvent({ type: 'near', id: 'castillo-reina' }), 2500)"
     },
     {
-      "until": "!!document.querySelector('#dialogue') && !document.querySelector('#dialogue').hidden && document.querySelector('#dialogue').textContent.includes('veinticinco')",
+      "until": "!!document.querySelector('#dialogue') && !document.querySelector('#dialogue').hidden && document.querySelector('#dialogue').textContent.includes('vint-i-cinc')",
       "timeout": 30000
     },
     {
@@ -123,23 +123,130 @@
       "eval": "window.gerard.battleUI.jumpTo('won')"
     },
     {
-      "until": "!document.querySelector('.battle-result').hidden",
+      "until": "document.querySelector('#battle')?.dataset.finale === 'true'",
       "timeout": 20000
     },
     {
-      "wait": 1200
-    },
-    {
-      "eval": "document.querySelector('.battle-result [data-after=\"close\"]').click()"
+      "shot": "acabar-en-el-suelo",
+      "delay": 1300,
+      "caption": "At 0 she does not come apart: she sinks to the floor, small, and Gerard walks up to her; the fight's HUD has gone"
     },
     {
       "until": "!document.querySelector('#ending')?.hidden && document.querySelector('#ending')?.dataset.on === 'true'",
       "timeout": 30000
     },
     {
-      "shot": "final",
+      "shot": "acabar-cuello",
       "delay": 1800,
-      "caption": "From the fight tester the ending plays on: the last scene, Acabar or Bajar la mano (then the Monday and the credits, with the save untouched)"
+      "caption": "Close on the two of them: his hand at her neck, and his two commands"
+    },
+    {
+      "eval": "document.querySelector('#ending button[data-choice=\"acabar\"]').focus(); undefined"
+    },
+    {
+      "eval": "document.querySelector('#ending button[data-choice=\"acabar\"]').click()"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line')",
+      "timeout": 10000
+    },
+    {
+      "shot": "acabar-carga",
+      "delay": 1500,
+      "caption": "Acabar: Aitor's «Hazlo.» as the Foc Binari forms in the hand at her neck"
+    },
+    {
+      "shot": "acabar-se-deshace",
+      "delay": 2300,
+      "caption": "It goes into her and she comes apart, pink to grey"
+    },
+    {
+      "until": "!document.querySelector('#ending').hidden && document.querySelector('#ending').dataset.black === 'true' && document.querySelector('#ending').dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "shot": "acabar-escena",
+      "delay": 1800,
+      "caption": "Over black: where the throne was, a classroom"
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "document.querySelector('#ending').click()"
+    },
+    {
+      "until": "!!document.querySelector('#dialogue') && !document.querySelector('#dialogue').hidden && document.querySelector('#dialogue').textContent.includes('Dilluns')",
+      "timeout": 120000
+    },
+    {
+      "shot": "acabar-lunes",
+      "delay": 1500,
+      "caption": "The Monday after: the alarm at its hour"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !window.gerard.battleUI.fight.busy && !document.querySelector('#battle[data-entering]')",
+      "timeout": 180000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "until": "document.querySelector('#battle')?.dataset.finale === 'true'",
+      "timeout": 20000
+    },
+    {
+      "shot": "bajar-en-el-suelo",
+      "delay": 1300,
+      "caption": "At 0 she does not come apart: she sinks to the floor, small, and Gerard walks up to her; the fight's HUD has gone"
+    },
+    {
+      "until": "!document.querySelector('#ending')?.hidden && document.querySelector('#ending')?.dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "shot": "bajar-cuello",
+      "delay": 1800,
+      "caption": "Close on the two of them: his hand at her neck, and his two commands"
+    },
+    {
+      "eval": "document.querySelector('#ending button[data-choice=\"bajar\"]').focus(); undefined"
+    },
+    {
+      "eval": "document.querySelector('#ending button[data-choice=\"bajar\"]').click()"
+    },
+    {
+      "until": "!!document.querySelector('.battle-speech-line')",
+      "timeout": 10000
+    },
+    {
+      "shot": "bajar-suelta",
+      "delay": 900,
+      "caption": "Bajar la mano: «…Vale. Vale.» as his hand comes down from her neck"
+    },
+    {
+      "until": "document.querySelector('#queen-scream')?.dataset.on === 'true'",
+      "timeout": 20000
+    },
+    {
+      "shot": "bajar-blanco",
+      "delay": 1800,
+      "caption": "The dream ends, in white"
+    },
+    {
+      "until": "!!document.querySelector('#dialogue') && !document.querySelector('#dialogue').hidden && document.querySelector('#dialogue').textContent.includes('Dilluns')",
+      "timeout": 120000
+    },
+    {
+      "shot": "bajar-lunes",
+      "delay": 1500,
+      "caption": "The Monday after: the alarm at its hour"
     }
   ]
 }

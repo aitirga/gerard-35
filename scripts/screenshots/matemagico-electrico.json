@@ -1,0 +1,135 @@
+{
+  "title": "Matemágico · Cortocircuito y ∂Q/∂t Condensador",
+  "description": "docs/animas/matemagico/README.md § Cortocircuito and ∂Q/∂t Condensador (Aitor 2026-11-21): the electric line past Toma de tierra. In the fight tester against three sturdy dogs that hit back, one player leading both. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Atoma-de-tierra%22%2C%22matemagico%3Acortocircuito%22%2C%22matemagico%3Acondensador%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Avasos%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "The electric line with its two new nodes: Punto eléctrico, Cortocircuito and ∂Q/∂t Condensador"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"condensador\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "condensador",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "∂Q/∂t Condensador: ∂Q over ∂t written in his circle, two plates slide in either side with arcs between them, and it all draws into Gerard: ¡Cargado!"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "cargado",
+      "caption": "Gerard carries the charge: little sparks off him and the capacitor's icon on his plate (×2)"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); })"
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "descarga-de-vuelta",
+      "seconds": 5,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "The dogs' turn: the one that bites Gerard takes the charge, lightning from him to it (∂Q/∂t · la carga salta)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[0].timed = { ...s.foes[0].timed, mojado: { level: 1, left: 20, next: 20 } }; delete s.foes[0].shock; delete s.foes[0].shorted; })"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"cortocircuito\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "cortocircuito",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Cortocircuito on a wet dog: a resistor drawn in his circle flies to it and snaps in two; the current stays in it: ¡Cortocircuito! and ¡Shock!, nothing jumps to the others"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').capacitor = true; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"descarga\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "doble",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "With the charge on, Punto eléctrico lets it go: the plates flash open over the dog and the blow lands twice as hard (×2)"
+    }
+  ]
+}

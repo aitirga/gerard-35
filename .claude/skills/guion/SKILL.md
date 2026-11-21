@@ -1,6 +1,6 @@
 ---
 name: guion
-description: Read the suggestions and comments Aitor left on the game's script (`just guion`, docs/guion-notes.json) and act on them one by one: rewrite a line as he suggests or as his comment asks, keep each character's voice and the game's tone, apply it in the code, and answer each note with what was done. Use when the user says to look at the script, its notes, suggestions or comments ("mira el guion", "las notas del guion", "aplica las sugerencias", "lo que he comentado en el guion").
+description: Read the suggestions, comments and changes (blocks of lines to add, lines to take out) Aitor left on the game's script (`just guion`, docs/guion-notes.json) and act on them one by one: rewrite a line as he suggests or as his comment asks, add or remove the lines he marked, keep each character's voice and the game's tone, apply it in the code, and answer each note with what was done. Use when the user says to look at the script, its notes, suggestions or comments ("mira el guion", "las notas del guion", "aplica las sugerencias", "lo que he comentado en el guion").
 ---
 
 # The script's notes
@@ -17,7 +17,8 @@ notes ask.
   across machines).
 - `docs/guion-notes.json`: `notes[]`, each with `entry` (the entry's id), `title`, `line` (0-based)
   and `quote` (what the line said when he wrote the note) if it is about one line, `proposal` (how he
-  would write it) for a suggestion, `text` (his comment, may be empty on a suggestion), `status`
+  would write it) for a suggestion, `change` for a change to the moment's lines (below), `at` (the
+  line's `file:line` when the note was written), `text` (his comment or why, may be empty), `status`
   (`abierta`, `hecha`, `descartada`), `created`, and once answered `reply` and `closed`. Work only on
   `abierta` notes.
 - What the entry is now: `node --experimental-strip-types --no-warnings scripts/guion.mjs` writes
@@ -26,6 +27,12 @@ notes ask.
   in the code (`grep`), before touching anything. `output/guion/partida.json` says when it is said
   (`moments`), which helps read it in context: read the lines before and after it in the same entry
   and section.
+
+- **Changes** (`change`): `añadir` puts the lines of `block` (each `{ speaker, text }`, in that
+  order) `place` (`antes` / `despues`) the line `line` whose text was `quote`; `quitar` takes the
+  line `line` (`quote`) out. Find that line by `quote` first (`at` says where it was): `line` counts
+  the lines as the script showed them then, so it moves when other changes land. Several blocks on the
+  same line go in the order they were made (`created`).
 
 ## 1 · Plan
 
@@ -46,6 +53,17 @@ propose before implementing; the story bible is docs/lore.md and docs/story-outl
   cryptic; ánima, never "clase". A skill or effect description follows the fixed shape in AGENTS.md.
 - If the same text is quoted in a doc (docs/quests/*.md, docs/chapter-*.md, docs/castle*.md), change
   it there too. If a test pins the text (`grep -rn` it in tests/), update the test.
+
+- **A block to add**: write each line as the entry's other lines are written (a dialogue's
+  `{ speaker: '<id>', text: '…' }` in its `lines`, a look's plain string), right where `place` says.
+  `speaker` is a `SPEAKERS` id (src/dialogue.ts) or a voice of `VOICES` (src/guion.ts): if it is
+  neither of the dialogue's `left`/`right`, see how that dialogue shows a third voice before adding,
+  and ask if it cannot. His text is applied as written, like a suggestion, unless it breaks a rule
+  above.
+- **A line to take out**: delete its element. Before, `grep` for anything that counts on the line or
+  its index (a test, an index such as `lines[3]`, a fight or step waiting on it); if the moment would be
+  left empty, ask.
+- Apply an entry's changes from its last line to its first, so the earlier ones do not shift.
 
 ## 3 · Answer each note
 

@@ -59,37 +59,37 @@ export function createBenchmarkEncounter(): CombatDefinition {
     combatants: [
       {
         id: 'party-front', name: 'Prototipo A · presión', team: 'party',
-        stats: { power: 14, armor: 5, support: 0, speed: 13 },
+        stats: { power: 14, armor: 5, support: 0 },
         resources: { hp: { max: 112 }, effort: { max: 28 } },
         actions: ['strike', 'burst', 'brace', 'recover'], statuses: [{ id: 'response' }],
       },
       {
         id: 'party-support', name: 'Prototipo B · apoyo', team: 'party',
-        stats: { power: 8, armor: 3, support: 12, speed: 11 },
+        stats: { power: 8, armor: 3, support: 12 },
         resources: { hp: { max: 92 }, effort: { max: 35 } },
         actions: ['strike', 'mend', 'pressure', 'recover'],
       },
       {
         id: 'party-flex', name: 'Prototipo C · control', team: 'party',
-        stats: { power: 11, armor: 4, support: 5, speed: 15 },
+        stats: { power: 11, armor: 4, support: 5 },
         resources: { hp: { max: 100 }, effort: { max: 30 } },
         actions: ['strike', 'interrupt', 'attrition', 'mend', 'recover'],
       },
       {
         id: 'opponent-front', name: 'Rival A · presión', team: 'opponent',
-        stats: { power: 16.5, armor: 5, support: 0, speed: 10 },
+        stats: { power: 16.5, armor: 5, support: 0 },
         resources: { hp: { max: 116 }, effort: { max: 24 } },
         actions: ['strike', 'burst', 'brace', 'recover'],
       },
       {
         id: 'opponent-support', name: 'Rival B · apoyo', team: 'opponent',
-        stats: { power: 10.5, armor: 3, support: 10, speed: 12 },
+        stats: { power: 10.5, armor: 3, support: 10 },
         resources: { hp: { max: 98 }, effort: { max: 28 } },
         actions: ['strike', 'mend', 'pressure', 'recover'],
       },
       {
         id: 'opponent-flex', name: 'Rival C · control', team: 'opponent',
-        stats: { power: 13.5, armor: 4, support: 3, speed: 14 },
+        stats: { power: 13.5, armor: 4, support: 3 },
         resources: { hp: { max: 108 }, effort: { max: 27 } },
         actions: ['strike', 'interrupt', 'attrition', 'recover'],
       },

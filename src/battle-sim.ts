@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
@@ -324,6 +324,20 @@ const PLAN_WORTH = 22;
  * the real rules on a copy. El Montón: the turns `smart` expects it to give its first blow back, and
  * what each shape adds to each copy (a fire's pulses, a turn lost, a wound's ticks and its opening).
  */
+/**
+ * What a stored charge (∂Q/∂t Condensador) is worth to `smart`: what the next electric blow he could give
+ * (with the maná left after it) would add, the real rules on a copy, a little less since it may not come.
+ */
+function chargeWorth(state: BattleState) {
+  const actor = state.allies[state.active], left = actor.secondary - (SKILLS.find(s => s.id === 'condensador')?.cost ?? 0);
+  const bolts: Choice[] = [
+    ...skillsFor(state, actor).filter(s => s.kind === 'magic' && 'element' in s && s.element === 'electrico' && s.cost <= left).map(s => ({ action: 'skill' as const, skill: s.id })),
+    ...elementsFor(state, actor).includes('electrico') ? [{ action: 'attack' as const, element: 'electrico' as Element }] : [],
+  ];
+  let best = 0;
+  for (const foe of state.foes.filter(f => f.hp > 0)) for (const bolt of bolts) best = Math.max(best, damageOn(state, { ...bolt, target: foe.id }, foe.id));
+  return best * (CONDENSADOR.scale - 1) * .6;
+}
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 3;
 const SHAPE_WORTH: Record<MontonForm, number> = { golpe: 0, fuego: 15, agua: 0, electrico: 30, sangrado: 12 };
 interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
@@ -409,6 +423,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i]?.timed?.cegado?.level ?? 0))) {
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
+  // Shock (Cortocircuito's for sure): the turn the foe loses, the real rules on a copy.
+  if (after.foes.some((foe, i) => foe.shock && !before.foes[i]?.shock)) value += sum(threat) - sum(threatOn(after));
+  // ∂Q/∂t Condensador: about what the charge will add to the next electric blow, or take off a foe that strikes first.
+  if (choice.skill === 'condensador') value += chargeWorth(before);
   // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
   const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
   if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));

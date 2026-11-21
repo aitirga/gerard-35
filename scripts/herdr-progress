@@ -61,6 +61,11 @@ def load(path):
                 raise ValueError(f"{name}: in sin grep ni absent")
             if "priority" in item and item["priority"] not in known:
                 raise ValueError(f"{name}: no hay prioridad {item['priority']}")
+            for key in ("grep", "absent"):
+                try:
+                    re.compile(item.get(key, ""))
+                except re.error as problem:  # Otherwise it surfaces as a bare «missing ), …» with no item.
+                    raise ValueError(f"{name}: {key} no es una expresión válida ({problem})") from None
     return manifest
 
 

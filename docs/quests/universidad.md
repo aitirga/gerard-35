@@ -75,16 +75,16 @@ The beach is the L4's own stop on the network map, so a person pointing there is
 2. **The conversation** (decided content; the lines are proposals):
 
    ```text
-   Miquel  Anna se ha ido directa al agua. Ya sabes cómo es.
-   Sarah   Le encanta el agua fría. Y el peligro.
-   Miquel  Felicidades, Gerard. Treinta y cinco.
-   Sarah   Hemos dejado a los niños en casa. A todos. Hemos venido corriendo a felicitarte.
+   Miquel  L'Anna se n'ha anat directa a l'aigua. Ja saps com és.
+   Sarah   Li encanta l'aigua freda. I el perill.
+   Miquel  Felicitats, Gerard. Trenta-cinc.
+   Sarah   Hem deixat els nens a casa. Tots. Hem vingut corrents a felicitar-te.
    Aitor   ¿Con quién los habéis dejado?
            (Nobody answers.)
-   Soraya  He dejado a Guillem. Ahora tengo muchísimo tiempo. Para vosotros. Muchísimo.
-   Álvaro  Con lo que me gustan a mí los juegos. Vamos a jugar al pilla-pilla.
+   Soraya  He deixat el Guillem. Ara tinc moltíssim temps. Per a vosaltres. Moltíssim.
+   Álvaro  Amb el que m'agraden a mi els jocs. Juguem a pillar.
            (They all turn at once and stare. The violet eyes. The tentacles come out.)
-   Álvaro  Nos la quedamos nosotros.
+   Álvaro  Ens la quedem nosaltres.
    ```
 
 3. **Pilla-pilla** (decided): they chase the party towards the sea, where Anna is.
@@ -192,9 +192,9 @@ with it) and his Rayo's target, and *Bombona → todos* on a mago that has charg
 
 | Foe | Look | Rule | Move | The answer |
 | --- | --- | --- | --- | --- |
-| **Mago de camping** | A robe of old tent canvas, a head torch for a single light, a tent pole as a staff; in twos or threes | Takes half from magic, more from blows | *Bombona*: charges a turn (chip *Bombona → todos*), then a magic blast on both | Hit it physically; hold on when it charges |
+| **Mago de camping** | A robe of old orange tent canvas under a hood and cape of flysheet, no face in the hood, a head torch for a single light, a tent pole as a staff and a gas canister in the other hand; in twos or threes (a Meshy figure, `tools/figures.toml` `[mago]`, 2026-11-21) | Takes half from magic, more from blows | *Bombona*: charges a turn (chip *Bombona → todos*), then a magic blast on both | Hit it physically; hold on when it charges |
 | **Dado** | Human-sized and worn, its pips burnt in; in packs, the small fights of the dungeon | Its top face is shown and is the strength of its blow this round; it rolls again each round | *Tumbarse*: a blow as strong as its face | Kill the sixes first. A readable reason to choose a target |
-| **Agente** | A tall figure of card, a word on its chest; in pairs | Each round one is face up and takes everything, the other face down and takes half. Ticks ignore this | *Contraseña*: a blow on one | Focus the one face up; put statuses on the one face down |
+| **Agente** | A tall, gaunt figure cut from thick card, a struck-out word on its chest, its back the back of a card; in pairs (a Meshy figure, `[agente]`, 2026-11-21) | Each round one is face up and takes everything, the other face down and takes half. Ticks ignore this | *Contraseña*: a blow on one | Focus the one face up; put statuses on the one face down |
 | **El Campeón** | The villain of their superhero board game at life size (redone 2026-11-19, Aitor: «como si fuera un villano de los de los juegos de mesa… con sus ataques de rayos»): charcoal armour, a furnace grate glowing in his chest, glowing gauntlets, a cape of blue tarpaulin; **invented, no real character** (`tools/figures.toml` `[campeon]`) | **His Plan**, on his plate: a step up every turn; full (3), his next turn is the Rayo total on everyone and it starts again. **Every magic blow on him takes it a step down** («¡Plan frustrado!») and lands at 70 %; blows land whole. **Etapa II** at half his PV: the Plan fires at 2 | *Rayo*, said a turn ahead (*Rayo → X*), *Rayo total* | Frustrate the Plan with magic while blows do the damage, and hold on whoever he aims at. The mini-boss |
 
 **The fights** (ids the story starts; all in the fight tester's *Camping Eurosport* row, staged on the
@@ -383,7 +383,7 @@ has four directions grown from the proposals below, waiting for a choice.
 | --- | --- | --- | --- |
 | Idea | The table where everyone finally sits: a support ánima that plays with turns and dice, the friends' own game | The melon photo: everyone in the frame at once | The plan that never happens until it does |
 | Fantasy | Gerard deals the round: who goes next, what the dice say | One moment where the whole party is together | Something promised that comes when it is most needed |
-| Skills (AGENTS.md shape) | *Tirada* · `Daño físico medio a un enemigo. La fuerza depende de dos dados.` · *Otra ronda* · `Sube Velocidad de todo el equipo durante 2 rondas.` | *Foto de grupo* · `Sube Fuerza, Magia y Defensa de todo el equipo durante 2 rondas.` (once a fight) | *A ver si quedamos* (abstract) · *«Algún día.»*: a few rounds later, it comes back as a heal and a guard on the whole party |
+| Skills (AGENTS.md shape) | *Tirada* · `Daño físico medio a un enemigo. La fuerza depende de dos dados.` · *Otra ronda* · `Sube Velocidad de todo el equipo durante 2 rondas.` (void: Velocidad no longer exists) | *Foto de grupo* · `Sube Fuerza, Magia y Defensa de todo el equipo durante 2 rondas.` (once a fight) | *A ver si quedamos* (abstract) · *«Algún día.»*: a few rounds later, it comes back as a heal and a guard on the whole party |
 | Shared mechanic | Dice shown on screen (readable, as Álvaro's Tirada) | Once per fight, like the duals | A delayed effect with a visible countdown chip |
 | Look | A tablecloth cape, cards in a belt, a die on a cord | A camera on a strap | — |
 | World key | A board-game shop's door in the city that only opens to a player | — | — |

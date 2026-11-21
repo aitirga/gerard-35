@@ -245,7 +245,7 @@
     {
       "shot": "grito-1",
       "delay": 500,
-      "caption": "Aurelià beaten: the Queen screams through the whole building («No. ¡NO! ¡Devolvédmelo! ¡Era mío!») and the picture goes to white. No night follows a castle boss"
+      "caption": "Aurelià beaten: the Queen screams through the whole building («No. NO! Torneu-me'l! Era meu!») and the picture goes to white. No night follows a castle boss"
     },
     {
       "until": "window.gerard.story.clock.day === 2 && window.gerard.game.environmentId === 'meridiana'",

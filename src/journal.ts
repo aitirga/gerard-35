@@ -32,7 +32,7 @@ export function storyClock(story: Story): { time: string; day: string } {
 /** What Gerard remembers, one line per beat, in the order they can happen. */
 const GERARD_DIARY: { chapter: 1 | 2; flag: StoryFlag; text: string }[] = [
   { chapter: 1, flag: 'met-jan', text: 'Jan me felicitó medio dormido. Sabe más de lo que dice.' },
-  { chapter: 1, flag: 'got-potion', text: 'Un frasco de la mesa de Jan: «POCIÓ. NO TOCAR». Lo toqué.' },
+  { chapter: 1, flag: 'got-potion', text: 'El frasco de Jan, con luces dentro. Me lo llevé.' },
   { chapter: 1, flag: 'got-shoes', text: 'Mamá me regaló unas zapatillas. Ahora nadie me alcanza.' },
   { chapter: 1, flag: 'got-backpack', text: 'Libros, estuche y un bocadillo de fuet.' },
   { chapter: 1, flag: 'bernat-joined', text: 'Bernat bajó tarde, como siempre. Dice que hoy tiene una sensación rara.' },

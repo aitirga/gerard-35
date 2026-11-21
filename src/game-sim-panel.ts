@@ -22,7 +22,7 @@ const mn = (x: number | null | undefined) => x == null ? '–' : `${Math.round(x
 export interface SimJump { flag: StoryFlag; day?: number; missions?: AnimaId[] }
 /** The moments of `player`'s typical game worth jumping to: the timeline's key events and each mission's end, in order. */
 export function simMoments(player: PlayerSummary): { minute: number; day: number; label: string; jump: SimJump; fights: number }[] {
-  const castle = ['aurelia', 'direccion', 'aitor-poseido', 'artilugio', 'final-acabar', 'final-bajar'];
+  const castle = ['cortina', 'aurelia', 'direccion', 'aitor-poseido', 'artilugio', 'final-acabar', 'final-bajar'];
   const keys = new Set<string>([...TIMELINE.map(t => t.at).filter(at => at !== 'new'), ...Object.keys(CLOSES), 'palace-tried', 'cardedeu', 'camping', 'cuerdas', ...castle]);
   // Only what the picker can jump to: a story flag with its step (src/story-points.ts).
   const jumpable = (flag: string): flag is StoryFlag => { try { return STORY_FLAGS.includes(flag as StoryFlag) && !!stepOf(flag as StoryFlag); } catch { return false; } };

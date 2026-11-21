@@ -24,7 +24,7 @@ export const ANIMAS = {
   // The university friends (docs/quests/universidad.md): one mission, one ánima, still to design with /anima.
   universidad: { id: 'universidad', friend: 'Los amigos de la uni', name: 'Ánima de los amigos de la uni', colour: '#a8a89a', bonus: { fuerza: 1, espiritu: 1, pv: 10 }, note: 'La Barceloneta y el Càmping Eurosport. Por diseñar.' },
   // Marta (docs/quests/marta.md): her voice back. The wearable ánima is still to design with /anima.
-  marta: { id: 'marta', friend: 'Marta', name: 'Ánima de Marta', colour: '#9fb8b4', bonus: { magia: 1, velocidad: 1, pv: 10 }, note: 'Alegia y Las cuerdas. Por diseñar.' },
+  marta: { id: 'marta', friend: 'Marta', name: 'Ánima de Marta', colour: '#9fb8b4', bonus: { espiritu: 1, defensa: 1, pv: 10 }, note: 'Alegia y Las cuerdas. Por diseñar.' },
   // Emilie (docs/quests/emilie.md): the why back. Freática is its wearable form (docs/animas/freatica/README.md).
   emilie: { id: 'emilie', friend: 'Emilie', name: 'Ánima de Emilie', colour: '#a3aea2', bonus: { magia: 1, defensa: 1, pv: 10 }, note: 'Poble Sec y su modelo. Freática.' },
   // Luca (docs/quests/luca.md): his colours back. Colorista is its wearable form (docs/animas/prismatico/README.md).

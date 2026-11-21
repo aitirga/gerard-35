@@ -17,7 +17,7 @@ import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag }
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
 import { createTitle } from './title';
-import { LINES_CASTLE } from './castle-story';
+import { LINES_CASTLE, type EndingChoice } from './castle-story';
 import { onThroneStage } from './throne-arena';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
 import { NIGHT_DEV, nightMight } from './night';
@@ -29,7 +29,7 @@ import { isTicketStation, remember } from './tickets';
 import { createDayLog, sendLog } from './day-log';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { ANIMA_NAMES, CLASS_STATS, ESCAPE, canWear, dazzle, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, ESCAPE, canWear, dazzle, kitOf, manaMax, palaceGuards, stageWater, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
 import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
@@ -45,7 +45,7 @@ import { createVozSong } from './voz-song';
 import { CUERDAS_PLACE, QUALITIES } from './friends/marta';
 import { PLACES_NURIA } from './friends/nuria';
 import { castleHaunt } from './haunt';
-import { createSfx, watchMenuSounds, type SoundId } from './sfx';
+import { QUEEN_LA, createSfx, watchMenuSounds, type SoundId } from './sfx';
 import { createArtilugio, type ArtilugioMode } from './artilugio';
 import { createCredits } from './credits';
 import { createPortalUI } from './portal-ui';
@@ -54,6 +54,9 @@ import { mountSoundPage } from './sound-ui';
 
 const isMember = (id: string): id is MemberId => id === 'gerard' || id === 'bernat' || id === 'aitor';
 
+/** The dual trials that keep the save's levels (set up before the newer duals); the rest are tried with every shared ánima grown whole. */
+const OLD_TRIALS: readonly string[] = ['sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color', 'sobrecalentamiento', 'vulcano'];
+const TRIAL_LEVELS: Partial<Record<ClassId, number>> = { papagato: 7, dadaista: 7, sincopante: 7, prismatico: 7, freatica: 7 };
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 let previousScore = 0;
 let sessionSteps = 0;
@@ -118,6 +121,8 @@ let place: EnvironmentId | undefined;
  * while the wind blows, `piano` once Gerard has chosen.
  */
 let finale: 'won' | 'choosing' | 'piano' | undefined;
+/** What Gerard chose in her last scene, inside the fight (`lastScene`), until the fight's end tells the story. */
+let chosen: EndingChoice | undefined;
 /**
  * The boss rooms of three friends' missions (Vertitrón's summit, La Sobremesa's merendero, El que no
  * converge's bottom of the model; Aitor, 2026-11-19): there the place's song gives way to mazmorra-3,
@@ -237,6 +242,8 @@ if (import.meta.env.DEV) {
   const escape = new URLSearchParams(location.search).get('escape');
   ESCAPE.mode = escape === 'chance' || escape === 'off' ? escape as EscapeMode : 'always';
 }
+/** Development: `?combates=no`, no fight starts (arriving, a patrol, a story beat): to look at a place where one would. */
+const noFights = import.meta.env.DEV && new URLSearchParams(location.search).get('combates') === 'no';
 const story = new Story(devStory ?? []);
 // Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day);
 // ?hour=<h> at that hour: 21 is night, and on the Meridiana the way home starts at the station.
@@ -400,7 +407,7 @@ try {
     solo: () => playing().mode === 'solo',
     // The fight's clock (statuses timed in seconds) stops with the pause menu.
     paused: () => menuOpen(),
-    pulse: id => game.statusPulse(id),
+    pulse: (id, status, by) => game.statusPulse(id, status, by),
     ecos: news => game.ecoNews(news),
     // A fall wakes Gerard up at home only in chapter 2's castle; anywhere else it can be fought again or stepped back from.
     forgiving: () => !(story.adult && (currentLocation.startsWith('palacio') || currentLocation.startsWith('castillo'))),
@@ -409,6 +416,20 @@ try {
     dev: () => import.meta.env.DEV,
     // A dual's banner slows the 3D fight as it slows the fight's clock (src/battle-scene.ts, FightClock).
     slowmo: (scale, seconds) => game.slowmo(scale, seconds),
+    upcoming: effect => game.upcoming(effect),
+    // Her last scene, in her fight (docs/castle-bosses.md § The last scene): Gerard walks up to her
+    // and takes her by the neck, the two commands come up over it, Aitor answers with one line, and
+    // what Gerard chose plays out: the Foc Binari and she comes apart, or the hand comes down and the
+    // dream ends, in white. The fight then closes and the story hears the choice (`onBattleEnd`).
+    lastScene: async say => {
+      silenceForChoice();
+      await game.lastScene('hold');
+      const choice = chosen = await endings.choose(LINES_CASTLE.lastScene);
+      pianoAfterChoice();
+      void say('aitor', LINES_CASTLE[choice].aitor.text, 2200);
+      await game.lastScene(choice);
+      if (choice === 'bajar') await storyUI.scream('', 0);
+    },
     // …and its clock follows the scene's, whatever slows it (the choreography slows itself further).
     speed: () => game.fightSpeed(),
     // La Voz's recording plays where her fight's clock is.
@@ -497,8 +518,18 @@ try {
     });
     else if (effect.kind === 'snow') { if (effect.on) sfx.play('pickup'); await storyUI.snow(effect.on); }
     else if (effect.kind === 'drain') await game.riseFromDrain();
-    // The room goes out with the screen, and comes back as they wake.
-    else if (effect.kind === 'ambush') { await game.ambush(() => { homeLights.moment('ambush'); return storyUI.blackout(true, 1400); }); storyEvent({ type: 'caught' }); }
+    // The room goes out with the screen, and comes back as they wake. As her hands come down the
+    // castle's song gives way to her singing to herself (docs/lore.md § Her music); in the dark her
+    // words and her echo die away, and the castle's song is gone, so home's comes in from silence.
+    else if (effect.kind === 'ambush') {
+      await game.ambush(() => { homeLights.moment('ambush'); return storyUI.blackout(true, 1400); }, () => {
+        music.hush(true, { fade: .8 }); sfx.play('reina-la');
+        storyUI.sing(QUEEN_LA.map(([, seconds, word]) => ({ word, seconds })));
+      });
+      music.stop({ fade: 0 }); music.hush(false, { fade: 0 });
+      await storyUI.unsing();
+      storyEvent({ type: 'caught' });
+    }
     // Out of the dark, or out of the white her scream left (a boss of her castle beaten).
     else if (effect.kind === 'wake') await game.wake(() => { homeLights.moment('wake'); storyUI.unflash(); return storyUI.blackout(false, 2000); });
     else if (effect.kind === 'rise') await game.rise();
@@ -526,16 +557,11 @@ try {
     else if (effect.kind === 'doom') { homeLights.moment('doom'); await theEnd(); }
     // The last scene: the game holds still until Gerard chooses, and the story hears which.
     else if (effect.kind === 'ending') {
+      // Only when the fight could not play it (`lastScene`): the two commands over the place.
       exploration.close(); storyPaused = true; game.setPaused(true);
-      // The choice is made in silence, with only the wind through the balcony; once it is made, the
-      // welcome screen's piano comes back, sadder, and plays out before any place's song comes in.
-      finale = 'choosing'; music.stop({ fade: 2 }); sfx.bed('wind', { volume: 1 }, 1.5);
+      silenceForChoice();
       const choice = await endings.choose(LINES_CASTLE.lastScene);
-      sfx.bed('wind', undefined, 1.2);
-      finale = 'piano';
-      void audio.unlocked.then(() => music.play('intro-triste', { from: 'start', restart: true, fade: 3 })).then(() => {
-        const out = setInterval(() => { if (music.playing === 'intro-triste') return; clearInterval(out); finale = undefined; if (place) scorePlace(place); }, 1000);
-      });
+      pianoAfterChoice();
       storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
       storyEvent({ type: 'ending', choice });
     }
@@ -600,17 +626,28 @@ try {
     for (const effect of effects) await play(effect);
     storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
   }
+  /** The last choice is made in silence, with only the wind through the balcony. */
+  function silenceForChoice() { finale = 'choosing'; music.stop({ fade: 2 }); sfx.bed('wind', { volume: 1 }, 1.5); }
+  /** Once it is made, the welcome screen's piano comes back, sadder, and plays out before any place's song comes in. */
+  function pianoAfterChoice() {
+    sfx.bed('wind', undefined, 1.2);
+    finale = 'piano';
+    void audio.unlocked.then(() => music.play('intro-triste', { from: 'start', restart: true, fade: 3 })).then(() => {
+      const out = setInterval(() => { if (music.playing === 'intro-triste') return; clearInterval(out); finale = undefined; if (place) scorePlace(place); }, 1000);
+    });
+  }
   /**
    * The ending as the fight tester shows it (docs/dev-tools.md): what `castleEnding` plays once Gerard
-   * has chosen (src/castle-story.ts), the last scene, his choice, what it does, the Monday's words and
-   * the credits, but nothing is raised and no morning comes: the save is the same afterwards.
+   * has chosen in her fight (src/castle-story.ts), what it does, the Monday's words and the credits,
+   * but nothing is raised and no morning comes: the save is the same afterwards.
    */
-  async function previewEnding() {
+  async function previewEnding(choice: EndingChoice) {
     storyPaused = true; game.setPaused(true);
-    const choice = await endings.choose(LINES_CASTLE.lastScene), lines = LINES_CASTLE[choice];
-    await play({ kind: 'dialogue', dialogue: { left: 'gerard35', right: 'aitor', lines: [lines.aitor] } });
-    await play({ kind: 'epilogue', choice, text: lines.scene });
+    const lines = LINES_CASTLE[choice];
+    if ('scene' in lines) await play({ kind: 'epilogue', choice, text: lines.scene });
+    else await storyUI.blackout(true, 0);
     // No morning comes here to lift the black (the story's wakes them at home): the Monday's words are said where they stand.
+    storyUI.unflash();
     await storyUI.blackout(false, 1600);
     await play({ kind: 'dialogue', dialogue: lines.epilogue });
     await play({ kind: 'credits' });
@@ -781,13 +818,16 @@ try {
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: setup.trial === 'relevo-de-sangre' ? { ...story.levels, papagato: 3, dadaista: 3 } : story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: setup.trial === 'relevo-de-sangre' ? { ...story.levels, papagato: 3, dadaista: 3 } : setup.trial && !OLD_TRIALS.includes(setup.trial) ? { ...story.levels, ...TRIAL_LEVELS } : story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
         // At night on the Meridiana: the first of the night's groups of the castle's floor the save is on, as strong as the friends chosen and the levels leave it.
         ...setup.encounter === 'night-guard' ? { night: { room: nightGroup(1, castlePhaseAt(story)), might: nightMight(setup.adult ? setup.friends.length : 0, story.levels) } } : {} });
       if (setup.trial) battleUI.tweak(s => {
         // An injured ally to stitch, a wound to relay, or enough time to watch the delayed impact.
         for (const foe of s.foes) foe.hp = foe.maxHp = 260;
         if (setup.trial === 'sutura-de-luz') s.allies.find(a => a.id === 'gerard')!.hp = 15;
+        // Water already under a foe for the duals that play with it, and a wound for the ones that keep it.
+        if (setup.trial === 'marea' || setup.trial === 'geiser') stageWater(s, setup.trial === 'geiser' ? 3 : 1);
+        if (setup.trial === 'metralla') s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
         if (setup.trial === 'relevo-de-sangre') {
           s.foes[0].hp = 7;
           s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
@@ -832,6 +872,8 @@ try {
   }
   const game = await createGame(canvas, {
     onEncounter: (withPartner, foes, options) => {
+      // Development: `?combates=no` lets nothing start a fight (the script's photos, just guion-fotos).
+      if (import.meta.env.DEV && noFights) return;
       exploration.close(); dialogue.close();
       // A patrol of the campsite's maze: its foes shout their word as they fall (docs/quests/universidad.md § Las palabras).
       const patrol = currentLocation === 'camping' ? CAMP_HUNTERS.find(h => h.id === story.uni.fighting && h.encounter === options.encounter) : undefined;
@@ -850,7 +892,9 @@ try {
       // Fought again or stepped back from, a fall never reaches the story; a test fight fought again stays a test.
       if (fallen) { const choice = fallen; fallen = undefined; if (choice === 'rewind') { testing = undefined; leaving = false; game.refreshStory(); } return; }
       // The Queen beaten in the fight tester: the ending plays on, as the story would, with the save left as it was.
-      if (testing && !leaving && phase === 'won' && onThroneStage(encounter)) { testing = undefined; game.refreshStory(); void previewEnding(); return; }
+      const ending = phase === 'won' && onThroneStage(encounter) ? chosen : undefined;
+      chosen = undefined;
+      if (testing && !leaving && ending) { testing = undefined; game.refreshStory(); void previewEnding(ending); return; }
       // A test fight, or one left from the picker, leaves the story as it was, and the street as the story has it.
       if (testing || leaving) {
         testing = undefined; leaving = false; game.refreshStory();
@@ -858,7 +902,7 @@ try {
         if (finale === 'won') { finale = undefined; if (place) scorePlace(place); }
         return;
       }
-      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken }); keepXp(); }
+      if (phase !== 'escaped') { storyEvent({ type: 'battle', won: phase === 'won', encounter, worn, xp, taken, ending }); keepXp(); }
     },
     onBattleTargets: targets => battleUI.positionTargets(targets),
     onEntrance: moment => battleUI.entrance(moment),
@@ -1104,6 +1148,7 @@ try {
     const animas = (params.get('animas')?.split(',') ?? ['matemagico']).filter((id): id is ClassId => id in CLASS_STATS);
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas }));
+    if (animaDemo) void import('./anima-demo').then(({ mountAnimaDemo }) => { const stage = mountAnimaDemo(game, battleUI, audio); import.meta.hot?.dispose(() => stage.destroy()); });
     if (fxLab) void import('./fx-lab').then(({ mountFxLab }) => { const lab = mountFxLab(game, sfx); import.meta.hot?.dispose(() => lab.destroy()); });
     // ?music=battle&from=126 plays a song from a mark or second on the first key or click, to hear a loop's seam (just dev-music).
     const track = params.get('music'), haunt = Number(params.get('haunt'));

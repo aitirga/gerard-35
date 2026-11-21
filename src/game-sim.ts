@@ -235,8 +235,6 @@ export class Playing {
   private losses: Record<string, number> = {};
   /** Every fall in each mission: people learn, so after two they grind a level more before going on (`seekLevel`). */
   private tries: Partial<Record<MissionId, number>> = {};
-  /** The guards before the curtain beaten once: the castle's hall is crossed from then on (not a flag: the story only brings night). */
-  private guardsBeaten = false;
   /** Whether each of Emilie's stakes is measured, for each run through her model, by whoever does not always stop for them (decided once). */
   private stakeChoices = new WeakMap<ModeloState, Map<string, boolean>>();
   readonly player: Player;
@@ -603,7 +601,6 @@ export class Playing {
     const learnt = this.player.learnAfter > 0 && (this.losses[encounter] ?? 0) >= this.player.learnAfter;
     const run = playOut(state, { fight: encounter, party: '', policy: learnt ? 'smart' : this.player.policy, think: this.player.think, maxRounds: 80 }, this.random);
     const won = run.outcome === 'won', worn = participants(state).map(p => p.id), xp = fightXp(state);
-    if (won && encounter === 'palace-guards') this.guardsBeaten = true;
     const wasted = won ? worn.filter(id => LEVELLED.includes(id) && (before[id] ?? 1) >= topOf(id)).length * xp : 0;
     const clock = story.clock;
     this.out.fights.push({
@@ -1107,7 +1104,8 @@ export class Playing {
   private castle(): { name: string; run: () => void } | undefined {
     this.stageName = 'El castillo';
     if (this.has('reina')) return undefined;
-    if (!this.guardsBeaten) return { name: 'Los guardianes', run: () => this.castleTry() };
+    // Beaten once, the curtain stays open on its stair (`cortina`): the way up to the first floor.
+    if (!this.has('cortina')) return { name: 'Los guardianes', run: () => this.castleTry() };
     // Bernat called after she took Aitor: to El Nucli, his game told, his box solved, the artilugio home.
     if (this.has('bernat-llama') && !this.has('artilugio')) return { name: 'Bernat y su caja', run: () => {
       this.stageName = 'Bernat';

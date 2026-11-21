@@ -111,10 +111,12 @@ export const STORY_ARCS = [
   ] },
   // Bernat the first time (docs/quests/bernat.md): the confidant at his table in El Nucli.
   { id: 'bernat', chapter: 2, title: 'Bernat', detail: 'El Nucli · Sants', after: 'metro', steps: [
-    { flags: ['bernat-nucli'], label: 'Bernat en El Nucli: es el castillo de su libreta', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
+    { flags: ['bernat-nucli'], label: 'Bernat en El Nucli: es el castillo de su sueño', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
   ] },
   // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.
   { id: 'castillo', chapter: 2, title: 'El castillo', detail: 'Tres plantas, tres jefes y el final', after: 'castle', steps: [
+    // The guards before the curtain beaten: gone for good, and the stair behind it climbs to the first floor.
+    { flags: ['cortina'], label: 'Los guardianes vencidos: la cortina se abre', spot: { environment: 'palacio', cell: { x: 16, z: 10 } } },
     { flags: ['aurelia', 'luz-aurelia'], label: 'Aurelià vencido: la entrada pasa al gimnasio', spot: castleEntry(new Set(['aurelia'])) },
     { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a Direcció', spot: castleEntry(new Set(['direccion'])) },
     { flags: ['aitor-poseido'], label: 'La Reina toma a Aitor: Gerard cae' },

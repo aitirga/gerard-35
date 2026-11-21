@@ -63,6 +63,10 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   integral: { start: [{ id: 'think' }], impact: [{ id: 'heal' }, { id: 'clink', volume: .5, delay: .15 }] },
   vasos: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .12 }] },
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
+  // Cortocircuito: a resistor that snaps: a crack, the zap, and a dull thud as the current stays in them.
+  cortocircuito: { start: [{ id: 'think' }], impact: [{ id: 'crack' }, { id: 'zap', delay: .04 }, { id: 'thump', volume: .5, delay: .08 }] },
+  // ∂Q/∂t Condensador: the sum worked out, then the charge humming up into him.
+  condensador: { start: [{ id: 'think' }], impact: [{ id: 'charge', volume: .55 }, { id: 'clink', volume: .4, delay: .2 }] },
   // Bip's signal takes; the foe's own blow lands from the scene.
   'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
   virus: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .35, delay: .06 }, { id: 'glitch', volume: .5, delay: .18 }] },

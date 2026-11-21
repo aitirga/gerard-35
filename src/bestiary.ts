@@ -16,13 +16,14 @@ import { COMPANIONS, CREATURES, HELD, buildCharacter, buildCreature, loadCharact
 import { CLASSES, grownUp, wearClass } from './classes';
 import { SPEAKERS, type Speaker } from './dialogue';
 import type { Effects } from './effects';
-import { createFears } from './fears';
+import { FEAR_FIGURES, createFears } from './fears';
 import { createMinion } from './minion';
 import { NOTES_ENDPOINT, REDO, isoNow, newNote, type Note, type NotesFile, type Redo } from './bestiary-notes';
 import PORTRAIT_EXPRESSIONS from './portraits.json';
 import { MODEL_URL as SOBREMESA_URL } from './sobremesa';
 import { PROFILES, STAT_LABELS, type ProfileId, type Stats } from './stats';
 import { DIRECTIVAS, isCastle } from './castle';
+import { BOSS_FIGURES } from './foe-bodies';
 
 /**
  * The bestiary (development, `just bestiario`): everyone in the game, allies, foes, people and the
@@ -147,7 +148,7 @@ async function start() {
   const floor = new pc.Entity('Suelo'); floor.addComponent('render', { type: 'plane', material: ground }); floor.setLocalScale(14, 1, 14); app.root.addChild(floor);
 
   // Everything the game builds its fighters from: the people's files, the minion, the fears' templates.
-  await loadCharacterModels(app, [...CHARACTERS, ...CREATURE_SPECS, ...COMPANIONS]).catch(error => console.warn('[bestiario]', error));
+  await loadCharacterModels(app, [...CHARACTERS, ...CREATURE_SPECS, ...COMPANIONS, ...FEAR_FIGURES]).catch(error => console.warn('[bestiario]', error));
   const silent = { emit() {} } as unknown as Effects;
   const minion = createMinion(app, silent);
   minion.root.enabled = false;
@@ -394,12 +395,14 @@ async function start() {
   for (const seen of foes) {
     const template = fears.templates.has(seen.kind);
     // The management team is one kind with three figures, Mar's, Montse's and Pilar's (src/castle-models.ts `castleFigure`).
-    const own = seen.kind === 'directiva' ? DIRECTIVAS.map(d => d.id as string) : [seen.kind as string];
+    const own = seen.kind === 'directiva' ? DIRECTIVAS.map(d => d.id as string) : [BOSS_FIGURES[seen.kind] ?? seen.kind as string];
     const speaker = speakerOfFoe(seen), designs = own.flatMap(figureLinks), monsters = own.flatMap(id => MONSTERS.filter(m => m.id === id)), monster = monsters[0];
     // A castle foe in one piece (El Montón, El Atril) is a creature's file.
     const piece = isCastle(seen.kind) && !monster ? CREATURE_SPECS.find(c => c.id === seen.kind) : undefined;
-    // A castle foe with a figure of its own fights with it (src/castle-models.ts): that is what the fight draws.
-    const fightsWithIt = (!!monster || !!piece) && isCastle(seen.kind);
+    // A castle foe or a boss with a figure of its own fights with it (src/castle-models.ts): that is what the fight draws.
+    const fightsWithIt = (!!monster || !!piece) && (isCastle(seen.kind) || !!BOSS_FIGURES[seen.kind]);
+    // Vertitrón wears its figure over the joints the fight poses (src/fears.ts): its template is what the fight draws.
+    const dressed = seen.kind === 'vertigo' && !!monster;
     const status: ModelStatus = fightsWithIt ? { tone: 'own', label: `Modelo propio: su figura de Meshy (${monster ? monsters.map(m => `src/monsters/${m.id}.json`).join(', ') : `src/creatures/${piece!.id}.json`})` } : modelStatusOf(seen.kind, template);
     const family = familyOf(seen.kind, template);
     const inGame: View = fightsWithIt ? monster ? { type: 'monster', spec: monster } : { type: 'creature', spec: piece! } : seen.kind.startsWith('sobremesa-') ? { type: 'glb', url: SOBREMESA_URL }
@@ -411,11 +414,11 @@ async function start() {
       : { type: 'none', why: status.label };
     const views = [{ label: `En el combate: ${status.label}`, button: monsters.length > 1 ? monster.name : 'En el juego', view: inGame },
       ...fightsWithIt ? monsters.slice(1).map(m => ({ label: `En el combate: ${m.name}`, button: m.name, view: { type: 'monster', spec: m } as View })) : [],
-      ...monster && !fightsWithIt ? [{ label: 'Modelo nuevo (sin conectar al combate)', button: 'Nuevo', view: { type: 'monster', spec: monster } as View }] : []];
+      ...monster && !fightsWithIt && !dressed ? [{ label: 'Modelo nuevo (sin conectar al combate)', button: 'Nuevo', view: { type: 'monster', spec: monster } as View }] : []];
     const fights = seen.meetings.map(m => m.fight);
     entries.push({
       key: `enemigo:${seen.kind}`, filter: 'enemigos', name: seen.name, sub: seen.aka.length ? `También: ${seen.aka.join(', ')}` : '', group: seen.place.name,
-      status: monster && !fightsWithIt ? { tone: 'placeholder', label: 'Modelo nuevo hecho, el combate aún usa el provisional' } : status,
+      status: monster && !fightsWithIt && !dressed ? { tone: 'placeholder', label: 'Modelo nuevo hecho, el combate aún usa el provisional' } : status,
       portrait: speaker?.portrait, art: [...portraitArt(speaker), ...designs.flatMap(f => figureArt(f).map(a => ({ ...a, label: `${f.id} · ${a.label}` })))],
       views,
       search: `${seen.name} ${seen.aka.join(' ')} ${seen.kind} ${seen.place.name} ${fights.join(' ')} enemigo`,
@@ -426,11 +429,11 @@ async function start() {
         const cached = moveCache.get(seen.kind);
         const moves = cached ? cached.moves.length ? cached.moves.map(m => `<div class="move"><span>${m.card ? '<b>' : ''}${html(m.name)}${m.card ? '</b>' : ''}</span><small>${m.times} veces en ${cached.runs} combates</small></div>`).join('') : `<p>Solo golpes sin nombre (en ${cached.runs} combates simulados).</p>`
           : '<p id="moves-wait">Simulando sus combates…</p>';
-        return `<p>${badge(status)}${monster && !fightsWithIt ? badge({ tone: 'own', label: 'Modelo nuevo listo: src/monsters/' + monster.id + '.json' }) : ''}</p>
+        return `<p>${badge(status)}${monster && !fightsWithIt && !dressed ? badge({ tone: 'own', label: 'Modelo nuevo listo: src/monsters/' + monster.id + '.json' }) : ''}</p>
           ${section('Rasgos', `${statsGrid(seen.meetings[0].foe.stats, first.pv)}${table}`)}
           ${section('Ataques (los que usa, simulados con el bot del simulador)', moves + (cached?.failed.length ? `<p><small>${cached.failed.map(html).join('<br>')}</small></p>` : ''))}
           ${section('Truco del combate', answer(seen.kind) + targets.map(t => `<p class="why">${html(t.why)} <small>${t.id} · ${t.policy}${t.win ? ` · gana ${Math.round(t.win[0] * 100)}–${Math.round(t.win[1] * 100)} %` : ''}</small></p>`).join(''))}
-          ${section('Animaciones', fightsWithIt ? motion(MOTION[piece ? 'castlePiece' : 'castle']) : motion(MOTION[family]) + (monster ? `<p>Modelo nuevo: ${motion(MOTION.monster)}</p>` : ''))}
+          ${section('Animaciones', fightsWithIt ? motion(MOTION[piece ? 'castlePiece' : 'castle']) : motion(MOTION[family]) + (monster && !dressed ? `<p>Modelo nuevo: ${motion(MOTION.monster)}</p>` : ''))}
           ${section('Dónde aparece', `<p>${fights.map(f => html(fightName(f))).join(' · ')}</p>`)}
           ${designs.map(figureDetail).join('')}`;
       },
@@ -482,7 +485,8 @@ async function start() {
   for (const [id, speaker] of Object.entries(speakers)) {
     if ((party as string[]).includes(id)) continue;
     const spec = characterOf(speaker.portrait ?? id) ?? characterOf(id), figure = figureOf(spec?.id ?? id);
-    if (!spec && foes.some(f => f.kind === id)) continue;
+    // Nor does one who fights as a monster's figure (Mar, Montse and Pilar, El Equipo de dirección's entry).
+    if (!spec && (foes.some(f => f.kind === id) || MONSTERS.some(m => m.id === id))) continue;
     if (spec) used.add(spec.id);
     entries.push({
       key: `npc:${id}`, filter: 'npc', name: speaker.name, sub: speaker.portrait ? '' : 'Sin retrato', group: 'Gente',

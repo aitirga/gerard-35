@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, dualBlock, createBattle, enemyAct, nextRound, improve, inflict, fireTop, pulseDamage, runClock, bitsOf, BITS, COMBUSTION, FIRE_TOP, MANA_POINTS, TIMED } from '../src/battle.ts';
+import { act, actDual, dualBlock, createBattle, enemyAct, nextRound, improve, inflict, fireTop, pulseDamage, runClock, bitsOf, BITS, COMBUSTION, DUALS, FIRE_TOP, MANA_POINTS, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
 
 // Grade III (docs/animas/matemagico/README.md and docs/animas/tecnopata/README.md § Grade III):
@@ -172,10 +172,11 @@ test('Escudo de bits: a cure on someone under the dome patches it with what they
   }
 });
 
-test('Sobrecalentamiento: Foc Binari and Escudo de bits; the wall goes off as fire over every foe and what is left of it shields the party', () => {
+test('Sobrecalentamiento: Foc Binari and Escudo de bits, a plain dual; the dome of fire bursts over every foe and leaves no shield', () => {
   const s = pair('tecnopata', ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits']);
   const e = actDual(s, 'sobrecalentamiento');
   assert.equal(e.dual.id, 'sobrecalentamiento'); assert.equal(e.hits.length, 3);
   assert.ok(e.hits.every(h => h.amount > 0 && h.burn.level === 2));
-  assert.equal(bitsOf(s).hp, 20); assert.deepEqual(e.bits, { raised: 20 });
+  assert.equal(bitsOf(s), undefined); assert.equal(e.bits, undefined);
+  assert.ok(!DUALS.find(d => d.id === 'sobrecalentamiento').major, 'not a dúo mayor');
 });

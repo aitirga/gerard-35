@@ -197,7 +197,9 @@ export function buildPalaceInterior(kit: PalaceInteriorKit, environment: Environ
   });
 
   // ——— The gum curtain over the stair to the throne ———
-  const strands: { e: pc.Entity; phase: number }[] = [];
+  // Parted (its guards beaten in chapter 2), each strand is swept to its own side and hangs there, tied back from the stair.
+  const parted = !!environment.palace!.parted;
+  const strands: { e: pc.Entity; phase: number; lean: number }[] = [];
   plan.forEach((row, pz) => [...row].forEach((c, px) => {
     if (c !== 'C') return;
     const cell = at(px, pz, 0, 'Cortina de chicle');
@@ -208,7 +210,10 @@ export function buildPalaceInterior(kit: PalaceInteriorKit, environment: Environ
       const length = 2.1 + jitter(px * 5 + k) * .45;
       part(pivot, 'Hebra de chicle', 'cylinder', k % 2 ? drip : crest, [0, -length / 2, 0], [.07, length, .07], [0, 0, 0], false);
       part(pivot, 'Gota de la hebra', 'sphere', drip, [0, -length, 0], [.13, .2, .13], [0, 0, 0], false);
-      strands.push({ e: pivot, phase: px * 1.3 + k * .9 });
+      // Off the middle (x 16): the middle strands swing furthest, the outer ones barely, so none goes into the wall.
+      const off = px - .4 + k * .2 - 16, side = Math.sign(off) || 1, lean = parted ? side * (10 + 40 * (1 - Math.min(1, Math.abs(off) / 2.4))) : 0;
+      strands.push({ e: pivot, phase: px * 1.3 + k * .9, lean });
+      if (parted) pivot.setLocalEulerAngles(0, 0, lean);
     }
   }));
   // The stair behind it rises north towards a glowing doorway: the throne, for later.
@@ -302,7 +307,7 @@ export function buildPalaceInterior(kit: PalaceInteriorKit, environment: Environ
       if (!animate) return;
       time += dt;
       for (const d of drips) { const s = d.e.getLocalScale(); d.e.setLocalScale(s.x, d.length * (1 + Math.sin(time * .8 + d.phase) * .14), s.z); }
-      for (const s of strands) s.e.setLocalEulerAngles(Math.sin(time * 1.1 + s.phase) * 4, 0, Math.sin(time * .9 + s.phase * 1.3) * 5);
+      for (const s of strands) s.e.setLocalEulerAngles(Math.sin(time * 1.1 + s.phase) * 4, 0, s.lean + Math.sin(time * .9 + s.phase * 1.3) * (s.lean ? 2 : 5));
       pool.setLocalPosition(0, .5 + Math.sin(time * 1.6) * .02, 0);
       for (const f of falls) {
         const t = (time * .7 + f.phase) % 1, r = .55 + t * .45;

@@ -33,7 +33,7 @@ import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, cast
 import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, EVENINGS, LATE, NIGHT, WOKE_LATE, boostOf, dusk, freshDays, isBoost, isNight, readDays, spread, stage, type Activity, type BoostId, type Days, type EveningId } from './days.ts';
-import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS, type Environment } from './environments.ts';
+import { CAMPING_DOOR, CAMPING_GATE, ENVIRONMENTS, PALACIO, type Environment } from './environments.ts';
 
 /** Keep in sync with STORY_FLAGS in server.py (a test checks it). */
 export const STORY_FLAGS = [
@@ -73,10 +73,11 @@ export const STORY_FLAGS = [
   'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-alegia', 'ticket-espanya',
   // Bernat (docs/quests/bernat.md): met at El Nucli, the confidant who recognises her castle.
   'bernat-nucli',
-  // The castle (docs/castle.md, docs/castle-bosses.md): Aurelià beaten and his light, the management team and
+  // The castle (docs/castle.md, docs/castle-bosses.md): the guards before the curtain beaten (its stair
+  // open for good onto the first floor), Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, Bernat's call, his game told and the box opened, the portal
   // solved (docs/quests/bernat.md), the artilugio, the Queen beaten, and which of the two endings.
-  'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'bernat-llama', 'bernat-juego', 'portal-nucli', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
+  'cortina', 'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'bernat-llama', 'bernat-juego', 'portal-nucli', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -103,7 +104,7 @@ export type StoryEvent =
    * A fight ended; `encounter` says which one (the street dogs if missing), `worn` the ánimas that
    * took part (src/levels.ts `participants`) and `xp` what the fight was worth to each of them.
    */
-  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[]; xp?: number; /** The Queen had Aitor when it ended (src/castle-fight.ts `aitorTaken`). */ taken?: boolean }
+  | { type: 'battle'; won: boolean; encounter?: EncounterId; worn?: ClassId[]; xp?: number; /** The Queen had Aitor when it ended (src/castle-fight.ts `aitorTaken`). */ taken?: boolean; /** Her last scene played in the fight, and this is what Gerard chose there (src/main.ts `lastScene`). */ ending?: EndingChoice }
   /** The palace has finished rising over the north end of the street. */
   | { type: 'palace' }
   /** Gerard is (or is no longer) heading back south, away from the palace. */
@@ -887,7 +888,11 @@ export class Story {
   place(environment: EnvironmentId): Environment {
     if (isCastlePlace(environment)) return castleEnvironmentFor(environment, this.days.epoch, this.days.clock.day);
     // A built zone of the school stands as the bosses fallen leave it (src/castle-mood.ts): the school again behind them, more hers ahead.
-    return this.adult && isCastleZone(environment) ? castleZone(this.flags, environment) : ENVIRONMENTS[environment];
+    if (this.adult && isCastleZone(environment)) return castleZone(this.flags, environment);
+    // The hall with its guards beaten: the curtain is tied back from its stair (src/palace-scenery.ts).
+    // From its own constant: the game keeps what this returns in `ENVIRONMENTS`.
+    if (environment === 'palacio') return this.adult && this.has('cortina') ? { ...PALACIO, palace: { ...PALACIO.palace!, parted: true } } : PALACIO;
+    return ENVIRONMENTS[environment];
   }
   /** The next morning at home with nothing said yet (the Monday after the end). */
   private newMorning(): StoryEffect[] {
@@ -1053,7 +1058,11 @@ export class Story {
     // One of them beaten in the street: it melts where it stood (the game), the hunt goes on.
     if (event.encounter === 'night-guard') return [];
     // Through the guards: hours gone, and no more (her castle never brings the night: docs/chapter-2.md § Night and the way home).
-    if (event.encounter === 'palace-guards') return [say(LINES_2.guardsBeaten), ...this.spend('fight')];
+    // Beaten, they are gone for good and the curtain parts on its stair: the hall is drawn again with it open, the party before it.
+    if (event.encounter === 'palace-guards') {
+      const parted: StoryEffect[] = this.set('cortina') ? [{ kind: 'travel', environment: PLACES_2.guards.environment, cell: { ...PLACES_2.guards.challenge } }] : [];
+      return [...parted, say(LINES_2.guardsBeaten), ...this.spend('fight')];
+    }
     if (event.encounter === 'palace-minion') {
       if (!this.set('wrapper-room')) return [];
       return [say(LINES.afterMatemagico), { kind: 'ambush' }];
@@ -1465,7 +1474,8 @@ export class Story {
   }
   /** Cells the guards stand on in the palace hall (chapter 2): fewer as the party gathers ánimas. */
   get guarded(): Cell[] {
-    if (!this.adult) return [];
+    // Beaten once, they are gone for good, and the curtain with them (docs/castle.md § Structure).
+    if (!this.adult || this.has('cortina')) return [];
     const { count } = palaceGuards(this.animas.length);
     const cells = PLACES_2.guards.cells;
     // The middle one stays; the sides go first.
@@ -1614,9 +1624,10 @@ export class Story {
     if (environment === 'maresme' && this.has('palace') && !this.adult) list.push({ id: 'enter-palace', label: 'Atravesar la pompa', cell: { x: PLACES.palace.door.x, z: PLACES.palace.door.z - 1 } });
     if (environment === 'palacio') {
       // Chapter 1's looks answer with Bernat's voice; at 35 only the curtain is worth a word.
-      for (const look of PALACE_LOOKS) if (!this.adult || look.id === 'look-curtain') list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
+      for (const look of PALACE_LOOKS) if (!this.adult || (look.id === 'look-curtain' && !this.has('cortina'))) list.push({ id: look.id, label: look.label, cell: { ...look.cell } });
       if (!this.has('wrapper-room')) list.push({ id: 'push-back-door', label: 'Empujar la puerta', hint: 'Empujar', cell: { ...BACK_DOOR } });
-      if (this.adult) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', hint: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
+      // Until they fall; then the curtain stands open on its stair (castleInteractions).
+      if (this.adult && !this.has('cortina')) list.push({ id: 'challenge-guards', label: 'Cruzar la cortina', hint: 'Cruzar la cortina', cell: { ...PLACES_2.guards.challenge } });
       // At 35 the east door opens: the school is behind it (src/palace-zone-plans.ts).
       if (this.adult) list.push({ id: SCHOOL_WAY, label: 'Abrir la puerta', cell: { x: 21, z: 13 } });
     }
@@ -1628,7 +1639,7 @@ export class Story {
   gate(interactionId: string): Dialogue | undefined {
     if (interactionId === PALACE_EXIT) return this.has('wrapper-room') ? undefined : LINES.leaveLocked;
     // Inside the palace the school's doors open boss by boss: the secretaría and Direcció once the management team has fallen.
-    const shut = castleGate(this.castleHost, interactionId, { office: LINES_2.officeShut, direction: LINES_2.directionShut });
+    const shut = castleGate(this.castleHost, interactionId, { gym: LINES_2.gymShut, office: LINES_2.officeShut, direction: LINES_2.directionShut });
     if (shut) return shut;
     // The TV switched itself on when Gerard woke: Aitor will not go out before seeing it.
     if (interactionId === 'meridiana-door' && this.adult && !this.has('tv-news')) return LINES_2.doorBeforeNews;
@@ -1835,7 +1846,7 @@ export class Story {
         return [{ kind: 'travel', environment: CALLE, cell: { ...PLACES_NURIA.calleBack.cell } }];
       case 'talk-jan':
         if (this.set('met-jan')) return [say(LINES.jan)];
-        return [say(this.has('got-potion') ? LINES.janAfterPotion : LINES.janAgain)];
+        return [say(LINES.janAgain)];
       case 'take-pocion':
         if (!this.set('got-potion')) return [];
         return [say(LINES.pocion), { kind: 'item', item: 'pocion' }];
@@ -1844,7 +1855,7 @@ export class Story {
         return [say(this.has('got-backpack') ? LINES.mamaBye : LINES.mamaWaiting)];
       case 'take-mochila':
         if (!this.set('got-backpack')) return [];
-        return [say(LINES.mochila), { kind: 'item', item: 'mochila' }, { kind: 'hint', id: 'items' }];
+        return [{ kind: 'item', item: 'mochila' }, { kind: 'hint', id: 'items' }];
       case 'call-bernat':
         if (!this.has('got-backpack')) return [say(LINES.bernatNotYet)];
         if (!this.set('bernat-joined')) return [say(LINES.bernatHere)];

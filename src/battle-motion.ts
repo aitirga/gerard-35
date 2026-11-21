@@ -12,8 +12,23 @@ export const CAST_GAP = .085;
  * leaves at SPELL_LAUNCH and lands SPELL_FLIGHT later.
  */
 export const SPELL_LAUNCH = .44, SPELL_FLIGHT = .4, SPELL_CONTACT = SPELL_LAUNCH + SPELL_FLIGHT;
-/** Cardioide: its comet leaves the circle at CAST_LAUNCH and reaches whoever it cures here. */
-export const CURE_CONTACT = CAST_LAUNCH + .24;
+/**
+ * Matemágico's figures (src/math-figures.ts), drawn in his circle from CAST_LAUNCH: when each lands
+ * (`contact`: the blow, the cure) and when its action is over (`end`), from the action's start.
+ */
+export const FIGURES = {
+  cardioide: { contact: 1.5, end: 2 },
+  'factor-comun': { contact: 1.64, end: 2.35 },
+  vasos: { contact: 1.96, end: 2.6 },
+  integral: { contact: 1.55, end: 2.05 },
+  descarga: { contact: 1, end: 1.7 },
+  cortocircuito: { contact: 1, end: 1.6 },
+  condensador: { contact: 1.3, end: 1.8 },
+} as const satisfies Record<string, { contact: number; end: number }>;
+export type FigureSkill = keyof typeof FIGURES;
+export const isFigure = (skill?: string): skill is FigureSkill => !!skill && skill in FIGURES;
+/** Cardioide: its motes reach whoever it cures here. */
+export const CURE_CONTACT = FIGURES.cardioide.contact;
 export const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 export const smooth = (t: number) => { t = clamp01(t); return t * t * (3 - 2 * t); };
 /** Off slowly, quicker and quicker, then a short brake: how things rush into a fight (cubic in-out). */

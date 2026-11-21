@@ -15,7 +15,7 @@ import { DUO, FIGHTS, MISSIONS, MISSION_IDS, TARGETS, createFight, missionOf, pl
 import { CASTLE_FIGHT_NAMES, CASTLE_NAMES, isCastle, isCastleEncounter } from './castle.ts';
 import { ENCOUNTER_NAMES } from './game-sim.ts';
 import { STAT_LABELS, type Stats } from './stats.ts';
-import { FOE_BODIES } from './foe-bodies.ts';
+import { BOSS_FIGURES, FOE_BODIES } from './foe-bodies.ts';
 
 /** Every fight of the game: the simulator's, and the palace minion's, which is chapter 1's alone. */
 export const ALL_FIGHTS: readonly string[] = [...FIGHTS, 'palace-minion'];
@@ -164,7 +164,7 @@ export const MOTION: Record<Family, string[]> = {
   onion: ['Encoge capa a capa: su piel se aclara con las que le quedan y las capas salen volando', 'Carrerilla: rueda hacia atrás antes del Aplastón', 'Bambolea; se deshace al caer'],
   dish: ['Da una vuelta entera cuando cambia de plato; con la sorpresa, la campana tiembla', 'Bambolea; se deshace al caer'],
   ghost: ['Se vuelve transparente entero y tiembla (Transparente)', 'Se deshace al caer'],
-  vertigo: ['Rígido: no se estira ni bambolea; se inclina pesado y tiembla al recibir', 'Poses del robot: pisotón, barrido, grito, carga del rayo, retroceso, arrodillarse al caer', 'Su ojo gira (parte con PV propios); Uri arriba con Nil en brazos'],
+  vertigo: ['Rígido: no se estira ni bambolea; se inclina pesado y tiembla al recibir', 'Su figura de Meshy sigue las juntas del robot (src/fears.ts `dressVertitron`). Poses: pisotón, barrido, grito, carga del rayo, retroceso, arrodillarse al caer', 'Su ojo gira (parte con PV propios); Uri arriba con Nil en brazos'],
   camping: ['Su modelo enseña su regla (src/camping-foes.ts `show`): la cara del dado, el agente boca arriba o abajo, la bombona del mago', 'Bambolea; se deshace al caer'],
   cuerdas: ['Cuerdas, cristal y luz que se mueven con su regla (src/cuerdas-foes.ts `show`): el nudo de La Lealtad y su escudo, los anillos y las ondas del Eco en el suelo; La Voz canta', 'Se deshace al caer; un Eco vuelve a atarse'],
   modelo: ['Celdas, figuras y órbitas que enseñan su valor, su agua y los electrones que le quedan (src/modelo-foes.ts)', 'El Átomo: sus electrones giran, más deprisa antes de la Reacción; arrancados, caen apagados al agua', 'Se deshace al caer'],
@@ -193,6 +193,8 @@ export function modelStatusOf(kind: FoeKind, template: boolean): ModelStatus {
   if (isSobremesa(kind)) return { tone: 'own', label: 'Modelo propio: el cuerpo de La Sobremesa (Meshy, rig del juego)' };
   if (kind === 'vertigo-ojo') return { tone: 'part', label: 'Parte de Vertitrón: el ojo de su pecho' };
   if (kind === 'lampara') return { tone: 'part', label: 'Parte del combate de Fran: una lámpara del palio' };
+  if (BOSS_FIGURES[kind]) return { tone: 'own', label: `Modelo propio: figura de Meshy con esqueleto (src/monsters/${BOSS_FIGURES[kind]}.json), como los alumnos del castillo` };
+  if (kind === 'vertigo') return { tone: 'own', label: 'Modelo propio: figura de Meshy (src/monsters/vertigo.json) movida por las juntas del combate (src/fears.ts `dressVertitron`), con su ojo y Uri encima' };
   if (FOE_BODIES[kind]) return { tone: 'own', label: `Modelo propio: figura de Meshy (${FOE_BODIES[kind]}), su regla en código encima` };
   if (template) return { tone: 'procedural', label: 'Modelo propio procedural (primitivas en código)' };
   if (kind === 'minion') return { tone: 'procedural', label: 'Modelo propio procedural (src/minion.ts)' };

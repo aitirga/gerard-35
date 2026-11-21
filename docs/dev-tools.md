@@ -264,6 +264,8 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
 - **Huir** is there and always works in development; the game has none (`ESCAPE.mode = 'off'` in
   `src/battle.ts`). `?escape=off` in the URL plays the fight's menu as the game does, `?escape=chance`
   tries a Huir that can fail (docs/combat.md § Huir).
+- `?combates=no` in the URL lets nothing start a fight (arriving, a patrol, a story beat): to look at
+  a place where one would. `just guion-fotos` loads the game so.
 - **Salir del combate**: the fight ends at once, with no result for the story. Picking a place in
   Lugares also leaves the fight first.
 
@@ -444,15 +446,23 @@ or, inside a mission, `/?mission=…&part=…` from `missionNow`). Each section 
 that order, then what the simulated game never says (talking twice, optional looks, other branches).
 *Abrir en el juego* reloads the game at that point. The result is `output/guion/partida.json`.
 
+What that game never says, it still tries: at each new point, on a copy of the story, every interaction
+of the place it is in, twice (talking again, a palace portrait, each afternoon, the piano), and what
+comes out is kept in `extra` with the interaction it came from (`via`, `again`). Then the `corredor`
+player plays its own game (`OTHER_PLAYERS`: another order, the other ending), and what only it hears
+goes to `extra` too (`player`; `--otros corredor,casual` adds the slow one, `--otros ''` none). The page
+marks those *fuera de la partida*, with how they are reached and their point to reload, and the photos
+take them as they take the rest (about 20 seconds in all).
+
 **Photos**: `just guion-fotos` loads the game at each moment's point, stands Gerard where it was said
 (`setEnvironment`), puts its first line on screen with the game's own banner (`window.gerard.dialogue`)
 and saves `output/guion/fotos/<entry>.jpg`; a thing looked at gets its photo from the first visit to
 its place. Only what is missing is taken (`--todas` redoes them all, `--solo <section or id>` some,
 `--ver` shows the browser); a moment whose point starts a fight is tried again from the first visit
 to its place; each load is a fresh tab (one tab reloaded dozens of times runs out of GPU memory). About
-200 photos in half an hour on this machine's GPU; a few never come out, where a fight starts on arriving
-anywhere near (a castle room's pupils, the patrols of Emilie's model). A photo is the place and the line,
-not the exact scene: people the mission moves may stand elsewhere.
+200 photos in half an hour on this machine's GPU. The game is loaded with `?combates=no`, so a fight
+that would start on arriving (a castle room's pupils, the patrols of Emilie's model) does not get in the
+way. A photo is the place and the line, not the exact scene: people the mission moves may stand elsewhere.
 
 **Editing.** Hovering a line offers *Editar*, *Sugerir* and *Comentar*; clicking its text edits it.
 *Guardar en el juego* (⌘ + Enter) writes the new text straight into the code: the dev server
@@ -464,11 +474,22 @@ in `git diff`, and the game says it so at its next reload. *Dejar como sugerenci
 as a note instead (old struck through, new in green, *Aplicar* writes it later); *Comentar* leaves a
 comment on a line, and *Comentar el momento* on the whole entry.
 
+**Adding and taking out lines.** *+ Después* (and *+ Antes* on a moment's first line) opens a block
+editor in place: one row per new line, each with who says it (the moment's own voices first, then
+everyone; the next row starts with the other side of the dialogue) and its text, *+ Otra línea* for
+more, *Guardar bloque* (⌘ + Enter). *Quitar* marks a line to stop being said. Neither touches the code:
+each is a note for the `guion` skill to write in, and the page shows it where it goes, the new lines
+in green between the others and the line to go struck through, until it is closed. A change note
+keeps the line it hangs from as `line`, `quote` and `at` (`file:line`), so it is found again if the
+lines move; if that line is gone, the note says so above the moment.
+
 **Notes** live in `docs/guion-notes.json`, tracked so they travel between machines, written by the
 dev server as the bestiary's (`GET`/`PUT /__guion/notas`, checked by `guionNotesProblem` in
 src/guion.ts). Each has `id` (`g-` and the time in base 36), `entry` (the entry's id:
 `chapter-1:LINES.mama`, `lugar:<interaction id>`, `journal:textos`…) and `title`, `line` (0-based) and
-`quote` (what the line said then) when it is about one line, `proposal` for a suggestion, `text`,
+`quote` (what the line said then) and `at` (its `file:line` then) when it is about one line,
+`proposal` for a suggestion, `change` (`añadir` with `place`, `antes` or `despues`, and `block`, the
+lines in order as `{ speaker, text }`; or `quitar`) for a change to the moment's lines, `text`,
 `status` (`abierta`, `hecha`, `descartada`), `created`, and `closed` and `reply` once answered. The
 `guion` skill reads the open ones, applies or answers them and writes its `reply`, which the page
 shows. A note whose entry the code no longer has is listed at the end, *Notas sin sitio*.

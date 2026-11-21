@@ -15,8 +15,8 @@ function duel(options = {}) {
   return {
     id: 'simulator-test',
     combatants: [
-      { id: 'p', team: 'party', stats: { speed: 2 }, resources: { hp: { max: 20 }, energy: { max: 10 } }, actions: ['hit', 'skill'] },
-      { id: 'e', team: 'opponent', stats: { speed: 1 }, resources: { hp: { max: 20 }, energy: { max: 10 } }, actions: ['hit'] },
+      { id: 'p', team: 'party', stats: {}, resources: { hp: { max: 20 }, energy: { max: 10 } }, actions: ['hit', 'skill'] },
+      { id: 'e', team: 'opponent', stats: {}, resources: { hp: { max: 20 }, energy: { max: 10 } }, actions: ['hit'] },
     ],
     actions: {
       hit: { target: 'enemy', effects: [{ kind: 'damage', amount: 6 }] },

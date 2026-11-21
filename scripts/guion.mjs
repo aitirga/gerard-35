@@ -3,7 +3,8 @@
  * The script of the game (`just guion`, docs/dev-tools.md § El guion), from the game's own data:
  *
  *   node scripts/guion.mjs            output/guion/guion.json: every line, who says it and where it is written
- *   node scripts/guion.mjs partida    output/guion/partida.json: when each is said, in one simulated game (src/game-sim.ts)
+ *   node scripts/guion.mjs partida    output/guion/partida.json: when each is said, in one simulated game (src/game-sim.ts), and what it
+ *                                     only says trying every interaction or in another player's game (`extra`)
  *   node scripts/guion.mjs fotos      output/guion/fotos/: a photo of each moment, the game at that point with its line on screen
  *
  * The page (guion.html, src/guion-page.ts) reads the three; the dev server writes guion.json again each
@@ -67,7 +68,7 @@ function extras(m) {
     { id: 'chapter-2:NEWS.screen', group: 'capitulo-2', kind: 'tele', title: 'Las noticias: rótulos', file: 'chapter-2', lines: all('tele', [NEWS.channel, NEWS.kicker, NEWS.live, ...Object.values(NEWS.shots), NEWS.reporter.name, NEWS.reporter.role]) },
     { id: 'chapter-2:NEWS.ticker', group: 'capitulo-2', kind: 'tele', title: 'Las noticias: el teletipo', file: 'chapter-2', lines: all('tele', NEWS.ticker) },
     { id: 'castle-story:LINES_CASTLE.screams', group: 'castillo', kind: 'grito', title: 'El grito de la Reina al caer cada jefe', file: 'castle-story', lines: all('reina', Object.values(LINES_CASTLE.screams)) },
-    { id: 'castle-story:LINES_CASTLE.scenes', group: 'castillo', kind: 'narracion', title: 'La última escena y los dos finales', file: 'castle-story', lines: all('narracion', [LINES_CASTLE.lastScene, LINES_CASTLE.acabar.scene, LINES_CASTLE.bajar.scene]) },
+    { id: 'castle-story:LINES_CASTLE.scenes', group: 'castillo', kind: 'narracion', title: 'La última escena y los dos finales', file: 'castle-story', lines: all('narracion', [LINES_CASTLE.lastScene, LINES_CASTLE.acabar.scene]) },
     { id: 'friends/nuria:LINES_NURIA.shouts', group: 'nuria', kind: 'grito', title: 'Uri grita desde lo alto de la torre', file: 'friends/nuria', lines: all('uri', [LINES_NURIA.mazeIn, ...LINES_NURIA.shouts, LINES_NURIA.roof]) },
     { id: 'friends/nuria:STREET_MARKS', group: 'nuria', kind: 'burbuja', title: 'Aitor por La calle que no acaba', file: 'friends/nuria', lines: all('aitor', STREET_MARKS.map(s => s.text)) },
     { id: 'friends/universidad:LINES_UNI.run', group: 'universidad', kind: 'burbuja', title: 'Aitor, al empezar el pilla-pilla', file: 'friends/universidad', lines: all('aitor', [LINES_UNI.run]) },
@@ -150,17 +151,29 @@ async function script() {
 }
 
 // ── When it is said ────────────────────────────────────────────────────────
-/** One simulated game (src/game-sim.ts) with the story listened to: each dialogue said, where and when, and how to get the game back to that point. */
-async function partida({ player = 'pensando', seed = 35 } = {}) {
-  const { entries, objects } = await collect();
+/** The story with the same state, to try things on without touching the game (its own `handle` stays behind). */
+const copyStory = story => Object.assign(Object.create(Object.getPrototypeOf(story)), structuredClone(Object.fromEntries(Object.entries(story).filter(([, v]) => typeof v !== 'function'))));
+
+/**
+ * One simulated game (src/game-sim.ts) with the story listened to: each dialogue said, where and when,
+ * and how to get the game back to that point. With `probe`, at each new point it also tries, on a copy
+ * of the story, every interaction of the place it is in, twice: what that would say (talking again, a
+ * portrait, an afternoon) goes to `tried`, with the interaction it came from.
+ */
+async function listen({ player, seed, probe, entries, objects }) {
   const { PLAYERS, Playing } = await import('../src/game-sim.ts');
   const { MISSIONS } = await import('../src/battle-sim.ts');
   const { missionNow, missionsDone } = await import('../src/story-points.ts');
+  const { ENVIRONMENTS } = await import('../src/environments.ts');
   const byText = new Map();
   for (const entry of entries) for (const l of entry.lines) if (!byText.has(l.text)) byText.set(l.text, entry.id);
+  const entryOf = effect => {
+    const text = effect.kind === 'dialogue' ? effect.dialogue.lines[0].text : effect.kind === 'shout' || effect.kind === 'scream' || effect.kind === 'epilogue' ? effect.text : effect.kind === 'photo' ? effect.caption : undefined;
+    return text === undefined ? undefined : (effect.kind === 'dialogue' && objects.get(effect.dialogue)) || byText.get(text);
+  };
   const game = new Playing(PLAYERS[player], seed);
   const story = game.story, handle = story.handle.bind(story);
-  const flags = [...story.saved], moments = [], visits = {};
+  const flags = [...story.saved], moments = [], visits = {}, tried = new Map(), probed = new Set();
   const jump = () => {
     const adult = story.adult, clock = story.clock;
     const time = adult ? `&day=${clock.day}${clock.hour >= 21 ? `&hour=${clock.hour}` : ''}` : '';
@@ -169,6 +182,26 @@ async function partida({ player = 'pensando', seed = 35 } = {}) {
     const part = mission && missionNow(mission, story.saved, story.nuria, story.uni, story.luca);
     if (part) return `/?mission=${mission}&part=${part}${done.length ? `&with=${done.join(',')}` : ''}${time}`;
     return flags.length ? `/?story=${flags.at(-1)}${done.length ? `&with=${done.join(',')}` : ''}${time}` : '/?story=new';
+  };
+  const when = () => ({ stage: game.stageName, day: story.adult ? story.clock.day : 0, hour: story.adult ? story.clock.hour : 0 });
+  const tryAll = environment => {
+    const point = jump();
+    if (probed.has(`${environment} ${point}`)) return;
+    probed.add(`${environment} ${point}`);
+    const ids = new Map();
+    for (const i of story.interactions(environment)) ids.set(i.id, i);
+    for (const i of ENVIRONMENTS[environment]?.interactions ?? []) if (!ids.has(i.id)) ids.set(i.id, i);
+    for (const [id, { cell, label }] of ids) {
+      const copy = copyStory(story);
+      for (const again of [false, true]) {
+        let effects;
+        try { effects = copy.handle({ type: 'interact', id }); } catch { break; }
+        for (const effect of effects) {
+          const entry = entryOf(effect);
+          if (entry && !tried.has(entry)) tried.set(entry, { n: 0, entry, ...when(), environment, cell: { x: Math.round(cell.x), z: Math.round(cell.z) }, event: 'interact', via: id, ...(label ? { label } : {}), ...(again ? { again } : {}), jump: point });
+        }
+      }
+    }
   };
   story.handle = event => {
     const at = { environment: game.at.environment, cell: { x: Math.round(game.at.cell.x), z: Math.round(game.at.cell.z) } };
@@ -180,17 +213,35 @@ async function partida({ player = 'pensando', seed = 35 } = {}) {
     // door talked to), so arriving does not set it off again; just before it is the second try.
     const after = jump();
     for (const effect of effects) {
-      const text = effect.kind === 'dialogue' ? effect.dialogue.lines[0].text : effect.kind === 'shout' || effect.kind === 'scream' || effect.kind === 'epilogue' ? effect.text : effect.kind === 'photo' ? effect.caption : undefined;
-      if (text === undefined) continue;
-      const entry = (effect.kind === 'dialogue' && objects.get(effect.dialogue)) || byText.get(text);
-      if (!entry) continue;
-      moments.push({ n: moments.length + 1, entry, stage: game.stageName, day: story.adult ? story.clock.day : 0, hour: story.adult ? story.clock.hour : 0, ...at, event: event.type, jump: after, ...(before !== after ? { before } : {}) });
+      const entry = entryOf(effect);
+      if (entry) moments.push({ n: moments.length + 1, entry, ...when(), ...at, event: event.type, jump: after, ...(before !== after ? { before } : {}) });
     }
+    if (probe) tryAll(game.at.environment);
     return effects;
   };
   const played = game.playAll();
-  const file = writeJson('partida.json', { player, seed, made: new Date().toISOString(), finished: played.finished, moments, visits });
-  return { file, moments: moments.length, entries: new Set(moments.map(m => m.entry)).size, finished: played.finished };
+  return { moments, visits, tried: [...tried.values()], finished: played.finished };
+}
+
+/** Who else plays the game for the script: they take other branches (another ending, losing, another order) and say what the first player never hears. */
+const OTHER_PLAYERS = ['corredor'];
+
+/**
+ * The game played by `player` (its moments, in order) and what it never says but the game can: each
+ * interaction tried at every point (`listen`'s probe), and what `others` hear in their own game.
+ */
+async function partida({ player = 'pensando', seed = 35, others = OTHER_PLAYERS } = {}) {
+  const { entries, objects } = await collect();
+  const main = await listen({ player, seed, probe: true, entries, objects });
+  const said = new Set(main.moments.map(m => m.entry)), extra = new Map();
+  const keep = (list, from) => { for (const m of list) if (!said.has(m.entry) && !extra.has(m.entry)) extra.set(m.entry, { ...m, n: 0, ...(from ? { player: from } : {}) }); };
+  keep(main.tried);
+  for (const other of others) {
+    const game = await listen({ player: other, seed, probe: true, entries, objects });
+    keep(game.moments, other); keep(game.tried, other);
+  }
+  const file = writeJson('partida.json', { player, seed, made: new Date().toISOString(), finished: main.finished, moments: main.moments, extra: [...extra.values()], visits: main.visits });
+  return { file, moments: main.moments.length, entries: said.size, extra: extra.size, finished: main.finished };
 }
 
 // ── The photos ─────────────────────────────────────────────────────────────
@@ -216,7 +267,7 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
   mkdirSync(dir, { recursive: true });
   const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, 'utf8')) : {};
   const first = new Map();
-  for (const moment of played.moments) if (!first.has(moment.entry)) first.set(moment.entry, moment);
+  for (const moment of [...played.moments, ...(played.extra ?? [])]) if (!first.has(moment.entry)) first.set(moment.entry, moment);
 
   // What to photograph: each moment of the game, and each thing to look at in a place the game went to.
   const targets = [];
@@ -228,7 +279,9 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
     const faceless = ['narracion', 'tele', 'rotulo', 'diario'].includes(said.lines[0].speaker);
     // Where to load the game for it, and where else to try if a fight starts on arrival.
     const tries = urls => [...new Set(urls.filter(Boolean))];
-    if (moment) targets.push({ entry: entry.id, urls: tries([moment.jump, moment.before, played.visits[moment.environment]]), environment: moment.environment, cell: moment.cell, said: faceless ? undefined : said });
+    // A moment only tried (`extra`) stands Gerard by the thing that says it, not on it.
+    const cell = moment?.via ? standing(ENVIRONMENTS[moment.environment], moment.cell) : moment?.cell;
+    if (moment) targets.push({ entry: entry.id, urls: tries([moment.jump, moment.before, played.visits[moment.environment]]), environment: moment.environment, cell, said: faceless ? undefined : said });
     else if (entry.kind === 'mirar' && entry.place?.environment && played.visits[entry.place.environment]) {
       targets.push({ entry: entry.id, urls: [played.visits[entry.place.environment]], environment: entry.place.environment, cell: standing(ENVIRONMENTS[entry.place.environment], entry.place.cell), said });
     }
@@ -270,7 +323,9 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
       try {
         await freshPage();
         lastError = '';
-        await page.goto(new URL(url, base).href, { waitUntil: 'domcontentloaded' });
+        // No fight starts (`?combates=no`): one on arriving (a castle room's pupils, a patrol) would hide the place.
+        const href = new URL(url, base); href.searchParams.set('combates', 'no');
+        await page.goto(href.href, { waitUntil: 'domcontentloaded' });
         await until('!!window.gerard?.started && !!window.gerard.dialogue', 60000);
         await wait(1500);
         await quiet();
@@ -287,7 +342,10 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
           // Arriving may set the moment off by itself: then the game is already saying it, as it would.
           const own = t.said && await page.evaluate(text => window.gerard.dialogue.open && document.querySelector('#dialogue .text')?.textContent === text, t.said.lines[0].text);
           if (!own) await quiet();
-          if (!own && await page.evaluate(() => !!document.querySelector('#battle:not([hidden])'))) {
+          const fighting = () => page.evaluate(() => !!document.querySelector('#battle:not([hidden])'));
+          // A fight started on arrival (a castle room's pupils, a patrol): left at once with no result,
+          // as the picker does, so the place and the line are photographed all the same.
+          if (!own && await fighting()) {
             // A fight started on arrival: the rest of this point go on after a fresh load, and this
             // moment is tried again at its next point.
             if (group.length) queue.unshift({ url, group });
@@ -330,12 +388,13 @@ if (process.argv[1] === import.meta.filename) {
     const { file, entries, lines } = await script();
     console.log(`${file}: ${entries} entradas, ${lines} líneas`);
   } else if (command === 'partida') {
-    const { file, moments, entries, finished } = await partida({ player: option('--jugador'), seed: option('--semilla') ? Number(option('--semilla')) : undefined });
-    console.log(`${file}: ${moments} momentos de ${entries} entradas${finished ? '' : ' (la partida no llegó al final)'}`);
+    const others = option('--otros');
+    const { file, moments, entries, extra, finished } = await partida({ player: option('--jugador'), seed: option('--semilla') ? Number(option('--semilla')) : undefined, ...(others !== undefined ? { others: others ? others.split(',') : [] } : {}) });
+    console.log(`${file}: ${moments} momentos de ${entries} entradas, y ${extra} más que solo se dicen probando${finished ? '' : ' (la partida no llegó al final)'}`);
   } else if (command === 'fotos') {
     await fotos({ all: args.includes('--todas'), only: option('--solo'), headed: args.includes('--ver'), gpu: !args.includes('--sin-gpu') });
   } else {
-    console.log(`Uso: node scripts/guion.mjs [guion | partida [--jugador pensando] | fotos [--todas] [--solo <sección o id>] [--ver] [--sin-gpu]]`);
+    console.log(`Uso: node scripts/guion.mjs [guion | partida [--jugador pensando] [--otros corredor,casual] | fotos [--todas] [--solo <sección o id>] [--ver] [--sin-gpu]]`);
     process.exit(1);
   }
 }

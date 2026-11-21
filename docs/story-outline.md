@@ -31,7 +31,7 @@ What exists or is designed with a cartoon look, to judge one by one (keep, tone 
 
 | Piece | Now | Where | Verdict |
 | --- | --- | --- | --- |
-| La Reina Bubbaloo | Pink gum beehive, a crown of five gum balls, a wrapper-paper gown, sticky gloves, a gum-ball sceptre, heart beauty mark | `docs/lore.md`, `src/queen-hands.ts` (her hands: pink gelatine) | _open_ |
+| La Reina Bubbaloo | Pink gum beehive, a crown of five gum balls, a wrapper-paper gown, sticky gloves, a gum-ball sceptre, heart beauty mark | `docs/lore.md`, `src/queen-hands.ts` (her arms: `reina-brazo`, gloves of stretched gum) | _open_ |
 | Her minions | Gum-ball heads, gooey bodies, pink puddles, blowing bubbles | `src/minion.ts` | _open_ |
 | The palace | Gum ramparts, wrapper-twist towers, bubble domes; chapter 2's spiked towers, storm and glowing eyes | `docs/bubbaloo-palace.md`, `src/palace.ts` | _open_ |
 | Possessed animals and people | Dark pink eyes (animals), violet eyes (people) | `docs/lore.md` | _open_ |

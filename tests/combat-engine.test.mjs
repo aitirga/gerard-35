@@ -5,9 +5,9 @@ import {
   effectiveStats, resolveAmount, stepCombat, validateCombatDefinition,
 } from '../src/combat/engine.ts';
 
-const fighter = (id, team, speed = 10) => ({ id, team, stats: { speed, strength: 10, defense: 5 }, resources: { hp: { max: 100 }, energy: { max: 20 } }, actions: ['hit'] });
+const fighter = (id, team) => ({ id, team, stats: { strength: 10, defense: 5 }, resources: { hp: { max: 100 }, energy: { max: 20 } }, actions: ['hit'] });
 const definition = () => ({
-  id: 'test', combatants: [fighter('a', 'one', 20), fighter('b', 'two')],
+  id: 'test', combatants: [fighter('a', 'one'), fighter('b', 'two')],
   actions: { hit: { target: 'enemy', effects: [{ kind: 'damage', amount: 10 }] } }, statuses: {},
 });
 const command = (state, actionId = 'hit', targetIds = ['b']) => ({ actorId: activeCombatant(state).id, actionId, targetIds });
@@ -103,17 +103,21 @@ test('costs and cooldowns count subsequent owner turns; legal choices include wa
   assert.ok(availableActions(def, state).some(c => c.actionId === 'hit'));
 });
 
-test('initiative is stable on ties and recomputed from effective stats at round boundaries', () => {
-  const def = definition(); def.combatants[1].stats.speed = 20;
-  def.combatants.push(fighter('c', 'two', 20));
+test('turns go in the encounter\'s order, whatever the stats, and the fallen drop out at round boundaries', () => {
+  const def = definition(); def.combatants[1].stats.speed = 99;
+  def.combatants.push(fighter('c', 'two'));
   def.statuses.fast = { duration: 3, modifiers: [{ stat: 'speed', add: 50 }] };
   def.actions.boost = { target: 'enemy', effects: [{ kind: 'status', status: 'fast' }] }; def.combatants[0].actions.push('boost');
+  def.actions.hit.effects[0].amount = 100;
   let state = createCombat(def);
-  assert.deepEqual(state.order, ['a', 'b', 'c']);
+  assert.deepEqual(state.order, ['a', 'b', 'c'], 'no stat reorders it');
   state = move(def, state, 'boost', ['c']);
   assert.equal(activeCombatant(state).id, 'b');
   state = wait(def, state); state = wait(def, state);
-  assert.deepEqual(state.order, ['c', 'a', 'b']);
+  assert.deepEqual(state.order, ['a', 'b', 'c'], 'a boost to any stat does not move anyone up');
+  state = move(def, state, 'hit', ['b']);
+  state = wait(def, state);
+  assert.deepEqual(state.order, ['a', 'c'], 'whoever fell is skipped next round');
 });
 
 test('stacking buffs cap, refresh duration and expire on the documented owner boundary', () => {
@@ -143,14 +147,14 @@ test('periodic statuses use source stats, skip defeated turns and can decide the
 });
 
 test('initial periodic death correctly skips an actor without granting an action', () => {
-  const def = definition(); def.combatants.push(fighter('c', 'one', 5));
+  const def = definition(); def.combatants.push(fighter('c', 'one'));
   def.statuses.dot = { onTurnStart: [{ kind: 'damage', amount: 100 }] }; def.combatants[0].statuses = [{ id: 'dot' }];
   const state = createCombat(def);
   assert.equal(hp(state, 'a'), 0); assert.equal(activeCombatant(state).id, 'b'); assert.equal(state.actionsTaken, 0);
 });
 
 test('status cannot resurrect and only explicit revive targets fallen allies', () => {
-  const def = definition(); const fallen = fighter('c', 'one', 0); fallen.resources.hp.current = 0; def.combatants.push(fallen);
+  const def = definition(); const fallen = fighter('c', 'one'); fallen.resources.hp.current = 0; def.combatants.push(fallen);
   def.actions.revive = { target: 'ally', targetLife: 'dead', effects: [{ kind: 'heal', amount: 99 }, { kind: 'resource', resource: 'hp', amount: 99 }, { kind: 'revive', amount: 20 }] };
   def.combatants[0].actions.push('revive');
   const state = move(def, createCombat(def), 'revive', ['c']);
@@ -320,7 +324,7 @@ test('unsafe map keys and unknown resource references fail during definition val
 
 test('group resource effects support mixed class pools without inventing absent resources', () => {
   const def = definition();
-  const other = fighter('c', 'one', 5);
+  const other = fighter('c', 'one');
   delete other.resources.energy;
   other.resources.charges = { max: 4, current: 0 };
   def.combatants.push(other);

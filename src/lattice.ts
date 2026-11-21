@@ -29,8 +29,11 @@ const reachOf = (shape: LatticeShape) => shape === 'dome' ? .5 : 1;
 export type LatticeDissolve = 'random' | 'top' | 'bottom' | 'outside' | 'push';
 export const LATTICE_DISSOLVES: Record<LatticeDissolve, number> = { random: 0, top: 1, bottom: 2, outside: 3, push: 4 };
 
-/** Lattices alive at once, the most particles one holds, and how many of what is thrown at it each member looks at a frame. */
-export const MAX_LATTICES = 4, MAX_MEMBERS = 8192, HIT_SAMPLES = 24;
+/**
+ * Lattices alive at once, the most particles one holds, how many of what is thrown at it each member
+ * looks at a frame, and how many points its loose members can be thrown at (`throwAt`).
+ */
+export const MAX_LATTICES = 4, MAX_MEMBERS = 8192, HIT_SAMPLES = 24, MAX_AIMS = 6;
 /**
  * Texels a lattice takes in its row of the lattice texture:
  *  0–2 its own space → world · 3–5 world → its own space · 6 first slot, count, nx, ny ·
@@ -43,13 +46,26 @@ export const MAX_LATTICES = 4, MAX_MEMBERS = 8192, HIT_SAMPLES = 24;
  *  their bounce (below 0: caught) · 18 where the dissolve spreads from, its extent ·
  *  19 shortest cell step, its members' life, longest cell step, rim glow ·
  *  20 the point its surface faces away from (for `fresnel`), opacity · 21 fresnel, the axis its strands run along (0 x, 1 y) ·
- *  LOOK_COL (the last) its look: a colour its members turn to (linear RGB packed in 8 bits each), how
- *  far (0–1), how cracked it is (0–1) and the seed of its cracks.
+ *  22 thrown (`throwAt`): how many points, how hard it steers (1/s), its speed (m/s), how fast it scatters where it lands ·
+ *  23 the way the points lie from its middle (an angle round y), how high it arcs ·
+ *  24–29 the points (where, and how near counts as landing) ·
+ *  LOOK_COL (after them) its look: a colour its members turn to (linear RGB packed in 8 bits each), how
+ *  far (0–1), how cracked it is (0–1, `latticeCracks`) and the seed of its cracks.
  */
-export const LOOK_COL = 22;
+export const LOOK_COL = 24 + MAX_AIMS;
 export const LATTICE_COLS = LOOK_COL + 1;
 /** A linear RGB colour (0–1 each) packed into one number a shader unpacks exactly (8 bits each). */
 export const packColour = (rgb: readonly number[]) => rgb.slice(0, 3).reduce((sum, c) => sum * 256 + Math.round(Math.min(1, Math.max(0, c)) * 255), 0);
+/**
+ * Which of `count` points thrown at a member flies to, by the angle of its home round the lattice's
+ * middle (`angle`, round y as `atan2(z, x)`), against the way the points lie (`facing`): the points
+ * sorted by their own angle, the lattice is cut into `count` wedges from straight behind, so each side
+ * goes to the points on its side and no two streams cross. Also in WGSL (`aimOf`).
+ */
+export function latticeAim(angle: number, facing: number, count: number) {
+  const turn = (((angle - facing + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI);
+  return Math.min(count - 1, Math.floor(turn * count));
+}
 
 export interface Vec3Like { x: number; y: number; z: number }
 
@@ -265,6 +281,14 @@ fn rankOf(l: i32, o: i32, pos: vec3f, seed: f32) -> f32 {
   return mix(r, seed, 0.2);
 }
 fn slotOf(l: i32, o: i32) -> i32 { return i32(fmodf(lat(l, 6).x + f32(o), ${N}.0) + 0.5); }
+// Thrown: the point a loose member flies at (where, how near counts as landing), by the side of the
+// lattice its home is on (latticeAim).
+fn aimOf(l: i32, home: vec3f) -> vec4f {
+  let n = i32(lat(l, 22).x + 0.5);
+  let rel = home - vec3f(lat(l, 0).w, lat(l, 1).w, lat(l, 2).w);
+  let turn = fmodf(atan2(rel.z, rel.x) - lat(l, 23).x + 3.14159265, 6.2831853) / 6.2831853;
+  return lat(l, 24 + clamp(i32(turn * f32(n)), 0, n - 1));
+}
 // The member before it along its strands' axis (round the loop, when x closes), which a strand draws to;
 // or −1. Along x a sphere's strands are its parallels, along y its meridians.
 fn rowLeader(l: i32, o: i32) -> f32 {

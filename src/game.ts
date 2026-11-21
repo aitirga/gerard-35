@@ -40,7 +40,7 @@ const UNMASK_SECONDS = 2.2;
 import { createPocket, type Pocket } from './pocket';
 import { ARENA_SPREAD, BOSS_ARENAS, createBossArena, type BossArena } from './boss-arena';
 import { THRONE_INTRO, THRONE_LAYOUT, THRONE_SPREAD, THRONE_VIEW, createThroneArena, loadThroneLook, onThroneStage, throneLookReady, type ThroneArena, type ThroneCue } from './throne-arena';
-import { createFears } from './fears';
+import { FEAR_FIGURES, createFears } from './fears';
 import { mergeParts } from './props';
 import { buildTower, type Tower } from './tower-scene';
 import { buildCuerdas, buildPiano, type CuerdasScene } from './cuerdas-scene';
@@ -73,10 +73,10 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
-import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECTIVAS, castlePhaseAt, isCastle, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
 import { isCastleZone } from './castle-mood';
 import { createFloorStreet, roomGroups, roomTag, syncFloor } from './castle-pupils';
-import { castleFigure, castleModel, castleModelSettled, figureClips, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
+import { castleFigure, castleModel, castleModelSettled, figureClips, foeFigure, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -236,7 +236,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const toCamera = (at: pc.Vec3) => { const eye = camera.getPosition(); return facingToward(eye.x - at.x, eye.z - at.z); };
   app.root.addChild(player);
   // Gerard's model: the boy in chapter 1, the man at 35 once he wakes up (`dress`).
-  await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES), ...COMPANIONS]);
+  await loadCharacterModels(app, [...Object.values(CHARACTERS), ...Object.values(CREATURES), ...COMPANIONS, ...FEAR_FIGURES]);
   let rig = buildCharacter(playerCharacter(), player), grownUp = false;
   /** The artilugio on Gerard's figure (src/artilugio-held.ts): built hidden on him, so a fight's copy of him carries it too. */
   const fitHeld = () => { fitArtilugio(rig.body, playerCharacter(grownUp).lids?.color ?? '#f2b98a'); return new HeldArtilugio(rig.body); };
@@ -2165,9 +2165,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /**
    * The end of chapter 1 (docs/bubbaloo-palace.md): minions burst out of everywhere, and La
    * Reina Bubbaloo's gelatine hands come down from above the frame and close round both boys.
-   * `fadeOut` darkens the screen while the hands hold them; then the crowd and hands go.
+   * `singing` is called as her hands start down (she sings to herself while they come: docs/lore.md
+   * § Her music); `fadeOut` darkens the screen while the hands hold them; then the crowd and hands go.
    */
-  async function ambush(fadeOut: () => Promise<void>) {
+  async function ambush(fadeOut: () => Promise<void>, singing?: () => void) {
     holdStill();
     const centre = player.getPosition().clone();
     if (bernatHere()) centre.lerp(centre, mates.bernat.entity.getPosition(), .5);
@@ -2200,7 +2201,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
       hands.pose(0, 0);
     });
-    // Her hands come down out of the sky: far too big for the frame.
+    // Her hands come down out of the sky, far too big for the frame, while she sings.
+    singing?.();
     await play(2.4, t => {
       const k = t * t * (3 - 2 * t);
       hands.pose(k, 0); hands.update(1 / 60);
@@ -2684,8 +2686,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (next && !battle && next.encounter === 'sobremesa' && !battleScene.hasSobremesa) {
       return loadGlb(app, SOBREMESA_URL).then(model => battleScene.setSobremesa(model), error => console.warn('La Sobremesa:', error)).then(() => setBattle(next, effect, onImpact));
     }
-    // The castle's pupils with a figure of their own (src/castle-models.ts): the fight waits for the files the first time.
-    const figures = next && !battle ? next.foes.flatMap(f => isCastle(f.kind) ? [castleFigure(f.kind, f.castle?.year, f.id)] : []) : [];
+    // The castle's pupils and Fran with a figure of their own (src/castle-models.ts): the fight waits for the files the first time.
+    const figures = next && !battle ? next.foes.flatMap(f => foeFigure(f.kind, f.castle?.year, f.id) ?? []) : [];
     if (figures.some(id => !castleModelSettled(id))) return loadCastleModels(app, figures).then(() => setBattle(next, effect, onImpact));
     if (next && !battle) {
       // What was measured on the way down has calibrated the model before its fight (src/modelo.ts).
@@ -2951,8 +2953,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     // Each time they come out onto the street at night is a new hunt, round where they come out.
     endNightHunt(); fightingGroup = undefined;
     scenery.destroy();
-    // A floor of the castle is another every day: the story says what today's is (src/castle-floor.ts).
-    if (isCastlePlace(id) || isCastleZone(id)) ENVIRONMENTS[id] = story.place(id);
+    // A floor of the castle is another every day: the story says what today's is (src/castle-floor.ts);
+    // the school's zones and the hall stand as the story leaves them (a boss fallen, the curtain parted).
+    if (isCastlePlace(id) || isCastleZone(id) || id === 'palacio') ENVIRONMENTS[id] = story.place(id);
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
     dressScene();
@@ -3584,6 +3587,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fighterIds: battleScene.fighterIds,
     /** A dual's banner slows the fight (battle-ui.ts `slowmo`): its scene, particles and choreography. */
     slowmo: battleScene.slowmo,
+    /** The action about to play, while a pause holds it (battle-ui.ts `upcoming`). */
+    upcoming: battleScene.upcoming,
     /** How fast the 3D fight runs now (1: full speed), every slow motion together (battle-scene `speed`). */
     fightSpeed: () => battleScene.speed,
     /** Development (the effects lab): plays a dual or a foe's ability as the fight shows it, changing nothing. */
@@ -3631,6 +3636,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fighterAt(id: string) { const p = battleScene.modelOf(id)?.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     /** Development (the effects lab, src/fx-lab.ts): a fighter's model, for element hits aimed at them. */
     battleModel: battleScene.modelOf,
+    /** The last scene in her fight (battle-scene `lastScene`): Gerard's hand at her neck, then what he chose. */
+    lastScene: (stage: 'hold' | 'acabar' | 'bajar') => battleScene.lastScene(stage),
     raisePalace, popGate, riseFromDrain, startPalaceFight, ambush, wake, rise, look, flyColour, intoPortal, unmaskSobremesa, emerge, watchTV, releaseLights, shout,
     /** Bernat's model of the flat on his table (src/portal-ui.ts plays its riddle on it), while it stands here. */
     maqueta: {

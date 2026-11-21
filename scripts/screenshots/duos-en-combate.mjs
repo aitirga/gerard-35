@@ -20,15 +20,19 @@ export function prepare(id) {
     began(key = id) { return began.has(key); },
     confirm() {
       const s = battleUI.live;
-      const target = id === 'sutura-de-luz' ? 'gerard' : s.foes[0].id;
-      const selector = id === 'sutura-de-luz' ? '.roster-target' : '.battle-target';
+      // The duals that are for the party (a cure, a boost, a dome, a cortina) are aimed at Gerard.
+      const ally = ['sutura-de-luz', 'suceso-seguro', 'caleidoscopio', 'trampantojo'].includes(id);
+      const target = ally ? 'gerard' : s.foes[0].id;
+      const selector = ally ? '.roster-target' : '.battle-target';
       const button = document.querySelector(`${selector}[data-target="${target}"]:not(:disabled)`);
       if (!button) throw new Error(`Target unavailable for ${id}: ${target}`);
       // The opening still shows the ordinary framing. Get close enough in the clip to read the stitches and pigment.
-      const points = (id === 'sutura-de-luz' ? [target] : s.foes.map(f => f.id)).map(unit => game.fighterAt(unit));
+      // Sobrecalentamiento's dome stands over the party and its bits fly to the foes: both in the frame.
+      const wide = id === 'sobrecalentamiento' || (ally && id !== 'sutura-de-luz');
+      const points = (id === 'sutura-de-luz' ? [target] : wide ? [...s.allies, ...s.foes].map(f => f.id) : s.foes.map(f => f.id)).map(unit => game.fighterAt(unit));
       const mean = key => points.reduce((sum, p) => sum + p[key], 0) / points.length;
       const orbital = id === 'bombardeo-orbital';
-      game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : 2.6);
+      game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : wide ? 4.4 : 2.6);
       button.click();
     },
     async impact(key = id) {

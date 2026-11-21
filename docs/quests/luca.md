@@ -121,7 +121,7 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 
 Not used: El Secador (Aitor: no hairdryer monster), El Decolorante. **Cut on 2026-11-20** (Aitor, bestiary notes: «no tiene sentido», «quítalo»): El Telescopio and La Laca, with the apse's fight; the apse is now Fran's zone (§ What was built from the review).
 
-Las Polillas are a figure of `just character-3d polilla` (2026-11-20, Aitor's bestiary note: flight): one piece with its wings cut off as their own nodes, laid flat at chest height in the fight (`src/luca-foes.ts`), the wings beating (`battle-scene.ts`). Fran as a boss (`fran-jefe`, with six moves from Meshy's library) and the removal of La Laca and El Telescopio are waiting for Aitor (docs/bestiary-notes.json).
+Las Polillas are a figure of `just character-3d polilla` (2026-11-20, Aitor's bestiary note: flight): one piece with its wings cut off as their own nodes, laid flat at chest height in the fight (`src/luca-foes.ts`), the wings beating (`battle-scene.ts`). Fran fights as his boss figure (`fran-jefe`, Meshy's skeleton, 2026-11-21), loaded and moved like the castle's pupils (`BOSS_FIGURES` in `src/foe-bodies.ts`); its six moves from Meshy's library are not played in the fight yet. The removal of La Laca and El Telescopio is waiting for Aitor (docs/bestiary-notes.json).
 
 ## Beats
 

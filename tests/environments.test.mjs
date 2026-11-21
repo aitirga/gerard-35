@@ -112,8 +112,8 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       const adult = new Story(['caught']), schoolWay = to.environment === 'palacio' && adult.interactions('palacio').some(i => adult.redirect(i.id)?.environment === environment.id);
       // The throne room's stair comes down behind the guards; going up is crossing them (the story's fight).
       const curtainWay = to.environment === 'palacio' && environment.id === 'palacio-trono' && adult.interactions('palacio').some(i => i.id === 'challenge-guards');
-      // The castle's floors (docs/castle.md): the school's doors open onto them by the story, at each stage of the castle.
-      const castleWay = [['caught'], ['caught', 'aurelia'], ['caught', 'aurelia', 'direccion']].some(flags => {
+      // The castle's floors (docs/castle.md): the curtain's stair (its guards beaten) and the school's doors open onto them by the story, at each stage of the castle.
+      const castleWay = [['caught', 'cortina'], ['caught', 'cortina', 'aurelia'], ['caught', 'cortina', 'aurelia', 'direccion']].some(flags => {
         const at = new Story(flags);
         return [...destination.interactions, ...at.interactions(to.environment)].some(i => at.redirect(i.id)?.environment === environment.id);
       });

@@ -1,6 +1,6 @@
 {
   "title": "Los árboles en combate: elementos, Control remoto y pasivas",
-  "description": "docs/animas/README.md § The jar. The skills and passives bought as nodes of Matemágico's and Tecnópata's trees, in the fight tester against three sturdy dogs, one player leading both: Vasos comunicantes (Mojado), Descarga (Conducción), Factor común, Control remoto, Vapor, and each passive saying so on a plate over whoever has it (Telemetría, Toma de tierra, Rescoldo, Capilaridad, Nanitos). Run it with --gpu.",
+  "description": "docs/animas/README.md § The jar. The skills and passives bought as nodes of Matemágico's and Tecnópata's trees, in the fight tester against three sturdy dogs, one player leading both: Cubo acuático (Mojado), Punto eléctrico (Conducción), Pirámide ígnea, Control remoto, Vapor, and each passive saying so on a plate over whoever has it (Telemetría, Toma de tierra, Rescoldo, Capilaridad, Nanitos). Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Afactor-comun%22%2C%22matemagico%3Arescoldo%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Avasos%22%2C%22matemagico%3Acapilaridad%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Atoma-de-tierra%22%2C%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Atelemetria%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Acontrol-remoto%22%2C%22tecnopata%3Arayo-encogedor%22%2C%22tecnopata%3Ananitos%22%5D%7D"
@@ -26,7 +26,7 @@
     {
       "shot": "habilidades-matemagico",
       "delay": 300,
-      "caption": "Matemágico with its three element lines bought: Foc Binari, Factor común, Vasos comunicantes and Descarga"
+      "caption": "Matemágico with its three element lines bought: Foc Binari, Pirámide ígnea, Cubo acuático and Punto eléctrico"
     },
     {
       "eval": "document.querySelector('.skill-list [data-skill=\"vasos\"]').click()"
@@ -40,7 +40,7 @@
       "seconds": 1.9,
       "fps": 30,
       "tiles": 12,
-      "caption": "Vasos comunicantes: an arc of water leaves his circle for every dog; the water climbs each in rings to one and the same height and a level line joins them there. ¡Mojado! on all three"
+      "caption": "Cubo acuático: a square drawn in water light, extruded into a cube that fills with water on its way over the dogs and bursts on them. ¡Mojado! on all three"
     },
     {
       "until": "window.turn && window.turn('aitor')",
@@ -84,7 +84,7 @@
       "seconds": 2.1,
       "fps": 30,
       "tiles": 12,
-      "caption": "Descarga: a crackle goes up from his circle and a jagged bolt comes down on the first dog; Conducción runs through the water to every wet dog and leaves them dry. Toma de tierra (passive) gives him a maná back"
+      "caption": "Punto eléctrico: a point of charge rises from his circle and falls on the first dog as forking lightning; Conducción runs through the water to every wet dog and leaves them dry"
     },
     {
       "until": "window.turn && window.turn('aitor')",
@@ -184,7 +184,7 @@
       "seconds": 2.1,
       "fps": 30,
       "tiles": 12,
-      "caption": "Factor común: a pair of binary streams forks to every dog; the fire on each climbs to one height, a gold line ties them and the digit of the fire they now share stands over each: Quemado II on all"
+      "caption": "Pirámide ígnea: a triangle drawn in fire pulled into a pyramid that flies over the dogs and blows up; the fire on each climbs to one height and the digit of the fire they now share stands over it"
     },
     {
       "shot": "quemado-todos",

@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { SURFACE_SAMPLES, writeSurface } from './surface-samples.ts';
-import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, packColour, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
+import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, packColour, MAX_AIMS, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
 
 /**
  * A general particle engine on the GPU, for fights (docs/graphics.md, "Fight particles on the GPU").
@@ -189,6 +189,11 @@ export interface GpuLattice {
   /** 0–1 of it broken loose, starting from `dissolveFrom`: raise it over time to crumble it. */
   dissolve: number; dissolveFrom: LatticeDissolve;
   /**
+   * The share of its members' life they hold at while bonded (0.05–0.95): lowering it takes them back
+   * along their kind's colours (a fire's lattice going white-hot), raising it lets them age on to it.
+   */
+  hold: number;
+  /**
    * Its look over its kind's: `tint` (sRGB hex) its bonded members turn to, `tintAmount` (0–1) how far;
    * `cracks` (0–1) how much of it is split by cracks (dark gaps with bright edges across its cells,
    * more and wider the higher), laid out by `crackSeed`.
@@ -199,6 +204,13 @@ export interface GpuLattice {
   readonly alive: boolean;
   /** A push this frame: members within `radius` of `at` are kicked away at up to `strength` m/s (towards it if negative). */
   push(at: Vec3Like, radius: number, strength: number): void;
+  /**
+   * Thrown at up to MAX_AIMS points (`[]` lets go): from now on each loose member flies at the point on
+   * its side of the lattice (latticeAim), steering towards it at `speed` m/s (`steer` 1/s), arcing up
+   * over the way by `arc` of how far it still has to go; within its `radius` it goes off, scattering at
+   * up to `blast` m/s as its kind's `onDeath` (or dying, without one). Loose members it reforms ignore it.
+   */
+  throwAt(points: readonly { at: Vec3Like; radius: number }[], o?: { speed?: number; steer?: number; arc?: number; blast?: number }): void;
   /** A burst thrown at it: its particles meet its members (up to three bursts, the newest kept). */
   hitBy(batch: GpuBatch | undefined): void;
   /** Gone: its members are free, and age out as their kind. */
@@ -206,7 +218,7 @@ export interface GpuLattice {
 }
 
 /** How to make a lattice: its grid, shape and size, where, and how its members live; any `GpuLattice` field too. */
-export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rotation' | 'grid' | 'size' | 'members' | 'alive' | 'push' | 'hitBy' | 'remove' | 'wave'>> {
+export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rotation' | 'grid' | 'size' | 'members' | 'alive' | 'push' | 'hitBy' | 'throwAt' | 'remove' | 'wave'>> {
   grid: readonly [number, number, number];
   size: Vec3Like;
   at?: Vec3Like; rotation?: pc.Quat;
@@ -226,9 +238,11 @@ export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: nu
 
 const W = 256, H = 128, N = W * H, BANDS = 5;
 // Every kind registered at once: the fight's own, the duals', the statuses', the motes' and the ánimas' looks (Colorista's
-// powder, Freática's water: one name each). A row of a small data texture each: 128 since Freática's water joined the fights.
-export const MAX_KINDS = 128;
-const KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
+// powder, Freática's water: one name each). A row of a small data texture each: 128 since Freática's water joined the fights, 256 since each newer dual brings its own (src/duo-fx).
+export const MAX_KINDS = 256;
+// MAX_BATCHES: bursts a frame. The spawn loop stops at the frame's own count, so only a frame that uses them pays;
+// 128 since the newer duals' drawings (src/duo-fx) burst more than 64 on their busiest frames.
+const KIND_COLS = 12, MAX_BATCHES = 128, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
 /** Frames a fighter's real surface may be old before it is written again (src/surface-samples.ts). */
 const SURFACE_EVERY = 3;
@@ -488,7 +502,8 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       if (!(lb.w > 0.0 && leaderA.w < lb.w) || abs(le.z - group) > 0.5) { link = -1.0; }
     }
     // A lattice's member: which lattice, bonded or loose, and its cell. With its lattice gone it is free.
-    var ml = -1; var mo = 0; var bonded = false;
+    // Thrown (\`throwAt\`), a loose one flies at its point (\`aim\`) and goes off there.
+    var ml = -1; var mo = 0; var bonded = false; var thrown = false; var aim = vec4f(0.0);
     if (abs(member) > 0.5) {
       let l = i32(abs(member) + 0.5) - 1;
       if (l < ${MAX_LATTICES} && lat(l, 6).y > 0.5 && abs(lat(l, 6).x - group) < 0.5) { ml = l; bonded = member > 0.0; mo = i32(fmodf(f32(index) - group + ${N}.0, ${N}.0) + 0.5); }
@@ -612,6 +627,14 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
               if (dist < hitR) { vel += (hB.xyz - vel) * h17.z * (1.0 - dist / hitR); }
             }
           }
+        } else if (lat(ml, 22).x > 0.5 && g10.z <= 0.0) {
+          // Thrown: it steers at its point at the lattice's speed, arcing up over the way while far
+          // off, its weight carried, and goes off once there (below).
+          let g22 = lat(ml, 22);
+          aim = aimOf(ml, home); thrown = true;
+          let d = aim.xyz - pos; let dist = max(length(d), 1e-4);
+          let want = normalize(d / dist + vec3f(0.0, lat(ml, 23).y * min(1.0, dist / 3.0), 0.0)) * g22.z;
+          acc += (want - vel) * min(g22.y, 0.8 / dt) + vec3f(0.0, k0.y, 0.0);
         } else if (g10.z > 0.0) {
           // Loose, it is drawn home (reform), to bond again once there.
           // Its weight is carried home with it, or it would hang short of its place and never bond.
@@ -730,7 +753,13 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       if (ml >= 0) {
         let g10 = lat(ml, 10); let g15 = lat(ml, 15);
         let dissolving = g15.y > 0.0 && rankOf(ml, mo, pos, seed) < g15.y;
-        if (bonded) {
+        if (thrown && length(aim.xyz - pos) < aim.w) {
+          // Thrown, it reaches its point and goes off: free of its lattice, it scatters as its onDeath.
+          let r = id * 13u + frame;
+          vel = unitVec(rnd(r, 41u), rnd(r, 42u)) * lat(ml, 22).w * (0.35 + 0.65 * rnd(r, 43u)) + vel * 0.12;
+          member = 0.0; link = -1.0; chainPos = 0.0;
+          if (k9.y > -0.5) { kind = k9.y; age = 0.0; life = lifeOf(kind, seed); } else { age = life; }
+        } else if (bonded) {
           // A bond stretched past its toughness snaps, or the lattice dissolves under it: it breaks loose.
           if ((g10.x > 0.0 && strain > g10.x) || dissolving) { member = -member; link = -1.0; if (g10.y > -0.5) { kind = g10.y; age = 0.0; life = lifeOf(kind, seed); } }
           // How strained it is, and on a shield's rim how much brighter its outline is, for its glow.
@@ -1295,13 +1324,17 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     }
     return -1;
   }
+  /** Kinds whose bursts were dropped for want of a batch, warned of once each. */
+  const dropped = new Set<string>();
   function queue(kind: string, o: GpuBurst, member = 0, home = false): GpuBatch | undefined {
     const k = names.indexOf(kind);
     if (k < 0) throw new Error(`Unknown fight particle kind: ${kind}`);
     const chain = Math.max(1, Math.round(o.chain ?? 1));
     // Whole chains only, so no chain is cut in two by the end of a batch.
     const count = Math.floor(Math.min(Math.round(o.count), N / 4) / chain) * chain;
-    if (count <= 0 || batches.length >= MAX_BATCHES) return undefined;
+    if (count <= 0) return undefined;
+    // Past the frame's batches the burst is lost: say so once a kind while developing, it never shows.
+    if (batches.length >= MAX_BATCHES) { if (import.meta.env?.DEV && !dropped.has(kind)) { dropped.add(kind); console.warn(`Fight particles: more than ${MAX_BATCHES} bursts this frame, "${kind}" dropped`); } return undefined; }
     // A chain must not wrap round the ring's end: its links follow the slot before them.
     const start = place(count, chain > 1);
     if (start < 0) return undefined;
@@ -1385,7 +1418,11 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     return Math.min(volumes.length, MAX_VOLUMES);
   }
   /** Lattices in their slots, with what the CPU keeps of them between frames. */
-  interface LatticeState extends GpuLattice { slot: number; kind: number; life: number; hold: number; flowAt: number; phase: number; last: pc.Vec3; lastTurn: pc.Quat; pending?: { at: Vec3Like; radius: number; strength: number }; origin: pc.Vec3; hitters: GpuBatch[]; glowGroup?: LightGroup; dead: boolean }
+  interface LatticeState extends GpuLattice {
+    slot: number; kind: number; life: number; hold: number; flowAt: number; phase: number; last: pc.Vec3; lastTurn: pc.Quat; pending?: { at: Vec3Like; radius: number; strength: number }; origin: pc.Vec3; hitters: GpuBatch[]; glowGroup?: LightGroup; dead: boolean;
+    /** Thrown (`throwAt`): the points sorted round it from straight behind, the way they lie, and how its members fly. */
+    aim?: { points: { at: Vec3Like; radius: number }[]; facing: number; speed: number; steer: number; arc: number; blast: number };
+  }
   const lattices: LatticeState[] = [];
   const turn = new pc.Quat(), back = new pc.Quat(), spin = new pc.Vec3(), centre = new pc.Vec3();
   function writeLattices(dt: number) {
@@ -1436,6 +1473,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       rigid.transformPoint(shape === 'shield' ? new pc.Vec3(0, 0, -1.5 * Math.max(l.size.x, l.size.y)) : pc.Vec3.ZERO, centre);
       out.set([centre.x, centre.y, centre.z, Math.min(1, Math.max(0, l.opacity))], o + 80);
       out.set([Math.min(1, Math.max(0, l.fresnel)), l.strands === 'y' ? 1 : 0, 0, 0], o + 84);
+      const aim = l.aim;
+      out.set([aim?.points.length ?? 0, aim?.steer ?? 0, aim?.speed ?? 0, aim?.blast ?? 0], o + 88);
+      out.set([aim?.facing ?? 0, aim?.arc ?? 0, 0, 0], o + 92);
+      aim?.points.forEach((p, i) => out.set([p.at.x, p.at.y, p.at.z, p.radius], o + 96 + i * 4));
       out.set([packColour(tint(l.tint)), Math.min(1, Math.max(0, l.tintAmount)), Math.min(1, Math.max(0, l.cracks)), l.crackSeed], o + LOOK_COL * 4);
     }));
   }
@@ -1462,6 +1503,17 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       get alive() { return !l.dead; },
       push(where, radius, strength) { l.pending = { at: { x: where.x, y: where.y, z: where.z }, radius, strength }; },
       hitBy(batch) { if (!batch) return; l.hitters.push(batch); if (l.hitters.length > 3) l.hitters.shift(); },
+      throwAt(points, o = {}) {
+        if (!points.length) { l.aim = undefined; return; }
+        // The way they lie from its middle, and each one's angle against it (−π…π): sorted so, the
+        // lattice's wedges from straight behind go to them in order (latticeAim).
+        const kept = points.slice(0, MAX_AIMS);
+        const mid = kept.reduce((sum, p) => ({ x: sum.x + p.at.x / kept.length, z: sum.z + p.at.z / kept.length }), { x: 0, z: 0 });
+        const facing = Math.atan2(mid.z - l.at.z, mid.x - l.at.x);
+        const off = (p: Vec3Like) => { const a = Math.atan2(p.z - l.at.z, p.x - l.at.x) - facing; return Math.atan2(Math.sin(a), Math.cos(a)); };
+        const sorted = [...kept].sort((a, b) => off(a.at) - off(b.at)).map(p => ({ at: { x: p.at.x, y: p.at.y, z: p.at.z }, radius: p.radius }));
+        l.aim = { points: sorted, facing, speed: o.speed ?? 9, steer: o.steer ?? 7, arc: o.arc ?? .3, blast: o.blast ?? 4 };
+      },
       remove() {
         if (l.dead) return;
         l.dead = true;

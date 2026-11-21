@@ -64,8 +64,10 @@ own; ánimas (with their levels and passives) and equipment are what change them
 | **Magia** | Adds to magic hits (Foc Binari) and to healing. |
 | **Defensa** | Takes away from physical hits. |
 | **Espíritu** | Takes away from magic hits. |
-| **Velocidad** | Who acts first in the party's half of the round. **Being removed** (decided 2026-10-31): the players set the party's order (`docs/combat.md`); still in the code for now. No wearable ánima gives it any more (Papagato did until 2026-11-20). |
 | **Crítico** | The chance, in percent, that a blow is a **golpe crítico**: 50 % harder, added to a wound's bonus (`Stats.critico`, `CRIT_RULES` in `src/battle.ts`; `docs/animas/README.md` § Golpe crítico). 5 % for everyone in the party (`PARTY_CRIT`); foes have none. |
+
+There is no **Velocidad** (removed 2026-11-21, `docs/combat.md` § Sin Velocidad): the players
+choose who acts when in the party's turn, and each encounter sets its foes' order.
 
 **10 is average.** Every amount has a base at average stats, and each point a stat is above or
 below 10 moves it by one: a physical hit is `base + Fuerza − Defensa`, a magic hit is
@@ -133,7 +135,7 @@ The seven combinations, their costs and their effects are listed in [Combined sk
 mechanics): they stack, show under the fighter's nameplate, and lose a stack at the end of each
 round (Sangrado only if nobody cut it that round). **Sangrado** (up to 10) hurts at the end of every round, piles up under
 blows that add it, and is spent whole by a physical blow that adds none (+20 % a stack); **Mareo** (up to 5; no foe brings it since Vertitrón replaced El Vértigo)
-lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) lowers Fuerza and Magia.
+lowers Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) lowers Fuerza and Magia.
 **Quemado** (Foc Binari) runs on the fight's clock instead: it burns every 2 s for 10 s, and fire
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
 
@@ -197,7 +199,7 @@ Impulso and Abrazo are out for now.
 
 - `src/stats.ts`: stats, profiles and the three formulas. Pure.
 - `src/battle.ts`: fighters carry stats, a profile and a class; `createBattle` takes the party
-  (`story.battleParty`) and lines it up by Velocidad; `CLASS_STATS` and `SKILLS` (with `class`
+  (`story.battleParty`) in the party's own order (there is no Velocidad, `docs/combat.md` § Sin Velocidad); `CLASS_STATS` and `SKILLS` (with `class`
   skills, Ánima points, statuses, and party boosts like Análisis Parálisis, `state.boosts`).
 - `src/party.ts`: who drives whom (`partnerDriven`, `battleDriver`, `waitingForPlayer2`). Pure.
 - `src/story.ts`: `partner` (Bernat or Aitor), `party` with profiles and classes, `classes`,

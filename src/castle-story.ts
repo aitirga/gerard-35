@@ -24,9 +24,9 @@ const reina = (text: string): DialogueLine => ({ speaker: 'reina', text });
 const bernat = (text: string): DialogueLine => ({ speaker: 'bernat35', text });
 
 export const LINES_CASTLE = {
-  /** Through the gym's door the first time: it is not the gym. */
+  /** Up the stair behind the curtain the first time: not the throne of the dream, the school's first floor, and not as it was. */
   floorFirst: both(
-    gerard('Esto no es el gimnasio. Aquí había un pasillo de diez metros.'),
+    gerard('Esto es el primer piso de la escuela. O lo era: aquí había un pasillo y seis aulas.'),
     aitor('Pues ahora hay salas. Y se mueve algo dentro.'),
     gerard('Llevan bata. Son… del tamaño de los de tercero.'),
     aitor('No son niños, Gerard. Mírales la cara.'),
@@ -36,15 +36,15 @@ export const LINES_CASTLE = {
   rest: both(gerard('La sala de profesores. La cafetera sigue caliente.'), aitor('Cinco minutos. Y seguimos.')),
   find: both(gerard('Un armario de material. Tizas, fundas, un silbato.'), aitor('Nada que sirva. Todavía.')),
   aureliaBefore: withThem('aurelia',
-    aurelia('Llega tarde, Gerard. Y trae a alguien que no está matriculado.'),
-    gerard('Aurelià. Tienes los ojos…'),
-    aurelia('Aquí por fin hay orden. Nadie corre, nadie contesta. Siéntese.'),
+    aurelia('Arriba tard, Gerard. I porta algú que no està matriculat.'),
+    gerard('Aurelià. Tens els ulls…'),
+    aurelia('Aquí per fi hi ha ordre. Ningú corre, ningú contesta. Segui.'),
     aitor('No se va a apartar.'),
   ),
   aureliaWon: withThem('aurelia',
-    aurelia('…¿Gerard? ¿Qué hago yo en el gimnasio?'),
-    gerard('Dando clase. A tu manera.'),
-    aurelia('Me dolía menos cuando mandaba ella. No tenía que decidir nada.'),
+    aurelia('…Gerard? Què hi faig, jo, al gimnàs?'),
+    gerard('Fent classe. A la teva manera.'),
+    aurelia('Em feia menys mal quan manava ella. No havia de decidir res.'),
     aitor('Sal por el patio. La pompa de la puerta te deja pasar.'),
   ),
   aureliaAfter: both(
@@ -54,17 +54,17 @@ export const LINES_CASTLE = {
   ),
   lockers: both(gerard('Los vestuarios. Detrás suena papel. Mucho papel.'), aitor('Secretaría queda por ahí. O quedaba.')),
   direccionBefore: withThem('mar',
-    mar('Gerard. Te esperábamos a las ocho. Hay que cerrar el acta.'),
-    montse('Solo falta tu firma. Y la del acompañante.'),
-    pilar('Es un trámite. Luego ya no hay que pensar en nada más.'),
-    gerard('Mar. Montse. Pilar. Soy yo. Os llevo el café cada mañana.'),
-    mar('Por eso mismo. Firma.'),
+    mar('Gerard. T\'esperàvem a les vuit. Hem de tancar l\'acta.'),
+    montse('Només falta la teva signatura. I la de l\'acompanyant.'),
+    pilar('És un tràmit. Després ja no cal pensar en res més.'),
+    gerard('Mar. Montse. Pilar. Soc jo. Ara soc el secretari...'),
+    mar('Per això mateix. Signa.'),
   ),
   direccionWon: withThem('mar',
-    mar('…El acta está en blanco.'),
-    montse('¿Cuánto llevamos aquí sentadas?'),
-    pilar('Gerard, la puerta de Direcció. La de dentro. La ha abierto ella.'),
-    gerard('Lo sé. Marchaos por el patio.'),
+    mar('…L\'acta és en blanc.'),
+    montse('Quant fa que som aquí assegudes?'),
+    pilar('Gerard, la porta de Direcció. La de dins. L\'ha oberta ella.'),
+    gerard('Ho sé. Marxeu pel pati.'),
   ),
   direccionAfter: both(
     aitor('Tres luces. Tres más para el bote.'),
@@ -73,23 +73,23 @@ export const LINES_CASTLE = {
     gerard('No. Detrás está ella.'),
   ),
   reinaBefore: withThem('reina',
-    reina('Has tardado veinticinco años.'),
-    gerard('…¿Nuria?'),
-    reina('Me puse su cara porque la buscabais. Nunca tuve una mía. Soy lo que dejasteis en el patio cuando sonó el timbre.'),
-    reina('No quiero haceros daño. Quiero que no os vayáis otra vez.'),
+    reina('Has trigat vint-i-cinc anys.'),
+    gerard('…Nuria?'),
+    reina('Em vaig posar la seva cara perquè la buscàveu. Mai n\'he tingut una de meva. Odio creixer... odio que tothom tingui fills... odio el futur'),
+    reina('No us vull fer mal. Pero esque no ho enteneu... vull que tothom sigui feliç, que tothom...'),
     aitor('Tiene a medio barrio durmiendo de pie. Eso es daño.'),
   ),
   reinaAgain: withThem('reina',
-    reina('Vuelves. Y él vuelve contigo, como si no hubiera pasado.'),
-    gerard('Ha pasado. Me acuerdo de todo.'),
-    reina('Entonces sabes cómo acaba.'),
+    reina('Tornes. I ell torna amb tu, com si no hagués passat.'),
+    gerard('Ha passat. Me\'n recordo de tot.'),
+    reina('Llavors ja saps com acaba.'),
     aitor('Esta vez no.'),
   ),
   /** The morning after Gerard fell to Aitor's hand: Bernat calls them to El Nucli (docs/quests/bernat.md, round 5). */
   bernatCall: withThem('bernat35',
     aitor('Te suena el móvil. Pone «Bernat».'),
-    bernat('Gerard. Os vi caer anoche. No me preguntes cómo: lo vi.'),
-    bernat('Venid a El Nucli. Ya. Tengo que enseñaros algo, y por teléfono no.'),
+    bernat('Gerard. Us vaig veure caure ahir a la nit. No em preguntis com: ho vaig veure.'),
+    bernat('Veniu a El Nucli. Ara. Us he d\'ensenyar una cosa, i per telèfon no.'),
     aitor('…Gerard. Ayer. Yo te…'),
     gerard('No eras tú. Coge la chaqueta.'),
   ),
@@ -98,32 +98,36 @@ export const LINES_CASTLE = {
    * each time; then the picture goes white and they are in bed, the same morning again.
    */
   screams: {
-    aurelia: 'No. ¡NO! ¡Devolvédmelo! ¡Era mío!',
-    direccion: '¡Otra vez no! ¡No os vayáis! ¡NO ME DEJÉIS AQUÍ SOLA!',
+    aurelia: 'No. NO! Torneu-me\'l! Era meu!',
+    direccion: 'Un altre cop no! No us n\'aneu! NO EM DEIXEU AQUÍ SOLA!',
   },
   /** The school's door once it is over. */
   schoolAgain: both(gerard('Es la escuela. Solo la escuela.'), aitor('El lunes abren.')),
-  /** The last scene (docs/castle-bosses.md § The last scene): what is seen before Gerard chooses. */
-  lastScene: 'Está en el suelo, pequeña. En la mano de Gerard el Foc Binari ya tiene forma, y los números giran despacio a su alrededor.',
+  /**
+   * The last scene (docs/castle-bosses.md § The last scene): said over it as Gerard holds her by the
+   * neck, before he chooses. Then Aitor's one line, said in the fight as it plays out; Acabar's
+   * `scene` over black once she has come apart in front of them (Bajar la mano has none: the dream
+   * ends in white and they wake).
+   */
+  lastScene: 'La mà del Gerard és al seu coll. Ella no s\'hi resisteix.',
   acabar: {
     aitor: aitor('Hazlo.'),
-    scene: 'Q.E.D. Se deshace en motas que pasan del rosa al gris. Donde estaba el trono hay un aula, con las sillas subidas a las mesas.',
+    scene: 'On hi havia el tron hi ha una aula, amb les cadires pujades a les taules.',
     epilogue: both(
-      gerard('Lunes. Ha sonado el despertador a su hora.'),
+      gerard('Dilluns. El despertador ha sonat a la seva hora.'),
       aitor('Hay café. Y nadie canta en la calle.'),
-      gerard('Todo está en su sitio. La ciudad, la escuela, el horario.'),
-      gerard('He abierto la libreta de Bernat. Está en blanco.'),
+      gerard('Tot és al seu lloc. La ciutat, l\'escola, l\'horari.'),
+      gerard('He trucat al Bernat. Diu que aquesta nit no ha somiat res.'),
     ),
   },
   bajar: {
     aitor: aitor('…Vale. Vale.'),
-    scene: 'La magia se apaga en la mano. Ella encoge hasta ser una canica rosa, tibia, que cabe en el bolsillo.',
     epilogue: both(
-      gerard('Lunes. Ha sonado el despertador a su hora.'),
+      gerard('Dilluns. El despertador ha sonat a la seva hora.'),
       aitor('Hay café. En el bote hay una luz que no es como las otras.'),
-      gerard('Queda algo de rosa en la ciudad. En un toldo. En un chicle pegado en el metro.'),
+      gerard('Queda una mica de rosa a la ciutat. En un tendal. En un xiclet enganxat al metro.'),
       aitor('Estás silbando.'),
-      gerard('Son seis notas. No me las quito.'),
+      gerard('Són sis notes. No me les trec del cap.'),
     ),
   },
 } as const;
@@ -223,13 +227,15 @@ export function castleNear(host: CastleHost, id: string): StoryEffect[] {
  * A castle fight's end. Returns nothing for a fall like any other (the story ends the day).
  * `taken`: the Queen had Aitor when it ended.
  */
-export function castleBattle(host: CastleHost, event: { won: boolean; encounter?: string; taken?: boolean }): StoryEffect[] | undefined {
+export function castleBattle(host: CastleHost, event: { won: boolean; encounter?: string; taken?: boolean; ending?: EndingChoice }): StoryEffect[] | undefined {
   if (!isCastleEncounter(event.encounter)) return undefined;
   const today = run(host), fighting = today.fighting;
   today.fighting = undefined;
   const { encounter } = event;
   if (encounter === 'reina' || encounter === 'reina-vuelta') {
-    // She does not die at 0: the picture closes on Gerard, and he chooses (src/endings.ts).
+    // She does not die at 0: the fight closes on Gerard's hand at her neck, and he chooses there
+    // (src/main.ts `lastScene`). Where the fight could not show it, the picture closes on him after.
+    if (event.won && event.ending) return castleEnding(host, event.ending, true);
     if (event.won) return [{ kind: 'look', cell: { ...castlePhase(3).bossAt }, height: 4.5 }, { kind: 'ending' }];
     // The once it has to happen: Aitor hers, Gerard down. The morning after, Bernat calls them to
     // El Nucli, where the portal sends the artilugio home (docs/quests/bernat.md); until it has, a
@@ -253,32 +259,47 @@ export function castleBattle(host: CastleHost, event: { won: boolean; encounter?
   if (fighting && !today.beaten[fighting.phase]?.includes(fighting.room)) (today.beaten[fighting.phase] ??= []).push(fighting.room);
   return host.hour();
 }
-/** Gerard chose (docs/castle-bosses.md § The last scene): the end, and the Monday after. */
-export function castleEnding(host: CastleHost, choice: EndingChoice): StoryEffect[] {
+/**
+ * Gerard chose (docs/castle-bosses.md § The last scene): the end, and the Monday after. `seen`: it
+ * played in her fight, Aitor's line with it; otherwise he says it here.
+ */
+export function castleEnding(host: CastleHost, choice: EndingChoice, seen = false): StoryEffect[] {
   if (host.has('reina')) return [];
   host.raise('reina'); host.raise(choice === 'acabar' ? 'final-acabar' : 'final-bajar');
   const lines = LINES_CASTLE[choice];
-  return [say({ left: 'gerard35', right: 'aitor', lines: [lines.aitor] }), { kind: 'epilogue', choice, text: lines.scene }, { kind: 'look' }, ...host.morning(), say(lines.epilogue), { kind: 'credits' }];
+  const answer: StoryEffect[] = seen ? [] : [say({ left: 'gerard35', right: 'aitor', lines: [lines.aitor] })];
+  const told: StoryEffect[] = 'scene' in lines ? [{ kind: 'epilogue', choice, text: lines.scene }] : [];
+  return [...answer, ...told, { kind: 'look' }, ...host.morning(), say(lines.epilogue), { kind: 'credits' }];
 }
 
 /** Where a door of the school leads instead, while the castle stands between its rooms. */
 export function castleRedirect(host: CastleHost, interactionId: string): { environment: EnvironmentId; cell: Cell } | undefined {
   if (!host.adult || host.has('reina')) return undefined;
   const into = (phase: CastlePhaseId) => ({ environment: castlePhase(phase).environment as EnvironmentId, cell: { ...castleFloor(host, phase).spawn } });
-  // The gym's door opens onto the first floor until Aurelià has fallen; then it is the gym's door again.
-  if (interactionId === 'patio-gimnasio' && !host.has('aurelia')) return into(1);
+  // The stair behind the curtain climbs to the first floor until Aurelià has fallen; then his stretch is
+  // the school again and the stair comes out by the gym (the gym's own door, from the patio, is held
+  // shut from inside until then: `castleGate`).
+  if (interactionId === CURTAIN_WAY) return host.has('aurelia') ? { environment: 'palacio-gimnasio', cell: { ...castlePhase(1).into.cell } } : into(1);
   if (interactionId === 'gimnasio-vestuarios' && host.has('aurelia') && !host.has('direccion')) return into(2);
   if (interactionId === 'secretaria-direccio' && host.has('direccion')) return into(3);
   return undefined;
 }
 /** A door of the school that will not open yet says why (the lines are chapter 2's own). */
-export function castleGate(host: CastleHost, interactionId: string, shut: { office: Dialogue; direction: Dialogue }): Dialogue | undefined {
+export function castleGate(host: CastleHost, interactionId: string, shut: { gym: Dialogue; office: Dialogue; direction: Dialogue }): Dialogue | undefined {
+  // Aurelià holds his gym from inside: the way to him is the first floor, up the stair behind the curtain.
+  if (interactionId === 'patio-gimnasio' && !host.has('aurelia')) return shut.gym;
   if (interactionId === 'patio-secretaria' && !host.has('direccion')) return shut.office;
   if (interactionId === 'secretaria-direccio' && !host.has('direccion')) return shut.direction;
   return undefined;
 }
-/** What the story adds to a floor: its staff room and its cupboard, rooms with nothing in them yet. */
+/** The curtain in the hall once its guards have fallen: open for good, its stair the way up (`castleRedirect` says where to). */
+export const CURTAIN_WAY = 'cruzar-cortina';
+const CURTAIN_CELL: Cell = { x: 16, z: 10 };
+/** What the story adds to a floor: its staff room and its cupboard, rooms with nothing in them yet; and the curtain's stair in the hall. */
 export function castleInteractions(host: CastleHost, environment: EnvironmentId): Interaction[] {
+  if (host.adult && environment === 'palacio' && host.has('cortina') && !host.has('reina')) {
+    return [{ id: CURTAIN_WAY, label: 'Subir por la escalera', hint: 'Subir', cell: { ...CURTAIN_CELL }, to: { environment: castlePhase(1).environment, cell: { ...castleFloor(host, 1).spawn } } }];
+  }
   if (!host.adult || !isCastlePlace(environment)) return [];
   const floor = castleFloor(host, castlePhase(environment).id);
   return floor.rooms.flatMap(room => room.kind === 'rest' ? [{ id: 'castillo-descanso', label: 'Sentarse un momento', hint: 'Descansar', cell: { ...room.cell } }]

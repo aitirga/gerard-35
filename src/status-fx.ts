@@ -11,7 +11,7 @@ import type { GpuEmitter, GpuField, GpuKind } from './fight-particles.ts';
  * body and a way of moving.
  * Particles are only sparks, drops, crystals and haze, never sprites with a shape of their own.
  */
-export type StatusLookId = 'quemado' | 'combustion' | 'virus' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido';
+export type StatusLookId = 'quemado' | 'combustion' | 'virus' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido' | 'cargado';
 export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
 /** How a status moves whoever carries it (battle-scene plays it). */
 export type StatusMotion = 'freeze' | 'twitch' | 'sway';
@@ -27,7 +27,7 @@ interface Stream {
 export interface StatusLook {
   name: string;
   /** Who decided it: the combat design's physical statuses, the campaign's, what a reaction leaves, or Tecnópata's (Bip's). */
-  family: 'físico' | 'campaña' | 'reacción' | 'tecnópata';
+  family: 'físico' | 'campaña' | 'reacción' | 'tecnópata' | 'matemágico';
   /** Seconds it lasts by default (the design's real-time statuses). */
   seconds: number;
   /** What it shows, in a sentence (the report and docs). */
@@ -203,6 +203,14 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
     name: 'Llorera', family: 'campaña', seconds: 12,
     shows: 'Lágrimas que le saltan de la cara, caen y dejan charquitos a sus pies.',
     streams: [{ kind: 'drip', rate: [10, 16, 26], from: 'body', above: .72, outward: .8, up: 1, speed: .25, life: [.9, 1.4], colour: '#cfeaff', size: 1.4 }],
+  },
+  // Matemágico's ∂Q/∂t Condensador: the charge he carries until his next electric blow, or a foe's on him.
+  cargado: {
+    name: 'Cargado', family: 'matemágico', seconds: 30,
+    shows: 'Lleva la carga encima: chispitas amarillas que le saltan del pecho y las manos y, cada poco, un arco corto que le cruza el cuerpo; brilla un poco.',
+    streams: [{ kind: 'spark', rate: [7, 7, 7], from: 'body', above: .35, outward: .6, speed: .5, life: [.12, .3], colour: '#fff2a8', size: .7 }, { kind: 'twinkle', rate: [3, 3, 3], from: 'body', above: .45, outward: .3, up: .3, speed: .1, life: [.25, .5], colour: '#ffe45c' }],
+    pulse: { every: .9, streams: [{ kind: 'arc', count: [2, 2, 2], chain: 7, rate: [0, 0, 0], from: 'body', above: .3, outward: .9, speed: .9, life: [.1, .2], colour: '#fff2a8' }] },
+    tint: [.05, .045, .01],
   },
   // Tecnópata's (Bip's): a cure on the clock, waves of the mind, and a body shrunk (battle-scene scales it).
   sanacion: {

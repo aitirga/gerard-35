@@ -21,7 +21,7 @@ test('block 1 plays from waking up to the first fight in order', () => {
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-mama' })), ['dialogue', 'item:zapatillas', 'hint:run']);
   assert.equal(story.canRun, true);
 
-  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-mochila' })), ['dialogue', 'item:mochila', 'hint:items']);
+  assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-mochila' })), ['item:mochila', 'hint:items']);
   assert.deepEqual(story.items, ['zapatillas', 'mochila', 'pocion']);
   assert.equal(story.gate('leave-hall'), undefined);
 
@@ -35,7 +35,7 @@ test('block 1 plays from waking up to the first fight in order', () => {
   assert.equal(story.companion, 'stalled');
   const seen = [story.bubble];
   for (let i = 0; i < 3; i++) { story.handle({ type: 'leash' }); seen.push(story.bubble); }
-  assert.deepEqual([...new Set(seen)], ['¿Gerard…?', 'Espera.', 'Esto… ya lo he visto.']);
+  assert.deepEqual([...new Set(seen)], ['Gerard…?', 'Espera.', 'Això… ja ho he vist.']);
 
   assert.equal(story.minion, 'lurking');
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'talk-bernat' })), ['dialogue', 'minion']);
@@ -70,7 +70,7 @@ test('the palace rises, they go in, and Matemágico wakes up in the wrapper room
 
   // Heading south, Bernat says it is the other way; back north, he is quiet.
   story.handle({ type: 'away', away: true });
-  assert.equal(story.bubble, 'Es por el otro lado.');
+  assert.equal(story.bubble, 'És per l\'altre costat.');
   story.handle({ type: 'away', away: false });
   assert.equal(story.bubble, undefined);
 
@@ -82,9 +82,9 @@ test('the palace rises, they go in, and Matemágico wakes up in the wrapper room
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'enter-palace' })), ['gate', 'travel'], 'the welcome plays once');
 
   // Diegetic gates: the bubble will not let them out, the back door is stuck, the curtain explains itself.
-  assert.match(story.gate('leave-palace').lines[0].text, /pompa/);
+  assert.match(story.gate('leave-palace').lines[0].text, /sortir/);
   assert.deepEqual(story.blocked('palacio'), [{ x: 10, z: 16 }]);
-  assert.match(story.handle({ type: 'interact', id: 'push-back-door' })[0].dialogue.lines[0].text, /pegada/);
+  assert.match(story.handle({ type: 'interact', id: 'push-back-door' })[0].dialogue.lines[0].text, /enganxada/);
   assert.equal(story.handle({ type: 'interact', id: 'look-curtain' })[0].dialogue.right, 'bernat');
   for (let i = 1; i <= 5; i++) assert.equal(kinds(story.handle({ type: 'interact', id: `portrait-${i}` }))[0], 'dialogue');
   assert.deepEqual(kinds(story.handle({ type: 'interact', id: 'take-chicle' })), ['dialogue', 'item:chicle']);
@@ -99,7 +99,7 @@ test('the palace rises, they go in, and Matemágico wakes up in the wrapper room
   assert.match(story.party[0].note, /Matemágico/);
   const won = story.handle({ type: 'battle', won: true, encounter: 'palace-minion' });
   assert.deepEqual(won.map(e => e.kind), ['dialogue', 'ambush']);
-  assert.match(won[0].dialogue.lines.at(-1).text, /Quiere…$/, 'Bernat is cut off mid-sentence');
+  assert.match(won[0].dialogue.lines.at(-1).text, /MIRA!$/, 'Bernat sees her coming as the hands come down');
   assert.deepEqual(story.blocked('palacio'), [], 'the back door peels open');
   assert.equal(story.gate('leave-palace'), undefined);
   assert.deepEqual(story.handle({ type: 'room', id: 'Sala de los Envoltorios' }), [], 'the room is quiet now');
@@ -138,11 +138,11 @@ test('caught by the Queen, Gerard wakes up at 35 in Barcelona with Aitor and a B
 
 test('doors out of the house wait for breakfast and the backpack', () => {
   const story = new Story(['intro']);
-  assert.match(story.gate('leave-hall').lines[0].text, /cocina/);
+  assert.match(story.gate('leave-hall').lines[0].text, /cumple/);
   assert.equal(story.gate('stairs-up'), undefined, 'only the house exits are gated');
   story.handle({ type: 'interact', id: 'talk-mama' });
   assert.equal(story.gate('leave-living').right, 'mama');
-  assert.match(story.handle({ type: 'interact', id: 'call-bernat' })[0].dialogue.lines[0].text, /mochila/);
+  assert.match(story.handle({ type: 'interact', id: 'call-bernat' })[0].dialogue.lines[0].text, /motxilla/);
   assert.equal(story.companion, 'none');
 });
 
@@ -227,7 +227,7 @@ test('chapter 2 city: the metro opens the city, and the castle can be tried at o
   assert.ok(story.interactions('palacio').some(i => i.id === 'challenge-guards'));
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'challenge-guards' })), ['dialogue', 'battle:palace-guards']);
 });
-test("chapter 2: the hall's east door opens onto the school; the gym's door onto the castle's first floor, the office's shut until Dirección falls", () => {
+test("chapter 2: the hall's east door opens onto the school; the gym's door is held shut until Aurelià falls, the office's until Dirección", () => {
   const child = new Story([]), story = new Story(['caught']);
   assert.ok(!child.interactions('palacio').some(i => i.id === 'palace-east-door'), 'in the dream it stays a thing to look at');
   assert.equal(child.redirect('palace-east-door'), undefined);
@@ -236,10 +236,9 @@ test("chapter 2: the hall's east door opens onto the school; the gym's door onto
   const to = story.redirect(door.id);
   assert.equal(to.environment, 'palacio-patio');
   assert.ok(canWalk(to.cell, ENVIRONMENTS['palacio-patio'].grid));
-  // The gym's door leads into the castle's first floor (docs/castle.md); the secretaría and Direcció say why they will not open, in the world's own voice.
-  assert.equal(story.gate('patio-gimnasio'), undefined);
-  assert.equal(story.redirect('patio-gimnasio').environment, 'castillo-1');
-  for (const id of ['patio-secretaria', 'secretaria-direccio']) assert.ok(story.gate(id)?.lines.length, id);
+  // The way to the gym is the first floor, up the curtain's stair (docs/castle.md); the gym, the secretaría and Direcció say why they will not open, in the world's own voice.
+  assert.equal(story.redirect('patio-gimnasio'), undefined);
+  for (const id of ['patio-gimnasio', 'patio-secretaria', 'secretaria-direccio']) assert.ok(story.gate(id)?.lines.length, id);
   for (const id of ['patio-vestibulo', 'secretaria-patio', 'trono-direccio', 'trono-escalera']) assert.equal(story.gate(id), undefined, `${id}: the ways back are always open`);
 });
 

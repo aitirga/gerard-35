@@ -46,9 +46,9 @@ export const SPEAKERS = {
   fran: { name: 'Fran', portrait: 'fran', skin: '#e2b896', hair: '#1d1a1a', top: '#1c1c20', accent: '#d9dde4' },
   /** The chaplains Fran has restyled in the Sagrada Família. */
   capellan: { name: 'Capellán', portrait: 'capellan', skin: '#dcb594', hair: '#3e7fc4', top: '#18181c', accent: '#e9e6dc' },
-  /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; no portrait. */
-  mago: { name: 'Mago de camping', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
-  agente: { name: 'Agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
+  /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; portraits from `just character`, of their figures (tools/figures.toml). */
+  mago: { name: 'Mago de camping', portrait: 'mago', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
+  agente: { name: 'Agente', portrait: 'agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
   /**
    * The castle (docs/castle-bosses.md): Aurelià and the management team, her violet for accent while she
    * holds them; the Queen, in the face she took (Nuria Mendoza's, the false lead: docs/lore.md); and
@@ -56,7 +56,7 @@ export const SPEAKERS = {
    * figures' colours (tools/figures.toml: Aurelià tanned and dark-haired in his white vest; Mar's dark
    * bun and grey coat, Montse's grey bob and manila cardigan, Pilar's pale hair and steel-blue dress).
    */
-  aurelia: { name: 'Aurelià', skin: '#b9814f', hair: '#3b2a20', top: '#f0eee8', accent: '#b07aff' },
+  aurelia: { name: 'Aurelià', skin: '#c48f62', hair: '#4a2f22', top: '#d8c39b', accent: '#b07aff' },
   mar: { name: 'Mar', skin: '#e6bb98', hair: '#2e2420', top: '#4a4d55', accent: '#b07aff' },
   montse: { name: 'Montse', skin: '#e2b48e', hair: '#9a9a98', top: '#c9b48a', accent: '#b07aff' },
   pilar: { name: 'Pilar', skin: '#e9bf9c', hair: '#d8c9a8', top: '#5a6a82', accent: '#b07aff' },
@@ -66,7 +66,12 @@ export const SPEAKERS = {
 
 export type SpeakerId = keyof typeof SPEAKERS;
 /** `expression` picks e.g. portraits/gerard-child-sorprendido.png; lines without one, or with one not generated yet, use the plain portrait. */
-export interface DialogueLine { speaker: SpeakerId; text: string; expression?: string }
+/**
+ * `pace` changes how a line comes out: `rambling` lines (someone who does not stop talking) run into
+ * the next with no pause, and each press cuts the sentence off; after a few presses they give up.
+ * `spooky` types slowly with trembling letters.
+ */
+export interface DialogueLine { speaker: SpeakerId; text: string; expression?: string; pace?: 'rambling' | 'spooky' }
 export interface Dialogue {
   left: SpeakerId;      // Gerard, normally
   right?: SpeakerId;    // whoever he is talking to, if anyone
@@ -78,6 +83,11 @@ const PARTY = new Set<SpeakerId>(['gerard', 'gerard35', 'bernat', 'aitor']);
 
 const TYPE_SPEED_MS = 16;      // per character; 0 disables the typewriter
 const AUTO_ADVANCE_MS = 4200;  // after a line finishes typing; 0 waits for input
+const RAMBLING_TYPE_MS = 13;   // a rambling speaker talks fast…
+const RAMBLING_ADVANCE_MS = 450;  // …and barely stops between sentences
+const RAMBLING_CUT_MS = 380;   // how long a cut-off sentence stays, with its dash
+const RAMBLING_GIVE_UP = 3;    // presses over a rambling speaker before they stop
+const SPOOKY_TYPE_MS = 70;
 
 const EXPRESSIONS: Record<string, string[] | undefined> = PORTRAIT_EXPRESSIONS;
 
@@ -124,6 +134,11 @@ export function createDialogueBanner(hud: HTMLElement) {
   let typing: ReturnType<typeof setInterval> | undefined;
   let advanceTimer: ReturnType<typeof setTimeout> | undefined;
   let fullText = '';
+  let shown = 0;
+  /** Presses over the rambling speaker in this conversation, and whether a cut-off sentence is on screen. */
+  let cuts = 0;
+  let cutting = false;
+  let letters: HTMLElement[] = [];
   let done: (() => void) | undefined;
   /** Who is speaking, with what face, and whether their line is still coming out; nothing when it closes. */
   let onSpeak: ((line?: DialogueLine, talking?: boolean) => void) | undefined;
@@ -141,13 +156,37 @@ export function createDialogueBanner(hud: HTMLElement) {
     el.querySelector('svg, img')?.remove();
     el.insertAdjacentHTML('afterbegin', portrait(s));
   }
-  function stopTimers() { clearInterval(typing); clearTimeout(advanceTimer); typing = advanceTimer = undefined; }
+  function stopTimers() { clearInterval(typing); clearTimeout(advanceTimer); typing = advanceTimer = undefined; cutting = false; }
+  const pace = () => current?.lines[index].pace;
+  function reveal(count: number) {
+    if (pace() === 'spooky') letters.slice(0, count).forEach(l => l.classList.add('on'));
+    else text.textContent = fullText.slice(0, count);
+  }
   function finishLine() {
     stopTimers();
-    text.textContent = fullText;
+    shown = fullText.length;
+    reveal(shown);
     root.dataset.typing = 'false';
     if (current) onSpeak?.(current.lines[index], false);
-    if (AUTO_ADVANCE_MS) advanceTimer = setTimeout(advance, AUTO_ADVANCE_MS);
+    const wait = pace() === 'rambling' ? RAMBLING_ADVANCE_MS : AUTO_ADVANCE_MS;
+    if (wait) advanceTimer = setTimeout(() => goTo(index + 1), wait);
+  }
+  function goTo(next: number) {
+    if (!current) return;
+    if (next < current.lines.length) { index = next; showLine(); } else close();
+  }
+  /** A press over someone who will not stop: the sentence breaks off and they go on, until they give up. */
+  function cutOff() {
+    if (!current) return;
+    const wasTyping = !!typing;
+    stopTimers();
+    if (wasTyping) text.textContent = `${fullText.slice(0, shown).trimEnd()}—`;
+    root.dataset.typing = 'false';
+    onSpeak?.(current.lines[index], false);
+    let next = index + 1;
+    if (++cuts >= RAMBLING_GIVE_UP) while (next < current.lines.length && current.lines[next].pace === 'rambling') next++;
+    cutting = true;
+    advanceTimer = setTimeout(() => { cutting = false; goTo(next); }, RAMBLING_CUT_MS);
   }
   function showLine() {
     if (!current) return;
@@ -167,15 +206,35 @@ export function createDialogueBanner(hud: HTMLElement) {
     fullText = line.text;
     stopTimers();
     onSpeak?.(line, true);
+    if (line.pace) root.dataset.pace = line.pace; else delete root.dataset.pace;
+    letters = [];
+    if (line.pace === 'spooky') {
+      // Words stay whole when the line wraps; each letter trembles on its own.
+      text.replaceChildren(...line.text.split(/(\s+)/).map(part => {
+        if (/^\s+$/.test(part) || !part) return document.createTextNode(part);
+        const word = document.createElement('span');
+        word.className = 'word';
+        for (const ch of part) {
+          const letter = document.createElement('span');
+          letter.textContent = ch;
+          letter.style.setProperty('--i', String(letters.length));
+          letters.push(letter);
+          word.append(letter);
+        }
+        return word;
+      }));
+      fullText = letters.map(l => l.textContent).join('');
+    }
+    shown = 0;
     if (!TYPE_SPEED_MS || reducedMotion.matches) { finishLine(); return; }
-    let shown = 0;
-    text.textContent = '';
+    if (line.pace !== 'spooky') text.textContent = '';
     root.dataset.typing = 'true';
+    const speed = line.pace === 'rambling' ? RAMBLING_TYPE_MS : line.pace === 'spooky' ? SPOOKY_TYPE_MS : TYPE_SPEED_MS;
     typing = setInterval(() => {
       shown++;
-      text.textContent = fullText.slice(0, shown);
+      reveal(shown);
       if (shown >= fullText.length) finishLine();
-    }, TYPE_SPEED_MS);
+    }, speed);
   }
   /** `onDone` runs once the conversation closes, however it closes (or another one replaces it). */
   function show(dialogue: Dialogue, onDone?: () => void) {
@@ -185,6 +244,7 @@ export function createDialogueBanner(hud: HTMLElement) {
     previous?.();
     current = dialogue;
     index = 0;
+    cuts = 0;
     for (const line of dialogue.lines) {  // warm the cache so faces change without a blank frame
       const speaker: Speaker = SPEAKERS[line.speaker];
       if (line.expression && speaker.portrait && EXPRESSIONS[speaker.portrait]?.includes(line.expression)) {
@@ -199,8 +259,10 @@ export function createDialogueBanner(hud: HTMLElement) {
   }
   function advance() {
     if (!current) return;
+    if (cutting) return;
+    if (pace() === 'rambling') { cutOff(); return; }
     if (typing) { finishLine(); return; }  // first press reveals the whole line
-    if (index < current.lines.length - 1) { index++; showLine(); } else close();
+    goTo(index + 1);
   }
   function close() {
     stopTimers();

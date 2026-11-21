@@ -24,8 +24,7 @@ infantil.
 **Qué está construido** (2026-11-07): parte de esta dirección ya está en el juego y se describe en
 § *Estados en tiempo real*, que manda donde no coincidan: el reloj, Quemado (10 s, un pulso cada
 2 s, niveles I → III), Cegado, Mojado y las reacciones Humo, Cauterizado, Tormenta, Vapor y
-Conducción, con sus reglas propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, quitar la
-Velocidad, las barreras, las posiciones y el resto de reacciones.
+Conducción, con sus reglas propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, las barreras, las posiciones y el resto de reacciones.
 
 **Decidido como dirección:** el combate mezcla **turnos y tiempo real**. Algunos estados no duran
 rondas sino **segundos**: *Quemado* no dura 2 turnos, dura **segundos** (la idea decía 20 s; construido con 10 s). Y si antes de que se apague
@@ -44,12 +43,12 @@ grupo (los dos en paralelo, como arriba) y después los enemigos. Algún combate
 romper esa regla a propósito (un jefe que interrumpe, por ejemplo), caso por caso. El reloj de
 los estados sigue corriendo en las dos fases.
 
-**Sin Velocidad** (decidido 2026-10-31): la Velocidad **deja de ser un atributo**. El orden
-aliado lo deciden los jugadores; el de la fase enemiga lo fija cada encuentro (su definición o su
-IA). Pendiente en el código: hoy `src/stats.ts`, `src/battle.ts`, el laboratorio
-(`src/combat-lab.ts`, la regla de atributo de velocidad) y sus pruebas aún ordenan por ella; la
-sección *Orden de resolución y duración* describe ese motor actual. Ninguna ánima
-que se lleve puesta la da ya: Papagato la cambió por Crítico (2026-11-20).
+**Sin Velocidad** (decidido 2026-10-31, quitada del código 2026-11-21): la Velocidad **no es un
+atributo**. El orden aliado lo deciden los jugadores; el de la fase enemiga lo fija cada encuentro
+(su definición o su IA). `Stats` (`src/stats.ts`) ya no la tiene; el equipo entra al combate en
+su propio orden (`lineUp` en `src/battle.ts`); el motor genérico (`src/combat/`) y su laboratorio
+dan los turnos en el orden de la definición, sin regla de atributo de velocidad. Mareo ya no la
+baja. Papagato la cambió por Crítico (2026-11-20) y la luz de Marta por Espíritu +1 y Defensa +1.
 
 **Cortina de polvo** (hecha 2026-11-21, `CORTINA` en `src/battle.ts`; `docs/animas/README.md`
 § Cortina de polvo): la primera barrera del juego. *Cortina* y *Telón*, de Colorista, suben la
@@ -161,7 +160,7 @@ para permitir su comportamiento.
 | Fórmula | Base y contribuciones opcionales de atributos del actor y del objetivo, mínimo y variación. |
 | Estado | Duración, acumulación, modificadores, afinidades, bloqueo de acciones, efectos de turno y reacciones. |
 | Afinidad | Multiplicador asociado a una etiqueta de daño. Una etiqueta sin entrada es neutral. |
-| Reglas | Recurso de vida, atributo de velocidad, combinación de afinidades y límites de ejecución. |
+| Reglas | Recurso de vida, combinación de afinidades y límites de ejecución. |
 | Comando | Actor, acción y objetivos elegidos. Representa una intención que el motor debe validar. |
 | Evento | Lo que ocurrió realmente, con cantidades aplicadas. Alimenta registros y presentación. |
 
@@ -243,9 +242,8 @@ Los errores de una extensión durante una transición también revierten esa tra
 
 El recorrido del turno es explícito:
 
-1. Ordenar por velocidad efectiva al empezar la ronda; los empates conservan el orden de la
-   definición. Los cambios de velocidad alteran el orden de la siguiente ronda. Saltar a
-   quienes ya no viven.
+1. Al empezar la ronda, el orden es el de la definición del encuentro (no hay atributo de
+   velocidad: ningún estado ni atributo lo cambia). Saltar a quienes ya no viven.
 2. Ejecutar los efectos de inicio del turno del siguiente combatiente vivo. Si esos efectos
    lo derrotan, pasar al siguiente. Un bloqueo de acciones deja disponible la espera, por lo
    que los estados temporales siguen avanzando.
@@ -487,11 +485,19 @@ placa, y al caer lo dice un «¡Shock!». Solo lo recibe quien fue golpeado, no 
 salta la corriente; una parte de un jefe no lo recibe. Cuando el rayo es de un enemigo, cae entero
 sobre quien golpea y la mitad (`REACTION_RULES.share`) sobre los demás mojados.
 
+**Cortocircuito** (Matemágico, 2026-11-21) es el Shock seguro: sobre un enemigo mojado, o que tiene un
+movimiento anunciado, la corriente se queda en él (no salta, no hay Conducción) y pierde su siguiente
+turno; lo anunciado espera. No se repite sobre el mismo enemigo hasta que vuelva a actuar
+(`Combatant.shorted`), así que retrasa un movimiento una vez y nunca deja a nadie sin jugar. Su
+pareja, **∂Q/∂t Condensador**, deja a Gerard *Cargado* (`Combatant.capacitor`): su siguiente golpe
+eléctrico hace el doble (`CONDENSADOR.scale`), y si un enemigo le golpea antes, la carga salta a ese
+enemigo (`CONDENSADOR.jump`, magia eléctrica).
+
 Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quemado, pasa por encima de
 las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). **Mojado**
-(2026-11-15, 20 s, sin pulsos ni niveles) lo ponen Vasos comunicantes y, con la pasiva Capilaridad,
+(2026-11-15, 20 s, sin pulsos ni niveles) lo ponen Cubo acuático y, con la pasiva Capilaridad,
 el Atacar con agua; Vapor y Conducción las provoca también una habilidad con ese elemento (Foc
-Binari, Factor común, Descarga), no solo Atacar. Una **pasiva** que hace algo lo dice con una placa
+Binari, Pirámide ígnea, Punto eléctrico), no solo Atacar. Una **pasiva** que hace algo lo dice con una placa
 *PASIVA · nombre* sobre quien la tiene (`docs/animas/README.md` § The jar). Las reacciones que aún no
 se pueden dar (Envenenado, Congelado: nadie los pone todavía) esperan su aspecto ya hecho
 en `REACTIONS` (`src/status-fx.ts`). La pantalla: el número del golpe lleva el elemento debajo, la

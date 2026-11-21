@@ -68,7 +68,6 @@ export interface CombatantDefinition {
 }
 export interface CombatRules {
   healthResource?: string;
-  speedStat?: string;
   affinityPolicy?: AffinityPolicy;
   maxRounds?: number;
   maxActions?: number;

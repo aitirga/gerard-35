@@ -51,20 +51,26 @@ const RINGS = [80, 142, 204, 266, 328];
  * each line growing its own way (degrees, 0 to the right, clockwise); the shared ones small and
  * scattered round and between them, never a row or a grid (the sky must not say how many ánimas
  * there will be), their nodes one way (`nodes`) and the skills they have learned the other
- * (`skills`). Sincopante sits by the top of Matemágico's fire, so that Vulcano has room between.
+ * (`skills`). Each shared ánima sits by the end of the lines it makes a dúo mayor with, so its gold
+ * star has room between and no thread crosses the sky: Sincopante between Matemágico's fire and
+ * Tecnópata's Mente (Vulcano, Idea fija), Colorista in the middle between Eléctrico and Taller
+ * (Fulgurita, Caleidoscopio), Dadista by Cálculo (Suceso seguro), Freática under Agua (Marea),
+ * Papagato out past Bip (Metralla).
  */
 interface Seat { at: [number, number]; lines?: Partial<Record<LineId, number>>; mana?: number; ulti?: number; nodes?: number; skills?: number }
 const SKY: Partial<Record<ClassId, Seat>> = {
   matemagico: { at: [396, 500], lines: { calculo: 180, fuego: -60, electrico: 0, agua: 60 }, ulti: -120 },
-  tecnopata: { at: [1236, 468], lines: { bip: -120, mente: 0, taller: 120 }, mana: 58, ulti: -58 },
+  tecnopata: { at: [1236, 468], lines: { mente: -120, bip: 0, taller: 120 }, mana: 58, ulti: -58 },
   dadaista: { at: [244, 286], nodes: 0, skills: 190 },
-  sincopante: { at: [862, 150], nodes: 0, skills: 180 },
-  papagato: { at: [1112, 176], nodes: 10, skills: -140 },
-  prismatico: { at: [906, 428], nodes: 95, skills: -70 },
-  freatica: { at: [1404, 736], nodes: -145, skills: 35 },
+  sincopante: { at: [842, 172], nodes: -90, skills: 180 },
+  papagato: { at: [1452, 206], nodes: 180, skills: 80 },
+  prismatico: { at: [900, 404], nodes: 0, skills: 90 },
+  freatica: { at: [232, 752], nodes: 150, skills: -15 },
 };
 /** Places for an ánima the sky has none for yet. */
-const SPARE: [number, number][] = [[1456, 196], [640, 610], [214, 770]];
+const SPARE: [number, number][] = [[1404, 736], [640, 610], [1120, 812]];
+/** The dúos mayores whose arc bows downwards: away from the names of the line it hangs from (Caleidoscopio, off Taller), or under the core it goes round to reach its skill (Idea fija, to Ostinato on Sincopante's far side). */
+const BOWED_DOWN: readonly string[] = ['caleidoscopio', 'idea-fija'];
 /** How much the constellation under a cursor is pushed in on. */
 const PUSH = { own: 1.05, shared: 1.14 };
 /** How big each kind of light is on the sheet, for the joins to stop short of it and the notes to keep clear. */
@@ -204,7 +210,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       // Without its star yet, the thread starts at the edge of the other constellation's core, on the side facing this end.
       const toward = Math.atan2(ay - theirs.y, ax - theirs.x), rim = RADIUS.shared + 6;
       const bx = spark ? theirs.x + spark.x : theirs.x + Math.cos(toward) * rim, by = spark ? theirs.y + spark.y : theirs.y + Math.sin(toward) * rim;
-      const length = Math.hypot(bx - ax, by - ay), bow = (bx > ax ? -1 : 1) * length * .3;
+      const length = Math.hypot(bx - ax, by - ay), bow = (bx > ax ? -1 : 1) * (BOWED_DOWN.includes(item.dual!) ? -1 : 1) * length * .3;
       const cx = (ax + bx) / 2 + (ay - by) / length * bow, cy = (ay + by) / 2 + (bx - ax) / length * bow;
       const x = (ax + 2 * cx + bx) / 4, y = (ay + 2 * cy + by) / 4;
       return [{ item, partner: item.partner!, skill, learned: !!spark, x, y, threads: [`M${at(ax, ay)}Q${at((ax + cx) / 2, (ay + cy) / 2)} ${at(x, y)}`, `M${at(bx, by)}Q${at((bx + cx) / 2, (by + cy) / 2)} ${at(x, y)}`] as [string, string] }];

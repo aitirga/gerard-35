@@ -18,11 +18,12 @@ conflicts, as a starting list for it:
   juguete»): the onion, the dish and the fantasmita are now realistic Meshy figures (`[cebollon]`,
   `[plato]`, `[fantasmita]` in tools/figures.toml; `src/foe-bodies.ts`): a man-sized onion with torn
   dry skins and roots like legs, a tarnished cloche lifted on something pale and wet, an arcade ghost
-  of magenta glass cubes coming apart. What they are (food, a game) is still to rethink. Vertitrón's
-  new figure (`[vertigo]`, Meshy's skeleton) is made but not yet in the fight, which still poses the
-  robot built from primitives.
-- **Velocidad is gone as a stat** (2026-10-31, `docs/combat.md`): Mareo (lowers Velocidad) needs
-  another form. Papagato's Velocidad +2 has one since 2026-11-20: Fuerza +2, Crítico +15 %.
+  of magenta glass cubes coming apart. What they are (food, a game) is still to rethink. Vertitrón
+  fights as its Meshy figure (`[vertigo]`, 2026-11-21): the robot's joints of primitives are hidden
+  but still posed by the fight, and the figure's bones follow them (`dressVertitron` in
+  `src/fears.ts`); its eye sits in the window of its chest and Uri on its roof.
+- **Velocidad is gone as a stat** (decided 2026-10-31, out of the code 2026-11-21, `docs/combat.md`):
+  Mareo now lowers only Defensa and Espíritu. Papagato's Velocidad +2 became Fuerza +2, Crítico +15 % (2026-11-20).
 - **The pushchair raced like a go-kart** (proposal, § Unusual things).
 - **Papagato**: the cats fighting beside the party can stay, but its name, motto and skills should
   be checked for the same register (`docs/animas/papagato/`).
@@ -173,9 +174,9 @@ goes with Gerard), and the screen's edges close in, beating like a heart while s
   way up, Uri shouts down from the top (*"¡Nivel dos! ¡Más arriba!"*, *"¡Nivel tres! ¡El último!"*,
   *"¡Arriba del todo! ¡Desde aquí se ve todo Cardedeu!"*, `LINES_NURIA.shouts`). **Everything Uri says
   in the tower is a shout and never stops the game** (decided with Aitor 2026-11-05; they used to be
-  conversations): going in (*"¡NIVEL UNO! ¡Estoy arriba del todo! ¡Si me pilláis, ganáis!"*,
-  `LINES_NURIA.mazeIn`), up out of each ring, and onto the platform (*"¡Jefe final! ¡Vertitrón, a por
-  ellos!"*, `LINES_NURIA.roof`), where Vertitrón's fight comes in a moment and a half later (`beat`)
+  conversations): going in (*"NIVELL U! Sóc a dalt de tot! Si m'enxampeu, guanyeu!"*,
+  `LINES_NURIA.mazeIn`), up out of each ring, and onto the platform (*"Boss final! Vertitrón, a per
+  ells!"*, `LINES_NURIA.roof`), where Vertitrón's fight comes in a moment and a half later (`beat`)
   with no conversation before it. A jagged shout bubble in the fear's violet over Uri
   (`#shout-bubble`, the story effect `shout`, `storyUI.shout`), with a zigzag tail towards him;
   when he is above the screen it hangs from the top edge with its tail pointing up. The ring's way
@@ -526,8 +527,8 @@ dependencies; steps marked **blocked** need something from the user first.
 
 1. **Statuses in story fights.** Stacking statuses on `Combatant` in `src/battle.ts` (stacks,
    duration, end-of-round tick), shown on the fighters in `src/battle-ui.ts`. First three:
-   **Sangrado** (damage per stack each round, −1 stack per round), **Mareo** (−Velocidad per
-   stack), **Llorera** (the Cebollón's: more misses). Same rules as the combat core
+   **Sangrado** (damage per stack each round, −1 stack per round), **Mareo** (−Defensa and −Espíritu per
+   stack; its −Velocidad went with the stat), **Llorera** (the Cebollón's: more misses). Same rules as the combat core
    (`docs/combat.md`), with a parity case in `tests/combat-integration.test.mjs`; unit tests in
    `tests/battle.test.mjs`. Docs: `docs/animas/README.md` § Shared mechanics.
 2. **Papagato, level 1.** `papagato` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`; *Zarpazo de

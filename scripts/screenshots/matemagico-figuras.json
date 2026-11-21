@@ -1,0 +1,189 @@
+{
+  "title": "Matemágico · sus figuras",
+  "description": "docs/animas/matemagico/README.md § How each skill looks (Aitor's notes on the ánimas' sheet, 2026-11-21): each skill of his tree past Foc Binari is a figure drawn in his circle that then does what it is (src/math-figures.ts). In the fight tester against three sturdy dogs, one player leading both; Aitor holds on between them. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Afactor-comun%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Avasos%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Acardioide%22%2C%22matemagico%3Amana-1%22%2C%22matemagico%3Aintegral%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "Matemágico's skills with their new names: Cardioide, Pirámide ígnea, Cubo acuático, Punto eléctrico, Integral impropia"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"cardioide\"]').click()"
+    },
+    {
+      "eval": "{ const b = document.querySelector('.party-card[data-unit=\"aitor\"] .roster-target'); b ? b.click() : document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', key: 'Enter' })); }"
+    },
+    {
+      "record": "cardioide",
+      "seconds": 2.1,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Cardioide: a small circle rolls round another and its rim draws the cardioid in green; the curve comes apart from its cusp into motes that flow to Aitor, and the cure rises up him"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"factor-comun\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "factor-comun",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Pirámide ígnea: a triangle drawn in fire, an apex pulls it into a pyramid that turns, flies over the dogs and blows up; the fire on each rises to the highest"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"vasos\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "vasos",
+      "seconds": 2.7,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Cubo acuático: a square drawn in water light, extruded into a cube that fills with water on its way to the middle of the dogs, swells and bursts over them: Mojado on all three"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"descarga\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "descarga",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Punto eléctrico: a point of charge gathers in front of Gerard, rises crackling and falls on the dog as three jagged, forking strikes; Conducción runs to every wet dog"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .5); }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"integral\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "integral",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Integral impropia: ∫ from 0 to ∞ drawn upright, turned a quarter and laid between Gerard and Aitor; green light jets from both ends into each, and Sanación stays on them"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "sanacion",
+      "delay": 200,
+      "caption": "After Integral impropia: Gerard and Aitor both carry Sanación, the cure on the clock"
+    }
+  ]
+}

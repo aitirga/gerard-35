@@ -10,7 +10,9 @@
  */
 import * as pc from 'playcanvas';
 import { CREATURES, buildCreature } from './character-model';
-import { DIRECTIVAS, type CastleKind, type Year } from './castle';
+import type { FoeKind } from './battle';
+import { BOSS_FIGURES } from './foe-bodies';
+import { DIRECTIVAS, isCastle, type CastleKind, type Year } from './castle';
 
 /** A monster of `just character-3d`: Meshy's rigged model, its clips and its height in metres. */
 interface MonsterSpec { id: string; name: string; glb: string; clips: Record<string, string>; height: number }
@@ -35,6 +37,12 @@ export function castleFigure(kind: CastleKind, year?: Year, who?: string) {
   if (kind === 'repetidor' && year === 3) return 'repetidor-tercero';
   if (kind === 'directiva') return DIRECTIVAS.find(d => d.id === who)?.id ?? DIRECTIVAS[0].id;
   return kind;
+}
+
+/** The figure a foe fights as, if it has one: a castle foe's (`castleFigure`) or a boss's (BOSS_FIGURES). */
+export function foeFigure(kind: FoeKind | undefined, year?: Year, who?: string) {
+  if (!kind) return undefined;
+  return isCastle(kind) ? castleFigure(kind, year, who) : BOSS_FIGURES[kind];
 }
 
 export interface CastleModel {

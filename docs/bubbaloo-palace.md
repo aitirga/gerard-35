@@ -38,7 +38,7 @@ melts the minion's gum. Then it can be hurt, and they finish it.
 | 8 | **The unwinnable fight**: every hit is swallowed by the gum; the minion goes after Bernat | Trying everything | 2:00 |
 | 9 | *"¡Gerard, me va a matar!"* *"Pensa, Gerard! Fes la màgia amb la teva ment!"* → Matemágico: new interface style, **Foc Binari** | A new ánima and a skill, by using them | 0:45 |
 | 10 | Foc Binari melts the pringue; the minion falls. The back door unsticks. Bernat: *"¿Le has tirado fuego con la mano?"* Gerard: *"He pensado en unos y ceros… y me ha salido solo."* Gerard asks what is going on; Bernat: *"Creo que estamos en el castillo de la Reina… Ella es real… Quiere…"* | — | 0:40 |
-| 11 | **¡BAM!** Minions burst out of the floor all round them; La Reina Bubbaloo's hands (gelatine, far too big for the frame: only hands and forearms) come down and close round both boys; black. No end card. | — | 0:15 |
+| 11 | **¡BAM!** Minions burst out of the floor all round them; La Reina Bubbaloo's arms (her own figure, `just character-3d reina-brazo`: gaunt clawed hands in her gloves of stretched gum, far too big for the frame) come down while she sings to herself, unseen (*«La, la, la-la, laaa…»*: the castle's song falls silent for her voice, `docs/lore.md` § Her music) and close round both boys on her last note; black, where her words and her echo die away. No end card. | — | 0:20 |
 | 12 | **Chapter 2 begins**: Gerard, now 35, bolts upright in bed in the Meridiana flat shouting *"¡NO!"*; Aitor is beside him. A Bubbaloo wrapper lies on the bedside shelf. | Exploring | — |
 
 About 10 minutes, matching the 10–20 min block that `docs/chapter-1.md` keeps for "El juego se hace

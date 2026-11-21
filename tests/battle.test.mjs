@@ -278,7 +278,7 @@ test('L and R swap the active fighter\'s ánima for free among their own (their 
   assert.equal(gerard.stats.magia, 11);
   assert.equal(switchAnima(s, 1), 'papagato');
   assert.equal(gerard.classId, 'papagato'); assert.equal(gerard.stats.magia, 10); assert.equal(gerard.stats.fuerza, 12); assert.equal(gerard.stats.critico, 20);
-  assert.equal(gerard.stats.velocidad, 10, 'Papagato hits harder, it is no quicker');
+  assert.equal('velocidad' in gerard.stats, false, 'there is no Velocidad (docs/combat.md § Sin Velocidad)');
   assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo']);
   assert.equal(s.active, 0, 'the turn is still his');
   assert.equal(switchAnima(s, 1), 'matemagico', 'round the list');
@@ -356,6 +356,8 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
       : skill.kind === 'guard' ? skill.side === 'party' ? `^Protege a todo el equipo durante \\d rondas\\.${extra}$` : `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
       // Sincopante's ecos (AGENTS.md § Ecos): one left at an ally's side, or the ecos themselves.
+      // A charge on whoever uses it (∂Q/∂t Condensador).
+      : skill.kind === 'charge' ? `^Carga a quien la usa [^.]+\\.${extra}$`
       : skill.kind === 'eco' ? `^(Deja un eco [^.]+ durante \\d+ segundos|Los ecos [^.]+)\\.${extra}$`
       : `^Daño ${damageKind(skill)} ${intensity(skill.power)} ${'rain' in skill || 'volley' in skill ? 'a enemigos al azar' : targets[skill.side]}\\.${extra}$`;
     assert.match(skill.description, new RegExp(shape), skill.name);
@@ -508,7 +510,7 @@ test('Sangrado is an open wound: the next physical blow that adds none spends it
 
 // Ángulo exacto, Ronroneo and the dual attacks (docs/animas/README.md § Combined skills).
 const DUO = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
-/** Gerard on Matemágico and Aitor on Papagato against `dogs` sturdy dogs: Gerard (quicker, Velocidad 11 to 10) acts first. */
+/** Gerard on Matemágico and Aitor on Papagato against `dogs` sturdy dogs: Gerard, first in the party, is the one choosing first. */
 /** Matemágico grows by its tree, not by level: "matemagico 2" here is its trunk's first nodes, 3 its cure too. */
 const trunk = (levels = {}) => ({ skills: (levels.matemagico ?? 1) >= 3 ? ['angulo', 'analisis', 'cardioide'] : (levels.matemagico ?? 1) >= 2 ? ['angulo', 'analisis'] : [] });
 const duoFight = (levels = { papagato: 2, matemagico: 2 }, dogs = 2) => {
@@ -580,7 +582,8 @@ test('Ronroneo is for one ally: a cure at once, Sanación running on them, and t
 test('dual descriptions follow the plain shape too, and each dual pairs a skill of each of two ánimas, in either order', async () => {
   const { DUALS, dualOf, dualCost } = await import('../src/battle.ts');
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
-  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color', 'sobrecalentamiento', 'vulcano']);
+  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color', 'sobrecalentamiento', 'vulcano',
+    'marea', 'fulgurita', 'suceso-seguro', 'metralla', 'idea-fija', 'caleidoscopio', 'geiser', 'a-escala', 'seiche', 'staccato', 'cadaver-exquisito', 'trampantojo']);
   for (const d of DUALS) {
     const [a, b] = d.parts.map(id => SKILLS.find(s => s.id === id));
     assert.notEqual(a.class, b.class, `${d.name}: two ánimas`);
@@ -588,6 +591,10 @@ test('dual descriptions follow the plain shape too, and each dual pairs a skill 
     assert.deepEqual(dualCost(d), { [a.id]: a.cost, [b.id]: b.cost });
     if (d.abstract) continue;
     if (d.kind === 'heal') { assert.match(d.description, new RegExp(`^Cura ${intensity(d.power)} a un aliado herido\\.`)); continue; }
+    // A dual that deals no blow of its own keeps its kind's shape: a boost, a dome or a screen, an eco.
+    if (d.kind === 'boost') { assert.match(d.description, /^Sube [^.]+ de todo el equipo durante 3 rondas\.( [A-ZÁÉÍÓÚ][^.]*\.)*$/, d.name); continue; }
+    if (d.kind === 'guard') { assert.match(d.description, /^Protege a (todo el equipo durante \d rondas|un aliado[^.]*)\.( [A-ZÁÉÍÓÚ][^.]*\.)*$/, d.name); continue; }
+    if (d.kind === 'eco') { assert.match(d.description, /^Deja un eco [^.]+ durante \d+ segundos\.( [A-ZÁÉÍÓÚ][^.]*\.)*$/, d.name); continue; }
     assert.match(d.description, new RegExp(`^Daño ${damageKind(d)} ${intensity(d.power)} ${d.side === 'all-foes' ? 'a todos los enemigos' : 'a un enemigo'}\\.( [A-ZÁÉÍÓÚ][^.]*\\.)*$`), d.name);
   }
   assert.equal(dualOf('foc-binari', 'zarpazo'), undefined);
@@ -596,7 +603,7 @@ test('dual descriptions follow the plain shape too, and each dual pairs a skill 
 test('Zarpazos de fuego: both turns go into it, each wearer pays their own half, both ánimas take part, eight claws on Aitor\'s Fuerza', async () => {
   const s = duoFight();
   const aitor = byId(s, 'aitor'), gerard = byId(s, 'gerard');
-  assert.equal(s.allies[s.active], gerard, 'the quicker one first');
+  assert.equal(s.allies[s.active], gerard, 'the first in the party first');
   const claws = actDual(s, 'zarpazos-de-fuego', 'dog-1');
   assert.deepEqual(claws.dual, { id: 'zarpazos-de-fuego', name: 'Zarpazos de fuego', parts: ['foc-binari', 'zarpazos'], actors: ['gerard', 'aitor'], spent: { gerard: 1, aitor: 2 } });
   assert.equal(claws.kind, 'skill'); assert.equal(claws.target, 'dog-1');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LATTICE_SHAPES, closedShape, latticeCell, latticeNeighbour, latticeReach, latticeShape, latticeSpacing, latticeUnshape } from '../src/lattice.ts';
+import { LATTICE_SHAPES, closedShape, latticeAim, latticeCell, latticeNeighbour, latticeReach, latticeShape, latticeSpacing, latticeUnshape } from '../src/lattice.ts';
 import { FIGHT_FX } from '../src/effects.ts';
 
 // The lattice's shape maps run on the GPU (WGSL in src/lattice.ts); these are their TypeScript twins.
@@ -117,4 +117,16 @@ test('flowing, a lattice\'s cells scroll along x and wrap round, keeping their s
 
 test('the lattice presets are fight effects', () => {
   for (const name of ['ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb']) assert.ok(FIGHT_FX.includes(name), name);
+});
+
+test('thrown, a lattice is cut into wedges from straight behind: each side flies at the points on its side, in order', () => {
+  // Three points ahead (facing 0, along +x), sorted by their angle: the left back third to the first,
+  // the front third to the middle one, the right back third to the last.
+  const facing = 0, at = deg => latticeAim(deg * Math.PI / 180, facing, 3);
+  assert.equal(at(-170), 0); assert.equal(at(-90), 0);
+  assert.equal(at(-30), 1); assert.equal(at(0), 1); assert.equal(at(30), 1);
+  assert.equal(at(90), 2); assert.equal(at(170), 2);
+  // Whatever way the points lie, the member straight ahead of the lattice goes to the middle one, and one point takes everyone.
+  for (const turn of [-2.5, -1, .7, 3]) assert.equal(latticeAim(turn, turn, 3), 1);
+  for (const angle of [-3, -1, 0, 2, 3.1]) assert.equal(latticeAim(angle, .4, 1), 0);
 });

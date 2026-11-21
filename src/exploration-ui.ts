@@ -36,7 +36,7 @@ const PAGES: { id: PanelId; label: string; key?: string; icon: string }[] = [
 const TITLES: Record<PanelId, string> = { character: 'Tu aventura.', animas: 'Lo que despierta en ti.', items: 'Lo que lleváis.', map: 'Por aquí.', diary: 'Lo que recuerdas.', help: 'A tu ritmo.' };
 const COMPANION: Record<Story['companion'], string> = { none: 'Por tu cuenta', follow: 'Bernat', stalled: 'Bernat · Se ha quedado atrás' };
 /** PV and maná run on the vitals plate; these are the rest, which sit around 10. */
-const STAT_ORDER: (keyof Stats)[] = ['fuerza', 'magia', 'defensa', 'espiritu', 'velocidad'];
+const STAT_ORDER: (keyof Stats)[] = ['fuerza', 'magia', 'defensa', 'espiritu'];
 const STAT_SCALE = 20;
 const SLOT_LABELS = { feet: 'Pies', back: 'Espalda' } as const;
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);

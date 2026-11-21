@@ -186,44 +186,44 @@ export const LINES_NURIA = {
    * who is still trying not to be scared (docs/quests/nuria.md § Beats).
    */
   nuriaFirst: withNuria(
-    nuria('¡Gerard! ¡Aitor! Menos mal que habéis venido.'),
-    nuria('Es Uri. Se ha despertado hablando. Y no ha parado. Uri. Hablando.', 'preocupado'),
-    gerard('¿Uri? ¿Nuestro Uri?'),
-    nuria('Me ha llamado «señora». Me ha preguntado si mi hijo podía bajar a jugar.', 'preocupado'),
-    nuria('Se ha pasado una hora en la ventana contando coches. Rojo, rojo, blanco, rojo. Riéndose solo.'),
-    nuria('Luego ha cogido a Nil como quien coge un muñeco y ha dicho: «Vamos a jugar a que no volvemos».', 'preocupado'),
+    nuria('Gerard! Aitor! Menys mal que heu vingut.'),
+    nuria('És l\'Uri. S\'ha despertat parlant. I no ha parat. L\'Uri. Parlant.', 'preocupado'),
+    gerard('L\'Uri? El nostre Uri?'),
+    nuria('M\'ha dit «senyora». M\'ha preguntat si el meu fill podia baixar a jugar.', 'preocupado'),
+    nuria('S\'ha passat una hora a la finestra comptant cotxes. Vermell, vermell, blanc, vermell. Rient sol.'),
+    nuria('Després ha agafat el Nil com qui agafa un ninot i ha dit: «Juguem a no tornar».', 'preocupado'),
     aitor('…'),
-    nuria('Ha bajado la calle descalzo. Y la calle… se ha ido alargando detrás de él. Lo he visto desde arriba.'),
-    nuria('Tenía los ojos de color violeta.', 'preocupado'),
-    gerard('Violeta… Es ella. La Reina.'),
-    nuria('Llevaos a Haru y a Yuki. Siempre han sido un poco vuestras, y a Uri le encuentran donde sea.'),
-    nuria('Yo me quedo en la puerta. Si vuelve y no hay nadie… no sé si sabrá entrar.', 'preocupado'),
+    nuria('Ha baixat el carrer descalç. I el carrer… s\'ha anat allargant darrere seu. Ho he vist des de dalt.'),
+    nuria('Tenia els ulls de color violeta.', 'preocupado'),
+    gerard('Violeta… És ella. La Reina.'),
+    nuria('Emporteu-vos la Haru i la Yuki. Sempre han estat una mica vostres, i l\'Uri el troben on sigui.'),
+    nuria('Jo em quedo a la porta. Si torna i no hi ha ningú… no sé si sabrà entrar.', 'preocupado'),
   ),
   /** Nuria again, while they look for Uri. */
   nuriaWaiting: withNuria(
-    nuria('Calle arriba, por donde se fue. No os paréis.', 'preocupado'),
-    nuria('Y no miréis los números de las puertas.', 'preocupado'),
+    nuria('Carrer amunt, per on se\'n va anar. No us atureu.', 'preocupado'),
+    nuria('I no mireu els números de les portes.', 'preocupado'),
   ),
   /** The corner has gone and her street runs on, straight: the first time it unrolls before them. */
   calle: both(
     gerard('Aquí había una esquina. Doctor Daurella.'),
     aitor('Ya no. Solo calle. Recta, hacia delante.'),
-    uri('¡A que no me pilláis! ¡Hasta donde se acaba la calle!', 'crio'),
+    uri('A que no m\'enxampeu! Fins on s\'acaba el carrer!', 'crio'),
   ),
   /** In sight of the bubble at the end of the street, the first time. */
   portal: both(
     gerard('Una pompa. Como las de la Reina… pero por dentro está oscura.'),
     aitor('Se oye a Uri ahí dentro. Se está riendo.'),
-    uri('¡Aquí dentro está todo lo que me da miedo! ¡Es divertidísimo!', 'crio'),
+    uri('Aquí dins hi ha tot el que em fa por! És divertidíssim!', 'crio'),
   ),
   /** Nuria when they come back without Uri (they gave up or fell). */
   nuriaAgain: withNuria(
-    nuria('Haru y Yuki volvieron solas. ¿Lo intentáis otra vez?', 'preocupado'),
-    nuria('Las cebollas grandes ni las toquéis todavía. Haru se suelta con las pequeñas, y cuando aprende a dar zarpazos no hay capa que le dure.'),
-    nuria('Llevadlas. Uri sigue ahí dentro.'),
+    nuria('La Haru i la Yuki han tornat soles. Ho torneu a provar?', 'preocupado'),
+    nuria('Les cebes grosses no les toqueu encara. La Haru s\'espavila amb les petites, i quan aprèn a donar urpades no hi ha capa que li duri.'),
+    nuria('Emporteu-vos-les. L\'Uri encara és allà dins.'),
   ),
   /** Through the bubble into the tower's ground, the first time: Uri shouts down from the top (a `shout`). */
-  mazeIn: '¡NIVEL UNO! ¡Estoy arriba del todo! ¡Si me pilláis, ganáis!',
+  mazeIn: 'NIVELL U! Sóc a dalt de tot! Si m\'enxampeu, guanyeu!',
   /** At the station with the cats: Aitor asks before they go. */
   leaveWarn: both(
     aitor('¿Nos vamos y dejamos a Uri así?'),
@@ -233,20 +233,20 @@ export const LINES_NURIA = {
    * Up out of each ring: Uri shouts down from the top, where he has been all along, in a shout
    * bubble over him while they keep climbing (nothing stops; `shout` in story.ts).
    */
-  shouts: ['¡Nivel dos! ¡Más arriba!', '¡Nivel tres! ¡El último!', '¡Arriba del todo! ¡Desde aquí se ve todo Cardedeu!'],
+  shouts: ['Nivell dos! Més amunt!', 'Nivell tres! L\'últim!', 'Dalt de tot! Des d\'aquí es veu tot Cardedeu!'],
   /** Onto the platform at the top: Uri shouts for his boss, and Vertitrón's fight starts (a `shout`). */
-  roof: '¡Jefe final! ¡Vertitrón, a por ellos!',
+  roof: 'Boss final! Vertitrón, a per ells!',
   /** Vertitrón is beaten: Uri on the ridge, then all of them back down at the door. */
   won: withUri(
-    uri('Pues no está tan alto.', 'riendo'),
-    uri('…Gerard. Aitor. ¿Qué hacemos aquí arriba?', 'sorprendido'),
-    gerard('Bajar. Despacito. Nuria te espera.'),
+    uri('Doncs no és tan alt.', 'riendo'),
+    uri('…Gerard. Aitor. Què hi fem aquí dalt?', 'sorprendido'),
+    gerard('Baixar. A poc a poc. La Nuria t\'espera.'),
   ),
   home: withNuria(
-    nuria('¡Uri! ¡Nil!', 'riendo'),
-    uri('Perdona. No sé qué me ha pasado. Solo quería… jugar.'),
-    nuria('Ya. Pues mira, igual deberíamos jugar más.', 'riendo'),
-    nuria('Gerard, quedaos a Haru y a Yuki un tiempo. Os han echado de menos.'),
+    nuria('Uri! Nil!', 'riendo'),
+    uri('Perdona. No sé què m\'ha passat. Només volia… jugar.'),
+    nuria('Ja. Doncs mira, potser hauríem de jugar més.', 'riendo'),
+    nuria('Gerard, quedeu-vos la Haru i la Yuki una temporada. Us han trobat a faltar.'),
   ),
   /**
    * Before they go, Gerard and Aitor send them to the choir (docs/quests/coro.md § The choir room):
@@ -254,9 +254,9 @@ export const LINES_NURIA = {
    */
   coro: withNuria(
     aitor('Nuria, Uri. Una cosa más. El coro ya tiene local: A cop de diapasó, en la Meridiana, al lado de casa.'),
-    gerard('Pase lo que pase, venid allí. Acordaos siempre.'),
-    nuria('¿Al coro? ¿Desde Cardedeu?'),
-    gerard('Desde donde sea.'),
+    gerard('Passi el que passi, veniu allà. Recordeu-ho sempre.'),
+    nuria('Al cor? Des de Cardedeu?'),
+    gerard('Des d\'on sigui.'),
     uri('A cop de diapasó.'),
   ),
 } as const;

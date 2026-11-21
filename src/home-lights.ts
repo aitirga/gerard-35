@@ -12,7 +12,7 @@
 import type { EnvironmentId } from './environments.ts';
 import { FOE_ABILITIES, type BattleEffect, type BattleState, type Encounter } from './battle.ts';
 import { CASTLE_ENCOUNTERS, castlePhaseOf, type CastleEncounter } from './castle.ts';
-import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, DUAL_BANNER_SEEN, DUAL_FREEZE, SPELL_CONTACT } from './battle-motion.ts';
+import { CAST_CONTACT, CONTACT_SECONDS, DUAL_BANNER_SEEN, DUAL_FREEZE, FIGURES, SPELL_CONTACT, isFigure } from './battle-motion.ts';
 
 export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'dormitorio' | 'terraza' | 'estudio' | 'galeria';
 /**
@@ -320,7 +320,7 @@ export function impactSeconds(effect: BattleEffect) {
   // A dual: the room flickers as its banner settles and its choreography begins (battle-scene.ts `dual`).
   if (effect.dual) return DUAL_FREEZE + DUAL_BANNER_SEEN;
   if (effect.skill === 'foc-binari') return CAST_CONTACT;
-  if (effect.skill === 'cardioide') return CURE_CONTACT;
+  if (isFigure(effect.skill)) return FIGURES[effect.skill].contact;
   if (effect.spell) return SPELL_CONTACT;
   return effect.target && !effect.boosted ? CONTACT_SECONDS : .2;
 }

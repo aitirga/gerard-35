@@ -31,7 +31,7 @@ export const EVENINGS = {
   gimnasio: { label: 'Entrenar', place: 'street', name: 'En forma', stats: { fuerza: 2 }, effect: 'Sube un poco Fuerza de todo el equipo.' },
   coro: { label: 'Ensayar', place: 'street', name: 'Afinados', stats: { magia: 2 }, effect: 'Sube un poco Magia de todo el equipo.' },
 } as const satisfies Record<string, { label: string; place: 'home' | 'street'; name?: string; stats?: Partial<Record<Stat, number>>; effect?: string }>;
-type Stat = 'fuerza' | 'magia' | 'defensa' | 'espiritu' | 'velocidad' | 'critico';
+type Stat = 'fuerza' | 'magia' | 'defensa' | 'espiritu' | 'critico';
 export type EveningId = keyof typeof EVENINGS;
 /** The afternoons that leave something. */
 export type BoostId = { [K in EveningId]: (typeof EVENINGS)[K] extends { name: string } ? K : never }[EveningId];

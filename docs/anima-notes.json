@@ -1,0 +1,64 @@
+{
+  "notes": [
+    {
+      "id": "n-mwqc8epe",
+      "entry": "matemagico",
+      "name": "Matemágico",
+      "item": "skill:cardioide",
+      "itemName": "Cardioide",
+      "text": "No se ve muy bonito, quiero que claramente se pinte un cardioide, se deshaga en partículas y fluya al target",
+      "status": "hecha",
+      "created": "2026-11-21T11:41:53Z",
+      "closed": "2026-11-21T12:11:41Z",
+      "reply": "Hecho: un círculo pequeño rueda alrededor de otro igual y su borde dibuja el cardioide en verde, con el pico arriba; los círculos se van y la curva se deshace desde el pico en partículas que fluyen en arco hasta quien cura (src/math-figures.ts). Se ve en `just screenshots matemagico-figuras --gpu`."
+    },
+    {
+      "id": "n-mwqca4r5",
+      "entry": "matemagico",
+      "name": "Matemágico",
+      "item": "skill:factor-comun",
+      "itemName": "Factor común",
+      "text": "Cambiemos el nombre y la visualizacion: Pirámide ígnea . Gerard dibuja un triángulo que se convierte en 3D, se mueve al grupo enemigo y explota violéntamente",
+      "status": "hecha",
+      "created": "2026-11-21T11:43:13Z",
+      "closed": "2026-11-21T12:11:41Z",
+      "reply": "Hecho: ahora se llama Pirámide ígnea. Gerard dibuja un triángulo de fuego, le sale un vértice que lo convierte en pirámide 3D girando, vuela sobre el grupo enemigo dejando llamas, se encoge un instante y explota (fogonazo, bola de fuego, chispas de sus aristas y un anillo de fuego en el suelo). La regla no cambia: el fuego de todos sube al más alto."
+    },
+    {
+      "id": "n-mwqcbn66",
+      "entry": "matemagico",
+      "name": "Matemágico",
+      "item": "skill:vasos",
+      "itemName": "Vasos comunicantes",
+      "text": "Cambia el nombre a Cubo acuático. Quiero que se dibuje un cuadrado, se convierta y se extruya a 3D en un cubo, se vaya al centro mientras claramente se llena de agua (usa animaciones. quizas del freático) y explota, mojando a todos y haciendo daño",
+      "status": "hecha",
+      "created": "2026-11-21T11:44:24Z",
+      "closed": "2026-11-21T12:11:41Z",
+      "reply": "Hecho: ahora se llama Cubo acuático. Se dibuja un cuadrado, su cara de atrás se extruye y queda un cubo que gira para enseñar la profundidad; de camino al centro de los enemigos se llena de agua (con las gotas y burbujas del Freático) y explota, mojando y dañando a todos."
+    },
+    {
+      "id": "n-mwqcd6bj",
+      "entry": "matemagico",
+      "name": "Matemágico",
+      "item": "skill:integral",
+      "itemName": "Integral",
+      "text": "Integral impropia. Se dibuja una integral, se gira 90 mientras se coloca entre Gerard y Aitor y emite lateralmente chorros de partículas verdes que curan a ambos y les aplica cura en el tiempo",
+      "status": "hecha",
+      "created": "2026-11-21T11:45:35Z",
+      "closed": "2026-11-21T12:11:41Z",
+      "reply": "Hecho: ahora es Integral impropia (∫ de 0 a ∞). Se dibuja, gira 90° mientras se coloca entre Gerard y Aitor y lanza chorros verdes por los dos extremos que los curan; además les deja Sanación, la cura en el tiempo de 15 s. Descripción: «Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.» Los números (26 al instante más Sanación) quedan para el balance."
+    },
+    {
+      "id": "n-mwqce736",
+      "entry": "matemagico",
+      "name": "Matemágico",
+      "item": "skill:descarga",
+      "itemName": "Descarga",
+      "text": "cambia el nombre a Punto eléctrico. Generas un punto en el espacio en frente de Gerard, que sube y cae al enemigo, genera mejor el efecto de electricidad",
+      "status": "hecha",
+      "created": "2026-11-21T11:46:23Z",
+      "closed": "2026-11-21T12:11:41Z",
+      "reply": "Hecho: ahora se llama Punto eléctrico. Aparece un punto de carga delante de Gerard que chisporrotea, sube, se frena arriba y cae sobre el enemigo como rayo: tres descargas seguidas por caminos quebrados con ramas, arcos que corren por el enemigo y el suelo, chispas que rebotan. Sigue saltando a todos los mojados."
+    }
+  ]
+}

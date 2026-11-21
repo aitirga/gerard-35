@@ -1,0 +1,6 @@
+{
+  "id": "agente",
+  "name": "Agente",
+  "glb": "models/creatures/agente.glb",
+  "height": 2.3
+}

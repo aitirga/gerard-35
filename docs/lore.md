@@ -43,6 +43,9 @@ friends' stories and the second round carry it.
 
 - **The whole game revolves around La Reina Bubbaloo**, a villain **Bernat invented** for the game
   he designs in his notebook. In chapter 1 his notebook game becomes real, and she comes with it.
+  **On screen there is no notebook** (Aitor, 2026-11-21): no line names it. Bernat speaks of his
+  dream and of the game he made up as a boy (in chapter 1 he dreamt the morning, and he talked to the
+  light); the notebook stays the origin behind the game, never something the characters mention.
 - **Who she really is (decided 2026-10-29): nobody.** She is **not Nuria Mendoza**. She is a
   product of imagination: she **personifies being a kid** (*ser niño*), the part of everyone that
   growing up and its responsibilities push aside. That is the critique the game makes, and it is
@@ -85,6 +88,17 @@ friends' stories and the second round carry it.
 - **The ending (decided 2026-11-19): two endings**, by Gerard's choice at the end: **kill her, or
   let her live, weakened** (before, three). What each one shows: `docs/castle-bosses.md` § The
   last scene.
+
+### Her music
+
+- **She loves music, from her very first scene** (Aitor, 2026-11-21). She sings to herself the way a
+  kid does in the playground, unhurried and for no one. As her hands come down at the end of chapter 1
+  she is heard and never seen, high above: *«La, la, la-la, laaa…»*, the playground's chant (sol mi la
+  sol mi), while the castle's song falls silent for her voice (`reina-la` in `src/sfx.ts`, her words
+  over the picture: `sing` in `src/story-ui.ts`).
+- It is the first sign of what Bernat later puts into words, that she is very sensitive to music
+  (`docs/quests/bernat.md` § Round 5). Her chant is never the artilugio's melody, nor even in its scale
+  (`docs/story-outline.md` § The device), so it points at music and never at the answer.
 
 ### Her minions (esbirros)
 
@@ -204,9 +218,10 @@ friends' stories and the second round carry it.
    **Matemágico** wakes in him. His **Foc Binari**, fire from his hand, melts its gum, and it
    bursts.
 
-7. Bernat starts to explain (they are in the Queen's castle; she is real; she wants…) and is cut
-   off: minions burst out everywhere and **La Reina Bubbaloo's hands** (pink gelatine, so huge
-   only her hands and forearms fit on screen) catch them both. Black.
+7. Bernat starts to explain (they are in the Queen's castle; she is real; he remembers it all, they
+   are going to die) and sees her coming: minions burst out everywhere and **La Reina Bubbaloo's
+   arms** (gaunt clawed hands in her gloves of stretched gum, so huge only her arms fit on screen)
+   catch them both. Black.
 
 ## Chapter 2 so far
 

@@ -50,15 +50,16 @@ of the Queen's own figure: an adult, held by her, never a joke.
 
 | Who | Figure | What is theirs | What is hers |
 | --- | --- | --- | --- |
-| **Aurelià** (2.05 m) | `aurelia` | The athlete he was and still is: broad, tanned, tousled dark hair, stubble, a white sleeveless top and navy shorts, trainers | An emperor's cloak of her wrapper paper (pink and black stripes) held by two black gum balls, a laurel of pink gum, hands gone chalk white, her gum climbing his calves, violet eyes |
+| **Aurelià** (2.05 m) | `aurelia` | The real man: tall and lean like a runner, his dark curls, the full short beard, a silver hoop, his own shirt with a bold brown and black geometric print on sand, navy running shorts, trainers | A general's mantle of her wrapper paper (pink and black stripes) held by two black gum balls, a laurel of pink gum, her gum bound round his wrists like a gymnast's tape and criss-cross round his shins, violet eyes |
 | **El Atril** (1.45 m) | `atril`, a creature in one piece | A lectern of dark oak with brass corners, his laurel on its front, the book open on top | Her gum pulled taut over it in strands, the first black blisters |
 | **Mar** (2.0 m) | `mar` | The head: tall, a high dark bun, a long steel-grey coat buttoned to the neck | A pink gum bubble over the whole face, with a face pressed into it from inside and none of its own; pink gum gloves; a collar of her striped paper; black blisters on the skirt |
 | **Montse** (1.75 m) | `montse` | A grey bob, a manila cardigan over a dark dress, flat shoes | The same bubble and gloves; her striped paper as a scarf |
 | **Pilar** (1.88 m) | `pilar` | Long pale hair, a steel-blue dress | The same bubble and gloves; her striped paper as a short cape |
 
-- **Aurelià's build and colouring are the real Aurelià's**, taken in words from a photo Aitor
-  showed (2026-11-20). The photo has other people in it, so it never went to the image model: only
-  the description did.
+- **Aurelià is drawn from his own face** (redone 2026-11-21): Aitor's photos are all group shots,
+  so only crops of him alone went to the image model (`assets/references/characters/aurelia/`, the
+  originals in `raw/`). The first figure, from words alone, came out a generic comic-book strongman;
+  what makes him himself is his head and his patterned shirt, and the Queen's marks sit on top.
 - **The three have no face on purpose.** There is no photo of them, and Aitor asked for "a face as
   if it were Bubbaloo's": the Queen has put her own over theirs. It is also what tells the player
   they are held, where Aurelià has his violet eyes. Montse and Pilar were drawn from Mar's image so
@@ -211,19 +212,22 @@ today); `aitor-poseido` in `src/battle.ts` and `src/story.ts`, as docs/progress.
 
 ### The last scene
 
-At 0 PV she does not die.
+At 0 PV she does not die, and she does not come apart as the others do (Aitor, 2026-11-21).
 
-- The fight's clock slows (`FightClock.slow`, as a dual does), the music goes silent (decided
-  2026-11-19, replacing a held chord: only the wind through the open balcony), and the camera closes
-  on Gerard: the Foc Binari forming in his hand, the numbers turning round it. She is on the floor,
-  small. Once he chooses, the welcome screen's piano comes back, sadder (docs/audio.md § The last fight).
-- In Gerard's dock, two commands and no clock. **Only Gerard chooses**; Aitor answers with one
-  line.
+- She sinks to the floor, small (`LAST` in `src/battle-scene.ts`). The fight's HUD goes, there is
+  no victory screen, and the music goes silent: only the wind through the open balcony.
+- Gerard walks up to her and **takes her by the neck**; the camera closes in low, from the side, on
+  the two of them. Over it, the line «La mà del Gerard és al seu coll. Ella no s'hi resisteix.»
+  and, in Gerard's dock, two commands and no clock. **Only Gerard chooses**; Aitor answers with one
+  line, said in the fight as it plays out. Once he chooses, the welcome screen's piano comes back,
+  sadder (docs/audio.md § The last fight).
+- It plays inside her fight (`lastScene` in `src/battle-ui.ts` and `src/main.ts`); the fight closes
+  after and the story hears the choice with the win (`ending` on the battle event, `castleEnding`).
 
 | Command | What happens | Epilogue |
 | --- | --- | --- |
-| **Acabar** | Q.E.D. in slow motion. She comes apart in specks that go from pink to grey. The castle is the school again, with no trace of her | Monday, the alarm, work. Everything in order, and a little greyer. Bernat's notebook, blank |
-| **Bajar la mano** | The magic goes out. She shrinks to a pink marble: it goes in the jar, with the lights | Monday, the alarm, work. Some pink is still in the city. Gerard whistles the six notes |
+| **Acabar** | «Hazlo.» The Foc Binari forms in the hand at her neck, his circle turning, and goes into her: she comes apart in specks that go from pink to grey. Over black: where the throne was, a classroom with the chairs up on the desks | Monday, the alarm, work. Everything in order, and a little greyer |
+| **Bajar la mano** | «…Vale. Vale.» His hand comes down. The dream ends, in white, and they wake | Monday, the alarm, work. Some pink is still in the city. Gerard whistles the six notes |
 
 These are **the two endings** (2026-11-19): to kill her, or to let her live, weakened. They
 replace the three decided before (kill, wound, let live). Neither is the right one.

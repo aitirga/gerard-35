@@ -19,10 +19,10 @@ test('average stats leave every base amount as it is; stats above or below move 
   assert.deepEqual(withBonus(kid, { magia: 2, defensa: -20 }).defensa, 1, 'no stat drops below 1');
 });
 
-test('chapter 2 fights Gerard at 35 and Aitor, fastest first, with their ánimas\' skills', () => {
+test('chapter 2 fights Gerard at 35 and Aitor, in the party\'s order, with their ánimas\' skills', () => {
   const story = chapter2();
   const s = createBattle(story.battleParty(true), 2, false, undefined, story.classes);
-  assert.deepEqual(s.allies.map(a => a.id), ['gerard', 'aitor'], 'Gerard (Velocidad 11) acts before Aitor (10)');
+  assert.deepEqual(s.allies.map(a => a.id), ['gerard', 'aitor'], 'the party as it walks: there is no Velocidad to reorder it');
   assert.deepEqual(s.allies.map(a => a.maxHp), [120, 135]);
   const [gerard, aitor] = s.allies;
   assert.ok(skillsFor(s, gerard).some(k => k.id === 'foc-binari'), 'Gerard keeps Matemágico');

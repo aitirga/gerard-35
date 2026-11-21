@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import type { FoeKind } from './battle';
-import { buildCharacter, buildFoeBody, type CharacterSpec } from './character-model';
+import { buildCharacter, buildFoeBody, hasModel, instantiateModel, type CharacterSpec } from './character-model';
+import VERTITRON_FIGURE from './monsters/vertigo.json';
 import { FOE_BODIES } from './foe-bodies';
 import { createCampingFoes } from './camping-foes';
 import { createCuerdasFoes } from './cuerdas-foes';
@@ -171,6 +172,11 @@ export function createFears(app: pc.Application) {
     for (const node of up.find(n => n.name === POSSESSED_EYE) as pc.Entity[]) node.enabled = !free;
   }
   uriEyes(vertigo, false);
+  /** Per copy of Vertitrón: its joints with the figure's bones they turn (`jointsOf`), and its hands with the figure's (`handsOf`). */
+  const joints = new WeakMap<pc.Entity, [pc.Entity, pc.Entity][]>();
+  const handsAt = new WeakMap<pc.Entity, [pc.Entity, pc.Entity][]>();
+  // Its look is its Meshy figure once that is loaded (`dressVertitron`): the joints above still carry every pose.
+  const vertitron = hasModel(VERTITRON_FIGURE.id) ? dressVertitron(vertigo) : undefined;
 
   // Their young are the same fears, small (battle-scene.ts sizes them).
   const templates = new Map<FoeKind, pc.Entity>([['cebollon', onion], ['cebolla', onion], ['plato', dish], ['vertigo', vertigo], ['cebollita', onion], ['platito', dish], ['fantasmita', ghost]]);
@@ -219,6 +225,22 @@ export function createFears(app: pc.Application) {
     pose(model: pc.Entity, p: RobotPose) {
       const r = rig(model);
       if (!r) return;
+      poseJoints(r, p);
+      vertitron?.follow(model);
+    },
+    /** Its eye: cracked, its spiral gone (`broken`), or whole and turning. */
+    eye(model: pc.Entity, broken: boolean) {
+      const r = rig(model);
+      if (!r) return;
+      r.spiral.enabled = !broken;
+      for (const crack of r.eye.find(n => n.name === 'Grieta') as pc.Entity[]) crack.enabled = broken;
+    },
+    uriEyes,
+    destroy() { templates.forEach((t, kind) => { if (!camping.templates.has(kind as never) && !cuerdas.templates.has(kind as never) && !modelo.templates.has(kind as never) && !luca.templates.has(kind as never)) t.destroy(); }); materials.forEach(m => m.destroy()); camping.destroy(); cuerdas.destroy(); modelo.destroy(); luca.destroy(); },
+  };
+  /** Sets every joint of Vertitrón's for the pose `p` (see `pose`). */
+  function poseJoints(r: ReturnType<typeof rigOf>, p: RobotPose) {
+    {
       const k = p.kneel ?? 0, roar = p.roar ?? 0, charge = p.charge ?? 0, recoil = p.recoil ?? 0, stomp = p.stomp ?? 0, sweep = p.sweep ?? 0, t = p.time ?? 0;
       const hum = Math.sin(t * 1.6) * (1 - k), buzz = charge * Math.sin(t * 47) * .6;
       r.hips.setLocalPosition(0, ROBOT.hip - ROBOT.drop * k - .32 * sweep + hum * .025, -.12 * k);
@@ -242,18 +264,100 @@ export function createFears(app: pc.Application) {
       }
       if (p.spin !== undefined) r.spiral.setLocalEulerAngles(0, 0, p.spin);
       if (p.gaze) r.ball.setLocalEulerAngles(p.gaze[0], p.gaze[1], p.gaze[2]);
-    },
-    /** Its eye: cracked, its spiral gone (`broken`), or whole and turning. */
-    eye(model: pc.Entity, broken: boolean) {
-      const r = rig(model);
-      if (!r) return;
-      r.spiral.enabled = !broken;
-      for (const crack of r.eye.find(n => n.name === 'Grieta') as pc.Entity[]) crack.enabled = broken;
-    },
-    uriEyes,
-    destroy() { templates.forEach((t, kind) => { if (!camping.templates.has(kind as never) && !cuerdas.templates.has(kind as never) && !modelo.templates.has(kind as never) && !luca.templates.has(kind as never)) t.destroy(); }); materials.forEach(m => m.destroy()); camping.destroy(); cuerdas.destroy(); modelo.destroy(); luca.destroy(); },
-  };
+    }
+  }
+
+  /**
+   * Vertitrón's figure from Meshy (tools/figures.toml `[vertigo]`, src/monsters/vertigo.json) over its
+   * joints: the primitives are hidden but their joints stay and the fight poses them as always; each
+   * frame (`follow`) the figure's bones turn as their joint has turned from rest. Its eye (the fight's
+   * part with its own PV: lens, spiral, cracks) goes into the window in its chest and Uri onto its
+   * roof, on its bones; the hands the fight throws from go where the figure's are.
+   */
+  function dressVertitron(model: pc.Entity) {
+    const holder = new pc.Entity('Figura de Vertitrón');
+    const k = VERTITRON.tall / VERTITRON_FIGURE.height;
+    holder.setLocalScale(k, k, k);
+    model.addChild(holder);
+    instantiateModel(VERTITRON_FIGURE.id, holder);
+    const kept = ['Ojo de Vertitrón', 'Uri arriba', 'Charco pringoso'].map(name => model.findByName(name) as pc.Entity);
+    for (const render of model.findComponents('render') as pc.RenderComponent[]) {
+      let node: pc.GraphNode | null = render.entity;
+      while (node && node !== model && node !== holder && !kept.includes(node as pc.Entity)) node = node.parent;
+      if (node === model) render.enabled = false;
+    }
+    // Rest: every joint at its neutral pose, where the figure's own pose is its rest.
+    poseJoints(rigOf(model), {});
+    const relative = (root: pc.Entity, node: pc.GraphNode) => new pc.Quat().copy(root.getRotation()).invert().mul(node.getRotation());
+    const scaleUnder = (node: pc.GraphNode) => node.getWorldTransform().getScale().x / model.getWorldTransform().getScale().x;
+    const pairs = jointsOf(model);
+    const rest = pairs.map(([joint, bone]) => ({ joint: relative(model, joint).invert(), bone: relative(model, bone) }));
+    const hipsAt = (model.findByName('Cadera') as pc.Entity).getLocalPosition().clone();
+    const hipsBone = model.findByName('Hips') as pc.Entity, hipsBoneAt = hipsBone.getLocalPosition().clone();
+    // The eye into the window of its chest, Uri onto its roof: on the bones that carry them, at their size.
+    const place = (node: pc.Entity, bone: string, at: readonly number[], size: number) => {
+      const on = model.findByName(bone) as pc.Entity;
+      on.addChild(node);
+      node.setPosition(model.getWorldTransform().transformPoint(new pc.Vec3(at[0], at[1], at[2])));
+      node.setRotation(model.getRotation());
+      const s = size / scaleUnder(on);
+      node.setLocalScale(s, s, s);
+    };
+    place(kept[0], 'Spine', VERTITRON.eye, VERTITRON.eyeSize);
+    place(kept[1], 'Head', VERTITRON.uri, 1.3);
+    const turned = new pc.Quat(), root = new pc.Quat(), hands = new pc.Vec3();
+    return {
+      /** Turns the figure's bones of `copy` as its joints are turned now. */
+      follow(copy: pc.Entity) {
+        const joints = jointsOf(copy);
+        root.copy(copy.getRotation());
+        joints.forEach(([joint, bone], i) => {
+          turned.copy(root).invert().mul(joint.getRotation()).mul(rest[i].joint).mul(rest[i].bone);
+          bone.setRotation(new pc.Quat().copy(root).mul(turned));
+        });
+        // The hips go down and forward as the joints' do, in the figure's longer legs.
+        const hips = copy.findByName('Cadera') as pc.Entity, bone = joints[0][1];
+        const moved = hips.getLocalPosition().clone().sub(hipsAt).mulScalar(VERTITRON.hips / (k * .01));
+        bone.setLocalPosition(hipsBoneAt.x + moved.x, hipsBoneAt.y + moved.y, hipsBoneAt.z + moved.z);
+        for (const [hand, at] of handsOf(copy)) hand.setPosition(hands.copy(at.getPosition()));
+      },
+    };
+  }
+  /** Vertitrón's joints and the figure's bones they turn, parents first (found once per copy). */
+  function jointsOf(model: pc.Entity) {
+    let found = joints.get(model);
+    if (found) return found;
+    const by = (name: string, under: pc.Entity = model) => under.findByName(name) as pc.Entity;
+    // The joints on the picture's left (−x) are the figure's right side.
+    const sides = [['izquierdo', 'Right'], ['derecho', 'Left']] as const;
+    found = [[by('Cadera'), by('Hips')], [by('Tronco'), by('Spine02')], [by('Cabeza'), by('Head')]];
+    for (const [ours, its] of sides) {
+      const thigh = by(`Muslo ${ours}`), shoulder = by(`Hombro ${ours}`);
+      found.push([thigh, by(`${its}UpLeg`)], [by('Rodilla', thigh), by(`${its}Leg`)], [by('Tobillo', thigh), by(`${its}Foot`)]);
+      found.push([by('Brazo', shoulder), by(`${its}Arm`)], [by('Codo', shoulder), by(`${its}ForeArm`)]);
+    }
+    joints.set(model, found);
+    return found;
+  }
+  /** Where the fight throws from (`Mano del robot`) and the figure's hand it follows. */
+  function handsOf(model: pc.Entity) {
+    let found = handsAt.get(model);
+    if (!found) {
+      found = ([['izquierdo', 'Right'], ['derecho', 'Left']] as const).map(([ours, its]) => [(model.findByName(`Hombro ${ours}`) as pc.Entity).findByName('Mano del robot') as pc.Entity, model.findByName(`${its}Hand`) as pc.Entity]);
+      handsAt.set(model, found);
+    }
+    return found;
+  }
 }
+/**
+ * Vertitrón's Meshy figure (`dressVertitron`, model metres, measured on it): how tall it stands (the
+ * height of the robot of primitives it dresses), how much further its hips move than the joints' (its
+ * legs are longer), the centre of the window in its chest where the eye goes and its size there, and
+ * the ridge of its roof where Uri stands.
+ */
+const VERTITRON = { tall: 5.1, hips: 1.3, eye: [0, 3.65, .26], eyeSize: .3, uri: [-.15, 4.82, 0] } as const;
+/** The figure files the fears need loaded before they are built (`loadCharacterModels`). */
+export const FEAR_FIGURES = [VERTITRON_FIGURE];
 /** Vertitrón's measures (model metres): its hips over the floor, how far kneeling lowers them, and its eye up its trunk. */
 export const ROBOT = { hip: 2.1, drop: .84, eye: 1.05 } as const;
 export interface RobotPose { kneel?: number; stomp?: number; stompSide?: -1 | 1; sweep?: number; sweepSide?: -1 | 1; sweepAt?: number; roar?: number; charge?: number; recoil?: number; time?: number; spin?: number; gaze?: readonly [number, number, number] }

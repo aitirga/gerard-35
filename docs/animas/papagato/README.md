@@ -59,8 +59,7 @@ work).
 - **Crítico is an attribute** (decided by Aitor 2026-11-20): the chance that a blow is a golpe
   crítico (`../README.md` § Golpe crítico; `Stats.critico`, `PARTY_CRIT` in `src/stats.ts`). 5 % for
   everyone in the party; Papagato adds to it; foes have none.
-- Papagato no longer gives Velocidad (removed as a stat, `docs/combat.md` § Sin Velocidad; the
-  engine still orders turns by it, so with Papagato worn nobody jumps the order any more).
+- Papagato no longer gives Velocidad (removed as a stat, `docs/combat.md` § Sin Velocidad).
 - Nuria's light (`ANIMAS`) gives its own party bonus, separate.
 
 ## Signature: the wound and the golpe crítico
@@ -239,6 +238,8 @@ Zarpa en la llaga instead: 29, +240 %, +50 % = **113** for 2 maná.
 
 ## What it offers a dual
 
+**Built (2026-11-21):** *Metralla* (dúo mayor, Explosión + Zarpazo sangriento) and *Staccato* (Zarpazo sangriento + Ostinato); `../README.md` § Combined skills.
+
 The duals are designed after every ánima is (`../README.md` § Order of work). What Papagato
 brings to a pair, for then:
 
@@ -353,7 +354,7 @@ And of 2026-11-21 (`tests/papagato.test.mjs`):
 
 **To build**, in this order:
 
-1. **Crítico on the status screen**, and Velocidad out of the engine's turn order.
+1. **Crítico on the status screen**. (Velocidad is out of the turn order since 2026-11-21.)
 2. `just fight-sim`: its targets moved with the new rules (`just fight-sim check` fails on
    `platitos-sin-pensar`); they are set again with the balance, last. The smart bot does not know
    how to value Acecho, Cacería nor Siete vidas yet (it never or hardly uses them), and with Papagato

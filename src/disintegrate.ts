@@ -116,6 +116,8 @@ export interface Disintegration {
 export interface DisintegrateOptions {
   /** One colour it leaves in instead of violet and purple (sRGB hex). */
   colour?: string;
+  /** Instead, its specks go from the first colour to the second as it comes apart (the Queen, pink to grey). */
+  fade?: readonly [string, string];
   /** Seconds it stands whole first, to be seen. */
   delay?: number;
   /** Its materials are its own (a fighter's copies, made `dissolvable` when it was built): nothing to copy. */
@@ -144,12 +146,14 @@ export function createDisintegrations(gpu: FightParticles | undefined) {
   interface Run extends Disintegration {
     model: pc.Entity; materials: pc.StandardMaterial[]; borrowed: [pc.MeshInstance, pc.Material][];
     age: number; delay: number; still: boolean; low: number; high: number;
-    colours: readonly string[]; span: Float32Array;
+    colours: readonly string[]; span: Float32Array; fade?: readonly [pc.Color, pc.Color];
     specks: number; thrown: number; seconds: number;
     into?: pc.Vec3; field?: GpuField;
     progress: number; finished: boolean; done?: () => void; appear: boolean;
   }
   const runs: Run[] = [];
+  /** A fading run's colour now (`fade`). */
+  const mixed = new pc.Color();
   /** Seconds the last specks thrown still drift: the engine keeps running till then. */
   let rising = 0;
   /** Portals' fields still pulling specks in after their run finished, and for how long. */
@@ -192,10 +196,10 @@ export function createDisintegrations(gpu: FightParticles | undefined) {
         borrowed.push([mesh, m]); mesh.material = copy;
       }
       const { low, high } = bounds(model), metres = Math.max(.3, high - low);
-      const colours = o.colour ? [o.colour] : DISINTEGRATE.colours, edge = new Float32Array(linear(colours[0]).map(c => c * 1.4));
+      const colours = o.fade ? [o.fade[0]] : o.colour ? [o.colour] : DISINTEGRATE.colours, edge = new Float32Array(linear(colours[0]).map(c => c * 1.4));
       const run: Run = {
         model, materials, borrowed, age: 0, delay: o.delay ?? 0, still: !animate, low, high,
-        colours, span: new Float32Array(4),
+        colours, span: new Float32Array(4), fade: o.fade && [new pc.Color().fromString(o.fade[0]), new pc.Color().fromString(o.fade[1])],
         specks: Math.round(Math.min(DISINTEGRATE.most, Math.max(DISINTEGRATE.fewest, DISINTEGRATE.specks * metres)) * (o.into ? 1.6 : 1)), thrown: 0,
         seconds: o.seconds ?? (o.into ? DISINTEGRATE.portal.seconds : DISINTEGRATE.seconds),
         progress: 0, finished: false, done: o.done, appear: !!o.appear,
@@ -246,8 +250,9 @@ export function createDisintegrations(gpu: FightParticles | undefined) {
           if (specks > 0) {
             r.thrown += specks;
             // Half violet, half purple (an odd one to whichever comes first).
-            r.colours.forEach((colour, c) => {
-              const count = Math.round(specks * (c + 1) / r.colours.length) - Math.round(specks * c / r.colours.length);
+            const colours = r.fade ? [mixed.lerp(r.fade[0], r.fade[1], t).toString(false)] : r.colours;
+            colours.forEach((colour, c) => {
+              const count = Math.round(specks * (c + 1) / colours.length) - Math.round(specks * c / colours.length);
               // Coming together, they settle into it: drawn in a little and gone soon.
               if (count > 0) gpu!.burst(r.into ? 'portal-speck' : 'speck', { at: p, count: count * links, chain: links, shape: 'surface', fighter: index, band, colour, outward: r.appear ? -outward : outward, up: r.appear ? -up : up, speed, life: r.appear ? APPEAR_LIFE : life, size, velocity });
             });

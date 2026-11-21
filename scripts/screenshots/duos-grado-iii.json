@@ -33,8 +33,8 @@
     },
     {
       "record": "sobrecalentamiento",
-      "caption": "Sobrecalentamiento: Bip levanta la cúpula de bits, el fuego binario de Gerard entra en ella, se pone al rojo y estalla sobre los tres perros; lo que queda de la cúpula se cierra sobre el equipo.",
-      "seconds": 3.4,
+      "caption": "Sobrecalentamiento: Bip levanta la cúpula sobre el equipo, de fuego esta vez; el fuego binario de Gerard entra en ella, se hincha al rojo blanco y estalla, y sus propios bits vuelan contra cada perro y explotan en él.",
+      "seconds": 3.8,
       "fps": 20,
       "tiles": 12,
       "sheetWidth": 360
@@ -45,7 +45,7 @@
     {
       "shot": "sobrecalentamiento-despues",
       "delay": 900,
-      "caption": "Después: el muro que queda delante del equipo y los perros en Quemado II."
+      "caption": "Después: los tres perros en Quemado II; de la cúpula no queda nada."
     },
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22vulcano%22%7D"

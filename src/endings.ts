@@ -1,10 +1,8 @@
 /**
- * The last scene (docs/castle-bosses.md § The last scene): she is on the floor, the Foc Binari is in
- * Gerard's hand, and his dock has two commands and no clock: Acabar, or Bajar la mano. Only Gerard
- * chooses. Then what the choice does, told over black before the Monday after.
- *
- * Preliminary (2026-11-19): the choice and its words. The slowed fight, the held chord and the
- * camera closing on his hand are to come; the story already frames him (`look`) before this opens.
+ * The last scene's two commands (docs/castle-bosses.md § The last scene): she is on the floor and
+ * Gerard's hand is at her neck, in her fight (src/main.ts `lastScene`); over it, his dock has two
+ * commands and no clock: Acabar, or Bajar la mano. Only Gerard chooses. Then Acabar's words over
+ * black before the Monday after.
  */
 import type { EndingChoice } from './castle-story.ts';
 

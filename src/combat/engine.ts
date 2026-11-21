@@ -51,10 +51,9 @@ const find = (state: CombatState, id: string) => state.combatants.find(combatant
 export function activeCombatant(state: CombatState): CombatantState | undefined {
   return state.status === 'active' ? find(state, state.order[state.turnIndex]) : undefined;
 }
+/** The round's turns: whoever still stands, in the encounter's own order. There is no speed stat (docs/combat.md § Sin Velocidad). */
 function order(definition: CombatDefinition, state: CombatState): string[] {
-  const speed = definition.rules?.speedStat ?? 'speed';
-  return state.combatants.filter(c => alive(definition, c)).map((combatant, index) => ({ combatant, index, speed: effectiveStats(definition, combatant)[speed] ?? 0 }))
-    .sort((a, b) => b.speed - a.speed || a.index - b.index).map(({ combatant }) => combatant.id);
+  return state.combatants.filter(c => alive(definition, c)).map(combatant => combatant.id);
 }
 function eligible(definition: CombatDefinition, state: CombatState, actor: CombatantState, action: ActionDefinition): CombatantState[] {
   const life = action.targetLife ?? 'alive';

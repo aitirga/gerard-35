@@ -8,6 +8,7 @@ import { Story } from '../src/story.ts';
 import { LINES_CASTLE } from '../src/castle-story.ts';
 import { flagsAt } from '../src/story-points.ts';
 import { canWalk } from '../src/movement.ts';
+import { ENVIRONMENTS } from '../src/environments.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
 /** Whether `to` can be walked to from `from` on `grid`, step by step. */
@@ -101,9 +102,28 @@ test('with the artilugio, the melody in order frees Aitor; a wrong note puts the
   assert.ok(castleTaken(state, queen, 'physical') > 0, 'and she can be finished');
 });
 
-test('the castle in the story: the gym leads into the floor, each boss moves the way in, she takes Aitor once, and Gerard chooses', () => {
+test('the castle in the story: the curtain leads up to the floor, each boss moves the way in, she takes Aitor once, and Gerard chooses', () => {
   const story = new Story(flagsAt('castle'));
-  assert.equal(story.redirect('patio-gimnasio').environment, 'castillo-1');
+  // The gym is held shut from inside; the guards stand before the curtain, and there is no stair yet.
+  assert.ok(story.gate('patio-gimnasio')?.lines.length, 'the gym says why it will not open');
+  assert.ok(story.guarded.length > 0);
+  assert.ok(!story.interactions('palacio').some(i => i.id === 'cruzar-cortina'));
+  assert.ok(story.interactions('palacio').some(i => i.id === 'challenge-guards'));
+  // The guards beaten: gone for good, the curtain parted, the hall drawn again with the party before it.
+  const guards = story.handle({ type: 'battle', won: true, encounter: 'palace-guards' });
+  assert.ok(story.has('cortina'));
+  assert.deepEqual(guards.slice(0, 2).map(e => e.kind), ['travel', 'dialogue']);
+  assert.equal(guards[0].environment, 'palacio');
+  assert.deepEqual(story.guarded, [], 'nobody stands there any more');
+  assert.equal(story.place('palacio').palace.parted, true);
+  assert.ok(!story.interactions('palacio').some(i => i.id === 'challenge-guards' || i.id === 'look-curtain'));
+  const stair = story.interactions('palacio').find(i => i.id === 'cruzar-cortina');
+  assert.ok(stair && canWalk(stair.cell, ENVIRONMENTS.palacio.grid));
+  const up = story.redirect('cruzar-cortina');
+  assert.equal(up.environment, 'castillo-1');
+  assert.deepEqual(up.cell, story.place('castillo-1').spawn, "today's floor, where it begins");
+  assert.deepEqual(story.place('castillo-1').interactions.find(i => i.id === 'castillo-volver').to, { environment: 'palacio', cell: stair.cell }, 'and its way back comes down the same stair');
+  assert.equal(story.redirect('patio-gimnasio'), undefined);
   assert.equal(story.extraSlots, 1);
   // A boss beaten: the Queen screams through the building, the picture goes white, and they are in bed. No night to walk home through.
   const first = story.handle({ type: 'battle', won: true, encounter: 'aurelia' });
@@ -117,6 +137,8 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   assert.ok(story.has('aurelia') && story.has('luz-aurelia'));
   assert.equal(story.extraSlots, 2, 'Aurelià opens a third ánima each');
   assert.equal(story.redirect('gimnasio-vestuarios').environment, 'castillo-2');
+  assert.equal(story.gate('patio-gimnasio'), undefined, 'his gym is open again');
+  assert.equal(story.redirect('cruzar-cortina').environment, 'palacio-gimnasio', 'the first floor is the school again: the stair comes out by the gym');
   assert.deepEqual(castleEntry(new Set(['aurelia'])).environment, 'palacio-gimnasio');
   const second = story.handle({ type: 'battle', won: true, encounter: 'direccion' }).find(e => e.kind === 'scream');
   assert.ok(second.fear === 2 && second.text === LINES_CASTLE.screams.direccion, 'she is more afraid each time');
@@ -137,11 +159,24 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   assert.ok(won.some(e => e.kind === 'ending'));
   const end = story.handle({ type: 'ending', choice: 'bajar' });
   assert.ok(story.has('reina') && story.has('final-bajar') && !story.has('final-acabar'));
-  assert.ok(end.some(e => e.kind === 'epilogue' && e.choice === 'bajar'));
+  assert.ok(end[0].kind === 'dialogue' && end[0].dialogue.lines[0].text === LINES_CASTLE.bajar.aitor.text, 'chosen outside her fight, Aitor answers here');
+  assert.ok(!end.some(e => e.kind === 'epilogue'), 'letting her be ends the dream: nothing told over black');
   assert.equal(end.at(-1).kind, 'credits', 'the Monday after, then the credits');
   assert.deepEqual(story.handle({ type: 'ending', choice: 'acabar' }), [], 'only once');
   assert.equal(story.redirect('patio-gimnasio'), undefined, 'after her, the school is a school');
   assert.equal(extraSlots(1), 1); assert.equal(extraSlots(2), 2);
+});
+
+test('her last scene played in the fight: the choice comes with the win, Aitor has answered there, and only Acabar is told over black', () => {
+  for (const choice of ['acabar', 'bajar']) {
+    const story = new Story(flagsAt('artilugio'));
+    const end = story.handle({ type: 'battle', won: true, encounter: 'reina-vuelta', ending: choice });
+    assert.ok(story.has('reina') && story.has(`final-${choice}`), choice);
+    assert.ok(!end.some(e => e.kind === 'ending'), 'nothing left to choose');
+    assert.ok(!end.some(e => e.kind === 'dialogue' && e.dialogue.lines.some(l => l.text === LINES_CASTLE[choice].aitor.text)), 'his line was said in the fight');
+    assert.equal(end.some(e => e.kind === 'epilogue'), choice === 'acabar');
+    assert.equal(end.at(-1).kind, 'credits');
+  }
 });
 
 test('each castle boss beaten holds her back as an ánima does, so a castle begun late can be finished', () => {

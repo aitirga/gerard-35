@@ -32,7 +32,7 @@
       .entry.target { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
       .entry.unplayed { background: #171a12; }
       .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 6px; color: var(--dim); font-size: 12px; }
-      .head .n { color: var(--gold); font-weight: 600; font-size: 13px; }
+      .head .n { color: var(--gold); font-weight: 600; font-size: 13px; } .head .n.tried { color: var(--soft); font-weight: 500; font-size: 11px; padding: 0 7px; border: 1px dashed #ffffff33; border-radius: 99px; }
       .head .kind { padding: 0 7px; border-radius: 99px; border: 1px solid #ffffff26; color: var(--soft); font-size: 11px; }
       .head .title { color: var(--soft); }
       .head a { color: var(--edit); text-decoration: none; } .head a:hover { text-decoration: underline; }
@@ -70,6 +70,15 @@
       .note .reply { border-left: 2px solid var(--done); padding-left: 8px; color: var(--soft); }
       .entry-tools { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; }
       .entry-tools .comment { flex: 1; display: flex; gap: 6px; } .entry-tools .comment textarea { flex: 1; padding: 5px 8px; min-height: 34px; resize: vertical; }
+      .text.removing { color: #d9a3a3; text-decoration: line-through; text-decoration-color: #e0707a99; }
+      .ghost { margin: 2px -6px; padding: 2px 0 4px; border-left: 3px dashed var(--done); background: #7fc88f0d; border-radius: 0 4px 4px 0; }
+      .ghost .say { margin: 0; } .ghost .say:hover { background: none; } .ghost .text { color: var(--done); cursor: default; }
+      .ghost .note { margin: 2px 6px 0 50px; border-left-color: var(--done); background: none; padding: 0 4px; } .ghost .note .meta b { color: var(--done); }
+      .say.adding { background: #7fc88f0d; border-left: 3px dashed var(--done); margin: 2px -6px; }
+      .block-head { font-size: 11.5px; color: var(--done); font-weight: 600; }
+      .block-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 6px; align-items: start; }
+      .block-row select { padding: 5px 6px; border-left: 3px solid var(--c, #555); } .block-row textarea { min-height: 38px; }
+      .note .lost { color: var(--bad); font-size: 12px; }
       .line-notes { margin: 4px 0 2px 0; display: flex; flex-direction: column; gap: 4px; }
       .empty { color: var(--dim); padding: 40px 0; }
       #zoom { position: fixed; inset: 0; background: #000000e0; display: none; place-items: center; z-index: 5; cursor: zoom-out; } #zoom img { max-width: 94vw; max-height: 94vh; }

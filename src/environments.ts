@@ -175,7 +175,7 @@ export interface Environment {
    * `theme`, one of chapter 2's zones (ZONE_GLYPHS), built by `src/palace-zones.ts`, with named
    * `anchors` where its boss and set-pieces go.
    */
-  palace?: { plan: string[]; rooms: Room[]; theme?: ZoneTheme; anchors?: Record<string, Cell>; /** A generated floor of the castle (src/castle-floor.ts): its rooms by kind, for the builder to dress. */ floor?: CastleFloor };
+  palace?: { plan: string[]; rooms: Room[]; theme?: ZoneTheme; anchors?: Record<string, Cell>; /** A generated floor of the castle (src/castle-floor.ts): its rooms by kind, for the builder to dress. */ floor?: CastleFloor; /** The hall's gum curtain tied back from its stair (its guards beaten in chapter 2). */ parted?: boolean };
   /** A real place generated from map data (tools/geo.py), drawn by `src/geo-scenery.ts`. */
   geo?: GeoScene;
   /** Inside the Sagrada Família: a plan in BASILICA_GLYPHS, built by `src/basilica-scenery.ts`. */
@@ -509,7 +509,7 @@ export const EL_NUCLI = house({
     { id: 'nucli-estanteria', cell: { x: 2, z: 21 }, label: 'Mirar las estanterías', lines: ['Cajas hasta el techo: Faro de Niebla, Los Telares, Vapor Vell, Mercado de Sombras, Rodalies…', 'Algunas las he jugado en casa de alguien. Otras no las había visto nunca.'] },
     { id: 'nucli-mostrador', cell: { x: 4, z: 19 }, label: 'Mirar el mostrador', lines: ['La caja, un bote de dados sueltos a un euro y una campanita.', 'Nadie detrás. La campanita está boca abajo.'] },
     { id: 'nucli-vitrina', cell: { x: 7, z: 19 }, label: 'Mirar la vitrina', lines: ['Cartas sueltas en fundas, cada una con su precio escrito a lápiz.', 'Las más caras, arriba del todo, con su propia luz.'] },
-    { id: 'nucli-partida', cell: { x: 8, z: 11 }, label: 'Mirar la partida', lines: ['Una partida a medias: losetas, fichas de madera, una libreta con los puntos.', 'Las sillas están apartadas, como si se hubieran levantado todos a la vez.'] },
+    { id: 'nucli-partida', cell: { x: 8, z: 11 }, label: 'Mirar la partida', lines: ['Una partida a medias: losetas, fichas de madera, una hoja con los puntos.', 'Las sillas están apartadas, como si se hubieran levantado todos a la vez.'] },
     { id: 'nucli-tablon', cell: { x: 6, z: 9 }, label: 'Mirar el tablón', lines: ['Torneos, presentaciones y «se busca jugador para campaña de rol, los jueves».', 'Encima de todo han clavado una hoja nueva. Está en blanco.'] },
     // Bernat's mission (docs/quests/bernat.md) takes this over once he is there; until then it is a table.
     { id: 'nucli-mesa', cell: { x: 8, z: 4 }, label: 'Mirar la mesa', lines: ['Una mesa redonda entre cajas sin abrir, y dos sillas.', 'Desde aquí no se ve la calle. Y desde la calle no se ve esto.'] },

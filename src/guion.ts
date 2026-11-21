@@ -217,20 +217,31 @@ export interface Moment {
   stage: string; day: number; hour: number; environment: string; cell: { x: number; z: number }; event: string;
   /** The game reloaded just after it (`/?story=…` or `/?mission=…&part=…`), for its photo, and just before it when that differs (to see it happen). */
   jump: string; before?: string;
+  /** A moment the game did not play (`Partida.extra`): the interaction tried that says it, said the second time, or another player who hears it. */
+  via?: string; label?: string; again?: boolean; player?: string;
 }
-export interface Partida { player: string; seed: number; made: string; moments: Moment[]; visits: Record<string, string> }
+/** One game: `moments` in the order it says them, and `extra`, one moment for each entry it never says but trying an interaction or another player's game does (n 0). */
+export interface Partida { player: string; seed: number; made: string; moments: Moment[]; extra?: Moment[]; visits: Record<string, string> }
 
 /** The photo's file for an entry, under output/guion/fotos/. */
 export const photoName = (entry: string) => `${entry.replace(/[^a-zA-Z0-9-]+/g, '_').replace(/^_|_$/g, '')}.jpg`;
 
 // ── Aitor's notes ──────────────────────────────────────────────────────────
 /**
- * The notes on the script: a comment, or a suggestion (a line written as he would have it, for an agent
- * to apply with the `guion` skill). Kept in docs/guion-notes.json (tracked, so they travel between
- * machines); the skill answers each one in `reply`. Keep this shape: the skill depends on it.
+ * The notes on the script: a comment, a suggestion (a line written as he would have it), or a change to
+ * the moment's shape (lines added as a block, or a line taken out), for an agent to apply with the
+ * `guion` skill. Kept in docs/guion-notes.json (tracked, so they travel between machines); the skill
+ * answers each one in `reply`. Keep this shape: the skill depends on it.
  */
 export const GUION_NOTE_STATUS = ['abierta', 'hecha', 'descartada'] as const;
 export type GuionNoteStatus = (typeof GUION_NOTE_STATUS)[number];
+/** `añadir`: the lines of `block` go in, in that order, `place` the line `line`; `quitar`: the line `line` goes. */
+export const GUION_CHANGES = ['añadir', 'quitar'] as const;
+export type GuionChange = (typeof GUION_CHANGES)[number];
+export const GUION_PLACES = ['antes', 'despues'] as const;
+export type GuionPlace = (typeof GUION_PLACES)[number];
+/** A line to add: who says it (a `SPEAKERS` id or a `VOICES` one) and what. */
+export interface GuionBlockLine { speaker: string; text: string }
 export interface GuionNote {
   /** `g-` and the time it was made, in base 36. */
   id: string;
@@ -238,8 +249,14 @@ export interface GuionNote {
   entry: string; title: string;
   /** The line it is about (0-based), and what that line said when the note was written; none: the whole entry. */
   line?: number; quote?: string;
+  /** Where that line was written then (`src/chapter-1.ts:120`), to find it in the code. */
+  at?: string;
   /** How he would write the line instead; none: a comment. */
   proposal?: string;
+  /** A change to the moment's lines: `block` added `place` the line (`añadir`), or the line taken out (`quitar`). */
+  change?: GuionChange;
+  place?: GuionPlace;
+  block?: GuionBlockLine[];
   text: string;
   status: GuionNoteStatus;
   /** ISO dates, to the second. */
@@ -255,10 +272,15 @@ export const GUION_EDIT_ENDPOINT = '/__guion/editar';
 export const GUION_PAGE = '/guion.html';
 
 const isoNow = (now = new Date()) => now.toISOString().replace(/\.\d{3}Z$/, 'Z');
-export function newGuionNote(fields: Pick<GuionNote, 'entry' | 'title' | 'text'> & Partial<Pick<GuionNote, 'line' | 'quote' | 'proposal'>>, now = new Date()): GuionNote {
+export function newGuionNote(fields: Pick<GuionNote, 'entry' | 'title' | 'text'> & Partial<Pick<GuionNote, 'line' | 'quote' | 'at' | 'proposal' | 'change' | 'place' | 'block'>>, now = new Date()): GuionNote {
   const note: GuionNote = { id: `g-${now.getTime().toString(36)}`, entry: fields.entry, title: fields.title, text: fields.text.trim(), status: 'abierta', created: isoNow(now) };
-  if (fields.line !== undefined) { note.line = fields.line; note.quote = fields.quote ?? ''; }
+  if (fields.line !== undefined) { note.line = fields.line; note.quote = fields.quote ?? ''; if (fields.at) note.at = fields.at; }
   if (fields.proposal !== undefined && fields.proposal.trim()) note.proposal = fields.proposal.trim();
+  if (fields.change) note.change = fields.change;
+  if (fields.change === 'añadir') {
+    note.place = fields.place ?? 'despues';
+    note.block = (fields.block ?? []).map(l => ({ speaker: l.speaker, text: l.text.trim() })).filter(l => l.text);
+  }
   return note;
 }
 export const closeGuionNote = (note: GuionNote, status: GuionNoteStatus, now = new Date()): GuionNote => {
@@ -266,7 +288,7 @@ export const closeGuionNote = (note: GuionNote, status: GuionNoteStatus, now = n
   return status === 'abierta' ? { ...rest, status } : { ...rest, status, closed: isoNow(now) };
 };
 
-const NOTE_KEYS = ['id', 'entry', 'title', 'line', 'quote', 'proposal', 'text', 'status', 'created', 'closed', 'reply'];
+const NOTE_KEYS = ['id', 'entry', 'title', 'line', 'quote', 'at', 'proposal', 'change', 'place', 'block', 'text', 'status', 'created', 'closed', 'reply'];
 /** What is wrong with a notes file, if anything: the dev server refuses to write one that is not this shape. */
 export function guionNotesProblem(data: unknown): string | undefined {
   if (!data || typeof data !== 'object' || !Array.isArray((data as GuionNotesFile).notes)) return 'Se esperaba { "notes": [...] }.';
@@ -279,11 +301,29 @@ export function guionNotesProblem(data: unknown): string | undefined {
     if (ids.has(note.id)) return `${at}.id repetido: ${note.id}.`;
     ids.add(note.id);
     if (note.line !== undefined && (!Number.isInteger(note.line) || note.line < 0)) return `${at}.line debe ser un número de línea.`;
-    for (const key of ['quote', 'proposal', 'closed', 'reply'] as const) if (note[key] !== undefined && typeof note[key] !== 'string') return `${at}.${key} debe ser texto.`;
-    if (!note.text.trim() && !note.proposal) return `${at} no dice nada.`;
+    for (const key of ['quote', 'at', 'proposal', 'closed', 'reply'] as const) if (note[key] !== undefined && typeof note[key] !== 'string') return `${at}.${key} debe ser texto.`;
+    const problem = changeProblem(note);
+    if (problem) return `${at}${problem}`;
+    if (!note.text.trim() && !note.proposal && !note.change) return `${at} no dice nada.`;
     if (!(GUION_NOTE_STATUS as readonly string[]).includes(note.status)) return `${at}.status: ${GUION_NOTE_STATUS.join(', ')}.`;
     const extra = Object.keys(note).filter(k => !NOTE_KEYS.includes(k));
     if (extra.length) return `${at} tiene campos que no son del formato: ${extra.join(', ')}.`;
+  }
+  return undefined;
+}
+/** What is wrong with a note's change (` …` after its place in the file), if anything. */
+function changeProblem(note: GuionNote): string | undefined {
+  if (note.change === undefined) return note.place !== undefined || note.block !== undefined ? ': place y block solo van con change "añadir".' : undefined;
+  if (!(GUION_CHANGES as readonly string[]).includes(note.change)) return `.change: ${GUION_CHANGES.join(', ')}.`;
+  if (note.line === undefined) return ': un cambio necesita la línea a la que se refiere (line).';
+  if (note.proposal !== undefined) return ': un cambio no lleva proposal.';
+  if (note.change === 'quitar') return note.place !== undefined || note.block !== undefined ? ': quitar no lleva place ni block.' : undefined;
+  if (!(GUION_PLACES as readonly string[]).includes(note.place as string)) return `.place: ${GUION_PLACES.join(', ')}.`;
+  if (!Array.isArray(note.block) || !note.block.length) return '.block debe tener al menos una línea.';
+  for (const [j, l] of note.block.entries()) {
+    if (!l || typeof l !== 'object' || typeof l.speaker !== 'string' || !l.speaker || typeof l.text !== 'string' || !l.text.trim()) return `.block[${j}] necesita speaker y text.`;
+    const extra = Object.keys(l).filter(k => k !== 'speaker' && k !== 'text');
+    if (extra.length) return `.block[${j}] tiene campos que no son del formato: ${extra.join(', ')}.`;
   }
   return undefined;
 }

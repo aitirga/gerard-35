@@ -58,14 +58,14 @@ function inCharge(state: BattleState) {
 const WON: Partial<Record<CastleEncounter, string>> = {
   aurelia: 'Aurelià se queda quieto en mitad de la pista. El violeta se le va de los ojos y mira el gimnasio como si no lo hubiera visto nunca.',
   direccion: 'Las tres se sientan donde estaban, despacio. El violeta se apaga. Sobre la mesa queda un acta sin firmar.',
-  reina: 'Se queda en el suelo, pequeña.',
-  'reina-vuelta': 'Se queda en el suelo, pequeña. Ya no sostiene nada.',
+  reina: 'Es queda a terra, petita.',
+  'reina-vuelta': 'Es queda a terra, petita. Ja no aguanta res.',
 };
 const MESSAGES: Partial<Record<CastleEncounter, string>> = {
   aurelia: 'Aurelià está en la tarima, detrás del atril, con los ojos violeta. No levanta la voz. Nunca le ha hecho falta.',
   direccion: 'Mar, Montse y Pilar levantan la vista del acta a la vez. Las tres tienen los ojos violeta.',
-  reina: 'Baja del trono sin prisa. Lleva la cara de Nuria Mendoza, y no es ella. No tiene nombre: es todo lo que quedó de cuando erais niños.',
-  'reina-vuelta': 'Os está esperando donde la dejasteis. Lleva vuestros golpes encima. Gerard aprieta el artilugio en el bolsillo.',
+  reina: 'Baixa del tron sense pressa. Porta la cara de la Nuria Mendoza, i no és ella. No té nom: és tot el que va quedar de quan éreu petits.',
+  'reina-vuelta': 'Us espera on la vau deixar. Porta els vostres cops a sobre. El Gerard estreny l\'artilugi a la butxaca.',
 };
 export const castleWinMessage = (state: BattleState) => WON[state.encounter as CastleEncounter] ?? 'El chicle pierde la forma y se queda en el suelo, quieto. Solo era chicle.';
 

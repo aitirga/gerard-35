@@ -98,14 +98,14 @@ export const LINES_2 = {
     aitor('Madre mía.'),
     gerard('Está encima de la escuela. Como si hubiera crecido del tejado.'),
     aitor('Y no hay nadie. Ni policía, ni vecinos. Solo mochilas en el suelo.'),
-    gerard('Se oye cantar a los niños, ¿lo oyes? Están bien. Creo.'),
+    gerard('Se oye cantar a los niños, ¿lo oyes?'),
     aitor('La puerta de la escuela está abierta. Bueno… «abierta». Es una pompa.'),
   ),
   /** Inside the palace for the first time in chapter 2. */
   castleFirst: both(
     gerard('Es igual que en el sueño. El vestíbulo, la fuente, la cortina de chicle…'),
     aitor('Huele a fresa. Muchísimo. ¿Esto lo soñaste tú?'),
-    gerard('Lo soñó Bernat. Hace veinticinco años. Y yo estaba dentro.'),
+    gerard('Lo soñó Bernat. Hace veintitantos años. Y yo estaba dentro.'),
     aitor('Detrás de esa cortina hay algo. Y esas cosas enormes la están vigilando.'),
   ),
   /** Before the guards' fight. */
@@ -117,7 +117,9 @@ export const LINES_2 = {
   /** Guards beaten (only with ánimas). */
   guardsBeaten: both(
     aitor('¡Lo hemos hecho! Se han derretido.'),
-    gerard('La cortina se mueve. Arriba hay alguien.'),
+    gerard('La cortina se ha abierto. Detrás sube la escalera.'),
+    aitor('¿La del trono? ¿La de tu sueño?'),
+    gerard('En el sueño, sí. Ahora ya no sé adónde sube nada.'),
   ),
   /** Waking up after falling, the first time. */
   wakeFirst: both(

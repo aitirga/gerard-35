@@ -27,7 +27,8 @@ function tone(context: AudioContext, out: AudioNode, at: number, { type = 'sine'
   osc.onended = () => env.disconnect();
 }
 const noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
-function noise(context: AudioContext, out: AudioNode, at: number, { cutoff, to = cutoff / 4, type = 'lowpass', q = 1, attack = 0, hold = 0, length, gain }: { cutoff: number; to?: number; type?: BiquadFilterType; q?: number; attack?: number; hold?: number; length: number; gain: number }) {
+/** Half a second of white noise, made once for each context. */
+function noiseBuffer(context: BaseAudioContext) {
   let buffer = noiseBuffers.get(context);
   if (!buffer) {
     buffer = context.createBuffer(1, context.sampleRate / 2, context.sampleRate);
@@ -35,8 +36,11 @@ function noise(context: AudioContext, out: AudioNode, at: number, { cutoff, to =
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     noiseBuffers.set(context, buffer);
   }
+  return buffer;
+}
+function noise(context: AudioContext, out: AudioNode, at: number, { cutoff, to = cutoff / 4, type = 'lowpass', q = 1, attack = 0, hold = 0, length, gain }: { cutoff: number; to?: number; type?: BiquadFilterType; q?: number; attack?: number; hold?: number; length: number; gain: number }) {
   const source = context.createBufferSource(), filter = context.createBiquadFilter(), env = context.createGain();
-  source.buffer = buffer; source.loop = true;
+  source.buffer = noiseBuffer(context); source.loop = true;
   filter.type = type; filter.Q.value = q; filter.frequency.setValueAtTime(cutoff, at); filter.frequency.exponentialRampToValueAtTime(to, at + length);
   env.gain.setValueAtTime(attack ? 0 : gain, at);
   if (attack) env.gain.linearRampToValueAtTime(gain, at + attack);
@@ -65,6 +69,89 @@ function meow(context: AudioContext, out: AudioNode, at: number, { pitch, length
   osc.start(at); osc.stop(at + length + .02);
   osc.onended = () => env.disconnect();
 }
+
+/** A high hall's echo, made once for each context: three seconds of noise dying away, darker as it goes, after a moment's distance. */
+const halls = new WeakMap<BaseAudioContext, AudioBuffer>();
+function hall(context: BaseAudioContext) {
+  let buffer = halls.get(context);
+  if (!buffer) {
+    const rate = context.sampleRate, length = Math.round(rate * 3);
+    buffer = context.createBuffer(2, length, rate);
+    for (let channel = 0; channel < 2; channel++) {
+      const data = buffer.getChannelData(channel);
+      let low = 0;
+      for (let i = 0; i < length; i++) {
+        const t = i / rate;
+        // A one-pole lowpass that closes as the echo dies (about 5 kHz to 800 Hz), the way stone swallows the top.
+        low += (Math.random() * 2 - 1 - low) * (.5 - .4 * t / 3);
+        data[i] = low * Math.exp(-2.3 * t) * Math.min(1, Math.max(0, (t - .025) / .02));
+      }
+    }
+    halls.set(context, buffer);
+  }
+  return buffer;
+}
+/** A woman's «a» (a soprano's): each band's centre in Hz, how narrow it is, and how loud. Wide enough that every note of hers finds them. */
+const VOWEL_A = [[800, 5, 1], [1150, 7, .5], [2900, 12, .14], [3900, 16, .07]] as const;
+/** Where those bands sit for an «l», before the mouth opens into the «a». */
+const VOWEL_L = [360, 1000, 2700, 3500] as const;
+/**
+ * La Reina Bubbaloo singing to herself (docs/lore.md § Her music): a woman's voice on «la», unhurried.
+ * One voice slides from note to note; four bands shape it into an «a», and each syllable opens from an
+ * «l» (the bands low and the voice held back for a few hundredths of a second). The notes she holds
+ * waver (a vibrato), a breath runs under all of it, and she is heard mostly through a high hall's
+ * echo, far off and above. Her last note sinks a little as she lets it go. `notes` are [Hz, seconds].
+ */
+function sing(context: AudioContext, out: AudioNode, at: number, notes: readonly (readonly [hz: number, seconds: number, ...rest: unknown[]])[], gain: number) {
+  const length = notes.reduce((sum, [, seconds]) => sum + seconds, 0), end = at + length;
+  const voice = context.createGain(), dry = context.createGain(), echo = context.createConvolver(), wet = context.createGain();
+  echo.buffer = hall(context); dry.gain.value = .35;
+  voice.connect(dry).connect(out); voice.connect(echo).connect(wet).connect(out);
+  // A bright sawtooth through the vowel's bands, and the fundamental under it, which a high voice carries strongly.
+  const source = context.createOscillator(), fundamental = context.createOscillator(), body = context.createGain();
+  source.type = 'sawtooth'; body.gain.value = .28;
+  fundamental.connect(body).connect(voice);
+  const bands = VOWEL_A.map(([hz, q, level]) => {
+    const band = context.createBiquadFilter(), amount = context.createGain();
+    band.type = 'bandpass'; band.frequency.value = hz; band.Q.value = q; amount.gain.value = level * 2.4;
+    source.connect(band).connect(amount).connect(voice);
+    return band;
+  });
+  const breath = context.createBufferSource(), air = context.createBiquadFilter(), airLevel = context.createGain();
+  breath.buffer = noiseBuffer(context); breath.loop = true;
+  air.type = 'bandpass'; air.frequency.value = 2600; air.Q.value = .8; airLevel.gain.value = .05;
+  breath.connect(air).connect(airLevel).connect(voice);
+  const vibrato = context.createOscillator(), depth = context.createGain();
+  vibrato.frequency.value = 5.4; depth.gain.value = 0;
+  vibrato.connect(depth); depth.connect(source.frequency); depth.connect(fundamental.frequency);
+  const pitched = [source, fundamental];
+  for (const osc of pitched) osc.frequency.setValueAtTime(notes[0][0], at);
+  voice.gain.setValueAtTime(0, at);
+  let t = at;
+  for (const [hz, seconds] of notes) {
+    for (const osc of pitched) osc.frequency.setTargetAtTime(hz, t, .03);
+    // «l»: the voice dips and the bands close low, then the mouth opens into the «a» and the voice swells back.
+    const onset = Math.max(at, t - .015);
+    bands.forEach((band, i) => { band.frequency.setTargetAtTime(VOWEL_L[i], onset, .01); band.frequency.setTargetAtTime(VOWEL_A[i][0], t + .03, .035); });
+    voice.gain.setTargetAtTime(gain * .25, onset, .012);
+    voice.gain.setTargetAtTime(gain, t + .04, .04);
+    // A note she holds wavers; a quick one stays plain.
+    depth.gain.setTargetAtTime(0, t, .02);
+    if (seconds > .45) depth.gain.setTargetAtTime(hz * .012, t + .22, .12);
+    t += seconds;
+  }
+  const last = notes[notes.length - 1][0];
+  for (const osc of pitched) osc.frequency.setTargetAtTime(last * .985, end - .4, .25);
+  voice.gain.setTargetAtTime(0, end - .45, .15);
+  for (const node of [...pitched, vibrato, breath]) { node.start(at); node.stop(end + .6); }
+  return length + 3.4;
+}
+/**
+ * What La Reina Bubbaloo sings as her hands come down at the end of chapter 1 (docs/bubbaloo-palace.md,
+ * beat 11): the playground's chant, sol mi la sol mi, on «la» and slow. Each note comes with the word the
+ * screen shows as she sings it. It is not the artilugio's melody, nor even in its scale (E and A are not on it).
+ */
+export const QUEEN_LA = [[392, .55, 'La, '], [329.63, .55, 'la, '], [440, .32, 'la-'], [392, .32, 'la, '], [329.63, 1.35, 'laaa…']] as const;
 
 /** One of the artilugio's eight notes (its four buttons and four pairs): a held, clean note of the melody's scale. */
 const artilugio = (note: number): Sound => ({ synth: (c, out, at) => {
@@ -270,6 +357,8 @@ export const SOUNDS = {
     tone(c, out, at + .04, { from: 480 * p, to: 1000 * p, length: .07, gain: .035 });
     return .22;
   }, jitter: 80, gap: .06, voices: 4 },
+  // La Reina Bubbaloo singing to herself as her hands come down (src/game.ts `ambush`), far above, in a hall's echo.
+  'reina-la': { synth: (c, out, at) => sing(c, out, at, QUEEN_LA, .2), gap: 4, voices: 1 },
   // The artilugio's eight notes (docs/story-outline.md § The device): its four buttons alone, then its four pairs.
   'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
   'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),

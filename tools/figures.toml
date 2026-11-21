@@ -71,6 +71,19 @@ height = 1.32
 scale = 1
 backpack = { bag = "#a8473f", straps = "#7a3430" }
 
+# Bernat at 35 (docs/quests/bernat.md), the confidant at El Nucli. The convention photo (bernat-adulto-02)
+# shows his build but is left out of `photos`: its shirt is printed with a cartoon franchise's characters.
+# bernat-adulto-05 is only his head, cropped from it.
+[bernat-adult]
+name = "Bernat"
+kind = "person"
+photos = ["bernat/bernat-adulto-04.jpg", "bernat/bernat-adulto-01.png", "bernat/bernat-adulto-03.jpg", "bernat/bernat-adulto-05.jpg"]
+face_photos = ["bernat/bernat-adulto-01.png", "bernat/bernat-adulto-04.jpg"]
+about = "About him: 35, Gerard's best friend since they were kids, a father and a board-game designer beside another job; warm, a little shy, lit up when he talks about games. Average height, a little chubby: a soft rounded belly and soft shoulders, a bit heavier than his friends, not fat. A wide, rounded face with full cheeks that lift when he smiles and a soft jaw, fair skin with a light shadow of stubble. Short, thick, very dark brown hair, almost black, cut short on the sides, with some volume on top pushed up and slightly to one side, a little untidy. Rectangular glasses with thick dark navy frames, wider than his eyes. Brown eyes that narrow when he smiles, dark brows with a soft arch. A broad open smile that shows his top teeth.\nClothes: a plain short-sleeved buttoned shirt in brick red, worn untucked over his belly, with no print and no pattern; dark charcoal jeans; chunky grey trainers with white soles, no logos."
+cues = "a wide, rounded head with full cheeks, thick rectangular dark navy glasses as his strongest feature, short thick near-black hair pushed up on top in big chunks, a slightly chubby build with a soft belly under a plain brick-red short-sleeved shirt, a broad smile"
+height = 1.76
+scale = 1.12
+
 [jan-child]
 name = "Jan"
 kind = "person"
@@ -331,7 +344,7 @@ SECOND YEAR, older gum: grown huge and lanky, the gum gone a deep bruised plum-m
 THIS ONE, the one punished, made to stand facing the wall: taller than a grown man, bent forward, its head bowed so low that the small face bubble is pressed against its own chest. Out of its back, between the shoulders, swells an enormous bubble of stretched gum, a hunch bigger than its whole torso that rises high above its shoulders and bowed head, so that from the front it is a great taut dome behind and above it. The bubble is thin and tight, about to burst, the orange filling glowing through its skin. Long arms hanging to its knees, hands open, fingers spread, trembling."""
 # Its own walk from Meshy's library, to chase the party (Aitor, 2026-11-20).
 animations = [553]
-height = 2.2
+height = 2.3
 [castigado.view_notes]
 back = "The enormous swollen bubble fills its whole back, thin and tight, the orange filling glowing through it."
 left = "In profile the bubble on its back is as big as the rest of it, the head bowed in front."
@@ -408,6 +421,31 @@ He stands planted, feet apart, arms a little away from his body, fists clenched 
 height = 2.1
 [campeon.view_notes]
 back = "The blue tarpaulin cape with its grommets covers his back to the calves."
+
+[mago]
+name = "Mago de camping"
+kind = "creature"
+about = """A foe of a campsite at dusk where the board games a group of friends used to play came true: the wizard of their fantasy game, life size, made of what a campsite has. Not a person and not a cartoon wizard: nobody is inside it, no pointed hat, no beard, no stars. Real, worn camping materials. No pink anywhere.
+A tall, gaunt, slightly stooped figure in a long robe to the ground, sewn from the faded orange canvas of an old tent: a heavy zip runs down its front, a darker patch is stitched over a tear, its hem is dirty and frayed and no feet show. Over its shoulders, as a short cape, a grey-green flysheet in the shape of a small tent roof, its edge stiff, two pale guy ropes hanging from its corners down its back. A deep hood of the same grey-green flysheet: inside it only black shadow, no face at all, and in the shadow two small narrow slits of pale violet light where eyes would be. Strapped round the hood on a black elastic band, a head torch on its forehead, its lens lit warm white: its single light. Long canvas sleeves. Its right hand, a dark glove, holds upright a tent pole of grey aluminium in sections, taller than itself, as a staff. Its left hand holds out in front of it, level with its waist and well clear of the body, a squat blue camping gas canister with a brass valve and a small round steel burner on top, unlit, no flame.
+Silent and still, watching: menacing, not friendly."""
+height = 1.95
+[mago.view_notes]
+back = "The grey-green flysheet cape and the back of the hood, the two pale guy ropes hanging down the orange canvas robe; no face, no torch on this side, only its black strap."
+left = "The blue gas canister is in the hand on this side, held out in front."
+right = "The tall aluminium tent pole is in the hand on this side."
+
+[agente]
+name = "Agente"
+kind = "creature"
+about = """A foe of a campsite at dusk where the board games a group of friends used to play came true: a card of their word game, life size, standing up as a figure. Not a person, not a spy, not a robot, no hat and no coat: nobody is inside it. It is ONE single flat piece cut out of thick grey board card, as thick as a hand is wide, like a paper doll cut from one sheet: a tall, gaunt, too-thin human silhouette, much taller than a man. A big upright rectangular card for a body with square shoulders; a narrow, tall rectangular card for a head on a long thin neck of card; two very long, thin flat strips of card for arms, joined to the corners of its shoulders and hanging straight down past its knees, ending square with no hands; two long thin strips for legs, joined to the body, ending square with no feet. The arms and legs are printed on both sides with the dark teal lattice of the card's back. Everything in one flat plane, nothing floating apart. Its edges show the grey layers of card, dog-eared and peeling at the corners, creased where it has been bent, worn and old. No pink anywhere.
+ITS FRONT is printed like the face of a card: matte cream, with a thin dark red frame round the body card, and across its chest a white label where a single word has been struck out, five solid dark ink blocks in a row, no letters anywhere on it. Its head card is cream and blank, no nose, no mouth, with only two narrow horizontal slits cut in it, glowing pale violet.
+ITS BACK is the back of the card: dark teal, printed all over with a lattice of thin pale teal diamonds, on the body and the head as on the arms and the legs.
+It stands straight and still, its head tilted a little to one side as if listening, arms hanging a little away from its body, legs a little apart: unsettling, silent, watching, not friendly."""
+height = 2.3
+[agente.view_notes]
+back = "This is the back of the card: dark teal all over with a lattice of thin pale teal diamonds, on body, head, arms and legs. No cream, no label, no eyes on this side."
+left = "Edge on: it is as thin as a board, a narrow grey strip of layered card, cream on its front face and dark teal on its back face."
+right = "Edge on: it is as thin as a board, a narrow grey strip of layered card, cream on its front face and dark teal on its back face."
 
 # La torre de Uri (docs/quests/nuria.md § Monsters, § Final boss): Uri's fears, made real. Aitor
 # (2026-11-19): more realistic, less like toys. The fight keeps their rules by hand (src/fears.ts).
@@ -506,57 +544,93 @@ height = 2.8
 [reina.view_notes]
 back = "Her long dark hair falls down her back to the waist, the stiff collar fanning above it and the crown on top."
 
+# Her arm for the ambush that ends chapter 1 (src/queen-hands.ts), from Aitor's script note (2026-11-21:
+# more real, more frightening, from her references). One arm, standing on its cut end so Meshy sees it whole;
+# the game turns it upside down to come down from above the frame and mirrors it for the other hand.
+[reina-brazo]
+name = "Brazo de La Reina Bubbaloo"
+kind = "creature"
+art = ["output/characters/3d/reina/toy.png"]
+about = """THE FIRST IMAGE is La Reina Bubbaloo, approved. Draw ONLY ONE OF HER ARMS, from just above the elbow to the fingertips, alone, as a huge object: no body, no shoulder, no face, no crown. It stands upright on the clean cut end of the arm, a flat dark plum disc, with the hand at the top, palm facing forward.
+It is her arm exactly as in the first image: the long glove of stretched hot pink gum up past the elbow, pulled taut and thin over long bones, matte, with the twisted cuff of her black and hot pink wrapper paper at its top edge. Out of the glove the skin is her cold, sickly grey-pink, like old chewed gum.
+What makes it frightening: the hand is far too big and too long for a woman, gaunt, the knuckles and tendons pressing through the stretched gum. Five long thin fingers, a joint too many, spread wide and hooked like a claw about to close on someone, the thumb reaching round. Long dark plum nails, pointed. Thick strands of pink gum hang from every fingertip and stretch between the fingers like webbing pulled apart. A few black blisters the size of a fist burst through the glove on the forearm, like the rot of old gum. A single ring with a big glossy violet gum ball on one finger.
+Never a cartoon glove, never cute, never food: it must look like the hand of something huge reaching down to take you."""
+height = 3.0
+
 # The castle's two bosses before her (docs/castle-bosses.md): staff of the school, held by the Queen.
 # People, not gum: each keeps a grown adult's body and clothes, and wears her marks (the wrapper paper
 # in hot pink and black, the strands of gum, the black blisters), so they read as hers beside her.
-# Aurelià from words alone: the one photo Aitor showed is a group shot, so it never leaves this machine;
-# only what it shows of his build went into `about` (athletic, tanned, tousled dark hair, stubble, a
-# white sleeveless top).
+# Aurelià from his own face (2026-11-21): Aitor's photos are all group shots, so only crops of him alone
+# leave this machine (cara-barandilla, and cara-terraza with a neighbour's arm painted out); the
+# originals stay in raw/. His likeness is his head (big dark curls, the full short beard, the wide square
+# jaw) and his patterned shirt; the Queen's marks sit on top of him, never instead of him. Of two drafts
+# Aitor chose the one most like him (toy-a: the wrapped legs; toy-b had wilder hair and strands from the floor).
 [aurelia]
 name = "Aurelià"
 kind = "monster"
-about = """Aurelià, the first great boss of La Reina Bubbaloo's castle: the history teacher of a school and once a competing athlete, a despot in his classroom, now held by the Queen. A real grown man of about forty, not a creature: taller than anyone, lean and athletic, a runner's and gymnast's body with broad square shoulders, strong bare arms, a narrow waist and long strong legs. Deeply tanned skin. Thick, tousled dark brown wavy hair pushed up and back off his forehead. A short dark stubble beard as one flat patch over a strong square jaw. He stands very upright, chest out, chin high, looking down on whoever faces him: cold, sure of himself, his mouth closed and hard. His eyes glow a faint violet (he is held).
-What he wears: a plain white sleeveless athletics vest and short dark navy running shorts, white running shoes. Over them, as a Roman emperor's mantle (his namesake is the emperor Aurelian), a long stiff cloak of bubble-gum wrapper paper in broad hot pink and black stripes, pleated, hanging from both shoulders down his back to his calves and clasped at each collarbone with a glossy black gum ball. On his head a wreath of laurel leaves made of hardened hot pink gum, with thin strands of pink gum stretching from it down into his hair and his temples. His hands and forearms are chalk white, as if dipped in a gymnast's chalk, the white smeared up to the elbows. Pink gum has crept up his calves like long running socks, and his feet stand in it, a few thick strings stretching to the floor. His hands are empty and open. Nothing hangs in front of his chest."""
-look = """HOW HE LOOKS: one sculpted figure of matte material for a dark game for adults, a boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong upright athletic silhouette that reads from a high camera. He is a man, with a man's face in large simple planes (brow, straight nose, hard closed mouth, the flat patch of stubble), menacing through his bearing and his size, not through deformity. Never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
+face_photos = ["aurelia/cara-barandilla.jpg", "aurelia/cara-terraza.jpg"]
+about = """THE PHOTOS before the last image are the real man this figure is: he must be recognisable as him at once, by his head and his shirt, as large simple shapes, never the photos' realism, lighting or smile.
+Aurelià, the first great boss of La Reina Bubbaloo's castle: a history teacher at a school and a runner, a despot in his classroom, now held by the Queen. A real grown man in his thirties, not a creature: taller than anyone, lean and athletic like a distance runner, not a bodybuilder: square shoulders, long strong legs, a flat narrow waist, sinewy forearms. Light olive skin with a tan. HIS HEAD, the most important thing: a wide square face with a strong broad jaw, full cheekbones, thick dark brows; a big mass of thick dark brown curly hair, short on the sides and piled high on top in a few big tight curls falling a little over his forehead; a full short dark brown beard with a moustache, as one flat patch covering the jaw, chin and upper lip; a small silver hoop in his left earlobe. He stands very upright, chest out, chin high, looking down on whoever faces him, his brows low and level, his mouth closed in a hard flat line. His eyes glow a faint violet (he is held).
+What he wears, his own: a short-sleeved shirt with an open collar and a bold geometric print, rows of zigzags, diamonds and little squares in dark brown and black on a sand beige ground, drawn as a few large clean shapes so it reads from above; the shirt worn loose and untucked. Dark navy running shorts to mid-thigh and chunky white running shoes.
+What is hers: over his shoulders, a Roman general's mantle of stiff bubble-gum wrapper paper in broad hot pink and black vertical stripes, pleated in big folds, falling down his back to his knees and clasped at each collarbone with a matte black gum ball; it hangs behind him and never covers the shirt's front. On his curls a wreath of big laurel leaves of hardened hot pink gum, its leaves clearly separate. His wrists and palms are bound in hot pink gum wound round them like a gymnast's tape. From his shoes up to his knees, broad flat bands of matte pink gum are wound criss-cross round his shins, like a Roman soldier's leg straps, binding him. All the gum is matte and pulled taut, never glossy, never food. His hands are empty and open. Nothing hangs in front of his chest."""
+look = """HOW HE LOOKS: one sculpted figure of matte material for a dark game for adults, a boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong tall upright silhouette that reads from a high camera. He is that real man, recognisable by his face and his curls, with a man's face in large simple planes (brow, nose, the flat patch of beard, a hard closed mouth), menacing through his bearing, his height and his cold violet stare, not through deformity or muscles. Never a superhero, never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
 
-SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, stiff wrapper paper, chalk), and in big shapes: no fine noise, no glossy highlights except the two gum balls of the clasp, no painted light or shadow."""
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (the shirt's print, stretched gum, stiff wrapper paper), and in big shapes: no fine noise, no glossy highlights, no painted light or shadow."""
 height = 2.05
 [aurelia.view_notes]
-back = "The stiff pink and black striped cloak covers his back from the shoulders to the calves; the laurel wreath closes at the back of his tousled hair."
+back = "The stiff pink and black striped mantle covers his back from the shoulders to the knees; the laurel wreath closes at the back of his curls."
+left = "The small silver hoop shows in this earlobe."
 
-# Mar, Montse and Pilar: no photos, and no face of their own on purpose (Aitor, 2026-11-20: «sin cara
-# definida, cara como si fuera de Bubbaloo»). Each `about` opens with the same sentences; what tells
-# them apart is height, build and hair, which survive a high camera and Meshy's mirror.
+# Mar, Montse and Pilar from their own faces (Aitor, 2026-11-21: «que las caras ahora se reconozcan»),
+# replacing the faceless bubble of 2026-11-20 (kept in output/characters/3d/<id>/v1). Aitor's photos are
+# group shots, so only crops of each woman alone leave this machine; the originals stay in raw/, and the
+# people behind Mar and Pilar are painted out, as is the print on Montse's T-shirt. Like Aurelià: the real
+# face and hair, her marks on top (violet eyes, pink gum gloves, the striped wrapper paper, black blisters).
 [mar]
 name = "Mar"
 kind = "monster"
-about = """One of the three women who run a school, its management team, held by La Reina Bubbaloo: a grown woman in office clothes, with a real adult's proportions, not a child and not a creature. She has no face of her own: the Queen's gum has grown over it. The whole front of her head, from the hairline to under the chin, is one taut, smooth bubble of bright hot bubble-gum pink, with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes, no mouth opening. Her own hair frames the bubble. Thin strands of pink gum stretch from the bubble down her neck to her collar. Her hands are gloved to the elbow in stretched hot pink gum, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest.
-THIS ONE, Mar, the head of the school: the tallest of the three, thin, rigid and very upright, shoulders square. Dark hair pulled back tight into one big, high, round bun on top of her head. A long, severe, tailored coat in dark steel grey, buttoned to the neck and falling straight to her ankles, with a high stiff collar of bubble-gum wrapper paper in hot pink and black stripes fanning up behind her head. Flat black shoes."""
+face_photos = ["mar/cara-sala.jpg"]
+about = """THE PHOTOS before the last image are the real woman this figure is: she must be recognisable as her at once, by her face and her hair, as large simple shapes, never the photos' realism, lighting or smile.
+One of the three women who run a school, its management team, held by La Reina Bubbaloo: a real grown woman in her forties in office clothes, with a real adult's proportions, not a child and not a creature. Her face is her own and must be recognised at once: the Queen has not covered it, she has put her marks on her. Her eyes glow a faint cold violet (she is held), her brows low and level, her mouth closed in a hard flat line, never a smile: she looks down on whoever faces her. Her hands are gloved to the elbow in stretched hot pink gum, matte and pulled taut, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink, a plain ring with a number, is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest. All the gum is matte, never glossy, never food.
+THIS ONE, Mar, the head of the school: the tallest of the three, big-framed and solid, broad shoulders, rigid and very upright. HER HEAD, the most important thing: a round, full face with full soft cheeks and a rounded chin, fair skin, small dark eyes under dark straight brows, a small straight nose. Straight auburn hair, a warm reddish chestnut brown, parted on one side and falling smooth and heavy past her shoulders, one big sculpted piece on each side of her face. What is hers: a long, severe, tailored coat in dark steel grey, buttoned to the neck and falling straight to her ankles, and her own thick mustard yellow scarf wound twice round her neck, its two crumpled ends falling down her front over the coat. What is the Queen's: a high stiff collar of bubble-gum wrapper paper in hot pink and black stripes fanning up behind her head. Flat black shoes."""
+look = """HOW SHE LOOKS: one sculpted figure of matte material for a dark game for adults, a boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong upright silhouette that reads from a high camera. She is that real woman, recognisable by her face and her hair, with a woman's face in large simple planes (brow, cheekbones, nose, a hard closed mouth), menacing through her bearing and her cold violet stare, not through deformity. Never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
+
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, stiff wrapper paper, knitted wool), and in big shapes: no fine noise, no glossy highlights, no painted light or shadow."""
 height = 2.0
 [mar.view_notes]
-back = "The big round bun on top of her head, the striped wrapper-paper collar fanning below it, and the long grey coat falling straight to the ankles."
+back = "Her straight auburn hair falls past her shoulders over the long grey coat; the striped wrapper-paper collar fans up behind her head."
 
 [montse]
 name = "Montse"
 kind = "monster"
 art = ["output/characters/3d/mar/toy.png"]
-about = """The first image is Mar, another of the same three women: draw this one in exactly the same style, materials and colours of gum, as her colleague, but a different woman, with her own build, hair and clothes.
-One of the three women who run a school, its management team, held by La Reina Bubbaloo: a grown woman in office clothes, with a real adult's proportions, not a child and not a creature. She has no face of her own: the Queen's gum has grown over it. The whole front of her head, from the hairline to under the chin, is one taut, smooth bubble of bright hot bubble-gum pink, with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes, no mouth opening. Her own hair frames the bubble. Thin strands of pink gum stretch from the bubble down her neck to her collar. Her hands are gloved to the elbow in stretched hot pink gum, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest.
-THIS ONE, Montse, a head of studies: the shortest and broadest of the three, solid, heavy-shouldered, planted on her feet. Short grey hair cut in a big, rounded bob like a helmet, down to the jaw. A thick knitted cardigan the colour of manila paper, open over a dark steel-grey blouse, and a straight dark grey skirt to below the knee; dark stockings and flat black shoes. No collar of wrapper paper: instead a wide scarf of the same hot pink and black striped wrapper paper wound once round her neck, its two stiff ends standing out over her shoulders."""
+face_photos = ["montse/cara-aula.jpg"]
+about = """The first image is Mar, another of the same three women: draw this one in exactly the same style, finish and gum as her colleague, but a different woman, with her own face (from the photos after it), build, hair and clothes; never Mar's face.
+THE PHOTOS before the last image are the real woman this figure is: she must be recognisable as her at once, by her face and her hair, as large simple shapes, never the photos' realism, lighting or smile.
+One of the three women who run a school, its management team, held by La Reina Bubbaloo: a real grown woman in her forties in office clothes, with a real adult's proportions, not a child and not a creature. Her face is her own and must be recognised at once: the Queen has not covered it, she has put her marks on her. Her eyes glow a faint cold violet (she is held), her brows low and level, her mouth closed in a hard flat line, never a smile: she looks down on whoever faces her. Her hands are gloved to the elbow in stretched hot pink gum, matte and pulled taut, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink, a plain ring with a number, is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest. All the gum is matte, never glossy, never food.
+THIS ONE, Montse, a head of studies: the shortest of the three, sturdy and square-shouldered, planted on her feet. HER HEAD, the most important thing: a long face with high, wide cheekbones, a strong straight jaw and a pointed chin, fair skin, light grey-blue eyes, light brows, a long straight nose, thin straight lips. Dark ash-blonde hair, a little darker at the roots, cut in a straight bob just above the jaw, parted on one side, tucked behind one ear and falling forward on the other side in one big sculpted piece. What is hers: a plain black crew-neck T-shirt with short sleeves, with a thick knitted cardigan the colour of manila paper open over it, slim black trousers, grey trainers. What is the Queen's: a wide scarf of hot pink and black striped wrapper paper wound once round her neck, its two stiff ends standing out over her shoulders."""
+look = """HOW SHE LOOKS: one sculpted figure of matte material for a dark game for adults, a boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong upright silhouette that reads from a high camera. She is that real woman, recognisable by her face and her hair, with a woman's face in large simple planes (brow, cheekbones, nose, a hard closed mouth), menacing through her bearing and her cold violet stare, not through deformity. Never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
+
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, stiff wrapper paper, knitted wool), and in big shapes: no fine noise, no glossy highlights, no painted light or shadow."""
 height = 1.75
 [montse.view_notes]
-back = "The rounded grey bob like a helmet, the stiff ends of the striped wrapper-paper scarf over her shoulders, the manila cardigan."
+back = "The short ash-blonde bob, the stiff ends of the striped wrapper-paper scarf over her shoulders, the manila cardigan."
 
 [pilar]
 name = "Pilar"
 kind = "monster"
 art = ["output/characters/3d/mar/toy.png"]
-about = """The first image is Mar, another of the same three women: draw this one in exactly the same style, materials and colours of gum, as her colleague, but a different woman, with her own build, hair and clothes.
-One of the three women who run a school, its management team, held by La Reina Bubbaloo: a grown woman in office clothes, with a real adult's proportions, not a child and not a creature. She has no face of her own: the Queen's gum has grown over it. The whole front of her head, from the hairline to under the chin, is one taut, smooth bubble of bright hot bubble-gum pink, with the hollow imprint of a face pressed into it from inside, like a face pushed against a rubber sheet: brow, nose and closed lips just showing, no eyes, no mouth opening. Her own hair frames the bubble. Thin strands of pink gum stretch from the bubble down her neck to her collar. Her hands are gloved to the elbow in stretched hot pink gum, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest.
-THIS ONE, Pilar, a head of studies: of middle height between the other two, thin and a little stooped, her shoulders narrow and her neck long, leaning slightly forward. Long, straight, pale ash-blonde hair parted in the middle, falling flat and heavy on both sides of the bubble down to her waist. A plain straight dress in cold steel blue to the calves, with long narrow sleeves, and over her shoulders a short stiff cape of hot pink and black striped wrapper paper, pleated, reaching only to her elbows. Flat black shoes."""
+face_photos = ["pilar/cara-sala.jpg", "pilar/cara-fiesta.jpg"]
+about = """The first image is Mar, another of the same three women: draw this one in exactly the same style, finish and gum as her colleague, but a different woman, with her own face (from the photos after it), build, hair and clothes; never Mar's face.
+THE PHOTOS before the last image are the real woman this figure is: she must be recognisable as her at once, by her face and her hair, as large simple shapes, never the photos' realism, lighting or smile.
+One of the three women who run a school, its management team, held by La Reina Bubbaloo: a real grown woman in her forties in office clothes, with a real adult's proportions, not a child and not a creature. Her face is her own and must be recognised at once: the Queen has not covered it, she has put her marks on her. Her eyes glow a faint cold violet (she is held), her brows low and level, her mouth closed in a hard flat line, never a smile: she looks down on whoever faces her. Her hands are gloved to the elbow in stretched hot pink gum, matte and pulled taut, a few thick strands hanging from the fingertips. A few black blisters the size of a fist burst through her clothes at the hem, like the rot of old gum. A round registry stamp in dark navy ink, a plain ring with a number, is pressed on her chest like a brooch. Her hands are empty and open. Nothing hangs in front of her chest. All the gum is matte, never glossy, never food.
+THIS ONE, Pilar, a head of studies: of middle height between the other two, slim and wiry, her neck long, leaning slightly forward. HER HEAD, the most important thing: a long narrow face with high sharp cheekbones and hollow cheeks, light olive skin, dark brown eyes deep under strong dark arched brows, a long straight nose, a wide mouth. Long, straight, dark brown hair, parted a little off centre, falling flat and heavy on both sides of her face past her shoulders. Long thin silver drop earrings, like two short bars, and a small silver pendant on a black cord at her throat. What is hers: a plain straight dress in cold steel blue to the calves, with long narrow sleeves, a wide silver bangle on one wrist over the glove. What is the Queen's: over her shoulders a short stiff cape of hot pink and black striped wrapper paper, pleated, reaching only to her elbows. Flat black shoes."""
+look = """HOW SHE LOOKS: one sculpted figure of matte material for a dark game for adults, a boss of such a game, like a puppet made for a stop-motion film for adults: big simple shapes and nothing small, a strong upright silhouette that reads from a high camera. She is that real woman, recognisable by her face and her hair, with a woman's face in large simple planes (brow, cheekbones, nose, a hard closed mouth), menacing through her bearing and her cold violet stare, not through deformity. Never cute, never a cartoon, no big eyes, no smile, no joke. No gore, no blood, no realistic skin.
+
+SURFACES: matte, a few large areas of colour. Texture only where it tells what it is made of (stretched gum, stiff wrapper paper, knitted wool), and in big shapes: no fine noise, no glossy highlights, no painted light or shadow."""
 height = 1.88
 [pilar.view_notes]
-back = "Her long pale hair falls flat down her back to the waist, over the short stiff cape of striped wrapper paper."
+back = "Her long dark brown hair falls flat down her back past her shoulders, over the short stiff cape of striped wrapper paper."
 
 # Aurelià's lectern (docs/castle-bosses.md § Aurelià): a part of his fight with its own PV, in one piece.
 [atril]

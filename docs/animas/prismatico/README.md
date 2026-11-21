@@ -236,6 +236,8 @@ out of maná: round 4 is Defender (2 back), or a change of ánima.
 
 ## What it offers a dual
 
+**Built (2026-11-21):** *Fulgurita* (dúo mayor, Descarga + Puñado), *Caleidoscopio* (dúo mayor, Escudo de bits + Telón), *Cadáver exquisito* (Puñado + Estrella fugaz) and *Trampantojo* (Confusión + Cortina); `../README.md` § Combined skills.
+
 The duals are designed after every ánima is ([`../README.md`](../README.md) § Order of work).
 *Reserva de color* (built) pairs the handful with Foc Binari: a fuse of powder that goes off
 later; its name and sentence still speak of paint. Other pairings to explore:

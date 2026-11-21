@@ -1,5 +1,5 @@
 {
-  "title": "Grado III: Integral, Escudo de bits, Combustión, Virus atómico y Reinicio",
+  "title": "Grado III: Integral impropia, Escudo de bits, Combustión, Virus atómico y Reinicio",
   "description": "docs/animas/matemagico/README.md and docs/animas/tecnopata/README.md § Grade III, docs/animas/README.md § Combustión. In the fight tester against three sturdy dogs, one player leading both. Run it with --gpu.",
   "steps": [
     {
@@ -26,7 +26,7 @@
     {
       "shot": "habilidades-matemagico",
       "delay": 300,
-      "caption": "Matemágico with grade III: Integral in the Cálculo line"
+      "caption": "Matemágico with grade III: Integral impropia in the Cálculo line"
     },
     {
       "eval": "document.querySelector('.skill-list [data-skill=\"integral\"]').click()"
@@ -40,7 +40,7 @@
       "seconds": 2.2,
       "fps": 30,
       "tiles": 12,
-      "caption": "Integral: the sign drawn in gold over the party, then a cardioid of light under each one it cures; both get PV back"
+      "caption": "Integral impropia: ∫ from 0 to ∞ drawn in his circle, laid between the party, green light jetting from each end into both; both get PV back and Sanación"
     },
     {
       "until": "window.turn && window.turn('aitor')",
