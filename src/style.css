@@ -383,7 +383,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   --battle-gold: var(--ui-gold);
   --battle-paper: var(--ui-paper);
 }
-#battle { --battle-ink: var(--ui-ink); --battle-gold: var(--ui-gold); --battle-paper: var(--ui-paper); }
+/* Each player's aim has their colour, Gerard's gold and Aitor's cyan (their map colours): plate, card, ring on the floor, picker. */
+#battle { --battle-ink: var(--ui-ink); --battle-gold: var(--ui-gold); --battle-paper: var(--ui-paper); --aim-2: #4fd6ea; }
 .place-panel, #error {
   border-radius: 2px; background: var(--ui-surface); color: var(--ui-paper);
   border-color: var(--ui-line); box-shadow: var(--ui-shadow);
@@ -432,8 +433,11 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-target.is-down { opacity: .4; }
 /* La Sobremesa's friends stand in one body, their plates close: choosing one, its name shows over its head. */
 .battle-target .plate-name { display: none; order: -2; justify-self: center; padding: 4px 10px 3px; background: var(--battle-paper); color: var(--battle-ink); font: 800 14px/1 'Manrope', sans-serif; letter-spacing: .04em; white-space: nowrap; box-shadow: 3px 3px 0 #071e2266; }
-#battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, .is-cursor-2, :hover):not(:disabled) { z-index: 2; }
-#battle[data-targeting] .battle-target:is(.is-targeted, :focus-visible, .is-cursor-2, :hover):not(:disabled) .plate-name { display: block; animation: speech-in .2s cubic-bezier(.2,.9,.3,1.4) both; }
+#battle[data-targeting] .battle-target:is(.is-targeted, .is-targeted-2, :focus-visible, :hover):not(:disabled) { z-index: 2; }
+#battle[data-targeting] .battle-target:is(.is-targeted, .is-targeted-2, :focus-visible, :hover):not(:disabled) .plate-name { display: block; animation: speech-in .2s cubic-bezier(.2,.9,.3,1.4) both; }
+#battle[data-targeting] .battle-target.is-targeted .plate-name { box-shadow: inset 0 -3px 0 var(--battle-gold), 3px 3px 0 #071e2266; }
+#battle[data-targeting] .battle-target.is-targeted-2 .plate-name { box-shadow: inset 0 -3px 0 var(--aim-2), 3px 3px 0 #071e2266; }
+#battle[data-targeting] .battle-target.is-targeted.is-targeted-2 .plate-name { box-shadow: inset 0 -3px 0 var(--battle-gold), inset 0 -6px 0 var(--aim-2), 3px 3px 0 #071e2266; }
 /* Statuses ride under the health bar: small, in the status's own colour. */
 .unit-statuses { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
 .unit-statuses:empty { display: none; }
@@ -550,8 +554,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 @keyframes summary-in { from { opacity: 0; translate: -50% -12px; } }
 .battle-target:disabled { cursor: default; }
 #battle[data-targeting] .battle-target:not(:disabled) { pointer-events: auto; cursor: pointer; }
-.battle-target.is-eligible, .battle-target.is-targeted, .battle-target:focus-visible { outline: none; }
-.battle-target.is-targeted .enemy-health, .battle-target:is(:focus-visible, .is-cursor-2) .enemy-health { box-shadow: 0 0 0 1px var(--battle-gold), 0 0 7px #f3cf7870; }
+.battle-target.is-eligible, .battle-target.is-targeted, .battle-target.is-targeted-2, .battle-target:focus-visible { outline: none; }
+.battle-target.is-targeted .enemy-health, .battle-target:focus-visible .enemy-health { box-shadow: 0 0 0 1px var(--battle-gold), 0 0 7px #f3cf7870; }
+.battle-target.is-targeted-2 .enemy-health { box-shadow: 0 0 0 1px var(--aim-2), 0 0 7px #4fd6ea70; }
+.battle-target.is-targeted.is-targeted-2 .enemy-health { box-shadow: 0 0 0 1px var(--battle-gold), 0 0 0 3px var(--aim-2), 0 0 9px #4fd6ea70; }
 .battle-target.contact-hit { animation: nameplate-contact .35s ease-out; }
 @keyframes nameplate-contact { 50% { filter: brightness(1.5) drop-shadow(0 0 4px #f3cf78); } }
 @media (min-width: 900px) and (max-height: 760px) {
@@ -565,12 +571,18 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .is-eligible { outline: 1px solid #f3cf7880; cursor: pointer; }
 #battle[data-targeting="foes"] .party-roster { opacity: .4; }
 #battle[data-targeting] .party-card:not(.is-eligible) { opacity: .45; }
-.party-card.is-targeted { background: #455138f5; border-color: var(--battle-gold); }
+#battle .party-card.is-targeted { background: #455138f5; border-color: var(--battle-gold); box-shadow: 5px 5px 0 #071e2255, 0 0 0 1px var(--battle-gold), 0 0 22px #f3cf7855; }
+#battle .party-card.is-targeted-2 { background: #1f4a52f5; border-color: var(--aim-2); box-shadow: 5px 5px 0 #071e2255, 0 0 0 1px var(--aim-2), 0 0 22px #4fd6ea55; }
+#battle .party-card.is-targeted.is-targeted-2 { border-color: var(--battle-gold); box-shadow: 5px 5px 0 #071e2255, 0 0 0 1px var(--battle-gold), 0 0 0 4px var(--aim-2), 0 0 22px #4fd6ea55; }
 #battle[data-targeting="allies"] .battle-target[data-side="foes"] { visibility: hidden; }
 .target-picker { padding: 20px; border-left: 3px solid var(--battle-gold); background: #172c25f5; box-shadow: 5px 5px 0 #071e2266; }
 .target-picker h2 { margin: 10px 0; font-size: 30px; letter-spacing: -.04em; color: var(--battle-gold); }
 .target-picker p { margin: 0 0 16px; font-size: 12px; line-height: 1.5; }
-.target-picker .target-name { display: block; margin: -8px 0 16px; font: 800 18px/1.2 'Manrope', sans-serif; letter-spacing: -.01em; color: var(--battle-paper); }
+.target-picker { --aim: var(--battle-gold); }
+.target-picker[data-aim="2"] { --aim: var(--aim-2); }
+.target-picker .target-name { display: flex; align-items: center; gap: 9px; margin: -8px 0 16px; font: 800 18px/1.2 'Manrope', sans-serif; letter-spacing: -.01em; color: var(--aim); }
+/* The ring on the floor, small: whose aim it is, at a glance. */
+.target-picker .target-name::before { content: ''; flex: none; width: 16px; height: 7px; border: 2px solid var(--aim); border-radius: 50%; box-shadow: 0 0 7px var(--aim); }
 .target-picker .target-name[hidden] { display: none; }
 .target-back { display: flex; gap: 20px; align-items: center; border: 1px solid #f3cf7880; background: transparent; padding: 9px 12px; color: var(--battle-paper); font-size: 12px; transition: background .2s, color .2s, transform .25s; }
 .target-back:is(:hover, :focus, .is-cursor-2) { background: #f3cf7826; color: var(--battle-gold); transform: translateX(6px); }

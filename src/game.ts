@@ -315,9 +315,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let faceZoom: pc.Vec3 | undefined;
   /** How tall the view is while it looks at La Sobremesa's faces. */
   const FACE_ZOOM = 3.4;
-  function aimAt(id?: string) {
-    battleScene.selectTarget(id);
-    const friends = battle?.encounter === 'sobremesa' && id && battle.foes.some(f => f.id === id) ? battle.foes.filter(f => f.hp > 0).map(f => battleScene.modelOf(f.id)?.getPosition()).filter((p): p is pc.Vec3 => !!p) : [];
+  const aims: Partial<Record<1 | 2, string>> = {};
+  function aimAt(id?: string, player: 1 | 2 = 1) {
+    battleScene.selectTarget(id, player);
+    aims[player] = id;
+    const onFace = battle?.encounter === 'sobremesa' && [aims[1], aims[2]].some(a => a && battle!.foes.some(f => f.id === a));
+    const friends = onFace && battle ? battle.foes.filter(f => f.hp > 0).map(f => battleScene.modelOf(f.id)?.getPosition()).filter((p): p is pc.Vec3 => !!p) : [];
     faceZoom = friends.length ? friends.reduce((sum, p) => sum.add(p), new pc.Vec3()).mulScalar(1 / friends.length) : undefined;
   }
   const cameraWobble = new pc.Vec3();

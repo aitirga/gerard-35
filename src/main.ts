@@ -418,7 +418,7 @@ try {
       if (effect?.dual && !testing && story.discover(effect.dual.id)) keepDuals();
       return game.setBattle(state, effect, effect ? blow => { if (state && !blow) playCues(impactSounds(effect, state)); onImpact?.(blow); } : onImpact);
     },
-    target: id => game.selectTarget(id),
+    target: (id, player) => game.selectTarget(id, player),
     aimDie: (unit, index) => game.aimDie(unit, index),
     shakeDice: unit => game.shakeDice(unit),
     sound: id => sfx.play(id),

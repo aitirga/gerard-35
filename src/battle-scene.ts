@@ -509,10 +509,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** How far the camera leans in on whoever's turn it is (0–1), and where they stand. */
   let turnPush = 0;
   const turnAt = new pc.Vec3();
-  const targetMaterial = mat('#f3cf78');
-  targetMaterial.emissive.fromString('#f3cf78'); targetMaterial.emissiveIntensity = .3; targetMaterial.update();
-  const marker = part(battleRoot, 'Objetivo', 'cylinder', targetMaterial, [0, .03, 0], [1.1, .025, 1.1]);
-  marker.enabled = false;
+  /**
+   * The ring under whoever each player is aiming at: Gerard's gold, Aitor's cyan (their map colours).
+   * Aitor's is wider and sits lower, so on the same foe it shows as a cyan rim round the gold.
+   */
+  const markers = ([[1, '#f3cf78', 1.1, .025], [2, '#4fd6ea', 1.42, .012]] as const).map(([player, colour, size, lift]) => {
+    const material = mat(colour);
+    material.emissive.fromString(colour); material.emissiveIntensity = .3; material.update();
+    const entity = part(battleRoot, `Objetivo ${player}`, 'cylinder', material, [0, .03, 0], [size, .025, size]);
+    entity.enabled = false;
+    return { player, entity, lift };
+  });
+  const aimedBy: Partial<Record<1 | 2, string>> = {};
+  /** The latest aim, the one the fighter whose turn it is turns towards. */
   let selectedTarget: string | undefined;
   /** Confetti falls once per won fight. */
   let celebrated = false;
@@ -736,6 +745,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     'rayo-energia': { contact: .66, flight: .2, hold: .8 },
     'rayo-encogedor': { contact: .7, flight: .32, hold: .8 },
     'rayo-sanacion': { contact: .74, flight: .4, hold: .75 },
+    // Bomba remota and Escolta borrow the rays' flight for now (docs/animas/tecnopata/README.md § Look: their own is to do).
+    'bomba-remota': { contact: .7, flight: .28, hold: .8 },
+    escolta: { contact: .74, flight: .4, hold: .75 },
   };
   /**
    * Rayo solar letting go, in fight seconds from its start: Bip rises gathering the sun until
@@ -745,9 +757,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const SOLAR = { ignite: .78, span: 1, tail: .55 } as const;
   /** Rayo solar's sweep, worked out once: from beyond the first foe to beyond the last, and when it crosses each. */
   const solarPlans = new WeakMap<BattleEffect, { start: pc.Vec3; end: pc.Vec3; crossings: { f: Fighter; id: string; blow: number; at: number }[]; contact: number }>();
-    // Bomba remota and Escolta borrow the rays' flight for now (docs/animas/tecnopata/README.md § Look: their own is to do).
-    'bomba-remota': { contact: .7, flight: .28, hold: .8 },
-    escolta: { contact: .74, flight: .4, hold: .75 },
   function solarPlan(e: BattleEffect) {
     let plan = solarPlans.get(e);
     if (plan) return plan;
@@ -3386,7 +3395,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         eye.setLocalScale(on ? .085 : .055, size.y, on ? .04 : .03);
       }
     },
-    selectTarget(id?: string) { selectedTarget = id; },
+    /** Whom `player` aims at (none: nobody); each has their ring. */
+    selectTarget(id?: string, player: 1 | 2 = 1) { aimedBy[player] = id; selectedTarget = id ?? aimedBy[player === 1 ? 2 : 1]; },
     /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: back in line). */
     aimDie(unit?: string, index?: number) { aimedDie = unit !== undefined && index !== undefined ? { unit, index } : undefined; },
     /** Agitar: `unit`'s dice are thrown again, so each drops in tumbling once more, one after another, with a few stars off the hand. */
@@ -3547,7 +3557,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -3795,8 +3805,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Into place gathering speed: off slowly, then a rush, then a short brake (`surge`).
       const entryMove = surge((entryTime - .1) / .75);
       const selected = selectedTarget ? fighters.get(selectedTarget) : undefined;
-      marker.enabled = !!selected && selected.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
-      if (selected) marker.setPosition(selected.base.x, groundHeight(selected.base.x, selected.base.z) + .025, selected.base.z);
+      for (const { player, entity, lift } of markers) {
+        const on = aimedBy[player] ? fighters.get(aimedBy[player]!) : undefined;
+        entity.enabled = !!on && on.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
+        if (on) entity.setPosition(on.base.x, groundHeight(on.base.x, on.base.z) + lift, on.base.z);
+      }
       if (mass) sobremesaFrame(dt);
       crossOver(dt, animate);
       lastFrame(dt, animate);

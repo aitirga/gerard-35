@@ -179,7 +179,8 @@ export type FightMoment = 'won' | 'won-level' | 'lost' | 'foes-low' | 'party-low
 export function createBattleUI(hud: HTMLElement, callbacks: {
   /** `onImpact` runs as each blow lands: 0 at contact, then a flurry's others (`BattleEffect.strikes`). */
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void) => Promise<void>;
-  target: (id?: string) => void;
+  /** Whom `player` is aiming at (none: nobody), each player in their own colour (gold Gerard's, cyan Aitor's). */
+  target: (id: string | undefined, player: PlayerId) => void;
   /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: nobody is picking). */
   aimDie?: (unit?: string, index?: number) => void;
   /** Dadista shook the hand (Agitar): `unit`'s dice tumble again in the fight. */
@@ -1009,7 +1010,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     cursors[p]?.classList.remove(`is-cursor-${p}`);
     cursors[p] = button; button.classList.add(`is-cursor-${p}`);
     if (p === 1) button.focus({ preventScroll: true });
-    if (targeting && button.dataset.target) aimName(button.dataset.target);
+    if (targeting && button.dataset.target && !button.disabled) highlight(button.dataset.target);
     if (button.parentElement?.classList.contains('skill-list')) keepInView(button);
   }
   function cursor(): HTMLButtonElement | undefined {
@@ -1018,7 +1019,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const mine = cursors[p];
     return mine?.isConnected ? mine : undefined;
   }
-  const targetButtons = () => [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden);
+  /** Whom the menu being worked on can pick now: split, the other player's aim (a cure, a foe) is not this one's. */
+  const ownTargets = () => !state || !targeting || !selected ? [] : (aimedDual() ? dualTargets(state, aimedDual()!) : validTargets(state, selected === 'dual' ? 'attack' : selected, aimSkill())).map(c => c.id);
+  const targetButtons = () => { const mine = ownTargets(); return [...root.querySelectorAll<HTMLButtonElement>('.roster-target:not(:disabled), .battle-target[data-side="foes"]:not(:disabled)')].filter(button => !button.hidden && mine.includes(button.dataset.target!)); };
   /** A fighter's nameplate over their head (PV, maná for the party, statuses); a foe's is also how it is picked. */
   function plateHtml(f: Combatant, i: number, foe: boolean) {
     // Her pupils and she are her pink; those she holds (Aurelià, Dirección), possession's violet.
@@ -1043,9 +1046,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state) return;
     keepMenu();
     renderScreen();
-    const aims = !split() ? [renderPanel()] : ([1, 2] as PlayerId[]).map(p => withPlayer(p, renderPanel, true));
-    const eligible = aims.flatMap(a => a.eligible), cure = aims.some(a => a.cure);
-    if (aims.some(a => a.aiming)) root.dataset.targeting = cure ? 'allies' : 'foes'; else delete root.dataset.targeting;
+    const panels = !split() ? [renderPanel()] : ([1, 2] as PlayerId[]).map(p => withPlayer(p, renderPanel, true));
+    const eligible = panels.flatMap(a => a.eligible), cure = panels.some(a => a.cure);
+    // Split, one can aim a cure while the other aims at a foe: then both sides stay pickable ('both').
+    const atFoes = panels.some(a => a.aiming && !a.cure), atAllies = panels.some(a => a.aiming && a.cure);
+    if (atFoes || atAllies) root.dataset.targeting = atFoes && atAllies ? 'both' : atAllies ? 'allies' : 'foes'; else delete root.dataset.targeting;
     root.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
       button.disabled = !eligible.includes(button.dataset.target!);
       if (button.classList.contains('battle-target')) button.tabIndex = button.disabled ? -1 : 0;
@@ -1353,12 +1358,29 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Who the target picker is on, by name under its line: three of a kind stand close (Dirección), and a plate alone does not say who is who. */
   function aimName(id?: string) {
     const box = get<HTMLElement>('.target-picker .target-name'), who = id && state && [...state.foes, ...state.allies].find(c => c.id === id);
-    box.hidden = !who; box.textContent = who ? `→ ${who.name}` : '';
+    box.hidden = !who; box.textContent = who ? who.name : '';
+    // The picker wears the colour of whoever is aiming, the same as their ring and the plate they are on.
+    get<HTMLElement>('.target-picker').dataset.aim = String(aimSlot());
   }
+  /**
+   * Whom each player is aiming at, each in their colour: Gerard's gold (`.is-targeted`), Aitor's cyan
+   * (`.is-targeted-2`), on the plate or the card and in the ring on the floor. Split it is whoever's
+   * menu this is; alone, whose turn it is (Aitor's choices are cyan too), and only one aims at a time.
+   */
+  const aimedBy: Partial<Record<PlayerId, string>> = {};
+  const aimSlot = (): PlayerId => !state ? 1 : split() ? ctx : state.allies[state.active]?.id === 'aitor' ? 2 : 1;
   function highlight(id?: string) {
-    callbacks.target(id); aimName(id);
+    const slot = aimSlot();
+    aimedBy[slot] = id;
+    if (!state || !split()) aimedBy[slot === 1 ? 2 : 1] = undefined;
+    ([1, 2] as PlayerId[]).forEach(p => callbacks.target(aimedBy[p], p));
+    aimName(id); showAims();
+  }
+  function showAims() {
+    const on = (el: HTMLElement, id?: string) => !!id && (el.dataset.unit === id || el.dataset.target === id);
     root.querySelectorAll<HTMLElement>('[data-unit], [data-target]').forEach(el => {
-      el.classList.toggle('is-targeted', !!id && (el.dataset.unit === id || el.dataset.target === id));
+      el.classList.toggle('is-targeted', on(el, aimedBy[1]));
+      el.classList.toggle('is-targeted-2', on(el, aimedBy[2]));
     });
   }
   /**
@@ -2602,10 +2624,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   // The queue never takes the page's focus (it belongs to whoever's turn it is), not even on a click.
   root.addEventListener('mousedown', event => { if ((event.target as HTMLElement).closest('.queue-panel, .queue-plate')) event.preventDefault(); });
+  // The mouse is player 1's: split, it aims Gerard's move whenever he is choosing one.
   for (const eventName of ['pointerover', 'focusin']) root.addEventListener(eventName, event => {
-    if (!targeting || busy) return;
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-target]');
-    if (button && !button.disabled) highlight(button.dataset.target);
+    if (!button || button.disabled) return;
+    const aim = () => { if (targeting && !locked()) highlight(button.dataset.target); };
+    if (state && split()) withPlayer(1, aim, true); else if (!busy) aim();
   });
   /** Who the click being handled comes from: the mouse and keyboard, unless `control` is pressing for a controller. */
   let pointerPlayer: PlayerId = 1;
@@ -2956,6 +2980,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       get('.class-banner').hidden = true; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; get('.battle-speech').replaceChildren();
       queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; charges = 0;
       pending.length = 0; duo = undefined; ctx = 1; menus[1] = { targeting: false }; menus[2] = { targeting: false }; loadMenu(1);
+      aimedBy[1] = aimedBy[2] = undefined; callbacks.target(undefined, 1); callbacks.target(undefined, 2);
       lastWord = options.lastWord; wordSaid.clear();
       get('.battle-heading h1').innerHTML = FEAR_TITLES[encounter as keyof typeof FEAR_TITLES] ?? (encounter === 'palace-minion' ? 'Un esbirro <em>de verdad.</em>' : encounter === 'palace-guards' ? 'Los guardianes <em>de la cortina.</em>' : encounter === 'night-guard' ? 'De vuelta <em>a casa.</em>' : possessed ? 'Ojos <em>rosados.</em>' : 'Un pequeño <em>contratiempo.</em>');
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => plateHtml(f, i, i < foeCount)).join('');
