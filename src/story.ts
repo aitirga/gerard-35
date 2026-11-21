@@ -28,6 +28,7 @@ import type { Board } from './parcelas.ts';
 import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, isCastlePlace, nightGroup, type CastleEncounter, type NightFight } from './castle.ts';
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
+import { castleZone, isCastleZone } from './castle-mood.ts';
 import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
@@ -859,10 +860,12 @@ export class Story {
   get extraSlots() { return extraSlots(this.flags); }
   /**
    * A place as it is today: a castle floor is generated from the save and the day (src/castle-floor.ts),
-   * any other place is its own. The game builds what this says, and a simulator walks its grid and its doors.
+   * a zone of the school is dressed by the bosses fallen (src/castle-mood.ts), any other place is its own. The game builds what this says, and a simulator walks its grid and its doors.
    */
   place(environment: EnvironmentId): Environment {
-    return isCastlePlace(environment) ? castleEnvironmentFor(environment, this.days.epoch, this.days.clock.day) : ENVIRONMENTS[environment];
+    if (isCastlePlace(environment)) return castleEnvironmentFor(environment, this.days.epoch, this.days.clock.day);
+    // A built zone of the school stands as the bosses fallen leave it (src/castle-mood.ts): the school again behind them, more hers ahead.
+    return this.adult && isCastleZone(environment) ? castleZone(this.flags, environment) : ENVIRONMENTS[environment];
   }
   /** The next morning at home with nothing said yet (the Monday after the end). */
   private newMorning(): StoryEffect[] {

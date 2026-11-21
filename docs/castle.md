@@ -39,10 +39,9 @@ Rec Comtal → the hall (the guards, the curtain)
   bed in the morning: the 22nd again, as every morning of the loop (the day's count goes on, as it
   does after any night). The night is for coming back from the friends' missions and for the
   afternoons spent (chapter-2.md § Night and the way home), not for her castle.
-- **The castle hardens with each scream** (planned, not built): after each boss the building itself
-  looks more threatening, its textures further along from school towards hers, so the fear in the
-  scream is seen on the walls the next time they go in. Today only each phase's own drift exists
-  (§ The art drifts towards the boss).
+- **The castle changes with each scream** (§ The castle after each boss): what lies behind a beaten
+  boss goes back to being a school, what lies ahead is more hers than before, and the door that
+  leads on is clotted with her gum.
 - **Flags** (they replace the proposed `zona-patio`, `zona-gimnasio`, `zona-secretaria`):
   `aurelia`, `direccion`, and the ending's (`aitor-poseido`, `artilugio`, `reina`). Each gets its
   step in `STORY_ARCS`, its dot on the picker's timeline and its place in `dev-chapter`.
@@ -63,9 +62,25 @@ Each phase is **one continuous floor**, walked like any place: no loading betwee
   way through with `reachable` (`src/street-shift.ts`).
 - **Kinds of room**: fight, corridor, élite (La Delegada, § Bestiary), **rest** (one per floor: a
   staff room, which cures at the cost of time), **find** (an object) and the boss's antechamber.
-- **The pupils roam** as chasers (`src/chasers.ts`, as the tower's fears do; out on the Meridiana at
-  night each one hunts its own way instead, `src/night-pupils.ts`):
-  they can be seen coming, dodged or met. A fight is a choice more often than not.
+- **Each pupil is a body of its own and hunts its own way**, the same rules as out on the Meridiana
+  at night (`src/night-pupils.ts`), with the floor's own numbers (`src/castle-pupils.ts`): what the
+  way home rehearsed is what the rooms ask. They can be seen coming, dodged or met; a fight is a
+  choice more often than not.
+  - A room's pupils walk its round until they have Gerard; lost, they go and look where he was, then
+    back to their room. Walking into one, or one reaching the party, is its room's fight.
+  - El Repetidor winds up and charges across a room (a wall is always near to crash him into), La
+    Chivata keeps her distance and points him out to whoever is a room or two away, Los Gemelos cut
+    the corner ahead, El Castigado faces the wall until a run is heard nearby, El Montón holds on
+    for a room and a half.
+  - **La Delegada waits in her room.** Once she has seen Gerard, or La Chivata has pointed him out
+    within her reach, she walks at him and never stops, and nobody gives up while she stands.
+  - **El Ausente is only seen inside the light the party carries**, or once it comes at them.
+  - **The staff room is the floor's safe place**, as home's portal is the street's: pupils do not go
+    in and nobody in it is seen.
+  - The first floor is in daylight; on the second and third the pupils see little outside the
+    party's light and run faster (`FLOOR_TIERS`), and they glow a little, as they do at night.
+  - Nothing to hide behind yet: what cuts a line of sight is a wall, a corner, a corridor. El
+    Empollón, who learns the hiding places on the street, has nothing to learn inside (to settle).
 - **No map tells the way.** The map shows the rooms walked and where the party is, never the route.
 
 How it could meet the code (for when it is built): one place per phase whose grid is generated on
@@ -175,6 +190,28 @@ far), and El Repetidor, drawn in all three years, wears the mesh of his year. To
 whether the other pupils get a mesh per year, only a texture, or only their scale and tint. The
 first year's look decides the rest.
 
+## The castle after each boss
+
+Built 2026-11-20 (`src/castle-mood.ts`, `dressMood` in `src/palace-zones.ts`, `mood` in a
+`ZoneTheme`). The castle is four stretches, each ending in a boss: the patio and the gym
+(Aurelià), the first floor's rooms with them; the secretaría (Mar, Montse and Pilar); the throne.
+Each scream moves every stretch one step, and the party sees it the next time it goes in.
+
+| Stretch | Its boss stands | Its boss has fallen |
+| --- | --- | --- |
+| Colour | The zone's own palette, sunk towards a dark plum and pulled to her pink, one step more for each scream so far | The same rooms with most of the colour taken out: a school again, greyed |
+| Her gum | Runs down the tall walls and pools at their feet from the first scream; black rot in it from the second | None: every gum part of the zone is gone |
+| Light | Dimmer with each scream | Plain daylight, no tint of hers |
+| The door onward | — | While the next boss stands, the door that leads to it (the gym's changing rooms, Direcció's door) is clotted with her gum, veined over the wall around it, lit by a pulsing pink lamp; black blisters from the second scream |
+
+- The generated floors carry the same count: the first is met with no scream, the second with one,
+  the third with two (`castle-floor.ts`).
+- Nothing says it. No line, no panel: the party walks back in through a gym that is a gym again and
+  finds the next door grown over.
+- A stretch is only ever seen by the party at one count before its boss falls (the checkpoint moves
+  the way in past it), so what reads in play is: each stretch further in is worse than the last,
+  what is behind is given back, and the way on is marked by her and by nothing else.
+
 ## What each boss opens
 
 The three stages of growth (animas/README.md § Growth opens with the castle), made concrete:
@@ -199,8 +236,11 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | --- | --- | --- |
 | The rules book, the phases, the generator | `src/castle.ts` | Floors by save, day and phase; rooms, corridors, the staff room and the cupboard |
 | A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
+| The pupils on a floor | `src/castle-pupils.ts`, `huntIndoors` in `src/game.ts` | Each pupil a body of its own, hunting as it does at night (§ The generated floor) |
+| The castle after each boss | `src/castle-mood.ts`, `dressMood` in `src/palace-zones.ts` | Won stretches a school again, those ahead more hers, the door onward clotted (§ The castle after each boss) |
+| The bosses' figures | `tools/figures.toml`, `src/monsters/{aurelia,mar,montse,pilar}.json`, `src/creatures/atril.json` | Aurelià, the three of Dirección and El Atril, each its own (castle-bosses.md § How they look) |
 | The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), Aurelià, Dirección, the Queen |
-| The story | `src/castle-story.ts`, hooks in `src/story.ts` | Pupils patrol their rooms, a room won stays won today, an hour a fight, a boss beaten brings her scream, a flash and bed (no night) and moves the way in, lights for the jar, the third slot after Aurelià |
+| The story | `src/castle-story.ts`, hooks in `src/story.ts` | A room won stays won today, an hour a fight, a boss beaten brings her scream, a flash and bed (no night) and moves the way in, lights for the jar, the third slot after Aurelià |
 | Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts`, `src/battle-scene.ts` | She takes him at a tenth (down or not): he walks over to her side and fights from there, his card with him, player 2 choosing his moves; lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
 | The Queen's figure and stage | `src/monsters/reina.json`, `public/portraits/reina.png`, `src/throne-arena.ts` | Nuria Mendoza's face made cruel; her fight goes up onto the sala d'actes' stage, built for it |
 | The last scene | `src/endings.ts` | Acabar or Bajar la mano, an epilogue over black, the Monday after |
@@ -211,8 +251,11 @@ Placeholders and decisions taken for now (each one Aitor's to change):
   src/creatures/, loaded by `src/castle-models.ts` the first time a fight or a floor needs it), at
   its own height, El Repetidor by his year; in a fight it runs on Meshy's clip when it runs up and
   holds its pose standing, and on the floor it walks its round and runs the chase. Until its figure
-  lands it is the palace minion's model at its own size, as Aurelià and Dirección are (the Queen has
-  hers since 2026-11-20).
+  lands it is the palace minion's model at its own size: today only the Queen's hands are.
+- On a floor: the staff room is safe, La Delegada waits until she sees Gerard, El Ausente shows only
+  in the party's light, and there are no hiding places inside (§ The generated floor).
+- A stretch behind a beaten boss is a school again and the ones ahead harden (§ The castle after
+  each boss); Aitor has no line about it.
 - One hour a fight inside the castle (`COSTS.castle`); a boss beaten ends the day there, with her scream (§ Structure).
 - The Queen comes back at 40 % of her PV (`CASTLE.reinaVuelta`).
 - Bernat's phone call stands in for the salón de juegos mission that finds the artilugio.
@@ -231,8 +274,8 @@ Placeholders and decisions taken for now (each one Aitor's to change):
     leaves them in shock (a turn lost), a wound bleeds; a blow on everyone comes back on everyone.
     Its plate says what it will give back. Shapeless, it only leans on one, lightly.
 - Not built: the definitivas, the outer rings and level caps (`levelCap` exists, unused), the snow
-  globe inside, zones turning back into school once won, the six-note motif in the music, the
-  Queen's final rules (left for last, docs/castle-bosses.md).
+  globe inside, the props that drift along a floor, portraits for the four bosses, the six-note
+  motif in the music, the Queen's final rules (left for last, docs/castle-bosses.md).
 
 Measured with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`): with the dual
 party at Papagato 3 and Atacar's three elements, playing the answer wins Aurelià 82 %, Dirección
@@ -252,6 +295,10 @@ everyone that bleeds, and wins 17 % of those; the few times it shows it a plain 
 - Which nodes are in each ring of each constellation, and the exact caps.
 - Whether the rest room and the finds are the same every day or drawn with the floor.
 - Every number: they come out of `just fight-sim` as each fight is built.
+- **Hiding places inside the floors** (desks, cupboards, a coat rack), so El Empollón has something
+  to learn and the dark floors something to use.
+- Whether someone says a line the first time they walk back into a room that is a school again.
+- `src/game-sim.ts` still walks the castle's rooms with the simple group chasers, not each pupil's rules.
 
 ## Order to build it in
 

@@ -35,6 +35,12 @@ export interface ZoneTheme {
   light: { ambient: string; sun: string; intensity: number };
   her: number;
   glow: string;
+  /**
+   * How the castle stands today (src/castle-mood.ts): `won`, this stretch's boss has fallen and it is
+   * the school again, with none of her gum left but what clots round the door on (`onward`, a cell);
+   * `screams`, how many bosses have fallen while this stretch is still hers: more of her gum on it.
+   */
+  mood?: { won: boolean; screams: number; onward?: { x: number; z: number } };
 }
 
 /** What each character of a zone plan stands for. Digits are doors (see each zone's interactions). */

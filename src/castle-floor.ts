@@ -48,6 +48,8 @@ function themeOf(phase: CastlePhase): ZoneTheme {
     light: { ambient: mix(from.ambient, to.ambient, .6), sun: mix(from.sun, to.sun, .6), intensity: LIGHT[phase.id] },
     her: phase.id === 3 ? .35 : phase.id === 2 ? .25 : .18,
     glow: mix(from.glow, to.glow, .6),
+    // A floor is only ever walked with the bosses before it fallen: so many screams of hers are on its walls (src/castle-mood.ts).
+    mood: { won: false, screams: phase.id - 1 },
   };
 }
 const ROOM_NAMES = { fight: 'Aula', elite: 'Aula de la delegada', rest: 'Sala de profesores', find: 'Armario de material', corridor: 'Rellano', antechamber: 'Antesala' } as const;

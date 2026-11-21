@@ -240,8 +240,9 @@ test('El Montón takes the shape of the first blow it takes, by what that blow c
   assert.equal(shaped({ skill: 'foc-binari' }).monton.castle.form, 'fuego', 'a skill that burns is fire');
   assert.equal(shaped({ skill: 'zarpazo' }).monton.castle.form, 'sangrado', 'a blow that opens a wound');
   assert.equal(shaped({ dual: { id: 'zarpazos-de-fuego', name: '', parts: ['foc-binari', 'zarpazos'], actors: [], spent: {} } }).monton.castle.form, 'fuego', "a dual's fire");
-  const wide = shaped({ skill: 'a-la-vez', hits: true });
-  assert.ok(wide.monton.castle.form === 'sangrado' && wide.monton.castle.all, 'a blow on everyone comes back on everyone');
+  // (Papagato's Las dos a la vez, the blow on everyone that bled, is cut: docs/animas/papagato/README.md.)
+  const wide = shaped({ skill: 'vasos', hits: true });
+  assert.ok(wide.monton.castle.form === 'agua' && wide.monton.castle.all, 'a blow on everyone comes back on everyone');
   // Its turn: the copy, as hard as the blow it took and its year on top, and a shock that costs the next turn.
   const { state, monton } = shaped({ kind: 'attack', element: 'electrico' });
   assert.equal(montonCopy(monton), Math.round(20 * CASTLE.copia * CASTLE.year3));

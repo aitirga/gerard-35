@@ -46,11 +46,17 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
     m.update(); materials.push(m); return m;
   }
+  // Her gum, wherever she has crept in: glossy, a little see-through at the edges.
+  const gum = mat(P.her, .88, .08, 'gum'), gumDeep = mat('#d94a8c', .8, .04, 'gum');
+  // The gum that is left when the rest has gone, and what a scream adds: never swept away with the zone's own.
+  const clot = mat(P.her, .88, .12, 'gum'), clotDeep = mat('#b8336f', .8, .05, 'gum'), rot = mat('#1a1418', .5);
   /** A primitive under `parent`; still ones join the scene's batch. */
   function part(parent: pc.Entity, name: string, type: Shape, m: pc.Material, p: V3, s: V3, r: V3 = [0, 0, 0], shadows = true, still = true) {
     const e = new pc.Entity(name);
     e.addComponent('render', { type, material: m, castShadows: shadows, receiveShadows: true, ...(still ? { batchGroupId: batch } : {}) });
     e.setLocalPosition(...p); e.setLocalScale(...s); e.setLocalEulerAngles(...r);
+    // Behind a boss beaten it is the school again: none of her gum is left on it (src/castle-mood.ts).
+    if (t.mood?.won && (m === gum || m === gumDeep)) e.enabled = false;
     parent.addChild(e); return e;
   }
   /** A child of `root` at a cell's centre, so pieces are laid out in metres around it. */
@@ -247,8 +253,6 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     e.setLocalPosition(x(px), y, z(pz)); root.addChild(e); return e;
   }
 
-  // Her gum, wherever she has crept in: glossy, a little see-through at the edges.
-  const gum = mat(P.her, .88, .08, 'gum'), gumDeep = mat('#d94a8c', .8, .04, 'gum');
   /** A flattened smear of her gum on the ground, at cell coordinates, mostly the darker gum. */
   function smear(px: number, pz: number, seed: number, size = 1) {
     part(root, 'Chicle', 'sphere', jitter(seed) < .3 ? gum : gumDeep, [x(px), .01, z(pz)], [(.25 + jitter(seed + 1) * .35) * size, .03, (.12 + jitter(seed + 2) * .12) * size], [0, jitter(seed + 3) * 180, 0], false);
@@ -1089,7 +1093,58 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
     following.push(focus => pool.setPosition(focus.x, focus.y + 2.6, focus.z));
   }
 
+  /**
+   * How the castle stands today (src/castle-mood.ts). Behind a boss beaten, all that is left of her
+   * clots round the door on: a swollen mass over its frame, strands to the floor, black where it has
+   * begun to rot. Ahead of one, each scream puts more of her on the stretch still hers: gum creeping
+   * down the walls that face the camera and pooling at their foot, with her rot in it from the second.
+   */
+  function dressMood() {
+    const mood = t.mood;
+    if (!mood) return;
+    const open = (px: number, pz: number) => { const c = environment.grid[pz]?.[px]; return c !== undefined && c !== '#'; };
+    if (mood.onward) {
+      // The door stands in the wall north of the cell one opens it from: everything clings to that wall's face.
+      const { x: dx, z: dz } = mood.onward, face = open(dx, dz) ? -.5 : .5, door = at(dx, dz, 'Lo que queda de ella');
+      const dull = mat(P.her, .45, .1), dullDeep = mat('#b8336f', .4, .04);
+      // Gum squeezed out round the frame from behind, flat against the wall, thicker over the lintel.
+      for (let k = 0; k < 11; k++) {
+        const s = jitter(k * 5 + dx * 3 + 9100), a = Math.PI * (k / 10), up = Math.sin(a);
+        part(door, 'Chicle en el marco', 'sphere', s < .55 ? dullDeep : dull, [Math.cos(a) * (.78 + s * .12), .2 + up * 2.35, face + .1], [.5 + s * .3, .55 + s * .35 + up * .2, .2 + s * .1], [0, 0, (s - .5) * 50], false);
+      }
+      // And creeping out over the wall from there, in veins.
+      for (let k = 0; k < 9; k++) {
+        const s = jitter(k * 13 + dz * 5 + 9150), a = Math.PI * ((k + .5) / 9), reach = 1.5 + s * 1.3;
+        part(door, 'Vena de chicle', 'sphere', dullDeep, [Math.cos(a) * reach, .3 + Math.sin(a) * (1.6 + reach * .6), face + .04], [.1 + s * .08, .8 + s * .9, .05], [0, 0, 90 - a * 180 / Math.PI + (s - .5) * 30], false);
+      }
+      // Strands from the lintel to the floor in front, and what has run out under the door.
+      for (let k = 0; k < 4; k++) {
+        const s = jitter(k * 7 + dx + 9200), px = (k - 1.5) * .34;
+        part(door, 'Hilo de chicle', 'cylinder', dull, [px, 1.2, face + .32 + s * .1], [.03 + s * .02, 2.5, .03 + s * .02], [12 + s * 8, 0, (s - .5) * 10], false);
+        part(door, 'Charco de chicle', 'sphere', dullDeep, [px * 1.7, .02, face + .9 + s * .8], [.8 + s * .5, .05, .5 + s * .5], [0, s * 180, 0], false);
+      }
+      // From the second scream her gum rots where it clots: black blisters low on the mass, none two alike.
+      if (mood.screams > 1) for (let k = 0; k < 5; k++) { const s = jitter(k * 11 + dz + 9300), side = k % 2 ? 1 : -1; part(door, 'Pústula', 'sphere', rot, [side * (.7 + s * .5), .25 + jitter(k + 9400) * 1.3, face + .2], [.16 + s * .22, .14 + s * .2, .1], [0, 0, 0], false); }
+      const glowing = lamp(dx, 1.6, dz + (face < 0 ? .6 : 1.4), .6, 4, new pc.Color().fromString(P.her));
+      animated.push(time => { glowing.light!.intensity = .45 + Math.sin(time * 1.7) * .18; });
+    }
+    if (mood.won || !mood.screams) return;
+    const n = mood.screams;
+    for (let pz = 0; pz < D - 1; pz++) for (let px = 1; px < W - 1; px++) {
+      // A wall of the building (never a counter or a cabinet) with floor to its south faces the camera.
+      if (!tallWall(glyph(px, pz)) || !open(px, pz + 1)) continue;
+      const s = jitter(px * 31 + pz * 57 + 9500);
+      if (s > .13 * n) continue;
+      // It runs down from the top of the wall, never higher than the wall stands (a floor's are cut low).
+      const top = t.zone === 'castillo' ? 1.4 : Math.min(t.height, 3), k = s / (.13 * n), tall = Math.min(top, .6 + k * 1.1), wide = .16 + jitter(px + pz * 3 + 9600) * .2;
+      part(root, 'Chicle por el muro', 'sphere', k < .5 ? clotDeep : clot, [x(px) + (k - .5) * .5, top - tall / 2, z(pz) + .52], [wide, tall, .09], [0, 0, (k - .5) * 8], false);
+      part(root, 'Charco de chicle', 'sphere', clotDeep, [x(px) + (k - .5) * .5, .012, z(pz) + 1], [.5 + k * .5, .03, .3 + k * .3], [0, k * 180, 0], false);
+      if (n > 1 && k < .45) part(root, 'Pústula', 'sphere', rot, [x(px) + (k - .5) * .5, top - tall * .7, z(pz) + .55], [.2, .2, .12], [0, 0, 0], false);
+    }
+  }
+
   ({ patio: dressPatio, gimnasio: dressGym, secretaria: dressSecretaria, trono: dressTrono, castillo: dressCastillo })[t.zone]();
+  dressMood();
   void loadReal();
 
   let time = 0;
