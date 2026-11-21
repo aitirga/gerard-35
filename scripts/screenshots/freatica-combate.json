@@ -304,6 +304,9 @@
       "gap": 500
     },
     {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .6); }); })"
+    },
+    {
       "eval": "window.skill('bombeo')"
     },
     {

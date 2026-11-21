@@ -1,7 +1,7 @@
 import type * as pc from 'playcanvas';
-import { CRECIDA, waterOf, type BattleEffect, type BattleState } from './battle';
-import type { Effects } from './effects';
-import { AGUA, createFreaticaField, type AguaScene, type FreaticaField } from './freatica-fx';
+import { CRECIDA, waterOf, type BattleEffect, type BattleState } from './battle.ts';
+import type { Effects } from './effects.ts';
+import { AGUA, createFreaticaField, type AguaScene, type FreaticaField } from './freatica-fx.ts';
 
 /**
  * Freática's water in a real fight (docs/animas/freatica/README.md § Look and interface): the look built in the effects

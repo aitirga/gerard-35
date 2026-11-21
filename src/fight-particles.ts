@@ -225,8 +225,9 @@ export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rota
 export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: number; remove(): void }
 
 const W = 256, H = 128, N = W * H, BANDS = 5;
-// Every kind registered at once: the fight's own, the duals', the statuses' and the motes' (one name each).
-export const MAX_KINDS = 96;
+// Every kind registered at once: the fight's own, the duals', the statuses', the motes' and the ánimas' looks (Colorista's
+// powder, Freática's water: one name each). A row of a small data texture each: 128 since Freática's water joined the fights.
+export const MAX_KINDS = 128;
 const KIND_COLS = 12, MAX_BATCHES = 64, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
 /** Frames a fighter's real surface may be old before it is written again (src/surface-samples.ts). */

@@ -2286,8 +2286,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       effect.tutti?.forEach((last, i) => last.hits.forEach((h, j) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `${h.heal ? '+' : '−'}${h.amount}`, h.heal ? 'heal' : 'damage', 'Eco · última nota', undefined, j * 16); }, 1300 + i * 120)));
       effect.accompanied?.hits.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', 'Acompañamiento', undefined, i * 16); }, 560 + i * 60));
       if (effect.dacapo) for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'compas', text: '¡Da capo!', detail: effect.dacapo.duals.length ? 'Maná lleno · dúos de nuevo' : 'Maná lleno' });
-      // Integral: each one's PV back, a beat apart.
-      effect.cures?.slice(1).forEach((c, i) => setTimeout(() => { if (token === generation) pop(c.target, `+${c.amount}`, 'heal', 'Integral'); }, 140 + i * 90));
+      // A cure on the whole party (Integral, Bombeo): each one's PV back, a beat apart.
+      effect.cures?.slice(1).forEach((c, i) => setTimeout(() => { if (token === generation) pop(c.target, `+${c.amount}`, 'heal', SKILLS.find(sk => sk.id === effect.skill)?.name ?? 'Integral'); }, 140 + i * 90));
       // Virus atómico: what spread, over each foe it reached.
       effect.spread?.forEach(sp => sp.to.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, '¡Contagio!', 'status', sp.statuses.join(' · '), 'virus'); }, 480 + i * 80)));
       // Escudo de bits: raised, what it stopped, and the blow that broke it.

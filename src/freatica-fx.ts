@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
-import { bodyOf, type Effects } from './effects';
-import type { GpuEmitter, GpuKind } from './fight-particles';
+import { bodyOf, type Effects } from './effects.ts';
+import type { GpuEmitter, GpuKind } from './fight-particles.ts';
 
 /**
  * Freática's water as the fight will show it (docs/animas/freatica/README.md § Look and interface,
