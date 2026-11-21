@@ -1,7 +1,7 @@
 import { isDpad, type ControllerEvent } from './controller';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
 import type { Cell, Direction } from './movement';
-import { renderWorldMap } from './world-map';
+import { renderWorldMap, roomAt } from './world-map';
 import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
@@ -113,12 +113,6 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const shareable = (member: PartyMember) => member.id === 'bernat' ? [] : story.classes.filter(id => !ANIMA_OWNERS[id] && canWear(member.id, id));
   /** Who else has `id` among their ánimas now (two never have the same one). */
   const takenBy = (member: PartyMember, id: ClassId) => { const other = story.wearerOf(id); return other && other !== member.id ? story.party.find(m => m.id === other) : undefined; };
-  /** One chip per ánima they can switch to (their own and their extras): which one they wear now. */
-  function animaSwitch(member: PartyMember) {
-    // Bernat wears no ánima: he only attacks.
-    if (!story.classes.length || member.id === 'bernat' || !story.kitOf(member.id).length) return '';
-    return `<div class="anima-switch" role="group" aria-label="Ánima de ${escape(member.name)}"><span class="battle-kicker">ÁNIMA</span><div class="anima-chips">${story.kitOf(member.id).map(id => `<button type="button" data-key="wear:${member.id}:${id}" data-wear="${member.id}" data-class-id="${id}" aria-pressed="${member.classId === id}" style="--chip:${CLASSES[id].colour}">${animaOf(id, story.adult).name}</button>`).join('')}</div></div>`;
-  }
   /** An ánima's level and how far into it its EXP is: the level is the ánima's, whoever wears it. */
   const levelOf = (id: ClassId) => {
     const level = story.levels[id] ?? 1, xp = Math.max(story.xp[id] ?? 0, xpFloor(level));
@@ -153,6 +147,33 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     return `<ul class="status-equipment">${member.equipment.map(id => `<li><span>${SLOT_LABELS[ITEMS[id].equip ?? 'back']}</span>${escape(ITEMS[id].name)}</li>`).join('')}</ul>`;
   }
 
+  /**
+   * The ánimas this member can wear now (their own and their extras), as cards to pick from: each with
+   * its level (the ánima's, shared with whoever wears it) and the one on marked PUESTA. Confirming one
+   * puts it on; in a fight L / R still switch between them.
+   */
+  function kitCards(member: PartyMember) {
+    if (!story.classes.length || member.id === 'bernat' || !story.kitOf(member.id).length) return '';
+    const kit = story.kitOf(member.id);
+    return `<section class="status-kit" role="group" aria-label="Ánima de ${escape(member.name)}"><h3 class="anima-group-head"><span>ÁNIMA PUESTA</span>${kit.length > 1 ? '<small>Elige cuál llevas</small>' : ''}</h3>
+      <div class="kit-cards" data-count="${kit.length}">${kit.map(id => {
+        const spec = animaOf(id, story.adult), { level, fill } = levelOf(id), worn = member.classId === id;
+        return `<button type="button" class="kit-card" data-key="wear:${member.id}:${id}" data-wear="${member.id}" data-class-id="${id}" aria-pressed="${worn}" ${worn ? 'aria-current="true"' : ''} style="--chip:${spec.colour};--fill:${fill.toFixed(3)}">
+          <i class="anima-row-gem" aria-hidden="true"></i>
+          <span class="kit-card-name"><strong>${spec.name}</strong><span class="anima-row-level"><b>NV ${level}</b><i class="anima-row-bar" aria-hidden="true"><i></i></i></span></span>
+          ${worn ? '<span class="anima-badge">PUESTA</span>' : `<span class="anima-row-hint" data-glyph-template="{confirm} Ponerse"></span>`}
+        </button>`;
+      }).join('')}</div></section>`;
+  }
+  /** What the worn ánima can do: its skills by name and cost, each in a line (in full on the Ánimas page). */
+  function wornSkills(member: PartyMember) {
+    if (!story.classes.length || !member.classId) return '';
+    const id = member.classId, skills = skillsOf(id), spec = animaOf(id, story.adult);
+    if (!skills.length) return '';
+    return `<section class="status-skills" style="--scarf:${spec.colour}"><h3 class="anima-group-head"><span>HABILIDADES</span><small>${escape(spec.name)}</small></h3>
+      <ul>${skills.map(s => `<li><strong>${s.name}</strong><small>${costPips(s.cost)}</small><span>${s.description}</span></li>`).join('')}</ul></section>`;
+  }
+
   function statusPage(sheet: Sheet) {
     const own = ownerOf(sheet);
     const member = story.party.find(m => m.id === own) ?? story.party[0];
@@ -163,9 +184,13 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <div class="status-portrait" data-member="${member.id}" style="--anima:${animaColour(member) ?? 'var(--sheet-accent)'}">${portrait(member)}<i class="vitals-burst" aria-hidden="true"></i></div>
         <div class="status-name"><span class="battle-kicker">${own === 'aitor' ? 'EL COMPAÑERO' : 'EL PROTAGONISTA'}</span><h2>${escape(member.name)}</h2><p>${escape(member.note)}</p>${equipment(member)}</div>
       </section>
-      <section class="status-stats"><span class="battle-kicker">ESTADÍSTICAS</span>${statRows(member)}</section>
+      <section class="status-core">
+        ${kitCards(member)}
+        <section class="status-stats"><span class="battle-kicker">ESTADÍSTICAS</span>${statRows(member)}</section>
+        ${wornSkills(member)}
+      </section>
       <section class="status-side">
-        <div class="status-vitals">${plate(member)}${animaSwitch(member)}${animaLine(member)}</div>
+        <div class="status-vitals">${plate(member)}${animaLine(member)}</div>
         <article class="status-mission"><span class="battle-kicker">AHORA</span><p>${currentThought(story, own).mission}</p></article>
         <dl class="status-facts"><div><dt>Lugar</dt><dd>${escape(ENVIRONMENTS[location].name)}</dd></div><div><dt>Compañía</dt><dd>${company}</dd></div></dl>
         ${story.adult ? friendAnimas() : ''}
@@ -202,7 +227,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       return `<li><button type="button" class="anima-row" data-key="${key}" data-pick="${member.id}" data-class-id="${id}" data-state="${state}" aria-pressed="${equipped}" ${other || fixed ? 'aria-disabled="true"' : ''} ${sheet.equipped === key ? 'data-just' : ''} style="--chip:${spec.colour};--fill:${fill.toFixed(3)}">
         <i class="anima-row-gem" aria-hidden="true"></i>
         <span class="anima-row-name"><strong>${spec.name}</strong><span class="anima-row-level"><b>NV ${level}</b><i class="anima-row-bar" aria-hidden="true"><i></i></i>${top ? '<em>MÁX</em>' : ''}${worn ? '<em class="anima-row-worn">· PUESTA</em>' : ''}</span></span>
-        <span class="anima-row-state">${fixed ? '<span class="anima-badge" data-kind="fixed">PROPIA</span>' : equipped ? '<span class="anima-badge">EQUIPADA</span>' : other ? `<span class="anima-taken">La lleva ${escape(other.name)}</span>` : ''}${hint ? `<span class="anima-row-hint" data-glyph-template="{confirm} ${hint}"></span>` : ''}</span>
+        <span class="anima-row-state">${fixed ? '<span class="anima-badge" data-kind="fixed">PROPIA</span>' : equipped ? '<span class="anima-badge">EQUIPADA</span>' : other ? `<span class="anima-taken"><span class="anima-taken-face" style="--anima:${animaColour(other) ?? 'var(--ui-line)'}">${portrait(other)}</span>La lleva ${escape(other.name)}</span>` : ''}${hint ? `<span class="anima-row-hint" data-glyph-template="{confirm} ${hint}"></span>` : ''}</span>
       </button></li>`;
     };
     const lists = wards.map(m => {
@@ -242,12 +267,13 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** The ánima the cursor is on: its level (shared), who can wear it and who has it on, what it changes and the skills it knows. */
   function animaDetail(id: ClassId) {
     const spec = animaOf(id, story.adult), { level, xp, fill, top } = levelOf(id);
-    const owner = ANIMA_OWNERS[id], wearer = story.party.find(m => m.classId === id);
+    // Whose it is now: worn, or among their ánimas to switch to (two never have the same one).
+    const owner = ANIMA_OWNERS[id], holderId = story.wearerOf(id), holder = story.party.find(m => m.id === holderId) ?? story.party.find(m => m.classId === id);
     const who = owner ? `Solo ${owner === 'gerard' ? 'Gerard' : 'Aitor'}` : 'Cualquiera del equipo';
     return `<article class="anima-detail" data-anima="${id}" style="--scarf:${spec.colour};--fill:${fill.toFixed(3)}">
         <header><span class="battle-kicker">ÁNIMA</span><h2>${spec.name}</h2><p class="anima-motto">${spec.motto}</p></header>
         ${LEVELLED.includes(id) ? `<section class="anima-level"><div><span class="battle-kicker">NIVEL</span><strong>${level}</strong>${top ? '<em>MÁX</em>' : ''}</div><i class="anima-level-bar" aria-hidden="true"><i></i></i><small>${xp} EXP · el nivel es del ánima: crece la lleve quien la lleve</small></section>` : ''}
-        <dl class="anima-facts"><div><dt>La pueden llevar</dt><dd>${who}</dd></div><div><dt>Ahora</dt><dd>${wearer ? `La lleva ${escape(wearer.name)}` : 'Nadie la lleva'}</dd></div></dl>
+        <dl class="anima-facts"><div><dt>La pueden llevar</dt><dd>${who}</dd></div><div><dt>Ahora</dt><dd>${holder ? `<span class="anima-taken-face" style="--anima:${spec.colour}">${portrait(holder)}</span>${holder.classId === id ? 'La lleva puesta' : 'La tiene'} ${escape(holder.name)}` : 'Nadie la tiene'}</dd></div></dl>
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(id) || '<li data-sign="none">Nada todavía</li>'}</ul></section>
         ${boughtFor(id)}
         ${ANIMA_RULES[id] ? `<section><span class="battle-kicker">SIEMPRE</span><ul class="anima-skills"><li><strong>${ANIMA_RULES[id]!.name}</strong><span>${ANIMA_RULES[id]!.description}</span></li></ul></section>` : ''}
@@ -285,12 +311,26 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const world = !!sheet.world, environment = ENVIRONMENTS[location];
     const partnerAt = callbacks.partner();
     const partnerName = story.partner === 'aitor' ? 'Aitor' : story.partner === 'bernat' ? 'Bernat' : undefined;
-    const partner = partnerAt && partnerName ? { cell: { x: Math.round(partnerAt.x), z: Math.round(partnerAt.z) }, name: partnerName } : undefined;
+    // Each on the map is their face, ringed in the colour of the ánima they wear (or their own).
+    const faceOf = (id: 'gerard' | 'aitor' | 'bernat') => {
+      const speaker = id === 'gerard' ? (story.adult ? SPEAKERS.gerard35 : SPEAKERS.gerard) : SPEAKERS[id];
+      const member = story.party.find(m => m.id === id);
+      return { face: speaker.portrait ? `${import.meta.env.BASE_URL}portraits/${speaker.portrait}.png` : undefined, colour: (member && animaColour(member)) ?? speaker.accent };
+    };
+    const partnerId = story.partner === 'aitor' || story.partner === 'bernat' ? story.partner : undefined;
+    const partner = partnerAt && partnerName && partnerId ? { cell: { x: Math.round(partnerAt.x), z: Math.round(partnerAt.z) }, name: partnerName, ...faceOf(partnerId) } : undefined;
+    const gerard = { name: 'Gerard', ...faceOf('gerard') };
+    // Aitor's half is his own map: he is the one marked, and the room is his.
+    const mine = ownerOf(sheet) === 'aitor' && partner ? { ...partner } : { ...gerard, cell };
+    const theirs = ownerOf(sheet) === 'aitor' && partner ? { ...gerard, cell } : partner;
+    const player = { name: mine.name, face: mine.face, colour: mine.colour };
     // Places and where everyone is, never a list of things to do (AGENTS.md).
     const drawing = world ? renderExplorationWorldMap(location, { castle: story.has('tv-news'), threat: story.castleThreat, spread: Math.min(1, story.spread) })
-      : renderWorldMap(environment, cell, partner);
+      : renderWorldMap(environment, mine.cell, theirs, { player, aspect: callbacks.split() ? 0.9 : 1.6 });
+    const room = !world && roomAt(environment, mine.cell);
+    const key = (who: { name: string; face?: string; colour?: string }, cls: string) => `<span class="${cls}" style="--marker:${who.colour}">${who.face ? `<img src="${who.face}" alt=""/>` : '<i aria-hidden="true"></i>'}${escape(who.name)}</span>`;
     const keys = world ? '<span>Barcelona · Vista general</span>'
-      : `<span class="map-player-key"><i aria-hidden="true"></i>Gerard</span>${partner ? `<span class="map-partner-key"><i aria-hidden="true"></i>${escape(partner.name)}</span>` : ''}`;
+      : `${key(player, 'map-player-key')}${theirs ? key(theirs, 'map-partner-key') : ''}${room ? `<span class="map-here"><small>ESTÁS EN</small>${escape(room)}</span>` : ''}`;
     return `<div class="map-view" data-viewer="${ownerOf(sheet)}" data-level="${world ? 'world' : 'local'}">
       <header class="map-heading"><div><span class="battle-kicker">${world ? 'BARCELONA' : 'MAPA LOCAL'}</span><h2 id="map-title-${sheet.player}">${world ? 'Mapa del mundo' : escape(environment.name)}</h2></div><button class="journal-close" type="button" data-key="map-back" data-map-back>${world ? 'Mapa local' : 'Volver al juego'} <kbd data-glyph="cancel">Esc</kbd></button></header>
       <div class="map-canvas">${drawing}</div>

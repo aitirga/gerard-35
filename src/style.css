@@ -400,11 +400,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .journal-heading h1 { margin: 12px 0 22px; font-size: clamp(30px, 4vw, 48px); font-weight: 900; letter-spacing: -.055em; font-style: italic; }
 .journal-close { border: 0; background: none; color: var(--ui-gold); padding: 8px; font-size: 11px; white-space: nowrap; }
 .journal-close kbd { width: auto; padding: 0 5px; margin-left: 8px; }
-.map-blocked { fill: #20382f; }
-.map-walkable { fill: #758a6c; }
-.map-house { fill: #334b3e; stroke: #a9bb8c55; stroke-width: .15; }
-.map-player { fill: var(--ui-paper); stroke: #162823; stroke-width: .25; }
-.map-room { fill: #e7eddc; font-weight: 600; letter-spacing: .02em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #33503f; stroke-width: .18px; }
 /* Shift + M: Barcelona in the status screen's map page (src/exploration-world-map.ts). */
 .map-layout[data-level="world"] .map-frame { padding: 0; background: #eadfc2; }
 .exploration-world-map { display: block; width: 100%; height: 100%; }
@@ -1144,9 +1139,37 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .sheet-help { margin: 12px 0 0; font-size: 10px; color: var(--ui-muted); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 
 /* Estado: portrait, stats, and what the member has on and is about. */
-.status-page { display: grid; grid-template-columns: minmax(180px, .85fr) minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.status-page { display: grid; grid-template-columns: minmax(170px, .78fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 26px; }
 .status-hero { display: flex; flex-direction: column; min-height: 0; gap: 12px; }
-.status-portrait { position: relative; flex: 1; min-height: 120px; background: linear-gradient(155deg, #f3cf7828, transparent); border-bottom: 3px solid var(--sheet-accent); }
+/* The portrait stands in the light of the ánima worn, over a faint hatch. */
+.status-portrait { position: relative; flex: 1; min-height: 120px; overflow: hidden; border-radius: 14px 14px 0 0; border-bottom: 3px solid var(--sheet-accent);
+  background: radial-gradient(90% 60% at 50% 78%, color-mix(in srgb, var(--anima, var(--sheet-accent)) 34%, transparent), transparent 72%), repeating-linear-gradient(135deg, #ffffff07 0 2px, transparent 2px 12px), linear-gradient(180deg, #ffffff06, #00000026); }
+.status-core { display: flex; flex-direction: column; gap: 18px; min-height: 0; overflow: hidden; }
+/* Ánima puesta: one card per ánima they can wear, the worn one lit; a press puts another on. */
+.kit-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.status-sheet .kit-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; width: 100%; padding: 12px 13px; overflow: hidden; border: 1px solid var(--ui-line); border-radius: 10px; background: #0000001f; color: var(--ui-paper); text-align: left; transition: background .18s, border-color .18s, translate .18s, box-shadow .18s; }
+.status-sheet .kit-card[aria-pressed="true"] { border-color: var(--chip); background: linear-gradient(100deg, color-mix(in srgb, var(--chip) 30%, transparent), color-mix(in srgb, var(--chip) 6%, transparent)); box-shadow: inset 4px 0 0 var(--chip), 0 0 22px color-mix(in srgb, var(--chip) 20%, transparent); }
+.status-sheet .kit-card:hover, .status-sheet .kit-card.is-cursor { outline: none; translate: 0 -2px; border-color: var(--chip); background-color: color-mix(in srgb, var(--chip) 16%, transparent); }
+.kit-card-name { display: grid; gap: 6px; min-width: 0; }
+.kit-card-name strong { overflow: hidden; font: italic 800 16px/1 'Manrope', sans-serif; letter-spacing: -.02em; white-space: nowrap; text-overflow: ellipsis; }
+.kit-card .anima-row-bar { width: auto; flex: 1; max-width: 90px; }
+.kit-card .anima-row-hint { display: none; }
+.kit-card:is(:hover, .is-cursor) .anima-row-hint { display: inline; }
+.kit-card[aria-pressed="true"] .anima-badge { animation: anima-stamp .45s cubic-bezier(.2,1.6,.4,1) both; }
+/* The worn ánima's skills, each in a line under the stats. */
+.status-skills { min-height: 0; overflow: hidden; }
+.status-skills .anima-group-head small { color: var(--scarf); }
+.status-skills ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.status-skills li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: baseline; gap: 4px 10px; padding: 7px 0; border-top: 1px solid var(--ui-line); }
+.status-skills strong { font-size: 13px; white-space: nowrap; }
+.status-skills small { font-size: 9px; color: var(--scarf); }
+.status-skills li > span { overflow: hidden; font-size: 11px; color: var(--ui-muted); white-space: nowrap; text-overflow: ellipsis; }
+@container (max-width: 1000px) {
+  .status-page { grid-template-columns: minmax(130px, .62fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+  .status-skills li { grid-template-columns: auto auto; }
+  .status-skills li > span { display: none; }
+  .kit-cards { grid-template-columns: 1fr; }
+}
 .status-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(5px 0 0 #f3cf7830); }
 .portrait-art, .portrait-art svg, .portrait-art img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .portrait-scarf path, .portrait-scarf circle { fill: var(--scarf); stroke: #0003; stroke-width: .3; }
@@ -1207,7 +1230,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .anima-row-bar > i, .anima-level-bar > i { position: absolute; inset: 0 auto 0 0; width: calc(var(--fill) * 100%); background: var(--chip, var(--scarf)); box-shadow: 0 0 8px var(--chip, var(--scarf)); }
 .anima-row-state { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 .anima-badge { padding: 4px 8px 3px; border-radius: 4px; background: var(--chip); color: var(--ui-ink); font: 800 9px/1 'Manrope', sans-serif; letter-spacing: .16em; }
-.anima-taken { font-size: 10px; font-style: italic; color: var(--ui-muted); white-space: nowrap; }
+.anima-taken { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-style: italic; color: var(--ui-muted); white-space: nowrap; }
+/* Whose an ánima is now: their face in a small ring of its colour. */
+.anima-taken-face { position: relative; display: inline-block; flex: none; width: 20px; height: 20px; margin-right: 6px; overflow: hidden; vertical-align: middle; border-radius: 50%; background: #0d1916; box-shadow: 0 0 0 1.5px var(--anima); }
+.anima-taken .anima-taken-face { margin-right: 0; }
+.anima-taken-face img, .anima-taken-face .portrait-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
+.anima-taken-face .portrait-scarf { display: none; }
 .anima-row-hint { display: none; font-size: 10px; color: var(--chip); white-space: nowrap; }
 .status-sheet .anima-row[data-state="on"] { border-color: var(--chip); background: linear-gradient(100deg, color-mix(in srgb, var(--chip) 30%, transparent), color-mix(in srgb, var(--chip) 6%, transparent)); box-shadow: inset 4px 0 0 var(--chip), 0 0 20px color-mix(in srgb, var(--chip) 18%, transparent); }
 .status-sheet .anima-row[data-state="taken"] { opacity: .5; }
@@ -1233,6 +1261,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .anima-chips button[data-taken] { opacity: .4; }
 .anima-detail { display: grid; align-content: start; gap: 14px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--scarf) 35%, transparent); border-radius: 14px; background: radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--scarf) 16%, transparent), transparent 60%), #ffffff05; animation: detail-in .25s ease-out both; }
 @keyframes detail-in { from { opacity: .4; translate: 6px 0; } }
+/* The ánima under the cursor takes the whole height beside the lists, its colour along the top. */
+.animas-page > .anima-detail { align-self: stretch; min-height: 0; overflow: hidden; border-top: 4px solid var(--scarf); }
+.anima-facts dd { display: flex; align-items: center; }
 .anima-detail h2 { margin: 4px 0 0; font: italic 900 clamp(30px, 4cqi, 48px)/1 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: -.07em; color: color-mix(in srgb, var(--scarf) 75%, white); text-shadow: 3px 3px 0 #0006; }
 .journal-content .anima-motto { margin: 6px 0 0; font-size: 14px; font-style: italic; color: var(--ui-paper); }
 .anima-level { display: grid; gap: 6px; }
@@ -1261,7 +1292,6 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(200px, 1fr); gap: 24px; }
 .map-frame { min-height: 0; display: flex; padding: 12px; background: #0e211c; border: 1px solid var(--ui-line); }
 .world-map { display: block; width: 100%; height: 100%; }
-.map-partner { fill: #e7c9a1; stroke: #162823; stroke-width: .25; }
 .map-details { min-height: 0; overflow: hidden; }
 .map-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; margin-top: 10px; font-size: 11px; color: var(--ui-muted); border-block: 1px solid var(--ui-line); }
 .map-legend .legend-player { color: var(--ui-paper); }
@@ -1687,19 +1717,73 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .help-page .menu-controls > div { padding: 9px 4px; }
 /* M: the map on its own, centred (in its own half with two players), at two scales. */
 .status-sheet[data-layout="map"] { padding: 22px 24px 16px; animation: map-open .22s ease-out both; }
-#exploration-panel:not([data-split="true"]) .status-sheet[data-layout="map"] { align-self: center; width: min(1060px, 100%); height: min(780px, 100%); }
-.map-view { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; height: 100%; min-height: 0; }
+#exploration-panel:not([data-split="true"]) .status-sheet[data-layout="map"] { align-self: center; width: min(1280px, 100%); height: min(860px, 100%); }
+.map-view { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 14px; height: 100%; min-height: 0; }
 .map-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.map-heading h2 { margin: 6px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -.035em; }
-.map-canvas { display: grid; place-items: center; min-height: 0; overflow: hidden; padding: 16px; border: 1px solid #c6d6ad20; border-radius: 12px; background: radial-gradient(ellipse at center, #233c2d55, #0c1b16); }
-.map-canvas .world-map { width: 100%; height: 100%; max-height: none; }
-.map-canvas .map-player { fill: var(--ui-gold); stroke: #10231b; stroke-width: .2; }
+.map-heading h2 { margin: 6px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -.04em; }
+/* The local map (src/world-map.ts): an interior as a plan on drafting paper, a real place as a street map. */
+.map-canvas { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; padding: 18px; border: 1px solid #c6d6ad24; border-radius: 12px;
+  background: linear-gradient(#e9e3cf08 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, #e9e3cf08 1px, transparent 1px) 0 0 / 24px 24px, radial-gradient(ellipse at center, #1b2f2a, #0a1512 75%); box-shadow: inset 0 0 60px #0008; }
+.map-canvas .world-map { position: absolute; inset: 18px; width: calc(100% - 36px); height: calc(100% - 36px); max-height: none; overflow: visible; }
+.map-canvas .world-map[data-map="geo"] { inset: 0; width: 100%; height: 100%; }
+.map-canvas:has(.world-map[data-map="geo"]) { padding: 0; background: #e4ddcb; }
 .map-view[data-level="world"] .map-canvas { padding: 0; background: #eadfc2; }
-.map-footer { display: flex; justify-content: space-between; align-items: center; gap: 18px; color: var(--ui-muted); font-size: 11px; }
-.map-keys { display: flex; gap: 16px; }
-.map-player-key, .map-partner-key { display: flex; align-items: center; gap: 8px; }
-.map-player-key i, .map-partner-key i { width: 7px; height: 7px; border-radius: 50%; background: var(--ui-gold); box-shadow: 0 0 10px #f3cf7844; }
-.map-partner-key i { background: #e7c9a1; box-shadow: 0 0 10px #e7c9a144; }
+.world-map[data-cropped="x"] { mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+.world-map[data-cropped="z"] { mask-image: linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent); }
+/* Plan: thin cream walls, each room's floor in its material's tint, the room you are in lit. */
+.map-wall { fill: #e9e3cf; filter: drop-shadow(0 .5px 0 #0009); }
+.map-floor { fill: #34413c; transition: fill .3s; }
+.map-floor[data-floor="laminate"], .map-floor[data-floor="deck"] { fill: #5a4936; }
+.map-floor[data-floor="terracotta"] { fill: #6b4033; }
+.map-floor[data-floor="tile"] { fill: #3a4d55; }
+.map-floor[data-floor="hydraulic"] { fill: #35514e; }
+.map-floor[data-floor="terrazzo"] { fill: #4c4943; }
+.map-floor[data-floor="stone"] { fill: #4a4a43; }
+.map-floor[data-floor="gravel"] { fill: #4f4838; }
+.map-floor[data-floor="concrete"] { fill: #3c4442; }
+.map-floor[data-floor="grass"] { fill: #3a5538; }
+.map-floor.is-here { filter: brightness(1.32) saturate(1.1); }
+.map-furniture { fill: #f3efdc12; stroke: #f3efdc1c; stroke-width: .04; }
+.map-window { fill: #9fd6f5; }
+.map-door { fill: #e0a467; }
+.map-rail { fill: #e9e3cf; opacity: .55; }
+.map-stairs { fill: none; stroke: #e9e3cf; stroke-width: .06; opacity: .6; }
+.map-house-shadow { fill: #0006; }
+.map-house { fill: #4a5a50; stroke: #e9e3cf66; stroke-width: .12; }
+.map-room { fill: #f3efdc; font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: .08em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #0b1512; stroke-width: .14px; stroke-linejoin: round; opacity: .82; }
+.map-room.is-here { fill: var(--ui-gold); opacity: 1; }
+/* Street map: the same paper as the Mapa del mundo. */
+.map-ground { fill: #e4ddcb; }
+.map-area[data-area="grass"] { fill: #b9d29a; }
+.map-area[data-area="forest"] { fill: #98bd82; }
+.map-area[data-area="water"] { fill: #9ccce3; }
+.map-area[data-area="square"] { fill: #efe9da; stroke: #cfc5af; stroke-width: .15; }
+.map-area[data-area="sand"] { fill: #efe0b6; }
+.map-road-casing { fill: none; stroke: #c9bfa8; stroke-linecap: round; stroke-linejoin: round; }
+.map-road { fill: none; stroke: #fbf8f0; stroke-linecap: round; stroke-linejoin: round; }
+.map-path { fill: none; stroke: #f5efe1; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+.map-rail-line { fill: none; stroke: #8f887a; stroke-dasharray: 1.2 .8; }
+.map-building-shadow { fill: #3b30201f; }
+.map-building { fill: #d3c6ad; stroke: #a8987a; stroke-linejoin: round; }
+.map-street { fill: #6a5d49; font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: .12em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #fbf8f0; stroke-width: .3px; stroke-linejoin: round; }
+/* The party: their faces ringed in the colour of the ánima they wear; Gerard's ring breathes. */
+.map-marker { --marker: var(--ui-gold); }
+.map-marker-ring { fill: none; stroke: var(--marker); stroke-width: calc(var(--marker-stroke, .16) * 1px); filter: drop-shadow(0 0 .25px #000c); }
+.map-marker-back { fill: #0d1916; }
+.map-marker-initial { fill: var(--marker); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.map-marker-pulse { fill: none; stroke: var(--marker); stroke-width: .1; transform-box: fill-box; transform-origin: center; animation: map-pulse 2.2s ease-out infinite; }
+.world-map[data-map="geo"] .map-marker { --marker-stroke: .5; }
+.world-map[data-map="geo"] .map-marker-pulse { stroke-width: .3; }
+.map-partner { opacity: .95; }
+@keyframes map-pulse { from { opacity: .9; scale: 1; } to { opacity: 0; scale: 2.1; } }
+@media (prefers-reduced-motion: reduce) { .map-marker-pulse { animation: none; opacity: 0; } }
+.map-footer { display: flex; justify-content: space-between; align-items: center; gap: 18px; color: var(--ui-muted); font-size: 12px; }
+.map-keys { display: flex; align-items: center; gap: 18px; }
+.map-player-key, .map-partner-key { display: flex; align-items: center; gap: 8px; color: var(--ui-paper); font-weight: 600; }
+.map-player-key img, .map-partner-key img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: center 15%; background: #0d1916; box-shadow: 0 0 0 2px var(--marker); }
+.map-player-key i, .map-partner-key i { width: 9px; height: 9px; border-radius: 50%; background: var(--marker); }
+.map-here { display: flex; align-items: baseline; gap: 8px; padding-left: 18px; border-left: 1px solid var(--ui-line); color: var(--ui-gold); font-weight: 700; font-size: 13px; }
+.map-here small { font-size: 9px; font-weight: 700; letter-spacing: .16em; color: var(--ui-muted); }
 .map-footer button { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid #f3cf7833; border-radius: 8px; background: #f3cf7808; color: var(--ui-gold); font-size: 11px; }
 .map-footer button:hover { background: #f3cf7815; border-color: #f3cf7870; }
 .map-footer kbd { width: auto; min-width: 19px; padding: 0 4px; font-size: 9px; color: inherit; text-align: center; }

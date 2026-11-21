@@ -1,0 +1,107 @@
+{
+  "title": "Menús en Dúo",
+  "description": "Two players (docs/party.md), each on their own pad: each opens their own half of the user menu and moves in it on its own. Personaje: each picks the ánima they wear from their cards (their own and their extras), with its level, shared with whoever wears it. Ánimas: each equips their extras; one the other has shows their face and cannot be taken until they let it go, and the other half updates at once. Mapa: each half is centred on its own player, who is the one that pulses. Two standard gamepads are faked in the page.",
+  "steps": [
+    {
+      "open": "/?story=aurelia&solo=0&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "const s = window.gerard.story; s.merge(['papagato','papagato-2','papagato-3','papagato-4','anima-universidad','dadaista-2','dadaista-3','anima-marta','sincopante-2','anima-luca','prismatico-2','anima-emilie']); s.xp = { papagato: 2600, dadaista: 1300, sincopante: 700, prismatico: 500, freatica: 100 }; s.equip('gerard', 'papagato'); s.equip('aitor', 'sincopante'); s.wear('gerard', 'papagato');"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        11,
+        10
+      ]
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.frames = n => new Promise(done => { const tick = () => n-- > 0 ? requestAnimationFrame(tick) : done(); tick(); }); window.tap = async (pad, button) => { window.fakePads[pad].buttons[button].pressed = true; await frames(4); window.fakePads[pad].buttons[button].pressed = false; await frames(4); };"
+    },
+    {
+      "until": "window.gerard.control.secondPad",
+      "timeout": 20000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "tap(0, 3)"
+    },
+    {
+      "until": "!document.querySelector('.status-sheet[data-player=\"1\"]').hidden",
+      "timeout": 20000
+    },
+    {
+      "eval": "tap(1, 3)"
+    },
+    {
+      "until": "!document.querySelector('.status-sheet[data-player=\"2\"]').hidden",
+      "timeout": 20000
+    },
+    {
+      "shot": "personaje-dos",
+      "delay": 1500,
+      "caption": "Each opens their own Personaje: the ánima they wear among their cards, with its level"
+    },
+    {
+      "eval": "(async () => { for (const b of [13]) await tap(0, b); })()"
+    },
+    {
+      "shot": "gerard-elige",
+      "delay": 700,
+      "caption": "Gerard moves down onto his cards: the cursor shows how to put one on"
+    },
+    {
+      "eval": "document.querySelector('.status-sheet[data-player=\"1\"]').querySelector('[data-wear=\"gerard\"][data-class-id=\"matemagico\"]').click()"
+    },
+    {
+      "shot": "gerard-matemagico",
+      "delay": 900,
+      "caption": "He puts Matemágico on: PUESTA stamps in, his face lights up, his skills change"
+    },
+    {
+      "eval": "tap(1, 5)"
+    },
+    {
+      "shot": "aitor-animas",
+      "delay": 1500,
+      "caption": "Aitor turns to Ánimas: his own, his extra (Sincopante) and those he could equip; Papagato shows Gerard's face"
+    },
+    {
+      "eval": "document.querySelector('.status-sheet[data-player=\"2\"]').querySelector('[data-pick=\"aitor\"][data-class-id=\"papagato\"]')?.focus(); document.querySelector('.status-sheet[data-player=\"2\"]').querySelector('[data-pick=\"aitor\"][data-class-id=\"papagato\"]')?.classList.add('is-cursor')"
+    },
+    {
+      "shot": "aitor-papagato",
+      "delay": 800,
+      "caption": "Papagato is Gerard's: same level for both, and it says who has it"
+    },
+    {
+      "eval": "document.querySelector('.status-sheet[data-player=\"2\"]').querySelector('[data-pick=\"aitor\"][data-class-id=\"dadaista\"]')?.click()"
+    },
+    {
+      "shot": "aitor-equipa",
+      "delay": 900,
+      "caption": "Aitor equips Dadaísta in his free slot; Gerard's half follows at once"
+    },
+    {
+      "eval": "(async () => { await tap(0, 5); await tap(0, 5); await tap(0, 5); await tap(1, 5); await tap(1, 5); })()"
+    },
+    {
+      "until": "document.querySelector('.status-sheet[data-player=\"1\"]').dataset.layout === 'map' && document.querySelector('.status-sheet[data-player=\"2\"]').dataset.layout === 'map'",
+      "timeout": 20000
+    },
+    {
+      "shot": "mapa-dos",
+      "delay": 1200,
+      "caption": "Mapa in both halves: each is centred on its own player, who pulses, with their room below"
+    }
+  ]
+}

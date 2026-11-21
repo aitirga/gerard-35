@@ -1,0 +1,188 @@
+{
+  "title": "Menús y mapa local",
+  "description": "A pass over the user menu and the local map (src/exploration-ui.ts, src/world-map.ts) late in the story, with every ánima the castle asks for. The local map draws an interior as a plan (each room's floor in its tint, thin walls, windows, doors, furniture, steps, the room Gerard is in lit and named in the footer), a real place as a street map (parks, squares, streets with their names, buildings), and any other place from its grid; Gerard and whoever walks with him are their faces. Personaje shows the worn ánima's level and skills beside the stats; Ánimas, the one under the cursor in full.",
+  "steps": [
+    {
+      "open": "/?story=aurelia&solo=1&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 180000
+    },
+    {
+      "eval": "const s = window.gerard.story; s.merge(['papagato','papagato-2','papagato-3','papagato-4','anima-universidad','dadaista-2','dadaista-3','anima-marta','sincopante-2','anima-luca','prismatico-2','anima-emilie']); s.xp = { papagato: 2600, dadaista: 1300, sincopante: 700, prismatico: 500, freatica: 100 }; s.equip('gerard', 'papagato'); s.equip('aitor', 'sincopante'); s.wear('gerard', 'papagato');"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        11,
+        10
+      ]
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "mapa-casa",
+      "delay": 900,
+      "caption": "Casa de Gerard y Aitor: a plan, each room in its floor's tint, the bedroom lit and named below"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "home-floor-1",
+      "cell": [
+        5,
+        6
+      ]
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "mapa-casa-padres",
+      "delay": 900,
+      "caption": "His parents' house in Sant Quirze: tiles, the garden, the stairs"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('meridiana-calle')"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "mapa-meridiana",
+      "delay": 900,
+      "caption": "Avinguda Meridiana: a street map round Gerard, fading where it goes on"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('sants')"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "mapa-sants",
+      "delay": 900,
+      "caption": "Sants: a tall place, shown round Gerard"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.game.setEnvironment('palacio-secretaria')"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "mapa-secretaria",
+      "delay": 900,
+      "caption": "A castle room drawn from its grid"
+    },
+    {
+      "press": "Shift+KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'world'"
+    },
+    {
+      "shot": "mapa-mundo",
+      "delay": 900,
+      "caption": "Mapa del mundo (unchanged)"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        11,
+        10
+      ]
+    },
+    {
+      "press": "KeyC"
+    },
+    {
+      "shot": "personaje",
+      "delay": 1500,
+      "caption": "Personaje: portrait, stats and the worn ánima with its level and skills; vitals, the day and the party on the right"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "animas",
+      "delay": 1500,
+      "caption": "Ánimas: each member's own and extras; the one under the cursor in full"
+    },
+    {
+      "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"tecnopata\"]')?.focus()"
+    },
+    {
+      "shot": "animas-tecnopata",
+      "delay": 800,
+      "caption": "Tecnópata under the cursor"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "objetos",
+      "delay": 1200,
+      "caption": "Objetos"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "shot": "diario",
+      "delay": 1200,
+      "caption": "Diario"
+    }
+  ]
+}
