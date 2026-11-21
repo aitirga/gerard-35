@@ -2681,6 +2681,8 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   // ∂Q/∂t Condensador: the one who uses it, unless they carry a charge already.
   if (ability.kind === 'charge') { const self = state.allies[state.active]; return self && self.hp > 0 && !self.capacitor ? [self] : []; }
   // Corchete: anyone standing who is not protected already.
+  // Escolta lasts two rounds: anyone standing Bip is not with already, even someone Defending this one.
+  if (ability.kind === 'guard' && 'escort' in ability) return state.allies.filter(a => a.hp > 0 && !a.escort);
   if (ability.kind === 'guard') return state.allies.filter(a => a.hp > 0 && !a.guarding);
   // La crecida: Bombeo needs some water to pump; Golpe de ariete reaches whoever has water; Bajo cero freezes whoever has
   // it, once one of them has it at the third mark.
@@ -2688,8 +2690,6 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if ('pumps' in ability && !watered.length) return [];
   if ('hammer' in ability) return watered;
   if ('freezes' in ability) return watered.some(f => waterOf(f) >= CRECIDA.marks) ? watered : [];
-  // Escolta lasts two rounds: anyone standing Bip is not with already, even someone Defending this one.
-  if (ability.kind === 'guard' && 'escort' in ability) return state.allies.filter(a => a.hp > 0 && !a.escort);
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
   if (state.unbound && (ability.kind === 'heal' || ability.kind === 'boost')) return state.allies.filter(a => a.hp > 0);
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);
