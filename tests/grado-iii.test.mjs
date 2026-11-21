@@ -133,20 +133,43 @@ test('Virus atómico: what lands on the infected foe lands on every other foe to
   assert.equal(s.foes[1].timed.virus, undefined, 'the virus itself never does');
 });
 
-test('Escudo de bits: a wall in front of the party stops half of every blow until it breaks or two rounds pass', () => {
+test('Escudo de bits: a dome over the party stops every blow whole until it breaks; what is left of the blow that breaks it gets through', () => {
   const s = fight(['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'], 1);
   turn(s, 'aitor');
   const e = act(s, 'skill', undefined, 'escudo-de-bits');
   assert.deepEqual(e.bits, { raised: 40 });
-  const wall = bitsOf(s); assert.equal(wall.hp, 40); assert.equal(by(s, 'gerard').bits, by(s, 'aitor').bits, 'one wall for both');
+  const wall = bitsOf(s); assert.equal(wall.hp, 40); assert.equal(wall.cap, 40); assert.equal(by(s, 'gerard').bits, by(s, 'aitor').bits, 'one dome for both');
   s.phase = 'enemy'; s.enemyActions = [];
   const hp = s.allies.map(a => a.hp);
   const blow = enemyAct(s, 'dog-0');
-  const lost = s.allies.reduce((sum, a, i) => sum + hp[i] - a.hp, 0);
+  const lost = () => s.allies.reduce((sum, a, i) => sum + hp[i] - a.hp, 0);
   assert.ok(blow.bits.took > 0); assert.equal(wall.hp, 40 - blow.bits.took);
-  assert.ok(Math.abs(lost - blow.bits.took) <= 1, 'half of it went into the wall');
-  nextRound(s); nextRound(s);
-  s.round += BITS.rounds; nextRound(s);
+  assert.equal(lost(), 0, 'nothing reaches them'); assert.equal(blow.amount, 0);
+  // The blow that breaks it: what it could not stop gets through.
+  wall.hp = 1; s.enemyActions = [];
+  const last = enemyAct(s, 'dog-0');
+  assert.ok(last.bits.broke); assert.equal(last.bits.took, 1); assert.ok(last.amount > 0 && lost() === last.amount);
+  assert.equal(bitsOf(s), undefined);
+  nextRound(s);
+  assert.ok(s.allies.every(a => !a.bits), 'a broken dome is gone at the round\'s end');
+});
+
+test('Escudo de bits: a cure on someone under the dome patches it with what they have no room for, up to its PV; Redundancia, to three times them', () => {
+  const heal = ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide'];
+  for (const [nodes, cap] of [[heal, 40], [[...heal, 'tecnopata:redundancia'], 40 * BITS.redundancia]]) {
+    const s = fight(nodes, 1);
+    turn(s, 'aitor'); act(s, 'skill', undefined, 'escudo-de-bits');
+    const wall = bitsOf(s); assert.equal(wall.cap, cap);
+    wall.hp = 10;
+    // Gerard is whole: a cure on him is a cure for the dome, and only while it has room.
+    const gerard = turn(s, 'gerard');
+    gerard.hp = gerard.maxHp - 5;
+    const e = act(s, 'skill', 'gerard', 'cardioide');
+    assert.equal(e.amount, 5); assert.ok(e.bits.mended > 0); assert.equal(wall.hp, 10 + e.bits.mended);
+    assert.ok(wall.hp <= cap);
+    wall.hp = cap; turn(s, 'gerard');
+    assert.equal(act(s, 'skill', 'gerard', 'cardioide'), undefined, 'a whole one under a full dome is no target');
+  }
 });
 
 test('Sobrecalentamiento: Foc Binari and Escudo de bits; the wall goes off as fire over every foe and what is left of it shields the party', () => {

@@ -677,6 +677,13 @@ title = "Tecnópata: grado III (Reinicio, Virus atómico y Escudo de bits) y el 
 grep = "id: 'sobrecalentamiento'"
 in = "src/battle.ts"
 
+# Aitor 2026-11-21 (docs/animas/tecnopata/README.md § Virus atómico and Escudo de bits): the shield as a
+# dome with its own PV that stops each blow whole, cures patch it, and Redundancia fills it to three times.
+[[block.item]]
+title = "Escudo de bits como cúpula: para cada golpe entero, las curas la reparan y Redundancia la sube hasta ×3"
+grep = "'tecnopata', 'taller', 'redundancia'"
+in = "src/ecos.ts"
+
 [[block.item]]
 title = "Sincopante, la de Marta"
 grep = "sincopante"

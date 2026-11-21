@@ -107,6 +107,7 @@ const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
   passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
   skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos'),
+  passiveNode('tecnopata', 'taller', 'redundancia', 2, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
   manaNode('tecnopata'),
 ];
 /** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */

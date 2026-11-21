@@ -935,13 +935,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       cue('fire-cast', { delay: .1 }); [.42, .62, .82].forEach(at => cue('clink', { delay: at }));
     }
     if (id === 'sobrecalentamiento' && e.dual) {
-      // Bip's bits stand as a wall, Gerard's binary fire runs into it, it glows and goes off over the foes.
+      // Bip's bits close as a dome, Gerard's binary fire runs into it, it glows and goes off over the foes.
       const math = wearer('matemagico'), hand = handOf(math), wall = raiseWall(), up = { x: 0, y: 1, z: 0 };
       if (wall && hand) dualFx.after(.3, () => effects.binaryFire(hand, wall.centre, { seconds: .3, gap: 0, burn: true }));
       dualFx.after(.62, () => {
         if (!wall) return;
         dualFx.burst('crackle', { at: wall.centre, count: 220, spread: .6, speed: 1.4, up: .6, life: [.3, .6], colour: '#ffb84a' });
-        dualFx.ring(wall.centre, wall.face, .9, '#ff9a3c', { count: 120, outward: 3, life: .4, size: 1.4, light: 4 });
+        dualFx.ring(wall.centre, up, wall.radius * .8, '#ff9a3c', { count: 120, outward: 3, life: .4, size: 1.4, light: 4 });
       });
       dualFx.after(DUO.sobrecalentamiento.contact - .12, () => {
         wall?.shatter();
@@ -1908,24 +1908,29 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dualFx.burst('smog', { at: { ...mouth, y: mouth.y + .4 }, count: 4, spread: .25, up: 1, speed: .4, life: [1.6, 2.6] });
     dualFx.burst('crackle', { at: { x: site.x, y: site.y + .08, z: site.z }, count: 8, shape: 'ring', spread: .95, speed: .2, around: .5, life: [.35, .6], colour: '#ff7a2a' });
   }
-  /** Escudo de bits standing in front of the party (effects.bitWall), and the shield it shows. */
-  let wallFx: ReturnType<typeof effects.bitWall>, wallFor: BitShield | undefined;
+  /** Escudo de bits closed over the party (effects.bitDome), the shield it shows, and its PV last seen. */
+  let wallFx: ReturnType<typeof effects.bitDome>, wallFor: BitShield | undefined, wallSeen = 0;
   function raiseWall() {
-    const party = [...fighters.values()].filter(f => f.party && f.hp > 0), foes = [...fighters.values()].filter(f => !f.party && f.hp > 0);
+    const party = [...fighters.values()].filter(f => f.party && f.hp > 0);
     if (!party.length) return undefined;
-    const mid = (list: Fighter[]) => list.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / Math.max(1, list.length));
-    const p = mid(party), q = foes.length ? mid(foes) : p.clone().add(new pc.Vec3(3, 0, 0)), way = new pc.Vec3().sub2(q, p); way.y = 0; way.normalize();
-    const at = p.clone().add(way.clone().mulScalar(1.35)), wide = Math.max(2, party.reduce((most, f) => Math.max(most, f.base.distance(p)), 0) * 2 + 1.4);
-    // Its face half towards the foes and half towards whoever looks: from the fight's side camera a wall
-    // square to the foes would be seen edge on.
-    const v = viewDir(), face = new pc.Vec3(way.x + v.x * 1.4, 0, way.z + v.z * 1.4).normalize();
-    return effects.bitWall({ x: at.x, y: groundHeight(at.x, at.z) + .85, z: at.z }, Math.atan2(face.x, face.z) * 180 / Math.PI, { width: wide, height: 1.5 });
+    const mid = party.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / party.length);
+    // Wide enough for everyone standing under it with room round them, and high enough over the tallest.
+    const radius = Math.max(1.5, party.reduce((most, f) => Math.max(most, Math.hypot(f.base.x - mid.x, f.base.z - mid.z) + extent(f).radius), 0) + .75);
+    const height = Math.max(radius * .7, party.reduce((most, f) => Math.max(most, extent(f).height), 0) + .45);
+    return effects.bitDome({ x: mid.x, y: groundHeight(mid.x, mid.z), z: mid.z }, { radius, height });
   }
-  /** Each frame: the wall follows the shield in the rules, raised once its action lands, gone when it is. */
+  /** A foe's blow the bit dome took whole: nothing of it reached anyone under it. */
+  const domeStopped = (e?: BattleEffect) => !!e && e.kind === 'enemy' && !!e.bits?.took && !e.bits.broke && !e.amount && !e.hits?.some(h => h.amount > 0);
+  /** Where a foe's blow on `target` meets the dome, from `from`. */
+  const domeEntry = (from: Fighter, target: Fighter) => wallFx?.alive ? wallFx.entry(v3(chestOf(from)), v3(chestOf(target))) : undefined;
+  /** Each frame: the dome follows the shield in the rules, raised once its action lands, gone when it is; a cure that patched it shows. */
   function wallFrame() {
     const shield = state ? bitsOf(state) : undefined;
     const raising = !!effect?.bits?.raised && !impacted;
-    if (shield && shield !== wallFor && !raising) { wallFx?.fade(); wallFx = raiseWall(); wallFor = shield; }
+    if (shield && shield !== wallFor && !raising) { wallFx?.fade(); wallFx = raiseWall(); wallFor = shield; wallSeen = shield.hp; }
+    // A cure patched it (a cure's own action shows it as it lands, a pulse at once).
+    if (shield && shield === wallFor && shield.hp > wallSeen && !(effect?.bits?.mended && !impacted)) wallFx?.mend();
+    if (shield && shield === wallFor && !(effect?.bits?.mended && !impacted)) wallSeen = shield.hp;
     // Broken by a blow still on its way: it gives way when that blow lands.
     if (!shield && wallFor && !(effect?.bits?.broke && !impacted)) { if (wallFor.broken) wallFx?.shatter(); else wallFx?.fade(); wallFx = undefined; wallFor = undefined; }
   }
@@ -2027,11 +2032,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return land(felt, ax, 0, az);
     }
     if (action.skill === 'escudo-de-bits') {
-      // Escudo de bits: Bip throws its bits ahead of the party; the wall stands where they gather (`wallFrame`).
+      // Escudo de bits: Bip throws its bits up over the party; the dome closes where they fall (`wallFrame`).
       const wall = raiseWall();
       if (wall) {
-        wallFx?.fade(); wallFx = wall; wallFor = state ? bitsOf(state) : undefined;
-        for (let k = 0; k < 5; k++) effects.trails.comet(v3(from), { x: wall.centre.x + (k - 2) * .3, y: wall.centre.y + (k % 2 ? .3 : -.2), z: wall.centre.z }, ['#ffffff', BIP.cyan], .22, { arc: .3, width: .04, life: .35, intensity: 2.4, core: .5, additive: 1 });
+        wallFx?.fade(); wallFx = wall; wallFor = state ? bitsOf(state) : undefined; wallSeen = wallFor?.hp ?? 0;
+        for (let k = 0; k < 6; k++) {
+          const a = k / 6 * Math.PI * 2, r = Math.hypot(wall.top.y - wall.base.y, 1) * .6;
+          effects.trails.comet(v3(from), { x: wall.base.x + Math.cos(a) * r, y: wall.base.y + (wall.top.y - wall.base.y) * .75, z: wall.base.z + Math.sin(a) * r }, ['#ffffff', BIP.cyan], .22, { arc: .5, width: .04, life: .35, intensity: 2.4, core: .5, additive: 1 });
+        }
       }
       pulse?.(0, .3);
       return;
@@ -3071,18 +3079,20 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (effect.release && !animate) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
         worldFx(effect, actor, target, animate);
         if (effect.spell) mathCast.land();
-        const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
+        // A blow the bit dome took whole lands on the dome (below), not on whoever it was aimed at.
+        const landed = animate && effect && !domeStopped(effect) ? contactBurst(effect, actor, target) : undefined;
         // What the blow's element turned: its moment, as it lands (docs/combat.md § Reacciones entre elementos).
         if (animate && effect.reaction) reactFx(effect);
         // Combustión: the physical blow found a fire at IV, and it goes off.
         if (animate && effect.combustion) combustFx(effect);
         // Virus atómico: what spread goes from its host to the others.
         if (animate && effect.spread) spreadFx(effect);
-        // Escudo de bits: a blow that went into the wall dents it, and the one that breaks it shatters it.
-        if (animate && effect.bits?.took) {
-          const from = fighters.get(effect.actor);
-          wallFx?.hit(from ? v3(chestOf(from)) : wallFx.centre, Math.min(2, effect.bits.took / 10));
-          if (effect.bits.broke) wallFx?.shatter();
+        // Escudo de bits: a blow that went into the dome dents it where it meets it, and the one that breaks it shatters it.
+        if (animate && effect.bits?.took && wallFx) {
+          const from = fighters.get(effect.actor), at = from && target ? domeEntry(from, target) : undefined;
+          wallFx.hit(from ? v3(chestOf(from)) : wallFx.top, at ?? wallFx.top, Math.min(2, effect.bits.took / 10));
+          if (effect.bits.broke) wallFx.shatter();
+          if (domeStopped(effect)) { cue('clink'); shake = Math.max(shake, .18); pulse?.(.25, .35); }
         }
         // A cortina of powder: the one that stands up now, and the one this blow went through, which bursts over whoever dealt it (Rebufo).
         if (animate && effect.cortina?.raised) powderFx.telon(effect.cortina.raised, foesCentre(), effect.cortina.raised.map(() => nextMix()));
@@ -3177,7 +3187,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona') || actor?.camp === 'campeon'
         || !!actor?.mesh
         || (!!actor?.strings && !(actor.strings === 'directo' && (effect?.ability?.id === 'golpe-directo' || effect?.ability?.id === 'estocada')));
-      const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dicing && !dual && !planted ? contactMotion(actor.base, target.base, t) : undefined;
+      // A blow the bit dome takes whole: the foe comes up to the dome, not through it.
+      const shell = domeStopped(effect) && actor && target ? domeEntry(actor, target) : undefined;
+      const stopAt = shell && actor && target ? Math.max(1.65, Math.hypot(target.base.x - actor.base.x, target.base.z - actor.base.z) - Math.hypot(shell.x - actor.base.x, shell.z - actor.base.z) + extent(actor).radius + .2) : undefined;
+      const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dicing && !dual && !planted ? contactMotion(actor.base, target.base, t, stopAt) : undefined;
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
       const raise = casting && animate ? smooth(t / (castLaunch * .85)) * (1 - smooth((t - castContact - .12) / .35))

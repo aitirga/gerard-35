@@ -1291,57 +1291,81 @@ export function createEffects(app: pc.Application) {
      * simulation, not in a fight, reduced motion).
      */
     /**
-     * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a wall of Bip's bits standing at
-     * `centre`, its face turned `yaw` degrees, `width` × `height` m. It unfolds from its middle, ripples
-     * a little while it stands, dents and glints where a blow lands in it (`hit`), and gives way from
-     * where it is struck (`shatter`) or melts back to nanites (`fade`). A lattice on the GPU: nothing
-     * where the engine cannot run.
+     * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a dome of Bip's bits over the party,
+     * its rim on the floor round `base`, `radius` wide and `height` high. It rises from the floor, ripples
+     * a little while it stands, takes the blows aimed at those under it where they meet its shell (`hit`,
+     * `entry`), closes its dents when a cure patches it (`mend`), and gives way from inside (`shatter`) or
+     * melts back to nanites (`fade`). A lattice on the GPU: nothing where the engine cannot run.
      */
-    bitWall(centre: Vec, yaw: number, o: { width?: number; height?: number; colour?: string } = {}) {
+    bitDome(base: Vec, o: { radius?: number; height?: number; colour?: string } = {}) {
       if (!gpu || !gpuOn) return undefined;
-      const colour = o.colour ?? '#4fe0ff', half = { x: (o.width ?? 1.6) / 2, y: (o.height ?? 1) / 2, z: .02 };
-      const rotation = new pc.Quat().setFromEulerAngles(0, yaw, 0), face = rotation.transformVector(new pc.Vec3(0, 0, 1));
-      const at = { x: centre.x, y: centre.y, z: centre.z };
-      const wall = gpu.lattice('node', {
-        grid: [48, 30, 1], size: { x: .02, y: .02, z: .005 }, shape: 'box', at, rotation, life: 40, hold: .9, colour, scale: .55,
-        rigidity: 260, bonds: 480, damping: 9, viscosity: 2, toughness: 0, glow: 2.4, rim: 3.2, hitRadius: .08, transfer: .5, bounce: .35, reform: 0,
-        opacity: .9, fresnel: .35, wave: { height: .012, length: .45, speed: .7 }, light: { intensity: 1.4, range: 2.6, colour },
+      const colour = o.colour ?? '#4fe0ff', radius = o.radius ?? 1.8, height = o.height ?? radius * .8;
+      const at = { x: base.x, y: base.y, z: base.z };
+      // Rows round it as dense as the wall's were across it: more round its rim, fewer up to its top.
+      const round = Math.min(160, Math.max(64, Math.round(2 * Math.PI * radius / .055))), up = Math.min(48, Math.max(18, Math.round(Math.PI / 2 * Math.max(radius, height) / .06)));
+      const dome = gpu.lattice('node', {
+        grid: [round, up, 1], size: { x: .02, y: .02, z: .005 }, shape: 'dome', at, life: 40, hold: .9, colour, scale: .55,
+        rigidity: 260, bonds: 480, damping: 9, viscosity: 2, toughness: 0, glow: 2.4, rim: 3.2, hitRadius: .1, transfer: .5, bounce: .35, reform: 0,
+        opacity: .85, fresnel: .55, wave: { height: .01, length: .5, speed: .7 }, light: { intensity: 1.4, range: radius * 1.8, colour },
       });
-      let end = Infinity, how: 'shatter' | 'fade' = 'fade';
-      lattices.push({ lattice: wall, age: 0, seconds: 1e9, step: t => {
-        const k = 1 - (1 - span(t, 0, .45)) ** 2;
-        if (t < 1) wall.size.set(half.x * k + .02, half.y * k + .02, half.z);
-        // Whole, it mends what a blow dents; it only gives way once it has unfolded.
-        wall.toughness = t > .6 ? .55 : 0; wall.reform = t > .6 && end === Infinity ? 40 : 0;
+      let end = Infinity, how: 'shatter' | 'fade' = 'fade', mending = 0;
+      lattices.push({ lattice: dome, age: 0, seconds: 1e9, step: (t, dt) => {
+        // It rises from the floor, its rim first.
+        const k = 1 - (1 - span(t, 0, .5)) ** 2;
+        if (t < 1) dome.size.set(radius * (.35 + .65 * k), height * k + .02, .005);
+        // Whole, it mends what a blow dents (and faster while a cure patches it); it only gives way once it has risen.
+        mending = Math.max(0, mending - dt);
+        dome.toughness = t > .7 ? .55 : 0; dome.reform = t > .7 && end === Infinity ? (mending > 0 ? 160 : 40) : 0;
         if (end !== Infinity) {
-          wall.dissolve = span(t, end, end + (how === 'shatter' ? .35 : .8));
-          if (t > end + 1.2) wall.remove();
+          dome.dissolve = span(t, end, end + (how === 'shatter' ? .35 : .8));
+          if (t > end + 1.2) dome.remove();
         }
       } });
-      const ageOf = () => lattices.find(l => l.lattice === wall)?.age ?? 0;
+      const ageOf = () => lattices.find(l => l.lattice === dome)?.age ?? 0;
+      /** Where the way from `from` to `to` (a blow on someone under it) meets its shell; its top if it never does. */
+      const entry = (from: Vec, to: Vec): Vec => {
+        // In its own space scaled to a ball of 1: the segment's first crossing of the shell from outside.
+        const sy = radius / Math.max(height, .01), f = { x: (from.x - at.x) / radius, y: (from.y - at.y) * sy / radius, z: (from.z - at.z) / radius };
+        const d = { x: (to.x - from.x) / radius, y: (to.y - from.y) * sy / radius, z: (to.z - from.z) / radius };
+        const a = d.x * d.x + d.y * d.y + d.z * d.z, b = 2 * (f.x * d.x + f.y * d.y + f.z * d.z), c = f.x * f.x + f.y * f.y + f.z * f.z - 1, disc = b * b - 4 * a * c;
+        const t = disc >= 0 && a > 1e-9 ? (-b - Math.sqrt(disc)) / (2 * a) : -1;
+        if (t < 0 || t > 1) return { x: at.x, y: at.y + height, z: at.z };
+        const p = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t, z: from.z + (to.z - from.z) * t };
+        return { ...p, y: Math.max(at.y + .15, p.y) };
+      };
       return {
-        get alive() { return wall.alive && end === Infinity; },
-        /** A blow from `from` goes into it: a spray of sparks it catches, a dent and a glint. */
-        hit(from: Vec, strength = 1) {
-          if (!wall.alive) return;
-          const dx = at.x - from.x, dy = at.y - from.y, dz = at.z - from.z, d = Math.hypot(dx, dy, dz) || 1, speed = 9 + 5 * strength;
-          const batch = gpu.burst('spark', { at: from, count: Math.round(40 + 60 * strength), spread: .08, velocity: { x: dx / d * speed, y: dy / d * speed, z: dz / d * speed }, speed: 1, cone: .2, life: [.5, .9], colour: '#dffbff' });
-          wall.hitBy(batch);
-          glint(at, colour, 2 + strength, 2.6, .3);
+        get alive() { return dome.alive && end === Infinity; },
+        entry,
+        /** A blow from `from` meets it at `point`: a spray of sparks it catches there, a dent and a glint. */
+        hit(from: Vec, point: Vec, strength = 1) {
+          if (!dome.alive) return;
+          const dx = point.x - from.x, dy = point.y - from.y, dz = point.z - from.z, d = Math.hypot(dx, dy, dz) || 1, speed = 9 + 5 * strength;
+          const start = { x: point.x - dx / d * .5, y: point.y - dy / d * .5, z: point.z - dz / d * .5 };
+          const batch = gpu.burst('spark', { at: start, count: Math.round(50 + 70 * strength), spread: .06, velocity: { x: dx / d * speed, y: dy / d * speed, z: dz / d * speed }, speed: 1, cone: .2, life: [.5, .9], colour: '#dffbff' });
+          dome.hitBy(batch);
+          dome.push(point, .35 + .15 * strength, -1.5 * strength);
+          glint(point, colour, 2 + strength, 2.6, .3);
         },
-        /** It gives way where it was struck, in chips. */
+        /** A cure patches it: its dents close fast and light runs up it from the rim. */
+        mend() {
+          if (!dome.alive || end !== Infinity) return;
+          mending = .8;
+          gpu.burst('spark', { at: { x: at.x, y: at.y + .05, z: at.z }, count: 140, shape: 'ring', spread: radius * .95, up: height * 1.6, speed: .4, around: 1.2, life: [.5, .8], colour: '#dffbff' });
+          glint({ x: at.x, y: at.y + height * .7, z: at.z }, colour, 2.5, radius * 1.5, .4);
+        },
+        /** It gives way from inside, in chips. */
         shatter() {
-          if (end !== Infinity || !wall.alive) return;
+          if (end !== Infinity || !dome.alive) return;
           end = ageOf(); how = 'shatter';
-          wall.breakInto = 'chip'; wall.dissolveFrom = 'push';
-          wall.push({ x: at.x - face.x * .2, y: at.y, z: at.z - face.z * .2 }, half.x + .4, 4);
-          gpu.burst('spark', { at, count: 120, spread: half.x * .6, speed: 3, life: [.3, .7], colour: '#dffbff', light: { intensity: 4, range: 3, colour } });
-          glint(at, colour, 4, 3.4, .4);
+          dome.breakInto = 'chip'; dome.dissolveFrom = 'push';
+          dome.push({ x: at.x, y: at.y + height * .3, z: at.z }, radius + .4, 4);
+          gpu.burst('spark', { at: { x: at.x, y: at.y + height * .6, z: at.z }, count: 160, spread: radius * .6, speed: 3, life: [.3, .7], colour: '#dffbff', light: { intensity: 4, range: radius * 2, colour } });
+          glint({ x: at.x, y: at.y + height * .6, z: at.z }, colour, 4, radius * 2, .4);
         },
         /** It melts back into nanites, quietly (its time is over). */
-        fade() { if (end === Infinity && wall.alive) { end = ageOf(); how = 'fade'; } },
-        /** Its middle, and the way its face looks. */
-        centre: at, face: { x: face.x, y: face.y, z: face.z },
+        fade() { if (end === Infinity && dome.alive) { end = ageOf(); how = 'fade'; } },
+        /** The middle of its floor, the middle of it, and its top. */
+        base: at, radius, centre: { x: at.x, y: at.y + height * .5, z: at.z }, top: { x: at.x, y: at.y + height, z: at.z },
       };
     },
     fightFx(name: FightFx, o: { model: pc.Entity; from?: Vec; colour?: string; strength?: number }) {
@@ -1466,7 +1490,7 @@ export function createEffects(app: pc.Application) {
           // keeping its neighbours; a push shakes it like jelly, and it springs back.
           const colour = o.colour ?? '#ffd76a', at = { x: feet.x, y: feet.y + body.height + .8, z: feet.z };
           const shapes: LatticeShape[] = ['ball', 'crystal', 'ring', 'column', 'ball'];
-          const sizes: Record<LatticeShape, [number, number, number]> = { ball: [.4, .4, .4], crystal: [.3, .55, .3], ring: [.48, .09, .13], column: [.18, .55, .18], box: [.35, .35, .35], shield: [.35, .45, .1], sphere: [.42, .42, .02] };
+          const sizes: Record<LatticeShape, [number, number, number]> = { ball: [.4, .4, .4], crystal: [.3, .55, .3], ring: [.48, .09, .13], column: [.18, .55, .18], box: [.35, .35, .35], shield: [.35, .45, .1], sphere: [.42, .42, .02], dome: [.42, .42, .02] };
           const blob = gpu.lattice('node', {
             grid: [14, 14, 14], size: { x: .4, y: .4, z: .4 }, shape: 'ball', at, life: 8, hold: .4, colour, scale: .8,
             rigidity: 70, bonds: 200, damping: 5, viscosity: 1.5, glow: 1.2, light: { intensity: 2, range: 2.4, colour },

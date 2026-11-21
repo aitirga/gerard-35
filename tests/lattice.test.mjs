@@ -28,6 +28,8 @@ test('every cell of a grid lies inside its shape', () => {
     if (shield.y < -SIZE.y * .5) assert.ok(Math.abs(shield.x) < SIZE.x * Math.abs(c.x) + 1e-9, 'narrowing to its point');
     const sphere = latticeShape('sphere', c, SIZE), r = Math.hypot(sphere.x / SIZE.x, sphere.y / SIZE.y, sphere.z / SIZE.x);
     assert.ok(Math.abs(r - 1) <= SIZE.z / SIZE.x + 1e-9, 'on the sphere\'s shell, within its thickness');
+    const dome = latticeShape('dome', c, SIZE), rd = Math.hypot(dome.x / SIZE.x, dome.y / SIZE.y, dome.z / SIZE.x);
+    assert.ok(Math.abs(rd - 1) <= SIZE.z / SIZE.x + 1e-9 && dome.y >= -1e-9, 'on the dome\'s shell, never under its rim');
   }
 });
 

@@ -44,9 +44,9 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
     if (item.line) assert.ok(LINES[item.line], item.id);
   }
   // Nobody can have everything: both trees cost far more than a few lights (grade III: Combustión, the
-  // dúo mayor Vulcano and Integral, 6 more for Matemágico; Reinicio, Virus atómico and Escudo de bits, 6 more for Tecnópata).
+  // dúo mayor Vulcano and Integral, 6 more for Matemágico; Reinicio, Virus atómico, Escudo de bits and Redundancia, 8 more for Tecnópata).
   assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 23);
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 17);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 19);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {
   assert.deepEqual(withinEcos(['matemagico:vasos', 'matemagico:agua', 'matemagico:vasos'], 5), ['matemagico:agua', 'matemagico:vasos']);

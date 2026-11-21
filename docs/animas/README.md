@@ -187,7 +187,8 @@ If that feels too tight in play, lower the passives from 2 to 1 before adding li
 
 **Grade III** (Aitor 2026-11-20, after the castle's first boss): Bip adds *Reinicio* (2 ecos; every
 clock on every foe starts over), Mente *Virus atómico* (2; what lands on a foe spreads to the others),
-Taller *Escudo de bits* (2; a wall in front of the party), all built.
+Taller *Escudo de bits* (2; a dome over the party that stops each blow whole, which cures patch) and
+*Redundancia* (2; cures fill the dome to three times its PV), all built.
 [tecnopata/README.md](tecnopata/README.md) § Grade III.
 
 **How it is built.** A node is an `Improvement` in `src/ecos.ts` with its `line` (`LINES`) and
@@ -496,7 +497,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Dadista | **Relevo de sangre** | Zarpa en la llaga + Estrella fugaz | 3 · 3 | Playable. On a killing blow the wound passes to the enemy with the most remaining PV |
 | Tecnópata + Sincopante | **Bombardeo orbital** | Explosión + Ostinato | node · 1 | Playable. Three volleys on every foe next round, with Cegado II for 20 s |
 | Matemágico + Colorista | **Reserva de color** | Foc Binari + Brochazo | 1 · 1 | Playable. A fuse of powder on a foe explodes after its turn or when it falls (its text still says paint) |
-| Matemágico + Tecnópata | **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 · node | Built (2026-11-20). The bit wall overheats and goes off over every foe; what is left shields the party |
+| Matemágico + Tecnópata | **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 · node | Built (2026-11-20). The bit dome overheats and goes off over every foe; what is left closes over the party |
 | Matemágico + Sincopante | **Vulcano** (dúo mayor) | Foc Binari + Ostinato | 1 · 1, and its node | Built (2026-11-20). A volcano of particles for 20 s that raises every foe's fire each 5 s |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 

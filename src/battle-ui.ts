@@ -76,8 +76,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   cristalizado: '<path d="M8 1 10.4 6.4 8 15 5.6 6.4z"/><path d="M2.4 6.2 5 8.6 3.6 12.4z"/><path d="M13.6 6.2 11 8.6 12.4 12.4z"/>',
   ostinato: '<circle cx="7" cy="8" r="5" fill="none" stroke="currentColor"/><circle cx="10" cy="8" r="4" fill="none" stroke="currentColor"/>',
   quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
-  // Escudo de bits: a wall of little squares.
-  bits: '<path d="M2 3h3.4v3.4H2zM6.3 3h3.4v3.4H6.3zM10.6 3H14v3.4h-3.4zM2 7.3h3.4v3.4H2zM6.3 7.3h3.4v3.4H6.3zM10.6 7.3H14v3.4h-3.4zM4.1 11.6h3.4V15H4.1zM8.5 11.6h3.4V15H8.5z"/>',
+  // Escudo de bits: a dome of little squares on the floor's line.
+  bits: '<path d="M6.5 2.2h3v2.6h-3zM3.4 4.2h2.6v2.6H3.4zM10 4.2h2.6v2.6H10zM1.8 7.6h2.6v2.6H1.8zM11.6 7.6h2.6v2.6h-2.6zM1.2 11.1h2.6v2.6H1.2zM12.2 11.1h2.6v2.6h-2.6z"/><path d="M.8 14.8h14.4" stroke="currentColor" stroke-width="1.2"/>',
   // Volcán (the dúo mayor Vulcano): a cone with fire out of its mouth. Virus (Virus atómico): a swarm, three small Bips round a core.
   volcan: '<path d="M1.5 14.5 6 7.2h4l4.5 7.3z"/><path d="M8 1.2c.3 1.3 1.8 1.9 1.8 3.6a1.8 1.8 0 0 1-3.6 0c0-.9.5-1.5 1-2 0 .7.2 1.1.6 1.3C7.6 3.4 7.6 2.3 8 1.2z"/>',
   virus: '<circle cx="8" cy="8" r="2.2"/><circle cx="8" cy="2.6" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12.7" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="3.3" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.1v1.7M11.4 9.9 9.9 9M4.6 9.9 6.1 9" stroke="currentColor" stroke-width="1.1"/>',
@@ -373,7 +373,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // A cortina of powder in front of them, and Colorista's definitiva awake on whoever wears it.
       ...state && cortinaRounds(state, c) ? [{ id: 'cortina' as const, name: 'Cortina de polvo: el siguiente golpe, a la mitad', mark: '½', timed: false, lasts: `el siguiente golpe, o ${rounds(cortinaRounds(state, c))}` }] : [],
       ...state && c.classId === 'prismatico' && finaleReady(state) ? [{ id: 'definitiva' as const, name: 'Fin de fiesta: despierta', mark: '', timed: false, lasts: 'una vez en este combate' }] : [],
-      ...c.bits && !c.bits.broken && c.bits.hp > 0 ? [{ id: 'bits' as const, name: `Escudo de bits: ${c.bits.hp} PV, para la mitad de cada golpe`, mark: String(c.bits.hp), timed: false, lasts: rounds(Math.max(1, c.bits.until - (state?.round ?? 0) + 1)) }] : [],
+      ...c.bits && !c.bits.broken && c.bits.hp > 0 ? [{ id: 'bits' as const, name: `Escudo de bits: ${c.bits.hp} PV, para cada golpe entero`, mark: String(c.bits.hp), timed: false, lasts: rounds(Math.max(1, c.bits.until - (state?.round ?? 0) + 1)) }] : [],
       ...c.fuse ? [{ id: 'quemado' as const, name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
@@ -612,7 +612,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (pulses.some(p => p.heal)) callbacks.sound('heal');
     for (const p of pulses) {
       // A cure's pulse (Sanación) gives PV back: its number in green, no flare on the body.
-      if (p.heal) { if (p.amount) pop(p.target, `+${p.amount}`, 'heal', `${TIMED[p.status].name} ${roman(p.level)}`); }
+      if (p.heal) { if (p.amount) pop(p.target, `+${p.amount}`, 'heal', `${TIMED[p.status].name} ${roman(p.level)}`); if (p.mended) pop(p.target, `Cúpula +${p.mended}`, 'status', 'Se recompone', 'bits'); }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
@@ -2034,10 +2034,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.swallowed && effect.target) pop(effect.target, '0', 'guard', '¡Se lo traga!');
       else if (effect.dual?.id === 'reserva-de-color' && effect.target) pop(effect.target, 'Mecha encendida', 'status', 'Estalla al actuar o caer', 'empolvado');
       else if (effect.healedAll) effect.healedAll.forEach(h => pop(h.target, `+${h.amount}`, 'heal', label));
-      else if (effect.healed && effect.target) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label);
-      // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) says so below, with no number.
-      else if (effect.regen || (effect.afflicted && !effect.amount)) { /* its status pops below */ }
+      // A cure on someone whole under the bit dome went into the dome: its own pop says so (below).
+      else if (effect.healed && effect.target) { if (effect.amount || !effect.bits?.mended) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label); }
+      // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) or raises the bit dome says so below, with no number.
+      else if (effect.regen || (effect.afflicted && !effect.amount) || (effect.bits?.raised && !effect.dual)) { /* its status pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
+      // The bit dome stopped the whole blow: nothing reached them, the dome's own pop says what it took (below).
+      else if (effect.kind === 'enemy' && effect.bits?.took && !effect.amount && !effect.hits?.some(h => h.amount > 0)) { /* the dome's pop */ }
       else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0), 'crit' in rain[0] && !!rain[0].crit);
       else if (effect.hits) effect.hits.forEach(h => h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
       else if (effect.target && target) {
@@ -2140,7 +2143,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       effect.spread?.forEach(sp => sp.to.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, '¡Contagio!', 'status', sp.statuses.join(' · '), 'virus'); }, 480 + i * 80)));
       // Escudo de bits: raised, what it stopped, and the blow that broke it.
       if (effect.bits?.raised) for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'bits', text: '¡Escudo de bits!', detail: `${effect.bits.raised} PV` });
-      if (effect.bits?.took && effect.target) landed.push({ target: effect.target, id: 'bits', text: effect.bits.broke ? '¡Escudo roto!' : `Escudo −${effect.bits.took}`, detail: effect.bits.broke ? '' : 'Para la mitad' });
+      if (effect.bits?.took && effect.target) landed.push({ target: effect.target, id: 'bits', text: effect.bits.broke ? '¡Cúpula rota!' : `Cúpula −${effect.bits.took}`, detail: effect.bits.broke ? 'El resto pasa' : 'Para el golpe' });
+      if (effect.bits?.mended && effect.target) landed.push({ target: effect.target, id: 'bits', text: `Cúpula +${effect.bits.mended}`, detail: 'Se recompone' });
       // Vulcano: the volcano under each of them.
       if (effect.dual?.id === 'vulcano') effect.hits?.forEach(h => { if (state!.foes.find(f => f.id === h.target)?.timed?.volcan) landed.push({ target: h.target, id: 'volcan', text: '¡Volcán!', detail: '20 s' }); });
       // A passive that did something: its name on a plate over whoever has it, in their ánima's colour.

@@ -10,18 +10,21 @@
  * grid as it is, a ball and a crystal (a double pyramid) pull every shell of the grid radially onto
  * their own surface, a ring bends x round a circle and turns y × z into the tube's section, a column
  * does the same round its height, a shield cuts an escutcheon out of the grid (flat top, sides that
- * curve in to a point) and bends it out like a heater shield, and a sphere wraps x round it and runs y
- * from its bottom to its top: a hollow shell. A ring and a sphere close round x. Every map is continuous and keeps neighbours next to each other, so
+ * curve in to a point) and bends it out like a heater shield, a sphere wraps x round it and runs y
+ * from its bottom to its top: a hollow shell, and a dome is the sphere's upper half, y from its rim on
+ * the floor to its top. A ring, a sphere and a dome close round x. Every map is continuous and keeps neighbours next to each other, so
  * a lattice blends from one shape to another (`morph`) without tearing: the structure is kept.
  *
  * The maps exist twice, kept side by side here: TypeScript (tests, the CPU's own sums) and WGSL
  * (WebGPU), used by the simulation pass in src/fight-particles.ts.
  */
 
-export type LatticeShape = 'box' | 'ball' | 'crystal' | 'ring' | 'column' | 'shield' | 'sphere';
-export const LATTICE_SHAPES: Record<LatticeShape, number> = { box: 0, ball: 1, crystal: 2, ring: 3, column: 4, shield: 5, sphere: 6 };
+export type LatticeShape = 'box' | 'ball' | 'crystal' | 'ring' | 'column' | 'shield' | 'sphere' | 'dome';
+export const LATTICE_SHAPES: Record<LatticeShape, number> = { box: 0, ball: 1, crystal: 2, ring: 3, column: 4, shield: 5, sphere: 6, dome: 7 };
 /** Shapes whose first and last cells along x are neighbours (round a circle): no seam, a row is a loop. */
-export const closedShape = (shape: LatticeShape) => shape === 'ring' || shape === 'sphere';
+export const closedShape = (shape: LatticeShape) => shape === 'ring' || shape === 'sphere' || shape === 'dome';
+/** How far from the top a shell's rows reach (as a share of a half turn): a sphere to its bottom, a dome to its rim. */
+const reachOf = (shape: LatticeShape) => shape === 'dome' ? .5 : 1;
 /** Where the dissolve starts: anywhere, at the top, at the bottom, on its outside, or where it was last pushed. */
 export type LatticeDissolve = 'random' | 'top' | 'bottom' | 'outside' | 'push';
 export const LATTICE_DISSOLVES: Record<LatticeDissolve, number> = { random: 0, top: 1, bottom: 2, outside: 3, push: 4 };
@@ -69,7 +72,7 @@ const heater = (y: number) => { const t = Math.min(1, Math.max(0, (.15 - y) / 1.
 /**
  * Where a cell (−1…1) sits in the lattice's own space for a shape of half-size `size`: a ring's is its
  * radius, tube half-height and tube half-width; a shield's its half-width, half-height and how far it
- * bends out (towards +z); a sphere's its radius round, its radius up and half its thickness.
+ * bends out (towards +z); a sphere's (and a dome's) its radius round, its radius up and half its thickness.
  */
 export function latticeShape(shape: LatticeShape, c: Vec3Like, size: Vec3Like): Vec3Like {
   switch (shape) {
@@ -82,8 +85,8 @@ export function latticeShape(shape: LatticeShape, c: Vec3Like, size: Vec3Like): 
     }
     case 'column': { const [a, b] = disc(c.x, c.z); return { x: a * size.x, y: c.y * size.y, z: b * size.z }; }
     case 'shield': { const x = c.x * heater(c.y); return { x: x * size.x, y: c.y * size.y, z: size.z * (1 - x * x) + c.z * size.z * .5 }; }
-    case 'sphere': {
-      const phi = (c.x + 1) * Math.PI, theta = (1 - c.y) * Math.PI / 2, k = 1 + c.z * size.z / Math.max(size.x, size.y, 1e-4);
+    case 'sphere': case 'dome': {
+      const phi = (c.x + 1) * Math.PI, theta = (1 - c.y) * Math.PI / 2 * reachOf(shape), k = 1 + c.z * size.z / Math.max(size.x, size.y, 1e-4);
       return { x: Math.sin(theta) * Math.cos(phi) * size.x * k, y: Math.cos(theta) * size.y * k, z: Math.sin(theta) * Math.sin(phi) * size.x * k };
     }
   }
@@ -106,11 +109,11 @@ export function latticeUnshape(shape: LatticeShape, p: Vec3Like, size: Vec3Like)
       const w = Math.max(heater(u.y), 1e-3), cx = u.x / w, x = cx * w;
       return { x: cx, y: u.y, z: (p.z - size.z * (1 - x * x)) / Math.max(size.z * .5, 1e-4) };
     }
-    case 'sphere': {
+    case 'sphere': case 'dome': {
       const v = { x: u.x, y: u.y, z: p.z / Math.max(size.x, 1e-4) }, rho = Math.max(Math.hypot(v.x, v.y, v.z), 1e-5);
       let phi = Math.atan2(v.z, v.x); if (phi < 0) phi += 2 * Math.PI;
       const theta = Math.acos(Math.min(1, Math.max(-1, v.y / rho)));
-      return { x: phi / Math.PI - 1, y: 1 - theta / (Math.PI / 2), z: (rho - 1) * Math.max(size.x, size.y) / Math.max(size.z, 1e-4) };
+      return { x: phi / Math.PI - 1, y: 1 - theta / (Math.PI / 2 * reachOf(shape)), z: (rho - 1) * Math.max(size.x, size.y) / Math.max(size.z, 1e-4) };
     }
   }
 }
@@ -129,8 +132,8 @@ export function latticeNeighbour(grid: readonly [number, number, number], offset
 function steps(shape: LatticeShape, grid: readonly [number, number, number], size: Vec3Like) {
   const [nx, ny, nz] = grid;
   // A shield's bend lengthens its steps across, and its sides closing in on the point its lowest steps up.
-  const along = shape === 'ring' || shape === 'sphere' ? 2 * Math.PI * (size.x + size.z) / nx : shape === 'shield' ? Math.hypot(2 * size.x / nx, 4 * size.z / nx) : 2 * size.x / nx;
-  const up = shape === 'sphere' ? Math.PI * Math.max(size.x, size.y) / ny
+  const along = closedShape(shape) ? 2 * Math.PI * (size.x + size.z) / nx : shape === 'shield' ? Math.hypot(2 * size.x / nx, 4 * size.z / nx) : 2 * size.x / nx;
+  const up = shape === 'sphere' || shape === 'dome' ? Math.PI * reachOf(shape) * Math.max(size.x, size.y) / ny
     : shape === 'shield' ? Math.hypot(2 * size.y / ny, size.x * (heater(-1 + 3 / ny) - heater(-1 + 1 / ny))) : 2 * size.y / ny;
   const through = shape === 'shield' ? size.z / nz : 2 * size.z / nz;
   return [nx > 1 ? along : 0, ny > 1 ? up : 0, nz > 1 ? through : 0].filter(v => v > 0);
@@ -187,8 +190,8 @@ fn shapeMap(shape: f32, c: vec3f, s: vec3f) -> vec3f {
     let x = c.x * heater(c.y);
     return vec3f(x * s.x, c.y * s.y, s.z * (1.0 - x * x) + c.z * s.z * 0.5);
   }
-  // A sphere's shell: x round it, y from its bottom to its top, z through its thickness.
-  let phi = (c.x + 1.0) * 3.14159265; let theta = (1.0 - c.y) * 1.5707963;
+  // A sphere's shell: x round it, y from its bottom to its top, z through its thickness; a dome only its upper half.
+  let phi = (c.x + 1.0) * 3.14159265; let theta = (1.0 - c.y) * select(1.5707963, 0.78539816, shape > 6.5);
   let k = 1.0 + c.z * s.z / max(max(s.x, s.y), 1e-4);
   return vec3f(sin(theta) * cos(phi) * s.x, cos(theta) * s.y, sin(theta) * sin(phi) * s.x) * k;
 }
@@ -232,7 +235,7 @@ fn cellNear(l: i32, w: vec3f) -> i32 {
     let rho = max(length(v), 1e-5);
     var phi = atan2(v.z, v.x); if (phi < 0.0) { phi += 6.2831853; }
     let theta = acos(clamp(v.y / rho, -1.0, 1.0));
-    c = vec3f(phi / 3.14159265 - 1.0, 1.0 - theta / 1.5707963, (rho - 1.0) * max(s.x, s.y) / max(s.z, 1e-4));
+    c = vec3f(phi / 3.14159265 - 1.0, 1.0 - theta / select(1.5707963, 0.78539816, shape > 6.5), (rho - 1.0) * max(s.x, s.y) / max(s.z, 1e-4));
   }
   let n = vec3f(g.z, g.w, h.x);
   let f = clamp((c + 1.0) * 0.5 * n - 0.5, vec3f(0.0), n - 1.0);

@@ -129,7 +129,8 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
 | Line | Skill | Ecos | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mente | **Virus atómico** | 2 | 2 | 14 magic | `Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.` | Built |
-| Taller | **Escudo de bits** | 2 | 2 | wall of 40 PV | `Protege a todo el equipo durante 2 rondas. Un escudo de bits para la mitad del daño de cada golpe hasta que se rompe.` | Built |
+| Taller | **Escudo de bits** | 2 | 2 | dome of 40 PV | `Protege a todo el equipo durante 2 rondas. Una cúpula de bits detiene los golpes hasta que se rompe. Lo que una cura no puede dar a un aliado bajo la cúpula, la repara.` | Built |
+| Taller | **Redundancia** (passive) | 2 | — | cap ×3 | `Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.` | Built |
 
 - **Virus atómico** (Aitor: *se ve como un enjambre de Bips; los estados alterados que recibe se
   propagan a los enemigos*): a swarm of tiny Bips weaves from Bip into a foe and keeps buzzing round
@@ -138,13 +139,26 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   standing, at its level and with its time, carried by a stream of tiny Bips: *¡Contagio!* over each.
   What it carried before stays its own; the virus itself never spreads; Reinicio starts it over.
 - **Escudo de bits** (Aitor: *usa las animaciones de escudo con partículas; los ataques se dirigen
-  ahí y nos protegen un porcentaje mientras dure o se rompa*): a wall of Bip's bits in front of the
-  party, the GPU lattice the effects lab's shields are made of (`effects.bitWall`), turned half to the
-  camera so it reads from the fight's side. It has **40 PV** of its own; **every blow on the party goes
-  into it first and it stops half of it** out of those PV, until they run out (it shatters) or two
-  rounds pass (it melts back into nanites). Pulses go past it. On the party's plates, its icon with
-  the PV it has left; each blow says *Escudo −N*, the last *¡Escudo roto!* (`BITS`, `bitsOf`).
-  It answers the old question of Bip as a shield.
+  ahí y nos protegen un porcentaje mientras dure o se rompa*; 2026-11-21: *más como un escudo
+  redondeado, una semiesfera, y que los ataques la golpeen a ella; que tenga una vida y lo pare entero,
+  lo sobrante lo rompe y entra*): a dome of Bip's bits over the party, its rim on the floor round
+  everyone standing (`effects.bitDome`, a GPU lattice of the `dome` shape, src/lattice.ts). It has
+  **40 PV** of its own; **every blow on the party goes into it first and it stops it whole** out of
+  those PV; the blow that empties them breaks it and what it could not stop gets through. Otherwise
+  it lasts two rounds and melts back into nanites. Pulses go past it. A foe's blow it takes whole
+  lands on its shell, where the way from the foe to whoever it aimed at meets it: the foe comes up to
+  the dome, not through it, and the dome dents and sparks there, with nothing on the ally. On the
+  party's plates, its icon (a dome of squares) with the PV it has left; each blow says *Cúpula −N*,
+  the last *¡Cúpula rota!* (`BITS`, `bitsOf`). It answers the old question of Bip as a shield.
+- **Patching it** (Aitor 2026-11-21, *idea 1*): a cure on someone under the dome gives them what they
+  have room for and the rest goes into the dome, up to its PV (`changeHealth`): a whole ally under a
+  dome with room is a target of any cure, so curing someone whole patches it (Rayo de sanación's
+  pulses too). *Cúpula +N* over them, and light runs up the dome as its dents close. It asks a choice
+  under a big blow on its way: heal the one who is hurt or keep the dome standing.
+- **Redundancia** (Aitor 2026-11-21: *con una pasiva en el árbol permite sobrecurarlo por x3*): the
+  Taller line's last node, after Escudo de bits (2 ecos). With it bought, a dome raised by the party
+  can be patched up to three times its PV (120 for Escudo de bits, 60 for what Sobrecalentamiento
+  leaves; `BITS.redundancia`, `cap`). No fight-sim target plays the shield yet.
 
 **Duals of the shield** (Aitor: *otro dual que hace que el escudo explote al combinarlo con Foc
 Binari, etc.*). *Cortafuegos* is taken (the Sobremesa's foes' shield), so the fire one is:
@@ -155,8 +169,8 @@ Binari, etc.*). *Cortafuegos* is taken (the Sobremesa's foes' shield), so the fi
 | *Jaula de Faraday* | Descarga + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo recibe una descarga y puede quedar en shock.` | Idea |
 | *Muro de agua* | Vasos comunicantes + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo queda mojado.` | Idea |
 
-Sobrecalentamiento: Bip raises the wall, Gerard's binary fire runs into it, it glows and goes off over
-the foes (36 of fire on each, Quemado II), and what is left (20 PV) falls back in front of the party.
+Sobrecalentamiento: Bip raises the dome, Gerard's binary fire runs into it, it glows and goes off over
+the foes (36 of fire on each, Quemado II), and what is left (20 PV) closes again over the party.
 The two ideas make the wall a trap of the element that meets it; with Shock and Mojado they feed
 Matemágico's reactions. Not built: to choose.
 

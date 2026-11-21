@@ -120,9 +120,9 @@ export const SKILLS = [
   // Virus atómico (Mente): a swarm of tiny Bips gets into a foe (`infect`: the timed status Virus);
   // while it lasts, every status that lands on it lands on every other foe too (`spread`).
   { id: 'virus', name: 'Virus atómico', cost: 2, side: 'foes', power: 14, kind: 'magic', infect: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.', class: 'tecnopata' },
-  // Escudo de bits (Taller): Bip's bits stand as a wall in front of the party (`bits`: its PV, BITS);
-  // every blow on the party goes into it first, and it stops a share of it until it breaks or wears off.
-  { id: 'escudo-de-bits', name: 'Escudo de bits', cost: 2, side: 'party', power: 40, kind: 'guard', bits: true, node: true, description: 'Protege a todo el equipo durante 2 rondas. Un escudo de bits para la mitad del daño de cada golpe hasta que se rompe.', class: 'tecnopata' },
+  // Escudo de bits (Taller): Bip's bits close as a dome over the party (`bits`: its PV, BITS); every blow
+  // on the party goes into it first and it stops it whole until it breaks or wears off; cures patch it.
+  { id: 'escudo-de-bits', name: 'Escudo de bits', cost: 2, side: 'party', power: 40, kind: 'guard', bits: true, node: true, description: 'Protege a todo el equipo durante 2 rondas. Una cúpula de bits detiene los golpes hasta que se rompe. Lo que una cura no puede dar a un aliado bajo la cúpula, la repara.', class: 'tecnopata' },
   // Dadista's skill is a die thrown (docs/animas/dadaista/): its maná is dice, each with a face in
   // view that is a move of its own. Tirar dado (`die`) spends the die chosen and does what its face
   // says, so what it does depends on the die: it skips the fixed shape.
@@ -176,7 +176,7 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'olor-a-sangre' | 'otra-vez' | 'remolino';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
@@ -186,6 +186,8 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   combustion: { name: 'Combustión', anima: 'matemagico', description: 'El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.' },
   telemetria: { name: 'Telemetría', anima: 'tecnopata' },
   nanitos: { name: 'Nanitos', anima: 'tecnopata' },
+  // The Taller line's end: the dome a cure patches can be filled past its PV, up to BITS.redundancia times (`raiseBits`).
+  redundancia: { name: 'Redundancia', anima: 'tecnopata' },
   // Not a node of the jar: it comes with a level of its ánima (`level`, SCENT) and reaches the whole party.
   // Dadista's node at the jar: Agitar a second time in a fight (`shakesLeft`).
   'otra-vez': { name: 'Otra vez', anima: 'dadaista' },
@@ -748,14 +750,18 @@ export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'c
  */
 export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5 };
 /**
- * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a wall of Bip's bits in front of the
- * party. Every blow on one of them goes into it first: it stops `share` of it, out of its own PV, until
- * they run out (it breaks) or the round `until` is over. Pulses go past it. Tunable (`just fight-sim`).
+ * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a dome of Bip's bits over the party.
+ * Every blow on one of them goes into it first: it stops `share` of it (all of it), out of its own PV,
+ * until they run out (it breaks, and what it could not stop gets through) or the round `until` is
+ * over. Pulses go past it. A cure on someone under it that they have no room for patches it, up to
+ * `cap` (its PV; Redundancia, `redundancia` times them). Tunable (`just fight-sim`).
  */
-export const BITS = { share: .5, rounds: 2 };
-export interface BitShield { hp: number; max: number; until: number; share: number; broken?: boolean; hot?: boolean }
+export const BITS = { share: 1, rounds: 2, redundancia: 3 };
+export interface BitShield { hp: number; max: number; cap: number; until: number; share: number; broken?: boolean; hot?: boolean }
 /** The shield standing in front of the party, if any. */
 export const bitsOf = (state: BattleState) => state.allies.find(a => a.bits && a.bits.hp > 0 && !a.bits.broken)?.bits;
+/** Under a bit dome a cure can still patch (`changeHealth`). */
+const patchable = (c: Combatant) => !!c.bits && !c.bits.broken && c.bits.hp > 0 && c.bits.hp < c.bits.cap;
 /** How high fire climbs by itself: Quemado III. */
 export const FIRE_TOP = 3;
 /**
@@ -845,7 +851,7 @@ export interface Timed {
   until?: number;
 }
 /** What one pulse of a timed status did. */
-export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean }
+export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean; mended?: number }
 /** Level in roman numerals, as the fight shows it ("Quemado II"). */
 export const roman = (level: number) => ['I', 'II', 'III', 'IV', 'V'][level - 1] ?? String(level);
 /** How much one pulse of `id` at `level` takes from someone with `maxHp` PV. */
@@ -1427,7 +1433,7 @@ export interface BattleEffect {
   /** Reinicio: the clocks it started over on each foe. */
   restarted?: { target: string; statuses: TimedId[] }[];
   /** Escudo de bits raised (its PV), or what it took in this action and whether it broke. */
-  bits?: { raised?: number; took?: number; broke?: boolean };
+  bits?: { raised?: number; took?: number; broke?: boolean; mended?: number };
   /** Virus atómico: what spread from an infected foe to the others in this action. */
   spread?: { from: string; to: string[]; statuses: string[] }[];
   /** A cure on the whole party (Integral): what each one got back. */
@@ -1552,6 +1558,11 @@ function changeHealth(target: Combatant, delta: number, pulse = false) {
     wallTook.took += stopped;
     if (wall.hp <= 0) { wall.broken = true; wallTook.broke = true; }
   }
+  // A cure on someone under it: what they have no room for patches it, up to its cap.
+  if (wall && !wall.broken && wall.hp > 0 && delta > 0 && target.hp > 0) {
+    const mended = Math.min(Math.max(0, delta - (target.maxHp - target.hp)), wall.cap - wall.hp);
+    if (mended > 0) { wall.hp += mended; wallTook.mended += mended; }
+  }
   const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
   target.hp = result.resource.current;
   // Whoever falls loses the Racha.
@@ -1559,7 +1570,7 @@ function changeHealth(target: Combatant, delta: number, pulse = false) {
   return Math.abs(result.amount);
 }
 /** What the bit shield took during the action being resolved (`changeHealth`), for its effect (`wallSay`). */
-const wallTook = { took: 0, broke: false };
+const wallTook = { took: 0, broke: false, mended: 0 };
 /** The allies whose cortina a blow broke during the action being resolved (`changeHealth`), for its effect (`cortinaSay`). */
 const screenTook: string[] = [];
 /** A cortina stands in front of `ally`; one already there starts over. */
@@ -1580,11 +1591,19 @@ function cortinaSay(state: BattleState, effect: BattleEffect, breaker?: Combatan
     if (said) state.message += ` La cortina revienta sobre ${breaker.name}: ¡${TIMED.empolvado.name}!`;
   } else if (said) state.message += ' La cortina se rompe.';
 }
-/** Hands what the shield took in this action to `effect`, and clears it. */
-function wallSay(effect: BattleEffect) {
+/** Hands what the shield took (and what a cure patched) in this action to `effect`, says it, and clears it. */
+function wallSay(state: BattleState, effect: BattleEffect) {
   if (wallTook.took || wallTook.broke) effect.bits = { ...effect.bits, took: (effect.bits?.took ?? 0) + wallTook.took, ...wallTook.broke ? { broke: true } : {} };
-  wallTook.took = 0; wallTook.broke = false;
+  if (wallTook.mended) effect.bits = { ...effect.bits, mended: (effect.bits?.mended ?? 0) + wallTook.mended };
+  if (state.phase !== 'lost') {
+    if (wallTook.broke) state.message += ' ¡La cúpula de bits se rompe!';
+    else if (wallTook.took && !effect.amount && !effect.hits?.some(h => h.amount > 0)) state.message += ' La cúpula de bits lo para.';
+    if (wallTook.mended) state.message += ` La cúpula de bits se recompone: +${wallTook.mended} PV.`;
+  }
+  wallTook.took = 0; wallTook.broke = false; wallTook.mended = 0;
 }
+/** What a cure's pulse patched on the shield, taken (`runClock`). */
+const wallMended = () => { const n = wallTook.mended; wallTook.mended = 0; return n; };
 /** Damage on a foe, from anything (a blow, a tick, a pulse). */
 function hurt(state: BattleState, c: Combatant, amount: number) {
   // La Voz is all voice while she sings: nothing reaches her then, not even a fire already on her.
@@ -2041,8 +2060,9 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
   if (state.unbound && (ability.kind === 'heal' || ability.kind === 'boost')) return state.allies.filter(a => a.hp > 0);
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);
-  // A cure only reaches someone hurt and still standing (or carrying a status it takes away): it never gets anyone back up.
-  if (ability.kind === 'heal') return state.allies.filter(a => a.hp > 0 && (a.hp < a.maxHp || ('cleanse' in ability && cleansable(a).length > 0)));
+  // A cure only reaches someone hurt and still standing (or carrying a status it takes away, or under a bit
+  // dome it can patch): it never gets anyone back up.
+  if (ability.kind === 'heal') return state.allies.filter(a => a.hp > 0 && (a.hp < a.maxHp || ('cleanse' in ability && cleansable(a).length > 0) || patchable(a)));
   // A cortina can always be raised: again, it starts over, and so does the Defensa it comes with.
   if (ability.kind === 'boost' && 'screen' in ability) return state.allies.filter(a => a.hp > 0);
   // A boost already running has nothing to add until it wears off.
@@ -2378,9 +2398,10 @@ function bank(state: BattleState, actor: Combatant, c: Combatant, effect: Battle
   if (!passive(state, actor, 'rescoldo') || !c.timed?.quemado) return;
   c.timed.quemado.left = RESCOLDO; note(effect, 'rescoldo', actor);
 }
-/** Escudo de bits: a wall of `hp` in front of everyone standing in the party, for BITS.rounds. */
+/** Escudo de bits: a dome of `hp` over everyone standing in the party, for BITS.rounds; Redundancia lets cures fill it past them. */
 function raiseBits(state: BattleState, hp: number) {
-  const wall: BitShield = { hp, max: hp, until: state.round + BITS.rounds - 1, share: BITS.share };
+  const spare = state.allies.some(a => a.hp > 0 && passive(state, a, 'redundancia'));
+  const wall: BitShield = { hp, max: hp, cap: hp * (spare ? BITS.redundancia : 1), until: state.round + BITS.rounds - 1, share: BITS.share };
   for (const ally of state.allies) if (ally.hp > 0) ally.bits = wall; else delete ally.bits;
 }
 /** What a foe carries now, as Virus atómico remembers it. */
@@ -2523,7 +2544,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = actor.id;
     raiseBits(state, ability.power);
     effect.bits = { raised: ability.power };
-    state.message = `${actor.name} usa ${ability.name}. Bip levanta un muro de bits delante del equipo: ${ability.power} PV durante ${BITS.rounds} rondas.`;
+    state.message = `${actor.name} usa ${ability.name}. Bip levanta una cúpula de bits sobre el equipo: ${ability.power} PV durante ${BITS.rounds} rondas.`;
   } else if (party && ability!.kind === 'boost') {
     if (paid === undefined) spendSecondary(actor, ability!.cost);
     effect.skill = skill; effect.target = actor.id;
@@ -2933,7 +2954,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
   if (effect.converged) for (const f of state.foes) if (f.kind === 'no-converge' && f.diverged && f.hp > 0) soak(f);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
-  spread(state, effect); wallSay(effect);
+  spread(state, effect); wallSay(state, effect);
   amplify(effect); checkEye(state, effect);
   if (fallen(state)) return effect;
   settle(state);
@@ -3097,7 +3118,7 @@ export function actDual(state: BattleState, id: DualId, targetId?: string, die?:
     effect.amount = effect.hits[0]?.amount;
     state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
     if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
-    if (d.bits) { raiseBits(state, d.bits); effect.bits = { raised: d.bits }; state.message += ' Lo que queda del escudo cae delante del equipo.'; }
+    if (d.bits) { raiseBits(state, d.bits); effect.bits = { raised: d.bits }; state.message += ' Lo que queda de la cúpula se cierra sobre el equipo.'; }
     spread(state, effect); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
@@ -3323,7 +3344,7 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   screenTook.length = 0;
   const effect = enemyMove(state, id, targetId);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
-  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(effect); spread(state, effect); } else { wallTook.took = 0; screenTook.length = 0; }
+  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(state, effect); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; screenTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);
@@ -4983,7 +5004,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       dt -= on.next; on.left -= on.next; on.next = TIMED[id].every;
       const amount = pulseDamage(id, on.level, c.maxHp);
       // A cure's pulse (Sanación) gives PV back, never past the most.
-      if (TIMED[id].heal) pulses.push({ target: c.id, status: id, level: on.level, amount: changeHealth(c, amount), heal: true });
+      if (TIMED[id].heal) { const healed = changeHealth(c, amount), mended = wallMended(); pulses.push({ target: c.id, status: id, level: on.level, amount: healed, heal: true, ...mended ? { mended } : {} }); }
       // A fire on La Voz burns on, but while she sings it takes nothing: no pulse to show.
       else if (!(foeSide && singing(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount, true) });
       // Vulcano's volcano: each beat raises the fire on whoever it stands under (a wet one steams instead).

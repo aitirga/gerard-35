@@ -1,0 +1,113 @@
+{
+  "title": "Escudo de bits: la cúpula, parchearla y Redundancia",
+  "description": "docs/animas/tecnopata/README.md § Virus atómico and Escudo de bits. In the fight tester against three sturdy dogs, one player leading both, with Cardioide and Redundancia bought. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Acardioide%22%2C%22tecnopata%3Arayo-encogedor%22%2C%22tecnopata%3Ananitos%22%2C%22tecnopata%3Aescudo-de-bits%22%2C%22tecnopata%3Aredundancia%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"escudo-de-bits\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "cupula",
+      "seconds": 6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Escudo de bits: Bip throws its bits up over the party and they close as a dome; the dogs come up to it, not through it, and their blows land on its shell: Cúpula −N, nothing on Gerard or Aitor"
+    },
+    {
+      "shot": "cupula-en-pie",
+      "delay": 200,
+      "caption": "The dome standing over both, its icon with the PV it has left on their plates"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = a.maxHp; }); })"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"cardioide\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "parchear",
+      "seconds": 2.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Cardioide on Gerard, who is whole: the cure goes into the dome (Cúpula +N) and light runs up it as its dents close; with Redundancia it can go past its 40 PV"
+    },
+    {
+      "shot": "cupula-reparada",
+      "delay": 300,
+      "caption": "The dome patched: its PV on the plates, over 40 with Redundancia"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const w = s.allies.find(a => a.bits)?.bits; if (w) w.hp = 4; })"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "cupula-rota",
+      "seconds": 4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "A dome with 4 PV left: the first dog's blow breaks it (¡Cúpula rota!), it gives way in chips from inside, and what it could not stop reaches whoever it was aimed at"
+    },
+    {
+      "shot": "tras-romperse",
+      "delay": 300,
+      "caption": "After it broke: no dome, its icon gone from the plates"
+    }
+  ]
+}
