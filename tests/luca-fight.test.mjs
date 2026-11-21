@@ -26,7 +26,7 @@ test('the salon\'s fights are fears\' fights, each with the foes it says, under 
   }
 });
 
-test('the moths go for whoever struck with an element, and one more comes in while two stand', () => {
+test('the moths go for whoever struck with an element, and one more comes in while two stand and there is room for a third', () => {
   const s = fight('luca-recepcion');
   as(s, 'aitor');
   act(s, 'attack', s.foes[0].id);
@@ -35,7 +35,12 @@ test('the moths go for whoever struck with an element, and one more comes in whi
   assert.equal(s.flash, 'gerard');
   const hit = turn(s, s.foes[2].id, 'aitor');
   assert.equal(hit.target, 'gerard');
+  // Three is as many as stand at once (`polillasMost`): with the three of the start up, nobody comes in.
   const before = s.foes.length;
+  round(s);
+  assert.equal(s.foes.length, before);
+  // One down and two standing: the light draws another.
+  s.foes[0].hp = 0;
   round(s);
   assert.equal(s.foes.length, before + 1);
   assert.ok(takeNews(s).some(n => n.summoned?.startsWith('polilla')));

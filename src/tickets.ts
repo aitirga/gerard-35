@@ -22,19 +22,27 @@ export function lockedStations(has: (flag: ReturnType<typeof ticketFlag>) => boo
 }
 
 /**
- * What the server made of a memory: the station it points to, and whether its person and place are
- * right; a faraway station (Alegia) also asks for a moment with them (`moment`, true elsewhere).
+ * How the tablet lights its answer (the server says it with the verdict): green, the ticket prints and
+ * the station opens; yellow, close (its person or its place is right); red, nothing of any station.
  */
-export interface Verdict { station: string | null; person: boolean; place: boolean; moment?: boolean }
+export type TicketColour = 'green' | 'yellow' | 'red';
+/** What the server made of a memory: the station it points to, whether its person and place are right, and its colour. */
+export interface Verdict { station: string | null; person: boolean; place: boolean; colour?: TicketColour }
 /** A ticket printed: the station, or nothing yet. */
-export const opens = (verdict: Verdict) => verdict.station && verdict.person && verdict.place && verdict.moment !== false && isTicketStation(verdict.station) ? verdict.station : undefined;
+export const opens = (verdict: Verdict) => verdict.station && verdict.person && verdict.place && isTicketStation(verdict.station) ? verdict.station : undefined;
 
 /** Asks the server; throws when it cannot be reached, so the tablet can say it reads nothing. */
 export async function remember(text: string): Promise<Verdict> {
   const response = await fetch('/api/transit/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
   if (!response.ok) throw new Error(`ticket ${response.status}`);
-  const { station, person, place, moment } = await response.json() as Verdict;
-  return { station, person, place, ...moment === false ? { moment } : {} };
+  const { station, person, place, colour } = await response.json() as Verdict;
+  return { station, person, place, colour };
+}
+
+/** The answer's colour: the server's, or worked out the same way; none when nothing could be read. */
+export function colourOf(verdict: Verdict | undefined): TicketColour | undefined {
+  if (!verdict) return undefined;
+  return verdict.colour ?? (opens(verdict) ? 'green' : verdict.person || verdict.place ? 'yellow' : 'red');
 }
 
 /**
@@ -45,8 +53,6 @@ export function answer(verdict: Verdict | undefined, already = false): string {
   if (!verdict) return 'La pantalla parpadea. Ahora mismo no lee nada.';
   const station = opens(verdict);
   if (station) return already ? `Ese recuerdo ya es un billete: ${STATIONS[station].name}.` : `Billete impreso: ${STATIONS[station].name}.`;
-  // Someone and somewhere, but a faraway place asks for more of that day.
-  if (verdict.person && verdict.place && verdict.moment === false) return 'Tan lejos no llega un recuerdo así. Tiene que estar más vivo.';
   if (verdict.person) return 'Te acuerdas de quién. No de dónde.';
   if (verdict.place) return 'Un sitio sin nadie no lleva a ningún sitio.';
   return 'El billete sale en blanco.';

@@ -3,7 +3,7 @@
  * Pure: no DOM, no engine. `main.ts` runs the returned effects; `game.ts` reads the derived
  * state (NPCs, companion, extra interactions). Flags are what the server saves.
  */
-import type { Dialogue } from './dialogue';
+import type { Dialogue, DialogueLine } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.ts';
 import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
@@ -51,18 +51,18 @@ export const STORY_FLAGS = [
   'prismatico-2', 'prismatico-3', 'prismatico-4', 'prismatico-5', 'prismatico-6', 'prismatico-7',
   'sincopante-2', 'sincopante-3', 'sincopante-4', 'sincopante-5', 'sincopante-6', 'sincopante-7',
   'freatica-2', 'freatica-3', 'freatica-4', 'freatica-5', 'freatica-6', 'freatica-7',
-  // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
-  // that went with Gerard and Aitor (docs/quests/nuria.md).
-  'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
+  // Nuria's mission: her message heard in a rehearsal, out of the R4 at Cardedeu, Uri found and
+  // himself again, and the two lights that went with Gerard and Aitor (docs/quests/nuria.md).
+  'clue-nuria', 'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',
   // The university friends' mission (docs/quests/universidad.md): Aitor's word about the beach, the
   // talk on the sand, into the campsite through the spiral, the pool's padlock opened with the letters
   // of the maze's three words, Las parcelas solved by the pool (the merendero's door), La Sobremesa beaten,
   // their ánima, and the five lights that went with Gerard and Aitor (one a couple, one each alone).
   'clue-uni', 'barceloneta-uni', 'camping', 'candado', 'parcelas', 'sobremesa', 'anima-universidad',
   'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan',
-  // Marta's mission (docs/quests/marta.md): spoken to in Alegia, into Las cuerdas through the note
+  // Marta's mission (docs/quests/marta.md): her voice message from Alegia heard in a rehearsal, spoken to in Alegia, into Las cuerdas through the note
   // the piano left in the air, La Voz beaten, her ánima and the light that went with them.
-  'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
+  'clue-marta', 'alegia-marta', 'cuerdas', 'voz', 'anima-marta', 'luz-marta',
   // Emilie's mission (docs/quests/emilie.md): spoken to in her flooded flat in Poble Sec, into her model
   // through her laptop, El que no converge beaten, her ánima and the light that went with them.
   'clue-emilie', 'poble-sec-emilie', 'modelo', 'converge', 'anima-emilie', 'luz-emilie',
@@ -71,8 +71,9 @@ export const STORY_FLAGS = [
   'clue-luca-foto', 'clue-sagrada', 'clue-sagrada-cartel', 'sagrada-luca', 'peluqueria', 'fran', 'anima-luca', 'luz-luca',
   // Memory tickets (src/tickets.ts): a station opens once Gerard writes its person in its place.
   'ticket-cardedeu', 'ticket-barceloneta', 'ticket-sagrada-familia', 'ticket-placa-de-sants', 'ticket-poble-sec', 'ticket-el-carmel', 'ticket-alegia', 'ticket-espanya',
-  // Bernat (docs/quests/bernat.md): met at El Nucli, the confidant who recognises her castle.
-  'bernat-nucli',
+  // Bernat (docs/quests/bernat.md): his photo from El Nucli heard of in a rehearsal, met there, the
+  // confidant who recognises her castle.
+  'clue-bernat', 'bernat-nucli',
   // The castle (docs/castle.md, docs/castle-bosses.md): the guards before the curtain beaten (its stair
   // open for good onto the first floor), Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, Bernat's call, his game told and the box opened, the portal
@@ -236,7 +237,7 @@ export type StoryEffect =
   /** What the choice does, told over black before the Monday after. */
   | { kind: 'epilogue'; choice: EndingChoice; text: string }
   /** After the Monday of either ending: who made it and who is in it, and the false lead closed (src/credits.ts). */
-  | { kind: 'credits' }
+  | { kind: 'credits'; /** The ending chosen: its own closing card goes last. */ choice?: EndingChoice }
   /** Bernat's box opened: its puzzle with the flat's lamps (src/portal-ui.ts). */
   | { kind: 'nucli-box' }
   /** The fourth wall: Gerard, Aitor and whoever is with them look at the camera a while (docs/quests/bernat.md). */
@@ -370,6 +371,18 @@ const PALACE_LOOKS: { id: string; cell: Cell; label: string; dialogue: Dialogue 
   { id: 'look-curtain', cell: { x: 16, z: 7 }, label: 'Tocar la cortina de chicle', dialogue: LINES.curtain },
 ];
 /** The wrapper room's back door into the hall: stuck with gum until the minion falls. */
+/**
+ * What Aitor lets slip in a rehearsal's pause (docs/quests/coro.md § Ensayar), in this order: someone
+ * not reached yet, said in passing and never as a direction. `reached`: their station remembered or
+ * their place already walked into, so the remark has nothing left to give.
+ */
+const CHOIR_REMARKS: { flag: StoryFlag; reached: readonly StoryFlag[]; remark: Dialogue }[] = [
+  { flag: 'clue-emilie', reached: ['ticket-poble-sec', 'poble-sec-emilie'], remark: LINES_EMILIE.ensayo },
+  { flag: 'clue-nuria', reached: ['ticket-cardedeu', 'cardedeu'], remark: LINES_NURIA.ensayo },
+  { flag: 'clue-marta', reached: ['ticket-alegia', 'alegia-marta'], remark: LINES_MARTA.ensayo },
+  { flag: 'clue-bernat', reached: ['ticket-placa-de-sants', 'bernat-nucli', 'bernat-llama'], remark: LINES_BERNAT.ensayo },
+];
+
 const BACK_DOOR: Cell = { x: 10, z: 16 };
 /** The beach's walkable cells across its width that the friends' tentacles close during the game of tag. */
 const TENTACLES: readonly Cell[] = ENVIRONMENTS[BEACH].grid.flatMap((row, z) => z >= PLACES_UNI.tentacles.z && z < PLACES_UNI.tentacles.z + PLACES_UNI.tentacles.depth
@@ -837,14 +850,26 @@ export class Story {
     ];
   }
   /** Gerard's morning (and the first way down into the metro), with Aitor's word about the friends on the beach until they have been there. */
-  private withClue(morning: Dialogue): Dialogue {
+  private withClue(morning: Dialogue, first = false): Dialogue {
     if (!this.has('metro')) return morning;
     const lines = [...morning.lines];
     if (!this.has('barceloneta-uni')) { this.set('clue-uni'); lines.push(...LINES_UNI.clue); }
-    // Emilie has said nothing since the castle came out (decided 2026-11-19): Aitor notices, once, and
-    // puts it next to the flood in the Poble Sec the news talks of.
-    if (!this.has('poble-sec-emilie') && this.set('clue-emilie')) lines.push(...LINES_EMILIE.missed.lines);
+    // Emilie has said nothing since the castle came out (decided 2026-11-19). The choir is where it is
+    // noticed first (docs/quests/coro.md); if they have not been to a rehearsal by the next morning,
+    // Aitor notices, once, and puts it next to the flood in the Poble Sec the news talks of.
+    if (!first && !this.has('poble-sec-emilie') && this.set('clue-emilie')) lines.push(...LINES_EMILIE.missed.lines);
     return { ...morning, lines };
+  }
+  /**
+   * A rehearsal's remark: the first not yet heard of someone still not reached; once all are heard,
+   * one of those again, a different one each day, so whoever is stuck can come back for it.
+   */
+  private choirRemark(): readonly DialogueLine[] {
+    const left = CHOIR_REMARKS.filter(r => !r.reached.some(flag => this.has(flag)));
+    const remark = left.find(r => !this.has(r.flag)) ?? left[this.days.clock.day % left.length];
+    if (!remark) return [];
+    this.set(remark.flag);
+    return remark.remark.lines;
   }
   /**
    * Her street has turned into La calle que no acaba before them (src/street-shift.ts walks them on
@@ -1300,8 +1325,8 @@ export class Story {
     this.remember();
     this.days.clock = { ...this.days.clock, hour: NIGHT };
     const lines = [...LINES_2.afternoon[what].done.lines];
-    // The choir is where they find out Emilie is missing (docs/quests/coro.md § The choir room).
-    if (what === 'coro' && !this.has('poble-sec-emilie') && this.set('clue-emilie')) lines.push(...LINES_EMILIE.missed.lines);
+    // In the pause, before they go out into the night, Aitor lets something slip (docs/quests/coro.md § Ensayar).
+    if (what === 'coro') lines.splice(1, 0, ...this.choirRemark());
     const done: StoryEffect = { kind: 'dialogue', dialogue: { ...LINES_2.afternoon[what].done, lines } };
     if (!isBoost(what)) return [{ kind: 'recover' }, done];
     this.days.boost = { id: what, until: this.days.clock.day + 1 };
@@ -1930,7 +1955,7 @@ export class Story {
         return this.adult ? this.spendAfternoon('coro') : [];
       case 'meridiana-piano':
         if (!this.adult) return [];
-        return [say(LINES_2.piano), ...this.spend('piano')];
+        return [say(this.has('alegia-marta') ? LINES_2.piano : LINES_MARTA.pianoCasa), ...this.spend('piano')];
       case 'meridiana-luces':
         return this.adult && this.jar.length ? [{ kind: 'jar' }] : [];
       case 'meridiana-balcony':
@@ -1963,7 +1988,7 @@ export class Story {
       if (!this.nuria.warned) { this.nuria.warned = true; return [say(LINES_NURIA.leaveWarn)]; }
       this.nuria = freshRun();
     }
-    if (station && this.adult) return [...(this.set('metro') ? [say(this.withClue(LINES_2.metroFirst))] : []), { kind: 'metro', station }];
+    if (station && this.adult) return [...(this.set('metro') ? [say(this.withClue(LINES_2.metroFirst, true))] : []), { kind: 'metro', station }];
     if (event.id === 'look-curtain' && this.adult) return [say(LINES_2.curtain)];
     const look = PALACE_LOOKS.find(l => l.id === event.id);
     return look ? [say(look.dialogue)] : [];

@@ -10,7 +10,7 @@
 import { ANIMA_NAMES, DUALS, SKILLS, kitIn, skillKnown, type ClassId } from './battle.ts';
 import { LEVELLED, topOf } from './levels.ts';
 import {
-  FIGHTS, PAIR, STRETCHES, TARGETS, createFight, playFight, seeded, simulate, storyJobs, stretchOf, targetSetup, tunables, watchReads, withTuning,
+  FIGHTS, FIRST_FIGHTS, PAIR, STRETCHES, TARGETS, createFight, playFight, seeded, simulate, storyJobs, stretchOf, targetSetup, tunables, watchReads, withTuning,
   type Ban, type Policy, type Row, type Setup, type StoryJob, type StoryPoint, type Target, type Tuning,
 } from './battle-sim.ts';
 
@@ -34,7 +34,9 @@ export function pairGoals(points: StoryPoint[], options: { fights?: string[]; pa
     want: job.setup.policy === 'smart' ? { win: [PAIR.with, 1] } : { win: [0, PAIR.without] },
   }));
 }
-const teaches = (fight: string) => { const stretch = stretchOf(fight); return !!stretch && STRETCHES[stretch].teaching.includes(fight); };
+/** Whether a target asks for something to happen in its fight at least once (`Target.happens`). */
+const reaches = (target: Target) => Object.values(target.happens ?? {}).some(range => range[0] >= 1);
+const teaches = (fight: string) => { const stretch = stretchOf(fight); return FIRST_FIGHTS.includes(fight) || !!stretch && STRETCHES[stretch].teaching.includes(fight); };
 /** What one step of the loss is, for each thing a goal can ask: ten points of wins, ten of PV, a round, half a dual. */
 const UNITS = { win: .1, hpLeftWon: .1, roundsWon: 1, roundsLost: 1, duals: .5 } as const;
 /** Where a number cannot go any further: a range that ends there has no edge to keep away from. */
@@ -317,6 +319,23 @@ export interface Coverage {
   numbers: Record<string, string[]>;
 }
 /**
+ * Each fight's pair as `targets` hold it (docs/combat.md § La respuesta de cada combate), without playing anything.
+ * With the answer: `smart`, nothing banned, asked to win. Without: anything asked not to (a ban, `casual`, the wrong
+ * party), but never Atacar alone. A fight that cannot be won (the Queen's first) is held by what happens in it instead:
+ * its answer gets there, `happens` at least once. A fight that only teaches needs no pair, just something that holds it (`held`).
+ */
+export function pairsOf(targets: readonly Target[] = TARGETS) {
+  const kindOf = (fight: string) => fight.split(':')[0];
+  return FIGHTS.map(fight => {
+    const mine = targets.filter(target => kindOf(target.fight) === kindOf(fight) && (fight.includes(':') ? target.fight === fight : true));
+    return {
+      fight, teaches: teaches(fight), held: mine.length,
+      with: mine.filter(t => t.policy === 'smart' && !t.ban?.length && (t.win && t.win[0] >= .5 || reaches(t))).map(t => t.id),
+      without: mine.filter(t => t.policy !== 'attack' && t.win && t.win[1] <= .5 && !reaches(t)).map(t => t.id),
+    };
+  });
+}
+/**
  * What the targets leave out, measured: every target is played a little and its used actions
  * gathered, and a few of its fights are watched for the numbers they read. What is left over is what
  * the final pass has no hold on yet: fights without their pair, skills and ánimas no target plays,
@@ -330,16 +349,7 @@ export async function coverage(options: { play: Play; runs?: number; seed?: numb
   const read = new Set(targets.flatMap(target => [...readsOf(targetSetup(target))]));
   const numbers: Record<string, string[]> = {};
   for (const path of Object.keys(tunables())) if (!read.has(path)) (numbers[path.split('.')[0]] ??= []).push(path);
-  const kindOf = (fight: string) => fight.split(':')[0];
-  const fights = FIGHTS.map(fight => {
-    const mine = targets.filter(target => kindOf(target.fight) === kindOf(fight) && (fight.includes(':') ? target.fight === fight : true));
-    return {
-      fight,
-      // With the answer: `smart`, nothing banned, asked to win. Without: anything asked not to (a ban, `casual`, the wrong party), but never Atacar alone.
-      with: mine.filter(t => t.policy === 'smart' && !t.ban?.length && t.win && t.win[0] >= .5).map(t => t.id),
-      without: mine.filter(t => t.policy !== 'attack' && t.win && t.win[1] <= .5).map(t => t.id),
-    };
-  }).filter(f => !teaches(f.fight) && (!f.with.length || !f.without.length));
+  const fights = pairsOf(targets).filter(f => !f.teaches && (!f.with.length || !f.without.length)).map(({ fight, with: played, without }) => ({ fight, with: played, without }));
   const ids = Object.keys(ANIMA_NAMES) as ClassId[];
   return {
     fights,

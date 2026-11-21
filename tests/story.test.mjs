@@ -382,16 +382,35 @@ test('an afternoon on the sofa, cooking, at the gym or with the choir brings the
   assert.equal(story.boost, 'cocina');
 });
 
-test('the choir on an afternoon is where they learn Emilie is missing, once', () => {
+test('each rehearsal lets one remark slip, about someone not reached yet; heard them all, they come round again', () => {
   const story = new Story(upTo('tv-news'));
+  const rehearse = () => {
+    const lines = story.handle({ type: 'evening', what: 'coro' }).at(-1).dialogue.lines.map(l => l.text).join(' ');
+    story.handle({ type: 'home' });
+    return lines;
+  };
+  // Emilie first: missing from the room, with nothing said of where (the flood is on the TV).
+  const first = rehearse();
+  assert.ok(story.has('clue-emilie') && /Emilie/.test(first) && !/Poble|Blai/.test(first));
+  assert.ok(/Nuria/.test(rehearse()) && story.has('clue-nuria'));
+  // Marta's is the one line in the game that names Alegia.
+  assert.ok(/Marta.*Alegia/.test(rehearse()) && story.has('clue-marta'));
+  assert.ok(/Bernat.*Nucli/.test(rehearse()) && story.has('clue-bernat'));
+  for (const text of [first]) assert.doesNotMatch(text, /tienes que|ve a|vamos a|misión|ánima|pista/i, 'never a direction');
+  // All heard: one again, so whoever is stuck can come back for it.
+  assert.match(rehearse(), /Emilie|Nuria|Marta|Bernat/);
+  // Once each is reached, the rehearsal is only a rehearsal.
+  for (const flag of ['poble-sec-emilie', 'cardedeu', 'ticket-alegia', 'bernat-nucli']) story.flags.add(flag);
+  assert.doesNotMatch(rehearse(), /Emilie|Nuria|Marta|Bernat/);
+});
+
+test('the first way down into the metro leaves Emilie to the choir; the next morning, Aitor says it if nobody has', () => {
+  const story = new Story(upTo('tv-news'));
+  story.handle({ type: 'interact', id: 'station-fabra-i-puig' });
+  assert.ok(story.has('metro') && story.has('clue-uni'));
   assert.equal(story.has('clue-emilie'), false);
-  const gone = story.handle({ type: 'evening', what: 'coro' });
+  toBed(story);
   assert.equal(story.has('clue-emilie'), true);
-  const first = gone.at(-1).dialogue.lines.length;
-  toBed(new Story(upTo('tv-news')));
-  story.handle({ type: 'home' });
-  const again = story.handle({ type: 'evening', what: 'coro' });
-  assert.ok(again.at(-1).dialogue.lines.length < first, 'the second rehearsal is only a rehearsal');
 });
 
 test("the Queen's advance: without help she covers everything on the seventh morning, and the way out is back a day", () => {

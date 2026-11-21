@@ -39,6 +39,7 @@ const LIMP: Acts = Object.fromEntries(SOBREMESA_FRIENDS.map(f => [f, { kind: 'fr
 const UNMASK_SECONDS = 2.2;
 import { createPocket, type Pocket } from './pocket';
 import { ARENA_SPREAD, BOSS_ARENAS, createBossArena, type BossArena } from './boss-arena';
+import { STAGE_INTRO, STAGE_LAYOUT, STAGE_SPREAD, STAGE_VIEW, bossStageOf, createBossStage, loadStageLook, stageLookReady, type BossStage, type StageCue } from './boss-stages';
 import { THRONE_INTRO, THRONE_LAYOUT, THRONE_SPREAD, THRONE_VIEW, createThroneArena, loadThroneLook, onThroneStage, throneLookReady, type ThroneArena, type ThroneCue } from './throne-arena';
 import { FEAR_FIGURES, createFears } from './fears';
 import { mergeParts } from './props';
@@ -249,9 +250,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   effects.setScene(environment, scenery);
   // Each fighter is cloned from their street model; Bernat borrows Gerard's (recoloured) as before.
   /** The pocket a fight moved to, while it goes on there (src/pocket.ts, `setBattle`). */
-  let pocket: Pocket | BossArena | ThroneArena | undefined;
+  let pocket: Pocket | BossArena | ThroneArena | BossStage | undefined;
   /** The Queen's stage, while her fight is on it (src/throne-arena.ts): its entrance drives the camera. */
   let throne: ThroneArena | undefined;
+  /** Aurelià's or Dirección's stage, while their fight is on it (src/boss-stages.ts): its entrance drives the camera too. */
+  let bossStage: BossStage | undefined;
+  /** Whose face a boss stage's entrance looks at: the boss, or the middle of Dirección. */
+  let stageFace: string | undefined;
   /** Her entrance's camera shake: when the spotlight slammed on. */
   let slammedAt = -1, throneLit = false;
   // In a pocket the floor is its own, flat; elsewhere the scene's.
@@ -2710,6 +2715,20 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
           wait();
         }));
       });
+      // Aurelià and Dirección go up onto their own stages, as the Queen does (src/boss-stages.ts), their textures fetched first.
+      const stageId = bossStageOf(fight);
+      if (stageId && !stageLookReady()) return loadStageLook().then(() => setBattle(next, effect, onImpact));
+      if (stageId) return diffuse(() => {
+        const stage = bossStage = createBossStage(app, stageId, { cast });
+        stageFace = stageId === 'pista' ? 'aurelia' : 'montse';
+        pocket = stage;
+        fightStage = { layout: STAGE_LAYOUT, pocket: true, spread: STAGE_SPREAD };
+        if (!reducedMotion.matches) { stage.beginIntro(); callbacks.onEntrance?.('start'); }
+        return applyBattle(next, effect, onImpact, stage.centre).then(() => new Promise<void>(resolve => {
+          const wait = () => stage.introTime === undefined || bossStage !== stage ? resolve() : requestAnimationFrame(wait);
+          wait();
+        }));
+      });
       // A boss with its own arena fights there, built of the place's pieces, away from its waiting dressing (src/boss-arena.ts).
       const arena = environment.geo ? BOSS_ARENAS[fight] : undefined;
       if (arena) return diffuse(() => {
@@ -2739,6 +2758,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (!next && battle && pocket) return diffuse(() => {
       const settled = applyBattle(undefined, effect, onImpact);
       if (throne) { throne = undefined; post.spotlight(0, []); }
+      if (bossStage) { bossStage = undefined; post.spotlight(0, []); }
       pocket?.destroy(); pocket = undefined; fightStage = { layout: 'open' };
       return settled;
     });
@@ -2938,6 +2958,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   function setEnvironment(id: EnvironmentId, destination?: Cell, exact?: { x: number; z: number }) {
     // Near her, her figure and her stage's textures load quietly, so her fight starts without waiting (src/throne-arena.ts).
     if (id === 'palacio-trono' || id === 'castillo-3') { void loadThroneLook(); void loadCastleModels(app, ['reina']); }
+    if (id === 'castillo-1' || id === 'castillo-2') void loadStageLook();
     if (battle) return;
     clearInput();
     // Out of a portal on the other side (`intoPortal`): whole again, and free to walk.
@@ -3078,8 +3099,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   window.addEventListener('keydown', keydown);
   // Her entrance can be skipped: Enter, Space or Escape go straight to the camera pulling back.
   const skipEntrance = (event: KeyboardEvent) => {
-    if (throne?.introTime === undefined || throne.introTime >= THRONE_INTRO.pull || !['Enter', ' ', 'Escape'].includes(event.key)) return;
-    event.preventDefault(); event.stopImmediatePropagation(); throne.skipIntro();
+    if (!['Enter', ' ', 'Escape'].includes(event.key)) return;
+    if (throne?.introTime !== undefined && throne.introTime < THRONE_INTRO.pull) { event.preventDefault(); event.stopImmediatePropagation(); throne.skipIntro(); }
+    else if (bossStage?.introTime !== undefined && bossStage.introTime < STAGE_INTRO.pull) { event.preventDefault(); event.stopImmediatePropagation(); bossStage.skipIntro(); }
   };
   window.addEventListener('keydown', skipEntrance, { capture: true });
   app.on('destroy', () => window.removeEventListener('keydown', skipEntrance, { capture: true }));
@@ -3095,6 +3117,28 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       slammedAt = performance.now();
       post.pulse(.8, 1, .85);
     }
+  }
+  /**
+   * A sound Aurelià's or Dirección's stage asks for (`StageCue`): a row of tubes catching or a blind
+   * opening, a lamp, the run-up, the blow (the school bell; the stamp on the minutes).
+   */
+  function stageCue(cue: StageCue) {
+    const gym = stageFace === 'aurelia';
+    if (cue === 'step') callbacks.onSound(gym ? 'tube' : 'blind', { volume: .5 });
+    else if (cue === 'lamp') callbacks.onSound('click', { volume: .55 });
+    else if (cue === 'charge') callbacks.onSound('charge', { volume: .6 });
+    else if (cue === 'title' || cue === 'pull') callbacks.onEntrance?.(cue);
+    else if (cue === 'bang') {
+      callbacks.onSound(gym ? 'timbre' : 'stamp'); callbacks.onSound('thump', { volume: .8 });
+      slammedAt = performance.now();
+      post.pulse(.6, 1, .85);
+    }
+  }
+  /** Where a boss stage's entrance looks: the boss's face (Aurelià), or the middle of the three. */
+  function stageFaceAt() {
+    const unit = battle?.foes.find(f => f.id === stageFace || f.kind === stageFace) ?? battle?.foes[0];
+    const at = unit ? battleScene.modelOf(unit.id)?.getPosition() : undefined;
+    return at ? at.clone().add(new pc.Vec3(0, stageFace === 'aurelia' ? 1.9 : 1.6, 0)) : undefined;
   }
   /**
    * Her entrance's camera (src/throne-arena.ts THRONE_INTRO), at `t` seconds: up the dark stage onto
@@ -3147,8 +3191,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     stepDiffusion(dt);
     // Her stage: whether she holds Aitor (her light turns), and what its entrance asks to sound.
     throne?.setHeld(!!battle?.allies.some(a => a.castle?.held === 'reina'));
+    throne?.setPeeled(battle?.foes.find(f => f.kind === 'reina')?.castle?.peeled?.length ?? 0);
+    // Aurelià's lap on the gym's scoreboard; who of Dirección still stands, and the Acta's signatures.
+    if (bossStage && 'setLap' in bossStage) { const a = battle?.foes.find(f => f.kind === 'aurelia'); bossStage.setLap(a?.castle?.phase, a?.castle?.lap, !a || a.hp <= 0); }
+    if (bossStage && 'setTeam' in bossStage) bossStage.setTeam(['mar', 'montse', 'pilar'].map(id => { const d = battle?.foes.find(f => f.id === id); return !!d && d.hp > 0; }), battle?.castle?.firmas ?? 0);
     const cues = pocket?.update(delta, !reducedMotion.matches);
-    if (Array.isArray(cues)) for (const cue of cues) throneCue(cue);
+    if (Array.isArray(cues)) for (const cue of cues) { if (bossStage) stageCue(cue as StageCue); else throneCue(cue as ThroneCue); }
     // Cutscenes, fight animations and effects keep the clock on slow machines (a frame or two a
     // second with software rendering); walking stays on `delta`, which keeps collisions safe.
     const shown = Math.min(dt, SHOW_STEP);
@@ -3430,8 +3478,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const apart = shared ? player.getPosition().distance(shared) : 0;
     let target = battle && framed && cinematic ? cinematic.target.clone() : battle && faceZoom ? faceZoom.clone() : battle ? battleScene.frame.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     // Her entrance holds the camera (`throneShot`); it ends on the fight's own view.
-    const fightHeight = battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) * (throne ? THRONE_VIEW.wider : 1) : 0;
-    const shot = battle && throne?.introTime !== undefined ? throneShot(throne.introTime, target, fightHeight) : undefined;
+    const fightHeight = battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) * (throne ? THRONE_VIEW.wider : bossStage ? STAGE_VIEW.wider : 1) : 0;
+    const shot = battle && throne?.introTime !== undefined ? throneShot(throne.introTime, target, fightHeight)
+      : battle && bossStage?.introTime !== undefined ? bossStage.shot(bossStage.introTime, target, fightHeight, stageFaceAt()) : undefined;
     if (shot) target = shot.target;
     // A pocket's diffusion swaps the scene at its peak: the camera is there at once, not on its way.
     // Her entrance's keys are smooth already: the camera follows them exactly, frame by frame.
@@ -3464,10 +3513,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // Up to 45° round the fight and 15° up or down, so the foes and the party always stay in view.
       // Big moments (a dual's two-shot and orbit, the Rayo) turn it a little more: battle-scene `lens`.
       const lens = battleScene.lens;
-      const yaw = (-battleLook.x * 45 + lens.yaw + (shot?.yaw ?? 0)) * pc.math.DEG_TO_RAD, length = offset.length();
+      const yaw = (-battleLook.x * 45 + lens.yaw + (shot?.yaw ?? 0) + (bossStage ? STAGE_VIEW.turn : 0)) * pc.math.DEG_TO_RAD, length = offset.length();
       offset.set(offset.x * Math.cos(yaw) + offset.z * Math.sin(yaw), offset.y, offset.z * Math.cos(yaw) - offset.x * Math.sin(yaw));
       // A little lower than the street's camera, so faces read.
-      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch - 7 + (shot?.pitch ?? 0) + (throne ? THRONE_VIEW.lower : 0)) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
+      const pitch = Math.asin(offset.y / length) + (battleLook.y * 15 + lens.pitch - 7 + (shot?.pitch ?? 0) + (throne ? THRONE_VIEW.lower : bossStage ? STAGE_VIEW.lower : 0)) * pc.math.DEG_TO_RAD, flat = Math.hypot(offset.x, offset.z);
       offset.set(offset.x / flat * Math.cos(pitch) * length, Math.sin(pitch) * length, offset.z / flat * Math.cos(pitch) * length);
     } else { battleLook.set(0, 0); battleAim.set(0, 0); }
     // The view is orthographic, so how far back the camera stands only decides what its clip planes
@@ -3506,6 +3555,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const amount = (t < I.bang ? .6 : .45) * (1 - Math.min(1, Math.max(0, (t - I.pull) / (I.length - I.pull))));
       const core = throne.throneCore();
       post.spotlight(amount, t < I.bang || !at ? [{ x: core.x, y: core.y, z: core.z, radius: 1.7 }] : [{ x: at.x, y: at.y + 1.8, z: at.z, radius: 1.9 }, { x: core.x, y: core.y, z: core.z, radius: 1.2 }]);
+      throneLit = true;
+    } else if (shot && bossStage?.introTime !== undefined) {
+      const { amount, spots } = bossStage.glow(bossStage.introTime, stageFaceAt());
+      post.spotlight(amount, spots);
       throneLit = true;
     } else if (throneLit) { throneLit = false; post.spotlight(0, []); }
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;

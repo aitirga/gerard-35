@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANIMA_GROWTH, animaBonus } from '../src/animas.ts';
-import { FOE_GROWTH, createEncounter, gatheredFor, kitIn } from '../src/battle.ts';
+import { FIGHT_GROWTH, FOE_GROWTH, createEncounter, gatheredFor, growthOf, kitIn } from '../src/battle.ts';
 import { CASTLE_UNLOCKS } from '../src/castle.ts';
 import { FOE_XP, LEVEL_XP, XP_RULES, fightXp } from '../src/levels.ts';
 import { improvementOf, stageOf } from '../src/ecos.ts';
@@ -86,8 +86,12 @@ test('each friend\'s ánima adds what it says, and the growth rule can be tried 
   assert.equal(hp({ 'growth.rules.scale': 2 }) - hp({}), 20);
 });
 
-test('an open mission\'s foes grow with the other missions\' ánimas behind it, in the game as in the simulator', () => {
-  assert.deepEqual(FOE_GROWTH, { pv: 0, stat: 1.25 }, 'a point and a quarter of each attribute for each, and no more PV');
+test('an open mission\'s foes grow with the other missions\' ánimas behind it, each fight by its own rule, in the game as in the simulator', () => {
+  assert.deepEqual(FOE_GROWTH, { pv: 0, stat: 1.25 }, 'the rule of a fight with none of its own: a point and a quarter of each attribute for each, and no more PV');
+  // Every fight of the four open missions has its own, found so that done last it is what it is done first (docs/fight-sim.md § The final pass).
+  for (const id of ['universidad', 'marta', 'emilie', 'luca']) for (const fight of STRETCHES[id].fights) assert.ok(FIGHT_GROWTH[fight], `${fight} has no growth of its own`);
+  for (const fight of ['cebollon', 'uri-vertigo', 'aurelia', 'reina-vuelta']) assert.equal(FIGHT_GROWTH[fight], undefined, `${fight} is met as it is`);
+  assert.equal(growthOf('fran'), FIGHT_GROWTH.fran); assert.equal(growthOf('dogs'), FOE_GROWTH); assert.equal(growthOf(), FOE_GROWTH);
   const all = ['nuria', 'universidad', 'marta', 'emilie', 'luca'];
   // Nuria's is with everyone before the first open mission, and a mission's own comes at its end: neither counts.
   assert.deepEqual([[], ['nuria'], ['nuria', 'luca'], ['nuria', 'marta', 'emilie'], all].map(friends => gatheredFor('fran', friends)), [0, 0, 0, 2, 3]);
@@ -95,23 +99,23 @@ test('an open mission\'s foes grow with the other missions\' ánimas behind it, 
   // Nuria's fights and the castle's are met as they are: before any open mission, or after them all.
   for (const fight of ['cebollon', 'uri-vertigo', 'aurelia', 'reina-vuelta', 'dogs', 'palace-guards', 'night-guard']) assert.equal(gatheredFor(fight, all), 0, fight);
   const fran = (friends, tuning = {}) => withTuning(tuning, () => createFight({ fight: 'fran', party: MISSION_PARTY, policy: 'smart', friends }, seeded(1)).foes.find(foe => foe.kind === 'fran'));
-  const first = fran(['nuria']), last = fran(['nuria', 'universidad', 'marta', 'emilie']);
-  // +1 with one of the others behind, +3 with two, +4 with all three.
-  assert.deepEqual([['nuria', 'marta'], ['nuria', 'marta', 'emilie'], all].map(friends => fran(friends).stats.defensa - first.stats.defensa), [1, 3, 4]);
+  const first = fran(['nuria']), last = fran(['nuria', 'universidad', 'marta', 'emilie']), rule = FIGHT_GROWTH.fran;
+  // Its `stat` for each of the others behind, rounded on the sum; its `pv`, a share of its PV for each.
+  assert.deepEqual([['nuria', 'marta'], ['nuria', 'marta', 'emilie'], all].map(friends => fran(friends).stats.defensa - first.stats.defensa), [1, 2, 3].map(n => Math.round(rule.stat * n)));
   const four = c => [c.stats.fuerza, c.stats.magia, c.stats.defensa, c.stats.espiritu];
-  assert.deepEqual(four(last), four(first).map(value => value + 4)); assert.equal(last.maxHp, first.maxHp); assert.equal(last.stats.velocidad, first.stats.velocidad);
-  assert.deepEqual(four(fran(all, { 'foes.growth.stat': 0 })), four(first), 'the rule is a number: at 0 the fight is the one tuned');
-  const longer = fran(all, { 'foes.growth.pv': .1 });
+  assert.deepEqual(four(last), four(first).map(value => value + Math.round(rule.stat * 3))); assert.equal(last.maxHp, Math.round(first.maxHp * (1 + rule.pv * 3))); assert.equal(last.stats.velocidad, first.stats.velocidad);
+  assert.deepEqual(four(fran(all, { 'foes.fran.stat': 0 })), four(first), 'the rule is a number: at 0 the fight is the one tuned');
+  const longer = fran(all, { 'foes.fran.pv': .1 });
   assert.equal(longer.maxHp, Math.round(first.maxHp * 1.3)); assert.equal(longer.hp, longer.maxHp);
   // The fight screen and the whole-game simulator start their fights here, with the story's ánimas.
   const slots = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata' }];
   const started = friends => createEncounter(slots, 'fran', { friends, random: seeded(1) });
   assert.deepEqual(four(started(all).foes.find(foe => foe.kind === 'fran')), four(last));
   assert.equal(started(all).grown, 3); assert.equal(started(['nuria']).grown, undefined);
-  for (const lamp of started(all).foes.filter(foe => foe.kind === 'lampara')) assert.equal(lamp.stats.defensa, started([]).foes.find(foe => foe.id === lamp.id).stats.defensa + 4, 'everything in the fight grows alike');
+  for (const lamp of started(all).foes.filter(foe => foe.kind === 'lampara')) assert.equal(lamp.stats.defensa, started([]).foes.find(foe => foe.id === lamp.id).stats.defensa + Math.round(rule.stat * 3), 'everything in the fight grows alike');
   // Whoever joins later comes as grown as the rest: La Voz's second voice.
   const voz = createEncounter(slots, 'voz', { friends: all, random: seeded(1) }), plain = createEncounter(slots, 'voz', { random: seeded(1) });
-  assert.equal(voz.foes[0].stats.magia, plain.foes[0].stats.magia + 4); assert.equal(voz.grown, 3);
+  assert.equal(voz.foes[0].stats.magia, plain.foes[0].stats.magia + Math.round(FIGHT_GROWTH.voz.stat * 3)); assert.equal(voz.grown, 3);
 });
 
 test('inside the castle a fight is worth three times its foes, and out at night half as much again', () => {
@@ -189,7 +193,7 @@ test('a story\'s rows become a line per point: how many pairs hold with the part
   assert.deepEqual(lines.map(l => [l.at, l.pairs, l.held, l.easy]), [['marta:first', 1, 1, []], ['marta:last', 1, 0, ['cuerdas-directo']]]);
   assert.ok(lines[1].friends > lines[0].friends);
   const goals = pairGoals(points);
-  assert.ok(goals.length === 16 && goals.every(g => g.want.win), 'four fights, two bots, two points');
+  assert.ok(goals.length === 12 && goals.every(g => g.want.win), 'the three fights that ask (Lo Cristalino only teaches), two bots, two points');
   assert.deepEqual(goals.find(g => g.setup.policy === 'casual').want.win, [0, .2]);
 });
 

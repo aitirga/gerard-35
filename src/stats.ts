@@ -49,16 +49,16 @@ export const PROFILES = {
   cebollon: base(150, 12, 10, 11, 10),
   /** La Cebolla: the same onion, between the little ones and El Cebollón (battle.ts ONIONS). */
   cebolla: base(110, 12, 10, 10, 10),
-  plato: base(260, 12, 12, 10, 10),
+  plato: base(264, 12, 12, 11, 10),
   /**
    * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
    */
-  vertigo: base(415, 13, 13, 12, 12),
+  vertigo: base(484, 13, 13, 10, 12),
   'vertigo-ojo': base(100, 10, 10, 9, 9),
   /** Their young, in twos and threes up the tower (docs/quests/nuria.md § The tower): little PV. The cebollitas are the easy ones. */
   cebollita: base(34, 11, 8, 9, 8),
   platito: base(68, 13, 12, 9, 9),
-  fantasmita: base(54, 12, 13, 8, 9),
+  fantasmita: base(71, 12, 13, 10, 9),
   /**
    * La Sobremesa's seven (docs/quests/universidad.md § Final boss), each a target of their own. Joan
    * and Soraya, who need each other, are the frailest; Nico, who shields the rest, the toughest.
@@ -75,60 +75,62 @@ export const PROFILES = {
    * (battle.ts CAMPING), so their stats stay near the average. El Campeón is the mini-boss.
    */
   mago: base(130, 10, 12, 9, 11),
-  dado: base(44, 12, 8, 11, 9),
+  dado: base(48, 12, 8, 11, 9),
   agente: base(66, 12, 10, 10, 10),
-  campeon: base(440, 14, 10, 12, 11),
+  campeon: base(500, 14, 10, 13, 11),
   /**
    * Las cuerdas' foes (docs/quests/marta.md): their rules do the work (battle.ts MARTA). La Lealtad is
    * a wall, an Eco frail, Lo Cristalino has spirit to spare (magic does nothing to it anyway),
    * Lo Directo hits. La Voz is all of them.
    */
-  lealtad: base(225, 12, 9, 14, 12),
+  lealtad: base(280, 12, 9, 15, 12),
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
-  directo: base(420, 14, 10, 11, 10),
-  voz: base(430, 12, 13, 12, 12),
+  directo: base(470, 14, 10, 11, 10),
+  voz: base(500, 12, 14, 12, 14),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
    * Queen and one of her hands. Their rules do the work (src/castle-fight.ts). First guesses.
    */
-  repetidor: base(110, 14, 8, 12, 9),
-  empollon: base(85, 11, 12, 10, 12),
+  repetidor: base(160, 14, 8, 12, 9),
+  empollon: base(125, 11, 12, 10, 12),
   chivata: base(48, 9, 10, 8, 9),
   gemelo: base(62, 12, 9, 10, 10),
-  delegada: base(130, 12, 12, 11, 12),
+  delegada: base(150, 12, 12, 11, 12),
   // El Ausente reached one round in two; El Castigado broad, felled in one big blow after
   // what it could take; El Montón a lump that lasts: what it hits with is whatever the party shows it.
-  ausente: base(100, 13, 9, 9, 9),
-  castigado: base(120, 12, 9, 11, 10),
-  monton: base(130, 12, 12, 10, 10),
+  ausente: base(140, 13, 9, 9, 9),
+  castigado: base(160, 12, 9, 11, 10),
+  monton: base(250, 12, 12, 10, 10),
   // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
   // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
-  aurelia: base(480, 16, 11, 12, 12),
+  aurelia: base(560, 16, 11, 12, 12),
   atril: base(90, 1, 1, 10, 8),
   // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
   // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.
-  directiva: base(185, 10, 19, 12, 14),
+  directiva: base(245, 10, 20, 12, 14),
   reina: base(620, 14, 14, 12, 13),
   mano: base(110, 12, 10, 11, 10),
+  // La Pompa she blows: a thing to burst before it does. First guess.
+  pompa: base(300, 1, 1, 9, 9),
   /**
    * The foes of Emilie's model (docs/quests/emilie.md § Fights): their rules do the work (battle.ts
    * MODELO). A Celda seca is a block; an Oscilación frail; El Átomo alone, heavy. El que
    * no converge is the boss.
    */
   'celda-seca': base(70, 10, 11, 11, 10),
-  oscilacion: base(110, 10, 12, 9, 10),
-  atomo: base(440, 11, 12, 10, 11),
-  'no-converge': base(520, 12, 13, 11, 12),
+  oscilacion: base(120, 10, 14, 9, 10),
+  atomo: base(520, 11, 12, 10, 11),
+  'no-converge': base(540, 12, 13, 11, 12),
   // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern and the restyled chaplains.
-  polilla: base(28, 10, 8, 8, 8),
+  polilla: base(52, 10, 8, 8, 8),
   'estampado-rojo': base(75, 12, 10, 11, 11),
   'estampado-azul': base(75, 12, 10, 11, 11),
   'estampado-oro': base(75, 12, 10, 11, 11),
-  capellan: base(116, 12, 9, 10, 10),
+  capellan: base(116, 12, 9, 9, 11),
   // Fran, under the Queen's hold, and the three lamps of the canopy he has made his chair's.
-  fran: base(150, 13, 13, 12, 12),
+  fran: base(150, 13, 13, 12, 14),
   lampara: base(40, 8, 8, 8, 8),
 } as const satisfies Record<string, Stats>;
 export type ProfileId = keyof typeof PROFILES;

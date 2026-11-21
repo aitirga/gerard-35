@@ -212,6 +212,54 @@ footlights one by one, her core in the dark, her spotlight's slam.
 | Framing | The fight's camera looks up the stage, a little lower than other fights', and sees the back wall's lowest metres: everything that matters stands below that, the throne low beside her on the camera's right so her silhouette stands against the dark balcony, the crown on the bubble, the banner at 2 m |
 | Smoothness | 120 Hz through her entrance (measured 2026-11-20: 8.4 ms a frame on average, no long frame once the stage is up). Every stage light stays above 0 (a shadow-casting light coming back into the clustered lighting recompiled every shader at the slam); her figure and textures load before the fight |
 
+### The bosses' stages · `src/boss-stages.ts`
+
+Aurelià's and Dirección's fights go up onto stages of their own, as the Queen's does (Aitor,
+2026-11-21: «diseña sus lugares para que esos combates se sientan más épicos»): the picture breaks
+into glass and the fight goes on in the room as the boss has made it, laid out along it (the party
+near the camera, the boss up it). Each opens with a short film (`STAGE_INTRO`, 7 s, skipped with
+confirm) and the fight's camera on them is lower, a little wider and turned nearly straight up the
+stage (`STAGE_VIEW`: Aitor, «una visión más de frente, un pelín más ángulo de bajo»).
+
+#### La pista (Aurelià)
+
+The gym's own card (mat blue, pine wall bars, grey sports floor, tube light), dressed as his. No new
+identity: it is the gym.
+
+| | |
+| --- | --- |
+| Floor | The grey sports floor (`estuc`), six **running lanes painted mat blue** with white lines from the party's start line (numbered 1–6) to a yellow finish line before his dais; the court's yellow lines down the sides |
+| Back | The blue dado and the cream wall (`paret-pintada`) fading into the dark above; the wall bars either side; **a history timeline** along the whole wall (−753 Roma … 270 Aurelià, in his red … 1992 Jocs); her plum in the barred high windows |
+| Landmark | **His dais of marble** (`marbre`) with its step, two fluted marble columns with her laurel of gum, his desk with exams and a stopwatch, a blackboard on wheels (*Tema 9 · La crisi del segle III*, *RESTITVTOR ORBIS*) and, between them, **the gym's scoreboard running his lap**: «LLIÇÓ», «VOLTA 00:14» counting down while he runs, «RÈCORD» in the last straight |
+| Sides | Blue mats stacked waist-high, a Swedish bench, the plint stepped into its tower, ropes hanging from the dark, hoops on the floor (one pink); two banners hung from the dark (*AVRELIANVS RESTITVTOR*, a laurel, her gum on a corner) |
+| Her pink | Her laurel on the columns, gum spilt before the dais' step, on the plint's handhold, one hoop |
+| Light | Twelve tubes in four rows over the floor (one light per row), one cold spotlight on him (the only shadow), her plum from behind, a warm lamp over his desk |
+| Entrance | The gym dark but for the plum windows; the tubes catch row by row down the lanes, each with a stutter, the camera gliding low along them; the school bell rings, the scoreboard lights and his spotlight slams on: Aurelià from below, his name; the pull back |
+
+#### La sala de juntas (Mar, Montse and Pilar)
+
+Direcció, the room between the secretaría and the throne room, built for their fight. A card of
+its own, against its two neighbours (manila under flat green light; indigo and gold at night):
+
+| | |
+| --- | --- |
+| Dominant | Carpet slate `#4b5966` (the floor and the walls `#6f7c86`) |
+| Secondary | Dark oak `#4e3a2c` (the table, the shelves), panel `#3b302a`, lamp shades green `#2f4f46`, manila folders `#d6b46a` |
+| Material | **Venetian blinds** over a wall of windows, square carpet tiles (drawn), oak panelling to the sills |
+| Ground | Carpet tiles laid each way |
+| Landmark | **The long table** behind them (kind: furniture), three high-backed leather chairs pushed back, three lamps, the book of minutes open in the middle |
+| Light | Morning through the blinds behind them (the only shadow: long shadows run towards the party), its **stripes on the carpet**, a cold fill, three warm lamps; warm against the secretaría's flat green and the throne room's night |
+| Props | Binders by school year on tall oak shelves down both sides, the clock stopped at nine (as the secretaría's), a coat stand, a water cooler |
+| Only here | **The Acta in the room**: each lamp goes out with whoever has fallen, a signature makes hers flare, and the book of minutes shows each signature in her pink ink and, from the entrance on, the stamp *CONSTA EN ACTA* |
+| Her pink | The ink, the stamp, a sticky note on the blinds, gum over the school's seal |
+| Text | Catalan: the seal *INSTITUT ESCOLA REC COMTAL · DIRECCIÓ*, the book's *ACTA* |
+| Entrance | The room dark, the blinds shut; bay by bay they open (from the outside in) and the stripes fall on the carpet; the three lamps click on; the stamp comes down on the minutes; the three from below, their name; the pull back |
+
+Both stages: one shadow-casting light each, every light kept above 0 (as on the Queen's stage), the
+textures (`estuc`, `marbre`, `paret-pintada`) fetched before the fight. Measured 2026-11-21 on the
+RTX 5070 Ti (`--perf`): 3.3–3.5 ms a frame through the entrances and the fights, p95 4 ms. Their
+new sounds are in `src/sfx.ts`: `tube`, `blind`, `click`, `timbre`, `stamp`.
+
 ### Five moods, one palace
 
 | | Entrance | El patio | El gimnasio | La secretaría | El salón del trono |

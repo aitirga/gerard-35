@@ -115,7 +115,7 @@ steal light; not Luca's own traits (that is Marta's). Each asks one question.
 
 | Foe | What it is | Question | Answer and how it shows | Weak / resists |
 | --- | --- | --- | --- | --- |
-| **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element and leave them Cegado | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
+| **Las Polillas** | Grey moths, many and frail, drawn to light: they swarm whoever struck with an element (the flash) | Lo que alcanza a todos | An all-target blow clears the swarm | Fuego / – |
 | **Las camisas de Luca** (roja, azul, dorada; `estampado-*` in code) | Three of his loud shirts on wire hangers, nobody in them | A cuál, by the light | **Only the shirt in the light of its own colour can be hurt** (it is in colour, the others grey; *En su luz* / *Fuera de su luz* on the plate, *Nada* on a wasted blow). That light eats the party's element of that colour, so it is hit with anything else. Fallen, **its light goes out with it** and that element comes back | – / – |
 | **Los capellanes** | The basilica's chaplains, restyled by Fran, each with hair of another shape and colour. People under the Queen, unsettling, not a joke | Orden | The freshly styled one (*Recién peinado*) repeats the last gesture next round; down it first and the copy stops | – |
 
@@ -380,7 +380,10 @@ shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, 
   `src/luca-foes.ts`, fight tester row *La peluquería*, `STAGED_MOMENTS` `fran-acolitos`,
   `fran-baldaquino`, `fran-aspersion`, `TARGETS` for every fight (all hold, `just fight-sim check`).
   Zone numbers: Polillas 28 PV, Estampados 100, capellanes 116 (2026-11-20, without La Laca); Fran 150,
-  his acolytes 55, his lamps 40 (2026-11-19).
+  his acolytes 55, his lamps 40 (2026-11-19). Final pass (2026-11-21): Polillas 52 PV and three at
+  most (`polillasMost`, they were five: fewer and each worth a blow), Aleteo 11, each Brillo .625 of
+  a blow (`brilloStep`), Fran 14 Espíritu, and each fight its own growth (`FIGHT_GROWTH`,
+  docs/fight-sim.md § The final pass, as done).
 - **The place**: Luca by the pond (grey by the colours still missing, his reflection in colour lying
   on the water), the door gated until he is met, the salon dressed zone by zone
   (`src/peluqueria-scenery.ts`), each zone's foes waiting, the chaplain before the presbytery.

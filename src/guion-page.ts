@@ -32,8 +32,8 @@ const moments = new Map<string, Moment[]>();
 const tried = new Map<string, Moment>();
 /** Lines changed from this page since it opened, `<entry>#<line>`: shown green. */
 const changed = new Set<string>();
-/** What is open to write: a line's editor, a comment, or a block to add (`place` the line, its rows kept across redraws). */
-let editing: { entry: string; line?: number; mode: Mode; place?: GuionPlace; block?: GuionBlockLine[]; why?: string } | undefined;
+/** What is open to write: a line's editor, a comment, or a block to add (`place` the line, its rows kept across redraws; `note`, the saved block being reopened). */
+let editing: { entry: string; line?: number; mode: Mode; place?: GuionPlace; block?: GuionBlockLine[]; why?: string; note?: string } | undefined;
 let message: { kind: 'err' | 'warn' | 'ok'; text: string } | undefined;
 
 // ── Who says it ─────────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ function noteHtml(note: GuionNote, e: GuionEntry, inline = false) {
     : note.change === 'quitar' && (note.status !== 'abierta' || anchorOf(note, e) === undefined) ? `<div class="diff"><del>${html(note.quote ?? '')}</del></div>` : '';
   const when = note.created.slice(0, 16).replace('T', ' ');
   const buttons = !writable ? '' : note.status === 'abierta'
-    ? `${canApply ? `<button data-note="aplicar" data-id="${note.id}" title="Escribe la sugerencia en el código y cierra la nota">Aplicar</button>` : ''}<button data-note="hecha" data-id="${note.id}">Hecha</button><button data-note="descartada" data-id="${note.id}">Descartar</button>${note.reply ? '' : `<button data-note="borrar" data-id="${note.id}">Borrar</button>`}`
+    ? `${inline ? `<button data-note="editar-bloque" data-id="${note.id}" title="Reabre el bloque para cambiar o añadir líneas">Editar</button>` : ''}${canApply ? `<button data-note="aplicar" data-id="${note.id}" title="Escribe la sugerencia en el código y cierra la nota">Aplicar</button>` : ''}<button data-note="hecha" data-id="${note.id}">Hecha</button><button data-note="descartada" data-id="${note.id}">Descartar</button>${note.reply ? '' : `<button data-note="borrar" data-id="${note.id}">Borrar</button>`}`
     : `<button data-note="abierta" data-id="${note.id}">Reabrir</button>`;
   return `<div class="note ${note.status}">
     <div class="meta"><b>${kind}</b><span>${note.status}</span><span>${when}</span><span class="btns">${buttons}</span></div>
@@ -174,7 +174,7 @@ function editorHtml(e: GuionEntry, mode: Mode, line?: GuionLine) {
       + `<optgroup label="Todos">${rest.map(id => `<option value="${id}"${id === chosen ? ' selected' : ''}>${html(voice(id).name)}</option>`).join('')}</optgroup>`;
     const rows = editing?.block?.length ? editing.block : [{ speaker: nextSpeaker(e, line?.speaker), text: '' }];
     return `<div class="editor block-editor" data-mode="add">
-    <div class="block-head">${editing?.place === 'antes' ? 'Líneas nuevas antes de esta' : 'Líneas nuevas después de esta'}, en este orden</div>
+    <div class="block-head">${editing?.note ? 'Editando el bloque: ' : ''}${editing?.place === 'antes' ? 'Líneas nuevas antes de esta' : 'Líneas nuevas después de esta'}, en este orden</div>
     ${rows.map((r, j) => `<div class="block-row" style="--c:${voice(r.speaker).colour}"><select>${options(r.speaker)}</select><textarea rows="2" placeholder="Qué dice…">${html(r.text)}</textarea>${rows.length > 1 ? `<button data-act="add-drop" data-row="${j}" title="Quita esta línea del bloque">×</button>` : ''}</div>`).join('')}
     <input placeholder="Por qué (opcional)" value="${html(editing?.why ?? '')}" />
     <div class="buttons"><button class="main" data-act="add-save" title="Queda como nota: la skill guion las escribe en el código">Guardar bloque</button><button data-act="add-row">+ Otra línea</button><button data-act="cancel">Cancelar</button><small>⌘↵ guarda · Esc cancela</small></div>${msg}</div>`;
@@ -206,7 +206,7 @@ function lineHtml(e: GuionEntry, line: GuionLine, i: number) {
 
 /** What goes `place` line `i`: the open blocks to add there, and the block being written there. */
 function around(e: GuionEntry, i: number, place: GuionPlace) {
-  const ghosts = blocksAt(e, i, place).map(n => `<div class="ghost" data-id="${n.id}">
+  const ghosts = blocksAt(e, i, place).filter(n => n.id !== editing?.note).map(n => `<div class="ghost" data-id="${n.id}">
     ${(n.block ?? []).map(l => { const v = voice(l.speaker); return `<div class="say added" style="--c:${v.colour}"><div class="face">${v.portrait ? `<img src="${v.portrait}" alt="" loading="lazy" />` : html(v.mark)}</div><div><div class="who">${html(v.name)}<code>nueva</code></div><p class="text">${html(l.text)}</p></div></div>`; }).join('')}
     ${noteHtml(n, e, true)}
   </div>`).join('');
@@ -323,7 +323,9 @@ async function act(button: HTMLElement) {
     if (act === 'add-save' && i !== undefined) {
       if (!rows.some(r => r.text.trim())) { message = { kind: 'warn', text: 'Escribe al menos una línea.' }; refresh(entry); return; }
       const was = editing;
-      if (await saveNotes([...notes, newGuionNote({ entry, title: e.title, text: why, line: i, quote: line?.text, at: whereOf(line), change: 'añadir', place: editing.place, block: rows })])) { if (editing === was) editing = undefined; toast('Bloque guardado en docs/guion-notes.json: la skill guion lo escribirá en el código.'); }
+      const next = editing.note ? notes.map(n => n.id === editing!.note ? { ...n, text: why, block: rows } : n)
+        : [...notes, newGuionNote({ entry, title: e.title, text: why, line: i, quote: line?.text, at: whereOf(line), change: 'añadir', place: editing.place, block: rows })];
+      if (await saveNotes(next)) { if (editing === was) editing = undefined; toast('Bloque guardado en docs/guion-notes.json: la skill guion lo escribirá en el código.'); }
       refresh(entry); return;
     }
   }
@@ -358,6 +360,13 @@ async function noteAction(button: HTMLElement) {
   const note = notes.find(n => n.id === button.dataset.id);
   if (!note) return;
   const what = button.dataset.note!;
+  if (what === 'editar-bloque') {
+    const e = entryById(note.entry), line = e && anchorOf(note, e);
+    if (!e || line === undefined) return;
+    message = undefined;
+    editing = { entry: note.entry, line, mode: 'add', place: note.place ?? 'despues', block: (note.block ?? []).map(l => ({ ...l })), why: note.text, note: note.id };
+    refresh(note.entry); return;
+  }
   if (what === 'borrar') { if (await saveNotes(notes.filter(n => n !== note))) render(); return; }
   if (what === 'aplicar' && note.line !== undefined && note.proposal) {
     const wrong = await saveLine(note.entry, note.line, note.proposal);

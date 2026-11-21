@@ -62,6 +62,14 @@ export const LINES_EMILIE = {
     gerard('¿Nada?'),
     aitor('Nada. Y en las noticias hablaban de una fuga de agua enorme en el Poble Sec. Por Blai. Es su calle.'),
   ),
+  /**
+   * A rehearsal she misses (docs/quests/coro.md § Ensayar): what Aitor lets slip in the pause, no more.
+   * The flood that goes with it is on the TV's ticker.
+   */
+  ensayo: group('aitor',
+    aitor('Falta Emilie.'),
+    aitor('Ella, que no se pierde un ensayo. Y ni un mensaje.'),
+  ),
   /** At her door on Margarit, the first time: water runs out under it. */
   door: group('emilie',
     gerard('Sale agua por debajo del portal.'),

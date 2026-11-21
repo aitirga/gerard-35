@@ -11,6 +11,14 @@ one a phase; without the answer the party loses and sees what killed it (the mov
 was announced); with it the fight turns and the turn shows. Rules are by kind of blow or status,
 never by ánima. Each rule is on the plate: a part with its PV, a chip, a tell, a clock.
 
+**Redesigned on 2026-11-21** for the party that reaches each of them (its ánimas, grades, duals and
+definitivas exist now; the first version was written before them) and for the castle's weaknesses
+([castle.md](castle.md) § Weaknesses): the ring (water puts out fire, a spark runs through water,
+fire melts the wire) is learned on the second floor and asked again by Dirección and by the Queen.
+An element is always a prize and never a requirement: each boss has an answer within reach of fire,
+physical, astral and Sangrado. **Nothing here is balanced yet**: the numbers are first guesses and
+the `TARGETS` keep the ranges they had (the balance round is still to come).
+
 ## Aurelià
 
 **Aurelià** is the castle's first great boss: a history teacher at the Rec Comtal, a despot in the
@@ -18,7 +26,9 @@ classroom, an athlete once. The Queen holds him (his eyes are violet). He is a c
 Gerard's, written as an adult would know him: a man who has always confused being obeyed with
 being right. He is not mocked and he is not a monster; beaten, he comes back to himself.
 
-- **Where**: the gym, dressed as his. A dais with a lectern before the mats, running lanes painted
+- **Where**: the gym, dressed as his; his fight goes up onto *La pista* (`src/boss-stages.ts`,
+  [palace-zones.md](places/palace-zones.md) § The bosses' stages), with its entrance: the tubes
+  row by row, then the school bell. A dais with a lectern before the mats, running lanes painted
   across the floor, a timeline along the whole wall, laurel and marble: his namesake is the
   emperor of the walls, the one who called himself restorer of order. Phase 1's floor has been
   turning into this room since the patio.
@@ -28,18 +38,18 @@ being right. He is not mocked and he is not a monster; beaten, he comes back to 
 
 | Phase | PV | Moves | Question → answer |
 | --- | --- | --- | --- |
-| **La lección** | 100–65 % | *Dictado* (told a round ahead, on everyone); *Pregunta → X* (one, very hard); *Castigo* (on whoever uses the same kind of blow two rounds running) | **Part.** *El Atril* has its own PV and, while it stands, Aurelià takes half of everything. Break it: it is wood, it burns. Defender on a *Pregunta* leaves him exposed: the next blow on him is ×1.5 |
-| **La carrera** | 65–30 % | *Vuelta*: a clock that runs on his plate, 20 s. When it closes, *Sprint* on everyone and +1 *Ritmo*, for good | **Status and moment.** A **new** clock status on him starts the lap over («Tropiezo»). The same one again does not count: the ánimas have to rotate |
-| **La última recta** | 30–0 % | *Expulsión → X* (out for two rounds); *Récord* (charged over two rounds) | **Moment.** Spend now what was kept: the open wound, the dual, Punto débil, before *Récord* lands |
+| **La lección** | 100–65 % | *Dictado* (told a round ahead, on everyone); *Pregunta → X* (one, very hard); *Castigo* (on whoever uses the same kind of blow two rounds running) | **Part.** *El Atril* has its own PV and, while it stands, Aurelià takes half of everything. Break it: it is oak with brass corners, **weak to fire and to electricity**. Defender (or a protection) on a *Pregunta* leaves him exposed: the next blow on him is ×1.5 («Respuesta correcta») |
+| **La carrera** | 65–30 % | *Vuelta*: a clock that runs on his plate, 20 s. When it closes, *Sprint* on everyone and a step of *Ritmo* (his Fuerza, for good; the chip says how many he has) | **Status and moment.** Any **new** status on him, with a clock or not (a burn, a wound, a shock), is a «Tropiezo»: the lap starts over **and he loses a step of Ritmo**. The same one again does not count: the ánimas have to rotate |
+| **La última recta** | 30–0 % | *Expulsión → X* (out for two rounds); *Récord* (charged over two rounds, on everyone) | **Hold on, and keep one back.** Whoever holds on through the *Expulsión* stays in the room («Se queda»). A Tropiezo during the run-up of the *Récord* brings him down («Caída»): the Récord is lost and he is exposed, ×1.5. One status has to be kept unused for it |
 
-- **Without the answer**: half damage all through the lesson, laps that pile up *Ritmo*, and the
-  party falls in the race.
+- Aurelià has no weakness of element: he is a man, not gum. What is hers on him is the lectern.
+- **Without the answer**: half damage all through the lesson, *Ritmo* piling up lap after lap, one of
+  the party out of the room, the *Récord* whole.
 - **With it, it shows**: the lectern breaking, «Respuesta correcta» on a defended question,
-  «Tropiezo» on a broken lap.
+  «Tropiezo» and a step of Ritmo gone on a broken lap, «Se queda», «Caída».
 - *El Atril* never blocks the win; breaking it removes *Dictado*.
-- `TARGETS`: `aurelia` (played with the answer, ≥ 0.9), `aurelia-sin-atril` and
-  `aurelia-sin-relojes` (≤ 0.2). `FightMoment`s for the picker: `aurelia-leccion`,
-  `aurelia-carrera`, `aurelia-recta`.
+- `TARGETS`: `aurelia-bien`, `aurelia-con-dos`, `aurelia-con-una` and `aurelia-sin-pensar`.
+  `FightMoment`s for the picker: `aurelia-leccion`, `aurelia-carrera`, `aurelia-recta`.
 - **After**: [castle.md](castle.md) § What each boss opens.
 
 ## How they look
@@ -77,40 +87,47 @@ of the Queen's own figure: an adult, held by her, never a joke.
 ## Mar, Montse and Pilar
 
 **The management team**: **Mar**, the head, and **Montse** and **Pilar**, the two heads of
-studies. Three at once, held by her, in *Direcció*. They are the people Gerard, the school's
+studies. Three at once, held by her, in *Direcció*. Their fight is on *La sala de juntas* (`src/boss-stages.ts`, [palace-zones.md](places/palace-zones.md) § The bosses' stages): the blinds open, the three lamps, the stamp on the minutes; a lamp goes out with each who falls and the book shows the Acta's signatures. They are the people Gerard, the school's
 secretary, answers to every day. Phase 2's floor has gone dark and turned to manila and steel on
 the way here.
 
 - **Met with**: stage 2. Three ánimas each, levels up to 6, the constellations' outer ring, so the
   three elements are within reach.
-- **Each carries an element**, shown on her plate, and they use on the party the same reactions
-  the player learned (combat.md § Reacciones).
+- **Each carries a folder**, an element shown on her plate, and they use on the party the same
+  reactions the player learned (combat.md § Reacciones).
+- **What did not work before**: the three were interchangeable, their moves were not told (wetting
+  and the spark fell in the same enemy phase with nothing to do about it) and the Acta and the trade
+  of folders ran on a count of rounds nobody could see.
 
-| Move | Whose | What it does |
-| --- | --- | --- |
-| *Expediente* | Whoever holds fire | Burns one, and raises the level of a burn already there |
-| *Horario* | Whoever holds water | Wets everyone |
-| *Circular* | Whoever holds electricity | Electric on everyone; brutal on the wet |
-| ***Acta*** | The three | Every third round each signs on her turn (chips «Firma 1/3»). The third signature closes it and announces *Resolución* on everyone for her next turn: all but kills whoever does not hold on, and one of them falling first voids it |
-| *Cambio de cargo* | The three | Every few rounds they trade elements, and their weaknesses with them |
-
-- **Two standing**: no quorum, so no *Acta*; but they share out the fallen one's element.
-- **One standing**: *Voto de calidad*, the three elements in one.
+| Rule | What it is |
+| --- | --- |
+| **Each says what she will do** | Her next move is on her plate, as Aurelià's are: «Expediente → X», «Horario», «Circular», «Firma». The round of the *Acta* shows on the three plates as «Firma», and the trade the round before it comes («Cambio de cargo al acabar la ronda») |
+| *Expediente* | Whoever holds fire: burns one, and raises the level of a burn already there |
+| *Horario* | Whoever holds water: wets everyone |
+| *Circular* | Whoever holds electricity: electric on everyone; brutal on the wet |
+| **The ring** | Each is weak to what undoes her folder (fire → water, water → electricity, electricity → fire). That blow also **overrules** her («Desautorizada»): she loses the move she had announced. Once per folder each: after it she is «Sobre aviso» until the next trade |
+| ***Acta*** | **Mar presides.** Every third round those standing with her each sign on their turn (chips «Firma 1/3»). The last signature closes it and announces *Resolución* on everyone for her next turn: it all but kills whoever does not hold on. One who is blinded, confused or without her turn does not sign («No firma»). An Acta left open at the end of the round is void. **Without Mar there is no Acta** |
+| *Cambio de cargo* | Every four rounds they trade folders, and their weaknesses with them. It takes «Sobre aviso» off |
+| **When one falls** | The next in line takes her folder; an Acta being signed, or a Resolución announced, is void |
+| **The last one** | If she is **Mar**: *Voto de calidad*, the three elements in one and she hits harder. If Montse or Pilar: **«En funciones»**, the three elements without the extra |
 
 The question has three parts:
 
 | Part | Answer |
 | --- | --- |
-| **Order** | First, whoever holds water right now: with nobody wet, electricity loses its edge |
-| **Element** | Each is weak to one element, and it moves with *Cambio de cargo*: read it again |
-| **Moment** | One who is blinded, confused or has lost her turn does not sign: keep a clock ready for the next signature |
+| **What to break before it fires** | Each round there are three moves told and two turns: overrule the *Circular* while the party is wet, or the *Horario* before it |
+| **Order** | Mar first (no more Actas, no Voto de calidad, but she is the one who takes longest) or whoever holds water first (the spark loses its edge). Both work and each costs something else |
+| **Moment** | Keep a status (blind, confuse, shock) for the signature, and the Cúpula, the Telón or Defender for the *Resolución* |
 
+- **A second answer for a party without the element**: Cortocircuito, Confusión, Control remoto and
+  Cegado already take away or weaken a move that has been told; now there is something to take away.
 - **Without the answer**: the party is wet, then struck, and the Resolución lands on nobody holding on.
-- **With it, it shows**: a signature missed («No firma»), a weakness found, the *Acta* never
-  closing once one has fallen.
-- `TARGETS`: `direccion-bien` (≥ 0.7) and `direccion-sin-pensar` (≤ 0.05) for now; the split into
+- **With it, it shows**: «Desautorizada» and a move that never comes, a signature missed («No
+  firma»), the Acta void, «Sin quórum» once Mar has fallen.
+- `TARGETS`: `direccion-bien`, `direccion-con-dos` and `direccion-sin-pensar`; the split into
   `-sin-orden` and `-sin-elementos` waits for a bot that plays one part of the answer and not the other.
-  `FightMoment`s: `direccion-tres`, `direccion-dos`, `direccion-una`.
+  `FightMoment`s: `direccion-tres`, `direccion-dos`, `direccion-una` (Mar alone, Voto de calidad),
+  `direccion-funciones` (Montse alone, en funciones).
 - **After**: the definitivas ([castle.md](castle.md) § What each boss opens).
 
 ## La Reina Bubbaloo
@@ -145,17 +162,26 @@ everything the party has: stage 3, the definitivas, three ánimas each. No joke,
   stage's textures load as the party comes into the throne room, so it starts without waiting.
 - **While she holds Aitor** her spotlight turns possession's violet, her core beats faster and the
   footlights falter; freed, the warm light comes back.
-- **The rules are preliminary, on purpose**: Aitor (2026-11-20) leaves the fight's real design for
-  last, once every ánima's mechanics exist; until then it is the version below.
+- **The rules are her definitive design** (2026-11-21, once every ánima's mechanics existed): the
+  whole game asked again, each stage examining a floor of the castle. Aitor held, the artilugio, the
+  melody, the last scene and the two endings are as they were, and she still comes back at 40 % of
+  her PV, in La pompa.
 
-| Phase | PV | What it tests |
-| --- | --- | --- |
-| **El chicle** | 100–70 % | The first lesson, at scale: layers of pringue that each ask for something else (fire; a blow, once it is rancid; electricity while it is wet) |
-| **Las manos** | 70–40 % | Parts and order: two *Manos*, each with its PV. *Atrapar* holds one of the party out of the fight until that hand breaks |
-| **La pompa** | 40–10 % | Moment and elements: she charges *La Pompa* over several rounds. Break it or Defender, with its reactions |
-| **She takes Aitor** | 10 % | Below |
+| Stage | PV | What she does | What it examines |
+| --- | --- | --- | --- |
+| **El chicle** | 100–70 % | **Five layers, the five of her crown**: fresh (fire), three with a filling (what undoes each: the ring), rancid (physical, or wet it and then fire). Under a layer everything goes in at ×0.25. The layer's answer tears it off («Se despega») and takes a piece of her PV with it; she spends her turn wrapping herself in the next. With a filling, her *Pegote* burns, wets or shocks. **A layer torn off does not come back**: the five gone, she has no gum left. A dual tears off any layer | The three years of her pupils |
+| **Las manos** | 70–40 % | Two hands, each a thing with its own PV and its own job: **the one that holds** (*Atrapar → X*, told: whoever holds on is not caught, «No lo coge») and **the one that crushes** (*Aplastar → X*, told). Each hand standing takes a quarter off what reaches her. A hand broken takes its told move with it, and lets go of whoever it held | Part, order and holding on (Aurelià) |
+| **La pompa** | 40–10 % | *La Pompa* is **a thing with its own PV**, in front of her: while she blows it she takes less than half (`pompaTras`, ×0.375 since the final pass). Burst in time it goes off in her face («¡Pompa rota!»): she loses her turn and a piece of her PV. Left alone, it goes off on everyone | What to break before it fires, with everything kept (the definitivas) |
+| **She takes Aitor** | 10 % | Below | – |
 
-`TARGETS`: `reina` (≥ 0.9), and one without the answer for each phase. `FightMoment`s:
+- **Her crown is her marker**: each layer torn off puts out one of its five flavours
+  (`setPeeled` in src/throne-arena.ts). No new HUD; her plate says «Capas N».
+- **Without the answer**: ×0.25 all through the first stage while she hits every turn, one of the
+  party caught, La Pompa whole.
+- **Placeholder**: La Pompa and the two hands are drawn with the palace minion's model at their own
+  size; neither has a figure yet.
+
+`TARGETS`: `reina-toma-a-aitor`, `reina-con-artilugio` and `reina-sin-melodia`; one without the answer for each stage is still to be added (the balance round). `FightMoment`s:
 `reina-chicle`, `reina-manos`, `reina-pompa`, `reina-aitor`.
 
 ### Aitor, held
@@ -219,9 +245,10 @@ today); `aitor-poseido` in `src/battle.ts` and `src/story.ts`, as docs/progress.
 
 At 0 PV she does not die, and she does not come apart as the others do (Aitor, 2026-11-21).
 
-- She sinks to the floor, small (`LAST` in `src/battle-scene.ts`). The fight's HUD goes, there is
+- She sags where she stands, bowed and spent, her full size still: imposing, with no strength left
+  (`LAST` in `src/battle-scene.ts`; Aitor, 2026-11-21: not small). The fight's HUD goes, there is
   no victory screen, and the music goes silent: only the wind through the open balcony.
-- Gerard walks up to her and **takes her by the neck**; the camera closes in low, from the side, on
+- Gerard walks up to her and **reaches up to take her by the neck**; the camera closes in low, from the side, on
   the two of them. Over it, the line «La mà del Gerard és al seu coll. Ella no s'hi resisteix.»
   and, in Gerard's dock, two commands and no clock. **Only Gerard chooses**; Aitor answers with one
   line, said in the fight as it plays out. Once he chooses, the welcome screen's piano comes back,

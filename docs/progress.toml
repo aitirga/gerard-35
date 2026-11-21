@@ -463,6 +463,21 @@ grep = "clue-emilie"
 in = "src/story.ts"
 
 [[block.item]]
+title = "Ensayar deja caer una frase de alguien a quien aún no han llegado (Emilie, Nuria, Marta, Bernat)"
+grep = "CHOIR_REMARKS"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Marta: la única pista que nombra Alegia (el audio en el ensayo), y el piano de casa la recuerda"
+grep = "clue-marta"
+in = "src/story.ts"
+
+[[block.item]]
+title = "Nuria y Bernat: una pista de persona en el ensayo (Cardedeu y El Nucli ya estaban en el mundo)"
+grep = "clue-bernat"
+in = "src/story.ts"
+
+[[block.item]]
 title = "Marta: diseño"
 file = "docs/quests/marta.md"
 
@@ -1006,6 +1021,23 @@ title = "Modelo propio de El Atril"
 priority = "historia"
 file = "src/creatures/atril.json"
 
+# 2026-11-21 (docs/castle.md § Weaknesses): element, kind of blow and combination; the ring through the
+# second year's fillings, El Montón, Dirección and the Queen's layers. Balanced in the final pass (2026-11-21,
+# docs/fight-sim.md § The final pass, as done).
+[[block.item]]
+title = "Debilidades del castillo: el anillo, la clase de golpe y las combinaciones, en vez de solo fuego"
+weight = 2
+priority = "historia"
+grep = "export function castleAffinity"
+in = "src/castle-fight.ts"
+
+[[block.item]]
+title = "Aurelià y Dirección rediseñados para el equipo que llega a ellos: Tropiezo, Caída, gestos avisados, Desautorizada, preside Mar"
+weight = 2
+priority = "historia"
+grep = "(?s)(?=.*overruled)(?=.*tripped)(?=.*planDireccion)"
+in = "src/castle-fight.ts"
+
 [[block.item]]
 title = "Aurelià: combate y sala"
 weight = 2
@@ -1098,12 +1130,37 @@ priority = "historia"
 grep = "export const THRONE_INTRO"
 in = "src/throne-arena.ts"
 
+# Aitor 2026-11-21: Aurelià and Dirección on stages of their own, with an entrance each and a lower,
+# more frontal camera (docs/places/palace-zones.md § The bosses' stages).
+[[block.item]]
+title = "Los escenarios de Aurelià (la pista) y de Dirección (la sala de juntas)"
+weight = 2
+priority = "historia"
+grep = "(?s)(?=.*function createPista)(?=.*function createJuntas)"
+in = "src/boss-stages.ts"
+
+[[block.item]]
+title = "Las entradas de Aurelià y de Dirección: los tubos y el timbre; las persianas, las lámparas y el sello"
+priority = "historia"
+used = "STAGE_INTRO"
+
 # Aitor's own rewrite (2026-11-20): the fight's rules stay preliminary until every ánima's mechanics exist.
+# Built 2026-11-21 (docs/castle-bosses.md § La Reina Bubbaloo): five layers that do not come back, two
+# hands with a job each, La Pompa as a thing with its PV. Balanced in the final pass (2026-11-21).
 [[block.item]]
 title = "Combate de la Reina: diseño definitivo, con todas las ánimas hechas"
 priority = "historia"
-note = "Cerrar sus reglas cuando todas las ánimas tengan su mecánica; hasta entonces son provisionales. Se marca a mano."
+note = "Hecho: cinco capas (las de su corona, que se apaga con cada una), una mano que sujeta y otra que aplasta, y La Pompa como pieza con sus PV. Equilibrado en la pasada final (21-11): el equipo llega a su décimo jugando lo que pide cada fase, y sin pensar no."
 weight = 3
+grep = "peeled"
+in = "src/castle-fight.ts"
+
+# The Queen's hands and La Pompa fight with the palace minion's model (docs/castle-bosses.md § La Reina Bubbaloo).
+[[block.item]]
+title = "Figura propia de La Pompa y de las dos manos de la Reina en su combate"
+priority = "historia"
+note = "Hoy se dibujan con el modelo del esbirro a su tamaño: hacerles figura (just character-3d)."
+file = "src/creatures/pompa.json"
 
 [[block.item]]
 title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"
@@ -1228,6 +1285,18 @@ priority = "historia"
 grep = "export const ALBUM"
 in = "src/credits.ts"
 
+[[block.item]]
+title = "Créditos: el collage de la aventura y las misiones"
+priority = "historia"
+grep = "export const SNAPSHOTS"
+in = "src/credits.ts"
+
+[[block.item]]
+title = "El final: el texto de cada final, «Fi» y vuelta a la pantalla de inicio"
+priority = "historia"
+grep = "export const FINAL_CARD"
+in = "src/credits.ts"
+
 # ——— Economía ———
 [[block]]
 title = "Economía"
@@ -1314,7 +1383,7 @@ used = "onVeil"
 [[block.item]]
 title = "Equilibrio del juego entero con el simulador: sin muros"
 priority = "pruebas"
-note = "just fight-sim check en verde (el 21-11 hay 25 objetivos fuera de rango) y ninguna partida del simulador del juego que se atasque. Se marca a mano."
+note = "just fight-sim check en verde (el 21-11, tras el update de combates del castillo, hay 29 de 117 objetivos fuera de rango; todos los números de CASTLE son primera estimación) y ninguna partida del simulador del juego que se atasque. Se marca a mano."
 weight = 2
 
 # AGENTS.md § Game philosophy: each fight keeps a pair of TARGETS (src/battle-sim.ts), one playing its
@@ -1324,7 +1393,8 @@ weight = 2
 [[block.item]]
 title = "Cada combate con su pareja de objetivos en el simulador"
 priority = "pruebas"
-note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: faltan 22 (los perros, los alumnos y las delegadas del castillo, los guardias, la Reina…; just progress --audit los lista). Se marca a mano."
+note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: hechos en la pasada final (21-11), just fight-sim coverage no lista ninguno. Los que solo enseñan (los primeros perros, la primera sala de cada curso del castillo y los combates de entrada de cada misión) llevan un objetivo que los sujeta fáciles. Se marca a mano."
+done = true
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the
 # party's attributes, so an open mission's foes grow with the other missions' ánimas (FOE_GROWTH), and
@@ -1332,8 +1402,8 @@ note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: faltan
 [[block.item]]
 title = "El crecimiento del equipo acompaña a la historia: cada ánima sube al equipo, los enemigos de las misiones abiertas crecen con ellas, los niveles 5 a 7 se alcanzan y el castillo pide ánimas"
 priority = "pruebas"
-used = ["FOE_GROWTH", "gatheredFor", "XP_RULES", "ANIMA_GROWTH"]
-note = "Cada ánima da +1 a Fuerza, Magia, Defensa y Espíritu (ANIMA_GROWTH); por cada ánima de otra misión abierta, un punto y cuarto a los cuatro atributos de sus enemigos (FOE_GROWTH: +1, +3, +4); LEVEL_XP de 4 a 7 en 950, 1.150, 1.400 y 1.700, los combates del castillo valen el triple de EXP y los de noche vez y media (XP_RULES); Aurelià pide las ánimas de Nuria y dos misiones, y Dirección las de casi todas (objetivos aurelia-con-una, aurelia-con-dos, direccion-con-dos). Medido en docs/fight-sim.md § Progression y § Power and the castle."
+used = ["FOE_GROWTH", "FIGHT_GROWTH", "gatheredFor", "XP_RULES", "ANIMA_GROWTH"]
+note = "Cada ánima da +1 a Fuerza, Magia, Defensa y Espíritu (ANIMA_GROWTH); por cada ánima de otra misión abierta, los enemigos de cada combate crecen según su propia regla (FIGHT_GROWTH, desde la pasada final: de un cuarto de punto a tres en los cuatro atributos y hasta un 15 % de PV, lo que deja su pregunta igual hecha la primera o la última); LEVEL_XP de 4 a 7 en 950, 1.150, 1.400 y 1.700, los combates del castillo valen el triple de EXP y los de noche vez y media (XP_RULES); Aurelià pide las ánimas de Nuria y dos misiones, y Dirección las de casi todas (objetivos aurelia-con-una, aurelia-con-dos, direccion-con-dos). Medido en docs/fight-sim.md § Progression y § Power and the castle."
 
 [[block.item]]
 title = "Pasada final de pulido"

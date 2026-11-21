@@ -122,6 +122,8 @@ function start(stage: DuoStage, _e: BattleEffect, reached: DuoFighter[]) {
     stage.fx.ring(B, UP, .3, C.cyan, { count: 120, outward: 7, life: .35, size: 1.3 });
     stage.fx.burst('grit', { at: { ...floor, y: floor.y + .1 }, count: 150, shape: 'ring', spread: .5, outward: 6, up: .9, speed: .5, life: [.6, 1.1] });
     stage.fx.burst('floorring', { at: floor, count: 1, spread: .01, life: [.4, .55], colour: C.cyan, size: 2.2 });
+    // Bip's own explosion in it, a fluid fireball (src/fluid-fx.ts): it swells, rolls up and leaves smoke over them.
+    stage.fluid.fireball(B, 1.05, 1.1);
     // A fistful aimed straight at each foe, so every one of them is struck through.
     for (const f of foes) {
       const d = flat(B, f.chest), dy = (f.chest.y - B.y) / (d.d || 1);

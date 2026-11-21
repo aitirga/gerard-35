@@ -171,6 +171,9 @@ blink and the performance stay).
 
 | Clue | Where | Flag |
 | --- | --- | --- |
+| Aitor at a rehearsal: Bernat's photo of the back table at El Nucli, lit and empty, no words | The choir (Ensayar) | `clue-bernat` |
+| Gerard inside the castle the first time: *«Si lo sabe, estará en El Nucli dándole vueltas.»* | `LINES_2.castleFirst` | — |
+| Bernat's call, *«vine al Nucli»* | After the Queen takes Aitor | `bernat-llama` |
 
 ## Unusual things
 

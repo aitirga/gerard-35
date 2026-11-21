@@ -1,17 +1,91 @@
 {
   "title": "The end · Credits",
-  "description": "After either ending's Monday, over black: who made the game and who is in it, rolling up; then, alone, the last card: Nuria Mendoza was on holiday the whole time. A key hurries the roll; at the last card it closes them and the game goes on at home. The words are a draft.",
+  "description": "After either ending's Monday, over black: who made the game and who is in it, rolling up between two collages of snapshots of the adventure and the friends' missions laid down one by one; then, alone, the last card: Nuria Mendoza was on holiday the whole time; then the ending's own closing text and «Fi» (Bajar la mano's, then Acabar's); after it the game goes back to the welcome screen. A key hurries the roll and turns each card. The words are a draft.",
   "steps": [
-    { "open": "/?story=reina&at=home&solo=1" },
-    { "until": "!!window.gerard && document.title.startsWith('Meridiana')", "timeout": 90000 },
-    { "skipDialogue": true },
-    { "eval": "window.creditsDone = false; void window.gerard.credits.play().then(() => { window.creditsDone = true; }); undefined" },
-    { "shot": "roll-start", "delay": 9000, "caption": "Over black, the roll begins: a game by Aitor for Gerard" },
-    { "shot": "roll-friends", "delay": 14000, "caption": "The friends, as themselves" },
-    { "hold": ["Enter"], "until": "document.querySelector('#credits .credits-last')?.dataset.on === 'true'", "timeout": 120000 },
-    { "shot": "last-card", "delay": 8500, "caption": "The last card: the false lead closed, Nuria Mendoza's holiday photos dropping in round it (local only: public/private/)" },
-    { "press": "Enter" },
-    { "until": "window.creditsDone", "timeout": 20000 },
-    { "shot": "home", "delay": 1200, "caption": "And the game goes on at home" }
+    {
+      "open": "/?story=reina&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard && document.title.startsWith('Meridiana')",
+      "timeout": 90000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.creditsDone = false; void window.gerard.credits.play('bajar').then(() => { window.creditsDone = true; }); undefined"
+    },
+    {
+      "shot": "roll-start",
+      "delay": 9000,
+      "caption": "Over black, the roll begins, and the first snapshots are laid down on either side"
+    },
+    {
+      "shot": "roll-collage",
+      "delay": 30000,
+      "caption": "Halfway: the collage fills both sides, the adventure and the friends' missions in the order the story meets them"
+    },
+    {
+      "hold": [
+        "Enter"
+      ],
+      "until": "document.querySelector('#credits .credits-last')?.dataset.on === 'true'",
+      "timeout": 120000
+    },
+    {
+      "shot": "last-card",
+      "delay": 8500,
+      "caption": "The last card: the collage gone, the false lead closed, Nuria Mendoza's holiday photos dropping in round it (local only: public/private/)"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "document.querySelector('#credits .credits-final')?.dataset.on === 'true'",
+      "timeout": 20000
+    },
+    {
+      "shot": "final-card",
+      "delay": 15000,
+      "caption": "The ending's own closing lines, one after another, and «Fi» under them"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "window.creditsDone",
+      "timeout": 20000
+    },
+    {
+      "shot": "after",
+      "delay": 1200,
+      "caption": "The credits close (in the story, the welcome screen comes up next, with «Continuar»)"
+    },
+    {
+      "eval": "window.creditsDone = false; void window.gerard.credits.play('acabar').then(() => { window.creditsDone = true; }); undefined"
+    },
+    {
+      "hold": [
+        "Enter"
+      ],
+      "until": "document.querySelector('#credits .credits-last')?.dataset.on === 'true'",
+      "timeout": 120000
+    },
+    {
+      "until": "document.querySelector('#credits > small')?.dataset.on === 'true'",
+      "timeout": 30000
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "document.querySelector('#credits .credits-final')?.dataset.on === 'true'",
+      "timeout": 20000
+    },
+    {
+      "shot": "final-card-acabar",
+      "delay": 15000,
+      "caption": "Acabar's closing lines, one after another, and «Fi» under them"
+    }
   ]
 }

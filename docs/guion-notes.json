@@ -287,8 +287,162 @@
       "entry": "chapter-2:LINES_2.bola",
       "title": "LINES_2.bola",
       "text": "Esto ya no tiene sentido no? la bola de nieve no se usa en nada, para qué era?",
+      "status": "hecha",
+      "created": "2026-11-21T13:27:26Z",
+      "reply": "Sí se usa: es un objeto clave (Objetos › Agitar). Guarda cómo va cada misión de los amigos, así que un final de día, una caída o una recarga ya no las pone a cero, y os lleva a casa sin gastar horas (docs/chapter-2.md § The snow globe). Si quieres que las líneas lo dejen más claro o quitarla, dímelo.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqmsa89",
+      "entry": "castle-story:LINES_CASTLE.reinaBefore",
+      "title": "LINES_CASTLE.reinaBefore",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:37:16Z",
+      "line": 4,
+      "quote": "Però... això ho han decidit ells, no pots impondre la teva visió",
+      "at": "src/castle-story.ts:80",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "reina",
+          "text": "Ai Aitor... no ho entens... jo soc tú, tú ets jo,... i no em podeu parar, tothom tornarà als seus origens, sense filtres socials, i viuran feliços, molt més que ara"
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:81, después de la línea de Aitor.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqmva5l",
+      "entry": "castle-story:LINES_CASTLE.bernatCall",
+      "title": "LINES_CASTLE.bernatCall",
+      "text": "Añade un pitido de movil, al despertar el dia siguiente, después del No y durante la casa, un poco de pronto, esta conversa se activa antes de que salgan de casa, tipo a los 30 segons, Gerard ha de acceptar la trucada",
       "status": "abierta",
-      "created": "2026-11-21T13:27:26Z"
+      "created": "2026-11-21T16:39:36Z",
+      "line": 0,
+      "quote": "Te suena el móvil. Pone «Bernat».",
+      "at": "src/castle-story.ts:90",
+      "reply": "Pendiente de tu OK: ahora la llamada salta nada más despertar. Propuesta: unos 30 s después, el móvil de Gerard suena en casa, aparece «Contestar» y la conversación empieza al contestar; si salen de casa sin contestar, sigue sonando."
+    },
+    {
+      "id": "g-mwqmvite",
+      "entry": "castle-story:LINES_CASTLE.bernatCall",
+      "title": "LINES_CASTLE.bernatCall",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:39:47Z",
+      "line": 2,
+      "quote": "Veniu a El Nucli. Ara. Us he d'ensenyar una cosa, i per telèfon no.",
+      "at": "src/castle-story.ts:92",
+      "change": "quitar",
+      "reply": "Quitada de src/castle-story.ts (bernatCall). Nada dependía de ella.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqn5w82",
+      "entry": "castle-story:LINES_CASTLE.reinaBefore",
+      "title": "LINES_CASTLE.reinaBefore",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:47:51Z",
+      "line": 4,
+      "quote": "Però... això ho han decidit ells, no pots impondre la teva visió",
+      "at": "src/castle-story.ts:80",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "gerard35",
+          "text": "No, no ho permitirem. Et destruirem junts, Aitor i jo"
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:82.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqn646a",
+      "entry": "castle-story:LINES_CASTLE.reinaBefore",
+      "title": "LINES_CASTLE.reinaBefore",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:48:01Z",
+      "line": 4,
+      "quote": "Però... això ho han decidit ells, no pots impondre la teva visió",
+      "at": "src/castle-story.ts:80",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "reina",
+          "text": "Jaaaaa ja ja ja ja"
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:83, la última de la escena antes del combate.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqn7w5k",
+      "entry": "castle-story:LINES_CASTLE.lastWords",
+      "title": "LINES_CASTLE.lastWords",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:49:24Z",
+      "line": 0,
+      "quote": "No pot ser... aquesta melodia... aquestes sis notes... tot el meu mon està construit al voltant de elle",
+      "at": "src/castle-story.ts:114",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "reina",
+          "text": "Com les heu trobat... es imposible, es l'unic que podia alliberar al Aitor"
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:118. lastWords es ahora un bloque de cuatro líneas que la Reina dice seguidas en la última escena, antes de los dos comandos.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqnafzu",
+      "entry": "castle-story:LINES_CASTLE.lastWords",
+      "title": "LINES_CASTLE.lastWords",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:51:23Z",
+      "line": 0,
+      "quote": "No pot ser... aquesta melodia... aquestes sis notes... tot el meu mon està construit al voltant de elle",
+      "at": "src/castle-story.ts:114",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "reina",
+          "text": "I ara... no puc.... estic feble... tothom tornarà a ser com era... i vosaltres també us convertireu en ells... em necesiteu, necesiteu la inocencia... necesiteu respectar, viure pels amics... no soc dolenta... només us volia protegir..."
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:119. En el combate, cada línea dura lo que se tarda en leerla y la burbuja salta de línea cuando es larga.",
+      "closed": "2026-11-21T16:54:09Z"
+    },
+    {
+      "id": "g-mwqnbato",
+      "entry": "castle-story:LINES_CASTLE.lastWords",
+      "title": "LINES_CASTLE.lastWords",
+      "text": "",
+      "status": "hecha",
+      "created": "2026-11-21T16:52:03Z",
+      "line": 0,
+      "quote": "No pot ser... aquesta melodia... aquestes sis notes... tot el meu mon està construit al voltant de elle",
+      "at": "src/castle-story.ts:114",
+      "change": "añadir",
+      "place": "despues",
+      "block": [
+        {
+          "speaker": "reina",
+          "text": "Soc la imaginatzio, represento la cohesió, la amistad, deixeu-me viure..."
+        }
+      ],
+      "reply": "Aplicada en src/castle-story.ts:120, la última antes de que Gerard decida.",
+      "closed": "2026-11-21T16:54:09Z"
     }
   ]
 }

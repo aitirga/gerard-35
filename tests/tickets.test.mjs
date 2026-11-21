@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Story } from '../src/story.ts';
-import { OPEN_STATIONS, TICKET_STATIONS, answer, opens } from '../src/tickets.ts';
+import { OPEN_STATIONS, TICKET_STATIONS, answer, colourOf, opens } from '../src/tickets.ts';
 import { STATION_PLACES, destinations } from '../src/transit.ts';
 import { flagsAt } from '../src/story-points.ts';
 
@@ -33,10 +33,11 @@ test('the machine prints a ticket only for someone somewhere, and never says mor
   }
 });
 
-test('Alegia is far: Marta and her town are not enough without a moment with her, and the machine does not say which', () => {
-  assert.equal(opens({ station: 'alegia', person: true, place: true, moment: false }), undefined);
-  assert.equal(opens({ station: 'alegia', person: true, place: true, moment: true }), 'alegia');
-  const far = answer({ station: 'alegia', person: true, place: true, moment: false });
-  assert.equal(far, 'Tan lejos no llega un recuerdo así. Tiene que estar más vivo.');
-  assert.doesNotMatch(far, /cant|canci|piano|voz|Marta|Alegia/i);
+test('the answer is lit green when the ticket prints, yellow when close, red when nothing, and not at all when unread', () => {
+  assert.equal(colourOf({ station: 'cardedeu', person: true, place: true }), 'green');
+  assert.equal(colourOf({ station: 'cardedeu', person: true, place: false }), 'yellow');
+  assert.equal(colourOf({ station: 'barceloneta', person: false, place: true }), 'yellow');
+  assert.equal(colourOf({ station: null, person: false, place: false }), 'red');
+  assert.equal(colourOf(undefined), undefined);
+  assert.equal(colourOf({ station: 'cardedeu', person: true, place: false, colour: 'yellow' }), 'yellow', 'the server says it');
 });

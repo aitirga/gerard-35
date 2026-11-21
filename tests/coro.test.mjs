@@ -8,6 +8,8 @@ import { LINES_UNI } from '../src/friends/universidad.ts';
 
 // Every ánima mission ends with Gerard and Aitor sending the people helped to the choir
 // (docs/quests/coro.md § The choir room): it is why they turn up there every morning after.
+/** The missions whose people Gerard speaks Catalan with. */
+const CATALAN = ['nuria', 'luca', 'universidad'];
 const ENDINGS = { nuria: LINES_NURIA, marta: LINES_MARTA, emilie: LINES_EMILIE, luca: LINES_LUCA, universidad: LINES_UNI };
 
 test('every ánima mission ends with Gerard and Aitor naming the choir, where it is, and asking them to always remember it', () => {
@@ -17,8 +19,10 @@ test('every ánima mission ends with Gerard and Aitor naming the choir, where it
     const by = speaker => coro.lines.filter(l => l.speaker === speaker).map(l => l.text).join(' ');
     assert.match(by('aitor'), /A cop de diapasó/, `${mission}: Aitor, who directs it, names the choir`);
     assert.match(by('aitor'), /Meridiana/, `${mission}: and says where it is`);
-    assert.match(by('gerard35'), /Pase lo que pase/, `${mission}: Gerard asks them to come whatever happens`);
-    assert.match(by('gerard35'), /siempre/i, `${mission}: and to always remember it`);
+    // Gerard speaks Catalan with his people (docs/chapter-1.md § Catalan with his people): Nuria, Luca and the university friends.
+    const catalan = CATALAN.includes(mission);
+    assert.match(by('gerard35'), catalan ? /Passi el que passi/ : /Pase lo que pase/, `${mission}: Gerard asks them to come whatever happens`);
+    assert.match(by('gerard35'), catalan ? /sempre/i : /siempre/i, `${mission}: and to always remember it`);
     assert.ok(coro.lines.some(l => l.speaker !== 'aitor' && l.speaker !== 'gerard35'), `${mission}: the people helped answer`);
   }
 });

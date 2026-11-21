@@ -7,10 +7,10 @@
  *
  * Preliminary (2026-11-19): the dynamics, with first-guess numbers (src/castle.ts `CASTLE`).
  */
-import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, TIMED, addStatus, elementOf, inflict, roman, stacks, woundScale,
-  type Affinity, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type TimedId } from './battle.ts';
+import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, STATUSES, TIMED, addStatus, affinityName, elementOf, inflict, roman, stacks, woundScale,
+  type Affinity, type AffinityKey, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type StatusId, type TimedId } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
-import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, isCastle, yearOf,
+import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, HANDS, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, gumOf, isCastle, yearOf,
   type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type MontonForm, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
 
 /** What src/battle.ts lends: its own stats, PV and line-up, so a castle fight is measured as any other. */
@@ -42,9 +42,86 @@ function standing(state: BattleState) {
 const byYear = (year?: Year) => year === 3 ? CASTLE.year3 : year === 2 ? CASTLE.year2 : year === 1 ? CASTLE.year1 : 1;
 const yearScale = (c: Combatant) => byYear(c.castle?.year) * (c.castle?.might ?? 1) * (c.castle?.strong ? STRONG.power : 1);
 const ability = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
-const weakTo = (elements: readonly Element[]): Partial<Record<Element, Affinity>> => Object.fromEntries(elements.map(e => [UNDOES[e], 'weak' as const]));
-/** Things with PV that never take a turn and never hold up the win: Aurelià's lectern, the Queen's hands. */
-export const castleProp = (c: Combatant) => c.kind === 'atril' || c.kind === 'mano';
+const soak = (c: Combatant) => { c.timed = { ...c.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; };
+/** Every status on `c` now, by id: the ones with a clock, the ones that pile up, and a Shock. */
+const statusesOn = (c: Combatant): string[] => [
+  ...(Object.keys(c.timed ?? {}) as TimedId[]).filter(id => c.timed?.[id]),
+  ...(Object.keys(c.statuses ?? {}) as StatusId[]).filter(id => stacks(c, id) > 0),
+  ...c.shock ? ['shock'] : [],
+];
+const statusName = (id: string) => id === 'shock' ? 'Shock' : TIMED[id as TimedId]?.name ?? STATUSES[id as StatusId]?.name ?? id;
+/** Things with PV that never take a turn and never hold up the win: Aurelià's lectern, the Queen's hands, the Pompa she blows. */
+export const castleProp = (c: Combatant) => c.kind === 'atril' || c.kind === 'mano' || c.kind === 'pompa';
+
+// ——— What each is made of ———————————————————————————————————————————————————————————————
+/**
+ * What a layer of gum is weak to and resists (docs/castle.md § Weaknesses). Fresh, fire melts it. With
+ * a filling, what undoes the filling (`UNDOES`), and it resists its own. Rancid, it breaks under
+ * blows and no longer minds the fire; wet, it is soft again and the fire gets in.
+ */
+function gumAffinity(gum: Gum, key: AffinityKey, wet: boolean): Affinity | undefined {
+  if (gum === 'fresco') return key === 'fuego' ? 'weak' : undefined;
+  if (gum === 'rancio') return key === 'fisico' ? 'weak' : key === 'fuego' ? (wet ? 'weak' : 'resist') : undefined;
+  return key === UNDOES[gum] ? 'weak' : key === gum ? 'resist' : undefined;
+}
+/** What undoes El Montón's shape: the ring for an element, and fire on a wound (it seals it). A plain blow has nothing to undo. */
+const SHAPE_UNDONE: Partial<Record<MontonForm, Element>> = { ...UNDOES, sangrado: 'fuego' };
+/**
+ * What a castle foe is weak to or resists right now, worked out from what it is and what is on it,
+ * never kept: its gum by its year (and whether it is wet), a Gemelo's strand to its twin (a spark),
+ * the shape El Montón took, the folders one of Dirección carries, the layer the Queen is wrapped in,
+ * the lectern's oak and brass. By element or kind of blow, never by who strikes (src/battle.ts `affinityOf`).
+ */
+/** Her two hands, up: the one that holds and the one that crushes. Those already in the fight stand again (a moment staged twice). */
+function raiseHands(kit: CastleKit, state: BattleState) {
+  for (const hand of ['sujeta', 'aplasta'] as const) {
+    const id = `mano-${hand}`;
+    let c = state.foes.find(x => x.id === id);
+    if (!c) { c = kit.foe(id, HANDS[hand], 'mano'); state.foes.push(c); }
+    c.hp = c.maxHp; c.castle = { seen: c.hp, hand };
+  }
+}
+export function castleAffinity(c: Pick<Combatant, 'kind' | 'castle' | 'timed'>, key: AffinityKey): Affinity | undefined {
+  const m = c.castle;
+  if (!m) return undefined;
+  const wet = !!c.timed?.mojado;
+  if (c.kind === 'atril') return key === 'fuego' || key === 'electrico' ? 'weak' : undefined;
+  if (c.kind === 'directiva') return (m.elements ?? []).some(e => UNDOES[e] === key) ? 'weak' : undefined;
+  if (c.kind === 'reina') return m.gum ? gumAffinity(m.gum, key, wet) : undefined;
+  if (!m.year) return undefined;
+  if (c.kind === 'gemelo' && key === 'electrico') return 'weak';
+  if (c.kind === 'monton' && m.form && SHAPE_UNDONE[m.form] === key) return 'weak';
+  return gumAffinity(gumOf(m.year, m.filling), key, wet);
+}
+/** What a kind of blow finds in a castle foe: El Empollón knows the one it learned and not the other; rancid gum breaks under a blow. */
+export function castleBlow(c: Combatant, blow: 'physical' | 'magic'): Affinity | undefined {
+  if (c.kind === 'empollon' && c.castle?.learned) return c.castle.learned === blow ? 'resist' : 'weak';
+  return blow === 'physical' ? castleAffinity(c, 'fisico') : undefined;
+}
+/** Everything a foe can be weak to (a function: src/battle.ts is still loading when this file is read). */
+const keys = (): readonly AffinityKey[] => [...ELEMENT_ORDER, 'fisico'];
+/** Mar presides: without her there is no Acta, and the Voto de calidad is hers alone. */
+const PRESIDES: string = DIRECTIVAS[0].id;
+const MOVES: Record<Element, FoeAbilityId> = { fuego: 'expediente', agua: 'horario', electrico: 'circular' };
+/** Whether the Acta can be signed: Mar, and at least one of the other two. */
+const quorum = (team: Combatant[]) => team.length >= 2 && team.some(d => d.id === PRESIDES);
+/**
+ * What each of Dirección will do in `round`, on her plate from the round before: her signature on an
+ * Acta round, otherwise the move of the folder she carries (in turn, if she carries several). A
+ * Resolución already announced stays.
+ */
+function planDireccion(state: BattleState, round: number) {
+  const team = all(state, 'directiva').filter(alive), up = standing(state);
+  const acta = quorum(team) && round % CASTLE.actaEvery === 0;
+  team.forEach((d, i) => {
+    if (d.intent?.ability === 'resolucion') return;
+    const elements = d.castle?.elements ?? ['fuego'], element = elements[(d.turns ?? 0) % elements.length];
+    if (acta) d.intent = { ability: 'firma' };
+    else if (element !== 'fuego') d.intent = { ability: MOVES[element], at: 'todos' };
+    else if (up.length) d.intent = { ability: 'expediente', target: up[(round + i) % up.length].id };
+    else delete d.intent;
+  });
+}
 /**
  * Whoever has no turn now: a thing, a Gemelo its twin is holding up, El Ausente the round it is
  * there (it struck already), El Castigado until its Rabia is full. The round never waits for them.
@@ -75,9 +152,8 @@ function pupil(kit: CastleKit, kind: PupilKind, id: string, name: string, year: 
   const c = kit.foe(id, name, kind), pv = Math.round(c.maxHp * byYear(year));
   c.stats = { ...c.stats, pv }; c.hp = c.maxHp = pv;
   c.castle = { year, seen: pv };
-  // Fresh gum melts; a filling decides what it is weak to; rancid gum no longer minds the fire.
+  // Its gum by its year decides what it is made of (`castleAffinity`); in the second it carries a filling, which shows.
   if (year === 2) c.castle.filling = ELEMENT_ORDER[Math.floor(random() * ELEMENT_ORDER.length)];
-  c.affinities = year === 1 ? { fuego: 'weak' } : year === 2 ? { [c.castle.filling!]: 'weak' } : { fuego: 'resist' };
   if (kind === 'repetidor' && year === 1) c.shell = true;
   if (kind === 'repetidor' && year === 3) c.castle.crust = CASTLE.crust;
   // El Ausente starts out of reach; El Castigado facing the wall, calm.
@@ -91,12 +167,12 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
   const castle: BattleState['castle'] = {};
   if (encounter === 'aurelia') {
     const boss = kit.foe('aurelia', CASTLE_NAMES.aurelia, 'aurelia'), atril = kit.foe('atril', CASTLE_NAMES.atril, 'atril');
-    boss.castle = { phase: 'leccion', seen: boss.hp }; atril.castle = { seen: atril.hp }; atril.affinities = { fuego: 'weak' };
+    boss.castle = { phase: 'leccion', seen: boss.hp }; atril.castle = { seen: atril.hp };
     foes = [boss, atril];
   } else if (encounter === 'direccion') {
     foes = DIRECTIVAS.map(d => {
       const c = kit.foe(d.id, d.name, 'directiva');
-      c.castle = { elements: [d.element], seen: c.hp }; c.affinities = weakTo([d.element]);
+      c.castle = { elements: [d.element], seen: c.hp };
       return c;
     });
   } else if (encounter === 'reina' || encounter === 'reina-vuelta') {
@@ -107,7 +183,7 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
     if (encounter === 'reina-vuelta') {
       // Back with the artilugio: she is as they left her, the wounds showing, already blowing her Pompa.
       queen.hp = Math.round(queen.maxHp * CASTLE.reinaVuelta);
-      queen.castle = { stage: 'pompa', seen: queen.hp }; delete queen.affinities;
+      queen.castle = { stage: 'pompa', seen: queen.hp };
     }
     foes = [queen];
   } else {
@@ -122,12 +198,15 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
     message = `${who.length > 1 ? `${who.slice(0, -1).join(', ')} y ${who.at(-1)}` : who[0]}. Chicle con forma de alumno, la bata en los pliegues y una pompa donde iría la cara.`;
   }
   const unlocked = animas ?? [...new Set(party.flatMap(s => s.classId ? [s.classId] : []))];
-  return {
+  const state: BattleState = {
     allies: kit.lineUp(party, unlocked), foes,
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: kit.seedFrom(random),
     message: message!, castle,
   };
+  // Dirección say what is coming from the first round.
+  if (encounter === 'direccion') planDireccion(state, 1);
+  return state;
 }
 /**
  * A room's pupils out on the Meridiana at night (src/castle.ts `NightFight`, docs/chapter-2.md § Night
@@ -161,11 +240,10 @@ export function castleStrong(state: BattleState): BattleState {
   state.message = `${state.message} Vienen encarnados: rojos por dentro, y más enteros que los demás.`;
   return state;
 }
-/** The Queen wraps herself in a layer of gum: what takes it off is what it is weak to (a blow, for the rancid one). */
+/** The Queen wraps herself in a layer of gum: what takes it off is what it is weak to (`gumAffinity`), or a dual. */
 function wrap(queen: Combatant, gum: Gum) {
   const m = mark(queen);
-  m.gum = gum; m.wrapped = 0; delete m.found;
-  queen.affinities = gum === 'fresco' ? { fuego: 'weak' } : gum === 'mojado' ? { electrico: 'weak' } : { fuego: 'resist' };
+  m.gum = gum; delete m.found;
 }
 
 // ——— A blow weighed ————————————————————————————————————————————————————————————————————
@@ -179,14 +257,18 @@ function wrap(queen: Combatant, gum: Gum) {
 export function castleTaken(state: BattleState, target: Combatant, blow: Blow): number {
   const m = target.castle;
   if (!m || !isCastle(target.kind)) return 1;
-  if (m.down || m.away) return 0;
-  if (target.kind === 'empollon') return m.learned && m.learned === blow ? CASTLE.learned : 1;
-  if (target.kind === 'repetidor') return m.crust ? CASTLE.crusted : 1;
+  const wet = !!target.timed?.mojado;
+  // Wet, El Ausente shows where it is.
+  if (m.down || (m.away && !wet)) return 0;
+  // What it learned it resists; the other kind it does not know (a dual is neither).
+  if (target.kind === 'empollon') return !m.learned || blow === 'dual' ? 1 : m.learned === blow ? CASTLE.learned : CASTLE.noSabe;
+  // The crust gives while it is wet.
+  if (target.kind === 'repetidor') return m.crust && !wet ? CASTLE.crusted : 1;
   if (target.kind === 'aurelia') return (alive(one(state, 'atril')) ? CASTLE.atril : 1) * (m.exposed ? CASTLE.expuesto : 1);
   if (target.kind === 'reina') {
     if (m.stage === 'aitor') return 0;
-    const hands = all(state, 'mano').filter(alive).length;
-    return (m.gum ? CASTLE.gum : 1) * Math.max(0, 1 - CASTLE.mano * hands);
+    const hands = all(state, 'mano').filter(alive).length, bubble = all(state, 'pompa').some(alive);
+    return (m.gum ? CASTLE.gum : 1) * Math.max(0, 1 - CASTLE.mano * hands) * (bubble ? CASTLE.pompaTras : 1);
   }
   return 1;
 }
@@ -221,6 +303,15 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     effect.telegraph = { id, name: FOE_ABILITIES[id].name, ...target ? { target: target.id } : { at: 'todos' as const } };
   };
   const named = (intent: Combatant['intent']) => up.find(a => a.id === intent?.target);
+  /** What a filling leaves on whoever its blow lands on: a fire, water, or a spark that finds them wet (their next turn lost). */
+  const fill = (element: Element, who?: Combatant): string => {
+    if (!alive(who)) return '';
+    if (element === 'fuego') { const fire = inflict(who, 'quemado'); if (who.id === effect.target) effect.burn = { id: 'quemado', level: fire.level }; return ` ${who.name} arde.`; }
+    if (element === 'agua') { soak(who); return ` ${who.name} queda mojado.`; }
+    if (!who.timed?.mojado) return '';
+    delete who.timed.mojado; who.shock = true; effect.shocked = [...effect.shocked ?? [], who.id];
+    return ` La chispa encuentra mojado a ${who.name}: pierde su siguiente turno.`;
+  };
   // Whom La Delegada said, if she is in charge; otherwise whom the fight aimed at, if they can be struck.
   const boss = inCharge(state), ordered = boss && actor !== boss ? up.find(a => a.id === state.castle?.focus) : undefined;
   let target = ordered ?? (up.includes(aimed) ? aimed : up[0]);
@@ -242,7 +333,10 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
   } else if (actor.kind === 'chivata') {
     // She points at whoever a big blow is already coming for; with nobody marked she marks, otherwise she pinches.
     const coming = state.foes.map(f => alive(f) ? named(f.intent) : undefined).find(Boolean);
-    if (!up.some(a => a.castle?.marked)) {
+    // Blinded, she cannot point at anyone.
+    const blind = !!actor.timed?.cegado, free = !up.some(a => a.castle?.marked);
+    if (blind && free) called.push({ target: actor.id, text: 'No ve a quién', detail: 'Cegada no señala' });
+    if (free && !blind) {
       const who = coming ?? target;
       mark(who).marked = true; use('chivatazo'); effect.target = who.id; effect.amount = 0;
       called.push({ target: who.id, text: 'Chivatazo', detail: `El siguiente golpe, ×${CASTLE.chivatazo}` });
@@ -289,6 +383,9 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     }
     reinaTurn();
   }
+  // A second-year pupil hits with what it carries inside.
+  const filling = actor.castle?.filling;
+  if (filling && (effect.amount ?? 0) > 0) state.message += [effect.target, ...(effect.splash ?? []).map(hit => hit.target)].map(id => fill(filling, up.find(a => a.id === id))).join('');
   if (called.length) effect.called = [...effect.called ?? [], ...called];
   if (!effect.splash?.length) delete effect.splash;
   forsaken(state);
@@ -356,9 +453,14 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       said = repeater ? `«Otra vez lo mismo». Castigo para ${target.name}. −${effect.amount} PV.` : `${actor.name} golpea el suelo con la regla ante ${target.name}. −${effect.amount} PV.`;
     } else if (due?.ability === 'expulsion') {
       target = named(due) ?? target; effect.target = target.id;
+      // Whoever holds on stays in the room.
+      const stays = target.guarding;
       use('expulsion'); effect.amount = strike(target, CASTLE.expulsion);
       said = `«Fuera de mi clase». −${effect.amount} PV a ${target.name}.`;
-      if (alive(target) && up.length > 1) {
+      if (stays && alive(target)) {
+        called.push({ target: target.id, text: 'Se queda', detail: 'Aguanta en su sitio' });
+        said += ` ${target.name} no se mueve de su sitio.`;
+      } else if (alive(target) && up.length > 1) {
         mark(target).expelled = CASTLE.expulsado; called.push({ target: target.id, text: 'Expulsado', detail: `${CASTLE.expulsado} rondas fuera` });
         said += ` ${target.name} se queda fuera ${CASTLE.expulsado} rondas.`;
       }
@@ -389,18 +491,28 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     if (!effect.ability) use(next);
     state.message = said;
   }
-  /** One of Dirección: her signature on an Acta round, otherwise the move of the element she holds. */
+  /**
+   * One of Dirección: she does what her plate said (`planDireccion`): her signature on an Acta round,
+   * otherwise the move of the folder she carries. Struck with what undoes it, she has lost that move.
+   */
   function directivaTurn() {
     const m = mark(actor), team = all(state, 'directiva').filter(alive), f = fight(state);
-    const last = team.length === 1, power = (base: number) => base * (last ? CASTLE.voto : 1);
-    // The Acta closed last round: whoever signed last reads out the Resolución, if the three are still sitting.
-    if (actor.intent?.ability === 'resolucion') {
-      delete actor.intent; f.firmas = 0; for (const d of team) delete d.castle!.signed;
+    const last = team.length === 1, casting = last && actor.id === PRESIDES, power = (base: number) => base * (casting ? CASTLE.voto : 1);
+    const due = actor.intent; delete actor.intent;
+    if (m.overruled) {
+      delete m.overruled; delete effect.target;
+      called.push({ target: actor.id, text: 'Desautorizada', detail: 'Pierde el turno' });
+      state.message = `${actor.name} busca en la carpeta lo que iba a leer. Ya no está. Pierde el turno.`;
+      return;
+    }
+    // The Acta closed last round: whoever signed last reads out the Resolución, if there is still quorum.
+    if (due?.ability === 'resolucion') {
+      f.firmas = 0; for (const d of team) delete d.castle!.signed;
       use('resolucion'); everyone(spell, () => CASTLE.resolucion, target);
       state.message = `Resolución: lo que dice el acta, se cumple. −${effect.amount} PV a ${target.name}.`;
       return;
     }
-    if (team.length === 3 && state.round % CASTLE.actaEvery === 0 && !m.signed) {
+    if (due?.ability === 'firma' && quorum(team) && !m.signed) {
       delete effect.target;
       if (actor.timed?.cegado) {
         use('firma');
@@ -409,26 +521,28 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
         return;
       }
       m.signed = true; f.firmas = (f.firmas ?? 0) + 1;
-      if (f.firmas < 3) {
+      if (f.firmas < team.length) {
         use('firma');
-        called.push({ target: actor.id, text: `Firma ${f.firmas}/3` });
-        state.message = `${actor.name} firma el acta. Firma ${f.firmas} de 3.`;
+        called.push({ target: actor.id, text: `Firma ${f.firmas}/${team.length}` });
+        state.message = `${actor.name} firma el acta. Firma ${f.firmas} de ${team.length}.`;
         return;
       }
-      // The third: the Acta is closed, and its Resolución comes on her next turn. Holding on takes two thirds off; one of them down, and there is no quorum.
+      // The last one: the Acta is closed, and its Resolución comes on her next turn. Holding on takes two thirds off; without quorum it is void.
       use('firma'); announce('resolucion');
-      called.push({ target: actor.id, text: 'Firma 3/3', detail: 'Resolución en su próximo turno' });
+      called.push({ target: actor.id, text: `Firma ${f.firmas}/${team.length}`, detail: 'Resolución en su próximo turno' });
       state.message = `${actor.name} firma la última. El acta está cerrada: en su próximo turno, Resolución para todos.`;
       return;
     }
-    const elements = m.elements ?? ['fuego'], element = elements[(actor.turns! - 1) % elements.length];
+    const elements = m.elements ?? ['fuego'];
+    const element: Element = due?.ability === 'expediente' ? 'fuego' : due?.ability === 'horario' ? 'agua' : due?.ability === 'circular' ? 'electrico' : elements[(actor.turns! - 1) % elements.length];
+    if (due?.target) { target = named(due) ?? target; effect.target = target.id; }
     if (element === 'fuego') {
       use('expediente'); effect.amount = spell(target, power(CASTLE.expediente));
       if (alive(target)) { const fire = inflict(target, 'quemado'); effect.burn = { id: 'quemado', level: fire.level }; }
       state.message = `${actor.name} abre un expediente a nombre de ${target.name}. Arde. −${effect.amount} PV.`;
     } else if (element === 'agua') {
       use('horario'); everyone(spell, () => power(CASTLE.horario), target);
-      for (const a of up.filter(alive)) a.timed = { ...a.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+      for (const a of up.filter(alive)) soak(a);
       state.message = `${actor.name} reparte el horario nuevo. Os cae encima como un cubo de agua. Mojados.`;
     } else {
       const wet = new Set(up.filter(a => a.timed?.mojado).map(a => a.id));
@@ -436,7 +550,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       for (const a of up) if (wet.has(a.id) && a.timed) delete a.timed.mojado;
       state.message = `${actor.name} hace circular la corriente${wet.size ? ': en los mojados prende entera' : ''}. −${effect.amount} PV a ${target.name}.`;
     }
-    if (last) state.message = `Voto de calidad. ${state.message}`;
+    if (last) state.message = `${casting ? 'Voto de calidad' : 'En funciones'}. ${state.message}`;
   }
   /** The Queen, by her stage: the gum, her hands, La Pompa, and Aitor's hand against Gerard. */
   function reinaTurn() {
@@ -468,19 +582,33 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       forsaken(state);
       return;
     }
-    if (stage === 'manos' && !hands.length) {
-      // Her two hands come out of the floor: each a thing to break, each taking a share of what reaches her.
-      for (const n of [1, 2]) { const hand = kit.foe(`mano-${n}`, `Mano ${n === 1 ? 'izquierda' : 'derecha'}`, 'mano'); hand.castle = { seen: hand.hp }; state.foes.push(hand); }
+    const grip = hands.filter(alive), holder = grip.find(h => h.castle?.hand === 'sujeta'), crusher = grip.find(h => h.castle?.hand === 'aplasta');
+    /** What her hands will do on her next turn, said now: the one that holds reaches for someone, or the other comes down. */
+    const tell = (after?: FoeAbilityId) => {
+      const whom = standing(state).filter(a => alive(a) && !a.castle?.held), caught = state.allies.some(a => a.castle?.held && a.castle.held !== 'reina');
+      const next = holder && alive(holder) && !caught && whom.length > 1 && after !== 'atrapar' ? 'atrapar' as const : crusher && alive(crusher) ? 'aplastar' as const : undefined;
+      if (next && whom.length) announce(next, whom[(state.round + actor.turns!) % whom.length]);
+    };
+    if (stage === 'manos' && !m.raised) {
+      // Her two hands come out of the floor: each a thing to break, each taking a share of what reaches her. One holds, the other crushes.
+      raiseHands(kit, state); m.raised = true;
       use('manos'); delete effect.target;
       called.push({ target: actor.id, text: REINA_PHASES.manos });
-      state.message = 'Del suelo salen dos manos de chicle, cada una del tamaño de una puerta.';
+      state.message = 'Del suelo salen dos manos de chicle, cada una del tamaño de una puerta. Una se abre. La otra se cierra en un puño.';
+      // And she says at once what the first of them is going to do.
+      const whom = up.filter(alive);
+      if (whom.length) announce(whom.length > 1 ? 'atrapar' : 'aplastar', whom[(state.round + actor.turns!) % whom.length]);
       return;
     }
     if (stage === 'pompa') {
+      const bubble = state.foes.find(x => x.id === m.pompa?.id);
       if (!m.pompa) {
-        m.pompa = { left: CASTLE.pompaRounds, from: actor.hp };
+        // La Pompa is a thing in front of her, with its own PV: burst before it is full, it is hers to take.
+        const b = kit.foe(`pompa-${all(state, 'pompa').length + 1}`, CASTLE_NAMES.pompa, 'pompa');
+        b.castle = { seen: b.hp }; state.foes.push(b);
+        m.pompa = { left: CASTLE.pompaRounds, id: b.id };
         use('pompa'); announce('pompa'); delete effect.target;
-        state.message = `${actor.name} empieza a hinchar una pompa. Crece despacio y lo va tapando todo.`;
+        state.message = `${actor.name} empieza a hinchar una pompa delante de ella. Crece despacio y lo va tapando todo.`;
         return;
       }
       m.pompa.left -= 1;
@@ -490,33 +618,51 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
         return;
       }
       delete m.pompa; delete actor.intent;
+      if (bubble) { bubble.hp = 0; mark(bubble).told = true; mark(bubble).seen = 0; }
       use('pompa'); everyone(spell, () => CASTLE.pompaBlow, target);
       state.message = `La Pompa revienta sobre todos. −${effect.amount} PV a ${target.name}.`;
       return;
     }
-    const grip = hands.filter(alive), holding = state.allies.some(a => a.castle?.held && a.castle.held !== 'reina');
-    if (stage === 'manos' && grip.length && !holding && up.length > 1 && actor.turns! % 2 === 0) {
-      mark(target).held = grip[0].id;
-      use('atrapar'); effect.amount = 0;
-      called.push({ target: target.id, text: 'Atrapado', detail: `Hasta romper la ${grip[0].name.toLowerCase()}` });
-      state.message = `La ${grip[0].name.toLowerCase()} se cierra sobre ${target.name} y lo levanta del suelo. Fuera del combate hasta que se rompa.`;
+    if (stage === 'manos') {
+      // Each turn her hands do what she said, and she says what comes next.
+      const due = actor.intent; delete actor.intent;
+      const caught = state.allies.some(a => a.castle?.held && a.castle.held !== 'reina');
+      if (due?.ability === 'atrapar' && holder) {
+        target = named(due) ?? target; effect.target = target.id;
+        use('atrapar'); effect.amount = 0;
+        if (target.guarding) {
+          called.push({ target: target.id, text: 'No lo coge', detail: 'Aguanta en el suelo' });
+          state.message = `La ${holder.name.toLowerCase()} se cierra sobre ${target.name}, que se agarra al suelo. No lo levanta.`;
+        } else if (up.length > 1 && !caught) {
+          mark(target).held = holder.id;
+          called.push({ target: target.id, text: 'Atrapado', detail: 'Hasta romper esa mano' });
+          state.message = `La ${holder.name.toLowerCase()} se cierra sobre ${target.name} y lo levanta del suelo. Fuera del combate hasta que se rompa.`;
+        } else state.message = `La ${holder.name.toLowerCase()} se cierra en el aire.`;
+      } else if (due?.ability === 'aplastar' && crusher) {
+        target = named(due) ?? target; effect.target = target.id;
+        use('aplastar'); effect.amount = strike(target, CASTLE.aplastar);
+        state.message = `La ${crusher.name.toLowerCase()} cae sobre ${target.name}. −${effect.amount} PV.`;
+      } else {
+        use('pegote'); effect.amount = strike(target, CASTLE.pegote);
+        state.message = `${actor.name} lanza un pegote contra ${target.name}. −${effect.amount} PV.`;
+      }
+      tell(due?.ability);
       return;
     }
-    if (stage === 'manos' && grip.length) {
-      use('aplastar'); effect.amount = strike(target, CASTLE.aplastar * grip.length);
-      state.message = `${grip.length > 1 ? 'Las dos manos caen' : 'La mano que le queda cae'} sobre ${target.name}. −${effect.amount} PV.`;
-      return;
+    if (stage === 'chicle' && !m.gum) {
+      // Bare: she spends the turn wrapping herself in the next of her five. One torn off never comes back.
+      const next = GUM_ORDER.find(gum => !(m.peeled ?? []).includes(gum));
+      if (next) {
+        wrap(actor, next); use('envolver'); delete effect.target;
+        called.push({ target: actor.id, text: GUM[next] });
+        state.message = `${actor.name} se envuelve en otra capa. ${next === 'rancio' ? 'Esta es vieja, gris, agrietada.' : next === 'fresco' ? 'Esta es fresca y brilla.' : `Esta lleva algo dentro: ${ELEMENTS[next].name.toLowerCase()}.`}`;
+        return;
+      }
     }
-    if (stage === 'chicle' && !m.gum && (m.wrapped ?? 0) >= CASTLE.envolver) {
-      const next = GUM_ORDER[(GUM_ORDER.indexOf(m.last ?? 'mojado') + 1) % GUM_ORDER.length];
-      wrap(actor, next); use('envolver'); delete effect.target;
-      called.push({ target: actor.id, text: GUM[next] });
-      state.message = `${actor.name} se envuelve en otra capa. ${next === 'rancio' ? 'Esta es vieja, gris, agrietada.' : next === 'mojado' ? 'Esta chorrea.' : 'Esta es fresca y brilla.'}`;
-      return;
-    }
-    if (!m.gum) m.wrapped = (m.wrapped ?? 0) + 1;
     use('pegote'); effect.amount = strike(target, CASTLE.pegote);
     state.message = `${actor.name} lanza un pegote contra ${target.name}. −${effect.amount} PV.`;
+    // Wrapped in a layer with a filling, her gum carries it.
+    if (m.gum && m.gum !== 'fresco' && m.gum !== 'rancio' && effect.amount > 0) state.message += fill(m.gum, target);
   }
 }
 
@@ -533,6 +679,12 @@ function blowOf(effect?: BattleEffect): Blow | undefined {
   const skill = effect.kind === 'skill' ? SKILLS.find(s => s.id === effect.skill) : undefined;
   return skill?.kind === 'magic' ? 'magic' : skill?.kind === 'physical' ? 'physical' : undefined;
 }
+/** The element a party action landed with: Atacar's, a skill's or a dual's (Foc Binari is fire). */
+function elementIn(effect?: BattleEffect): Element | undefined {
+  if (!effect) return undefined;
+  const dual = effect.dual ? DUALS.find(d => d.id === effect.dual!.id) : undefined, skill = effect.skill ? SKILLS.find(s => s.id === effect.skill) : undefined;
+  return effect.element ?? elementOf(dual ?? skill);
+}
 /** What El Montón gives back with each copy: the blow it took, and its year on top. */
 export const montonCopy = (c: Combatant) => Math.round((c.castle?.copied ?? 0) * CASTLE.copia * yearScale(c));
 /** Whether a party action was aimed at `c` or reached it (a blow on everyone). */
@@ -542,8 +694,8 @@ const reached = (effect: BattleEffect | undefined, c: Combatant) => !!effect && 
  * dual's: Foc Binari and Zarpazos de fuego are fire), else a wound it opened, else nothing.
  */
 export function carried(effect: BattleEffect): MontonForm {
-  const dual = effect.dual ? DUALS.find(d => d.id === effect.dual!.id) : undefined, skill = effect.skill ? SKILLS.find(s => s.id === effect.skill) : undefined;
-  const element = effect.element ?? elementOf(dual ?? skill);
+  const skill = effect.skill ? SKILLS.find(s => s.id === effect.skill) : undefined;
+  const element = elementIn(effect);
   if (element) return element;
   if ((skill && 'bleed' in skill) || effect.status?.id === 'sangrado' || effect.hits?.some(h => h.status?.id === 'sangrado')) return 'sangrado';
   return 'golpe';
@@ -552,7 +704,7 @@ export function carried(effect: BattleEffect): MontonForm {
  * After anything that can take PV off (an action, a tick, a pulse, a round's end): what the castle's
  * rules make of it. With an `effect` it is told there; without one, as news (`takeNews`).
  */
-export function castleAfter(_kit: CastleKit, state: BattleState, effect?: BattleEffect) {
+export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleEffect) {
   if (!state.foes.some(f => isCastle(f.kind))) return;
   const called: Called = [], said: string[] = [], blow = blowOf(effect), f = fight(state);
   const actor = blow ? state.allies.find(a => a.id === effect!.actor) : undefined;
@@ -563,19 +715,35 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
     mark(actor).blows = [...blows, { round: state.round, kind: blow }].slice(-2);
   }
   // A blow found what its target is weak to: its plate keeps it.
-  const found = [...effect?.affinity && effect.target ? [effect.target] : [], ...(effect?.hits ?? []).flatMap(h => h.affinity ? [h.target] : [])];
+  const found = [...effect?.affinity && effect.target ? [effect.target] : [], ...(effect?.hits ?? []).flatMap(h => h.affinity ? [h.target] : []), ...(effect?.kinds ?? []).map(k => k.target)];
   for (const id of found) { const c = state.foes.find(x => x.id === id); if (c?.castle) c.castle.found = true; }
+  // Whom this blow found weak to its element: what Dirección's folders and the Queen's gum give way to.
+  const weakened = new Set([...effect?.affinity === 'weak' && effect.target ? [effect.target] : [], ...(effect?.hits ?? []).flatMap(h => h.affinity === 'weak' ? [h.target] : [])]);
+  // Los Gemelos hold each other by the smock: a spark on one passes to the other.
+  if (blow && elementIn(effect) === 'electrico') for (const c of state.foes) {
+    const m = c.castle, twin = m?.twin ? state.foes.find(x => x.id === m.twin) : undefined;
+    if (c.kind !== 'gemelo' || !m || !alive(twin) || twin.castle?.down || m.down || m.seen === undefined || c.hp >= m.seen || !reached(effect, c) || reached(effect, twin)) continue;
+    const passed = kit.changeHealth(twin, -Math.max(1, Math.round((m.seen - c.hp) * CASTLE.salto)));
+    called.push({ target: twin.id, text: 'Pasa al otro', detail: `−${passed} PV` });
+    said.push(`La chispa pasa de ${c.name} a ${twin.name} por la bata. −${passed} PV.`);
+  }
 
   for (const c of state.foes) {
     const m = c.castle;
     if (!m) continue;
-    if (c.kind === 'empollon' && alive(c) && hurtNow(c) && (blow === 'physical' || blow === 'magic') && m.learned !== blow) {
+    // Confused, El Empollón forgets what it had learned, and learns nothing.
+    if (c.kind === 'empollon' && alive(c) && m.learned && c.timed?.confusion) {
+      delete m.learned;
+      called.push({ target: c.id, text: 'Se le olvida', detail: 'Ya no resiste nada' });
+      said.push(`${c.name} se queda en blanco: lo que se había aprendido, se le ha ido.`);
+    }
+    if (c.kind === 'empollon' && alive(c) && hurtNow(c) && !c.timed?.confusion && (blow === 'physical' || blow === 'magic') && m.learned !== blow) {
       m.learned = blow;
       called.push({ target: c.id, text: 'Se lo aprende', detail: blow === 'magic' ? 'Resiste la magia' : 'Resiste los golpes' });
       said.push(`${c.name} se aprende ${blow === 'magic' ? 'la magia' : 'el golpe'}: el siguiente igual le hará mucho menos.`);
     }
     // El Ausente is not there: the blow goes through where it was (a fire or a wound it carried still takes).
-    if (c.kind === 'ausente' && m.away && alive(c) && blow && reached(effect, c)) {
+    if (c.kind === 'ausente' && m.away && !c.timed?.mojado && alive(c) && blow && reached(effect, c)) {
       called.push({ target: c.id, text: 'No está', detail: 'Solo la ronda después de su golpe' });
       said.push(`El golpe pasa por donde estaba ${c.name}. No hay nadie.`);
     }
@@ -609,6 +777,19 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
         if (twin?.castle?.down) { twin.hp = 0; twin.castle.told = true; delete twin.castle.down; said.push('Caen los dos a la vez. Nadie levanta a nadie.'); }
       }
     }
+    // A second-year pupil falls and its filling spills on the others: a fire, water, or a spark through whoever of them is wet.
+    if (m.filling && c.hp <= 0 && !m.down && !m.spilled) {
+      m.spilled = true;
+      const others = state.foes.filter(x => x !== c && alive(x) && !!x.castle?.year && !x.castle.down);
+      const reached = m.filling === 'electrico' ? others.filter(x => x.timed?.mojado) : others;
+      for (const x of reached) {
+        if (m.filling === 'fuego') inflict(x, 'quemado');
+        else if (m.filling === 'agua') soak(x);
+        else { kit.changeHealth(x, -Math.min(x.hp, CASTLE.derrame)); if (!x.timed!.agua) delete x.timed!.mojado; if (x.hp > 0) x.shock = true; }
+        called.push({ target: x.id, text: 'Se derrama', detail: m.filling === 'fuego' ? 'Arde' : m.filling === 'agua' ? 'Mojado' : `−${CASTLE.derrame} PV · pierde el turno` });
+      }
+      if (reached.length) said.push(`El relleno de ${c.name} se derrama sobre ${reached.length > 1 ? 'los demás' : reached[0].name}: ${m.filling === 'fuego' ? 'arden' : m.filling === 'agua' ? 'quedan mojados' : 'la chispa corre por el agua'}.`);
+    }
   }
   aurelia(); direccion(); reina();
   for (const c of state.foes) if (c.castle) c.castle.seen = c.hp;
@@ -637,43 +818,64 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
     const share = boss.hp / boss.maxHp, phase: AureliaPhase = share <= CASTLE.recta ? 'recta' : share <= CASTLE.carrera ? 'carrera' : 'leccion';
     if (phase !== m.phase) {
       m.phase = phase; delete boss.intent; delete m.record; delete m.lap; boss.turns = 0;
-      if (phase === 'carrera') { m.lap = CASTLE.vuelta; m.clocks = timedOn(boss); }
+      if (phase === 'carrera') m.lap = CASTLE.vuelta;
+      m.clocks ??= statusesOn(boss);
       called.push({ target: boss.id, text: AURELIA_PHASES[phase] });
       said.push(phase === 'carrera' ? 'Aurelià se quita la chaqueta y baja a la pista. Empieza a correr, y un cronómetro corre con él.' : 'Aurelià enfila la última recta. Ya no pregunta: echa.');
     }
-    if (m.phase !== 'carrera') return;
-    // Tropiezo: a clock status that was not on him, and is not the one that last tripped him, starts the lap over.
-    const now = timedOn(boss), fresh = now.filter(id => !(m.clocks ?? []).includes(id));
+    if (m.phase === 'leccion') return;
+    // Tropiezo: a status that was not on him, and is not the one that last tripped him, breaks his step. Any status: a clock, a wound, a shock.
+    const now = statusesOn(boss), fresh = now.filter(id => !(m.clocks ?? []).includes(id));
     m.clocks = now;
     const trip = fresh.find(id => id !== m.tripped);
-    if (trip) {
+    if (!trip) return;
+    if (m.phase === 'carrera') {
+      // The lap starts over, and he loses a step of the Ritmo he had gained.
       m.tripped = trip; m.lap = CASTLE.vuelta;
-      called.push({ target: boss.id, text: 'Tropiezo', detail: 'La vuelta empieza otra vez' });
-      said.push(`Tropiezo: ${TIMED[trip].name} le rompe el paso y la vuelta empieza otra vez.`);
+      const pace = boss.lasting?.shifts.fuerza ?? 0;
+      if (pace > 0) boss.lasting!.shifts.fuerza = Math.max(0, pace - CASTLE.ritmo);
+      called.push({ target: boss.id, text: 'Tropiezo', detail: pace > 0 ? 'La vuelta empieza otra vez · Ritmo −1' : 'La vuelta empieza otra vez' });
+      said.push(`Tropiezo: ${statusName(trip)} le rompe el paso y la vuelta empieza otra vez.`);
+    } else if (boss.intent?.ability === 'record') {
+      // On his run-up it brings him down: no Récord, and he is on the floor for the next blow.
+      m.tripped = trip; delete boss.intent; delete m.record; m.exposed = true;
+      if (effect) effect.cancelled = 'record';
+      called.push({ target: boss.id, text: 'Caída', detail: `Sin Récord · el siguiente golpe, ×${CASTLE.expuesto}` });
+      said.push(`${statusName(trip)} le coge en plena carrerilla: Aurelià se va al suelo. No hay Récord.`);
     }
   }
   function direccion() {
     const team = all(state, 'directiva');
     if (!team.length) return;
+    // Struck with what undoes the folder she carries, she loses the move she had announced. Once, until they next trade.
+    if (blow && effect) for (const d of team) {
+      const m = mark(d), move = d.intent?.ability;
+      if (!alive(d) || !weakened.has(d.id) || m.warned || !move || !(Object.values(MOVES) as FoeAbilityId[]).includes(move)) continue;
+      delete d.intent; m.overruled = true; m.warned = true; effect.cancelled = move;
+      called.push({ target: d.id, text: 'Desautorizada', detail: `Pierde ${FOE_ABILITIES[move].name}` });
+      said.push(`${d.name} pierde el hilo: ${FOE_ABILITIES[move].name} se queda sin leer.`);
+    }
     for (const d of team) {
       const m = mark(d);
       if (d.hp > 0 || m.told) continue;
       m.told = true; f.firmas = 0;
-      const heir = team.find(alive);
-      // No quorum: a closed Acta is void, its Resolución with it.
-      for (const x of team) { delete x.castle!.signed; if (x.intent?.ability === 'resolucion') { delete x.intent; if (effect) effect.cancelled = 'resolucion'; } }
+      const left = team.filter(alive), heir = left[0];
+      // An Acta being signed is void, and a closed one with it: one of them is missing.
+      for (const x of team) { delete x.castle!.signed; if (x.intent?.ability === 'resolucion' || x.intent?.ability === 'firma') { if (x.intent.ability === 'resolucion' && effect) effect.cancelled = 'resolucion'; delete x.intent; } }
       if (!heir) continue;
-      // No quorum any more; whoever is left shares out what she held.
+      // Whoever is next in line takes the folders she carried, and is weak to what undoes each.
       mark(heir).elements = [...new Set([...mark(heir).elements ?? [], ...m.elements ?? []])];
-      heir.affinities = weakTo(mark(heir).elements!); delete mark(heir).found;
-      called.push({ target: heir.id, text: team.filter(alive).length === 1 ? 'Voto de calidad' : 'Sin quórum', detail: mark(heir).elements!.map(e => ELEMENTS[e].name).join(' · ') });
-      said.push(`${d.name} se sienta. ${team.filter(alive).length === 1 ? `${heir.name} se queda con todo: voto de calidad.` : `Ya no hay quórum para el acta, y ${heir.name} se queda con lo suyo.`}`);
+      delete mark(heir).found;
+      const alone = left.length === 1, text = alone ? heir.id === PRESIDES ? 'Voto de calidad' : 'En funciones' : quorum(left) ? 'Hereda' : 'Sin quórum';
+      called.push({ target: heir.id, text, detail: mark(heir).elements!.map(e => ELEMENTS[e].name).join(' · ') });
+      said.push(`${d.name} se sienta. ${alone ? heir.id === PRESIDES ? `${heir.name} se queda con todo: voto de calidad.` : `${heir.name} se queda con todo, en funciones.` : quorum(left) ? `${heir.name} se queda con lo suyo, y sigue habiendo quórum para el acta.` : `Sin Mar no hay quién presida: ya no habrá más actas. ${heir.name} se queda con lo suyo.`}`);
     }
   }
   function reina() {
     const queen = one(state, 'reina');
     if (!queen) return;
-    const m = mark(queen), hands = all(state, 'mano');
+    const m = mark(queen), hands = all(state, 'mano'), bubbles = all(state, 'pompa');
+    const burst = () => { for (const b of bubbles) if (b.hp > 0 || !mark(b).told) { b.hp = 0; mark(b).told = true; mark(b).seen = 0; delete b.statuses; delete b.timed; } };
     const release = (id: string, why: string) => {
       for (const a of state.allies) if (a.castle?.held === id) {
         delete a.castle.held; state.spent = state.spent?.filter(x => x !== a.id);
@@ -683,38 +885,48 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
     for (const hand of hands) if (hand.hp <= 0 && !mark(hand).told) {
       mark(hand).told = true; delete hand.statuses; delete hand.timed;
       release(hand.id, `La ${hand.name.toLowerCase()} se deshace.`);
+      // What she had said that hand would do is off.
+      const role = mark(hand).hand === 'sujeta' ? 'atrapar' : 'aplastar';
+      if (queen.intent?.ability === role) { delete queen.intent; if (effect) effect.cancelled = role; }
     }
-    // The gum's answer found: the layer comes off, with what was under it.
+    // The gum's answer found (what the layer is weak to, an element or a blow; or a dual, whatever the layer): it comes off, and a piece of her with it.
     if (m.gum && alive(queen) && hurtNow(queen) && effect) {
-      const answered = m.gum === 'rancio' ? blow === 'physical' || blow === 'dual' : effect.affinity === 'weak' || effect.hits?.some(h => h.target === queen.id && h.affinity === 'weak');
+      const answered = blow === 'dual' || weakened.has(queen.id) || !!effect.kinds?.some(k => k.target === queen.id && k.affinity === 'weak');
       if (answered) {
-        const was = m.gum; m.last = was; delete m.gum; delete queen.affinities; m.wrapped = 0;
-        called.push({ target: queen.id, text: 'Se despega', detail: GUM[was] });
-        said.push(`La capa de ${GUM[was].toLowerCase()} se le cae a tiras. Debajo no hay nada que la proteja.`);
+        const was = m.gum; m.peeled = [...m.peeled ?? [], was]; delete m.gum;
+        const torn = Math.max(0, Math.min(queen.hp - 1, Math.ceil(queen.maxHp * CASTLE.capa)));
+        if (torn) kit.changeHealth(queen, -torn);
+        const left = GUM_ORDER.length - m.peeled.length;
+        called.push({ target: queen.id, text: 'Se despega', detail: `${GUM[was]} · −${torn} PV` });
+        said.push(`La capa de ${GUM[was].toLowerCase()} se le cae a tiras y se lleva un trozo de ella. ${left ? 'Debajo no hay nada que la proteja.' : 'Era la última: ya no le queda chicle con que envolverse.'}`);
       }
     }
     // Her stages by her PV; she never goes back one.
     const share = queen.hp / queen.maxHp, floor = Math.ceil(queen.maxHp * CASTLE.toma);
     if (m.stage === 'chicle' && share <= CASTLE.manos) {
-      m.stage = 'manos'; delete m.gum; delete queen.affinities; queen.turns = 0;
+      m.stage = 'manos'; delete m.gum; queen.turns = 0;
       called.push({ target: queen.id, text: REINA_PHASES.manos }); said.push('El chicle se le escurre entero. Hunde los brazos en el suelo.');
     }
     if (m.stage === 'manos' && share <= CASTLE.pompa) {
-      m.stage = 'pompa'; queen.turns = 0;
+      m.stage = 'pompa'; queen.turns = 0; delete queen.intent;
       for (const hand of hands) if (hand.hp > 0) { hand.hp = 0; mark(hand).told = true; release(hand.id, 'Recoge las manos.'); }
       called.push({ target: queen.id, text: REINA_PHASES.pompa }); said.push('Recoge las manos y toma aire. Mucho aire.');
     }
-    // La Pompa, burst by what she took while she blew it: she loses her next turn.
-    if (m.pompa && alive(queen) && m.pompa.from - queen.hp >= CASTLE.pompaHp) {
+    // La Pompa burst before it was full: it goes off in her face. She loses her next turn and a piece of herself.
+    const bubble = m.pompa ? bubbles.find(b => b.id === m.pompa!.id) : undefined;
+    if (bubble && bubble.hp <= 0 && !mark(bubble).told && alive(queen)) {
+      mark(bubble).told = true; delete bubble.statuses; delete bubble.timed;
       delete m.pompa; delete queen.intent; m.stunned = true;
+      const torn = Math.max(0, Math.min(queen.hp - 1, Math.ceil(queen.maxHp * CASTLE.pompaRota)));
+      if (torn) kit.changeHealth(queen, -torn);
       if (effect) effect.cancelled = 'pompa';
-      called.push({ target: queen.id, text: '¡Pompa rota!', detail: 'Pierde el turno' }); said.push('La pompa le revienta en la cara antes de tiempo.');
+      called.push({ target: queen.id, text: '¡Pompa rota!', detail: `Pierde el turno · −${torn} PV` }); said.push('La pompa le revienta en la cara antes de tiempo.');
     }
     // At a tenth of her PV she takes Aitor, and nothing reaches her while she has him.
     // Only when she is about to fall: the possession is what nearly beating her brings. Lost before that, it is an ordinary fall.
     const aitor = taker();
     if ((m.stage === 'pompa' || m.stage === 'manos' || m.stage === 'chicle') && queen.hp <= floor && aitor && !f.freed) {
-      queen.hp = floor; m.stage = 'aitor'; queen.turns = 0; delete m.pompa; delete queen.intent; delete m.gum; delete queen.affinities; delete m.stunned;
+      queen.hp = floor; m.stage = 'aitor'; queen.turns = 0; delete m.pompa; delete queen.intent; delete m.gum; delete m.stunned; burst();
       for (const hand of hands) if (hand.hp > 0) { hand.hp = 0; mark(hand).told = true; release(hand.id, ''); }
       // Down or not, he is hers: she lifts him to half his PV, so the moment cannot be skipped.
       if (aitor.hp <= 0) aitor.hp = Math.ceil(aitor.maxHp / 2);
@@ -729,13 +941,12 @@ export function castleAfter(_kit: CastleKit, state: BattleState, effect?: Battle
       said.push('Casi en el suelo, alarga un hilo de chicle hasta Aitor. Se le vuelven violeta los ojos. Se gira hacia Gerard.');
     }
     if (m.stage === 'aitor' && queen.hp < floor) queen.hp = floor;
-    if (queen.hp <= 0) for (const hand of hands) hand.hp = 0;
+    if (queen.hp <= 0) { for (const hand of hands) hand.hp = 0; burst(); }
     forsaken(state);
   }
   /** Aitor, if he is there to be taken: in the party (standing or not), not already hers. */
   function taker() { return state.allies.length > 1 ? state.allies.find(a => a.id === 'aitor' && !a.castle?.held) : undefined; }
 }
-const timedOn = (c: Combatant) => (Object.keys(c.timed ?? {}) as TimedId[]).filter(id => c.timed?.[id]);
 
 // ——— A round's end, and the next one's start ————————————————————————————————————————————
 /** The end of a round: a Gemelo held up gets back on its feet, an Acta not closed is void, and every few rounds Dirección trade elements. */
@@ -760,19 +971,25 @@ export function castleRoundEnd(state: BattleState) {
   delete f.focus;
   const team = all(state, 'directiva').filter(alive);
   if (team.length) {
-    // An Acta left open (a signature missed) is void; a closed one waits for its Resolución while the three are sitting.
-    const closed = team.length === 3 && team.some(d => d.intent?.ability === 'resolucion');
+    // An Acta left open (a signature missed) is void; a closed one waits for its Resolución while there is quorum.
+    const closed = quorum(team) && team.some(d => d.intent?.ability === 'resolucion');
     if (!closed) {
-      if (f.firmas && team.length === 3) said.push('El acta se queda sin cerrar. Las firmas que había no valen.');
+      if (f.firmas && quorum(team)) said.push('El acta se queda sin cerrar. Las firmas que había no valen.');
       f.firmas = 0; for (const d of team) { delete d.castle!.signed; if (d.intent?.ability === 'resolucion') delete d.intent; }
     }
-    if (team.length > 1 && state.round % CASTLE.cargoEvery === 0) {
-      // Cambio de cargo: each takes the next one's elements, and her weakness with them.
-      const held = team.map(d => mark(d).elements ?? []);
-      team.forEach((d, i) => { mark(d).elements = held[(i + 1) % team.length]; d.affinities = weakTo(mark(d).elements!); delete mark(d).found; });
-      for (const d of team) called.push({ target: d.id, text: 'Cambio de cargo', detail: mark(d).elements!.map(e => ELEMENTS[e].name).join(' · ') });
-      said.push('Cambio de cargo: se pasan las carpetas. Cada una lleva ahora lo de otra.');
+    if (state.round % CASTLE.cargoEvery === 0) {
+      // Whoever was put on her guard is not any more.
+      for (const d of team) delete mark(d).warned;
+      if (team.length > 1) {
+        // Cambio de cargo: each takes the next one's folders, and what undoes them with them.
+        const held = team.map(d => mark(d).elements ?? []);
+        team.forEach((d, i) => { mark(d).elements = held[(i + 1) % team.length]; delete mark(d).found; });
+        for (const d of team) called.push({ target: d.id, text: 'Cambio de cargo', detail: mark(d).elements!.map(e => ELEMENTS[e].name).join(' · ') });
+        said.push('Cambio de cargo: se pasan las carpetas. Cada una lleva ahora lo de otra.');
+      }
     }
+    // What each will do next round goes on her plate now.
+    planDireccion(state, state.round + 1);
   }
   if (!called.length && !said.length) return;
   const lead = state.foes.find(alive) ?? state.foes[0];
@@ -803,7 +1020,7 @@ export function runCastle(kit: CastleKit, state: BattleState, seconds: number): 
   const boss = one(state, 'aurelia'), m = boss?.castle;
   if (!alive(boss) || !m || m.phase !== 'carrera' || m.lap === undefined) return false;
   // A clock status that ran out can trip him again when it comes back.
-  if (m.clocks) m.clocks = m.clocks.filter(id => boss.timed?.[id]);
+  if (m.clocks) { const on = statusesOn(boss); m.clocks = m.clocks.filter(id => on.includes(id)); }
   m.lap -= seconds;
   if (m.lap > 0) return false;
   m.lap = CASTLE.vuelta;
@@ -819,7 +1036,7 @@ export function runCastle(kit: CastleKit, state: BattleState, seconds: number): 
   const splash = up.slice(1).map(a => ({ target: a.id, amount: blow(a, CASTLE.sprint) }));
   if (splash.length) news.splash = splash;
   news.stats = [{ target: boss.id, way: 'up', stats: ['fuerza'] }];
-  news.called = [{ target: boss.id, text: 'Vuelta', detail: 'Ritmo +1' }];
+  news.called = [{ target: boss.id, text: 'Vuelta', detail: `Ritmo ${Math.round(lasting.shifts.fuerza / CASTLE.ritmo)} · Fuerza +${lasting.shifts.fuerza}` }];
   state.message = 'Aurelià cierra la vuelta y os pasa por encima sin frenar. Cada vuelta corre más.';
   (state.news ??= []).push(news);
   return true;
@@ -866,12 +1083,16 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
   const m = c.castle, chips: [string, string][] = [];
   if (!m || c.hp <= 0) return chips;
   const f = state.castle ?? {};
-  if (m.found) for (const [element, a] of Object.entries(c.affinities ?? {}) as [Element, Affinity][]) chips.push([`${a === 'weak' ? 'debil' : 'resiste'}-${element}`, `${a === 'weak' ? 'Débil' : 'Resiste'}: ${ELEMENTS[element].name}`]);
+  const wet = !!c.timed?.mojado;
+  // A second-year pupil's filling shows; what a blow has found it weak to or resisting stays on its plate, as it is now (wet, rancid gum is soft again).
+  if (m.filling) chips.push([`relleno-${m.filling}`, `Relleno: ${ELEMENTS[m.filling].name}`]);
+  if (m.found) for (const key of keys()) { const a = castleAffinity(c, key); if (a) chips.push([`${a === 'weak' ? 'debil' : 'resiste'}-${key}`, `${a === 'weak' ? 'Débil' : 'Resiste'}: ${affinityName(key)}`]); }
+  if (m.year === 3 && wet) chips.push(['reblandecido', 'Reblandecido']);
   if (m.learned) chips.push(['aprendido', m.learned === 'magic' ? 'Se sabe la magia' : 'Se sabe los golpes']);
-  if (m.crust) chips.push(['costra', `Costra ${m.crust}`]);
+  if (m.crust) chips.push(['costra', wet ? 'Costra blanda' : `Costra ${m.crust}`]);
   if (m.down) chips.push(['caido', 'Caído · lo levanta su gemelo']);
   if (m.marked) chips.push(['chivatazo', `Chivatazo ×${CASTLE.chivatazo}`]);
-  if (c.kind === 'ausente') chips.push(m.away ? ['ausente', 'Ausente: no se le puede pegar'] : ['presente', 'Presente hasta el final de la ronda']);
+  if (c.kind === 'ausente') chips.push(m.away ? wet ? ['presente', 'Mojado: se le ve'] : ['ausente', 'Ausente: no se le puede pegar'] : ['presente', 'Presente hasta el final de la ronda']);
   if (c.kind === 'castigado') chips.push(m.rage ? ['rabia', `Rabia ${m.rage}/${CASTLE.rabia}${m.rage >= CASTLE.rabia ? ' · revienta' : ''}`] : ['pared', 'De cara a la pared']);
   if (c.kind === 'monton') chips.push(m.form ? ['forma', `Copia: ${MONTON_FORMS[m.form]} · ${montonCopy(c)}${m.all || m.form === 'agua' ? ' a todos' : ''}`] : ['sin-forma', 'Sin forma: copia el primer golpe']);
   if (m.expelled) chips.push(['expulsado', `Expulsado · ${m.expelled}`]);
@@ -882,21 +1103,32 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
     if (alive(one(state, 'atril'))) chips.push(['atril', 'Tras el atril: mitad de daño']);
     if (m.exposed) chips.push(['expuesto', `Sin palabras ×${CASTLE.expuesto}`]);
     if (m.phase === 'carrera' && m.lap !== undefined) chips.push(['vuelta', `Vuelta · ${Math.max(0, Math.ceil(m.lap))} s`]);
+    const pace = c.lasting?.shifts.fuerza ?? 0;
+    if (pace > 0) chips.push(['ritmo', `Ritmo ${Math.round(pace / CASTLE.ritmo)}`]);
+    if (m.tripped && m.phase !== 'leccion') chips.push(['tropiezo', `Tropezó: ${statusName(m.tripped)}`]);
   }
   if (c.kind === 'directiva') {
+    const team = all(state, 'directiva').filter(alive);
     chips.push(['cargo', (m.elements ?? []).map(e => ELEMENTS[e].name).join(' · ')]);
-    if (m.signed) chips.push(['firma', `Firma ${f.firmas ?? 0}/3`]);
+    if (team.length === 1) chips.push(c.id === PRESIDES ? ['voto', 'Voto de calidad'] : ['funciones', 'En funciones']);
+    else if (c.id === PRESIDES && quorum(team)) chips.push(['preside', 'Preside el acta']);
+    if (m.signed) chips.push(['firma', `Firma ${f.firmas ?? 0}/${team.length}`]);
+    if (m.overruled) chips.push(['desautorizada', 'Desautorizada']);
+    else if (m.warned) chips.push(['sobre-aviso', 'Sobre aviso']);
+    if (team.length > 1 && state.round % CASTLE.cargoEvery === 0) chips.push(['cambio', 'Cambio de cargo al acabar la ronda']);
   }
   if (c.kind === 'reina') {
     if (m.stage && m.stage !== 'libre' && m.stage !== 'aitor') chips.push(['fase', REINA_PHASES[m.stage]]);
     if (m.gum) chips.push(['chicle', GUM[m.gum]]);
+    if (m.stage === 'chicle') { const left = GUM_ORDER.length - (m.peeled?.length ?? 0); chips.push(['capas', left ? `Capas ${left}` : 'Sin chicle']); }
     const hands = all(state, 'mano').filter(alive).length;
     if (hands) chips.push(['manos', `${hands === 2 ? 'Dos manos' : 'Una mano'}: daño −${Math.round(CASTLE.mano * hands * 100)} %`]);
-    if (m.pompa) chips.push(['pompa', `La Pompa · ${m.pompa.left} · aguanta ${Math.max(0, CASTLE.pompaHp - (m.pompa.from - c.hp))}`]);
+    if (m.pompa) chips.push(['pompa', 'Tras la pompa: daño −50 %']);
     if (m.stage === 'aitor') chips.push(['aitor', f.artilugio && f.startled ? `Aitor ${'●'.repeat(f.notes ?? 0)}${'○'.repeat(MELODY.length - (f.notes ?? 0))}` : 'Tiene a Aitor']);
     if (m.stunned) chips.push(['sin-turno', 'Sin turno']);
   }
-  if (c.kind === 'mano') { const held = state.allies.find(a => a.castle?.held === c.id); if (held) chips.push(['atrapado', `Sujeta a ${held.name}`]); }
+  if (c.kind === 'mano') { const held = state.allies.find(a => a.castle?.held === c.id); chips.push(held ? ['atrapado', `Sujeta a ${held.name}`] : ['mano', c.castle?.hand === 'aplasta' ? 'Aplasta' : 'Sujeta']); }
+  if (c.kind === 'pompa') { const left = one(state, 'reina')?.castle?.pompa?.left; if (left) chips.push(['pompa', `Revienta en ${left}`]); }
   return chips;
 }
 /** A castle foe's announced move as the fight shows it; with La Delegada in charge, her pupils' tells do not show. */
@@ -923,31 +1155,36 @@ export function stageCastle(kit: CastleKit, state: BattleState, moment: CastleMo
     boss.hp = phase === 'leccion' ? boss.maxHp : Math.floor(boss.maxHp * (phase === 'carrera' ? CASTLE.carrera : CASTLE.recta));
     atril.hp = phase === 'leccion' ? atril.maxHp : 0;
     atril.castle = { seen: atril.hp, ...phase === 'leccion' ? {} : { told: true } };
-    boss.castle = { phase, seen: boss.hp, ...phase === 'carrera' ? { lap: CASTLE.vuelta, clocks: [] } : {} };
+    boss.castle = { phase, seen: boss.hp, ...phase === 'leccion' ? {} : { clocks: [] }, ...phase === 'carrera' ? { lap: CASTLE.vuelta } : {} };
   } else if (moment.startsWith('direccion-')) {
     const team = all(state, 'directiva');
     if (team.length !== 3) return false;
-    const left = moment === 'direccion-tres' ? 3 : moment === 'direccion-dos' ? 2 : 1;
+    // Who is still sitting: the three; Mar and Montse; Mar alone, with her casting vote; Montse alone, in charge without it.
+    const sitting = moment === 'direccion-tres' ? [0, 1, 2] : moment === 'direccion-dos' ? [0, 1] : moment === 'direccion-una' ? [0] : [1];
+    const heir = sitting[0], gone = DIRECTIVAS.flatMap((x, i) => sitting.includes(i) ? [] : [x.element]);
     state.castle = {};
     team.forEach((d, i) => {
       delete d.intent; delete d.timed; delete d.statuses; d.turns = 0;
-      d.hp = i < left ? d.maxHp : 0;
-      d.castle = { elements: i < left ? [DIRECTIVAS[i].element, ...i === left - 1 ? DIRECTIVAS.slice(left).map(x => x.element) : []] : [DIRECTIVAS[i].element], seen: d.hp, ...i < left ? {} : { told: true } };
-      d.affinities = weakTo(d.castle.elements!);
+      d.hp = sitting.includes(i) ? d.maxHp : 0;
+      d.castle = { elements: [DIRECTIVAS[i].element, ...i === heir ? gone : []], seen: d.hp, ...sitting.includes(i) ? {} : { told: true } };
     });
-    // The round the next Acta is signed in, with the three standing.
-    if (left === 3) state.round = Math.ceil(state.round / CASTLE.actaEvery) * CASTLE.actaEvery;
+    // The round the next Acta is signed in, with the three sitting.
+    if (sitting.length === 3) state.round = Math.ceil(state.round / CASTLE.actaEvery) * CASTLE.actaEvery;
+    planDireccion(state, state.round);
   } else {
     const queen = one(state, 'reina');
     if (!queen) return false;
-    state.foes = state.foes.filter(c => c.kind !== 'mano');
-    delete queen.intent; delete queen.timed; delete queen.statuses; delete queen.affinities; queen.turns = 0;
+    // Her things from another moment are put down, not taken out: whoever draws the fight keeps its fighters.
+    for (const c of state.foes) if (castleProp(c)) { c.hp = 0; c.castle = { ...c.castle, told: true, seen: 0 }; delete c.timed; delete c.statuses; }
+    delete queen.intent; delete queen.timed; delete queen.statuses; queen.turns = 0;
     // The first fight's moment has no artilugio; the rest are the second fight's.
     state.castle = { artilugio: moment === 'reina-suyo' ? false : state.castle?.artilugio ?? true };
     if (moment === 'reina-chicle') { queen.hp = queen.maxHp; queen.castle = { stage: 'chicle', seen: queen.hp }; wrap(queen, 'fresco'); }
     else if (moment === 'reina-manos') {
-      queen.hp = Math.floor(queen.maxHp * CASTLE.manos); queen.castle = { stage: 'manos', seen: queen.hp };
-      for (const n of [1, 2]) { const hand = kit.foe(`mano-${n}`, `Mano ${n === 1 ? 'izquierda' : 'derecha'}`, 'mano'); hand.castle = { seen: hand.hp }; state.foes.push(hand); }
+      queen.hp = Math.floor(queen.maxHp * CASTLE.manos); queen.castle = { stage: 'manos', seen: queen.hp, raised: true };
+      raiseHands(kit, state);
+      const whom = state.allies.filter(a => a.hp > 0);
+      if (whom.length > 1) queen.intent = { ability: 'atrapar', target: whom[0].id };
     } else if (moment === 'reina-pompa') { queen.hp = Math.floor(queen.maxHp * CASTLE.pompa); queen.castle = { stage: 'pompa', seen: queen.hp }; }
     else {
       // At a tenth of her PV: she has just taken Aitor (the artilugio's moment, or the first time's with none).

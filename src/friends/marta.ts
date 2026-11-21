@@ -66,6 +66,20 @@ const marta = (text: string): DialogueLine => ({ speaker: 'marta', text });
 const group = (right: SpeakerId, ...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right, lines });
 
 export const LINES_MARTA = {
+  /**
+   * A rehearsal's pause (docs/quests/coro.md § Ensayar): her voice message from Alegia, the one
+   * place in the game that names her town (she is from Tolosa, so nobody would think of it).
+   */
+  ensayo: group('aitor',
+    aitor('Marta me ha mandado un audio desde Alegia.'),
+    aitor('Medio minuto sin decir nada. Al final intenta una nota, y no le sale.'),
+  ),
+  /** The piano at home while her mission is still ahead: Aitor remembers who sang it. */
+  pianoCasa: group('aitor',
+    gerard('Una pieza. Solo una.'),
+    aitor('Esta la tocábamos en Keiran. Yo al piano, Marta cantando.'),
+    aitor('Suena bonita. Aunque se nos va la mañana…'),
+  ),
   /** In Alegia, the first time: she is there, and she is not. */
   arrive: group('marta',
     aitor('Marta. Hemos venido en cuanto hemos podido.'),

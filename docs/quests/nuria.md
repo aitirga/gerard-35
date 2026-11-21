@@ -90,7 +90,8 @@ cats come home with Gerard; give up, and they go back to Nuria. Round the corner
 
 | Clue | Where | Flag |
 | --- | --- | --- |
-| *"La R4 se amplía desde La Sagrera hasta Cardedeu"* | TV ticker at home (done); La Sagrera's platform (to do) | `clue-r4` |
+| *"La R4 se amplía desde La Sagrera hasta Cardedeu"* | TV ticker at home (done); the bus shelter's poster on the Meridiana (done); La Sagrera's platform (to do) | `clue-r4` |
+| Aitor at a rehearsal: *«Te ha escrito Nuria. Solo esto: "Podeu venir?"»*: the person, never the place | The choir (Ensayar) | `clue-nuria` |
 
 ## Unusual things
 

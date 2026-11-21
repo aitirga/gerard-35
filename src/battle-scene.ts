@@ -3,7 +3,7 @@ import { HeldArtilugio, PROP } from './artilugio-held';
 import { ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, foeFigure, redden, type FigureClips } from './castle-models';
+import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
 import { createStamps } from './dice-stamp';
@@ -42,6 +42,7 @@ import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, 
 import { TONES, type ToneId } from './song';
 import { takeZero } from './anima-looks';
 import { DUO_STAGINGS, type DuoFighter, type DuoStage } from './duo-fx';
+import { createFluidFx } from './fluid-fx';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
 import { spellLaunch } from './battle-sounds';
@@ -138,6 +139,8 @@ const duoOf = (e?: BattleEffect) => !e?.dual ? undefined : DUO_STAGINGS[e.dual.i
 const duoEnd = (e: BattleEffect) => e.dual?.id === 'relevo-de-sangre' && e.relay ? DUO['relevo-de-sangre'].relayed : duoOf(e)?.end ?? (e.detonation ? BLAST[e.detonation].end : 0);
 /** Duals already seen this session (as the fight screen's banner counts them). */
 const seenDuals = new Set<string>();
+/** How much denser the newer duals' bursts are drawn than written (`denseFx`). */
+const DUO_DENSITY = 1.8;
 /** How the dish under a platito or El Plato's cloche looks (`Plato`), by what it is. */
 const DISH_TINT: Record<DishId, string> = { alcachofa: '#a9cf72', coliflor: '#f4ecd6', sorpresa: '#9c9a92' };
 
@@ -274,7 +277,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * one in front of her (`away`), how far across they are (0 home, 1 there) and which way they go.
      */
     cross?: { home: pc.Vec3; away: pc.Vec3; t: number; hers: boolean };
-    /** The Queen beaten: how far she has sunk to the floor, small (0–1, `LAST`). */
+    /** The Queen beaten: how far she has sagged, bowed and spent (0–1, `LAST`). */
     low?: number;
     arms: pc.Entity[]; legs: pc.Entity[]; yaw: number; turn: number; scale: pc.Vec3;
     walk: WalkAnimation;
@@ -395,6 +398,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let setNight: ((amount: number, lift?: number) => void) | undefined, night = 0, nightLift = 0, shownNight = 0;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
+  /** Fire, lava, smoke and water as fluids (src/fluid-fx.ts), on the fight's clock. */
+  const fluidFx = createFluidFx(effects, dualFx.after);
   /** What Dadista's faces draw where their die lands (src/dice-fx.ts). */
   /** The faces slapped on whoever a die hits, and the astral's stars of light (src/dice-stamp.ts). */
   const stamps = createStamps(app, battleRoot);
@@ -981,11 +986,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const body = extent(f), hand = f.party ? (f.arms[0]?.findByName('Mano') as pc.Entity | null ?? f.model).getPosition() : undefined;
     return { id, party: f.party, chest: v3(chestOf(f)), feet: v3(floorUnder(f)), hand: hand && v3(hand), radius: Math.max(.25, body.radius), height: body.height, rigid: f.rigid, anima: f.party ? classOf(id) : undefined, hp: f.hp, index: effects.fighterIndex(f.model) };
   }
+  /**
+   * The newer duals draw dense (Aitor, 2026-11-21: the GPU is not the limit, *dale duro*): every burst of
+   * theirs with a handful of particles or more carries `DUO_DENSITY` times as many. A single ring, glow or
+   * star (a count of one or two) stays as it is, so nothing is brighter, only fuller.
+   */
+  const denseFx: typeof dualFx = Object.assign(Object.create(dualFx) as typeof dualFx, {
+    burst: (kind: string, o: Parameters<typeof dualFx.burst>[1]) => dualFx.burst(kind, o.count >= 8 ? { ...o, count: Math.round(o.count * DUO_DENSITY) } : o),
+  });
   /** What the newer duals' own looks (src/duo-fx) are handed: the fight as points, and the scene's few levers. */
   function duoStage(e?: BattleEffect): DuoStage {
     const standing = (party: boolean) => [...fighters.entries()].filter(([, f]) => f.party === party && f.hp > 0 && !f.part && !f.unborn).map(([id, f]) => duoFighter(id, f));
     return {
-      fx: dualFx, effects, view: viewDir(),
+      fx: denseFx, fluid: fluidFx, effects, view: viewDir(),
       fighter: id => { const f = fighters.get(id); return f ? duoFighter(id, f) : undefined; },
       foes: () => standing(false), party: () => standing(true),
       wearer: anima => {
@@ -1067,6 +1080,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (dome) dualFx.ring(dome.base, up, dome.radius, '#ff9a3c', { kind: 'crackle', count: 90, around: 1.2, life: .5, size: 1.2, light: 3 });
       });
       dualFx.after(plan.burst, () => {
+        // The dome bursts as a fireball over the party, rolling up as its bits fly.
+        if (dome) fluidFx.fireball(dome.centre, Math.min(1.4, dome.radius * .55), 1.1);
         dome?.throwAt(struck.map(f => ({ at: v3(chestOf(f)), radius: Math.max(.3, extent(f).radius * .6) })), plan.contact + plan.stream - plan.burst);
         shake = Math.max(shake, .3);
       });
@@ -1376,15 +1391,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   /**
    * The last scene (docs/castle-bosses.md § The last scene), on her stage once she is down. She does
-   * not come apart: she sinks to the floor, small (`sink` s, to `small` of her size). Gerard walks up
-   * to her (`walk`), stops `near` metres from her and takes her by the neck (`reach`), and holds it
+   * not come apart and keeps her size: she sags (`sink` s), bowed forward and a little to one side
+   * (`bow`, `slump` degrees), imposing still but with no strength left. Gerard walks up to her
+   * (`walk`), stops `near` metres from her and reaches up to take her by the neck (`reach`, his arm
+   * raised as high as her neck is, between `arm` degrees), and holds it
    * (`settle`) while the two commands come up. Acabar: the Foc Binari forms in that hand (`charge`),
    * goes into her (`flight`) and she comes apart from pink to grey (`gone`). Bajar la mano: the hand
    * comes down (`lower`). The camera closes on the two of them (`lens`).
    */
-  const LAST = { sink: 1.4, small: .5, walk: 1.8, near: .95, reach: .8, settle: .7, charge: 2.6, flight: .32, gone: 2.4, after: 1.2, lower: 1.5,
-    lens: { yaw: -72, pitch: -4, zoom: .56, y: .3 }, fade: ['#ff4fa8', '#8e8a90'] as const } as const;
-  let last: { stage: 'hold' | 'acabar' | 'bajar'; t: number; done: () => void; from?: pc.Vec3; to?: pc.Vec3; reach: number; cast?: boolean; fired?: boolean } | undefined;
+  const LAST = { sink: 1.4, bow: 24, slump: 5, arm: [-96, -150] as const, walk: 1.8, near: 1.35, reach: .8, settle: .7, charge: 2.6, flight: .32, gone: 2.4, after: 1.2, lower: 1.5,
+    lens: { yaw: -88, pitch: -3, zoom: .46, y: .7 }, fade: ['#ff4fa8', '#8e8a90'] as const } as const;
+  let last: { stage: 'hold' | 'acabar' | 'bajar'; t: number; done: () => void; from?: pc.Vec3; to?: pc.Vec3; reach: number; angle?: number; cast?: boolean; fired?: boolean } | undefined;
   const queenOf = () => [...fighters].find(([id]) => state?.foes.some(u => u.id === id && u.kind === 'reina'))?.[1];
   /** Where Gerard's hand holds her: her neck, as low as she has sunk. */
   function neckOf(q: Fighter, toward: pc.Vec3) {
@@ -1412,6 +1429,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (l.stage === 'hold') {
       g.base.lerp(l.from, l.to!, smooth(l.t / LAST.walk));
       l.reach = smooth((l.t - LAST.walk + .2) / LAST.reach);
+      // Up to her neck: as high as it is over his shoulder, from where he stands.
+      if (l.angle === undefined && l.t >= LAST.walk - .2) {
+        const shoulder = (g.arms[0] ?? g.model).getPosition(), neck = neckOf(q, g.base);
+        const up = Math.atan2(neck.y - shoulder.y, Math.hypot(neck.x - shoulder.x, neck.z - shoulder.z)) * 180 / Math.PI;
+        l.angle = Math.min(LAST.arm[0], Math.max(LAST.arm[1], -90 - up));
+      }
       if (l.t >= LAST.walk + LAST.reach + LAST.settle && l.reach >= 1) end();
       return;
     }
@@ -1734,6 +1757,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         hit(f, orbital ? white : flame, (orbital ? 1.8 : 1.5) * (f.rigid ? .4 : 1));
         if (!orbital) {
           dualFx.paintBlast(v3(chestOf(f)), v3(floorUnder(f)), viewDir(), h.target === action.target);
+          // The powder's fire as a fireball on whoever the fuse was on (a fluid).
+          if (h.target === action.target) fluidFx.fireball(v3(chestOf(f)), .8, .8);
           effects.element('fire', v3(chestOf(f)), { strength: h.target === action.target ? 1.4 : 1 });
         }
       }
@@ -2201,6 +2226,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dualFx.burst('ember', { at: mouth, count: Math.round(140 * k), spread: .3, velocity: { x: 0, y: 6, z: 0 }, cone: .5, speed: 1.6, life: [.9, 1.8], colour: MAGMA_HOT });
     dualFx.burst('smog', { at: { ...mouth, y: mouth.y + .6 }, count: Math.round(90 * k), spread: .4, up: 1.6, speed: .7, life: [1.4, 2.4] });
     dualFx.ring({ x: site.x, y: site.y + .06, z: site.z }, up, .9, MAGMA, { count: 110, outward: 2.2, around: 1.2, life: .6, size: 1.4, light: 4 });
+    // A ball of burning gas swells out of its mouth and rolls up; lava wells over the rim and runs down
+    // its sides to pool round its foot (fluids, src/fluid-fx.ts).
+    fluidFx.fireball({ ...mouth, y: mouth.y + .35 }, .55 + .25 * k, .7 * k);
+    fluidFx.lava({ ...mouth, y: mouth.y + .05 }, 260 * k, { shape: 'ring', spread: .22, outward: 1.7, up: 1.6, speed: .45, life: [2, 3] });
     shake = Math.max(shake, .35 * k); pulse?.(.3 * k, .4); cue('fire-hit');
     to.forEach((f, i) => {
       const chest = v3(chestOf(f)), feet = floorUnder(f), flight = .42 + i * .05;
@@ -2208,6 +2237,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       dualFx.after(flight, () => {
         dualFx.ring({ x: feet.x, y: feet.y + .06, z: feet.z }, up, Math.max(.45, extent(f).radius), MAGMA, { count: 80, outward: 1.4, around: 2, life: .5, size: 1.3, light: 2.5 });
         dualFx.burst('crackle', { at: chest, count: 90, spread: .2, speed: 3, up: 1.2, life: [.3, .6], colour: '#ffb84a' });
+        // The bomb is lava: it splashes and spreads into a pool round their feet.
+        fluidFx.lavaPool({ x: feet.x, y: feet.y, z: feet.z }, Math.max(.45, extent(f).radius), .7 * k);
         hit(f, flame, 1.2);
       });
     });
@@ -2221,7 +2252,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dualFx.burst('crackle', { at: { x: site.x, y: site.y + .45, z: site.z }, count: 14, shape: 'ring', spread: .55, outward: .2, up: 1.2, speed: .5, around: .4, life: [.3, .6], colour: MAGMA });
     dualFx.burst('smog', { at: { ...mouth, y: mouth.y + .4 }, count: 4, spread: .25, up: 1, speed: .4, life: [1.6, 2.6] });
     dualFx.burst('crackle', { at: { x: site.x, y: site.y + .08, z: site.z }, count: 8, shape: 'ring', spread: .95, speed: .2, around: .5, life: [.35, .6], colour: '#ff7a2a' });
+    // Now and then lava brims over its rim and runs down to the pool at its foot.
+    if (++volcanoDrip % 5 === 0) fluidFx.lava({ ...mouth, y: mouth.y + .05 }, 26, { shape: 'ring', spread: .16, outward: .9, up: .6, speed: .2, life: [1.6, 2.4] });
   }
+  /** Counts Vulcano's idle beats, for the lava that brims over every few. */
+  let volcanoDrip = 0;
   /** Escudo de bits closed over the party (effects.bitDome), the shield it shows, and its PV last seen. */
   let wallFx: ReturnType<typeof effects.bitDome>, wallFor: BitShield | undefined, wallSeen = 0;
   /** Where a dome over the party stands: the middle of its floor, wide enough for everyone standing under it with room round them, and high enough over the tallest. */
@@ -2291,6 +2326,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dualFx.after(.1, () => {
       const feet = floorUnder(origin);
       dualFx.shock({ x: feet.x, y: feet.y, z: feet.z }, 3, '#ff9a2e', { chips: 140, light: true, heavy: true });
+      // It goes off as a fireball, and the fire runs over the floor to each it reaches as a river of burning gas (fluids).
+      fluidFx.fireball({ x: feet.x, y: feet.y + .7, z: feet.z }, 1, 1.2);
+      for (const h of c.hits) {
+        const f = fighters.get(h.target);
+        if (!f || f === origin) continue;
+        const to = floorUnder(f), T = .4;
+        fluidFx.burst('fluido-fuego', { at: { x: feet.x, y: feet.y + .25, z: feet.z }, count: 260, spread: .2, velocity: { x: (to.x - feet.x) / T, y: .5, z: (to.z - feet.z) / T }, speed: .5, life: [.55, .85] });
+      }
       hit(origin, white, 1.6); shake = Math.max(shake, .75); pulse?.(.9, .5); zoom.x = Math.max(zoom.x, HIT.punch.size);
       cue('hit');
     });
@@ -2392,6 +2435,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Bip blows itself up among them: a ball of fire, a shockwave along the floor, every foe flaring.
       const floor = groundHeight(from.x, from.z);
       effects.element('fire', v3(from), { strength: 2.2 });
+      // The fireball itself, a fluid: born packed, it swells under its own pressure, rolls up and leaves smoke.
+      fluidFx.fireball({ x: from.x, y: Math.max(floor + .8, from.y), z: from.z }, 1.25, 1.5);
       dualFx.shock({ x: from.x, y: floor, z: from.z }, 3.2, '#ff9a2e', { chips: 120, light: true, heavy: true });
       for (const h of action.hits ?? []) { const f = fighters.get(h.target); if (f) { hit(f, flame, 1.3); effects.element('fire', v3(chestOf(f)), { from: v3(from), strength: .8, feet: v3(floorUnder(f)) }); } }
       shake = Math.max(shake, .7); pulse?.(.5, .4);
@@ -3181,6 +3226,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       redden(built.materials);
       built.glow = built.materials.map(m => m.emissive.clone().mulScalar(m.emissiveIntensity));
       built.halo = encarnadoHalo(model, app.graphicsDevice);
+    } else if (unit.castle?.filling) {
+      // A second-year's filling shows through its gum (docs/castle.md § Weaknesses): every flash fades back to it.
+      fillGum(built.materials, unit.castle.filling);
+      built.glow = built.materials.map(m => m.emissive.clone().mulScalar(m.emissiveIntensity));
     }
     if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); built.plateAt = own.size * MINION_HEIGHT + .1; }
     if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
@@ -3502,8 +3551,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         for (const unit of next.foes) if (!fighters.has(unit.id) && standsAlone(unit)) {
           const caller = (nextEffect?.summoned === unit.id ? fighters.get(nextEffect.actor) : undefined) ?? [...fighters.values()].find(f => !f.party && !f.part);
           const { ahead, side } = axes(layout), from = caller?.base ?? anchor;
-          // The Queen's hands come up one on each side of her, and are there at once.
-          const hers = isCastle(unit.kind), across = hers && unit.id.endsWith('-2') ? -1.6 : hers ? 1.6 : 1;
+          // The Queen's hands come up one on each side of her (the one that holds, the one that crushes), La Pompa swells
+          // right in front of her, and all are there at once.
+          const hers = isCastle(unit.kind), across = unit.kind === 'pompa' ? 0 : hers && unit.castle?.hand === 'aplasta' ? -1.6 : hers ? 1.6 : 1;
           const base = new pc.Vec3(from.x + side.x * SUMMON.side * across - ahead.x * SUMMON.ahead, from.y, from.z + side.z * SUMMON.side * across - ahead.z * SUMMON.ahead);
           build(unit, next.foes.indexOf(unit), false, base, base.clone());
           // Only one called in waits unseen for its call; one the fight puts there (Fran's lamps coming down, the Queen's hands) is there at once.
@@ -3859,10 +3909,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           }
         }
         // Vertitrón does not come apart: it kneels (`robotFrame`).
-        // The Queen does not come apart: she sinks to the floor, small, and the last scene decides (`LAST`).
+        // The Queen does not come apart: she sags where she stands, bowed, with no strength left, and the last scene decides (`LAST`).
         if (unit?.kind === 'reina' && down >= 0) {
           f.low = animate ? smooth(down / LAST.sink) : 1;
-          lean += 14 * f.low * (f.dissolve ? 1 - smooth(f.dissolve.progress) : 1);
+          lean += LAST.bow * f.low; roll += LAST.slump * f.low;
         }
         if (!f.party && !f.robot && down >= 0 && unit?.kind !== 'reina') {
           if (!f.dissolve && (!f.arriving || f.arriving.finished) && (down >= DISINTEGRATE.shudder || !animate)) { f.dissolve = effects.disintegrate(f.model, { own: true, ...f.strings ? { colour: CUERDAS_SPECKS[f.strings] } : f.mesh ? { colour: PHOSPHOR } : {} }); cue('dissolve'); }
@@ -3877,7 +3927,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         else f.arms.forEach((arm, i) => arm.setLocalEulerAngles(celebrating ? -165 + Math.sin(time * 11 + i * Math.PI) * 12 : guarding ? -60 : -notice * 25 - strike * (i === 0 ? 85 : 35) - lifted * (i === 0 ? 150 : 12) - stride * (i === 0 ? 1 : -1), 0, guarding ? (i === 0 ? -20 : 20) : 0));
         // The last scene: his hand out to her neck, and down again if he lets her be (`LAST`).
         const reach = id === 'gerard' && last ? last.reach : 0;
-        if (reach && f.arms[0]) { const was = f.arms[0].getLocalEulerAngles(); f.arms[0].setLocalEulerAngles(pc.math.lerp(was.x, -96, reach), 0, pc.math.lerp(was.z, 6, reach)); }
+        if (reach && f.arms[0]) { const was = f.arms[0].getLocalEulerAngles(); f.arms[0].setLocalEulerAngles(pc.math.lerp(was.x, last?.angle ?? LAST.arm[0], reach), 0, pc.math.lerp(was.z, 6, reach)); }
         if (f.limbRig) {
           // Ready: knees a little bent, weight forward; elbows bent, straightening to reach or strike.
           poseLegs(f.limbRig, gait, lively && down < 0 && !celebrating ? 12 + idle.breathe * 4 : 0);
@@ -3960,8 +4010,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Encogido (Rayo encogedor): smaller from when the ray lands, and back to size when it wears off.
         const shrunk = state && [...state.foes, ...state.allies].find(u => u.id === id)?.timed?.encogido && !([effect, upcoming].some(e => (e?.skill === 'rayo-encogedor' || e?.dual?.id === 'a-escala') && e.target === id && (e !== effect || !impacted)));
         f.shrink = animate ? f.shrink + ((shrunk ? SHRUNK : 1) - f.shrink) * (1 - Math.exp(-dt * 8)) : shrunk ? SHRUNK : 1;
-        const size = f.shrink * (1 - (1 - LAST.small) * (f.low ?? 0));
-        f.model.setLocalScale(f.scale.x * size * (1 + squash * .09), f.scale.y * size * (1 - squash * .16 + breathe), f.scale.z * size * (1 + squash * .09));
+        f.model.setLocalScale(f.scale.x * f.shrink * (1 + squash * .09), f.scale.y * f.shrink * (1 - squash * .16 + breathe), f.scale.z * f.shrink * (1 + squash * .09));
         if (stance === 'sway' && animate && down < 0) roll += Math.sin(time * 2.3 + f.seed) * (f.rigid ? 1.2 : 6);
         f.model.setLocalEulerAngles(lean, f.turn, roll);
         if (fall) f.model.setPosition(position.x, groundHeight(position.x, position.z) + hop + fall * .22, position.z);

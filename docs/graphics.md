@@ -427,7 +427,7 @@ about 0.1–0.9 ms more CPU a frame. Set `LOOK.softParticles` to false to drop i
 
 A general particle engine on the GPU, used in fights, and on the street while something beaten comes
 apart there (Disintegration, below), only with motion on, on a device that renders to float textures;
-everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 32 768 particles.
+everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 131 072 particles (32 768 until 2026-11-21), up to 256 bursts a frame.
 
 - **State** is a float texture of five bands of rows (A position + age; B velocity + life; C kind,
   seed, the part it clings to, size; D when it lets go + its colour tint; E the particle it follows,
@@ -514,6 +514,43 @@ plus `meteor` (trails falling from high up that flare where they land, a scorch 
 fireflies light what is round them; the lattice presets (`ward`, `morph`, `current`, `veil`, `forge`, `shield`, `bubble`, `globe`, `orb`) are under Lattices. Firing all thirteen every 0.7 s (a storm no fight reaches)
 costs ~1.1 ms at 2× pixels, nearly all of it the lights; the first
 eight alone, before particles lit anything, cost ~0.15 ms.
+
+### The fluid (built 2026-11-21)
+
+A basic fluid on the GPU, particle-in-cell, for water that moves as a body (Aitor: *más interacción
+entre partículas, más como un fluido y luego se expande*). A kind marks itself a fluid with
+`fluid: { pressure, viscosity, rest }`; every other kind is untouched.
+
+- **The grid**: 64 × 24 × 64 cells of 20 cm (12.8 × 4.8 × 12.8 m) on one RGBA16F texture (a slice of
+  64 columns per height). It goes round wherever a fluid burst was last thrown (`aimGrid`), its floor
+  half a metre under the lowest of them, and is only filled while a fluid may be out (`fluidUntil`), so
+  it costs nothing otherwise.
+- **The splat**: before the simulation pass, every slot is drawn into the grid as a one-texel quad
+  (`SplatPass`, one instanced `QuadRender`), adding up momentum and mass per cell (additive blending;
+  the pass sets no blending back after it, as the simulation's own pass draws with whatever is left).
+- **Reading it**: in the simulation pass each fluid particle reads the eight cells round it (trilinear):
+  how packed the fluid is there and which way it thins, and the flow there. It is pushed down the
+  packing (`pressure`, harder past `rest` particles to a cell, capped at 40 m/s²), so a mass keeps its
+  volume, falls as one and spreads when it lands; and it is drawn into the flow (`viscosity`), so it
+  moves as one body. With `collide` and some `friction` it runs over the floor and round the fighters.
+- **Writing for it**: spawn a fluid as a shape, never all at one point (a column of layers, a sheet):
+  hundreds born in one cell blow apart at once. Soft `glow`s that overlap read as a body of water
+  better than crisp dots.
+- **For any effect**: `src/fluid-fx.ts` (`createFluidFx`, the scene's `fluidFx`, and `stage.fluid` for the
+  newer duals) has fire, lava, smoke and water as fluids: `fireball(at, radius)` (a knot of burning gas
+  born packed that swells under its own pressure, rolls up and leaves a billow of smoke), `lava(at, n)`
+  and `lavaPool(feet, radius)` (heavy, very thick lava that runs and pools), and the kinds themselves
+  (`fluido-lava`, `fluido-fuego`, `fluido-humo`, `fluido-agua`).
+- **Where**: Marea's wave (src/duo-fx/marea.ts), Riada's surge (`agua-ola` in src/freatica-fx.ts),
+  Vulcano (a fireball out of the volcano's mouth on each eruption, lava over its rim and down its sides
+  to pool at its foot, a pool where each bomb lands, and lava brimming over now and then while it
+  stands), Bip's Explosión and Metralla's blast (a fireball and its smoke), and Géiser (its column's
+  water falls back as a body and spreads); and, judged worth it (2026-11-21): Freática's steam
+  (`agua-vapor` billows) and the Vapor reaction (`fluido-vapor`), Golpe de ariete (each mark spent jumps
+  out and spills), Bombeo (the water given up arcs to each ally as a stream), Cubo acuático (what was in
+  it falls on them as one body), Combustión (a fireball and a river of burning gas to each it reaches),
+  Sobrecalentamiento's burst and Reserva de color's blast (a fireball). Left without: Bombardeo orbital
+  (columns of light) and Fin de fiesta (powder), where a fluid adds nothing.
 
 ## Lattices (`src/lattice.ts`)
 
@@ -1110,17 +1147,25 @@ The scene (`startDuo`, `contactBurst`, `holdTells` in src/battle-scene.ts) hands
 the fighters as plain points (`DuoFighter`: chest, feet, hand, size, its GPU `index` for
 `shape: 'surface'` bursts) and a few levers. Each file defines its own GPU particle kinds lazily,
 named after the dual (`metralla-shard`), falling back to a tinted shared kind if the engine is full
-(`MAX_KINDS`, 256 since then); the shared staging they first played (`DUO_LOOKS`) is gone. Duals over
+(`MAX_KINDS`, 256 since then); the shared staging they first played (`DUO_LOOKS`) is gone. They draw dense
+(Aitor, 2026-11-21: the GPU is not the limit): the stage hands them `denseFx`, which carries every burst of
+eight particles or more `DUO_DENSITY` (1.8) times over, and the engine takes up to 256 bursts a frame
+(`MAX_BATCHES`; past it a burst is lost, with a warning while developing). `pulsed` draws a status's
+beat as the fight screen shows it (Idea fija's, with the foe it made strike). A coming action's dome
+or shrinking waits for it to play even through a dual's unlock pause (`upcoming`). Duals over
 every foe get a wide lens (`duoLens`); Géiser a lens that pulls back for its column.
 `just screenshots duos-nuevos --gpu` plays the twelve.
 
-**Marea.** Gerard chalks communicating vessels onto the field in gold: a cylinder round each foe, a
-double pipe along the floor from each to the next, a gold `=` between each pair at the height the water
-will reach. Freática's water wells up under every foe at once, teal beads settling at one shared height
-and a surface climbing in each vessel from its own level to it (the driest rises most), current running
-out along the pipes from the fullest. On landing the surfaces become one body, joined along the pipes, a
-gold tick and a binary `1` marking the mark more. While `marea` holds, a faint tide line joins the foes'
-water at their levels; when water rises on one, a pulse lights every surface and pipe.
+**Marea** (redone 2026-11-21 as the sea, then as a fluid, Aitor: *más espectacular, como olas de mar*;
+*más como un fluido y luego se expande*). Gerard draws the level in chalk-gold, one long line across the
+field at the height the water will reach, a small `=` over its middle. The sea draws back first: water
+runs away along the floor from under the foes. Then a wall of water stands up out of the sea behind
+them, fifteen layers to over two metres, each higher layer on its way faster: it is a fluid (§ The
+fluid), so the wall leans, its top overtakes its foot and it falls on them by its own weight, abyss-blue
+at the foot, teal, foam at the crest, spray torn back off it. It breaks over every foe, the level
+flashes gold, and the water spreads out over the floor round them as it settles, each foe's water
+rocking in a ring at the shared level. While `marea` holds, a low swell rolls through them every few
+seconds, each one's water lifting in turn; when water rises on one, a bigger swell throws foam off each.
 
 **Seiche.** Sincopante's doubled nácar rings and Freática's teal thread make the field a basin between
 two faint nácar walls; a surface of water rocks about its still middle as a standing wave, a nácar ring
@@ -1205,10 +1250,8 @@ slipping sideways. When a foe goes through the cortina (`struck`), a force field
 own powder over to it with cyan static, a blue cloud and a turning ring over its head; if the cortina
 just runs out, the figure sifts down as dust.
 
-**Open** (2026-11-21): the bit dome shows before Caleidoscopio's contact the first time it is found (its
-unlock pause); Seiche's water reads more as a band of light than a heavy body; Idea fija's hold infers
-whom each beat struck from their PV (runClock's pulses do not reach `struck`); Cadáver's fire band is
-hard to pick out on foes already burning.
+**Open** (2026-11-21): in the fight tester's Cadáver exquisito trial the dogs already show flames when
+it starts, so its fire band is read against fire (hence char with a seam, not orange).
 
 ## What next
 

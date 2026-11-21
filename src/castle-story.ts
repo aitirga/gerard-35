@@ -76,20 +76,22 @@ export const LINES_CASTLE = {
     reina('Has trigat vint-i-cinc anys.'),
     gerard('…Nuria?'),
     reina('Em vaig posar la seva cara perquè la buscàveu. Mai n\'he tingut una de meva. Odio creixer... odio que tothom tingui fills... odio el futur'),
-    reina('No us vull fer mal. Pero esque no ho enteneu... vull que tothom sigui feliç, que tothom...'),
-    aitor('Tiene a medio barrio durmiendo de pie. Eso es daño.'),
+    reina('No us vull fer mal. Pero esque no ho enteneu... vull que tothom sigui feliç, que tothom visqui La vida, no un constructe de la societat'),
+    aitor('Però... això ho han decidit ells, no pots impondre la teva visió'),
+    reina('Ai Aitor... no ho entens... jo soc tú, tú ets jo,... i no em podeu parar, tothom tornarà als seus origens, sense filtres socials, i viuran feliços, molt més que ara'),
+    gerard('No, no ho permitirem. Et destruirem junts, Aitor i jo'),
+    reina('Jaaaaa ja ja ja ja'),
   ),
   reinaAgain: withThem('reina',
-    reina('Tornes. I ell torna amb tu, com si no hagués passat.'),
-    gerard('Ha passat. Me\'n recordo de tot.'),
+    reina('Tornes. I ell torna amb tu. He estat mirant tot lo que feu, deixeu estar a la gent. Però es inutil, no podeu salvar a tothom, i jo cada día soc mes forta'),
+    gerard('Me\'n recordo de tot... Núria...'),
     reina('Llavors ja saps com acaba.'),
     aitor('Esta vez no.'),
   ),
   /** The morning after Gerard fell to Aitor's hand: Bernat calls them to El Nucli (docs/quests/bernat.md, round 5). */
   bernatCall: withThem('bernat35',
     aitor('Te suena el móvil. Pone «Bernat».'),
-    bernat('Gerard. Us vaig veure caure ahir a la nit. No em preguntis com: ho vaig veure.'),
-    bernat('Veniu a El Nucli. Ara. Us he d\'ensenyar una cosa, i per telèfon no.'),
+    bernat('Gerard. Sé com parar-la, vine al Nucli, no preguntis'),
     aitor('…Gerard. Ayer. Yo te…'),
     gerard('No eras tú. Coge la chaqueta.'),
   ),
@@ -110,6 +112,21 @@ export const LINES_CASTLE = {
    * ends in white and they wake).
    */
   lastScene: 'La mà del Gerard és al seu coll. Ella no s\'hi resisteix.',
+  /** Her last words, with his hand at her neck, just before the two commands come up (said in the fight, one after another). */
+  lastWords: withThem('reina',
+    reina('No pot ser...'),
+    reina('Aquesta melodia... aquestes sis notes...'),
+    reina('Tot el meu mon està construit al voltant de elle'),
+    reina('Com les heu trobat...'),
+    reina('Es imposible, es l\'unic que podia alliberar al Aitor'),
+    reina('I ara... no puc.... estic feble...'),
+    reina('Tothom tornarà a ser com era... i vosaltres també us convertireu en ells...'),
+    reina('Em necesiteu, necesiteu la inocencia...'),
+    reina('Necesiteu respectar, viure pels amics...'),
+    reina('No soc dolenta... només us volia protegir...'),
+    reina('Soc la imaginatzio, represento la cohesió, la amistad...'),
+    reina('Deixeu-me viure...'),
+  ),
   acabar: {
     aitor: aitor('Hazlo.'),
     scene: 'On hi havia el tron hi ha una aula, amb les cadires pujades a les taules.',
@@ -293,7 +310,7 @@ export function castleEnding(host: CastleHost, choice: EndingChoice, seen = fals
   const lines = LINES_CASTLE[choice];
   const answer: StoryEffect[] = seen ? [] : [say({ left: 'gerard35', right: 'aitor', lines: [lines.aitor] })];
   const told: StoryEffect[] = 'scene' in lines ? [{ kind: 'epilogue', choice, text: lines.scene }] : [];
-  return [...answer, ...told, { kind: 'look' }, ...host.morning(), say(lines.epilogue), { kind: 'credits' }];
+  return [...answer, ...told, { kind: 'look' }, ...host.morning(), say(lines.epilogue), { kind: 'credits', choice }];
 }
 
 /** Where a door of the school leads instead, while the castle stands between its rooms. */

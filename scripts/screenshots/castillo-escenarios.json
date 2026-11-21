@@ -1,0 +1,134 @@
+{
+  "title": "Los escenarios de Aurelià y de Dirección",
+  "description": "src/boss-stages.ts, docs/places/palace-zones.md § The bosses' stages. Aurelià's gym and Direcció's meeting room built for their fights, as the Queen's stage is: each with its short entrance, and a lower, more frontal camera. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22aurelia%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-run]')",
+      "timeout": 180000
+    },
+    {
+      "shot": "aurelia-entrada-oscuro",
+      "delay": 700,
+      "caption": "Aurelià's entrance: the gym dark, only her plum in the high windows; the first row of tubes catches over the lanes' start"
+    },
+    {
+      "shot": "aurelia-entrada-luz",
+      "delay": 1300,
+      "caption": "Row by row the tubes come on down the lanes towards his dais, the camera gliding low along them"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-name]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "aurelia-entrada-nombre",
+      "delay": 700,
+      "caption": "The school bell: the scoreboard lights, the spotlight slams on, and he is there from below; his name"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-pull]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "aurelia-entrada-vuelta",
+      "delay": 900,
+      "caption": "The camera pulls back over Gerard's and Aitor's shoulders into the fight; the bars open"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "aurelia-combate",
+      "caption": "La pista: lanes painted from the party to his marble dais, the columns with her laurel of gum, the wall bars, the timeline, the scoreboard running his lap, the plint and the mats; a lower, more frontal camera"
+    },
+    {
+      "eval": "closeUp('aurelia', 3.2)"
+    },
+    {
+      "shot": "aurelia-cerca",
+      "delay": 1200,
+      "caption": "Aurelià before his dais, the blackboard and his desk behind him"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22direccion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-run]')",
+      "timeout": 180000
+    },
+    {
+      "shot": "direccion-entrada-oscuro",
+      "delay": 700,
+      "caption": "Dirección's entrance: the meeting room dark, the blinds shut, a line of morning round them"
+    },
+    {
+      "shot": "direccion-entrada-luz",
+      "delay": 1300,
+      "caption": "Bay by bay the blinds open: stripes of light fall across the carpet and the long table"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-name]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "direccion-entrada-nombre",
+      "delay": 700,
+      "caption": "The three lamps come on and the stamp comes down on the minutes: CONSTA EN ACTA; the three from below, their name"
+    },
+    {
+      "until": "!!document.querySelector('#battle[data-intro-pull]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "direccion-entrada-vuelta",
+      "delay": 900,
+      "caption": "The camera pulls back over Gerard's and Aitor's shoulders into the fight; the bars open"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "direccion-combate",
+      "caption": "La sala de juntas: the windows behind them in stripes, the long table with three empty chairs and three lamps, the book of minutes, the school's seal with her gum, the clock stopped at nine, binders down the sides"
+    },
+    {
+      "eval": "closeUp('montse', 3.6)"
+    },
+    {
+      "shot": "direccion-cerca",
+      "delay": 1200,
+      "caption": "The table behind them: the lamps, the folders, the book of minutes stamped in her pink ink"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "title": "La Reina Bubbaloo: su escenario, Aitor de su lado y el final",
-  "description": "docs/castle-bosses.md § La Reina Bubbaloo. Her entrance (src/throne-arena.ts THRONE_INTRO), her figure (Nuria Mendoza's face, src/monsters/reina.json) and portrait, her stage (src/throne-arena.ts), Aitor crossing to her side when she takes him and fighting from there with player 2's commands, the six notes bringing him back,. Run it with --gpu. Then her last scene, in the fight, for each choice: she sinks to the floor small, Gerard walks up and takes her by the neck, the two commands over it; Acabar charges the Foc Binari and she comes apart pink to grey, then the classroom over black; Bajar la mano lowers the hand and the dream ends in white; each to its Monday.",
+  "description": "docs/castle-bosses.md § La Reina Bubbaloo. Her entrance (src/throne-arena.ts THRONE_INTRO), her figure (Nuria Mendoza's face, src/monsters/reina.json) and portrait, her stage (src/throne-arena.ts), Aitor crossing to her side when she takes him and fighting from there with player 2's commands, the six notes bringing him back,. Run it with --gpu. Then her last scene, in the fight, for each choice: she sags, bowed and spent at her full size, Gerard walks up and reaches up to take her by the neck, the two commands over it; Acabar charges the Foc Binari and she comes apart pink to grey, then the classroom over black; Bajar la mano lowers the hand and the dream ends in white; each to its Monday.",
   "steps": [
     {
       "open": "/?story=castle&solo=1"
@@ -129,16 +129,25 @@
     {
       "shot": "acabar-en-el-suelo",
       "delay": 1300,
-      "caption": "At 0 she does not come apart: she sinks to the floor, small, and Gerard walks up to her; the fight's HUD has gone"
+      "caption": "At 0 she does not come apart: she sags, bowed and spent, still her full size, and Gerard walks up to her; the fight's HUD has gone"
+    },
+    {
+      "until": "[...document.querySelectorAll('.battle-speech-line[data-speaker=\"reina\"]')].some(l => l.textContent.includes('estic feble'))",
+      "timeout": 30000
+    },
+    {
+      "shot": "acabar-ultimas-palabras",
+      "delay": 600,
+      "caption": "Before the two commands, her last words over her head, one short bubble after another"
     },
     {
       "until": "!document.querySelector('#ending')?.hidden && document.querySelector('#ending')?.dataset.on === 'true'",
-      "timeout": 30000
+      "timeout": 60000
     },
     {
       "shot": "acabar-cuello",
       "delay": 1800,
-      "caption": "Close on the two of them: his hand at her neck, and his two commands"
+      "caption": "Close on the two of them: his hand up at her neck, and his two commands"
     },
     {
       "eval": "document.querySelector('#ending button[data-choice=\"acabar\"]').focus(); undefined"
@@ -204,16 +213,16 @@
     {
       "shot": "bajar-en-el-suelo",
       "delay": 1300,
-      "caption": "At 0 she does not come apart: she sinks to the floor, small, and Gerard walks up to her; the fight's HUD has gone"
+      "caption": "At 0 she does not come apart: she sags, bowed and spent, still her full size, and Gerard walks up to her; the fight's HUD has gone"
     },
     {
       "until": "!document.querySelector('#ending')?.hidden && document.querySelector('#ending')?.dataset.on === 'true'",
-      "timeout": 30000
+      "timeout": 60000
     },
     {
       "shot": "bajar-cuello",
       "delay": 1800,
-      "caption": "Close on the two of them: his hand at her neck, and his two commands"
+      "caption": "Close on the two of them: his hand up at her neck, and his two commands"
     },
     {
       "eval": "document.querySelector('#ending button[data-choice=\"bajar\"]').focus(); undefined"

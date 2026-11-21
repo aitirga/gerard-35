@@ -808,16 +808,23 @@ Cebollón de 3 a 2, El Campeón de 7 a 4), y lo que el castillo pide para entrar
 Después de la misión de Nuria y Uri la ciudad está abierta: Los amigos de la uni, Marta, Emilie y
 Luca se hacen en el orden que se quiera. Para que la misma misión no sea un paseo hecha la última y
 un muro hecha la primera, **sus enemigos crecen con las ánimas de las otras tres**: por cada una que
-el equipo ya tiene, todos los enemigos del combate llevan un punto y cuarto más de Fuerza, Magia,
-Defensa y Espíritu, redondeado sobre la suma (`FOE_GROWTH` en `src/battle.ts`, `gatheredFor`, `growFoes`).
+el equipo ya tiene, los enemigos del combate llevan algo más de Fuerza, Magia, Defensa y Espíritu,
+redondeado sobre la suma, y en algunos combates algo más de PV (`src/battle.ts`: `FIGHT_GROWTH`, la
+regla de cada combate; `FOE_GROWTH`, la de los que no tienen una propia; `growthOf`, `gatheredFor`,
+`growFoes`).
 
-- La primera misión abierta es el combate tal como está afinado; la segunda, +1 a los cuatro
-  atributos; la tercera, +3; la cuarta, +4.
+- **Cada combate crece a su manera** (desde la pasada final, 2026-11-21). Un solo número para todos
+  dejaba unos combates más duros hechos los últimos y otros más fáciles: La Sobremesa pega muchas
+  veces poco y un punto de Magia le sube mucho más que al Campeón, que pega una vez y avisada. El
+  número de cada uno es el que deja su pregunta igual con un ánima detrás que con cuatro: de un
+  cuarto de punto por ánima (La Sobremesa, La Lealtad) a tres (Fran y su recepción), y de 0 a un
+  15 % más de PV por ánima.
+- La primera misión abierta es el combate tal como está afinado; las otras tres suman una, dos y
+  tres veces su regla.
 - No cuentan el ánima de Nuria (está antes de todas) ni la de la propia misión. Los combates de
   Nuria y los del castillo no crecen: sus números son los suyos, y los del castillo son los que piden
   ánimas (Aurelià, las de Nuria y dos misiones; Dirección, las de casi todas: [fight-sim.md](fight-sim.md) § Power and the castle).
 - Crece todo lo que hay en el combate, también lo que entra más tarde (la Segunda voz, las polillas).
-- No suben los PV: más PV solo alargaba los combates.
 - Nadie lo anuncia ni hay panel: se nota en los golpes.
 
 **Encarnados**: un grupo de alumnos al día, en una sala del castillo o de noche en la Meridiana,
@@ -867,13 +874,25 @@ sobre su objetivo; un reloj en la placa de cada uno del equipo (como la canción
 luz de ahora y las que vienen. Lo que ya arde sigue ardiendo: la luz se come el golpe, no el fuego
 encendido antes. `annulled` en `src/battle.ts`, `just fight-sim` lo juega (los bots lo ven en la copia).
 
-#### Debilidades por elemento (2026-11-15)
+#### Debilidades (2026-11-15; clase de golpe y combinaciones, 2026-11-21)
 
-Algunos enemigos están hechos de algo (`AFFINITIES` en `src/battle.ts`): un golpe con el elemento
-al que son débiles entra ×1,5 y uno que resisten ×0,5 (`ELEMENT_RULES`, libro `element.rules` del
-simulador). Cuenta el elemento del golpe, venga de donde venga: Atacar con un elemento, una
-habilidad de ese elemento (Foc Binari y Explosión son fuego), un dual hecho con ella (Zarpazos de
-fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca depende del ánima.
+Hay tres clases de debilidad. Las tres sueltan el mismo rótulo («¡Débil!» o «Resiste», con lo que
+la ha encontrado) y dejan su chip en la placa. Nunca dependen del ánima.
+
+| Clase | Qué es | Cómo se ve |
+| --- | --- | --- |
+| **Elemento** | Fuego, agua o eléctrico: ×1,5 débil, ×0,5 resiste (`ELEMENT_RULES`) | «¡Débil! Fuego ×1,5», chip «Débil: Fuego» |
+| **Clase de golpe** | Físico como debilidad declarada (`fisico` en las afinidades), y lo que cada familia ya pedía por clase de golpe | «¡Débil! Golpe físico», «Resiste · Magia» |
+| **Combinación** | Un estado sobre el enemigo cambia lo que es: mojado, cegado, confuso, con forma | Rótulo propio («Se le ve», «No ve a quién», «Se le olvida») y el chip que cambia en su placa |
+
+**Por elemento.** Algunos enemigos están hechos de algo (`AFFINITIES` en `src/battle.ts`): un golpe
+con el elemento al que son débiles entra ×1,5 y uno que resisten ×0,5 (`ELEMENT_RULES`, libro
+`element.rules` del simulador). Cuenta el elemento del golpe, venga de donde venga: Atacar con un
+elemento, una habilidad de ese elemento (Foc Binari y Explosión son fuego), un dual hecho con ella
+(Zarpazos de fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). El pringue (El
+Repetidor de primero, el plato de Uri) se funde con **cualquier golpe de fuego**, también Atacar con
+fuego, no solo con las habilidades que lo dicen. Lo astral (mágico sin elemento) no encuentra nunca
+debilidad ni resistencia: frente a lo que resiste, ese es su valor.
 
 | Enemigo | Débil a | Resiste |
 | --- | --- | --- |
@@ -885,11 +904,57 @@ fuego, Rayo solar) o una reacción eléctrica (Tormenta, Conducción). Nunca dep
 | Lo Directo | Eléctrico | – |
 | Eco | Fuego | – |
 | Polilla | Fuego | – |
+| Alumnos de 1.º (chicle fresco) | Fuego | – |
+| Alumnos de 2.º (con relleno, a la vista) | Lo que deshace su relleno | Su relleno |
+| Alumnos de 3.º (chicle rancio) | Físico; mojados, también fuego | Fuego, mientras están secos |
+| Los Gemelos | Eléctrico (además de lo de su año) | – |
+| El Montón, con forma | Lo que deshace su forma (forma de herida: fuego) | – |
+| El Atril de Aurelià | Fuego y eléctrico | – |
+| Mar, Montse y Pilar | Lo que deshace cada carpeta que llevan | – |
+| La Reina, por capa | Fresca: fuego. Con relleno: lo que lo deshace. Rancia: físico, o mojada y fuego | El relleno de la capa; la rancia, el fuego |
+
+Las del castillo no son fijas: se calculan con lo que el enemigo es en ese momento (`castleAffinity`
+en `src/castle-fight.ts`) y siguen **el anillo**: el agua apaga el fuego, la chispa corre por el
+agua, el fuego funde el cable ([castle.md](castle.md) § Weaknesses). Las camisas de Luca no tienen
+debilidad propia: la luz de su color ya se come ese elemento. El modelo de Emilie tampoco usa esta
+tabla, tiene sus reglas ([quests/emilie.md](quests/emilie.md)): la celda seca se enciende mojada y
+conduce la chispa, El Átomo pierde electrones, El que no converge no recibe nada de su elemento.
+
+**Por clase de golpe.** Lo que ya pedía cada familia saca ahora el mismo rótulo (sus números no
+cambian):
+
+| Enemigo | Débil a | Resiste |
+| --- | --- | --- |
+| Plato de alcachofa | Físico | Magia |
+| Plato de coliflor | Magia | Físico |
+| Mago de camping | Físico | Magia |
+| El Campeón | – | Magia |
+| Cristalino, sin agrietar | Físico | – |
+| Fantasmita transparente | – | Físico |
+| El Empollón | La clase que no se ha aprendido («No se lo sabe») | La que acaba de aprender |
+| Chicle rancio (3.º, la última capa de la Reina) | Físico | – |
+
+**Por combinación.** Un estado puesto sobre el enemigo cambia lo que es:
+
+| Estado | Sobre quién | Qué cambia |
+| --- | --- | --- |
+| Mojado | Chicle rancio | Se reblandece: deja de resistir el fuego y es débil a él |
+| Mojado | El Ausente | Se le ve: se le puede pegar aunque no esté |
+| Mojado | El Repetidor de 3.º | La costra cede |
+| Cegado | La Chivata, La Delegada, una directiva | No señala, no manda, no firma |
+| Confusión | El Empollón, La Delegada, una directiva | Olvida lo aprendido, no manda, no firma |
+| Un estado nuevo | Aurelià | Tropiezo: la vuelta vuelve a empezar y pierde un Ritmo; en la carrerilla del Récord, Caída |
+| Una forma | El Montón | Es débil a lo que la deshace |
 
 Nada lo dice de antemano. El primer golpe que lo encuentra suelta «¡Débil!» o «Resiste» con su
 multiplicador, y desde entonces la placa de ese tipo de enemigo lleva el chip («Débil: Fuego»)
 mientras dure la sesión. Son pocas a propósito: una debilidad se añade cuando es parte de la
-respuesta de un combate, no para rellenar una tabla.
+respuesta de un combate, no para rellenar una tabla. Y un elemento es siempre premio, nunca
+requisito: las misiones se hacen en cualquier orden, así que cada combate tiene además una respuesta
+al alcance de fuego, físico, astral y Sangrado.
+
+Apuntado para la ronda de equilibrio (2026-11-21), sin tocar: fuera del castillo ningún enemigo
+premia *Encogido* ni *Virus*, y *Mareo* no lo aplica nadie.
 
 Se mide con dos objetivos por combate en `TARGETS` (`src/battle-sim.ts`,
 [fight-sim.md](fight-sim.md) § Targets): uno que juega la respuesta y otro que no.

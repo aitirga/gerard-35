@@ -5,7 +5,7 @@ import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
-import { castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { castleAffinity, castleBlow, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
@@ -259,7 +259,7 @@ export type FoeKind = 'dog' | 'minion' | 'guardian' | 'cebollon' | 'cebolla' | '
 /**
  * The foes of Emilie's model (docs/quests/emilie.md § Fights): what goes wrong in a groundwater model.
  * Each asks one question with water and electricity, by kind of blow and never by who wears what, and
- * shows its answer on its plate. A Celda seca takes half while dry; water wets it, and then
+ * shows its answer on its plate. A Celda seca takes two fifths while dry; water wets it, and then
  * electricity is Conducción. An Oscilación shows the value it is on («Agua» or «Eléctrico», the other
  * one every round): a blow of that element is absorbed, one of the other lands hard. El Átomo, the
  * model's chemistry, carries three electrons (fire, water, electricity) and throws them at the party;
@@ -491,7 +491,7 @@ const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ..
  */
 export const FEAR_RULES = {
   aplastonEvery: 4, aplastonFirst: 3, aplaston: 1.5, escortAplastonFirst: 3,
-  flipAt: .5, transparent: .5, sorpresaSingle: .5, sorpresaDual: 1, puaj: 38,
+  flipAt: .5, transparent: .5, sorpresaSingle: .5, sorpresaDual: 1, puaj: 37,
   escortLayers: 4, mixChance: .35, mixLayers: 3,
 };
 /**
@@ -533,10 +533,10 @@ export const SOBREMESA = {
  * on everyone; a magic blow on him lands at `campeonMagic` and takes his Plan a step down.
  */
 export const CAMPING = {
-  magoMagic: .5, magoPhysical: 1.5, bombona: 26,
-  dadoBase: 4, dadoPip: 4,
+  magoMagic: .5, magoPhysical: 1.4, bombona: 28,
+  dadoBase: 4, dadoPip: 6,
   downTaken: .5, contrasena: 18,
-  rayo: 22, rayoTotal: 36, planMost: 3, planMostII: 2, stageAt: .5, campeonMagic: .7,
+  rayo: 22, rayoTotal: 38, planMost: 3, planMostII: 2, stageAt: .5, campeonMagic: .7,
 };
 /**
  * Las cuerdas' foes and La Voz (docs/quests/marta.md), every number in one book (`marta.rules`); their
@@ -567,14 +567,14 @@ export const CAMPING = {
  * breath and holds a Calderón on everyone (`calderon`) unless an Acorde breaks it first (src/song.ts).
  */
 export const MARTA = {
-  juramento: 36, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
-  cristalPhysical: 1.5, reflect: .5, destello: 34, crack: .5, estallido: 14, prisma: 16,
-  directo: 44, linea: 26, estocada: 60, clavado: 3.5,
+  juramento: 46, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
+  cristalPhysical: 1.5, reflect: .5, destello: 34, crack: .5, estallido: 14, prisma: 22,
+  directo: 54, linea: 28, estocada: 60, clavado: 3.5,
   // Her song is Marta's recording (src/song.ts): some 64 notes in 87 s, each one a beam, so each is small and her
   // Magia (13) against the party's Espíritu does the rest: light on Gerard (13), heavy on Aitor (10); Re, a physical
   // blow, the other way round. Each Crescendo is a quarter point of Magia (2026-11-20, `just fight-sim`).
   vozDo: 2, vozSol: 1, vozFa: 2, vozConduce: 6, vozRe: 4, vozSib: 1, vozLa: 1, hueco: .1,
-  crescendo: .25, acorde: 1.5, coro: 32, calderon: 20,
+  crescendo: .25, acorde: 1.5, coro: 32, calderon: 30,
   allegro: .6, capela: .25,
 };
 /**
@@ -593,13 +593,13 @@ export const MARTA = {
  * `descarga` plus `descargaStep` for each mark of Error, on everyone wet. Holding on takes two thirds off.
  */
 export const MODELO = {
-  seca: .5, contra: 1.5, plano: .5,
-  chispa: 16, ola: 14, conduce: 22,
+  seca: .4, contra: 1.5, plano: .5,
+  chispa: 16, ola: 16, conduce: 22,
   ioniza: 1.5, captura: .5, desnudo: 2,
-  electron: 16, reaccionEvery: 3, reaccion: 14, reaccionRayo: 32, choque: 20,
+  electron: 16, reaccionEvery: 3, reaccion: 20, reaccionRayo: 32, choque: 20,
   itera: .5, converge: 2, convergeTurns: 2,
   error: 3, errorDiverge: 4, errorMost: 6, diverge: .5,
-  inunda: 10, descarga: 20, descargaStep: 7,
+  inunda: 18, descarga: 20, descargaStep: 7,
 };
 /** Lo Directo's turns, in order, round and round; each is said a turn ahead. */
 export const DIRECTO_TURNS = ['golpe-directo', 'golpe-directo', 'en-linea', 'estocada'] as const;
@@ -1106,14 +1106,17 @@ export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whoever wears Colorista with Remolino learned, standing. */
 export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
+/** The blows of the action being resolved that found a foe weak to their kind, or resisting it (`blowAffinity`); `amplify` hands them to its effect. */
+const met: { target: string; blow: 'physical' | 'magic'; affinity: Affinity }[] = [];
 /** What the poison and the shards added to the blows of the action being resolved; `amplify` hands it to its effect. */
 const dug: { target: string; venom?: true; shards?: number }[] = [];
 /** The blows of this action that landed on someone poisoned or full of shards: who, and what the shards added. */
 function amplify(effect: BattleEffect) {
+  if (met.length) effect.kinds = met.splice(0).filter((k, i, all) => all.findIndex(x => x.target === k.target) === i);
   if (dug.length) effect.amplified = dug.splice(0);
 }
 /**
- * What a foe is made of (docs/combat.md § Debilidades por elemento): a blow carrying an element it is
+ * What a foe is made of (docs/combat.md § Debilidades): a blow carrying an element it is
  * weak to lands `weak` times as hard, one it resists `resist`. By kind of foe and by element, never by
  * who strikes or with which skill: Atacar with an element, a skill of that element and a dual made
  * with one all count. Nothing says it beforehand; the first blow that finds it does (`BattleEffect.affinity`),
@@ -1122,7 +1125,10 @@ function amplify(effect: BattleEffect) {
  */
 export const ELEMENT_RULES = { weak: 1.5, resist: .5 };
 export type Affinity = 'weak' | 'resist';
-export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinity>>>> = {
+/** What a foe can be weak to or resist: an element, or a physical blow (docs/combat.md § Debilidades). */
+export type AffinityKey = Element | 'fisico';
+export const affinityName = (key: AffinityKey) => key === 'fisico' ? 'Físico' : ELEMENTS[key].name;
+export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<AffinityKey, Affinity>>>> = {
   // Onions fry: fire goes through every layer's worth of them.
   cebollita: { fuego: 'weak' }, cebolla: { fuego: 'weak' }, cebollon: { fuego: 'weak' },
   // A fantasmita is a screen's ghost: a spark undoes it, water goes straight through.
@@ -1140,8 +1146,9 @@ export const AFFINITIES: Partial<Record<FoeKind, Partial<Record<Element, Affinit
   polilla: { fuego: 'weak' },
 };
 /** What `element` finds in `c`: a weakness, a resistance or nothing. */
-export const affinityOf = (c: Pick<Combatant, 'kind' | 'affinities'>, element?: Element): Affinity | undefined => element && c.kind ? (c.affinities ? c.affinities[element] : AFFINITIES[c.kind]?.[element]) : undefined;
-const affinityScale = (c: Combatant, element?: Element) => { const a = affinityOf(c, element); return a ? ELEMENT_RULES[a] : 1; };
+export const affinityOf = (c: Pick<Combatant, 'kind' | 'affinities' | 'castle' | 'timed'>, element?: AffinityKey): Affinity | undefined =>
+  !element || !c.kind ? undefined : c.castle && isCastle(c.kind) ? castleAffinity(c, element) : c.affinities ? c.affinities[element] : AFFINITIES[c.kind]?.[element];
+const affinityScale = (c: Combatant, element?: AffinityKey) => { const a = affinityOf(c, element); return a ? ELEMENT_RULES[a] : 1; };
 /** The element a skill or a dual lands with: its own, or the one of what it lights (Foc Binari burns, Explosión melts: fire). */
 export function elementOf(spec?: object): Element | undefined {
   if (!spec) return undefined;
@@ -1317,8 +1324,8 @@ export interface Combatant {
   winded?: boolean;
   /** The castle's rules on this fighter (src/castle.ts `CastleMark`). */
   castle?: CastleMark;
-  /** What this one is weak to or resists, when it is its own and not its kind's (`AFFINITIES`): a pupil's year, a directiva's element, the Queen's gum. */
-  affinities?: Partial<Record<Element, Affinity>>;
+  /** What this one is weak to or resists, when it is its own and not its kind's (`AFFINITIES`). The castle's are worked out from what each one is now (`castleAffinity`). */
+  affinities?: Partial<Record<AffinityKey, Affinity>>;
   /** An Oscilación, El que no converge: the value it is on now, on its plate; the other one next round. */
   sign?: Sign;
   /** El que no converge: its marks of Error, on its plate. */
@@ -1807,6 +1814,8 @@ export interface BattleEffect {
   reaction?: { id: ElementReaction; level?: number; stacks?: number; hits?: { target: string; amount: number }[]; targets?: string[]; burns?: { target: string; level: number }[] };
   /** Blows of this action that landed on someone Envenenado (`venom`) or Cristalizado (`shards`: what they added). */
   amplified?: { target: string; venom?: true; shards?: number }[];
+  /** The kind of blow found what a foe is weak to or resists (a dish, a mago, glass, rancid gum): said on the blow as an element's is. */
+  kinds?: { target: string; blow: 'physical' | 'magic'; affinity: Affinity }[];
   /** Cortinas of powder: the allies one stood up in front of, the ones whose screen this blow broke, and whoever it burst over (Rebufo). */
   cortina?: { raised?: string[]; broke?: string[]; rebufo?: string };
   /** Traca: each puff in the order it went off, and the foe it found. */
@@ -2389,6 +2398,36 @@ export const OPEN_MISSIONS = {
  * Progression). Tunable (`just fight-sim`, book `foes`).
  */
 export const FOE_GROWTH = { pv: 0, stat: 1.25 };
+/**
+ * Each open fight's own growth (`pv`, `stat`, as `FOE_GROWTH`, which a fight not listed here takes): fights
+ * do not lean on their foes' attributes alike (La Sobremesa's many small blows grow far more with a point of
+ * Magia than El Campeón's one big told one), so one number for all left some harder done last and others
+ * easier. Each is the one that keeps its fight the same question with one ánima behind it or with four,
+ * found with the bench at both ends of the story (docs/fight-sim.md § The final pass). Book `foes.<fight>`.
+ */
+export const FIGHT_GROWTH: Partial<Record<Encounter, { pv: number; stat: number }>> = {
+  'camping-magos': { pv: .1, stat: 1 },
+  'camping-dados': { pv: .1, stat: .75 },
+  'camping-agentes': { pv: 0, stat: 2.25 },
+  'camping-tienda': { pv: .05, stat: 2 },
+  'camping-negra': { pv: .1, stat: .75 },
+  campeon: { pv: 0, stat: 1.25 },
+  sobremesa: { pv: 0, stat: .25 },
+  'cuerdas-lealtad': { pv: .1, stat: 0 },
+  'cuerdas-cristalino': { pv: .1, stat: 1.5 },
+  'cuerdas-directo': { pv: .1, stat: .25 },
+  voz: { pv: 0, stat: 1.25 },
+  'modelo-celdas': { pv: 0, stat: 1.5 },
+  'modelo-oscilacion': { pv: 0, stat: 1.5 },
+  'modelo-atomo': { pv: .05, stat: 1 },
+  'no-converge': { pv: .075, stat: .25 },
+  'luca-recepcion': { pv: .15, stat: 3.25 },
+  'luca-sillones': { pv: .1, stat: .75 },
+  'luca-carta': { pv: .05, stat: 2 },
+  fran: { pv: 0, stat: 3 },
+};
+/** How `encounter`'s foes grow with each ánima gathered: its own rule, or the one for all. */
+export const growthOf = (encounter?: string) => (encounter ? FIGHT_GROWTH[encounter as Encounter] : undefined) ?? FOE_GROWTH;
 /** How many ánimas count against the foes of `encounter`: the other open missions' the party has. */
 export function gatheredFor(encounter: string, animas: readonly string[] = []) {
   const missions = Object.keys(OPEN_MISSIONS) as (keyof typeof OPEN_MISSIONS)[];
@@ -2396,9 +2435,9 @@ export function gatheredFor(encounter: string, animas: readonly string[] = []) {
   return own ? missions.filter(id => id !== own && animas.includes(id)).length : 0;
 }
 /** One foe grown by `gathered` ánimas (`FOE_GROWTH`). */
-function grow<T extends Combatant>(c: T, gathered = 0): T {
-  if (!gathered || !(FOE_GROWTH.pv || FOE_GROWTH.stat)) return c;
-  const pv = Math.round(c.maxHp * (1 + FOE_GROWTH.pv * gathered)), more = Math.round(FOE_GROWTH.stat * gathered);
+function grow<T extends Combatant>(c: T, gathered = 0, rule = FOE_GROWTH): T {
+  if (!gathered || !(rule.pv || rule.stat)) return c;
+  const pv = Math.round(c.maxHp * (1 + rule.pv * gathered)), more = Math.round(rule.stat * gathered);
   c.stats = { ...c.stats, pv, fuerza: c.stats.fuerza + more, magia: c.stats.magia + more, defensa: c.stats.defensa + more, espiritu: c.stats.espiritu + more };
   c.hp = c.maxHp = pv;
   return c;
@@ -2408,7 +2447,7 @@ function grow<T extends Combatant>(c: T, gathered = 0): T {
  * grown the same (`state.grown`). The fight screen, both simulators and the fight tester go through here.
  */
 export function growFoes(state: BattleState, gathered: number): BattleState {
-  if (gathered > 0) { state.grown = gathered; state.foes.forEach(c => grow(c, gathered)); }
+  if (gathered > 0) { state.grown = gathered; state.foes.forEach(c => grow(c, gathered, growthOf(state.encounter))); }
   return state;
 }
 /**
@@ -2699,8 +2738,12 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
   if (target.transparent && blow === 'physical') out *= FEAR_RULES.transparent;
   foil(target, blow);
   out *= campingTaken(target, blow) * cuerdasTaken(target, blow) * castleTaken(state, target, blow) * modeloTaken(target, element) * lucaTaken(state, target);
+  // What it is made of gives under a blow (rancid gum): a dual is a blow too, and never the worse for it.
+  const hard = affinityOf(target, 'fisico');
+  if (hard && (blow === 'physical' || (blow === 'dual' && hard === 'weak'))) out *= ELEMENT_RULES[hard];
   // Magic off glass does nothing at all (Lo Cristalino).
   if (out <= 0) return 0;
+  if (blow !== 'dual') { const kind = blowAffinity(target, blow); if (kind) met.push({ target: target.id, blow, affinity: kind }); }
   // Envenenado: the blow lands harder. Cristalizado: the shards dig in, a level deeper with each blow (`POWDER_RULES`).
   const venom = target.timed?.envenenado, glass = target.timed?.cristalizado;
   let landing = Math.max(1, Math.round(out * (venom ? POWDER_RULES.poison : 1)));
@@ -2712,6 +2755,20 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
     dug.push({ target: target.id, shards, ...venom ? { venom: true as const } : {} });
   } else if (venom) dug.push({ target: target.id, venom: true });
   return landing;
+}
+/**
+ * Whether `target` is weak to this kind of blow or resists it, by its own rule (a dish, a mago's flame,
+ * glass, El Campeón's plan, a fantasmita gone see-through, the castle's gum): what the blow says when it lands.
+ */
+function blowAffinity(target: Combatant, blow: 'physical' | 'magic'): Affinity | undefined {
+  const scaled = (scale: number) => scale > 1 ? 'weak' as const : scale < 1 ? 'resist' as const : undefined;
+  if (target.dish) return scaled(DISHES[target.dish][blow]);
+  if (target.kind === 'mago') return blow === 'physical' ? 'weak' : 'resist';
+  if (target.kind === 'campeon') return blow === 'magic' ? 'resist' : undefined;
+  if (target.kind === 'cristalino' && !target.cracked) return blow === 'physical' ? 'weak' : undefined;
+  if (target.transparent && blow === 'physical') return 'resist';
+  if (isCastle(target.kind)) return castleBlow(target, blow);
+  return blow === 'physical' ? affinityOf(target, 'fisico') : undefined;
 }
 /** What the fight says when the last foe falls. */
 function winMessage(state: BattleState) {
@@ -3284,7 +3341,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
-  dug.length = 0; screenTook.length = 0; livesTook.length = 0;
+  dug.length = 0; met.length = 0; screenTook.length = 0; livesTook.length = 0;
   // Tirar dado: the die spent decides the move, its face's own (`FACE_SKILLS`); a blank repeats the last face spent.
   let cast: number | undefined, paid: number | undefined;
   const streak = rachaOf(actor);
@@ -3674,7 +3731,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (foe.layers && !--foe.layers) bare(foe);
       const status = 'bleed' in ability! && foe.hp > 0 ? { id: 'sangrado' as const, stacks: cut(state, foe, ability.bleed as number) } : undefined;
       // Fire melts the pringue (Explosión).
-      if ('melts' in ability! && foe.shell) { foe.shell = false; effect.melted = true; }
+      if (elementOf(ability) === 'fuego' && foe.shell) { foe.shell = false; effect.melted = true; }
       return { target: foe.id, amount, status, peeled, ...bled ? { bled } : {}, ...crit && amount > 0 ? { crit: true as const } : {}, ...spends ? { weakSpot: true as const } : {}, ...found && amount > 0 ? { affinity: found } : {} };
     });
     // Explosión: the flash blinds whoever is still standing until the round is over (a longer smoke stays as it is).
@@ -3774,7 +3831,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (action === 'skill') { if (cast === undefined && paid === undefined) spendSecondary(actor, ability!.cost); effect.skill = skill; }
     effect.target = target.id;
     if (action === 'attack' && actor.classId === 'matemagico') effect.spell = true;
-    const melts = action === 'skill' && !!ability && 'melts' in ability;
+    // Any blow of fire melts the pringue: a skill of fire, or Atacar carrying it.
+    const melts = (action === 'skill' ? elementOf(ability) : attackElement(state, actor)) === 'fuego';
     if (annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)) {
       // Fran's salon: the light on now eats a blow of its own element (the white one, a physical blow), whole.
       const light = annulled(state, actor, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'attack' ? 'physical' : ability?.kind)!;
@@ -4075,7 +4133,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   const parts = halves.map(h => SKILLS.find(s => s.id === h)!);
   const striker = [a, b][Math.max(0, parts.findIndex(p => p.kind === d.kind))];
   const effect: BattleEffect = { actor: a.id, kind: 'skill', target: target.id, dual: { id: d.id, name: d.name, parts: [...halves], actors: [a.id, b.id], spent: { [a.id]: cost[halves[0]]!, [b.id]: cost[halves[1]]! } } };
-  const melts = parts.some(p => 'melts' in p);
+  const melts = parts.some(p => 'melts' in p) || elementOf(d) === 'fuego';
   if (d.kind === 'heal') {
     effect.healed = true;
     effect.amount = changeHealth(target, healing(d.power, current(state, striker)));
@@ -4345,7 +4403,7 @@ function release(state: BattleState, holder: Combatant) {
   const d = DUALS.find(x => x.id === charge.dual), striker = state.allies.find(a => a.id === charge.striker) ?? holder;
   if (!d || holder.hp <= 0) return;
   if (d.id === 'bombardeo-orbital') return blast(state, d.id, striker, state.foes.find(f => f.hp > 0)?.id ?? holder.id);
-  const melts = d.parts.some(id => SKILLS.some(s => s.id === id && 'melts' in s));
+  const melts = d.parts.some(id => SKILLS.some(s => s.id === id && 'melts' in s)) || elementOf(d) === 'fuego';
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, release: { id: d.id, name: d.name } };
   const eaten = annulled(state, holder, elementOf(d), d.kind);
   if (eaten) {
@@ -4392,7 +4450,7 @@ function pounce(state: BattleState, holder: Combatant) {
   const standing = state.foes.filter(f => f.hp > 0);
   const target = standing.find(f => f.id === stalk.target) ?? [...standing].sort((a, b) => stacks(b, 'sangrado') - stacks(a, 'sangrado'))[0];
   if (holder.hp <= 0 || holder.classId !== ability.class || !target) return;
-  dug.length = 0; screenTook.length = 0;
+  dug.length = 0; met.length = 0; screenTook.length = 0;
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true };
   let said: string;
   const light = annulled(state, holder, undefined, 'physical');
@@ -4638,7 +4696,7 @@ export function calibrate(state: BattleState, piezometers: number) {
 }
 /**
  * How much of a blow a foe of the model takes, by the element it carries (a dual carries none): a
- * Celda seca, half while dry; an Oscilación, nothing of the element it is on and more of the other;
+ * Celda seca, two fifths while dry; an Oscilación, nothing of the element it is on and more of the other;
  * El Átomo, more of an element whose electron it still has (it tears it off), less of one it has
  * lost (it takes it back), and double of what has none once it has no electrons left; El que no
  * converge, nothing of its own while it iterates, little of anything else, and more of everything
@@ -5125,7 +5183,7 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
     if (move === 'coro') {
       // Coro: a second voice beside her, an Eco in all but name. It can be struck at any moment, and waits for the next round.
       delete effect.target; delete actor.intent;
-      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown);
+      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown, growthOf(state.encounter));
       state.foes.push(second); state.enemyActions.push(second.id);
       effect.summoned = second.id;
       state.message = `${actor.name} canta, y otra voz le contesta desde las cuerdas. Ya son dos.`;
@@ -5303,11 +5361,11 @@ export function songLabel(state: BattleState) {
  * lights no longer eat the party's blows (`lightFreed`).
  */
 export const LUCA = {
-  aleteo: 12, polillasMost: 5,
+  aleteo: 11, polillasMost: 3,
   estampar: 18,
   tijeretazo: 29,
   deslumbre: 14,
-  corte: 22, acolito: 55, acolitoCorte: 16, aspersion: 16, aspersionLamp: 12, aspersionDown: 1, brilloStep: .5, brilloMost: 3, standAt: .75, hisopoAt: .33,
+  corte: 22, acolito: 55, acolitoCorte: 16, aspersion: 16, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';
@@ -5560,7 +5618,7 @@ function lucaRoundEnd(state: BattleState) {
   if (!isLucaFight(state)) return;
   const moths = state.foes.filter(f => f.kind === 'polilla');
   if (moths.filter(f => f.hp > 0).length >= 2 && moths.length < LUCA.polillasMost + 2 && moths.filter(f => f.hp > 0).length < LUCA.polillasMost) {
-    const n = moths.length + 1, one = grow(foe(`polilla-${state.foes.length}`, `${LUCA_NAMES.polilla} ${n}`, 'polilla'), state.grown);
+    const n = moths.length + 1, one = grow(foe(`polilla-${state.foes.length}`, `${LUCA_NAMES.polilla} ${n}`, 'polilla'), state.grown, growthOf(state.encounter));
     state.foes.push(one);
     (state.news ??= []).push({ kind: 'enemy', actor: one.id, summoned: one.id });
     state.message = `${state.message} Entra otra polilla, atraída por la luz.`.trim();
@@ -6335,7 +6393,7 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
       state.song.t = Math.max(0, turnStarts(VOZ_SONG)[5] - .5);
     } else if (moment === 'voz-coro') {
       // Her second voice already there, a turn old.
-      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown); second.turns = 1;
+      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown, growthOf(state.encounter)); second.turns = 1;
       state.foes.push(second); voz.turns = 1;
     } else if (moment === 'voz-calderon') {
       voz.turns = VOZ_TURNS['a-capela'].indexOf('calderon'); voz.intent = { ability: 'calderon', at: 'todos' };

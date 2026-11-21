@@ -107,6 +107,11 @@ const bernat = (text: string): DialogueLine => ({ speaker: 'bernat35', text });
 const group = (right: SpeakerId, ...lines: DialogueLine[]): Dialogue => ({ left: 'gerard35', right, lines });
 
 export const LINES_BERNAT = {
+  /** A rehearsal's pause (docs/quests/coro.md § Ensayar): a photo from El Nucli, with no words. */
+  ensayo: group('aitor',
+    aitor('Bernat ha mandado una foto. La mesa del fondo del Nucli, con la luz encendida y nadie sentado.'),
+    aitor('Sin texto. Solo la foto.'),
+  ),
   /** The first time, before the Queen took Aitor: the confidant (round 4). */
   first: group('bernat35',
     bernat('Gerard. Seieu. Aquí no mira ningú.'),

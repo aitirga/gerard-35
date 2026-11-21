@@ -82,7 +82,11 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
     Never a direction, never «tienes que ir a»: the player has to put it together.
     *(Example, to rewrite with real details: «Hoy tampoco ha venido Emilie. Ella, que nunca
     falta.»)*
-  - One remark a rehearsal, picked from the clues not yet seen.
+  - One remark a rehearsal, picked from the clues not yet seen. **Built** (2026-11-21, written lines,
+    no AI yet): Emilie missing, Nuria's «Podeu venir?», Marta's voice message from Alegia, Bernat's
+    photo from El Nucli (`CHOIR_REMARKS` in `src/story.ts`, docs/chapter-2.md § Hidden clues). Aitor
+    (2026-11-21): **the choir is never explicit**: a remark is something that happened, never a
+    direction. Once all are heard, those not reached yet come round again, one a day.
   - **The price is time** (decided round 7): **any clue in the game** can come out, but rehearsing
     spends the day's hours and the Queen's power grows meanwhile (`docs/chapter-2.md` § The Queen's
     advance), so leaning on the choir makes the game harder. Proposal: 3 hours, more than the piano
@@ -195,6 +199,10 @@ How (proposal), following what the game already does for the dogs' turns (`ai.py
 
 | Clue | Where | Flag |
 | --- | --- | --- |
+| Aitor: *«Falta Emilie. Ella, que no se pierde un ensayo. Y ni un mensaje.»* | Ensayar | `clue-emilie` |
+| Aitor: *«Te ha escrito Nuria. Solo esto: "Podeu venir?". Y no contesta a nada más.»* | Ensayar | `clue-nuria` |
+| Aitor: *«Marta me ha mandado un audio desde Alegia. Medio minuto sin decir nada. Al final intenta una nota, y no le sale.»* | Ensayar | `clue-marta` |
+| Aitor: *«Bernat ha mandado una foto. La mesa del fondo del Nucli, con la luz encendida y nadie sentado. Sin texto.»* | Ensayar | `clue-bernat` |
 
 ## Unusual things
 

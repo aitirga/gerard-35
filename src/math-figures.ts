@@ -3,6 +3,7 @@ import { CAST_LAUNCH, clamp01, smooth } from './battle-motion';
 import type { Effects } from './effects';
 import type { GpuEmitter, GpuKind } from './fight-particles';
 import { AGUA_KINDS } from './freatica-fx';
+import { ensureFluidKinds } from './fluid-fx';
 
 /**
  * The figures Matemágico draws (docs/animas/matemagico/README.md § How each skill looks, Aitor's notes
@@ -479,6 +480,9 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       // It bursts: water thrown out all round, that falls and splashes, a flash of blue light.
       g.burst('bloom', { at, count: 1, spread: .1, life: [.16, .24], colour: FIGURE_LOOKS.water.halo, size: .9, light: { intensity: 4, range: 6, colour: FIGURE_LOOKS.water.halo } });
       g.burst('agua-gota', { at, count: 420, shape: 'ball', spread: r, outward: 3.4, up: 2.2, speed: 1.6, life: [.6, 1.1], size: 1.6 });
+      // What was in it falls on them as one body of water and spreads over the floor (a fluid, src/fluid-fx.ts).
+      ensureFluidKinds(g);
+      g.burst('fluido-agua', { at, count: 1100, shape: 'ball', spread: r * .55, speed: .8, up: .6, life: [1.8, 2.5] });
       g.burst('agua-gota', { at, count: 160, shape: 'ball', spread: r * .5, outward: 6, up: .8, speed: 2, life: [.3, .6], size: 1.1 });
       g.burst('floorring', { at: { x: mid.x, y: mid.y + .05, z: mid.z }, count: 1, life: [.45, .55], colour: FIGURE_LOOKS.water.halo, size: 2.2 });
       g.burst('drip', { at: { x: mid.x, y: mid.y + .1, z: mid.z }, count: 120, shape: 'ring', spread: 1.5, outward: 2.6, up: 1.4, speed: .5, life: [.4, .8] });

@@ -125,6 +125,9 @@ export const staging: DuoStaging = {
       fx.burst('geiser-jet', { at: foot, count: Math.round(70 * s), spread: .06, velocity: { x: 0, y: 10.5 * Math.sqrt(s), z: 0 }, cone: .025, speed: .5, life: [.5, .8] });
       fx.burst('geiser-steam', { at: foot, count: Math.round(24 * s), spread: R * .25, velocity: { x: 0, y: 4.5, z: 0 }, cone: .2, speed: .6, life: [.6, 1.1] });
       fx.burst('geiser-drop', { at: add(foot, UP, .3), count: Math.round(55 * s), spread: R * .3, velocity: { x: 0, y: 6.5, z: 0 }, cone: .5, speed: 2, life: [1.1, 1.6] });
+      // The column's water, a fluid (src/fluid-fx.ts): thrown up with it, it falls back as a body over the
+      // foe and spreads out over the floor round it.
+      stage.fluid.burst('fluido-agua', { at: add(foot, UP, .2), count: Math.round(260 * s), spread: R * .25, velocity: { x: 0, y: 6.2 * Math.sqrt(s), z: 0 }, cone: .22, speed: 1.2, life: [1.7, 2.3] });
       // Orange only at the root, where the fire is.
       fx.burst('bloom', { at: foot, count: 1, spread: .02, life: [.16, .24], colour: HEAT, size: .5, light: { intensity: 3.5, range: 3, colour: HEAT } });
       fx.burst('bloom', { at: add(foot, UP, .9), count: 1, spread: .02, life: [.14, .2], colour: TEAL, size: .4, light: { intensity: 1.6, range: 3, colour: '#dffcf6' } });

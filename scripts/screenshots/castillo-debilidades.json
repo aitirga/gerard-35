@@ -1,0 +1,282 @@
+{
+  "title": "El castillo: debilidades, alumnos y los tres jefes rediseñados",
+  "description": "docs/castle.md § Weaknesses, docs/castle-bosses.md (2026-11-21). From the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): the second year's fillings on the figures and plates, the third year softened when wet, Aurelià's Ritmo and tells, Dirección's told moves and who is left in charge, the Queen's five layers and her crown going out, her two hands and La Pompa as a thing of its own. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.wet = c => { c.timed = { ...c.timed, mojado: { level: 1, left: 20, next: 20 } }; }; window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "segundo-rellenos",
+      "delay": 1500,
+      "caption": "Second year: each pupil's filling shows through its gum (orange fire, blue water, yellow electricity) and is named on its plate («Relleno: …»). It is weak to what undoes it"
+    },
+    {
+      "eval": "closeUp(ui.live.foes[0].id, 3)"
+    },
+    {
+      "shot": "segundo-relleno-cerca",
+      "delay": 1200,
+      "caption": "A filling up close, lit from inside"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "segundo-pegan-con-relleno",
+      "delay": 600,
+      "caption": "They hit with their filling: whoever they struck is left burning, wet or (if wet) in shock"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-3b%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.wet = c => { c.timed = { ...c.timed, mojado: { level: 1, left: 20, next: 20 } }; }; window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "tercero-rancio",
+      "delay": 1500,
+      "caption": "Third year: rancid gum. It resists fire and breaks under physical blows"
+    },
+    {
+      "eval": "ui.tweak(s => s.foes.forEach(wet))"
+    },
+    {
+      "shot": "tercero-reblandecido",
+      "delay": 900,
+      "caption": "Wet, it softens: «Reblandecido», weak to fire while it lasts (and El Repetidor's crust gives)"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22aurelia%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.wet = c => { c.timed = { ...c.timed, mojado: { level: 1, left: 20, next: 20 } }; }; window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "aurelia-leccion",
+      "delay": 1500,
+      "caption": "Aurelià behind El Atril (oak and brass: weak to fire and to electricity)"
+    },
+    {
+      "eval": "ui.jumpTo('aurelia-carrera')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "eval": "ui.tweak(s => { const a = s.foes.find(f => f.kind === 'aurelia'); a.lasting = { shifts: { fuerza: 4 }, from: 'Ritmo' }; a.castle.tripped = 'quemado'; a.castle.clocks = ['quemado']; })"
+    },
+    {
+      "shot": "aurelia-carrera",
+      "delay": 900,
+      "caption": "La carrera: his Ritmo with its count on his plate, and what he has already tripped over (any new status trips him and takes a step of Ritmo)"
+    },
+    {
+      "eval": "ui.jumpTo('aurelia-recta')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "aurelia-recta",
+      "delay": 900,
+      "caption": "La última recta: Expulsión → X is told; whoever holds on stays in the room"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22direccion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.wet = c => { c.timed = { ...c.timed, mojado: { level: 1, left: 20, next: 20 } }; }; window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "direccion-avisos",
+      "delay": 1500,
+      "caption": "Dirección: each says on her plate what she will do this round (Expediente → X, Horario, Circular), her folder, and Mar presides the Acta"
+    },
+    {
+      "eval": "ui.tweak(s => { const m = s.foes[1]; delete m.intent; m.castle.overruled = true; m.castle.warned = true; })"
+    },
+    {
+      "shot": "direccion-desautorizada",
+      "delay": 900,
+      "caption": "Struck with what undoes her folder: «Desautorizada», the move she had told is lost; then «Sobre aviso» until they trade folders"
+    },
+    {
+      "eval": "ui.jumpTo('direccion-una')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "direccion-voto",
+      "delay": 900,
+      "caption": "Mar alone: Voto de calidad, the three folders and she hits harder"
+    },
+    {
+      "eval": "ui.jumpTo('direccion-funciones')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "direccion-funciones",
+      "delay": 900,
+      "caption": "Montse alone: «En funciones», the three folders without the extra. Without Mar there is no Acta"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind); window.wet = c => { c.timed = { ...c.timed, mojado: { level: 1, left: 20, next: 20 } }; }; window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "reina-capas",
+      "delay": 2500,
+      "caption": "La Reina, El chicle: five layers, the five flavours of her crown. Under a layer everything goes in at a quarter"
+    },
+    {
+      "eval": "ui.tweak(s => { const q = s.foes.find(f => f.kind === 'reina'); q.castle.peeled = ['fresco', 'fuego']; q.castle.gum = 'agua'; })"
+    },
+    {
+      "shot": "reina-dos-capas-menos",
+      "delay": 1500,
+      "caption": "Two layers torn off: two flavours of her crown gone out, and the third layer (filled with water: weak to electricity) on her plate"
+    },
+    {
+      "eval": "closeUp('reina', 5)"
+    },
+    {
+      "shot": "reina-corona",
+      "delay": 1200,
+      "caption": "Her crown, her marker: a flavour goes out with each layer"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "ui.jumpTo('reina-manos')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "reina-manos",
+      "delay": 1200,
+      "caption": "Las manos: one holds (Atrapar → X, told: whoever holds on is not caught) and one crushes (Aplastar → X). Drawn with the palace minion's model for now"
+    },
+    {
+      "eval": "closeUp('mano-sujeta', 3.4)"
+    },
+    {
+      "shot": "reina-mano-sujeta",
+      "delay": 1000,
+      "caption": "The hand that holds, its own plate and PV"
+    },
+    {
+      "eval": "closeUp('mano-aplasta', 3.4)"
+    },
+    {
+      "shot": "reina-mano-aplasta",
+      "delay": 1000,
+      "caption": "The hand that crushes"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "ui.jumpTo('reina-pompa')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 90000
+    },
+    {
+      "shot": "reina-pompa",
+      "delay": 900,
+      "caption": "La pompa: a thing of its own in front of her, with its PV and the rounds left on its plate; behind it she takes half. Burst in time it goes off in her face (the palace minion's model for now)"
+    }
+  ]
+}

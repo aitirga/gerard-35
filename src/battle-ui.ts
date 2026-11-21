@@ -21,6 +21,16 @@ import { artilugioLive, castleChips, castleNote } from './castle-fight';
 
 /** The castle's fights on the kicker and the heading (docs/castle.md, docs/castle-bosses.md). */
 const YEAR_WORDS = { 1: 'PRIMERO', 2: 'SEGUNDO', 3: 'TERCERO' } as const;
+/**
+ * The entrances' name cards (src/throne-arena.ts, src/boss-stages.ts): where, who, one line. The
+ * Queen's in her pink; Aurelià's and Dirección's in possession's violet, held by her.
+ */
+const BOSS_CARDS: Partial<Record<string, { place: string; who: string; sub: string; held?: true }>> = {
+  reina: { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'Lo que dejasteis en el patio.' },
+  'reina-vuelta': { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'Lo que dejasteis en el patio.' },
+  aurelia: { place: 'El gimnasio', who: '<em>Aurelià</em>', sub: 'No levanta la voz. Nunca le ha hecho falta.', held: true },
+  direccion: { place: 'Direcció', who: 'Mar, Montse <em>y Pilar</em>', sub: 'El equipo de Dirección. Reunido desde las nueve.', held: true },
+};
 const CASTLE_KICKERS = Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' ? 'AURELIÀ' : id === 'direccion' ? 'EL EQUIPO DE DIRECCIÓN' : id.startsWith('reina') ? 'LA REINA BUBBALOO'
   : `${id.startsWith('delegada') ? 'LA DELEGADA' : 'ALUMNOS DE LA REINA'} · ${YEAR_WORDS[yearOf(id)]}`])) as Record<CastleEncounter, string>;
 const CASTLE_TITLES = Object.fromEntries(CASTLE_ENCOUNTERS.map(id => [id, id === 'aurelia' ? 'Nadie sale <em>hasta el timbre.</em>' : id === 'direccion' ? 'Consta <em>en acta.</em>' : id === 'reina' ? 'Lo que <em>queda.</em>' : id === 'reina-vuelta' ? 'Otra vez, <em>con música.</em>'
@@ -248,7 +258,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.id = 'battle'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Combate por turnos');
   root.innerHTML = `
-    <div class="boss-intro" aria-hidden="true"><i class="boss-bar"></i><i class="boss-bar"></i><p class="boss-name"><small>El salón del trono</small><span>La Reina <em>Bubbaloo</em></span><small class="boss-sub">Lo que dejasteis en el patio.</small></p><p class="boss-skip" data-glyph-template="{confirm} Saltar"></p></div>
+    <div class="boss-intro" aria-hidden="true"><i class="boss-bar"></i><i class="boss-bar"></i><p class="boss-name"><small class="boss-place"></small><span class="boss-who"></span><small class="boss-sub"></small></p><p class="boss-skip" data-glyph-template="{confirm} Saltar"></p></div>
     <div class="dual-cinema" aria-hidden="true" hidden><span class="dual-veil"></span><i></i><b></b></div>
     <header class="battle-heading"><span class="battle-kicker">ENCUENTRO / PASSATGE MARESME</span><h1>Un pequeño <em>contratiempo.</em></h1><p class="battle-notes" data-glyph-template="{notes} · El artilugio" hidden></p></header>
     <div class="round-badge"><span>RONDA</span><strong>01</strong></div>
@@ -467,7 +477,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** The fears' own rules, where the player can read them (docs/quests/nuria.md). */
   function ruleChips(c: Combatant, summary = false): [string, string][] {
     const chips: [string, string][] = [];
-    // What a blow has already found this kind of foe to be made of (docs/combat.md § Debilidades por elemento): never shown before it is found.
+    // What a blow has already found this kind of foe to be made of (docs/combat.md § Debilidades): never shown before it is found.
     if (c.hp > 0 && c.kind) for (const element of foundAffinities.get(c.kind) ?? []) {
       const a = AFFINITIES[c.kind]?.[element];
       if (a) chips.push([`${a === 'weak' ? 'debil' : 'resiste'}-${element}`, `${a === 'weak' ? 'Débil' : 'Resiste'}: ${ELEMENTS[element].name}`]);
@@ -2376,6 +2386,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (kind) foundAffinities.set(kind, new Set([...foundAffinities.get(kind) ?? [], element]));
         landed.push({ target: id, id: `${a === 'weak' ? 'debil' : 'resiste'}-${element}`, text: a === 'weak' ? '¡Débil!' : 'Resiste', detail: `${ELEMENTS[element].name} ×${ELEMENT_RULES[a]}` });
       }
+      // The kind of blow found it (a dish, a mago, glass, rancid gum): said the same way, with no number, since each has its own.
+      const byElement = new Set(element ? affinities.map(([id]) => id) : []);
+      for (const k of effect.kinds ?? []) if (!byElement.has(k.target)) landed.push({ target: k.target, id: `${k.affinity === 'weak' ? 'debil' : 'resiste'}-${k.blow === 'physical' ? 'fisico' : 'magico'}`, text: k.affinity === 'weak' ? '¡Débil!' : 'Resiste', detail: k.blow === 'physical' ? 'Golpe físico' : 'Magia' });
       // Punto débil: left on the target, or spent by this blow (it landed WEAK_SPOT times as hard).
       const spentOn = [...markSpent(effect) && effect.target && !effect.hits ? [effect.target] : [], ...(effect.hits ?? []).filter(h => h.weakSpot).map(h => h.target)];
       if (markLeft(effect) && effect.target) landed.push({ target: effect.target, id: 'punto-debil', text: '¡Punto débil!', detail: `×${WEAK_SPOT} al siguiente golpe` });
@@ -2946,7 +2959,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       get('.battle-targets').innerHTML = [...state.foes, ...state.allies].map((f, i) => plateHtml(f, i, i < foeCount)).join('');
       root.dataset.entering = 'true'; delete root.dataset.resolving;
       // Her entrance (src/throne-arena.ts THRONE_INTRO, played by the game): the bars and her name over it, and no HUD until it ends.
-      const entrance = (encounter === 'reina' || encounter === 'reina-vuelta') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const card = BOSS_CARDS[encounter], entrance = !!card && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (card) { get('.boss-place').textContent = card.place; get('.boss-who').innerHTML = card.who; get('.boss-sub').textContent = card.sub; root.dataset.boss = card.held ? 'held' : 'reina'; }
       root.toggleAttribute('data-intro', entrance); for (const key of ['introEnd', 'introRun', 'introName', 'introPull'] as const) delete root.dataset[key];
       root.querySelectorAll('.party-card').forEach(card => card.remove()); root.querySelectorAll('.anima-chips').forEach(chips => chips.removeAttribute('data-for'));
       get('.battle-pops').replaceChildren(); positions.clear();

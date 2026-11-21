@@ -11,7 +11,7 @@ import { CITY_VIEW, renderCityMap, type View } from './city-map';
 import { createCity3D, type City3D } from './city-3d';
 import type { MapMarker } from './map-markers';
 import { LINES, STATIONS, destinations, linesAt, route, type Closures, type Leg } from './transit';
-import { answer, opens, type Verdict } from './tickets';
+import { answer, colourOf, opens, type Verdict } from './tickets';
 
 /** The tablet's memory field: stations without a ticket, and who judges a memory (`tickets.remember`). */
 export interface Tickets { locked: readonly string[]; remember: (text: string) => Promise<Verdict>; opened: (station: string) => void }
@@ -45,7 +45,7 @@ export function createTravelUI(hud: HTMLElement) {
   /** The city as a 3D model (city-3d.ts), made the first time the map opens; the flat plan without it. */
   let city: City3D | undefined, tried = false;
   const get = <T extends Element = HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
-  const field = get<HTMLInputElement>('#travel-memory'), ticket = get('.travel-ticket');
+  const field = get<HTMLInputElement>('#travel-memory'), ticket = get('.travel-ticket'), memoryForm = get('.travel-memory');
   /** Where the train can go from here: open, reachable and with a ticket. */
   const reachable = () => destinations(from, options).filter(id => !tickets?.locked.includes(id));
   const badge = (id: string) => { const l = LINES.find(line => line.id === id)!; return `<b class="line-badge" data-kind="${l.kind}" style="--line:${l.colour}">${l.name}</b>`; };
@@ -153,14 +153,15 @@ export function createTravelUI(hud: HTMLElement) {
     const text = field.value.trim();
     if (!tickets || reading || travelling || !text) return;
     reading = true; field.disabled = true;
-    root.classList.add('is-reading'); ticket.textContent = 'Leyendo…'; ticket.dataset.outcome = '';
+    root.classList.add('is-reading'); ticket.textContent = 'Leyendo…'; memoryForm.dataset.colour = '';
     let verdict: Verdict | undefined;
     try { verdict = await tickets.remember(text); } catch { verdict = undefined; }
     reading = false; field.disabled = false; root.classList.remove('is-reading');
     if (!root.open) return;
     const station = verdict && opens(verdict), already = !!station && !tickets.locked.includes(station);
     ticket.textContent = answer(verdict, already);
-    ticket.dataset.outcome = station ? 'ticket' : verdict?.person || verdict?.place ? 'half' : 'blank';
+    // Green, a ticket (or one already printed); yellow, close; red, nothing. Unread: no colour.
+    memoryForm.dataset.colour = station ? 'green' : colourOf(verdict) ?? '';
     if (station) {
       if (!already) { tickets = { ...tickets, locked: tickets.locked.filter(id => id !== station) }; tickets.opened(station); }
       field.value = '';
@@ -250,7 +251,7 @@ export function createTravelUI(hud: HTMLElement) {
       close();
       from = station; options = closures; markers = icons; tickets = memory;
       root.classList.toggle('has-memory', !!tickets);
-      field.value = ''; ticket.textContent = ''; ticket.dataset.outcome = '';
+      field.value = ''; ticket.textContent = ''; memoryForm.dataset.colour = '';
       choices = reachable(); selected = choices[0];
       // The model's WebGPU device comes up asynchronously the first time; the panel waits for it.
       if (!tried) { tried = true; city = await createCity3D(get('.travel-map')); root.classList.toggle('is-3d', !!city); }

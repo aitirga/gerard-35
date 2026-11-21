@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { bodyOf, type Body, type Effects, type FireLevel } from './effects.ts';
 import type { GpuEmitter, GpuField, GpuKind } from './fight-particles.ts';
+import { ensureFluidKinds } from './fluid-fx.ts';
 
 /**
  * How statuses read on whoever carries them, in a fight (docs/combat.md, "Turnos con tiempo real",
@@ -493,6 +494,8 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
           break;
         case 'vapor':
           g?.burst('steam', { at: chest, count: 320, spread: body.radius, up: 3, speed: 1.5, life: [1, 2] });
+          // The boil itself, a fluid (src/fluid-fx.ts): steam born packed round them that swells out and rolls up.
+          ensureFluidKinds(g); g?.burst('fluido-vapor', { at: chest, count: 420, spread: body.radius * .5, speed: 1.2, up: 1.6, life: [1.2, 2] });
           g?.burst('steam', { at: head, count: 140, spread: .3, up: .6, speed: .6, life: [1.4, 2.4] });
           api.apply(id, 'cegado', { level });
           break;

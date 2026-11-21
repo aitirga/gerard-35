@@ -240,6 +240,7 @@ material, light and landmark, which the last column names.
 | Palace · el patio | `#3f7d58` | court green | painted resin court (`pista-pintada`), its lines as kerbs | the court's raised lines | `palacio-patio` cool | El Nucli (ΔE 25): a painted court under the sky vs felt indoors |
 | Palace · el gimnasio | `#2d5a9e` | mat blue | vinyl mats, pine wall bars, grey sports floor | the stacked vaulting box | `palacio-gimnasio` cold | Throne room (ΔE 23): blue under tubes vs indigo in the dark |
 | Palace · la secretaría | `#d6b46a` | manila and steel | archive boxes (`cartro`) on steel cabinets, terrazzo (`terratzo`) | aisles of cabinets | `palacio-secretaria` flat green | Sants (ΔE 7): an office under her vs a street |
+| Palace · Direcció (the bosses' stage, `src/boss-stages.ts`) | `#4b5966` | carpet slate, oak | venetian blinds, carpet tiles | the long table under the windows | warm morning in stripes | La secretaría (ΔE 45), the throne room (ΔE 20): slate and striped morning vs manila under flat green, or indigo at night |
 | Palace · el salón del trono | `#232a5c` | night indigo and gold | velvet (`vellut`), stage boards (`fusta-escenari`), her gum | the stage and her throne | `palacio-trono` night | El gimnasio (ΔE 23), La torre de Uri (ΔE 25): indigo and gold vs blue or violet |
 
 ΔE is CIE76 between dominant colours: under ~10 reads as the same colour, 20 as clearly different.
@@ -278,6 +279,8 @@ share a landmark kind.
 | Sagrada outside · Búnkers del Carmel | Seen from the hilltop | 23 | colour, material, ground, light | ✓ |
 | La Barceloneta · Càmping Eurosport | Through the spiral in the sea | 55 | all four: sand and sea at a bright midday vs pine olive, canvas and needles at evening | ✓ |
 | Palace zones, door to door | Doors | 55–92 | all four | ✓ |
+| La secretaría · Direcció | Door | 45 | colour, material, ground, light (striped morning vs flat green) | ✓ |
+| Direcció · el salón del trono | Door | 20 | material, ground, light (morning vs night) | ✓ |
 
 ## 3. Cards
 

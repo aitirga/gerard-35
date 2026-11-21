@@ -73,6 +73,10 @@ function extras(m) {
     { id: 'friends/nuria:STREET_MARKS', group: 'nuria', kind: 'burbuja', title: 'Aitor por La calle que no acaba', file: 'friends/nuria', lines: all('aitor', STREET_MARKS.map(s => s.text)) },
     { id: 'friends/universidad:LINES_UNI.run', group: 'universidad', kind: 'burbuja', title: 'Aitor, al empezar el pilla-pilla', file: 'friends/universidad', lines: all('aitor', [LINES_UNI.run]) },
     { id: 'friends/universidad:LINES_UNI.photo', group: 'universidad', kind: 'rotulo', title: 'El pie de la foto del melón', file: 'friends/universidad', lines: all('rotulo', [LINES_UNI.photo]) },
+    { id: 'credits:FINAL_CARD.acabar', group: 'castillo', kind: 'rotulo', title: 'Final · ACABAR: el texto del final, tras los créditos', file: 'credits', lines: all('rotulo', m.credits.FINAL_CARD.acabar) },
+    { id: 'credits:FINAL_CARD.bajar', group: 'castillo', kind: 'rotulo', title: 'Final · BAJAR LA MANO: el texto del final, tras los créditos', file: 'credits', lines: all('rotulo', m.credits.FINAL_CARD.bajar) },
+    { id: 'credits:THE_END', group: 'castillo', kind: 'rotulo', title: 'La última palabra, en los dos finales', file: 'credits', lines: all('rotulo', [m.credits.THE_END]) },
+    { id: 'credits:SNAPSHOTS', group: 'castillo', kind: 'rotulo', title: 'Créditos: los pies del collage', file: 'credits', lines: all('rotulo', m.credits.SNAPSHOTS.map(s => s.caption)) },
     { id: 'credits:LAST_CARD', group: 'castillo', kind: 'rotulo', title: 'Créditos: la última cartela y las fotos', file: 'credits', lines: all('rotulo', [m.credits.LAST_CARD, ...m.credits.ALBUM.map(a => a.caption)]) },
     ...Object.values(m.items.ITEMS).map(item => ({ id: `items:${item.id}`, group: 'objetos', kind: 'objeto', title: item.name, file: 'items', lines: all('rotulo', [item.name, item.description]) })),
   ];

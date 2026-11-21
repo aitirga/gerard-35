@@ -54,11 +54,12 @@ section('selector', 'Selector de desarrollo', 'broken', 'cada flag, lugar y comb
 ]);
 
 // ——— Fights: each keeps its pair of targets, with the answer and without it (docs/combat.md) ———
-const measured = fight => TARGETS.filter(target => fightOf(target) === fight);
-section('combates', 'Combates y su pareja de objetivos', 'pending', 'cada combate tiene dos TARGETS: jugando su respuesta y sin ella', FIGHTS.flatMap(fight => {
-  const own = measured(fight), policies = new Set(own.map(target => target.policy));
-  if (!own.length) return [`${fight}: sin objetivos`];
-  return policies.size < 2 ? [`${fight}: solo ${own.length === 1 ? 'uno' : `la política «${[...policies][0]}»`}`] : [];
+// The bench's own rule (src/balance.ts `pairsOf`, what `just fight-sim coverage` lists): a fight that only teaches needs no pair, just a target that holds it.
+const { pairsOf } = await game('balance.ts');
+section('combates', 'Combates y su pareja de objetivos', 'pending', 'cada combate tiene dos TARGETS: jugando su respuesta y sin ella; el que solo enseña, uno que lo sujete', pairsOf().flatMap(f => {
+  if (!f.held) return [`${f.fight}: sin objetivos`];
+  if (f.teaches) return [];
+  return !f.with.length ? [`${f.fight}: falta el que juega su respuesta`] : !f.without.length ? [`${f.fight}: falta el que juega sin ella`] : [];
 }));
 
 // ——— Places: a song of its own (docs/audio.md) ———

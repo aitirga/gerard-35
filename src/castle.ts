@@ -8,7 +8,7 @@
  * is a first guess for `just fight-sim`, and the rest room and the find are rooms with nothing in
  * them yet.
  */
-import type { Element, TimedId } from './battle.ts';
+import type { Element } from './battle.ts';
 
 export interface Cell { x: number; z: number }
 export interface Rect { x: number; z: number; w: number; d: number }
@@ -251,16 +251,16 @@ export const roomId = (room: CastleRoom) => `castillo-sala-${room.id}`;
 export type PupilKind = 'repetidor' | 'empollon' | 'chivata' | 'gemelo' | 'delegada' | 'ausente' | 'castigado' | 'monton';
 /**
  * Everyone who fights in the castle. `atril` and `mano` are things with their own PV that never
- * take a turn and never hold up the win: Aurelià's lectern, the Queen's two hands. `directiva` is
- * each of Mar, Montse and Pilar.
+ * take a turn and never hold up the win: Aurelià's lectern, the Queen's two hands, the Pompa she
+ * blows. `directiva` is each of Mar, Montse and Pilar.
  */
-export type CastleKind = PupilKind | 'aurelia' | 'atril' | 'directiva' | 'reina' | 'mano';
-export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'ausente', 'castigado', 'monton', 'aurelia', 'atril', 'directiva', 'reina', 'mano'] as const satisfies readonly CastleKind[];
+export type CastleKind = PupilKind | 'aurelia' | 'atril' | 'directiva' | 'reina' | 'mano' | 'pompa';
+export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'ausente', 'castigado', 'monton', 'aurelia', 'atril', 'directiva', 'reina', 'mano', 'pompa'] as const satisfies readonly CastleKind[];
 export const isCastle = (kind?: string): kind is CastleKind => !!kind && (CASTLE_KINDS as readonly string[]).includes(kind);
 export const CASTLE_NAMES: Record<CastleKind, string> = {
   repetidor: 'El Repetidor', empollon: 'El Empollón', chivata: 'La Chivata', gemelo: 'Gemelo', delegada: 'La Delegada',
   ausente: 'El Ausente', castigado: 'El Castigado', monton: 'El Montón',
-  aurelia: 'Aurelià', atril: 'El Atril', directiva: 'Dirección', reina: 'La Reina Bubbaloo', mano: 'Mano',
+  aurelia: 'Aurelià', atril: 'El Atril', directiva: 'Dirección', reina: 'La Reina Bubbaloo', mano: 'Mano', pompa: 'La Pompa',
 };
 /** Who comes out in each room's fight, in the order they stand. */
 export const CASTLE_FIGHTS: Record<RoomEncounter, readonly PupilKind[]> = {
@@ -306,7 +306,7 @@ export interface NightFight { room: RoomEncounter; might: number }
  * luz (`STRONG_LIGHTS`: one every other day, night or floor, and no more than these in a game). `group`: which
  * of the night's groups it is. Tunable (`just fight-sim`, `castle.strong.*`).
  */
-export const STRONG = { pv: 1.6, power: 1.3, group: 2 };
+export const STRONG = { pv: 1.3, power: 1.1, group: 2 };
 export const STRONG_LIGHTS = ['encarnado-1', 'encarnado-2', 'encarnado-3', 'encarnado-4', 'encarnado-5', 'encarnado-6'] as const;
 /**
  * Each of the castle's rooms (each combination of pupils, and each year's La Delegada) lets go of an
@@ -326,19 +326,33 @@ export const yearOf = (encounter: string): Year => (Number(/-(\d)/.exec(encounte
 export const castlePhaseOf = (encounter: CastleEncounter): CastlePhaseId => encounter === 'aurelia' ? 1 : encounter === 'direccion' ? 2 : encounter === 'reina' || encounter === 'reina-vuelta' ? 3 : yearOf(encounter);
 export const YEARS: Record<Year, string> = { 1: 'Fresco', 2: 'Con relleno', 3: 'Rancio' };
 /** How big each stands, against the palace minion they are drawn from for now (placeholders: none has a model of its own yet). */
-export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, ausente: .72, castigado: .9, monton: .78, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25 };
+export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, ausente: .72, castigado: .9, monton: .78, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25, pompa: 1.5 };
 /** The management team, in the order they stand and act, and the element each starts with. */
 export const DIRECTIVAS = [
   { id: 'mar', name: 'Mar', element: 'fuego' },
   { id: 'montse', name: 'Montse', element: 'agua' },
   { id: 'pilar', name: 'Pilar', element: 'electrico' },
 ] as const satisfies readonly { id: string; name: string; element: Element }[];
-/** What undoes each element's holder: water on fire, a spark on water, fire on a wire. */
+/**
+ * The ring, one rule for the whole castle (docs/castle.md § Weaknesses): what undoes each element's
+ * holder. Water on fire, a spark on water, fire on a wire. A second-year pupil's filling, El Montón's
+ * shape, each of Dirección and the Queen's filled gum are all weak to what undoes what they carry.
+ */
 export const UNDOES: Record<Element, Element> = { fuego: 'agua', agua: 'electrico', electrico: 'fuego' };
-/** The Queen's gum, layer by layer, and what takes each off: fire while fresh, a blow once rancid, a spark while wet. */
-export const GUM = { fresco: 'Chicle fresco', rancio: 'Chicle rancio', mojado: 'Chicle mojado' } as const;
+/**
+ * The gum, as each year of her pupils wears it and as she wraps herself in it, a layer for each flavour
+ * of her crown: fresh (fire melts it), with a filling of fire, water or electricity (weak to what
+ * undoes it, and it resists its own), and rancid (it breaks under blows and no longer minds the fire,
+ * unless it is wet: then it is soft again).
+ */
+export const GUM = { fresco: 'Chicle fresco', fuego: 'Relleno de fuego', agua: 'Relleno de agua', electrico: 'Relleno eléctrico', rancio: 'Chicle rancio' } as const;
 export type Gum = keyof typeof GUM;
-export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
+export const GUM_ORDER: readonly Gum[] = ['fresco', 'fuego', 'agua', 'electrico', 'rancio'];
+/** A pupil's gum by its year (its second year's is its filling). */
+export const gumOf = (year: Year, filling?: Element): Gum => year === 1 ? 'fresco' : year === 2 ? filling ?? 'fuego' : 'rancio';
+/** The Queen's two hands: the one that holds and the one that crushes. */
+export const HANDS = { sujeta: 'Mano que sujeta', aplasta: 'Mano que aplasta' } as const;
+export type Hand = keyof typeof HANDS;
 /**
  * The castle's rules, every number in one book (`castle.rules`, `just fight-sim --tune`); each
  * foe's PV are its PROFILES entry. First guesses, all of them.
@@ -350,7 +364,10 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
  * `crusted` of anything else in. El Empollón resists the kind of blow it took last (`learned` of
  * it) and hits `repaso`. La Chivata's mark makes the next blow on whoever carries it land `chivatazo`
  * times as hard; her own is `senalar`. A Gemelo hits `gemelo` and gets its twin up with `levantar` of
- * its PV. La Delegada hits `orden`; a filling's element lands as ELEMENT_RULES says.
+ * its PV. La Delegada hits `orden`; a filling's element lands as ELEMENT_RULES says. Once El Empollón
+ * has learned a kind of blow, the other lands `noSabe` times as hard. A spark on one Gemelo passes to
+ * its twin, `salto` of it. A second-year pupil that falls spills its filling on the other pupils: a
+ * fire, water, or a spark of `derrame` PV on whoever of them is wet, which costs them their turn.
  *
  * El Ausente is not there: it strikes `presente` from nowhere every other round and can only be hit
  * in the round after. El Castigado never attacks: each blow that does not fell it is a point of
@@ -373,21 +390,24 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
  * they trade elements. The last one standing hits `voto` times as hard.
  *
  * La Reina. Phases at `manos`, `pompa` and `toma` of her PV. A layer of gum lets `gum` of anything
- * in but what takes it off; she wraps herself again every `envolver` own turns. Pegote `pegote` on
- * one. Each hand standing takes `mano` off what reaches her; Aplastar `aplastar`. La Pompa: `pompaHp`
- * PV off her while she blows it burst it, or after `pompaRounds` rounds it is `pompa` on everyone.
+ * in; what takes it off tears `capa` of her PV away with it, and she spends her next turn wrapping
+ * herself in the next of her five. Pegote `pegote` on one. Each hand standing takes `mano` off what
+ * reaches her; Aplastar `aplastar`. La Pompa is a thing with its own PV (PROFILES `pompa`): while it
+ * stands she takes `pompaTras` of everything; burst, it costs her a turn and `pompaRota` of her PV;
+ * after `pompaRounds` rounds it is `pompaBlow` on everyone.
  * With Aitor held, his blow on Gerard is `aitor`, and `aitorGrows` more of it each turn she has him. On
  * her way back she has `reinaVuelta` of her PV.
  */
 export const CASTLE = {
-  year1: 1.25, year2: 1.4, year3: 1.5,
-  empujon: 46, crust: 2, crusted: .3, repaso: 24, learned: .3, chivatazo: 3, senalar: 12, gemelo: 20, levantar: .5, orden: 22,
-  presente: 55, rabia: 3, revienta: 75, arrimarse: 14, copia: 1, sangre: 2,
+  year1: 1.6, year2: 1.4, year3: 1.8,
+  empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 3, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
+  salto: .5, derrame: 32,
+  presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
   carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 85, expuesto: 1.5, castigo: 40, castigoLeve: 16,
-  vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 70, recordRounds: 2,
-  expediente: 18, horario: 6, circular: 12, conducida: 1.8, actaEvery: 3, resolucion: 90, cargoEvery: 4, voto: 1.3,
-  manos: .7, pompa: .4, toma: .1, gum: .25, envolver: 3, pegote: 34, mano: .25, aplastar: 26,
-  pompaHp: 90, pompaRounds: 3, pompaBlow: 80, aitor: 30, aitorGrows: .35, reinaVuelta: .4,
+  vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 80, recordRounds: 2,
+  expediente: 18, horario: 6, circular: 16, conducida: 2.6, actaEvery: 3, resolucion: 100, cargoEvery: 4, voto: 1.3,
+  manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 74, mano: .25, aplastar: 44,
+  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, aitor: 30, aitorGrows: .35, reinaVuelta: .4,
 };
 /** How much of her PV the Queen has when the party comes back with the artilugio (docs/castle-bosses.md: 40 %, proposed). */
 export const QUEEN_RETURN_HP = CASTLE.reinaVuelta;
@@ -439,7 +459,7 @@ export type ReinaPhase = keyof typeof REINA_PHASES;
  * One of the party: `marked` by La Chivata, the kinds of
  * their last blows (`blows`, for Castigo), rounds still `expelled`, `held` by a hand (its id) or by
  * the Queen.
- * Aurelià: his `phase`, seconds left of his `lap`, the clock statuses already on him (`clocks`) and
+ * Aurelià: his `phase`, seconds left of his `lap`, the statuses already on him (`clocks`) and
  * the one that last tripped him (`tripped`), `exposed` after a question answered, rounds of `record`
  * still to charge. A directiva: the `elements` she holds, and whether she `signed` this Acta.
  * The Queen: her `stage`, the `gum` on her, own turns since she last wrapped herself (`wrapped`), and
@@ -447,6 +467,8 @@ export type ReinaPhase = keyof typeof REINA_PHASES;
  */
 export interface CastleMark {
   year?: Year; filling?: Element; learned?: 'physical' | 'magic'; crust?: number; twin?: string; seen?: number;
+  /** A second-year pupil's filling has spilled on the others (it fell). */
+  spilled?: true;
   away?: boolean; back?: number; rage?: number; form?: MontonForm; copied?: number; all?: boolean;
   /** Out on the Meridiana at night: how much harder it hits and holds than inside (`NightFight.might`). */
   might?: number;
@@ -457,9 +479,11 @@ export interface CastleMark {
   /** It loses its next turn (the Queen, her Pompa burst or startled by a note). */
   stunned?: boolean;
   marked?: boolean; blows?: { round: number; kind: 'physical' | 'magic' }[]; expelled?: number; held?: string;
-  phase?: AureliaPhase; lap?: number; clocks?: TimedId[]; tripped?: TimedId; exposed?: boolean; record?: number;
-  elements?: Element[]; signed?: boolean;
-  stage?: ReinaPhase | 'libre'; gum?: Gum; last?: Gum; wrapped?: number; pompa?: { left: number; from: number };
+  phase?: AureliaPhase; lap?: number; clocks?: string[]; tripped?: string; exposed?: boolean; record?: number;
+  /** A directiva: struck with what undoes her element, she loses the move she had announced (`overruled`), once until they next trade (`warned`). */
+  elements?: Element[]; signed?: boolean; overruled?: boolean; warned?: boolean;
+  /** The Queen: the layers already torn off her (`peeled`); La Pompa being blown, and the rounds it has left. One of her hands: which. */
+  stage?: ReinaPhase | 'libre'; gum?: Gum; peeled?: Gum[]; pompa?: { left: number; id: string }; hand?: Hand; raised?: boolean;
 }
 /**
  * What the castle's rules keep on the fight (`BattleState.castle`). La Delegada's `focus` (whom hers
@@ -487,6 +511,7 @@ export const CASTLE_MOMENTS = {
   'direccion-tres': { label: 'Las tres: Acta', encounter: 'direccion' },
   'direccion-dos': { label: 'Quedan dos', encounter: 'direccion' },
   'direccion-una': { label: 'Voto de calidad', encounter: 'direccion' },
+  'direccion-funciones': { label: 'En funciones', encounter: 'direccion' },
   'reina-chicle': { label: 'El chicle', encounter: 'reina-vuelta' },
   'reina-manos': { label: 'Las manos', encounter: 'reina-vuelta' },
   'reina-pompa': { label: 'La pompa', encounter: 'reina-vuelta' },

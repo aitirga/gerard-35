@@ -1,7 +1,7 @@
 # The castle of La Reina Bubbaloo
 
-The last block of the game, designed with Aitor on 2026-11-19. **Design only: nothing here is
-built.** Each piece is built later, one at a time, with his OK. Its three bosses, the possession of
+The last block of the game, designed with Aitor on 2026-11-19 and built since in a first version
+(§ Built so far says what stands and what is a placeholder). Its three bosses, the possession of
 Aitor, the artilugio and the endings are in [castle-bosses.md](castle-bosses.md).
 
 It builds on what exists: the four zones of the palace are built as places
@@ -126,13 +126,13 @@ character **is** how it fights.
 
 | Pupil | Character → how it fights | Question → answer |
 | --- | --- | --- |
-| **El Repetidor** | Big and slow. Announces *Empujón → X* and hits very hard. Wrapped in thick pringue | **Moment** and **element**: Defender on the tell; melt the pringue |
-| **El Empollón** | Studies the party: after taking a kind of blow it *learns* it and resists it (a chip on its plate) | **Kind of blow**: alternate physical and magic; never repeat |
-| **La Chivata** | Fragile. *Chivatazo → X* marks one of the party: the next blow they take is tripled | **Who first**: her, before El Repetidor hits |
-| **Los Gemelos** | Two bodies. If one falls alone, the other gets it up at the end of the round | **Order and moment**: bring them down together and fell both in one round |
-| **El Ausente** | Not there: it cannot be hit except in the round it has just acted. Clock statuses do reach it | **Moment**, or **status**: burn it and let the clock work |
+| **El Repetidor** | Big and slow. Announces *Empujón → X* and hits very hard. Wrapped in thick pringue (first year) or a crust (third) | **Moment** and **element**: Defender on the tell; any blow of fire melts the pringue; the crust gives after two physical blows, or while it is wet |
+| **El Empollón** | Studies the party: after taking a kind of blow it *learns* it and resists it (a chip on its plate). The kind it has not learned it does not know: «No se lo sabe», ×1.5. Confused, it forgets | **Kind of blow**: alternate physical and magic, never repeat; or **status**: confuse it |
+| **La Chivata** | Fragile. *Chivatazo → X* marks one of the party: the next blow they take is tripled. Blinded she cannot point («No ve a quién») | **Who first**: her, before El Repetidor hits; or **status**: blind her |
+| **Los Gemelos** | Two bodies. If one falls alone, the other gets it up at the end of the round. Weak to electricity, and a spark on one passes to the other («Pasa al otro») | **Order and moment**: bring them down together and fell both in one round; a spark does it for both |
+| **El Ausente** | Not there: it cannot be hit except in the round it has just acted. Clock statuses do reach it. Wet, it shows («Se le ve») | **Moment**, or **status**: burn it and let the clock work, or wet it and hit it when it likes |
 | **El Castigado** | Facing the wall, it does not attack. Every blow that does not fell it gives it *Rabia*; at three it bursts on everyone | **Moment**: leave it for last and fell it in one big blow (an open wound, a dual, Punto débil) |
-| **El Montón** | One of the bunch (*uno del montón*): gum with no shape of its own. It takes the shape of the first blow that lands on it, what it carried and how hard it was, and gives it back every turn | **Choose what it is shown**: open with a light blow that carries nothing |
+| **El Montón** | One of the bunch (*uno del montón*): gum with no shape of its own. It takes the shape of the first blow that lands on it, what it carried and how hard it was, and gives it back every turn. Shaped, it is weak to what undoes its shape (the ring below; a wound's shape, to fire) | **Choose what it is shown**: open with a light blow that carries nothing, or give it a shape the party can undo |
 | **Élite · La Delegada** | In charge. While she stands, hers all strike the same one and their tells do not show | **Part and order**: silence her (confusión, a lost turn) or fell her first |
 
 Every rule above is by **kind of blow or status, never by ánima** (combat.md), shows on the plate
@@ -146,8 +146,33 @@ year older, and the gum changes what the player knew.
 | Year | Phase | The gum | What changes for the player |
 | --- | --- | --- | --- |
 | First | 1 | Fresh | Fire melts it: the first lesson of the game still holds |
-| Second | 2 | With a **filling**: each pupil carries an element inside, seen when it cracks | Weaknesses and reactions: the filling decides what to hit it with, and what it leaves when it falls |
-| Third | 3 | **Rancid**, grey and cracked | Fire no longer melts it: it breaks under blows. What was learned first is turned over |
+| Second | 2 | With a **filling**: each pupil carries an element inside, seen through its gum (orange, blue or yellow) and named on its plate | Weak to what undoes its filling, resists its own. It **hits with its filling** (burns, wets, or shocks whoever is wet) and, when it falls, **spills it on the other pupils**: fire sets them alight, water wets them, a spark runs through the wet ones |
+| Third | 3 | **Rancid**, grey and cracked | Fire no longer melts it: it **breaks under physical blows**. **Wet, it softens**: while it is wet it stops resisting fire and is weak to it. What was learned first is turned over |
+
+### Weaknesses (2026-11-21)
+
+Until this round nearly everything in the castle was weak to fire, the second year's weakness could
+not be seen and the third year had none. Now there are three kinds of weakness, all with the same
+pop («¡Débil!» / «Resiste») and the same chip on the plate (docs/combat.md § Debilidades):
+
+| Kind | What it is | In the castle |
+| --- | --- | --- |
+| **Element** | Fire, water, electricity (×1.5 / ×0.5) | Fresh gum to fire; a filling to what undoes it; Los Gemelos to electricity; El Atril to fire and electricity |
+| **Kind of blow** | Physical, as a weakness of its own | Rancid gum; El Empollón to the kind it has not learned |
+| **Combination** | A status on the foe changes what it is | Wet: rancid gum softens, El Ausente shows, the crust gives. Blinded: La Chivata and La Delegada. Confused: El Empollón forgets. Shaped: El Montón |
+
+One rule runs through the whole castle, **the ring** (`UNDOES` in `src/castle-fight.ts`): water puts
+out fire, a spark runs through water, fire melts the wire. The second year's fillings, El Montón's
+shapes, Dirección's folders and the Queen's filled layers all follow it: it is learned on the second
+floor and asked twice more.
+
+- A foe's weaknesses are worked out from what it is **now** (`castleAffinity`), not fixed when the
+  fight is made: wetting a third-year changes its plate.
+- An element is always **a prize, never a requirement**: every room also has its answer of order,
+  kind of blow or status, within reach of the least a party can bring (fire, physical, astral,
+  Sangrado). Astral (magic with no element) never meets a weakness nor a resistance: with more
+  resistances about, that is its worth.
+- The hall's guards are fresh gum: fire, as before.
 
 - **Phase 1** has four (El Repetidor, El Empollón, La Chivata, Los Gemelos) and La Delegada near
   its end; **phase 2** adds El Ausente and El Castigado; **phase 3**, El Montón. Each phase brings
@@ -172,9 +197,11 @@ They are the same pupils and the same room, with the same question, and less roo
   (`strongRoom` in `src/castle-story.ts`); at night, on the Meridiana, one of the groups out
   (`STRONG.group` in `src/castle.ts`). Whichever is beaten first is the day's: after it nobody is red
   until the next morning.
-- **What they are**: every pupil of the group has `STRONG.pv` times its PV (1.6) and hits
-  `STRONG.power` times as hard (1.3), on top of its year and, at night, of the night's strength
-  (`castleStrong` in `src/castle-fight.ts`). Bosses and their parts are never Encarnados.
+- **What they are**: every pupil of the group has `STRONG.pv` times its PV (1.3) and hits
+  `STRONG.power` times as hard (1.1), on top of its year and, at night, of the night's strength
+  (`castleStrong` in `src/castle-fight.ts`). Bosses and their parts are never Encarnados. They were
+  ×1.6 and ×1.3 until the final pass: the rooms themselves are harder now (§ Balance), and on top of
+  that the old numbers made a room nobody won.
 - **What they leave**: beaten, an **Eco de luz**, which flies into the party as a friend's does
   (`strongWon`; flags `luz-encarnado-1` to `-6`, `STRONG_LIGHTS`). One every other day and **six in a
   game**: when the sixth is taken they do not come out again. Lost against, nothing is taken and they are
@@ -326,10 +353,18 @@ Placeholders and decisions taken for now (each one Aitor's to change):
     Its plate says what it will give back. Shapeless, it only leans on one, lightly.
 - Built since (2026-11-21): what each boss opens for the ánimas (the outer rings, the level caps, the
   definitivas' waking: § What each boss opens).
-- Not built: the props that drift along a floor, portraits for the four bosses, the six-note
-  motif in the music, the Queen's final rules (left for last, docs/castle-bosses.md).
+- Built 2026-11-21: the castle's weaknesses (§ Weaknesses), each pupil's second answer, and the three
+  bosses' designs for the party that reaches each (docs/castle-bosses.md). A second-year's filling
+  shows through its figure; the Queen's crown loses a flavour with each layer torn off her. La Pompa
+  is a thing of its own in her fight (`pompa`), drawn for now with the palace minion's model, like
+  her hands. **None of it is balanced**: every number in `CASTLE` is a first guess and `just
+  fight-sim check` is left for the balance round (27 of 117 targets were off before this round, 29
+  after). Still without a pair of `TARGETS`: rooms 1b, 1c, 2a–2c, 3a, 3c, delegada-1 and -2, and one
+  without the answer for each of the Queen's stages.
+- Not built: the props that drift along a floor, Aurelià's portrait, the six-note motif in the music.
 
-Measured with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`): with the dual
+Measured on 2026-11-19, before the weaknesses round, and not measured again since (the balance round
+does): with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`), with the dual
 party at Papagato 3 and Atacar's three elements, playing the answer wins Aurelià 82 %, Dirección
 92 %, the Queen with the artilugio 100 %; without it, 0 %. The first Queen is never won. The last
 three pupils' rooms, playing the answer: 100 % each; without it, El Ausente's 8 %, El Castigado's

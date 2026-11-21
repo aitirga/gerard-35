@@ -179,7 +179,7 @@ C. **Preguntas**: her intelligence comes back as questions she can no longer ask
 
 - The mission plays with **water and wind**, or something like it, from her work and Aitor's
   (hydrogeology). To integrate step by step.
-- What the game has today (`src/battle.ts`, `docs/combat.md` § Debilidades por elemento): three
+- What the game has today (`src/battle.ts`, `docs/combat.md` § Debilidades): three
   elements, **fuego, agua, eléctrico**, with reactions (humo, cauterizado, tormenta, vapor,
   conducción). **Wind does not exist**: it would be a fourth element, with its reactions to design.
   Matemágico already has some water (*Vasos comunicantes*, the *Capilaridad* passive), so Emilie's
@@ -393,7 +393,7 @@ New here: **foes can wet and shock the party**, by the same rules.
 
 | Foe | Zone | What it is | Its question | Without / with the answer |
 | --- | --- | --- | --- | --- |
-| **La celda seca** | The soil | A model cell that has dried out and switched off: a hollow block of mesh | *Which first?* While dry every blow lands at half. Water wets it and it switches on; then electricity is Conducción | A long fight of small numbers / wet it, then one bolt through all of them |
+| **La celda seca** | The soil | A model cell that has dried out and switched off: a hollow block of mesh | *Which first?* While dry every blow lands at two fifths (`seca`; it was half until the final pass, and the room was won by plain Atacar). Water wets it and it switches on; then electricity is Conducción | A long fight of small numbers / wet it, then one bolt through all of them |
 | **La oscilación** | The gravels | A figure flickering between two values, never still. Its plate says which it is on now: «Agua» or «Eléctrico», and it flips every turn | *When, and with what?* A blow of the element it is on is absorbed; the other one lands hard | Half the blows wasted / every blow the right one. It is the boss's rule, small |
 | **La pluma** | Under the city | The pink trace in the water, drifting; it wets one of the party each turn and grows downstream | *Who first?* It comes with celdas secas that shock whoever is wet | The party soaked and shocked / the plume down first, then the rest |
 
@@ -466,8 +466,10 @@ Proposals filed with it, to confirm (all invented, none of them a fact about the
   her cues and `/character-3d` are still to do, and her portrait.
 - **Her ánima is a placeholder** (`ANIMAS.emilie`: Magia +1, Defensa +1, PV +10, grey `#a3aea2`); the wearable ánima is designed, not built
   ([`docs/animas/freatica/README.md`](../animas/freatica/README.md)).
-- **The choir clue** is not there: the choir is not built (`docs/quests/coro.md`). Until then Aitor's word
-  one morning and the flood on the news lead to her (above), and the mission starts at her door.
+- **The choir clue** (built 2026-11-21): the first rehearsal's remark is Emilie missing, *«Falta
+  Emilie. Ella, que no se pierde un ensayo.»*, with nothing said of where (the flood is on the news).
+  If they have not been to a rehearsal, Aitor's word the next morning does it (no longer on the first
+  way down into the metro). The mission starts at her door either way.
 
 ## Decided in round 10 (Aitor: «me parece bien, empieza con la implementación»)
 
@@ -502,6 +504,5 @@ Proposals filed with it, to confirm (all invented, none of them a fact about the
 - Her photos and cues, her figure with `/character-3d`, her portrait.
 - Her ánima: designed whole 2026-11-20 as **Freática**, *La crecida*, waiting for Aitor's yes
   ([`docs/animas/freatica/README.md`](../animas/freatica/README.md)); only its look is built, in the effects lab. The second round (the kid's *why?*).
-- The choir clue, once the choir exists.
 - Landing in Las gravas by El suelo's first stake puts the party in an Oscilación's sight at once: whether that
   is the dodge the zone asks for or a stake to move.

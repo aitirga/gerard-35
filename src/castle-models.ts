@@ -174,6 +174,15 @@ function haloTexture(device: pc.GraphicsDevice) {
   haloMap.setSource(canvas);
   return haloMap;
 }
+/** What a second-year's gum is filled with, seen through it (docs/castle.md § Weaknesses): the elements' own colours. */
+export const FILLINGS = { fuego: '#ff8f3f', agua: '#6cc8f2', electrico: '#ffe45c' } as const;
+/** Lights `materials` from inside with their filling's colour, through their own texture: what the pupil is weak to can be read on it. */
+export function fillGum(materials: readonly pc.StandardMaterial[], filling: keyof typeof FILLINGS, strength = .5) {
+  for (const m of materials) {
+    m.emissiveMap = m.diffuseMap; m.emissive = new pc.Color().fromString(FILLINGS[filling]); m.emissiveIntensity = strength;
+    m.update();
+  }
+}
 /** Lights `materials` red from inside (an Encarnado's gum): their own texture, through `ENCARNADO`. */
 export function redden(materials: readonly pc.StandardMaterial[], strength = .16) {
   for (const m of materials) {

@@ -424,6 +424,8 @@ try {
     lastScene: async say => {
       silenceForChoice();
       await game.lastScene('hold');
+      // Her last words, each held as long as it takes to read.
+      for (const line of LINES_CASTLE.lastWords.lines) await say(line.speaker, line.text, Math.max(2000, 1000 + line.text.length * 60));
       const choice = chosen = await endings.choose(LINES_CASTLE.lastScene);
       pianoAfterChoice();
       void say('aitor', LINES_CASTLE[choice].aitor.text, 2200);
@@ -566,7 +568,11 @@ try {
       storyEvent({ type: 'ending', choice });
     }
     else if (effect.kind === 'epilogue') { await storyUI.blackout(true, 1600); await endings.tell(effect.text); }
-    else if (effect.kind === 'credits') { music.duck(true); await credits.play(); music.duck(false); }
+    else if (effect.kind === 'credits') {
+      music.duck(true); await credits.play(effect.choice); music.duck(false);
+      // After an ending's «Fi», the welcome screen again, with «Continuar»: the Monday at home is still there behind it.
+      if (effect.choice) { titleOpen = true; await welcome(Promise.resolve(true)); }
+    }
     // A level reached in a fight was shown on its victory screen.
     else if (effect.kind === 'learn') { if (!effect.quiet) { sfx.play('unlock'); storyUI.learn(effect.classId, effect.level, effect.skills); } }
     else if (effect.kind === 'anima' && effect.kept) { sfx.play('unlock'); await storyUI.kept(effect.classId); }

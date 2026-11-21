@@ -74,6 +74,8 @@ export const STORY_ARCS = [
     { flags: ['ticket-espanya'], label: "Aitor en Plaça d'Espanya", spot: { environment: 'meridiana-calle' } },
   ] },
   { id: 'nuria', chapter: 2, title: 'Misión de Nuria y Uri', detail: 'Cardedeu', after: 'metro', anima: 'nuria', steps: [
+    // A rehearsal's pause (docs/quests/coro.md § Ensayar): Nuria has written, only asking them to come.
+    { flags: ['clue-nuria'], label: 'Ensayo: Nuria pide que vayan, sin decir más', spot: { environment: 'meridiana-calle' } },
     { flags: ['cardedeu'], label: 'La R4 hasta Cardedeu', spot: { environment: 'cardedeu' } },
     // Winning at the top of the tower sets them all at once (story.ts): Papagato, the ánima and the two lights.
     { flags: ['nuria-uri', 'papagato', 'luz-nuria', 'luz-uri', 'anima-nuria'], label: 'Uri vuelve en sí' },
@@ -88,14 +90,16 @@ export const STORY_ARCS = [
     { flags: ['sobremesa', 'anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan'], label: 'Libres: La Sobremesa vencida' },
   ] },
   { id: 'marta', chapter: 2, title: 'Misión de Marta', detail: 'Alegia · Las cuerdas', after: 'metro', anima: 'marta', steps: [
+    // A rehearsal's pause: Marta's voice message from Alegia, half a minute of silence and a note that will not come.
+    { flags: ['clue-marta'], label: 'Ensayo: el audio de Marta desde Alegia', spot: { environment: 'meridiana-calle' } },
     { flags: ['alegia-marta'], label: 'Marta en Alegia: no le sale la voz', spot: { environment: 'alegia', cell: { ...PLACES_MARTA.back } } },
     { flags: ['cuerdas'], label: 'El piano: dentro de Las cuerdas' },
     // Beating La Voz gives her everything back at once, and her ánima and light with it.
     { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
   ] },
   { id: 'emilie', chapter: 2, title: 'Misión de Emilie', detail: 'Poble Sec · Su modelo', after: 'metro', anima: 'emilie', steps: [
-    // Aitor, one morning: she has not written since the castle came out, and her streets are flooding.
-    { flags: ['clue-emilie'], label: 'Aitor: Emilie no contesta, y hay una fuga en el Poble Sec' },
+    // A rehearsal she misses, or else Aitor one morning: she has not written, and her streets are flooding.
+    { flags: ['clue-emilie'], label: 'Emilie falta al ensayo (o Aitor, una mañana: no contesta)', spot: { environment: 'meridiana-calle' } },
     { flags: ['poble-sec-emilie'], label: 'Emilie en su piso inundado: ha perdido el porqué', spot: { environment: PISO, cell: { ...PLACES_PISO.laptop } } },
     { flags: ['modelo'], label: 'El portátil: dentro de su modelo' },
     // Beating El que no converge gives her the why back at once, and her ánima and light with it.
@@ -111,6 +115,8 @@ export const STORY_ARCS = [
   ] },
   // Bernat the first time (docs/quests/bernat.md): the confidant at his table in El Nucli.
   { id: 'bernat', chapter: 2, title: 'Bernat', detail: 'El Nucli · Sants', after: 'metro', steps: [
+    // A rehearsal's pause: Bernat's photo of the back table at El Nucli, with no words.
+    { flags: ['clue-bernat'], label: 'Ensayo: la foto de Bernat en El Nucli', spot: { environment: 'meridiana-calle' } },
     { flags: ['bernat-nucli'], label: 'Bernat en El Nucli: es el castillo de su sueño', spot: { environment: NUCLI, cell: { ...PLACES_BERNAT.portal } } },
   ] },
   // The castle's three phases and its end (docs/castle.md): each boss beaten moves the way in to its room.

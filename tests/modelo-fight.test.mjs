@@ -46,7 +46,7 @@ test('inside the model every Atacar can carry water or electricity, whatever is 
   for (const ally of street.allies) assert.deepEqual(elementsFor(street, ally), []);
 });
 
-test('a Celda seca takes half while dry; water wets it, and then electricity runs through every wet one and leaves them dry', () => {
+test('a Celda seca takes less than half while dry; water wets it, and then electricity runs through every wet one and leaves them dry', () => {
   const s = fight('modelo-celdas');
   const dry = blow(s, 'celda-seca-0');
   const first = strike(s, 'gerard', 'celda-seca-0', 'agua');

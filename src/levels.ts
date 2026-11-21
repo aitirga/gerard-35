@@ -60,7 +60,7 @@ export const FOE_XP: Record<FoeKind, number> = {
   lealtad: 40, eco: 12, cristalino: 45, directo: 50, voz: 110,
   // The castle: the Queen's pupils, and her bosses. A lectern and a hand are things: nothing of their own.
   repetidor: 22, empollon: 20, chivata: 14, gemelo: 14, delegada: 40, ausente: 18, castigado: 20, monton: 22,
-  aurelia: 140, atril: 0, directiva: 60, reina: 0, mano: 0,
+  aurelia: 140, atril: 0, directiva: 60, reina: 0, mano: 0, pompa: 0,
   // Emilie's model: the section's small fights, and El que no converge at the bottom.
   'celda-seca': 12, oscilacion: 18, atomo: 20, 'no-converge': 100,
   polilla: 6, 'estampado-rojo': 22, 'estampado-azul': 22, 'estampado-oro': 22, capellan: 16, fran: 120, lampara: 0,

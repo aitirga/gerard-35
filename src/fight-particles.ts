@@ -75,6 +75,13 @@ export interface GpuKind {
   flat?: boolean;
   /** Becomes this kind when it first lands on the floor, or when it dies; its own life when it becomes one. */
   onLand?: string; onDeath?: string; life?: readonly [number, number];
+  /**
+   * A fluid (src/fight-particles.ts § The fluid): its particles feel each other through a grid. They are
+   * pushed down the density (`pressure`, m/s² at twice their rest packing), so a body of them keeps its
+   * volume, falls as a mass and spreads when it lands; they move with the flow round them (`viscosity`,
+   * 1/s), so it moves as one; `rest` is how many to a 20 cm cell before they push (6 by default).
+   */
+  fluid?: { pressure: number; viscosity?: number; rest?: number };
 }
 
 export interface GpuBurst {
@@ -236,14 +243,21 @@ export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rota
 /** A stream (no `light`: a light group per spawn would push every other group out). */
 export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: number; remove(): void }
 
-const W = 256, H = 128, N = W * H, BANDS = 5;
+// The pool: 131 072 particles since 2026-11-21 (32 768 before). The GPU is not the limit (Aitor plays on an RTX 5070 Ti):
+// effects can be dense. The simulation pass and the draw cover the whole pool every frame.
+const W = 512, H = 256, N = W * H, BANDS = 5;
 // Every kind registered at once: the fight's own, the duals', the statuses', the motes' and the ánimas' looks (Colorista's
 // powder, Freática's water: one name each). A row of a small data texture each: 128 since Freática's water joined the fights, 256 since each newer dual brings its own (src/duo-fx).
 export const MAX_KINDS = 256;
 // MAX_BATCHES: bursts a frame. The spawn loop stops at the frame's own count, so only a frame that uses them pays;
-// 128 since the newer duals' drawings (src/duo-fx) burst more than 64 on their busiest frames.
-const KIND_COLS = 12, MAX_BATCHES = 128, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
+// 256 since the newer duals' drawings (src/duo-fx) burst more than 64 on their busiest frames.
+const KIND_COLS = 13, MAX_BATCHES = 256, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
+/**
+ * The fluid's grid: cells of `CELL` metres, `GX` × `GY` × `GZ` of them round where the fluid was last
+ * thrown, laid out on one texture `GX × GY` wide (a slice of `GX` columns for each height) and `GZ` tall.
+ */
+const GX = 64, GY = 24, GZ = 64, GW = GX * GY, CELL = .2;
 /** Frames a fighter's real surface may be old before it is written again (src/surface-samples.ts). */
 const SURFACE_EVERY = 3;
 /** Crystals and other volumes particles meet; light groups (bursts that light their surroundings), the lights they share and how many particles each samples. */
@@ -311,6 +325,8 @@ uniform uFloor: vec4f;
 var uVolumes: texture_2d<uff>;
 uniform uExtra: vec4f;
 var uLattices: texture_2d<uff>;
+var uGrid: texture_2d<uff>;
+uniform uGridAt: vec4f;
 varying vUv0: vec2f;
 
 fn hashu(v: u32) -> u32 { var x = v; x ^= x >> 16u; x *= 0x7feb352du; x ^= x >> 15u; x *= 0x846ca68bu; x ^= x >> 16u; return x; }
@@ -338,6 +354,8 @@ fn floorAt(p: vec3f) -> f32 {
   if (c.x < 0.0 || c.y < 0.0 || c.x >= ${FLOOR}.0 || c.y >= ${FLOOR}.0) { return uniform.uFloor.w; }
   return textureLoad(uFloorMap, vec2i(i32(c.x), i32(c.y)), 0).x;
 }
+// The fluid's grid (GX by GY by GZ cells): what was splatted in a cell this frame, momentum and mass.
+fn cellAt(c: vec3i) -> vec4f { return textureLoad(uGrid, vec2i(c.x + c.y * ${GX}, c.z), 0); }
 fn lifeOf(k: f32, s: f32) -> f32 { let l = kin(i32(k), 11); return mix(l.x, l.y, s); }
 // Volumes (crystals): a shape in its own space, from a rigid transform; signed distance and normal.
 fn vol(v: i32, c: i32) -> vec4f { return textureLoad(uVolumes, vec2i(c, v), 0); }
@@ -563,6 +581,32 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
         }
         acc += apart * k8.x * radius * 0.1;
         if (n > 0.0) { acc += (middle / n - pos) * k8.y + (heading / n - vel) * k8.z; }
+      }
+      // A fluid: the grid round it (trilinear over the eight cells about it) gives how packed it is
+      // there and which way it thins, and the flow there. Pushed down the packing it keeps its volume
+      // and spreads; drawn into the flow it moves as one body.
+      let fl = kin(k, 12);
+      if (fl.x > 0.0) {
+        let g = (pos - uniform.uGridAt.xyz) / uniform.uGridAt.w - 0.5;
+        let c0 = vec3i(floor(g));
+        if (c0.x >= 0 && c0.y >= 0 && c0.z >= 0 && c0.x < ${GX - 1} && c0.y < ${GY - 1} && c0.z < ${GZ - 1}) {
+          let t = g - floor(g);
+          var mass = 0.0; var mom = vec3f(0.0); var grad = vec3f(0.0);
+          for (var q = 0; q < 8; q++) {
+            let o = vec3i(q & 1, (q >> 1) & 1, (q >> 2) & 1);
+            let cell = cellAt(c0 + o);
+            let wx = select(1.0 - t.x, t.x, o.x == 1); let wy = select(1.0 - t.y, t.y, o.y == 1); let wz = select(1.0 - t.z, t.z, o.z == 1);
+            let w = wx * wy * wz;
+            mass += cell.w * w; mom += cell.xyz * w;
+            grad += cell.w * vec3f(select(-1.0, 1.0, o.x == 1) * wy * wz, wx * select(-1.0, 1.0, o.y == 1) * wz, wx * wy * select(-1.0, 1.0, o.z == 1));
+          }
+          let rest = max(fl.z, 0.5);
+          // How hard it pushes grows as it packs past its rest; capped, so a crowd never blows up in one frame.
+          let push = -grad / (rest * uniform.uGridAt.w) * fl.x * (0.35 + max(mass / rest - 1.0, 0.0));
+          let pl = length(push);
+          acc += select(push, push / pl * 40.0, pl > 40.0);
+          if (mass > 0.05 && fl.y > 0.0) { vel = mix(vel, mom / mass, clamp(fl.y * dt, 0.0, 1.0)); }
+        }
       }
       // Volumes pull and swirl what is near them: onto their shell (orbit) or into them (attract).
       let volumes = i32(uniform.uExtra.x);
@@ -1176,6 +1220,58 @@ export function canSimulate(device: pc.GraphicsDevice) {
   return device.isWebGPU && device.textureFloatRenderable;
 }
 
+// ── The fluid ───────────────────────────────────────────────────────────────────────────────────
+// A basic fluid on the GPU, particle-in-cell: every frame each particle of a fluid kind adds its mass
+// and momentum to the cell it is in (a quad a slot, one texel, added up); then, in the simulation pass,
+// each reads the eight cells round it for how packed the fluid is there, which way it thins and how it
+// flows, and is pushed and carried by them (`fluid` on its kind). It costs nothing while no fluid is out.
+
+const SPLAT_VS_WGSL = /* wgsl */ `
+attribute vertex_position: vec2f;
+var uState: texture_2d<uff>;
+var uKinds: texture_2d<uff>;
+uniform uGridAt: vec4f;
+varying vMom: vec4f;
+fn st(band: i32, index: i32) -> vec4f { return textureLoad(uState, vec2i(index % ${W}, index / ${W} + band * ${H}), 0); }
+fn kin(k: i32, c: i32) -> vec4f { return textureLoad(uKinds, vec2i(c, k), 0); }
+@vertex
+fn vertexMain(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  output.position = vec4f(2.0, 2.0, 2.0, 1.0); output.vMom = vec4f(0.0);
+  let i = i32(pcInstanceIndex);
+  let A = st(0, i); let B = st(1, i);
+  if (!(B.w > 0.0 && A.w < B.w)) { return output; }
+  if (kin(i32(st(2, i).x), 12).x <= 0.0) { return output; }
+  let c = vec3i(floor((A.xyz - uniform.uGridAt.xyz) / uniform.uGridAt.w));
+  if (c.x < 0 || c.y < 0 || c.z < 0 || c.x >= ${GX} || c.y >= ${GY} || c.z >= ${GZ}) { return output; }
+  let px = f32(c.x + c.y * ${GX}) + 0.5 + vertex_position.x * 0.45;
+  let py = f32(c.z) + 0.5 + vertex_position.y * 0.45;
+  output.position = vec4f(px / ${GW}.0 * 2.0 - 1.0, 1.0 - py / ${GZ}.0 * 2.0, 0.0, 1.0);
+  output.vMom = vec4f(B.xyz, 1.0);
+  return output;
+}`;
+const SPLAT_FS_WGSL = /* wgsl */ `
+varying vMom: vec4f;
+@fragment
+fn fragmentMain(input: FragmentInput) -> FragmentOutput {
+  var output: FragmentOutput;
+  output.color = vMom;
+  return output;
+}`;
+/** Everything adds up: momentum and mass from every particle in a cell. */
+const ADD_ALL = new pc.BlendState(true, pc.BLENDEQUATION_ADD, pc.BLENDMODE_ONE, pc.BLENDMODE_ONE, pc.BLENDEQUATION_ADD, pc.BLENDMODE_ONE, pc.BLENDMODE_ONE);
+/** The splat: every slot's quad drawn into the grid at once, instanced, added up. */
+class SplatPass extends pc.RenderPass {
+  quad: pc.QuadRender; rect: pc.Vec4; count: number;
+  constructor(device: pc.GraphicsDevice, quad: pc.QuadRender, rect: pc.Vec4, count: number) { super(device); this.quad = quad; this.rect = rect; this.count = count; }
+  execute() {
+    this.device.setDrawStates(ADD_ALL, pc.DepthState.NODEPTH, pc.CULLFACE_NONE);
+    this.quad.render(this.rect, undefined, this.count);
+    // Back to no blending: the simulation's own pass draws with whatever the device was left with.
+    this.device.setDrawStates();
+  }
+}
+
 export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuKind> = {}) {
   const device = app.graphicsDevice;
   const data = (width: number, height: number, name: string) => new pc.Texture(device, {
@@ -1216,6 +1312,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     const blur = typeof d.blur === 'number' ? [d.blur, d.blur] : d.blur ?? [0, 0];
     row(10, [d.sizeJitter ?? 0, d.aspect ?? .25, Math.max(0, blur[0]), Math.max(0, blur[1])]);
     row(11, [d.life?.[0] ?? .5, d.life?.[1] ?? d.life?.[0] ?? .5, Math.min(1, Math.max(0, d.core ?? 1)), 0]);
+    row(12, [d.fluid?.pressure ?? 0, d.fluid?.viscosity ?? 0, d.fluid?.rest ?? 6, 0]);
   }
   function uploadKinds() { const out = kindTex.lock() as Float32Array; out.set(kindData); kindTex.unlock(); }
   function define(name: string, kind: GpuKind) {
@@ -1240,12 +1337,40 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     uniqueName: 'gerard-fight-particles-light', attributes: { vertex_position: pc.SEMANTIC_POSITION },
     vertexChunk: 'fullscreenQuadVS', fragmentWGSL: LIGHT_WGSL, fragmentOutputTypes: 'vec4',
   });
+  // The fluid's grid and its splat (§ The fluid).
+  const gridTex = new pc.Texture(device, {
+    name: 'Fluido de combate', width: GW, height: GZ, format: pc.PIXELFORMAT_RGBA16F, mipmaps: false,
+    minFilter: pc.FILTER_NEAREST, magFilter: pc.FILTER_NEAREST, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE,
+  });
+  const gridTarget = new pc.RenderTarget({ colorBuffer: gridTex, depth: false });
+  const splatShader = pc.ShaderUtils.createShader(device, {
+    uniqueName: 'gerard-fight-particles-splat', attributes: { vertex_position: pc.SEMANTIC_POSITION },
+    vertexWGSL: SPLAT_VS_WGSL, fragmentWGSL: SPLAT_FS_WGSL, fragmentOutputTypes: 'vec4',
+  });
+  const splatQuad = new pc.QuadRender(splatShader);
+  const splat = new SplatPass(device, splatQuad, new pc.Vec4(0, 0, GW, GZ), N);
+  splat.init(gridTarget);
+  splat.setClearColor(new pc.Color(0, 0, 0, 0));
+  /** Where the grid's corner is and its cell (m), and until when (the engine's seconds) a fluid may be out. */
+  const gridAt = new Float32Array([0, 0, 0, CELL]);
+  let fluidUntil = -1, fluidSeen = -99;
+  /** The fluid was thrown at `at`: the grid goes round it, the floor a little under it. */
+  function aimGrid(at: { x: number; y: number; z: number }, until: number) {
+    const fresh = time - fluidSeen > 2, k = fresh ? 1 : .25;
+    const cx = gridAt[0] + GX * CELL / 2, cz = gridAt[2] + GZ * CELL / 2;
+    gridAt[0] = cx + (at.x - cx) * k - GX * CELL / 2;
+    gridAt[2] = cz + (at.z - cz) * k - GZ * CELL / 2;
+    // Its floor: as low as anything thrown since it was fresh, and half a metre under that.
+    gridAt[1] = fresh ? at.y - .5 : Math.min(gridAt[1], at.y - .5);
+    fluidSeen = time; fluidUntil = Math.max(fluidUntil, until);
+  }
   const scope = device.scope;
   const u = (name: string) => scope.resolve(name);
   const uniforms = {
     state: u('uState'), kinds: u('uKinds'), spawns: u('uSpawns'), fields: u('uFields'), parts: u('uParts'), fighters: u('uFighters'), surface: u('uSurface'), floorMap: u('uFloorMap'),
     dt: u('uDt'), time: u('uTime'), frame: u('uFrame'), counts: u('uCounts'), floor: u('uFloor'),
     volumes: u('uVolumes'), extra: u('uExtra'), groups: u('uGroups'), lattices: u('uLattices'),
+    grid: u('uGrid'), gridAt: u('uGridAt'),
   };
 
   // The draw: one quad per slot; dead slots collapse to nothing in the vertex shader.
@@ -1339,6 +1464,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     const start = place(count, chain > 1);
     if (start < 0) return undefined;
     batches.push({ start, count, kind: k, o, member, home });
+    if (defs[k].fluid) aimGrid(o.at, time + Math.max(o.life[1], defs[k].life?.[1] ?? 0) + .5);
     if (o.light) {
       if (groups.length >= MAX_LIGHT_GROUPS) groups.shift();
       const lifeLeft = o.life[1] * 2.5 + .5;
@@ -1684,6 +1810,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       writeLattices(Math.min(dt, 1 / 20));
       uniforms.lattices.setValue(latticeTex);
       uniforms.floor.setValue(floor);
+      // The fluid: splat this frame's particles into the grid first, so the simulation reads it (§ The fluid).
+      uniforms.gridAt.setValue(gridAt);
+      if (time < fluidUntil) splat.render();
+      uniforms.grid.setValue(gridTex);
       pc.drawQuadWithShader(device, targets[1 - current], sim, undefined, undefined, 'Partículas de combate');
       current = 1 - current;
       batches.length = 0;
@@ -1699,7 +1829,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       batches.length = 0; emitters.length = 0; fields.length = 0; volumes.length = 0; groups.length = 0; live = 0; head = 0;
       placeLights(false);
     },
-    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
+    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
   };
 }
 export type FightParticles = ReturnType<typeof createFightParticles>;

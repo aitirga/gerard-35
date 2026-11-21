@@ -106,6 +106,8 @@ export const LINES_2 = {
     gerard('Es igual que en el sueño. El vestíbulo, la fuente, la cortina de chicle…'),
     aitor('Huele a fresa. Muchísimo. ¿Esto lo soñaste tú?'),
     gerard('Lo soñó Bernat. Hace veintitantos años. Y yo estaba dentro.'),
+    aitor('¿Y él lo sabe?'),
+    gerard('Si lo sabe, estará en El Nucli dándole vueltas.'),
     aitor('Detrás de esa cortina hay algo. Y esas cosas enormes la están vigilando.'),
   ),
   /** Before the guards' fight. */

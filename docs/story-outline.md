@@ -190,6 +190,10 @@ Still to design (proposals wait for a yes):
   and never found out about any of it (decided): the last card is surrounded by her holiday
   photos dropping in one by one (`ALBUM` in `src/credits.ts`; the photos stay on this machine,
   `public/private/`, since the repository is public).
+- **The end, after the credits** (Aitor, 2026-11-21): the roll goes up between two collages of the
+  game's own snapshots, the adventure and the friends' missions (`SNAPSHOTS`); after Nuria's card,
+  each ending's own closing text and «Fi» (`FINAL_CARD`, drafts Aitor rewrites in the guion), and then
+  the welcome screen again, «Continuar» leading back to the Monday at home.
 - Open: who called her that as kids (Gerard and Bernat? the whole street?), and how the nickname
   surfaces in the game (Bernat remembering it is the natural place).
 - Proposal: Gerard can phone her too (the same phone as Bernat's call) and always gets her
@@ -443,6 +447,11 @@ and shops added complexity for nothing. What opens a trip is **remembering someo
   Sagrada Família."*; *"Te acuerdas de quién. No de dónde."* when only the person is right; *"Un
   sitio sin nadie no lleva a ningún sitio."* when only the place is; *"El billete sale en
   blanco."* otherwise.
+- **The answer has a colour** (Aitor, 2026-11-21): the server's verdict carries it (`colour` in
+  `tickets.py`, worked out from `person` and `place` so the model cannot contradict itself), and the
+  tablet lights the answer and the field's ring with it: **green**, the ticket prints and the
+  station opens; **yellow**, close (the person or the place is right); **red**, nothing written is
+  any station's. When the tablet reads nothing (no server), no colour.
 - **Clues live in the world** (`AGENTS.md`): photos and objects at home, people who mention
   someone, old messages on the phone, a cryptic line in the Diario. Never a list of what is missing.
 - **Open from the start**: Fabra i Puig (home) and Trinitat Vella (the school under the castle,
@@ -458,8 +467,11 @@ Open:
 - Whether the answers come from Gerard's own life (he is the player and knows his friends) or
   from what the game shows; proposal: both, the world filling in when he is stuck.
 - ~~Marta's long-distance train: the same tablet, or a harder memory.~~ Decided 2026-11-19: the same
-  tablet, a harder memory (Marta in Alegia and a moment of her singing), from Sants Estació
-  (docs/quests/marta.md).
+  tablet, from Sants Estació (docs/quests/marta.md). ~~A harder memory (Marta in Alegia and a moment
+  of her singing).~~ Aitor, 2026-11-21: Marta and Alegia are enough. Marta is from Tolosa, so Alegia
+  is not a word anyone would write without being told: the hard part is the place itself, which only
+  her voice message at a rehearsal names (`clue-marta`, docs/chapter-2.md § Hidden clues). Tolosa,
+  Gipuzkoa or the Basque Country do not count.
 - The landmarks' cards (Sagrada Família, Búnkers del Carmel…) still name famous places on the
   map before their station is remembered.
 

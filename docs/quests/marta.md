@@ -33,7 +33,9 @@ one of the hardest places to reach. Her mission ends against a boss that sings w
 - Where (decided round 1): **Alegia** (`docs/places/alegia.md`), San Juan kalea. What Alegia is to
   her (her village, where she works, a visit) and where in it she is found: _open_
 - How to get there (decided round 1): **hard to reach from the start: the trip to the Basque
-  Country has to be unlocked or paid for.** How (money, a person, another mission), how much and
+  Country has to be unlocked or paid for.** (Since 2026-11-19: a memory ticket, Marta in Alegia.)
+  **Marta is from Tolosa** (Aitor, 2026-11-21, real), so Alegia is not where anyone would think of
+  her: the ticket asks for Alegia itself. How (money, a person, another mission), how much and
   from which station: _open_. Proposal (`docs/story-outline.md` § Getting there): the long-distance
   train, the main money goal of the game.
 - Scene: **exists** (`alegia` in the dev picker, thirteen things to look at, no story yet). The
@@ -53,6 +55,8 @@ one of the hardest places to reach. Her mission ends against a boss that sings w
 
 | Clue | Where | Flag |
 | --- | --- | --- |
+| Aitor at a rehearsal: her voice message *from Alegia*, half a minute of silence and a note that will not come. The only line that names Alegia | The choir (Ensayar) | `clue-marta` |
+| Aitor at the piano at home: *«Esta la tocábamos en Keiran. Yo al piano, Marta cantando.»* (person only) | The flat's piano, until they have been to Alegia | — |
 
 ## Unusual things
 
@@ -312,11 +316,11 @@ Commands:
   the square by the town hall, `PLACES_MARTA`); her figure (a stand-in); the bonus of her ánima in
   `ANIMAS` (Espíritu +1, Defensa +1, 10 PV since Velocidad went, 2026-11-21); every line in `LINES_MARTA`.
 - **The trip to Alegia** (built 2026-11-19): a harder memory on the station tablet, Marta in Alegia
-  *and* a moment with her singing (`src/tickets.json`), opens the long-distance line from Sants
+  (since 2026-11-21 Marta in Alegia is enough, no moment) (`src/tickets.json`), opens the long-distance line from Sants
   Estació (`ld` in `src/geo/barcelona.json`); in Alegia its way is the street at the town's edge that
   leads up to the real station (`station-alegia`, about 100 m beyond the built zone). Each way takes
   three hours (`COSTS.tren`), and the train home runs at night too, to Fabra i Puig.
-- **Not built**: the clues; a second player
+- **Not built**: a second player
   driving Aitor never falls in a maze (only Gerard is checked); what is beaten inside is one visit's
   and is not saved; the song played well at the end is a line, not yet music.
 

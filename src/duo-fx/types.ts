@@ -1,6 +1,7 @@
 import type { BattleEffect, BattleState, ClassId, DualId } from '../battle';
 import type { DualFx, V3 } from '../dual-fx';
 import type { Effects } from '../effects';
+import type { FluidFx } from '../fluid-fx';
 import type { SoundId } from '../sfx';
 
 /**
@@ -36,6 +37,8 @@ export interface DuoFighter {
 export interface DuoStage {
   /** Lines, rings, digits, bursts of any GPU kind, and `after` on the fight's clock (src/dual-fx.ts). */
   fx: DualFx;
+  /** Fire, lava, smoke and water as fluids that push and carry each other (src/fluid-fx.ts). */
+  fluid: FluidFx;
   /** Trails, elements, the fight's GPU engine (`effects.gpu`), statuses' own looks (src/effects.ts). */
   effects: Effects;
   /** From whoever it lands on towards the camera (for figures that face it: `screenAxes(view)`). */

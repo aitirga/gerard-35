@@ -12,7 +12,7 @@ import {
   type BattleState, type Combatant, type FoeKind,
 } from './battle.ts';
 import { DUO, FIGHTS, MISSIONS, MISSION_IDS, TARGETS, createFight, missionOf, playOut, seeded, type Setup } from './battle-sim.ts';
-import { CASTLE_FIGHT_NAMES, CASTLE_NAMES, isCastle, isCastleEncounter } from './castle.ts';
+import { CASTLE_FIGHT_NAMES, CASTLE_NAMES, GUM, isCastle, isCastleEncounter } from './castle.ts';
 import { ENCOUNTER_NAMES } from './game-sim.ts';
 import { STAT_LABELS, type Stats } from './stats.ts';
 import { BOSS_FIGURES, FOE_BODIES } from './foe-bodies.ts';
@@ -91,7 +91,8 @@ export function foesOfTheGame(seeds = 6): FoeKindSeen[] {
 
 /** What one foe is, in a few words: PV, stats, weaknesses and resistances, and what it carries. */
 export function traitsOf(foe: Combatant) {
-  const affinities = ELEMENT_ORDER.map(element => ({ element: ELEMENTS[element].name, colour: ELEMENTS[element].colour, affinity: affinityOf(foe, element) })).filter(a => a.affinity);
+  const physical = affinityOf(foe, 'fisico');
+  const affinities = [...ELEMENT_ORDER.map(element => ({ element: ELEMENTS[element].name, colour: ELEMENTS[element].colour, affinity: affinityOf(foe, element) })), { element: 'Físico', colour: '#d8cfc0', affinity: physical }].filter(a => a.affinity);
   const flags: string[] = [];
   if (foe.shell) flags.push('Pringue: solo el fuego entra');
   if (foe.layers) flags.push(`${foe.layers} capas`);
@@ -101,7 +102,7 @@ export function traitsOf(foe: Combatant) {
   if (foe.countdown) flags.push(`Cuenta atrás ${foe.countdown}`);
   if (foe.castle?.year) flags.push(`Curso ${foe.castle.year}.º`);
   if (foe.castle?.filling) flags.push(`Relleno: ${ELEMENTS[foe.castle.filling].name}`);
-  if (foe.castle?.gum) flags.push(`Chicle: ${foe.castle.gum}`);
+  if (foe.castle?.gum) flags.push(`Capa: ${GUM[foe.castle.gum]}`);
   if (foe.castle?.strong) flags.push('Encarnado: rojo por dentro, más PV y pega más; vencido, un Eco de luz (uno al día)');
   const stats = (Object.keys(STAT_LABELS) as (keyof Stats)[]).filter(key => key !== 'pv').map(key => ({ label: STAT_LABELS[key], value: foe.stats[key] }));
   return { pv: foe.maxHp, stats, affinities, flags };
@@ -143,19 +144,20 @@ export function movesOf(kind: FoeKind, fights: readonly string[], runs = 4) {
  * docs/castle.md § Bestiary and docs/castle-bosses.md: change them there first.
  */
 export const CASTLE_ANSWERS: Record<string, { character: string; answer: string }> = {
-  repetidor: { character: 'Grande y lento. Anuncia «Empujón → X» y pega muy fuerte. Envuelto en pringue grueso.', answer: 'Momento y elemento: Defender en el aviso; derretir el pringue.' },
-  empollon: { character: 'Estudia al grupo: tras recibir un tipo de golpe, lo aprende y lo resiste (un chip en su placa).', answer: 'Tipo de golpe: alternar físico y mágico; no repetir nunca.' },
-  chivata: { character: 'Frágil. «Chivatazo → X» marca a uno del grupo: el siguiente golpe que recibe es triple.', answer: 'A quién primero: a ella, antes de que pegue El Repetidor.' },
-  gemelo: { character: 'Dos cuerpos. Si uno cae solo, el otro lo levanta al final de la ronda.', answer: 'Orden y momento: bajarlos juntos y tumbar a los dos en la misma ronda.' },
-  ausente: { character: 'No está: solo se le puede golpear en la ronda en que acaba de actuar. Los estados con reloj sí le llegan.', answer: 'Momento, o estado: quemarlo y dejar que el reloj trabaje.' },
-  castigado: { character: 'De cara a la pared, no ataca. Cada golpe que no lo tumba le da Rabia; a la tercera revienta sobre todos.', answer: 'Momento: dejarlo para el final y tumbarlo de un golpe grande (una herida abierta, un dual, Punto débil).' },
-  monton: { character: 'Chicle sin forma aún. Toma la del primer ánima que le pega y vuelve su estado contra el grupo.', answer: 'Elegir qué se le enseña: abrir con el ánima cuyo estado menos duela.' },
-  delegada: { character: 'Manda. Mientras está en pie, los suyos pegan todos al mismo y sus avisos no se ven.', answer: 'Parte y orden: silenciarla (confusión, un turno perdido) o tumbarla primero.' },
-  aurelia: { character: 'La lección (Dictado, Pregunta → X, Castigo a quien repite tipo de golpe), La carrera (Vuelta de 20 s, Sprint y Ritmo), La última recta (Expulsión, Récord cargado dos rondas).', answer: 'Parte: romper El Atril (madera, arde); Defender en la Pregunta lo deja expuesto. Estado: un estado de reloj nuevo le hace tropezar la vuelta. Momento: gastar lo guardado antes del Récord.' },
-  atril: { character: 'Parte de Aurelià: mientras está en pie, él recibe la mitad de todo. Romperlo quita el Dictado.', answer: 'Romperlo: es madera, arde.' },
-  directiva: { character: 'Mar, Montse y Pilar, cada una con un elemento: Expediente (fuego), Horario (agua, moja a todos), Circular (eléctrico, brutal en mojados). Firman el Acta cada tres rondas; Cambio de cargo les cambia elementos y debilidades.', answer: 'Orden: primero la que lleva el agua. Elemento: releer su debilidad tras cada Cambio de cargo. Momento: una cegada, confusa o sin turno no firma.' },
-  reina: { character: 'El chicle (capas de pringue, cada una pide otra cosa), Las manos (Atrapar saca a uno hasta romper esa mano), La pompa (carga varias rondas), y al décimo toma a Aitor.', answer: 'Todo el juego otra vez: fuego, golpe o chispa según la capa; romper las manos; romper la pompa o Defender. Con el artilugio, seis notas liberan a Aitor.' },
-  mano: { character: 'Una mano de la Reina, con sus PV. «Atrapar» saca a uno del grupo del combate hasta que se rompe.', answer: 'Romperla para recuperar a quien tiene.' },
+  repetidor: { character: 'Grande y lento. Anuncia «Empujón → X» y pega muy fuerte. En primero va envuelto en pringue grueso; en tercero, en una costra.', answer: 'Momento y elemento: Defender en el aviso. El pringue cede a cualquier fuego; la costra, a dos golpes físicos, o mientras está mojado.' },
+  empollon: { character: 'Estudia al grupo: tras recibir un tipo de golpe, lo aprende y lo resiste (un chip en su placa). El otro tipo no se lo sabe.', answer: 'Tipo de golpe: alternar físico y mágico; el que no se sabe le entra más. Confuso, se le olvida lo aprendido.' },
+  chivata: { character: 'Frágil. «Chivatazo → X» marca a uno del grupo: el siguiente golpe que recibe es triple.', answer: 'A quién primero: a ella, antes de que pegue El Repetidor. Cegada no señala.' },
+  gemelo: { character: 'Dos cuerpos cogidos de la bata. Si uno cae solo, el otro lo levanta al final de la ronda.', answer: 'Orden y momento: tumbar a los dos en la misma ronda. Débiles a lo eléctrico: la chispa sobre uno pasa al otro.' },
+  ausente: { character: 'No está: solo se le puede golpear en la ronda en que acaba de actuar. Los estados con reloj sí le llegan.', answer: 'Momento, o estado: quemarlo y dejar que el reloj trabaje. Mojado, se le ve: se le puede pegar aunque no esté.' },
+  castigado: { character: 'De cara a la pared, no ataca. Cada golpe que no lo tumba le da Rabia; a la tercera revienta sobre todos.', answer: 'Momento: dejarlo para el final y tumbarlo de un golpe grande (una herida abierta, un dual, Punto débil). Los estados con reloj no le dan Rabia.' },
+  monton: { character: 'Chicle sin forma aún. Toma la del primer golpe que le llega, lo que llevaba y lo fuerte que era, y lo devuelve cada turno.', answer: 'Elegir qué se le enseña: abrir con un golpe flojo que no lleve nada. Con forma, es débil a lo que la deshace: agua al fuego, chispa al agua, fuego a la chispa y a la herida.' },
+  delegada: { character: 'Manda. Mientras está en pie, los suyos pegan todos al mismo y sus avisos no se ven.', answer: 'Parte y orden: silenciarla (cegada o confusa no manda) o tumbarla primero.' },
+  aurelia: { character: 'La lección (Dictado, Pregunta → X, Castigo a quien repite tipo de golpe), La carrera (Vuelta de 20 s, Sprint y Ritmo), La última recta (Expulsión → X, Récord cargado dos rondas).', answer: 'Parte: romper El Atril; aguantar la Pregunta lo deja expuesto. Estado: cualquier estado nuevo le hace tropezar, reinicia la vuelta y le quita Ritmo. Momento: aguantar la Expulsión para quedarse, y guardar un estado sin usar para tirarlo en plena carrerilla del Récord.' },
+  atril: { character: 'Parte de Aurelià: mientras está en pie, él recibe la mitad de todo. Romperlo quita el Dictado.', answer: 'Romperlo: roble y latón. Débil al fuego y a lo eléctrico.' },
+  directiva: { character: 'Mar, Montse y Pilar, cada una con una carpeta: Expediente (fuego), Horario (agua, moja a todos), Circular (eléctrico, brutal en mojados). Cada una avisa de lo que va a hacer. Firman el Acta cada tres rondas, que preside Mar; Cambio de cargo les cambia carpetas y debilidades.', answer: 'Qué romper antes de que dispare: el golpe que deshace su carpeta (agua al fuego, chispa al agua, fuego a la chispa) la desautoriza, y pierde lo que había avisado; una vez cada una hasta el siguiente cambio. Orden: Mar primero y no hay más actas, o la del agua primero. Momento: una cegada, confusa o sin turno no firma.' },
+  reina: { character: 'El chicle (cinco capas, las de su corona: fresca, tres con relleno y rancia), Las manos (una sujeta, otra aplasta, las dos avisan), La pompa (una pieza delante de ella que carga tres rondas), y al décimo toma a Aitor.', answer: 'Todo el castillo otra vez. Cada capa cae con lo que la deshace (fuego la fresca, el anillo las de relleno, un golpe físico la rancia o mojarla y fuego) o con un dúo, y no vuelve. Aguantar el Atrapar y romper la mano que toca. Reventar la pompa antes de que se llene, o Defender. Con el artilugio, seis notas liberan a Aitor.' },
+  mano: { character: 'Las manos de la Reina, cada una con sus PV: una sujeta («Atrapar → X» saca a uno del combate hasta que se rompe) y otra aplasta. En pie, cada una le quita un cuarto a lo que le llega a ella.', answer: 'Aguantar el Atrapar para no ser cogido; romper la que sujeta para recuperar a quien tiene, o la que aplasta antes de que caiga.' },
+  pompa: { character: 'La pompa que hincha la Reina, con sus PV. Mientras está delante, ella recibe menos de la mitad de todo. A la tercera ronda revienta sobre todos.', answer: 'Reventarla antes: le estalla en la cara, pierde el turno y un trozo de sus PV. Si no da tiempo, Defender.' },
 };
 
 /** The families of models, by how a fight moves them (src/battle-scene.ts). */

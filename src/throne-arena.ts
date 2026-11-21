@@ -63,6 +63,8 @@ const PALETTE = {
 } as const;
 /** Her crown's five flavours (docs/lore.md): strawberry, mint, grape, lemon, liquorice. */
 const FLAVOURS = ['#ff4f7a', '#5fd3a0', '#9a5fe0', '#ffd84a', '#1c1418'] as const;
+/** A flavour whose layer of gum has been torn off her (docs/castle-bosses.md § La Reina): chewed out, the grey of old gum. */
+const SPENT = '#6b6468';
 /** The warm of the theatre's lamps, and possession's violet, which her spotlight turns while she holds Aitor. */
 const WARM = new pc.Color(1, .86, .64), HELD = new pc.Color(.66, .45, 1);
 
@@ -304,6 +306,9 @@ export function createThroneArena(app: pc.Application, source: ThroneArenaSource
   /** How far her hold on Aitor has turned the stage (0–1), and how many lamps were on last frame. */
   const tint = new pc.Color();
   let held = 0, holding = false, lampsOn = footlights.length, flavoursOn = FLAVOURS.length - 1;
+  /** How many of her layers of gum are gone, and which flavours show it already. */
+  let peeled = 0;
+  const spent = FLAVOURS.map(() => false);
   const giveBack = () => {
     if (!kept) return;
     app.scene.ambientLight.copy(kept.ambient);
@@ -341,6 +346,8 @@ export function createThroneArena(app: pc.Application, source: ThroneArenaSource
     skipIntro() { if (intro !== undefined && intro < I.pull) intro = I.pull - .001; },
     /** She holds Aitor (`on`) or has lost him: her spotlight turns possession's violet and the footlights falter. */
     setHeld(on: boolean) { holding = on; },
+    /** Her layers of gum torn off so far: a flavour of her crown goes out with each, the first one first. */
+    setPeeled(layers: number) { peeled = layers; },
     /** Advances the stage; returns what it asks to sound this frame. */
     update(dt: number, animate: boolean): ThroneCue[] {
       const cues: ThroneCue[] = [];
@@ -365,7 +372,13 @@ export function createThroneArena(app: pc.Application, source: ThroneArenaSource
       const shown = t === undefined ? FLAVOURS.length - 1 : Math.max(0, Math.min(FLAVOURS.length - 1, Math.floor((t - I.crown) / I.crownEach) + 1));
       if (shown !== flavoursOn) { if (shown > flavoursOn) cues.push('flavour'); flavoursOn = shown; }
       flavours.forEach((m, k) => {
-        if (k === 4) return;
+        if (spent[k] !== k < peeled) {
+          spent[k] = k < peeled;
+          m.diffuse.fromString(spent[k] ? SPENT : FLAVOURS[k]); m.gloss = spent[k] ? .1 : .85;
+          if (spent[k]) m.emissiveIntensity = 0;
+          m.update();
+        }
+        if (k === 4 || spent[k]) return;
         const since = t === undefined ? 9 : t - (I.crown + k * I.crownEach);
         const glow = since < 0 ? 0 : .18 + 1.6 * Math.exp(-since * 2.2);
         if (Math.abs(m.emissiveIntensity - glow) > .005) { m.emissiveIntensity = glow; m.update(); }

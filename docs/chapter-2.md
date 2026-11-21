@@ -427,6 +427,18 @@ notification, graffiti, a menu on a bar's board. A clue:
 | A photo of Gerard and Luca in the flat: Luca has gone grey in it (`clue-luca-foto`) | The Meridiana flat, looking at it | Luca is wrong |
 | *"Un hombre lleva días dentro de la Sagrada Família midiendo las columnas"* (`clue-sagrada`) | TV ticker | The Sagrada Família: Fran |
 | A Sagrada Família tour poster with one grey strip of stained glass (`clue-sagrada-cartel`) | A street poster on the Meridiana | The Sagrada Família; with the photo, Aitor: *"¿no será Fran?"* |
+| Emilie missing from the rehearsal, no word of where (`clue-emilie`) | The choir (Ensayar); if they have not been by the next morning, Aitor at home, with the flood in Blai | Poble Sec: Emilie (the flood is on the TV's ticker) |
+| Nuria has written only *«Podeu venir?»* (`clue-nuria`) | The choir (Ensayar) | Cardedeu, joined with the R4 clue: Nuria and Uri |
+| Marta's voice message from Alegia: half a minute of silence and a note that will not come (`clue-marta`) | The choir (Ensayar); the piano at home remembers Keiran, *«Marta cantando»* (person only) | Alegia. The one line in the game that names her town: she is from Tolosa, so nobody would write Alegia without it |
+| Bernat's photo of the back table at El Nucli, lit and empty, no words (`clue-bernat`) | The choir (Ensayar); inside the castle the first time, Gerard: *«estará en El Nucli dándole vueltas»* | Sants, El Nucli: Bernat, before his call |
+
+**The choir's remarks** (Aitor, 2026-11-21: the choir is never explicit): each rehearsal Aitor lets
+one remark slip in the pause, the first not yet heard of someone not reached yet (in the order of
+the table: Emilie, Nuria, Marta, Bernat; `CHOIR_REMARKS` in `src/story.ts`); once all are heard, one
+of those still not reached again, a different one each day. A remark is something that happened (a
+message, a photo, someone missing), never a direction, and never person and place together unless
+the fact itself carries both. Written by hand: the AI that writes them (`docs/quests/coro.md`) is not
+built.
 
 ## The Queen and the second round (blocks 4 and 5)
 

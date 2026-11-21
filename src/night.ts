@@ -146,7 +146,7 @@ export function risingAt(grates: readonly Cell[], from: Cell, count: number, cle
  * Provisional (2026-11-20): Aitor will balance the night later; El Empollón and La Chivata's group
  * is still won from the first night.
  */
-export const NIGHT_PUPILS = { start: 8, perFriend: 1.1, perLevel: .4, floor: 1 };
+export const NIGHT_PUPILS = { start: 6, perFriend: 1, perLevel: .4, floor: 1 };
 export function nightMight(friends: number, levels: Partial<Record<string, number>> = {}) {
   const grown = Object.values(levels).reduce((sum: number, level) => sum + Math.max(0, (level ?? 1) - 1), 0);
   return Math.max(NIGHT_PUPILS.floor, NIGHT_PUPILS.start - NIGHT_PUPILS.perFriend * friends - NIGHT_PUPILS.perLevel * grown);

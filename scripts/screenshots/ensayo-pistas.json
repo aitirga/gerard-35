@@ -1,0 +1,196 @@
+{
+  "title": "Ensayar · lo que se le escapa a Aitor",
+  "description": "Each rehearsal at A cop de diapasó (docs/quests/coro.md § Ensayar, docs/chapter-2.md § Hidden clues): in the pause Aitor lets one remark slip about someone not reached yet, in order Emilie, Nuria, Marta, Bernat. Never a direction: a message, a photo, someone missing.",
+  "steps": [
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "shot": "coro-puerta",
+      "delay": 2500,
+      "caption": "The choir's door on the Meridiana: «Ensayar con el coro» spends the afternoon"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "ensayo-emilie",
+      "delay": 700,
+      "caption": "First rehearsal: in the pause Aitor notices who is missing. «Falta Emilie. Ella, que no se pierde un ensayo. Y ni un mensaje.» Nothing says where: the flood in Blai is on the TV"
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "(() => { for (const f of [\"clue-emilie\"]) window.gerard.story.flags.add(f); })()"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "ensayo-nuria",
+      "delay": 700,
+      "caption": "Next rehearsal: «Te ha escrito Nuria. Solo esto: «Podeu venir?». Y no contesta a nada más.» The person; Cardedeu is on the TV and the bus shelter"
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "(() => { for (const f of [\"clue-emilie\", \"clue-nuria\"]) window.gerard.story.flags.add(f); })()"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "ensayo-marta",
+      "delay": 700,
+      "caption": "«Marta me ha mandado un audio desde Alegia. Medio minuto sin decir nada. Al final intenta una nota, y no le sale.» The one line in the game that names Alegia"
+    },
+    {
+      "open": "/?story=metro&at=home&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "(() => { for (const f of [\"clue-emilie\", \"clue-nuria\", \"clue-marta\"]) window.gerard.story.flags.add(f); })()"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        42
+      ]
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.night",
+      "timeout": 20000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "ensayo-bernat",
+      "delay": 700,
+      "caption": "«Bernat ha mandado una foto. La mesa del fondo del Nucli, con la luz encendida y nadie sentado. Sin texto. Solo la foto.»"
+    }
+  ]
+}

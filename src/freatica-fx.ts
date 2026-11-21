@@ -50,10 +50,14 @@ export const AGUA = {
 export const AGUA_KINDS = {
   // Air let go under water: beads of glass that rise and wobble.
   'agua-burbuja': { shape: 'dot', glass: .8, colours: ['#ffffff', '#dcfaff', '#a8e6ea'], intensity: [1.7, 1.3, .9], size: [.012, .024], sizeJitter: .6, drag: 2.4, gravity: -2.6, curl: .55, fadeIn: .08, fadeOut: .12, additive: .55, opacity: .95, core: .35 },
+  // Riada's surge, a fluid (src/fight-particles.ts § The fluid): soft teal water that pushes itself apart
+  // where it crowds and moves with the flow round it, so it runs across the cell as one body, breaks
+  // on the foe and spreads over the floor.
+  'agua-ola': { shape: 'glow', blur: [.5, .8], colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.35, 1.2, .95], middle: .5, size: [.06, .065], sizeJitter: .35, drag: .3, gravity: 9, curl: .1, response: .2, collide: true, bounce: .02, friction: .45, fadeIn: .05, fadeOut: .3, additive: .2, opacity: .78, core: 0, fluid: { pressure: 14, viscosity: 6, rest: 10 } },
   // Drops thrown off the surface.
   'agua-gota': { shape: 'dot', glass: .35, colours: ['#ffffff', '#c6f3f2', '#6fcfd8'], intensity: [1.5, 1.2, .9], size: [.02, .011], sizeJitter: .6, drag: .5, gravity: 9, collide: true, bounce: 0, friction: 1, fadeOut: .3, additive: .35, opacity: .9, core: .6 },
   // The top of the water gone up as steam: white haze that rushes up and spreads.
-  'agua-vapor': { shape: 'glow', colours: ['#ffffff', '#f2f8f8', '#dfeaea'], intensity: [1.5, 1.15, .8], middle: .3, size: [.12, .46], sizeJitter: .6, drag: 1.5, gravity: -2.4, curl: 1.3, response: 1, fadeIn: .08, fadeOut: .6, additive: .3, opacity: .26, blur: [.5, 1.2] },
+  'agua-vapor': { shape: 'glow', colours: ['#ffffff', '#f2f8f8', '#dfeaea'], intensity: [1.5, 1.15, .8], middle: .3, size: [.12, .46], sizeJitter: .6, drag: 1.5, gravity: -2.4, curl: 1.3, response: 1, fadeIn: .08, fadeOut: .6, additive: .3, opacity: .26, blur: [.5, 1.2], fluid: { pressure: 14, viscosity: 2.5, rest: 6 } },
   // What is left of it: a slow cloud that hangs at the height of the foes' heads.
   'agua-nube': { shape: 'glow', colours: ['#f4f8f8', '#e9f0f0', '#dbe5e5'], intensity: [.95, .85, .7], middle: .4, size: [.34, .7], sizeJitter: .5, drag: 2.2, gravity: -.08, curl: .35, response: .6, fadeIn: .35, fadeOut: .5, additive: .12, opacity: .11, blur: 1.2 },
   // The tape a skill runs out along the floor to the cell, and the bolt's own track: beads of light that stay where they are born.
@@ -727,6 +731,11 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       if (had) api.lower();
       us.forEach((p, i) => {
         if (had || (on && marks)) trace(world(0, .04, -half.d), { x: p.x, y: p.y + .04, z: p.z }, .3);
+        // The water given up arcs over to them as a stream of real water (a fluid) and lands at their feet.
+        if (had) {
+          const from = world(0, Math.max(.3, level), -half.d * .6), T = .55 + i * .08;
+          gpu()?.burst('agua-ola', { at: from, count: 180, spread: .12, velocity: { x: (p.x - from.x) / T, y: (p.y - from.y) / T + 4.5 * T, z: (p.z - from.z) / T }, speed: .25, life: [1.2, 1.6], colour: AGUA.green });
+        }
         after(.3 + i * .1, () => {
           const g = gpu(); if (!g) return;
           g.burst('agua-cura', { at: { x: p.x, y: p.y + .1, z: p.z }, count: 70, shape: 'ring', spread: .36, up: 1.2, speed: .25, around: .9, life: [.7, 1.4] });
@@ -741,6 +750,16 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       if (!api.raise(n)) return false;
       after(was ? .05 : .5, () => {
         const reach = half.d + .4, struck = new Set<string>();
+        // The surge itself, a fluid: a low wall of water across the cell's near edge, its top layers
+        // faster, that runs at the foe, breaks on it and spreads (§ The fluid in src/fight-particles.ts).
+        const g = gpu(), at = (x: number, z: number, y: number) => ({ x: centre.x + across.x * x + fwd.x * z, y: centre.y + y, z: centre.z + across.z * x + fwd.z * z });
+        if (g) for (let j = 0; j < 6; j++) {
+          const k = j / 5, y = .08 + k * Math.max(.5, level + .35), v = 2.2 + 1.6 * k;
+          for (const back of [0, .28]) g.burst('agua-ola', {
+            at: at(-half.w, -reach - back, y), to: at(half.w, -reach - back, y), shape: 'line', count: Math.round(half.w * 2 * 55), spread: .1,
+            velocity: { x: fwd.x * v, y: .4 + .9 * k, z: fwd.z * v }, speed: .2, life: [1.6, 2.1], colour: k < .35 ? AGUA.blue : k < .8 ? AGUA.green : AGUA.foam,
+          });
+        }
         tween(1.05, k => {
           const z = -reach + 2 * reach * k;
           u.cast[2] = z; u.cast[3] = Math.min(1, Math.sin(Math.PI * k) * 2.2) * 1.2;
@@ -760,6 +779,8 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       const blows = marks;
       for (let i = 0; i < blows; i++) after(i * .42, () => {
         blow();
+        // The mark spent jumps out of the cell as a body of water and spills over the floor (a fluid).
+        gpu()?.burst('agua-ola', { at: world(0, Math.max(.15, level), 0), count: Math.round(260 * Math.max(1, half.w * half.d)), shape: 'ring', spread: Math.min(half.w, half.d) * .6, outward: 2.2, up: 2.4, speed: .5, life: [1.3, 1.8], colour: i % 2 ? AGUA.green : AGUA.blue });
         u.ticks[3] = level; marks--; clock = AGUA.mark; stopBubbles();
         move(full(marks), .12, 0, () => { if (!marks) show(false); });
       });

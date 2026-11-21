@@ -171,6 +171,14 @@ export const STREET_MARKS: readonly { at: number; text: string }[] = [
 ];
 
 export const LINES_NURIA = {
+  /**
+   * A rehearsal's pause (docs/quests/coro.md § Ensayar): Nuria has written, and says nothing of where
+   * or why. Cardedeu is on the TV's ticker and the bus shelter's poster.
+   */
+  ensayo: both(
+    aitor('Te ha escrito Nuria. Solo esto: «Podeu venir?».'),
+    aitor('Y no contesta a nada más.'),
+  ),
   /** First time out of Cardedeu station. */
   arrive: both(
     aitor('Cardedeu. Qué tranquilo.'),
