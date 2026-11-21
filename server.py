@@ -5,14 +5,14 @@ import os
 from contextlib import contextmanager
 import sqlite3
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 import daylog
 from ai import claude, decision_provider, plan_enemy_turn
@@ -41,6 +41,9 @@ def connect():
             # Chapter 2's days (src/days.ts): the day, the hour and the mornings to go back to.
             if "days" not in columns:
                 db.execute("ALTER TABLE players ADD COLUMN days TEXT NOT NULL DEFAULT 'null'")
+            # Everything else «Continuar» needs (src/story.ts `snapshot`): where they stand, the missions as they run.
+            if "snapshot" not in columns:
+                db.execute("ALTER TABLE players ADD COLUMN snapshot TEXT NOT NULL DEFAULT 'null'")
             daylog.ensure(db)
             yield db
     finally:
@@ -70,8 +73,10 @@ def get_state(request: Request, response: Response):
     token = player(request, response)
     response.headers["Cache-Control"] = "no-store"
     with connect() as db:
-        row = db.execute("SELECT score, story, days FROM players WHERE id = ?", (token,)).fetchone()
-    return {"score": row[0], "story": known_flags(json.loads(row[1])), "days": json.loads(row[2])} if row else {"score": 0, "story": [], "days": None}
+        row = db.execute("SELECT score, story, days, snapshot FROM players WHERE id = ?", (token,)).fetchone()
+    if not row:
+        return {"score": 0, "story": [], "days": None, "snapshot": None}
+    return {"score": row[0], "story": known_flags(json.loads(row[1])), "days": json.loads(row[2]), "snapshot": json.loads(row[3])}
 
 
 # Flags that changed name; old saves keep working (src/story.ts has the same map). Nil's light is
@@ -108,10 +113,22 @@ class Days(BaseModel):
     boost: Boost | None = None
 
 
+# The snapshot is the browser's to read (src/main.ts `restoreSnapshot` checks every field); here it only has a size.
+SNAPSHOT_LIMIT = 256 * 1024
+
+
 class State(BaseModel):
     score: int = Field(strict=True, ge=0, le=2147483647)
     story: list[Literal[STORY_FLAGS]] = Field(default_factory=list, max_length=len(STORY_FLAGS))
     days: Days | None = None
+    snapshot: dict[str, Any] | None = None
+
+    @field_validator("snapshot")
+    @classmethod
+    def small_snapshot(cls, value):
+        if value is not None and len(json.dumps(value)) > SNAPSHOT_LIMIT:
+            raise ValueError("snapshot too large")
+        return value
 
 
 @app.put("/api/state")
@@ -124,11 +141,21 @@ def save_state(state: State, request: Request, response: Response):
         # grows and story flags only accumulate. The first write locks the row for the merge.
         db.execute("INSERT INTO players (id, score) VALUES (?, ?) ON CONFLICT(id) DO UPDATE "
                    "SET score = MAX(players.score, excluded.score)", (token, state.score))
-        score, saved, saved_days = db.execute("SELECT score, story, days FROM players WHERE id = ?", (token,)).fetchone()
+        score, saved, saved_days, saved_snapshot = db.execute("SELECT score, story, days, snapshot FROM players WHERE id = ?", (token,)).fetchone()
         story, days = merge_progress(json.loads(saved), json.loads(saved_days), state)
-        db.execute("UPDATE players SET story = ?, days = ? WHERE id = ?", (json.dumps(story), json.dumps(days), token))
+        snapshot = merge_snapshot(json.loads(saved_snapshot), json.loads(saved_days), state)
+        db.execute("UPDATE players SET story = ?, days = ?, snapshot = ? WHERE id = ?", (json.dumps(story), json.dumps(days), json.dumps(snapshot), token))
     response.headers["Cache-Control"] = "no-store"
-    return {"score": score, "story": story, "days": days}
+    return {"score": score, "story": story, "days": days, "snapshot": snapshot}
+
+
+def merge_snapshot(saved: dict | None, saved_days: dict | None, state: State):
+    """The last snapshot sent wins, unless it comes from a tab still on an older day lived (`epoch`)."""
+    if state.snapshot is None:
+        return saved
+    if state.days and saved_days and state.days.epoch < saved_days["epoch"]:
+        return saved
+    return state.snapshot
 
 
 def merge_progress(saved: list, saved_days: dict | None, state: State):

@@ -110,7 +110,7 @@ at full size).
 nothing else. A browser with no adapter gets a note saying the game needs WebGPU (a recent Chrome,
 Edge or Safari) instead of a black page.
 
-- The console says `Gerard 35 dibuja con WebGPU` once.
+- The console says `Mareas del Tiempo dibuja con WebGPU` once.
 - `?stats` shows `pc.MiniStats` (frame, CPU and GPU time, draw calls, VRAM), harmless in production.
 - The 3D city map (src/city-3d.ts) has its own small WebGPU app on its own canvas. Its device comes
   up asynchronously the first time the travel panel opens, and the panel waits for it.

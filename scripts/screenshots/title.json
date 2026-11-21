@@ -1,6 +1,6 @@
 {
   "title": "The welcome screen and its piano",
-  "description": "docs/audio.md § Where music plays now: the release opens on the welcome screen (development with ?title): the game's name and one button, «Començar el joc» for a new game. Aitor's piano (intro-piano) plays under it from its first note as soon as sound is on: at once where the browser lets the page play (as the test browser does), otherwise on the first press, which then only brings the piano in; the next press starts the game, in the house, where triste comes over the piano. The scenario suspends sound to play that second case. With a game under way the button says «Continuar». The overlay is the scenario's, not the game's. It plays music, so run it with --chrome: just screenshots title --chrome.",
+  "description": "docs/audio.md § Where music plays now: the release opens on the welcome screen (development with ?title): the game's name and one button, «Nueva partida» for a new game, over Gerard's room at night, blurred. Aitor's piano (intro-piano) plays under it from its first note as soon as sound is on: at once where the browser lets the page play (as the test browser does), otherwise on the first press, which then only brings the piano in; the next press starts the game, in the house, where triste comes over the piano. The scenario suspends sound to play that second case. With a game under way the button says «Continuar». The overlay is the scenario's, not the game's. It plays music, so run it with --chrome: just screenshots title --chrome.",
   "steps": [
     {
       "open": "/?story=new&title"
@@ -21,7 +21,7 @@
     },
     {
       "shot": "comencar",
-      "caption": "A new game: the name and «Començar el joc», nothing else, with the piano from its first note (this browser lets the page play)"
+      "caption": "A new game: the name and «Nueva partida», nothing else, with the piano from its first note (this browser lets the page play)"
     },
     {
       "eval": "window.gerard.audio.buses.context.suspend()"

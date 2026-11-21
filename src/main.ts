@@ -292,11 +292,11 @@ const ecosKey = 'gerard35.ecos.v1';
 try { story.improvements = JSON.parse(localStorage.getItem(ecosKey) ?? '[]'); } catch { /* Storage is optional. */ }
 function keepEcos() { try { localStorage.setItem(ecosKey, JSON.stringify(story.improvements)); } catch { /* Storage is optional. */ } }
 const xpKey = 'gerard35.xp.v1';
-try {
-  const saved: unknown = JSON.parse(localStorage.getItem(xpKey) ?? '{}');
+function readXp(saved: unknown) {
   // Aitor's own ánima was a placeholder called Físico (`fisico`) before it became Tecnópata.
   if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).map(([id, xp]) => [id === 'fisico' ? 'tecnopata' : id, xp]).filter(([id, xp]) => id in ANIMA_NAMES && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
-} catch { /* Storage is optional. */ }
+}
+try { readXp(JSON.parse(localStorage.getItem(xpKey) ?? '{}')); } catch { /* Storage is optional. */ }
 function keepXp() { try { localStorage.setItem(xpKey, JSON.stringify(story.xp)); } catch { /* Storage is optional. */ } }
 // And the dual attacks found (src/battle.ts DUALS): the ánimas screen shows only those.
 const dualsKey = 'gerard35.duals.v1';
@@ -321,8 +321,24 @@ if (import.meta.env.DEV) {
  */
 const waitsForPad = !import.meta.env.DEV || new URLSearchParams(location.search).get('solo') === '0';
 const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control, mode: 'solo' } : control;
-/** What was last sent: the flags and the days (a new hour is worth saving too). */
-const progress = () => JSON.stringify([story.saved, story.days]);
+/**
+ * Everything the server keeps besides the flags and the days (src/story.ts `snapshot`): where the
+ * party stands, the missions as they run, and what used to live only in this browser (who wears
+ * what, the globe, EXP, the Ecos de luz, the duals found). «Continuar» finds all of it as it was.
+ */
+const snapshot = () => ({ ...story.snapshot, loadout: story.loadout, kept: story.kept, xp: story.xp, improvements: story.improvements, duals: story.duals });
+function restoreSnapshot(saved: Record<string, unknown>) {
+  if ('kept' in saved) story.kept = saved.kept as Record<string, unknown>;
+  story.snapshot = saved;
+  if ('loadout' in saved) story.loadout = saved.loadout as Record<string, unknown>;
+  if ('xp' in saved) readXp(saved.xp);
+  if (Array.isArray(saved.improvements)) story.improvements = saved.improvements;
+  if (Array.isArray(saved.duals)) story.duals = saved.duals;
+  // This browser's copies follow the server's.
+  keepLoadout(); keepKept(); keepXp(); keepEcos(); keepDuals();
+}
+/** What was last sent: the flags, the days (a new hour is worth saving too) and the snapshot (a step is too). */
+const progress = () => JSON.stringify([story.saved, story.days, snapshot()]);
 let savedStory = progress();
 let startStory: (() => void) | undefined;
 /** The welcome screen before the story starts (src/title.ts); nothing in development without ?title. */
@@ -344,7 +360,11 @@ async function load() {
     if (!Number.isInteger(state.score) || state.score < 0) throw new Error('state');
     previousScore = state.score;
     // A development jump keeps its own flags instead of the saved progress.
-    if (!devStory && Array.isArray(state.story)) { story.merge(state.story); story.loadDays(state.days, state.story); savedStory = progress(); restoreLoadout(); loggedFlags = new Set(story.saved); dayLog.tick(); }
+    if (!devStory && Array.isArray(state.story)) {
+      story.merge(state.story); story.loadDays(state.days, state.story); restoreLoadout();
+      if (state.snapshot && typeof state.snapshot === 'object') restoreSnapshot(state.snapshot);
+      savedStory = progress(); loggedFlags = new Set(story.saved); dayLog.tick();
+    }
     loaded = true;
     if (dirty) void save();
   } catch {
@@ -359,7 +379,7 @@ async function save() {
   try {
     const response = await fetch('/api/state', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved, ...(devStory ? {} : { days: story.days }) }), keepalive: true,
+      body: JSON.stringify({ score: previousScore + sessionSteps, story: devStory ? [] : story.saved, ...(devStory ? {} : { days: story.days, snapshot: snapshot() }) }), keepalive: true,
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error('save');
@@ -916,6 +936,7 @@ try {
     onShout: shout => storyUI.shout(dialogue.open || exploration.active ? undefined : shout),
     onStep: (steps, cell) => {
       here = cell;
+      story.stand(currentLocation, cell);
       sessionSteps = steps;
       exploration.update(currentLocation, cell);
       dirty = true;
@@ -925,6 +946,7 @@ try {
     onLocation: (id, cell) => {
       here = cell;
       currentLocation = id;
+      story.stand(id, cell);
       dayLog.enter(id);
       homeLights.setPlace(id);
       story.inside = id;
@@ -936,14 +958,14 @@ try {
       // Its zones (chapter 2 only) are the school itself.
       const zone = !!ENVIRONMENTS[id].palace?.theme, school = (id === 'palacio' && story.adult) || zone;
       document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'piso-emilie' ? 'POBLE SEC, BARCELONA' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : id === 'piso-emilie' ? 'Carrer de Margarit · Casa de Emilie' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Según las fotos de 2026' : id === 'meridiana' ? 'Avinguda Meridiana · Según el croquis de casa'
+      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : id === 'piso-emilie' ? 'Carrer de Margarit · Casa de Emilie' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Carrer de Mallorca, 401' : id === 'meridiana' ? 'Avinguda Meridiana'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
-        : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20 · Según el plano de la familia'
+        : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';
       document.querySelector('#overview')!.firstChild!.textContent = ENVIRONMENTS[id].zoom ? 'Vista general ' : 'Centrar vista ';
       // A place with no overview (the campsite's maze) hides the button too.
       (document.querySelector('#overview') as HTMLElement).hidden = !!ENVIRONMENTS[id].noOverview;
-      document.title = `${ENVIRONMENTS[id].name} · Gerard 35`;
+      document.title = `${ENVIRONMENTS[id].name} · Mareas del Tiempo`;
     },
     onInteraction: interactionPrompt.show,
     onInteractionScreen: interactionPrompt.position,
@@ -1095,7 +1117,8 @@ try {
     const fight = import.meta.env.DEV ? new URLSearchParams(location.search).get('fight') : null;
     // A story point stands Gerard where it happened (story-points.ts); the tester takes him to its own stage.
     const { environment, cell } = (!fight && (nightJump ?? (devJump?.home ? story.home : devJump?.spot))) || story.resume;
-    if (story.started && environment !== currentLocation) game.setEnvironment(environment, cell);
+    // A game continued stands them where they were, in the same place too (the game opened on the story's spot).
+    if (story.started && (environment !== currentLocation || (cell && (cell.x !== here?.x || cell.z !== here?.z)))) game.setEnvironment(environment, cell);
     storyChanged();
     // Out of the welcome screen, the place's song comes over its piano.
     scorePlace(currentLocation);
@@ -1121,7 +1144,11 @@ try {
     void audio.unlocked.then(piano);
     let quiet = 0;
     const again = setInterval(() => { if (!audio.running || music.playing === 'intro-piano') quiet = 0; else if (++quiet >= 8) { quiet = 0; piano(); } }, 500);
-    await title.open(continuing);
+    // The room at night shows behind it from the start (src/title.ts), out of the black the game opens in.
+    void storyUI.open();
+    const continued = await title.open(continuing);
+    // A new game wakes in that room: it comes into focus. A game continued goes to black and on where it was.
+    if (continued) { await storyUI.shut(); title.close(); } else await title.wake();
     clearInterval(again);
     titleOpen = false; storyPaused = false;
     game.setPaused(!!exploration.active || menuOpen());

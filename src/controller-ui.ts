@@ -146,7 +146,7 @@ export function createControllerUI(callbacks: {
   function showPage(value: typeof page) {
     page = value;
     root.querySelectorAll<HTMLElement>('[data-page]').forEach(el => { el.hidden = el.dataset.page !== page; });
-    get('#controller-title').textContent = { home: 'Un respiro.', settings: 'A tu manera.', controller: 'Tu mando.', sound: 'Tu sonido.', lights: 'Como en casa.', exited: 'Gerard 35.' }[page];
+    get('#controller-title').textContent = { home: 'Un respiro.', settings: 'A tu manera.', controller: 'Tu mando.', sound: 'Tu sonido.', lights: 'Como en casa.', exited: 'Mareas del Tiempo.' }[page];
     get('[data-back]').hidden = page === 'exited';
     get('[data-back] span').textContent = page === 'home' ? 'Volver al juego' : 'Volver';
     get('.pause-state').textContent = page === 'home' ? 'EN PAUSA' : page === 'exited' ? 'HASTA PRONTO' : 'CONFIGURACIÓN';

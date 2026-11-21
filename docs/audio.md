@@ -80,8 +80,10 @@ The director, `music` in [src/main.ts](../src/main.ts):
 ### Where music plays now
 
 - **The welcome screen** ([src/title.ts](../src/title.ts)): the release opens on it (development only
-  with `?title`): the game's name and one button, «Començar el joc» for a new game and «Continuar»
-  once one is under way, nothing else. Aitor's piano (`intro-piano`, 56 s) plays under it from its
+  with `?title`): the game's name, *Mareas del Tiempo: La Reina*, and one button, «Nueva partida» for
+  a new game and «Continuar» once one is under way, nothing else, over Gerard's room at night, so
+  blurred it cannot be told. «Nueva partida» brings the room into focus and the game starts there;
+  «Continuar» goes to black and opens where the save left them. Aitor's piano (`intro-piano`, 56 s) plays under it from its
   first note (the `piano` mark, past the file's opening second of silence) as soon as sound is on,
   and again after a four-second breath if it plays out while the screen waits. A browser keeps sound
   off until a key, click or pad button, unless it lets the page play (Chrome does once a site has

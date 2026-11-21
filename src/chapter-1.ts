@@ -220,7 +220,7 @@ export const HINTS = {
 export type HintId = keyof typeof HINTS;
 
 export const CARDS = {
-  intro: { kicker: 'PROLOGO · SANT QUIRZE DEL VALLÈS', title: '22 de noviembre del 19XX', text: 'Hoy es tu cumpleaños.' },
+  intro: { kicker: 'PRÓLOGO · SANT QUIRZE DEL VALLÈS', title: '22 de noviembre del 19XX', text: 'Hoy es tu cumpleaños.' },
 } as const;
 export type CardId = keyof typeof CARDS;
 

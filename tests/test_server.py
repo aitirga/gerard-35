@@ -38,11 +38,11 @@ class PersistenceTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_reload_and_separate_players(self):
-        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35, 'story': [], 'days': None})
+        self.assertEqual(self.client.put('/api/state', json={'score': 35}).json(), {'score': 35, 'story': [], 'days': None, 'snapshot': None})
         with TestClient(app, cookies=self.client.cookies) as reopened:
-            self.assertEqual(reopened.get('/api/state').json(), {'score': 35, 'story': [], 'days': None})
+            self.assertEqual(reopened.get('/api/state').json(), {'score': 35, 'story': [], 'days': None, 'snapshot': None})
         with TestClient(app) as visitor:
-            self.assertEqual(visitor.get('/api/state').json(), {'score': 0, 'story': [], 'days': None})
+            self.assertEqual(visitor.get('/api/state').json(), {'score': 0, 'story': [], 'days': None, 'snapshot': None})
 
     def test_concurrent_and_out_of_order_saves(self):
         cookie = self.client.cookies.get('gerard_player')
@@ -51,13 +51,13 @@ class PersistenceTests(unittest.TestCase):
                 self.assertEqual(client.put('/api/state', json={'score': score}).status_code, 200)
         with ThreadPoolExecutor(max_workers=4) as executor:
             list(executor.map(save, [10, 35, 5, 20]))
-        self.assertEqual(self.client.get('/api/state').json(), {'score': 35, 'story': [], 'days': None})
+        self.assertEqual(self.client.get('/api/state').json(), {'score': 35, 'story': [], 'days': None, 'snapshot': None})
 
     def test_story_flags_accumulate_in_story_order(self):
         self.client.put('/api/state', json={'score': 3, 'story': ['got-shoes', 'intro']})
         # An older tab that only knows the intro must not undo the shoes.
         response = self.client.put('/api/state', json={'score': 1, 'story': ['intro', 'met-jan']})
-        self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes'], 'days': None})
+        self.assertEqual(response.json(), {'score': 3, 'story': ['intro', 'met-jan', 'got-shoes'], 'days': None, 'snapshot': None})
         self.assertEqual(self.client.get('/api/state').json()['story'], ['intro', 'met-jan', 'got-shoes'])
         for story in [['flying'], 'intro', ['intro'] * (len(STORY_FLAGS) + 1)]:
             self.assertEqual(self.client.put('/api/state', json={'score': 1, 'story': story}).status_code, 422)
@@ -83,13 +83,28 @@ class PersistenceTests(unittest.TestCase):
         for bad in [day(-1, 1, 8), day(0, 0, 8), day(0, 1, 25), {'epoch': 0}]:
             self.assertEqual(self.client.put('/api/state', json={'score': 1, 'days': bad}).status_code, 422)
 
+    def test_snapshot_keeps_the_last_sent_unless_from_an_older_day_lived(self):
+        def day(epoch, number, hour):
+            return {'epoch': epoch, 'clock': {'day': number, 'hour': hour}, 'mornings': []}
+        here = {'at': {'environment': 'meridiana', 'cell': {'x': 3, 'z': 4}, 'day': 2, 'epoch': 0, 'adult': True}, 'xp': {'papagato': 40}}
+        self.client.put('/api/state', json={'score': 1, 'story': ['intro'], 'days': day(0, 2, 10), 'snapshot': here})
+        self.assertEqual(self.client.get('/api/state').json()['snapshot'], here)
+        # A save without one (an older tab) leaves it as it was.
+        self.client.put('/api/state', json={'score': 1, 'story': ['intro']})
+        self.assertEqual(self.client.get('/api/state').json()['snapshot'], here)
+        back = {'at': None, 'xp': {'papagato': 10}}
+        self.client.put('/api/state', json={'score': 1, 'story': ['intro'], 'days': day(1, 1, 8), 'snapshot': back})
+        stale = self.client.put('/api/state', json={'score': 1, 'story': ['intro'], 'days': day(0, 2, 11), 'snapshot': here}).json()
+        self.assertEqual(stale['snapshot'], back)
+        self.assertEqual(self.client.put('/api/state', json={'score': 1, 'snapshot': {'big': 'x' * 300000}}).status_code, 422)
+
     def test_databases_from_before_the_story_gain_the_column(self):
         import sqlite3
         path = self.temp.name + '/old.sqlite3'
         with sqlite3.connect(path) as db:
             db.execute('CREATE TABLE players (id TEXT PRIMARY KEY, score INTEGER NOT NULL)')
         with mock.patch.dict(os.environ, {'DATABASE_PATH': path}), TestClient(app) as client:
-            self.assertEqual(client.put('/api/state', json={'score': 7, 'story': ['intro']}).json(), {'score': 7, 'story': ['intro'], 'days': None})
+            self.assertEqual(client.put('/api/state', json={'score': 7, 'story': ['intro']}).json(), {'score': 7, 'story': ['intro'], 'days': None, 'snapshot': None})
 
     def test_validation_and_health(self):
         for score in [-1, 2.5, True, '3', 2147483648]:

@@ -14,7 +14,7 @@ import type { EndingChoice } from './castle-story.ts';
 
 /** The roll, card by card: a heading (small caps) over its names. */
 export const CREDITS: readonly { heading: string; names: readonly string[] }[] = [
-  { heading: 'Gerard 35', names: ['Un juego de Aitor para Gerard, por sus treinta y cinco'] },
+  { heading: 'Mareas del Tiempo: La Reina', names: ['Un juego de Aitor para Gerard, por sus treinta y cinco'] },
   { heading: 'Dirección, diseño y música', names: ['Aitor Iraola'] },
   { heading: 'Programación', names: ['Claude'] },
   { heading: 'Gerard', names: ['Gerard, que lo ha jugado'] },

@@ -8,7 +8,7 @@ import type { EnvironmentId, Interaction } from './environments';
 import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.ts';
 import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
 import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
-import { facingToward, type Cell } from './movement.ts';
+import { canWalk, facingToward, type Cell } from './movement.ts';
 import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
@@ -305,6 +305,13 @@ export const freshEmilie = (): EmilieRun => ({ told: [] });
  */
 export interface LucaRun { entered: boolean; beaten: string[]; told: string[]; mirrors: number[] }
 export const freshLuca = (): LucaRun => ({ entered: false, beaten: [], told: [], mirrors: [...MIRRORS_START] });
+/** Where the party stood, and on which day (src/days.ts): another day, or a day lived again, starts where the story says. */
+export interface Spot { environment: EnvironmentId; cell: Cell; day: number; epoch: number; adult: boolean }
+/** What `Story.snapshot` saves. */
+export interface Snapshot {
+  at?: Spot; nuria: NuriaRun; uni: UniRun; marta: MartaRun; emilie: EmilieRun; luca: LucaRun; castle: CastleRun;
+  tugs: number; away: boolean; lentBefore: boolean;
+}
 /**
  * What the snow globe keeps (docs/chapter-2.md § The snow globe): each mission's run as it was the
  * last time the globe was shaken. A day's end, a fall or a reload puts the missions back to this.
@@ -456,6 +463,11 @@ export class Story {
    * back to. Saved next to the flags.
    */
   days: Days = freshDays();
+  /**
+   * Where the party stands, as main.ts last heard (each step, each place): a reload puts them back
+   * there on the same day (Aitor, 2026-11-21: «si cierro y le doy a continuar, justo donde estábamos»).
+   */
+  at?: Spot;
   constructor(flags: Iterable<string> = []) {
     this.flags = knownFlags(flags);
   }
@@ -1155,6 +1167,33 @@ export class Story {
     this.globe = Object.fromEntries(Object.entries({ nuria: run(freshRun(), v?.nuria), uni, marta: run(freshMarta(), v?.marta), emilie, luca: run(freshLuca(), v?.luca) }).filter(([, r]) => r));
     this.recall();
   }
+  /** The party stands here now (main.ts, each step and each place). */
+  stand(environment: EnvironmentId, cell: Cell) {
+    this.at = { environment, cell: { x: Math.round(cell.x), z: Math.round(cell.z) }, day: this.days.clock.day, epoch: this.days.epoch, adult: this.adult };
+  }
+  /**
+   * What a reload must find as it was, beyond the flags and the days: where they stand and the
+   * missions as they run now (not as the snow globe keeps them), with the small things said once.
+   */
+  get snapshot(): Snapshot {
+    return structuredClone({ at: this.at, nuria: this.nuria, uni: this.uni, marta: this.marta, emilie: this.emilie, luca: this.luca, castle: this.castle, tugs: this.tugs, away: this.away, lentBefore: this.lentBefore });
+  }
+  /** A saved snapshot, after `kept` (which puts the missions back to the globe's); anything invalid is dropped. */
+  set snapshot(value: Snapshot | Record<string, unknown>) {
+    const v = (value ?? {}) as Record<string, unknown>;
+    const at = v.at as Spot | undefined;
+    if (at && typeof at === 'object' && typeof at.environment === 'string' && at.environment in ENVIRONMENTS && at.cell && Number.isInteger(at.cell.x) && Number.isInteger(at.cell.z)
+      && Number.isInteger(at.day) && Number.isInteger(at.epoch) && typeof at.adult === 'boolean') this.at = { environment: at.environment, cell: { x: at.cell.x, z: at.cell.z }, day: at.day, epoch: at.epoch, adult: at.adult };
+    // The runs go through the globe's own checks, so they are read the same way.
+    const globe = this.globe;
+    this.kept = { nuria: v.nuria, uni: v.uni, marta: v.marta, emilie: v.emilie, luca: v.luca } as Record<string, unknown>;
+    this.globe = globe;
+    const castle = v.castle as CastleRun | undefined;
+    if (castle && typeof castle === 'object' && typeof castle.stamp === 'string' && castle.beaten && typeof castle.beaten === 'object') this.castle = structuredClone(castle);
+    if (Number.isInteger(v.tugs) && (v.tugs as number) >= 0) this.tugs = v.tugs as number;
+    if (typeof v.away === 'boolean') this.away = v.away;
+    if (typeof v.lentBefore === 'boolean') this.lentBefore = v.lentBefore;
+  }
   /** The missions as the snow globe keeps them, or not begun. */
   private recall() {
     const { nuria, uni, marta, emilie, luca } = this.kept;
@@ -1520,8 +1559,11 @@ export class Story {
     // The middle one stays; the sides go first.
     return (count >= cells.length ? cells : count === 2 ? [cells[0], cells[2]] : [cells[1]]).map(c => ({ ...c }));
   }
-  /** Where a new or reloaded game puts Gerard, if the story decides it. */
+  /** Where a new or reloaded game puts Gerard: where they stood, if that still holds, or where the story says. */
   get resume(): { environment: EnvironmentId; cell: Cell } {
+    const at = this.at;
+    if (at && at.adult === this.adult && at.epoch === this.days.epoch && at.day === this.days.clock.day
+      && at.environment in ENVIRONMENTS && canWalk(at.cell, this.place(at.environment).grid)) return { environment: at.environment, cell: { ...at.cell } };
     if (this.adult) return { environment: PLACES.wakeUp.environment, cell: { ...PLACES.wakeUp.cell } };
     if (this.has('in-palace')) return { environment: PLACES.palaceEntry.environment, cell: { ...PLACES.palaceEntry.cell } };
     if (this.has('palace')) return { environment: 'maresme', cell: { x: 16, z: 8 } };

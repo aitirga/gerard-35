@@ -300,6 +300,8 @@ export function createStoryUI(hud: HTMLElement) {
     veil: (on: boolean) => darken('travel', on, on ? 220 : 340),
     /** The game opens: out of the black it started in, once the place to show is drawn. */
     open: () => darken('boot', false, 600),
+    /** Back to that black before the game opens (the welcome screen's «Continuar», src/main.ts): then `open` clears it where the save left them. */
+    shut: () => darken('boot', true, 700),
     /** Whether the picture is already hidden (black, or white with snow): a place can change under it with no fade of its own. */
     get covered() { return dark.story || dark.travel || dark.boot || white.dataset.on === 'true' || scream.dataset.on === 'true'; },
     /** A full-screen title, e.g. the chapter opening; resolves once it has faded. */

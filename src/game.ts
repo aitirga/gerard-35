@@ -188,12 +188,12 @@ async function createDevice(canvas: HTMLCanvasElement) {
   if (!device?.isWebGPU) {
     const note = document.createElement('p');
     note.className = 'no-webgpu';
-    note.textContent = 'Gerard 35 necesita WebGPU. Ábrelo en una versión reciente de Chrome, Edge o Safari.';
+    note.textContent = 'Mareas del Tiempo necesita WebGPU. Ábrelo en una versión reciente de Chrome, Edge o Safari.';
     note.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;margin:0;padding:2rem;text-align:center;font:600 1.2rem system-ui,sans-serif;color:#eeeade;background:#101f25;z-index:9999';
     document.body.append(note);
     throw new Error('WebGPU is not available');
   }
-  console.info('Gerard 35 dibuja con WebGPU');
+  console.info('Mareas del Tiempo dibuja con WebGPU');
   return device;
 }
 
