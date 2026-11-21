@@ -94,12 +94,14 @@ export interface FightSetup {
   unbound: boolean;
   /** Crítico seguro: every blow of the party is a golpe crítico (to see it, and what it does to the numbers). */
   crit: boolean;
+  /** Contratiempo seguro: every action of Sincopante's wearer counts as pressed in the off-beat (A contratiempo, its level 3). */
+  offbeat?: boolean;
   /** What the Ecos de luz are in for this fight (src/ecos.ts): awake improvements, whatever they would cost. */
   improved: string[];
   trial?: keyof typeof DUAL_TRIALS;
 }
 /** The help any fight gets in development, the story's too. */
-export type FightHelp = Pick<FightSetup, 'free' | 'immune' | 'unbound' | 'crit'>;
+export type FightHelp = Pick<FightSetup, 'free' | 'immune' | 'unbound' | 'crit' | 'offbeat'>;
 const CLASS_IDS = Object.keys(CLASSES) as ClassId[];
 export const DEFAULT_FIGHT: FightSetup = { adult: false, partner: true, wear: { gerard: 'matemagico' }, animas: [...CLASS_IDS], friends: [], encounter: 'dogs', foes: 3, free: true, immune: false, unbound: false, crit: false, improved: [] };
 const DUAL_TRIALS = {
@@ -136,7 +138,7 @@ export function validFight(value: unknown): FightSetup {
     // The palace minion is chapter 1's; Uri's tower, chapter 2's.
     encounter: (adult && encounter === 'palace-minion') || (!adult && (tower || encounter === 'night-guard')) ? 'dogs' : encounter,
     foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes,
-    free: v.free !== false, immune: v.immune === true, unbound: v.unbound === true, crit: v.crit === true,
+    free: v.free !== false, immune: v.immune === true, unbound: v.unbound === true, crit: v.crit === true, offbeat: v.offbeat === true,
     improved: Array.isArray(v.improved) ? v.improved.filter(id => { const item = improvementOf(id); return !!item && !item.veiled && (!item.after || v.improved!.includes(item.after)); }) : [],
   };
 }
@@ -389,7 +391,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     return `
       <p class="jump-note jump-live">Combate en curso · ${escape(FIGHT_NAMES[now.encounter])}</p>
       <div class="fight-row"><span>Ayudas</span><div class="fight-chips">
-        <button type="button" data-help="immune" aria-pressed="${help.immune}">Inmunidad</button><button type="button" data-help="free" aria-pressed="${help.free}">PM infinitos</button><button type="button" data-help="unbound" aria-pressed="${help.unbound}">Sin límites</button><button type="button" data-help="crit" aria-pressed="${help.crit}">Crítico seguro</button></div></div>
+        <button type="button" data-help="immune" aria-pressed="${help.immune}">Inmunidad</button><button type="button" data-help="free" aria-pressed="${help.free}">PM infinitos</button><button type="button" data-help="unbound" aria-pressed="${help.unbound}">Sin límites</button><button type="button" data-help="crit" aria-pressed="${help.crit}">Crítico seguro</button><button type="button" data-help="offbeat" aria-pressed="${!!help.offbeat}">Contratiempo seguro</button></div></div>
       <div class="fight-row"><span>Saltar a</span><div class="fight-chips">
         ${moment('won', 'Victoria')}${moment('won-level', 'Victoria subiendo de nivel')}${moment('lost', 'Derrota')}${moment('foes-low', 'Enemigos a 1 PV')}${moment('party-low', 'Equipo a 1 PV')}
         ${now.encounter === 'palace-minion' ? moment('beat', 'Despierta Matemágico', now.awakened) : ''}</div></div>
@@ -431,7 +433,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'El primer grupo de alumnos de la planta del castillo en la que estáis, más fuerte fuera cuantos menos amigos y niveles.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Ecos de luz</span><div class="fight-chips">${IMPROVEMENTS.filter(item => !item.veiled && f.animas.includes(item.anima)).map(item => chip('improve', item.id, `${CLASSES[item.anima].name} · ${item.name}`, f.improved.includes(item.id), !!item.after && !f.improved.includes(item.after))).join('')}</div></div>` : ''}
-      <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}${chip('unbound', '1', 'Sin límites', f.unbound)}${chip('crit', '1', 'Crítico seguro', f.crit)}</div></div>
+      <div class="fight-row"><span>Ayudas</span><div class="fight-chips">${chip('immune', '1', 'Inmunidad', f.immune)}${chip('free', '1', 'PM infinitos', f.free)}${chip('unbound', '1', 'Sin límites', f.unbound)}${chip('crit', '1', 'Crítico seguro', f.crit)}${chip('offbeat', '1', 'Contratiempo seguro', !!f.offbeat)}</div></div>
       <button type="button" class="jump-go" data-start>Empezar combate</button>
       <p class="jump-note">No cuenta para la historia. Cambiar de época recarga la partida.</p>`;
   }
@@ -547,6 +549,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     else if (key === 'immune') setFight({ immune: !fight.immune });
     else if (key === 'unbound') setFight({ unbound: !fight.unbound });
     else if (key === 'crit') setFight({ crit: !fight.crit });
+    else if (key === 'offbeat') setFight({ offbeat: !fight.offbeat });
     else return;
     // Keep focus on the same chip after the page redraws.
     render(`[data-${key.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}="${value}"]`);

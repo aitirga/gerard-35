@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
@@ -35,6 +35,7 @@ import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 import { createPowderFx, powderMix, FIESTA, TRACA_GAP } from './powder-fx';
+import { createEcoFx, type EcoFx } from './eco-fx';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
 import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
 import { TONES, type ToneId } from './song';
@@ -79,7 +80,7 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta']);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo']);
 /**
  * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
  * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
@@ -543,6 +544,46 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const powderFx = createPowderFx(app, effects, { model: id => fighters.get(id)?.model });
   let powderTurn = 0;
   const nextMix = () => powderMix(powderTurn++);
+  /**
+   * Sincopante's ecos (src/eco-fx.ts), driven by the fight's rules (src/battle.ts `runEcos`): made the
+   * first time an eco is called (the GPU engine must be on), and told what each eco does, when.
+   */
+  let ecoFx: EcoFx | undefined, ecoPost: Parameters<typeof createEcoFx>[2];
+  const ecos = () => ecoFx ??= effects.gpu ? createEcoFx(app, effects, ecoPost, {
+    fighters: () => [...fighters].map(([id, f]) => ({ id, party: f.party })),
+    at: id => { const p = fighters.get(id)?.model.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
+    model: id => fighters.get(id)?.model,
+    driven: true,
+  }) : undefined;
+  /** Muffled while whoever called them is in another ánima (all of them: one voice sounding whole is enough to light them). */
+  const ecosMuffled = () => !!state?.ecos?.length && state.ecos.every(e => ecoMuffled(state!, e));
+  /**
+   * Sincopante's skills land: the eco called rises from what it did (a fourth puts the oldest out),
+   * Crescendo swells them, Tutti brings them together over the foes and down on them, Da capo runs
+   * everything back to the start.
+   */
+  function sincopanteBurst(action: BattleEffect, target?: Fighter) {
+    const fx = ecos();
+    fx?.setMuffled(false);
+    if (action.ecoReplaced !== undefined) fx?.out(action.ecoReplaced);
+    if (action.ecoCalled) {
+      const e = action.ecoCalled;
+      fx?.call(e.kind, e.owner, e.target, e.id);
+      if (target) hit(target, e.kind === 'ostinato' ? white : green, e.kind === 'ostinato' ? .8 : .6);
+      pulse?.(.05, .3);
+    }
+    for (const r of action.ecosRaised ?? []) fx?.raise(r.eco, r.grade as 0 | 1 | 2);
+    if (action.tutti) {
+      fx?.tutti();
+      // The plate comes down on the foes 1.27 s in (eco-fx `tutti`): that is the blow.
+      dualFx.after(1.27, () => {
+        for (const h of action.hits ?? []) { const f = fighters.get(h.target); if (f) hit(f, white, 1.4); }
+        zoom.x = Math.max(zoom.x, HIT.punch.size * 1.3); shake = Math.max(shake, .45);
+      });
+    }
+    if (action.dacapo) { fx?.dacapo(); pulse?.(.2, .6, .15); }
+    fx?.setMuffled(ecosMuffled());
+  }
   /** The middle of the foes standing: the side a cortina faces. */
   const foesCentre = () => {
     const at = { x: 0, y: 0, z: 0 }, list = (state?.foes ?? []).flatMap(f => { const fighter = f.hp > 0 ? fighters.get(f.id) : undefined; return fighter ? [fighter] : []; });
@@ -1501,6 +1542,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
+    // Acompañamiento: the eco at this fighter's side repeats the blow a moment after it lands.
+    const repeat = action.accompanied;
+    if (repeat) dualFx.after(.45, () => { ecos()?.sound(repeat.eco, repeat.hits.map(h => h.target), true); for (const h of repeat.hits) { const f = fighters.get(h.target); if (f && h.amount) hit(f, white, .4); } });
     // Siete vidas going off on this blow: the fight stops on it, and whoever it saved flares with the cure.
     if (action.lives) livesBeat(action);
     // Vertitrón's shout, its charge, and news of its eye breaking draw their own picture (`worldFx`).
@@ -1554,11 +1598,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (action.actor && action.target) powderFx.lanzar(action.actor, action.target, nextMix(), 0, .14);
       cue('hit'); return;
     }
-    if (target && action.skill === 'ostinato') {
-      const at = v3(chestOf(target));
-      for (let i = 0; i < 2; i++) dualFx.ring({ ...at, x: at.x + .2*i }, viewDir(), .62, '#9ce4cd', { life: 1.2, size: 2 });
-      return;
-    }
+    if (action.skill === 'ostinato' || action.skill === 'bordon' || action.skill === 'acompanamiento' || action.skill === 'crescendo' || action.skill === 'tutti' || action.skill === 'da-capo') { sincopanteBurst(action, target); return; }
     if (action.charging) { chargeUp(action); return; }
     // Acecho: nothing lands yet. Haru is sinking into the dark (`updateCats`).
     if (action.stalking) return;
@@ -3003,6 +3043,25 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     get speed() { return clock.scale; },
     /** Where a dual's spotlight goes (post.ts `spotlight`). */
     setSpot(next: typeof spot) { spot = next; },
+    /** The picture's post effects, for Sincopante's ecos (their pulses of bloom, the dimming round them). */
+    setEcoPost(next: typeof ecoPost) { ecoPost = next; },
+    /**
+     * Sincopante's ecos did something on their own (src/battle.ts `takeEcoNews`, through the fight
+     * screen): each one sounds on whoever it reached, goes out, and the beat falls.
+     */
+    ecoNews(news: readonly EcoNews[]) {
+      const fx = ecos(); if (!fx) return;
+      fx.setMuffled(ecosMuffled());
+      let beat = false;
+      for (const n of news) {
+        if (n.kind === 'pulse') {
+          fx.sound(n.eco, n.hits.map(h => h.target), !!n.accent);
+          if (!n.accent) beat = true;
+          n.hits.forEach((h, i) => dualFx.after(.28 + i * .04, () => { const f = fighters.get(h.target); if (f && h.amount) hit(f, h.heal ? green : white, h.heal ? .4 : .35); }));
+        } else if (n.kind === 'out') fx.out(n.eco);
+      }
+      if (beat) fx.beat();
+    },
     /**
      * Development (the effects lab): plays `next` as the fight would show it, without changing the
      * fight: a dual's choreography, a foe's ability. Nothing waits for it.
@@ -3213,7 +3272,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
       if (!next) {
-        dualFx.clear(); powderFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
+        dualFx.clear(); powderFx.clear(); ecoFx?.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
@@ -3247,6 +3306,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const elapsed = dt; real += dt; animating = animate; dt = clock.advance(dt);
       arrows.update(elapsed);
       time += dt; effectTime += dt;
+      // Sincopante's ecos: muffled while their wearer is in another ánima, and none the fight no longer has.
+      if (ecoFx) { ecoFx.setMuffled(ecosMuffled()); ecoFx.keep(state?.ecos?.map(e => e.id) ?? []); }
       // La carta de colores (docs/quests/luca.md): a shirt of Luca's keeps its colour only in the light of that colour.
       if (state?.light) for (const foe of state.foes) if (foe.kind?.startsWith('estampado')) { const f = fighters.get(foe.id); if (f) lightShirt(f.model, shirtLit(state, foe)); }
       dualFx.update(dt);

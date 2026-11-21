@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -48,7 +48,7 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas';
+type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
   // Dadista's Racha: a four-point star, the astral's own, with the dice spent in its corner.
@@ -78,7 +78,8 @@ const STATUS_ICONS: Record<IconId, string> = {
   // A definitiva awake: three puffs going up at once.
   definitiva: '<circle cx="8" cy="4.2" r="2.6"/><circle cx="3.6" cy="9" r="2.2"/><circle cx="12.4" cy="9" r="2.2"/><path d="M8 8v6.6M5.4 14.6h5.200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
   cristalizado: '<path d="M8 1 10.4 6.4 8 15 5.6 6.4z"/><path d="M2.4 6.2 5 8.6 3.6 12.4z"/><path d="M13.6 6.2 11 8.6 12.4 12.4z"/>',
-  ostinato: '<circle cx="7" cy="8" r="5" fill="none" stroke="currentColor"/><circle cx="10" cy="8" r="4" fill="none" stroke="currentColor"/>',
+  // Compás (Sincopante's ecos): a voice and its echo, two rings a little apart (Interferencia).
+  compas: '<circle cx="6.6" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="9.4" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/>',
   quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
   // Escudo de bits: a dome of little squares on the floor's line.
   bits: '<path d="M6.5 2.2h3v2.6h-3zM3.4 4.2h2.6v2.6H3.4zM10 4.2h2.6v2.6H10zM1.8 7.6h2.6v2.6H1.8zM11.6 7.6h2.6v2.6h-2.6zM1.2 11.1h2.6v2.6H1.2zM12.2 11.1h2.6v2.6h-2.6z"/><path d="M.8 14.8h14.4" stroke="currentColor" stroke-width="1.2"/>',
@@ -185,6 +186,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * clock runs now (0 while it is stopped), so her recording plays exactly where the fight is.
    */
   song?: (t: number, rate: number) => void;
+  /** Sincopante's ecos did something on their own (a note, going out, a chord): the 3D fight shows it. */
+  ecos?: (news: EcoNews[]) => void;
 }) {
   const COMMANDS = commandsFor(!!callbacks.dev?.());
   /** The commands, one set in each dock: with two players both choose at once, each in their own. */
@@ -394,6 +397,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // A cortina of powder in front of them, and the definitiva awake on whoever wears its ánima (Fin de fiesta, Siete vidas).
       ...state && cortinaRounds(state, c) ? [{ id: 'cortina' as const, name: 'Cortina de polvo: el siguiente golpe, a la mitad', mark: '½', timed: false, lasts: `el siguiente golpe, o ${rounds(cortinaRounds(state, c))}` }] : [],
       ...state && awakeUlti(state, c) ? [{ id: 'definitiva' as const, name: `${awakeUlti(state, c)!.name}: despierta`, mark: '', timed: false, lasts: 'una vez en este combate' }] : [],
+      // Sincopante's ecos, on whoever called them: one continuous icon, Compás, its hand going round once a beat.
+      ...state && ecosOf(state, c).length ? [compasStatus(c)] : [],
       // Acecho: their cat crouched, to spring as the next round starts.
       ...c.stalk ? [{ id: 'acecho' as const, name: `Acecho: salta sobre ${state?.foes.find(f => f.id === c.stalk!.target)?.name ?? 'su presa'} al empezar la ronda`, mark: '', timed: false, lasts: 'hasta que empiece la ronda' }] : [],
       // Siete vidas: Yuki's ward, on everyone it covers, until the blow that would have killed one of them.
@@ -407,6 +412,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         ? { id: 'combustion' as const, name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
         : { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }),
     ] : [];
+  }
+  /** Compás: how many ecos `c` has up, at what grade, and the longest time one has left. */
+  function compasStatus(c: Combatant) {
+    const mine = ecosOf(state!, c), muffled = mine.some(e => ecoMuffled(state!, e));
+    const grades = mine.map(e => GRADE_NAMES[e.grade]).join(' · ');
+    return { id: 'compas' as const, name: `Compás: ${mine.length === 1 ? 'un eco' : `${mine.length} ecos`} (${grades})${muffled ? ', apagados' : ''}${c.pedal ? '. Pedal: su tiempo no corre' : ''}`, mark: String(mine.length), timed: true, lasts: `${Math.ceil(Math.max(...mine.map(e => e.left)))} s` };
   }
   /** The fears' own rules, where the player can read them (docs/quests/nuria.md). */
   function ruleChips(c: Combatant, summary = false): [string, string][] {
@@ -537,6 +548,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         tune.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
       }
     }
+    // Compás: its hand goes round once a beat; a notch at the top (the beat) and one at the bottom (the off-beat).
+    const compas = state?.compas !== undefined ? plate.querySelector<HTMLElement>('.status-icon[data-status="compas"]') : null;
+    if (compas && state?.compas !== undefined) {
+      compas.style.setProperty('--left', (1 - state.compas / ECOS.beat).toFixed(4));
+      if (compas.dataset.ticks !== 'compas') {
+        compas.dataset.ticks = 'compas';
+        compas.style.setProperty('--ticks', 'conic-gradient(#120c0f 0deg 7deg, transparent 7deg 173deg, #f2e2a8 173deg 187deg, transparent 187deg 353deg, #120c0f 353deg)');
+      }
+    }
     for (const [id, on] of Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]) {
       const icon = plate.querySelector<HTMLElement>(`.status-icon[data-status="${id}"]`);
       if (!icon) continue;
@@ -627,7 +647,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
-    const sung = showSong() || showLight();
+    const sung = showSong() || showLight() || showEcos();
     // What a pulse brought on (Vertitrón's eye burnt out) plays once nothing else is.
     if (state.news?.length && !busy) void showNews();
     // Siete vidas went off on something that had no number of its own to turn over (a note of La Voz's): it says so now.
@@ -648,6 +668,36 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
     render();
+  }
+  /**
+   * Sincopante's ecos on their own (`takeEcoNews`): each note's number on whoever it reached, named
+   * *Eco*; Marta's voice in them (a grain each, under the music; none while muffled); three at once
+   * waking Da capo; and the 3D fight shows each one sound or go (`callbacks.ecos`). Returns whether the
+   * plates have something new to say.
+   */
+  const ECO_VOICES = ['eco-fa', 'eco-la', 'eco-do'] as const;
+  function showEcos() {
+    if (!state) return false;
+    const news = takeEcoNews(state);
+    if (!news.length) return false;
+    const sung = new Set<typeof ECO_VOICES[number]>();
+    for (const item of news) {
+      if (item.kind === 'pulse') {
+        const name = item.accent ? 'Eco · a contratiempo' : item.muffled ? 'Eco · apagado' : 'Eco';
+        item.hits.forEach((hit, i) => {
+          if (hit.heal) { if (hit.amount) pop(hit.target, `+${hit.amount}`, 'heal', name, undefined, i * 16); }
+          else if (hit.amount) { pop(hit.target, `−${hit.amount}`, 'damage', name, undefined, i * 16); callbacks.pulse(hit.target); }
+        });
+        const index = state.ecos?.findIndex(e => e.id === item.eco) ?? -1;
+        if (!item.muffled) sung.add(ECO_VOICES[Math.max(0, index) % 3]);
+      } else if (item.kind === 'chord' && item.awoken) {
+        const wearer = state.allies.find(a => a.hp > 0 && a.classId === 'sincopante');
+        if (wearer) { pop(wearer.id, 'Da capo', 'passive', 'Definitiva · despierta')?.style.setProperty('--anima', CLASSES.sincopante.colour); callbacks.sound('mark-set'); }
+      }
+    }
+    for (const id of sung) callbacks.sound(id);
+    callbacks.ecos?.(news);
+    return true;
   }
   /**
    * La Voz's song is a status on her, continuous, drawn like a fire's clock (`statusList`, `drain`):
@@ -1685,7 +1735,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const available = free ? uses > 0 && diceOf(state!, actor).length > 0 : validTargets(state!, 'skill', skill.id).length > 0;
       const reason = free ? !uses ? 'Usado' : available ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados'
         : !affordable ? 'Sin maná' : available ? 'ulti' in skill ? 'Definitiva' : costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
-      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'screen' in skill && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill) && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
     fitSkills();
   }
@@ -2075,6 +2125,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.healed && effect.target) { if (effect.amount || !effect.bits?.mended) pop(effect.target, `+${effect.amount ?? 0}`, 'heal', label); }
       // A skill that only leaves a status (Rayo de sanación, Confusión, Rayo encogedor) or raises the bit dome says so below, with no number.
       else if (effect.regen || (effect.afflicted && !effect.amount) || (effect.bits?.raised && !effect.dual)) { /* its status pops below */ }
+      // Sincopante's that strike nobody (Crescendo, Acompañamiento, Da capo): what they did pops below, with no number.
+      else if (effect.ecosRaised || effect.dacapo || (effect.ecoCalled?.kind === 'acompanamiento')) { /* its pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
       // The bit dome stopped the whole blow: nothing reached them, the dome's own pop says what it took (below).
       else if (effect.kind === 'enemy' && effect.bits?.took && !effect.amount && !effect.hits?.some(h => h.amount > 0)) { /* the dome's pop */ }
@@ -2180,6 +2232,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         setTimeout(() => { if (token === generation) pop(victim, `−${amount}`, 'damage', 'Control remoto'); }, 540);
       }
       effect.cleared?.forEach(id => landed.push({ target: effect.target!, id, text: `Sin ${TIMED[id].name}`, detail: '' }));
+      // Sincopante: an eco called rises over the party, Crescendo raises them, Tutti's last notes land a moment after its
+      // plate, an eco at someone's side repeats their blow, and Da capo fills everyone's maná.
+      if (effect.ecoCalled) landed.push({ target: effect.ecoCalled.owner, id: 'compas', text: effect.ecoCalled.kind === 'acompanamiento' ? 'Acompañamiento' : 'Eco', detail: `${ECOS.life} s` });
+      if (effect.ecosRaised?.length) landed.push({ target: effect.actor, id: 'compas', text: 'Crescendo', detail: effect.ecosRaised.map(r => GRADE_NAMES[r.grade]).join(' · ') });
+      effect.tutti?.forEach((last, i) => last.hits.forEach((h, j) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `${h.heal ? '+' : '−'}${h.amount}`, h.heal ? 'heal' : 'damage', 'Eco · última nota', undefined, j * 16); }, 1300 + i * 120)));
+      effect.accompanied?.hits.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', 'Acompañamiento', undefined, i * 16); }, 560 + i * 60));
+      if (effect.dacapo) for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'compas', text: '¡Da capo!', detail: effect.dacapo.duals.length ? 'Maná lleno · dúos de nuevo' : 'Maná lleno' });
       // Integral: each one's PV back, a beat apart.
       effect.cures?.slice(1).forEach((c, i) => setTimeout(() => { if (token === generation) pop(c.target, `+${c.amount}`, 'heal', 'Integral'); }, 140 + i * 90));
       // Virus atómico: what spread, over each foe it reached.

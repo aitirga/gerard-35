@@ -401,6 +401,7 @@ try {
     // The fight's clock (statuses timed in seconds) stops with the pause menu.
     paused: () => menuOpen(),
     pulse: id => game.statusPulse(id),
+    ecos: news => game.ecoNews(news),
     // A fall wakes Gerard up at home only in chapter 2's castle; anywhere else it can be fought again or stepped back from.
     forgiving: () => !(story.adult && (currentLocation.startsWith('palacio') || currentLocation.startsWith('castillo'))),
     fallen: choice => { fallen = choice; },
@@ -776,7 +777,7 @@ try {
     const possessed = setup.encounter === 'possessed';
     // A frame for the new place to settle before the fight takes its stage.
     requestAnimationFrame(() => {
-      testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound, crit: setup.crit };
+      testing = setup; help = { free: setup.free, immune: setup.immune, unbound: setup.unbound, crit: setup.crit, offbeat: setup.offbeat };
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
@@ -792,7 +793,7 @@ try {
           s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
         }
       });
-      if (help.unbound || help.crit) { if (help.unbound) unboundAnimas(); battleUI.tweak(applyHelp); }
+      if (help.unbound || help.crit || help.offbeat) { if (help.unbound) unboundAnimas(); battleUI.tweak(applyHelp); }
     });
   }
   /**
@@ -800,7 +801,7 @@ try {
    * Sin límites also keeps every ánima's maná full and lifts the skills' limits of use (`unbound`).
    */
   function applyHelp(state: BattleState) {
-    state.unbound = help.unbound || undefined; state.sureCrits = help.crit || undefined;
+    state.unbound = help.unbound || undefined; state.sureCrits = help.crit || undefined; state.sureOffbeat = help.offbeat || undefined;
     for (const ally of state.allies) {
       if (help.free || help.unbound) ally.secondary = ally.maxSecondary;
       if (help.unbound) for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(state.improved, id, state.levels);

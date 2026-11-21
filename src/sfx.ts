@@ -273,6 +273,12 @@ export const SOUNDS = {
   // The artilugio's eight notes (docs/story-outline.md § The device): its four buttons alone, then its four pairs.
   'artilugio-0': artilugio(0), 'artilugio-1': artilugio(1), 'artilugio-2': artilugio(2), 'artilugio-3': artilugio(3),
   'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),
+  // Sincopante's ecos sing with Marta's voice (docs/animas/sincopante/README.md § Sound): grains cut from her recording,
+  // Fa, La and Do (the battle song's own F major chord), and the start of her phrase for Da capo. Far under the music.
+  'eco-fa': { src: 'sfx/eco-fa.mp3', volume: .32, gap: .05, voices: 2 },
+  'eco-la': { src: 'sfx/eco-la.mp3', volume: .3, gap: .05, voices: 2 },
+  'eco-do': { src: 'sfx/eco-do.mp3', volume: .32, gap: .05, voices: 2 },
+  'eco-dacapo': { src: 'sfx/eco-dacapo.mp3', volume: .55, gap: 1, voices: 1 },
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
 

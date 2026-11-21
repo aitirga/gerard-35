@@ -707,28 +707,36 @@ title = "Sincopante: el aspecto de los ecos, en el laboratorio de efectos"
 grep = "createEcoFx"
 in = "src/eco-lab.ts"
 
-# Designed whole 2026-11-20, waiting for Aitor's yes (docs/animas/sincopante/README.md): ecos on the
-# party's side that sound on their own beat (the compás), raised by Crescendo.
+# Built 2026-11-21 with Aitor's yes (docs/animas/sincopante/README.md): ecos on the party's side that
+# sound on their own beat (the compás, `runEcos` in src/battle.ts), raised by Crescendo.
 [[block.item]]
 title = "Sincopante: los ecos y el compás (Ostinato, Bordón, Crescendo, A contratiempo)"
 priority = "animas"
-note = "Hoy solo existe Ostinato. Faltan Bordón, Crescendo y A contratiempo, y la regla del compás. Su aspecto ya está en el laboratorio de efectos."
-grep = "id: 'crescendo'"
+note = "Ecos en el lado del equipo que repiten el golpe o la cura en un compás de 5 s durante 20 s, tres como mucho, apagados al cambiar de ánima y fuera si cae quien los llamó. Ostinato, Bordón, Crescendo (mf, f) y A contratiempo (nivel 3)."
+grep = "function runEcos"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Sincopante: niveles 4 a 7 (Maná +1, Acompañamiento, Pedal, Tutti)"
 priority = "animas"
-note = "Maná +1, Acompañamiento, Pedal y Tutti, y que crezca por niveles (LEVELLED en src/levels.ts)."
-grep = "id: 'tutti'"
-in = "src/battle.ts"
+note = "Crece por niveles (LEVELLED): Maná +1 a 4, Acompañamiento a 5, Pedal a 6 y Tutti a 7."
+grep = "'prismatico', 'sincopante'"
+in = "src/levels.ts"
 
 [[block.item]]
 title = "Sincopante: la definitiva Da capo (los dúos otra vez)"
 priority = "animas"
-note = "La definitiva: repite los dúos del combate. Va después de los dúos de Sincopante."
-grep = "da-capo"
+note = "Se compra en el bote y despierta con tres ecos a la vez (el acorde): los dúos ya usados vuelven y todo el equipo recupera su maná."
+grep = "function capoReady|const capoReady"
 in = "src/battle.ts"
+
+# The ecos' look from the effects lab, driven by the fight's rules (src/eco-fx.ts `driven`; just screenshots sincopante-crece --gpu).
+[[block.item]]
+title = "Sincopante: los ecos en el combate de verdad, con la voz de Marta"
+priority = "animas"
+note = "La escena dibuja cada eco que llaman las reglas, su pulso en el compás, Crescendo, Tutti y Da capo; el icono Compás en la placa; la voz de Marta (Fa, La, Do y su frase en Da capo) en cada pulso. Falta: la reverberación y el filtro de «apagados» en el sonido, el compás atado a los tiempos fuertes de la canción y el tono de cada canción."
+grep = "driven: true"
+in = "src/battle-scene.ts"
 
 # Designed 2026-11-20 round the puff and agreed by Aitor that day (docs/animas/prismatico/README.md;
 # it was Prismático, and its id stays `prismatico`): powder that waits for an element, and screens of it.

@@ -40,7 +40,8 @@ test('grade III comes into the sky after Aurelià, with whatever hangs from it; 
 test('the castle\'s cap holds a shared ánima, keeps the EXP it earns and gives its levels once it rises', () => {
   assert.equal(reachOf('dadaista', 4), 4);
   assert.equal(reachOf('papagato', 6), 6);
-  assert.equal(reachOf('sincopante', 6), 1, 'never past its own top');
+  assert.equal(reachOf('sincopante', 6), 6);
+  assert.equal(reachOf('matemagico', 6), 1, 'never past its own top: an own ánima grows by its tree');
   const [held] = award(['dadaista'], LEVEL_XP[4], {}, {}, 4);
   assert.equal(held.levelAfter, 4);
   assert.equal(held.reach, 4);

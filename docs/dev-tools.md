@@ -197,7 +197,9 @@ The fight tester. Choose:
   cure on anyone standing, a boost or a mark again while it runs, every dual as often as wanted;
   `BattleState.unbound`, `unboundAnimas` and `applyHelp` in `src/main.ts`), and *Crítico seguro*:
   every blow of the party is a golpe crítico, to see it and what it does to the numbers
-  (`FightSetup.crit`, `BattleState.sureCrits`; docs/animas/README.md § Golpe crítico).
+  (`FightSetup.crit`, `BattleState.sureCrits`; docs/animas/README.md § Golpe crítico), and
+  *Contratiempo seguro*: every action of Sincopante's wearer counts as pressed in the off-beat, so
+  *A contratiempo* goes off whenever ecos are up (`FightSetup.offbeat`, `BattleState.sureOffbeat`).
 
 To balance fights rather than play them, `just fight-sim` plays thousands without a screen
 ([fight-sim.md](fight-sim.md)).
@@ -218,7 +220,7 @@ planta un combate), and `&pocket` sends any fight to one, wherever it starts (e.
 
 In any fight, the story's too, the Combate tab becomes the fight's own page:
 
-- **Ayudas**: *Inmunidad*, *PM infinitos*, *Sin límites* and *Crítico seguro*, on or off at once (a test fight starts
+- **Ayudas**: *Inmunidad*, *PM infinitos*, *Sin límites*, *Crítico seguro* and *Contratiempo seguro*, on or off at once (a test fight starts
   with its setup's; *Sin límites* off gives back the fight's own ánimas, levels and kits).
 - **Saltar a**: *Victoria* or *Derrota* (its result screen, as if it had happened), *Enemigos a
   1 PV* or *Equipo a 1 PV* (the next blow decides), and against the palace minion *Despierta
@@ -577,8 +579,9 @@ numbers or the story. Matemágico's *Foc Binari* has its own entry (the streams,
 the fizzle). `just screenshots fx-lab --gpu` clicks through it.
 
 **Sincopante · ecos** is a section at the top of the panel ([src/eco-lab.ts](../src/eco-lab.ts),
-[src/eco-fx.ts](../src/eco-fx.ts), and its shaders in [src/eco-shaders.ts](../src/eco-shaders.ts)). It shows how Sincopante's ecos will look before the ánima is in
-the game:
+[src/eco-fx.ts](../src/eco-fx.ts), and its shaders in [src/eco-shaders.ts](../src/eco-shaders.ts)). It plays Sincopante's ecos on their own,
+with a compás of their own; in a real fight the same piece is driven by the rules (`EcoScene.driven`,
+src/battle-scene.ts), and `just screenshots sincopante-crece --gpu` shows them there:
 - *Ostinato* and *Bordón* call an eco over the party;
 - *Crescendo* raises them all a grade (*p*, *mf*, *f*);
 - *A contratiempo* waits for the off-beat and accents them;

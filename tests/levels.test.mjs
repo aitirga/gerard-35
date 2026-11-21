@@ -26,7 +26,7 @@ test('every ánima has its level table: one skill or more at each level past the
   assert.equal(topOf('papagato'), 7); assert.equal(topOf('dadaista'), 7); assert.equal(topOf('matemagico'), 1);
   assert.equal(levelOf('dadaista', flag => flag === 'dadaista-5'), 5, 'the highest flag held is the level');
   assert.deepEqual(skillsAt('dadaista', 7), ['meteorito', 'meteoro', 'asteroide']);
-  assert.deepEqual(LEVELLED, ['papagato', 'dadaista', 'prismatico'], 'the shared ánimas level; the own ánimas grow by their tree at the jar');
+  assert.deepEqual(LEVELLED, ['papagato', 'dadaista', 'prismatico', 'sincopante'], 'the shared ánimas level; the own ánimas grow by their tree at the jar');
   // Colorista: a skill at 2, 3, 6 and 7, and its passive at 5 (a level can teach a passive and nothing else).
   assert.equal(topOf('prismatico'), 7); assert.deepEqual(skillsAt('prismatico', 5), []); assert.deepEqual(passivesAt('prismatico', 5), ['remolino']);
   // Papagato: Maná +1 at 4, Olor a sangre at 5 (a passive and nothing else), Acecho at 6 and Cacería at 7.

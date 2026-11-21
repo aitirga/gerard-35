@@ -22,9 +22,9 @@ export const LEVEL_XP = [180, 660, 1290, 2070, 3000, 4080] as const;
 /**
  * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
  * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Each grows
- * as far as it has been designed: Papagato to 3, Dadista and Colorista to 7 (`topOf`).
+ * as far as it has been designed: Papagato, Dadista, Colorista and Sincopante to 7 (`topOf`).
  */
-export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista', 'prismatico'];
+export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista', 'prismatico', 'sincopante'];
 /**
  * Levels that teach nothing yet, on purpose: Dadista's 6 is empty since Estrella fugaz moved to 3,
  * and is not filled out of habit (docs/animas/dadaista/README.md § Skills per level).

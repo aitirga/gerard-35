@@ -259,6 +259,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   battleScene.setPulse(post.pulse);
   battleScene.setNight(post.night);
   battleScene.setSpot(post.spotlight);
+  battleScene.setEcoPost(post);
   battleScene.setCue((id, options) => callbacks.onSound(id, options));
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);
   let battle: BattleState | undefined;
@@ -3591,6 +3592,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     status: battleScene.status,
     /** A timed status pulsed on a fighter (src/battle.ts `runClock`). */
     statusPulse: battleScene.pulse,
+    /** Sincopante's ecos did something on their own (src/battle.ts `takeEcoNews`): the 3D fight shows it. */
+    ecoNews: battleScene.ecoNews,
     react: battleScene.react,
     statChange: battleScene.statChange,
     statusesOf: battleScene.statusesOf,

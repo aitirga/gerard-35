@@ -355,6 +355,8 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
     const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets['screen' in skill ? 'party' : skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
       : skill.kind === 'guard' ? skill.side === 'party' ? `^Protege a todo el equipo durante \\d rondas\\.${extra}$` : `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
+      // Sincopante's ecos (AGENTS.md § Ecos): one left at an ally's side, or the ecos themselves.
+      : skill.kind === 'eco' ? `^(Deja un eco [^.]+ durante \\d+ segundos|Los ecos [^.]+)\\.${extra}$`
       : `^Daño ${damageKind(skill)} ${intensity(skill.power)} ${'rain' in skill || 'volley' in skill ? 'a enemigos al azar' : targets[skill.side]}\\.${extra}$`;
     assert.match(skill.description, new RegExp(shape), skill.name);
   }

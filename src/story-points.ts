@@ -150,6 +150,11 @@ export const STORY_ARCS = [
     { flags: ['prismatico-4'], label: 'Colorista, nivel 4' }, { flags: ['prismatico-5'], label: 'Colorista, nivel 5' },
     { flags: ['prismatico-6'], label: 'Colorista, nivel 6' }, { flags: ['prismatico-7'], label: 'Colorista, nivel 7' },
   ] },
+  { id: 'sincopante', chapter: 2, title: 'Sincopante crece', detail: 'Experiencia de combate', after: 'anima-marta', steps: [
+    { flags: ['sincopante-2'], label: 'Sincopante, nivel 2' }, { flags: ['sincopante-3'], label: 'Sincopante, nivel 3' },
+    { flags: ['sincopante-4'], label: 'Sincopante, nivel 4' }, { flags: ['sincopante-5'], label: 'Sincopante, nivel 5' },
+    { flags: ['sincopante-6'], label: 'Sincopante, nivel 6' }, { flags: ['sincopante-7'], label: 'Sincopante, nivel 7' },
+  ] },
 ] as const satisfies readonly Arc[];
 
 /**

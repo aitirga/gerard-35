@@ -49,6 +49,7 @@ export const STORY_FLAGS = [
   // Ánima levels reached (src/levels.ts).
   'papagato-2', 'papagato-3', 'papagato-4', 'papagato-5', 'papagato-6', 'papagato-7', 'matemagico-2', 'matemagico-3', 'dadaista-2', 'dadaista-3', 'dadaista-4', 'dadaista-5', 'dadaista-6', 'dadaista-7',
   'prismatico-2', 'prismatico-3', 'prismatico-4', 'prismatico-5', 'prismatico-6', 'prismatico-7',
+  'sincopante-2', 'sincopante-3', 'sincopante-4', 'sincopante-5', 'sincopante-6', 'sincopante-7',
   // Nuria's mission: out of the R4 at Cardedeu, Uri found and himself again, and the two lights
   // that went with Gerard and Aitor (docs/quests/nuria.md).
   'cardedeu', 'nuria-uri', 'luz-nuria', 'luz-uri',

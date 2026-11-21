@@ -13,7 +13,13 @@ export interface Cue { id: SoundId; volume?: number; delay?: number }
 interface Sounds { start?: Cue[]; impact: Cue[] }
 
 export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
-  ostinato: { start: [{ id: 'cast-soft' }], impact: [{ id: 'clink' }] },
+  // Sincopante: its ecos sing with Marta's voice as they are called (the beats sing from the scene, `ecoNews`).
+  ostinato: { start: [{ id: 'cast-soft' }], impact: [{ id: 'clink' }, { id: 'eco-fa', delay: .6 }] },
+  bordon: { start: [{ id: 'cast-soft' }], impact: [{ id: 'heal' }, { id: 'eco-la', delay: .6 }] },
+  crescendo: { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'eco-fa', volume: .8 }, { id: 'eco-la', volume: .8, delay: .05 }, { id: 'eco-do', volume: .8, delay: .1 }] },
+  acompanamiento: { start: [{ id: 'cast-soft' }], impact: [{ id: 'eco-do', delay: .4 }] },
+  tutti: { start: [{ id: 'rise', volume: .6 }], impact: [{ id: 'clink' }, { id: 'eco-fa', volume: 1.3 }, { id: 'eco-la', volume: 1.3 }, { id: 'eco-do', volume: 1.3 }] },
+  'da-capo': { start: [{ id: 'eco-dacapo' }], impact: [{ id: 'heal', volume: .6, delay: .8 }] },
   punado: { impact: [{ id: 'hit', volume: .55 }] },
   // Colorista's powder is dry and soft: a muffled thud, never a ring. The screens are a boost (`stat-up` from the scene).
   cortina: { start: [{ id: 'cast-soft', volume: .6 }], impact: [] },

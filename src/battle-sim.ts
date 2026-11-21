@@ -12,7 +12,7 @@ import { animaBonus, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, BROOD, CAMPING, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
 import { costOf, improvedBy, withinEcos } from './ecos.ts';
@@ -402,6 +402,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (stilled) {
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
+  // Sincopante's ecos: the notes still to come from those up (a call adds them, Crescendo raises them, Tutti spends them).
+  value += ecoWorth(after) - ecoWorth(before);
+  // Da capo: every dual already used back, and the party's maná full (what each point gathered is worth).
+  if (choice.skill === 'da-capo') value += (before.usedDuals?.length ?? 0) * 40 + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   value -= manaOf(choice) * 2.5;
@@ -608,6 +612,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     takeNews(state).forEach(note);
+    // Sincopante's ecos: each note one sounded, and each chord (three at once).
+    for (const news of takeEcoNews(state)) if (news.kind !== 'out') count(news.kind === 'pulse' ? (news.accent ? 'eco-contratiempo' : 'eco') : 'acorde-de-ecos');
     // La Voz's song: each note she sang is a move of hers (the bestiary lists them), what it set off, and her Crescendos and parts.
     for (const news of takeSongNews(state)) {
       if (news.kind === 'nota') {

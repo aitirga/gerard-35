@@ -111,6 +111,12 @@ cannot pay says *Sin ánima*.
 | Polvareda | **Colorista**, level 3 | 2 | 12 physical | Every foe, and all of them Empolvado |
 | Telón | **Colorista**, level 6 | 2 | Defensa +3 | As Cortina, with a cortina in front of each ally |
 | Traca | **Colorista**, level 7 | 3 | 10 physical, five times | Each on a foe at random, a blow of its own; whoever it touches is Empolvado |
+| Ostinato | Whoever wears **Sincopante** | 2 | 14 magic, astral | A blow, and an eco over the party that strikes that foe every 5 s for 20 s (`runEcos`) |
+| Bordón | **Sincopante** | 2 | 16 heal | A cure, and an eco that cures whoever has least of their PV left every 5 s for 20 s |
+| Crescendo | **Sincopante**, level 2 | 1 | — | The wearer's ecos a grade up and their clocks over: ×1.5 at *mf*, and at *f* they reach every foe or the whole party |
+| Acompañamiento | **Sincopante**, level 5 | 2 | 6 magic a repeat | An eco at one ally's shoulder for 20 s: each of their actions is repeated once with a light astral note |
+| Tutti | **Sincopante**, level 7 | 3 | 36 magic, astral | Every foe; then each eco sounds a last note, twice as strong, and goes out |
+| Da capo | **Sincopante**'s definitiva, bought at the jar | 0 | — | Wakes when three ecos sound at once; every dual already used can go off again, and every ánima of the party is full of maná |
 
 Costs are in circles of Ánima.
 

@@ -46,7 +46,18 @@ export const canWear = (who: string, id: ClassId) => who !== 'bernat' && (!ANIMA
  * ánima (`class`), so whoever wears none has none: Bernat only attacks.
  */
 export const SKILLS = [
-  { id: 'ostinato', name: 'Ostinato', cost: 2, side: 'foes', power: 14, kind: 'magic', class: 'sincopante', description: 'Daño mágico no elemental leve a un enemigo. Un eco repite el golpe cada 5 segundos durante 20 segundos.' },
+  // Sincopante (docs/animas/sincopante/): what its wearer does stays in the air as an eco (`eco`, `Eco`, ECOS) that
+  // repeats it on the compás, every 5 s for 20 s. Ostinato's strikes the foe it was called on; Bordón's cures whoever
+  // has least of their PV left. Crescendo raises them (`raise`); Acompañamiento leaves one at an ally's side that
+  // repeats their blows (`accompany`); Tutti spends them all in a last note (`tutti`); Da capo is its definitiva.
+  { id: 'ostinato', name: 'Ostinato', cost: 2, side: 'foes', power: 14, kind: 'magic', eco: true, class: 'sincopante', description: 'Daño mágico no elemental leve a un enemigo. Un eco repite el golpe cada 5 segundos durante 20 segundos.' },
+  { id: 'bordon', name: 'Bordón', cost: 2, side: 'allies', power: 16, kind: 'heal', eco: true, class: 'sincopante', description: 'Cura leve a un aliado herido. Deja un eco que cura al aliado más herido cada 5 segundos durante 20 segundos.' },
+  { id: 'crescendo', name: 'Crescendo', cost: 1, side: 'party', power: 0, kind: 'eco', raise: true, level: 2, class: 'sincopante', description: 'Los ecos suenan más fuerte y su reloj vuelve a empezar. Los que ya sonaban fuerte llegan a todos.' },
+  { id: 'acompanamiento', name: 'Acompañamiento', cost: 2, side: 'allies', power: 6, kind: 'eco', accompany: true, level: 5, class: 'sincopante', description: 'Deja un eco junto a un aliado durante 20 segundos. Repite cada golpe suyo con daño mágico no elemental leve.' },
+  { id: 'tutti', name: 'Tutti', cost: 3, side: 'all-foes', power: 36, kind: 'magic', tutti: true, level: 7, class: 'sincopante', description: 'Daño mágico no elemental alto a todos los enemigos. Cada eco suena una última vez, el doble de fuerte, y se apaga.' },
+  // Da capo, its definitiva (`ulti`): bought at the jar, it wakes once three ecos sound at once, a chord, while Sincopante is
+  // worn (`capoReady`). The duals already used in the fight can go off again, and every ánima of the party is full of maná.
+  { id: 'da-capo', name: 'Da capo', cost: 0, side: 'party', power: 0, kind: 'eco', capo: true, ulti: true, node: true, abstract: true, class: 'sincopante', description: 'Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.' },
   // Colorista (docs/animas/prismatico/): dry coloured powder. A blow that powders (`powders`) leaves whoever it
   // took PV from Empolvado, for an element to turn into something (`powder`, POWDER_RULES).
   { id: 'punado', name: 'Puñado', cost: 1, side: 'foes', power: 16, kind: 'physical', powders: true, class: 'prismatico', description: 'Daño físico leve a un enemigo. Lo empolva durante 20 segundos.' },
@@ -185,7 +196,7 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
@@ -203,6 +214,9 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   // Colorista's, with its level 5 (`remolinoOf`): each time a foe's powder turns into something, a cortina stands in front of its wearer.
   remolino: { name: 'Remolino', anima: 'prismatico', level: 5, description: 'Cuando el polvo de un enemigo reacciona, se levanta una cortina ante quien la lleva.' },
   'olor-a-sangre': { name: 'Olor a sangre', anima: 'papagato', level: 5, description: 'Los golpes a un enemigo que sangra tienen un 20 % más de Crítico. Gastar una herida de cinco cargas o más es siempre un golpe crítico.' },
+  // Sincopante's, with its levels 3 and 6 (`contratiempoOf`, `pedalOf`), while it is worn.
+  'a-contratiempo': { name: 'A contratiempo', anima: 'sincopante', level: 3, description: 'Si quien la lleva actúa justo entre dos pulsos, todos sus ecos suenan una vez más.' },
+  pedal: { name: 'Pedal', anima: 'sincopante', level: 6, description: 'Mientras quien la lleva se defiende, el reloj de sus ecos se para. Siguen sonando.' },
 };
 export const RESCOLDO = 15, TELEMETRIA = 3;
 /** The level at which an ánima that grows by level gains a point of maná (docs/animas/README.md § Levels). */
@@ -705,7 +719,7 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
   electrico: { name: 'Eléctrico', colour: '#ffe45c' },
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
-export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'ostinato' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus';
+export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus';
 export interface TimedSpec {
   /** `element`: the one that lights it, for the reactions; `heal`: its pulses give PV back instead of taking it. */
   name: string; element?: Element; heal?: boolean; seconds: number; every: number;
@@ -717,7 +731,6 @@ export interface TimedSpec {
   flat: number; share: number; cap: number;
 }
 export const TIMED: Record<TimedId, TimedSpec> = {
-  ostinato: { name: 'Ostinato', seconds: 20, every: 5, levels: [1], flat: 4, share: 0, cap: 0 },
   // Empolvado (Colorista's powder): it hurts nobody; it waits for an element (`powder`, `POWDER_RULES`).
   empolvado: { name: 'Empolvado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Envenenado (water on powder): a pulse every few seconds, and every blow on its carrier lands harder while it lasts.
@@ -742,6 +755,191 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
 };
 const TIMED_IDS = Object.keys(TIMED) as TimedId[];
+/**
+ * Sincopante's ecos (docs/animas/sincopante/README.md § Signature). An eco is not a fighter: a figure of
+ * light over the party that nobody can hurt or aim at. Every eco sounds on one shared beat, the compás
+ * (`beat` s; the first eco called starts it, and it runs while one is up), for `life` s from its call.
+ * At most `most` at once: a new one replaces the oldest. Crescendo raises its grade (*p*, *mf*, *f*):
+ * `raise` times as strong from *mf*, and at *f* it reaches everyone. A pulse is not a blow: no golpe
+ * crítico, no wound spent, no reaction, as a fire's pulse; it is the wearer's Magia at the moment it
+ * sounds (`pulse` power: astral damage, or a cure). With its wearer in another ánima the ecos go on
+ * muffled, at `muffled`; their wearer falling puts them all out. `offbeat`: half the window round the
+ * middle of the compás where A contratiempo counts. `tutti`: how hard Tutti's last note sounds.
+ */
+export const ECOS = { beat: 5, life: 20, most: 3, pulse: 4, raise: 1.5, muffled: .5, offbeat: .5, tutti: 2 } as const;
+export type EcoKind = 'ostinato' | 'bordon' | 'acompanamiento';
+/** An eco on the field: its kind, who called it, whom it goes for (a foe, or the ally it goes with), its grade (0 *p*, 1 *mf*, 2 *f*) and the seconds it has left. */
+export interface Eco { id: number; kind: EcoKind; owner: string; target?: string; grade: 0 | 1 | 2; left: number }
+/** What an eco's note did to one fighter: PV off, or a cure (`heal`). */
+export interface EcoHit { target: string; amount: number; heal?: true }
+/** What the ecos did on their own, for the fight to show (`takeEcoNews`): a pulse (accented, off the beat), an eco gone (its wearer fell), three at once. */
+export type EcoNews =
+  | { kind: 'pulse'; eco: number; hits: EcoHit[]; accent?: true; muffled?: true }
+  | { kind: 'out'; eco: number; fell?: true }
+  | { kind: 'chord'; awoken?: true };
+export const GRADE_NAMES = ['p', 'mf', 'f'] as const;
+/** The ecos `c` called that are up now. */
+export const ecosOf = (state: BattleState, c?: Combatant) => (state.ecos ?? []).filter(e => !c || e.owner === c.id);
+/** Whether the ecos of `owner` sound muffled: their wearer is in another ánima. */
+export const ecoMuffled = (state: BattleState, e: Eco) => state.allies.find(a => a.id === e.owner)?.classId !== 'sincopante';
+/** Whether now is the off-beat: half a second either side of the middle of the compás. */
+export const offbeat = (state: BattleState) => !!state.ecos?.length && state.compas !== undefined && (!!state.sureOffbeat || Math.abs(state.compas - ECOS.beat / 2) <= ECOS.offbeat);
+/** A contratiempo, with Sincopante's level 3, on whoever wears it now. */
+export const contratiempoOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && ((state.levels?.sincopante ?? 1) >= PASSIVES['a-contratiempo'].level! || !!state.unbound);
+/** Pedal, with Sincopante's level 6, on whoever wears it now. */
+export const pedalOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && ((state.levels?.sincopante ?? 1) >= PASSIVES.pedal.level! || !!state.unbound);
+/** How strong an eco's note is: its grade, and half while muffled. */
+const ecoScale = (state: BattleState, e: Eco) => (e.grade ? ECOS.raise : 1) * (ecoMuffled(state, e) ? ECOS.muffled : 1);
+/** Whether Da capo is awake in this fight: bought, a chord has sounded while Sincopante was worn, and not used yet. */
+export const capoReady = (state: BattleState) => skillKnown('da-capo', state.levels, state.improved)
+  && (state.unbound || (!!state.dacapo?.woke && !state.dacapo.used));
+/** What the ecos did since last asked (`EcoNews`), oldest first. */
+export function takeEcoNews(state: BattleState): EcoNews[] {
+  const news = state.ecoNews ?? [];
+  delete state.ecoNews;
+  return news;
+}
+/**
+ * `actor` calls an eco of `kind` on `target` (a foe for Ostinato, the ally for Bordón and
+ * Acompañamiento). A fourth replaces the oldest; the first starts the compás. The action says so (`ecoCalled`).
+ */
+function callEco(state: BattleState, actor: Combatant, kind: EcoKind, target: string | undefined, effect: BattleEffect) {
+  const ecos = state.ecos ??= [];
+  if (!ecos.length) state.compas = 0;
+  const gone = ecos.length >= ECOS.most ? ecos.shift() : undefined;
+  if (gone) (state.ecoNews ??= []).push({ kind: 'out', eco: gone.id });
+  const eco: Eco = { id: state.ecoSerial = (state.ecoSerial ?? 0) + 1, kind, owner: actor.id, ...target ? { target } : {}, grade: 0, left: ECOS.life };
+  ecos.push(eco);
+  effect.ecoCalled = { ...eco };
+  if (gone) effect.ecoReplaced = gone.id;
+  state.message += kind === 'acompanamiento' ? ` Un eco acompaña a ${state.allies.find(a => a.id === target)?.name ?? 'su aliado'}.` : ' Queda un eco en el aire.';
+}
+/** The foe an Ostinato eco goes for: the one it was called on, or once it falls, the next its wearer hit, or the one with the fewest PV. */
+function ecoAim(state: BattleState, e: Eco): Combatant | undefined {
+  const standing = state.foes.filter(f => f.hp > 0 && !f.part);
+  const named = standing.find(f => f.id === e.target);
+  if (named) return named;
+  const fewest = standing.reduce<Combatant | undefined>((least, f) => !least || f.hp < least.hp ? f : least, undefined);
+  if (fewest) e.target = fewest.id;
+  return fewest;
+}
+/**
+ * One note of `e`, `scale` times as strong as its grade and wearer make it (Tutti's last, ×2): an
+ * Ostinato eco strikes its foe (every foe at *f*), a Bordón eco cures whoever has least of their PV left
+ * (the whole party at *f*). An Acompañamiento eco only sounds with its ally's blows (`accompany`), or in
+ * Tutti's last note, on the foes. Never a golpe crítico, no wound, no reaction: a pulse, as a fire's.
+ */
+function ecoNote(state: BattleState, e: Eco, scale = 1): EcoHit[] {
+  const owner = state.allies.find(a => a.id === e.owner);
+  if (!owner || owner.hp <= 0) return [];
+  const k = ecoScale(state, e) * scale, stats = current(state, owner);
+  if (e.kind === 'bordon') {
+    const party = state.allies.filter(a => a.hp > 0);
+    const most = party.reduce<Combatant | undefined>((low, a) => !low || a.hp / a.maxHp < low.hp / low.maxHp ? a : low, undefined);
+    const reached = e.grade === 2 ? party : most ? [most] : [];
+    return reached.map(a => ({ target: a.id, amount: changeHealth(a, Math.max(1, Math.round(healing(ECOS.pulse, stats) * k))), heal: true as const }));
+  }
+  const power = e.kind === 'acompanamiento' ? SKILLS.find(s => s.id === 'acompanamiento')!.power : ECOS.pulse;
+  const reached = e.grade === 2 ? state.foes.filter(f => f.hp > 0 && !f.part) : [ecoAim(state, e)].filter((f): f is Combatant => !!f);
+  return reached.map(foe => ({ target: foe.id, amount: hurt(state, foe, Math.max(1, Math.round(magical(power, stats, current(state, foe)) * k))) }));
+}
+/**
+ * The compás on the fight's clock (`runClock`): `seconds` pass for the ecos. Each beat every eco up
+ * sounds (Acompañamiento's only with its ally's blows), three at once is a chord (it wakes Da capo while
+ * Sincopante is worn); each eco's clock runs (stopped by Pedal while its wearer holds on) and it goes out
+ * at its end. Whoever called them falling puts theirs out at once. What happened goes to `ecoNews`.
+ */
+function runEcos(state: BattleState, seconds: number): boolean {
+  const ecos = state.ecos;
+  if (!ecos?.length) { delete state.compas; return false; }
+  const news = state.ecoNews ??= [];
+  const before = news.length;
+  const out = (e: Eco, fell?: true) => { ecos.splice(ecos.indexOf(e), 1); news.push({ kind: 'out', eco: e.id, ...fell ? { fell } : {} }); };
+  let left = seconds;
+  while (left > 1e-9 && ecos.length) {
+    for (const e of [...ecos]) if ((state.allies.find(a => a.id === e.owner)?.hp ?? 0) <= 0) out(e, true);
+    if (!ecos.length) break;
+    const compas = state.compas ?? 0, step = Math.min(left, ECOS.beat - compas);
+    left -= step; state.compas = compas + step;
+    for (const e of ecos) { const owner = state.allies.find(a => a.id === e.owner); if (!owner?.pedal) e.left -= step; }
+    if (state.compas >= ECOS.beat - 1e-9) {
+      state.compas = 0;
+      const sounding = ecos.filter(e => e.left > -1e-6);
+      for (const e of sounding) {
+        if (e.kind === 'acompanamiento') continue;
+        const hits = ecoNote(state, e);
+        if (hits.length) news.push({ kind: 'pulse', eco: e.id, hits, ...ecoMuffled(state, e) ? { muffled: true as const } : {} });
+      }
+      if (sounding.length >= ECOS.most) {
+        const awake = state.allies.some(a => a.hp > 0 && a.classId === 'sincopante');
+        const was = capoReady(state);
+        if (awake) (state.dacapo ??= {}).woke = true;
+        news.push({ kind: 'chord', ...!was && capoReady(state) && !state.unbound ? { awoken: true as const } : {} });
+      }
+    }
+    for (const e of [...ecos]) if (e.left <= 1e-6) out(e);
+  }
+  if (!ecos.length) delete state.compas;
+  return news.length > before;
+}
+/**
+ * A contratiempo (Sincopante's level 3): an action of its wearer in the off-beat makes every eco of
+ * theirs sound once more, at once and accented, their clocks untouched.
+ */
+function offbeatNotes(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  if (!contratiempoOf(state, actor) || !offbeat(state)) return;
+  const mine = ecosOf(state, actor).filter(e => e.kind !== 'acompanamiento');
+  if (!mine.length) return;
+  const news = state.ecoNews ??= [];
+  for (const e of mine) news.push({ kind: 'pulse', eco: e.id, hits: ecoNote(state, e), accent: true });
+  note(effect, 'a-contratiempo', actor);
+  state.message += ' A contratiempo: sus ecos suenan una vez más.';
+}
+/**
+ * Acompañamiento: an eco at `actor`'s side repeats the blow of their action once, a light astral note
+ * on the foe it struck (every foe at *f*). Its call itself is not a blow.
+ */
+function accompany(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  const e = state.ecos?.find(x => x.kind === 'acompanamiento' && x.target === actor.id);
+  if (!e || effect.ecoCalled?.id === e.id) return;
+  const struck = [...effect.hits?.map(h => h.target) ?? [], ...effect.target ? [effect.target] : []].find(id => state.foes.some(f => f.id === id));
+  if (!struck || !(effect.amount || effect.hits?.some(h => h.amount))) return;
+  const keep = e.target;
+  e.target = struck;
+  const foe = state.foes.find(f => f.id === struck)!;
+  const hits = e.grade === 2 ? ecoNote(state, e) : foe.hp > 0 ? (() => { const k = ecoScale(state, e), owner = state.allies.find(a => a.id === e.owner); return owner && owner.hp > 0 ? [{ target: foe.id, amount: hurt(state, foe, Math.max(1, Math.round(magical(SKILLS.find(s => s.id === 'acompanamiento')!.power, current(state, owner), current(state, foe)) * k))) }] : []; })() : [];
+  e.target = keep;
+  if (hits.length) effect.accompanied = { eco: e.id, hits };
+}
+/** Tutti: every eco up sounds its last note, `ECOS.tutti` times as strong, and goes out. */
+function lastNotes(state: BattleState, effect: BattleEffect) {
+  const ecos = state.ecos ?? [];
+  effect.tutti = ecos.map(e => ({ eco: e.id, kind: e.kind, hits: ecoNote(state, e, ECOS.tutti) }));
+  ecos.length = 0; delete state.compas;
+  if (effect.tutti.length) state.message += ` ${effect.tutti.length === 1 ? 'El eco suena' : `Los ${effect.tutti.length} ecos suenan`} una última vez y se apaga${effect.tutti.length === 1 ? '' : 'n'}.`;
+}
+/**
+ * What the ecos up are still worth, for the bot (src/battle-sim.ts): each one's notes still to come at
+ * its grade on whoever it would reach now, about. Pure: a copy of the fight is looked at.
+ */
+export function ecoWorth(state: BattleState): number {
+  let worth = 0;
+  const foes = state.foes.filter(f => f.hp > 0 && !f.part);
+  if (!foes.length) return 0;
+  for (const e of state.ecos ?? []) {
+    const owner = state.allies.find(a => a.id === e.owner);
+    if (!owner || owner.hp <= 0) continue;
+    const beats = Math.max(0, Math.floor(e.left / ECOS.beat)), k = ecoScale(state, e), stats = current(state, owner);
+    const aimed = foes.find(f => f.id === e.target) ?? foes.reduce((least, f) => f.hp < least.hp ? f : least);
+    const guard = current(state, aimed);
+    if (e.kind === 'bordon') {
+      const hurtNow = state.allies.filter(a => a.hp > 0).reduce((sum, a) => sum + (a.maxHp - a.hp), 0);
+      worth += Math.min(hurtNow, beats * healing(ECOS.pulse, stats) * k * (e.grade === 2 ? state.allies.filter(a => a.hp > 0).length : 1)) * .9;
+    } else if (e.kind === 'acompanamiento') worth += beats * .7 * magical(SKILLS.find(s => s.id === 'acompanamiento')!.power, stats, guard) * k * (e.grade === 2 ? foes.length : 1);
+    else worth += Math.min(e.grade === 2 ? Infinity : aimed.hp, beats * magical(ECOS.pulse, stats, guard) * k * (e.grade === 2 ? foes.length : 1));
+  }
+  return worth;
+}
 /**
  * Reactions (docs/combat.md § Reacciones entre elementos): an Atacar with an element never lights a
  * status of its own; it turns what the foe already carries, whoever put it there.
@@ -816,7 +1014,7 @@ export const finaleReady = (state: BattleState) => skillKnown('fin-de-fiesta', s
 export const livesReady = (state: BattleState) => skillKnown('siete-vidas', state.levels, state.improved)
   && (state.unbound || (!!state.lives?.woke && !state.lives.used));
 /** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
-export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : false;
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whoever wears Colorista with Remolino learned, standing. */
@@ -962,6 +1160,8 @@ export interface Combatant {
   charge?: { dual: DualId; striker: string };
   /** Acecho: Haru crouched for this wearer, the foe she waits on; she lands as the next round starts (`pounce`). */
   stalk?: { target: string };
+  /** Pedal (Sincopante, level 6): they hold on, and their ecos' clocks stand still until they act again. */
+  pedal?: true;
   /** Siete vidas: Yuki among the party, the same ward on every ally it covers, until a blow that would kill one of them (`LivesWard`). */
   lives?: LivesWard;
   /** The round this fighter sits out (Explosión: Bip is putting itself back together). */
@@ -1132,6 +1332,12 @@ export interface BattleState {
   finale?: { seen: PowderTurn[]; used?: true };
   /** Siete vidas in this fight: whether a wound of five or more has been spent while Papagato was worn (`woke`), and whether it went off. */
   lives?: { woke?: true; used?: true };
+  /** Sincopante's ecos up now (`Eco`, ECOS), the last one's number, and what they did on their own since last asked (`takeEcoNews`). */
+  ecos?: Eco[]; ecoSerial?: number; ecoNews?: EcoNews[];
+  /** Seconds into the compás, the ecos' shared beat: it runs while an eco is up. */
+  compas?: number;
+  /** Da capo in this fight: whether a chord has sounded while Sincopante was worn (`woke`), and whether it went off. */
+  dacapo?: { woke?: true; used?: true };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1140,6 +1346,8 @@ export interface BattleState {
   unbound?: boolean;
   /** Development (the fight tester's «Crítico seguro»): every blow of the party is a golpe crítico. */
   sureCrits?: boolean;
+  /** Development (the fight tester's «Contratiempo seguro»): every action of Sincopante's wearer counts as in the off-beat. */
+  sureOffbeat?: boolean;
   /** The fight's dice (`roll`): a seed set when the fight is created, stepped on every roll. */
   seed?: number;
   /** The golpe crítico's own dice (`luck`), started from `seed`. */
@@ -1449,6 +1657,16 @@ export interface BattleEffect {
   pounce?: true;
   /** Siete vidas: the allies Yuki's ward now covers. */
   ward?: string[];
+  /** Sincopante: the eco this action called (Ostinato, Bordón, Acompañamiento), and the oldest one it replaced, if three were up. */
+  ecoCalled?: Eco; ecoReplaced?: number;
+  /** Crescendo: each eco raised, with its new grade (its clock starts over). */
+  ecosRaised?: { eco: number; grade: number }[];
+  /** Tutti: each eco's last note, twice as strong, on whoever it reached; then they are all gone. */
+  tutti?: { eco: number; kind: EcoKind; hits: EcoHit[] }[];
+  /** Acompañamiento: the eco at this fighter's side repeated their blow. */
+  accompanied?: { eco: number; hits: EcoHit[] };
+  /** Da capo: the duals given back, and the ecos whose clocks started over. */
+  dacapo?: { duals: DualId[]; ecos: number[] };
   /** Siete vidas' ward went off: the blow that would have killed `target` (`blow` PV) cured them `amount` instead. */
   lives?: { target: string; blow: number; amount: number };
   /** The blow, or one strike of it at least, was a golpe crítico (CRIT_RULES); `crits` says which strikes of a flurry. */
@@ -2142,6 +2360,9 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   const ability = SKILLS.find(s => s.id === skill);
   // Agitar is not an action (`shake`): it has nobody to reach.
   if (!ability || 'free' in ability) return [];
+  // Sincopante's: Crescendo raises the wearer's ecos, so with none up it has nothing to do; Acompañamiento goes with
+  // anyone standing; Da capo reaches the party.
+  if (ability.kind === 'eco') return 'raise' in ability && !ecosOf(state, state.allies[state.active]).length ? [] : state.allies.filter(a => a.hp > 0);
   // Corchete: anyone standing who is not protected already.
   if (ability.kind === 'guard') return state.allies.filter(a => a.hp > 0 && !a.guarding);
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
@@ -2616,6 +2837,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (guard && aimedAt) { target = guard; effect.interposed = aimedAt.id; }
   if (action === 'escape' && cornered(state)) return;
   if (action !== 'escape') took(state, actor);
+  // Pedal holds the ecos' clocks only until their wearer acts again (Defender again sets it again).
+  delete actor.pedal;
   // La Voz's song does not wait for rounds: a guard held against it lasts until that fighter acts again.
   if (state.song && action !== 'defend') actor.guarding = false;
   if (action === 'escape' && escapeChance(state) < 1 && roll(state) >= escapeChance(state)) {
@@ -2640,6 +2863,38 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (actor.classId === DICED && effect.charged) effect.dealt = diceOf(state, actor).slice(-effect.charged);
     state.message = state.song ? `${actor.name} se cubre: aguanta su voz hasta que vuelva a moverse.${effect.charged ? ` Maná +${effect.charged}.` : ''}`
       : `${actor.name} se prepara para el siguiente golpe.${effect.charged ? ` Maná +${effect.charged}.` : ''}`;
+    // Pedal (Sincopante, level 6): while they hold on, their ecos keep sounding and their clocks stand still.
+    if (pedalOf(state, actor) && ecosOf(state, actor).length) {
+      actor.pedal = true; note(effect, 'pedal', actor);
+      state.message += ' Pedal: sus ecos siguen sonando sin gastar su tiempo.';
+    }
+  } else if (party && ability && 'raise' in ability) {
+    // Crescendo: every eco of the wearer a grade up (*f* at most: from there it only starts over), and their clocks start over.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = actor.id;
+    const mine = ecosOf(state, actor);
+    for (const e of mine) { e.grade = Math.min(2, e.grade + 1) as Eco['grade']; e.left = ECOS.life; }
+    effect.ecosRaised = mine.map(e => ({ eco: e.id, grade: e.grade }));
+    const loudest = Math.max(...mine.map(e => e.grade));
+    state.message = `${actor.name} usa ${ability.name}. ${mine.length === 1 ? 'Su eco suena' : 'Sus ecos suenan'} ${GRADE_NAMES[loudest]}${loudest === 2 ? ': llegan a todos' : ', más fuerte'}.`;
+  } else if (party && ability && 'capo' in ability) {
+    // Da capo: back to the beginning. Every dual already used can go off once more, every ánima of everyone is full
+    // of maná again (worn or not), and the ecos up start their clocks over. It fires no dual by itself.
+    effect.skill = skill; effect.target = actor.id;
+    (state.dacapo ??= {}).used = true;
+    const duals = [...state.usedDuals ?? []];
+    delete state.usedDuals;
+    for (const ally of state.allies) if (ally.hp > 0 && wearsAnimas(ally)) { ally.secondary = ally.maxSecondary; delete ally.mana; }
+    for (const e of state.ecos ?? []) e.left = ECOS.life;
+    effect.dacapo = { duals, ecos: (state.ecos ?? []).map(e => e.id) };
+    state.message = `${actor.name} usa ${ability.name}. ¡Todo vuelve al principio! El maná de todo el equipo se llena${duals.length ? ` y ${duals.length === 1 ? 'el ataque dúo ya usado vuelve' : 'los ataques dúo ya usados vuelven'}` : ''}.`;
+  } else if (ability && 'accompany' in ability && target) {
+    // Acompañamiento: an eco at the ally's side that repeats their blows (`accompany`). One per ally: a new one takes the old one's place.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
+    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}.`;
+    for (const old of ecosOf(state).filter(e => e.kind === 'acompanamiento' && e.target === target.id)) {
+      state.ecos!.splice(state.ecos!.indexOf(old), 1); (state.ecoNews ??= []).push({ kind: 'out', eco: old.id });
+    }
+    callEco(state, actor, 'acompanamiento', target.id, effect);
   } else if (party && ability!.kind === 'heal') {
     // Integral: everyone standing who is hurt gets back what the curve adds up, more with Magia.
     spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = actor.id; effect.healed = true;
@@ -3085,11 +3340,15 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       }
     }
   }
-  if ((skill === 'punado' || skill === 'ostinato') && target && state.foes.includes(target) && target.hp > 0 && effect.amount && !effect.annulled) {
-    const id = skill === 'punado' ? 'empolvado' : 'ostinato';
-    kindle(target, id, 1);
-    effect.afflicted = { id, level: 1 };
+  if (skill === 'punado' && target && state.foes.includes(target) && target.hp > 0 && effect.amount && !effect.annulled) {
+    kindle(target, 'empolvado', 1);
+    effect.afflicted = { id: 'empolvado', level: 1 };
   }
+  // Ostinato and Bordón: what it did stays in the air as an eco, on the foe it struck or the ally it cured.
+  if (action === 'skill' && ability && 'eco' in ability && target && !effect.annulled && (ability.kind === 'heal' ? state.allies.includes(target) : state.foes.includes(target)))
+    callEco(state, actor, ability.kind === 'heal' ? 'bordon' : 'ostinato', target.id, effect);
+  // Tutti: every eco sounds its last note, twice as strong, and goes out.
+  if (action === 'skill' && ability && 'tutti' in ability) lastNotes(state, effect);
   // Estrella fugaz: with Racha enough it spends it and deals dice, as far as the hand has room, whatever became of the blow.
   if (action === 'skill' && ability && 'star' in ability && rachaOf(actor) >= RACHA.star) {
     actor.racha! -= RACHA.star; effect.starred = RACHA.star;
@@ -3107,6 +3366,10 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   }
   // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
   if (effect.converged) for (const f of state.foes) if (f.kind === 'no-converge' && f.diverged && f.hp > 0) soak(f);
+  // Sincopante: an Ostinato eco whose foe fell goes for the next one its wearer strikes; an eco at this fighter's
+  // side repeats the blow (Acompañamiento); acted in the off-beat, their ecos sound once more (A contratiempo).
+  if (target && state.foes.includes(target) && target.hp > 0) for (const e of ecosOf(state, actor)) if (e.kind === 'ostinato' && !state.foes.some(f => f.id === e.target && f.hp > 0)) e.target = target.id;
+  accompany(state, actor, effect); offbeatNotes(state, actor, effect);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
   livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
@@ -3198,6 +3461,19 @@ export function dualOptions(state: BattleState, swaps = false): { dual: DualSpec
  * half of its kind; it counts as every kind against a foe's rules.
  */
 export function actDual(state: BattleState, id: DualId, targetId?: string, die?: number): BattleEffect | undefined {
+  const effect = dualAct(state, id, targetId, die);
+  if (!effect?.dual) return effect;
+  // A dual is an action like any other for Sincopante: an eco at either one's side repeats it once, a wearer of it in
+  // the off-beat makes theirs sound again, and Pedal ends for both.
+  const pair = effect.dual.actors.map(who => state.allies.find(a => a.id === who)!);
+  for (const c of pair) delete c.pedal;
+  const accompanied = pair.find(c => state.ecos?.some(e => e.kind === 'acompanamiento' && e.target === c.id));
+  if (accompanied) accompany(state, accompanied, effect);
+  for (const c of pair) offbeatNotes(state, c, effect);
+  if (beaten(state) && state.phase !== 'won') { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
+  return effect;
+}
+function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number): BattleEffect | undefined {
   const d = DUALS.find(x => x.id === id), a = state.allies[state.active], b = dualPartner(state);
   if (state.phase !== 'player' || !d || !a || !b || dualBlock(state, d, a, b)) return;
   const halves = halvesOf(d, a, b)!, cost = dualCost(d), targets = dualTargets(state, d);
@@ -5196,6 +5472,8 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   const pulses: TimedPulse[] = [];
   // La Voz's song first: what sounds now decides whether a fire on her hurts this frame.
   const lit = runLight(state, seconds), sung = runSong(state, seconds) || lit, lapped = runCastle(castleKit, state, seconds);
+  // Sincopante's ecos sound on their compás (`runEcos`), what they did kept as news (`takeEcoNews`).
+  const echoed = runEcos(state, seconds);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.
@@ -5227,7 +5505,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       delete c.timed[id];
     }
   }
-  if (!pulses.length && !sung && !lapped) return pulses;
+  if (!pulses.length && !sung && !lapped && !echoed) return pulses;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); }
   // Whoever was choosing fell to the song (an Eco): the turn passes to the next one standing, or to the foes.

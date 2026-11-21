@@ -1,10 +1,10 @@
 # Sincopante
 
-Status: designed whole 2026-11-20 around Aitor's direction of that day (floating ecos that work
-for the party, support too; *Crescendo*; the astral; *Da capo* bringing the duals back), and
-reworked the same evening with his answers (no feeding; muffled ecos when switching; Marta's voice
-in them). It is waiting for his yes to the whole. Ostinato and Bombardeo orbital are playable after Marta’s mission · Comes from:
-Marta's mission, [`docs/quests/marta.md`](../../quests/marta.md)
+Status: **built whole 2026-11-21**, with Aitor's yes that day («debemos integrarlos ya»). Designed whole
+2026-11-20 around his direction of that day (floating ecos that work for the party, support too;
+*Crescendo*; the astral; *Da capo* bringing the duals back), and reworked the same evening with his
+answers (no feeding; muffled ecos when switching; Marta's voice in them). Comes from: Marta's mission,
+[`docs/quests/marta.md`](../../quests/marta.md)
 
 What is **decided** says so and by whom. Everything else is a proposal, and its numbers are first
 guesses ([`../README.md`](../README.md) § Order of work).
@@ -199,15 +199,15 @@ Numbers are first guesses: "Base" is the power, against Atacar's 18.
 
 | Level | What it gives | Who | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | **Ostinato** | The wearer, then its eco | 2 | 14; the eco 4 a beat | `Daño mágico no elemental leve a un enemigo. Deja un eco que repite el golpe cada 5 segundos durante 20 segundos.` | Designed |
-| 1 | **Bordón** | The wearer, then its eco | 2 | 16; the eco 4 a beat | `Cura leve a un aliado herido. Deja un eco que cura al aliado más herido cada 5 segundos durante 20 segundos.` | Designed |
-| 2 | **Crescendo** (Aitor's) | The ecos | 1 | ×1.5, then everyone | `Los ecos suenan más fuerte y su reloj vuelve a empezar. Los que ya sonaban fuerte llegan a todos.` | Designed |
-| 3 | Passive · **A contratiempo** | The wearer | — | — | `Si quien la lleva actúa justo entre dos pulsos, todos sus ecos suenan una vez más.` | Designed |
-| 4 | **Maná +1** | — | — | — | — | Designed |
-| 5 | **Acompañamiento** | Its eco | 2 | 6 a repeat | `Deja un eco junto a un aliado durante 20 segundos. Repite cada golpe suyo con daño mágico no elemental leve.` | Designed |
-| 6 | Passive · **Pedal** | The wearer | — | — | `Mientras quien la lleva se defiende, el reloj de sus ecos se para. Siguen sonando.` | Designed |
-| 7 | **Tutti** | The wearer and every eco | 3 | 36 | `Daño mágico no elemental alto a todos los enemigos. Cada eco suena una última vez, el doble de fuerte, y se apaga.` | Designed |
-| Definitiva | ***Da capo*** (Aitor's) | The wearer | — | — | *Abstract*: `Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.` | Designed |
+| 1 | **Ostinato** | The wearer, then its eco | 2 | 14; the eco 4 a beat | `Daño mágico no elemental leve a un enemigo. Deja un eco que repite el golpe cada 5 segundos durante 20 segundos.` | Built |
+| 1 | **Bordón** | The wearer, then its eco | 2 | 16; the eco 4 a beat | `Cura leve a un aliado herido. Deja un eco que cura al aliado más herido cada 5 segundos durante 20 segundos.` | Built |
+| 2 | **Crescendo** (Aitor's) | The ecos | 1 | ×1.5, then everyone | `Los ecos suenan más fuerte y su reloj vuelve a empezar. Los que ya sonaban fuerte llegan a todos.` | Built |
+| 3 | Passive · **A contratiempo** | The wearer | — | — | `Si quien la lleva actúa justo entre dos pulsos, todos sus ecos suenan una vez más.` | Built |
+| 4 | **Maná +1** | — | — | — | — | Built |
+| 5 | **Acompañamiento** | Its eco | 2 | 6 a repeat | `Deja un eco junto a un aliado durante 20 segundos. Repite cada golpe suyo con daño mágico no elemental leve.` | Built |
+| 6 | Passive · **Pedal** | The wearer | — | — | `Mientras quien la lleva se defiende, el reloj de sus ecos se para. Siguen sonando.` | Built |
+| 7 | **Tutti** | The wearer and every eco | 3 | 36 | `Daño mágico no elemental alto a todos los enemigos. Cada eco suena una última vez, el doble de fuerte, y se apaga.` | Built |
+| Definitiva | ***Da capo*** (Aitor's) | The wearer | — | — | *Abstract*: `Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.` | Built |
 
 **What `AGENTS.md`'s shape has no word for**: Ostinato, Bordón and Tutti pass it as they are. A
 skill that leaves an eco says so in an extra sentence, which the shape already allows. Three rows
@@ -511,41 +511,46 @@ takes its colour, nácar. **Her voice is in the ecos from the start**: the ánim
 
 ## Implementation
 
-**Built**:
-- **The ecos' look in the effects lab** (`src/eco-fx.ts`, `src/eco-shaders.ts`, `src/eco-lab.ts`; § Look and interface).
-  It touches no fight, so it is ready for step 3 below.
-- **First playable skill and dual**. Ostinato marks a target for four timed beats. The independent field ecos and the remaining progression are still pending.
+**Built** (2026-11-21):
+- **The ecos and the compás** in the rules (`src/battle.ts`): `Eco`, `ECOS`, `BattleState.ecos` and
+  `compas`, sounding from `runClock` (`runEcos`): a pulse every 5 s, 20 s each, three at most (a
+  fourth replaces the oldest), muffled at half while their wearer is in another ánima, out at once if
+  they fall. What they do on their own goes to `takeEcoNews`. A pulse is not a blow: no golpe
+  crítico, no wound, no reaction.
+- **The ánima**: Ostinato and Bordón (`eco`), Crescendo (`raise`), Acompañamiento (`accompany`),
+  Tutti (`tutti`) and Da capo (`capo`, `ulti`) in `SKILLS`; *A contratiempo* and *Pedal* in
+  `PASSIVES`, with levels 3 and 6 (`contratiempoOf`, `pedalOf`); Sincopante in `LEVELLED`
+  (`src/levels.ts`) with its level flags; Da capo at the jar like every definitiva (`src/ecos.ts`),
+  awake once a chord sounds (`capoReady`). The *Ecos* description shape is in `AGENTS.md` and
+  `tests/battle.test.mjs`. A dual is an action too: Acompañamiento repeats it, and it can be played
+  off the beat.
+- **The look in the fight**: `src/eco-fx.ts` driven by the rules (`EcoScene.driven`): the scene
+  (`src/battle-scene.ts`) calls each eco, sounds it on its beat on whoever the rules say, raises it,
+  puts it out, and plays Tutti and Da capo; Acompañamiento's eco floats at its ally's shoulder, two
+  thirds the size. *Compás* on the wearer's plate (`src/battle-ui.ts`): a ring whose hand goes round
+  once a beat, with the beat and off-beat notches; each note's number is named *Eco*.
+- **Her voice**: the four grains in `public/sfx/` (`eco-fa`, `eco-la`, `eco-do`, `eco-dacapo` in
+  `SOUNDS`, `src/sfx.ts`), a note for each eco on its beat, the chord in Crescendo and Tutti, her
+  phrase in Da capo; silent while muffled.
+- **The fight tester**: its levels, Da capo at the jar, and *Contratiempo seguro*
+  (`BattleState.sureOffbeat`). `just screenshots sincopante-crece --gpu` plays it whole.
+- **The bot** (`src/battle-sim.ts`) values the notes still to come (`ecoWorth`) and Da capo.
 
-**To build**, once Aitor says yes ([`../README.md`](../README.md) § How an ánima is built):
-
-1. **The ecos**, a new field entity that is not a fighter: `BattleState.ecos` (kind, grade, target,
-   life, owner) and the compás, sounding from `runClock` in `src/battle.ts`. This includes:
-   - the pulse rule (a pulse, not a blow);
-   - three at most;
-   - going on after a switch, and going out on a fall.
-
-   Then tests, and `just fight-sim` (a bot that calls, raises and holds on, with the off-beat
-   played as a chance).
-2. **The ánima**: `sincopante` in `ClassId`, `ANIMA_NAMES` and `CLASS_STATS`. In `SKILLS`:
-   Ostinato, Bordón and Crescendo. In `PASSIVES`: A contratiempo. Its levels 1 to 3 in `LEVELLED`
-   (`src/levels.ts`), `CLASSES`, and the *Ecos* description shape in `AGENTS.md` and
-   `tests/battle.test.mjs`. In the fight tester: ecos at will, and a *Contratiempo seguro* (as
-   *Crítico seguro*).
-3. **The look**: the ecos' bodies (rings, bead, motes on the GPU engine), every beat above, the
-   muffled state, the *Compás* icon, the theme. Then a screenshot scenario `sincopante.json` that is
-   the ánima's sheet (`scripts/screenshots/papagato.json` is the model), and `docs/party.md`.
-4. **Her voice** (§ Sound): the four grains in `public/sfx/` with `SOUNDS` entries
-   (`src/sfx.ts`), played through a reverb on the effects bus and muffled through a filter. Also
-   the compás locked to the song's downbeats (from `TRACKS` and `untilBoundary` in
-   `src/music.ts`), and a `key` for each fight song so the grains can be transposed.
-5. **The unlock** at the end of Marta's mission, and her light's bonus in `ANIMAS`.
-6. **What waits on a system that does not exist yet**:
-   - Acompañamiento, Pedal and Tutti wait on the seven levels;
-   - Da capo waits on the definitivas in a fight.
+**Not built yet**:
+- The reverb on her voice and the muffled filter (650 Hz low-pass): today a muffled eco is silent.
+- The compás locked to the song's downbeats (`TRACKS` in `src/music.ts`), and a `key` for each
+  fight song to transpose the grains.
+- The rings on the wearer's nape and the dock's theme with the mark.
+- The unlock moment at the end of Marta's mission (the three notes over the piano): today the
+  ánima comes with `anima-marta` as before.
 
 ## For the balance, later
 
-`just fight-sim` cannot play it yet: there are no ecos in the game. Numbers to watch once it can:
+`just fight-sim` plays it now. First run (2026-11-21, `smart`, Gerard on Matemágico): Sincopante wins
+as often as Papagato and Colorista (El Campeón 100 %, La Voz 98 %, Aurelià 88–93 %) but the fights
+last about twice as long (El Campeón 9–11 rounds against Papagato's 7; Aurelià 22 against 12). The
+bot calls, raises and spends the ecos (Ostinato, Crescendo, Tutti, Bordón) and holds on a lot. Numbers
+to watch:
 
 - **The eco's pulse** (base 4, 6 on Aitor). It is the number that decides whether Sincopante outdoes
   Atacar while its wearer holds on. In *What a round looks like* it gives 97 against Atacar's 60

@@ -6,8 +6,10 @@ import { createEcoSheets } from './eco-shaders';
 
 /**
  * Sincopante's ecos as the fight will show them (docs/animas/sincopante/README.md § Look and
- * interface). This is a visual piece only, played from the effects lab (`?fxlab`): it never touches
- * a fight's numbers. An eco is light, not glass, and it is drawn by `src/eco-shaders.ts`:
+ * interface). A visual piece only: it never touches a fight's numbers. In the effects lab (`?fxlab`,
+ * src/eco-lab.ts) it keeps its own compás; in a fight it is driven (`EcoScene.driven`, src/battle-scene.ts):
+ * the fight's rules (src/battle.ts `runEcos`) say when each eco sounds, on whom, rises or goes, and it
+ * only draws that. An eco is light, not glass, and it is drawn by `src/eco-shaders.ts`:
  *
  * - **Interferencia is the eco itself**, the ánima's mark: a voice and its echo. A bead inside rings
  *   of nácar, each ring doubled by a copy a little apart, fine ripples running out from both and a
@@ -41,12 +43,14 @@ export const ECO = {
   /** Metres to one eco unit: its one ring at *p* is .62 units out, the outer of three at *f* 1.9. */
   unit: .32,
   /** How each kind's circle is squashed (across, up) and turned. */
-  shape: { ostinato: { squash: [.72, 1], turn: -.12 }, bordon: { squash: [1.2, .5], turn: 0 } },
+  shape: { ostinato: { squash: [.72, 1], turn: -.12 }, bordon: { squash: [1.2, .5], turn: 0 }, acompanamiento: { squash: [.72, 1], turn: -.12 } },
+  /** Acompañamiento's eco: two thirds the size, at its ally's shoulder (up and to the side, m). */
+  beside: { size: .66, up: .55, side: .4 },
   /** Line width (px), and how bright each sheet of light is. */
   line: 1.5, gain: { body: 1.5, figure: 1.8, light: 2, wave: 1.5 },
 } as const;
 
-export type EcoKind = 'ostinato' | 'bordon';
+export type EcoKind = 'ostinato' | 'bordon' | 'acompanamiento';
 type Grade = 0 | 1 | 2;
 type V3 = { x: number; y: number; z: number };
 
@@ -72,6 +76,11 @@ export interface EcoScene {
   /** A fighter's feet, and their model (for their height). */
   at(id: string): V3 | undefined;
   model(id: string): pc.Entity | undefined;
+  /**
+   * Driven by a fight's rules: no compás of its own, no clock that puts an eco out. The fight says
+   * when each sounds (`sound`), rises (`raise`), goes (`out`) and where the beat falls (`beat`).
+   */
+  driven?: boolean;
 }
 
 
@@ -80,6 +89,8 @@ type Turn = 'face' | 'upright' | 'flat';
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 interface Eco {
   kind: EcoKind; grade: Grade; slot: number; target?: string; left: number; born: number;
+  /** The fight's own number for it (driven), and the ally it floats beside (Acompañamiento). */
+  rule?: number; follow?: string;
   /** Where it is, its own sheet of light, the veil it hangs to the floor and the pool under it. */
   root: pc.Entity; sheet: pc.Entity; veil: pc.Entity; pool: pc.Entity;
   /** What its sheets are drawn with (src/eco-shaders.ts). */
@@ -188,12 +199,18 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     right.y = 0; right.normalize();
     return us.clone().add(fwd.clone().mulScalar(-ECO.back)).add(right.clone().mulScalar((i - 1) * ECO.apart)).add(new pc.Vec3(0, ECO.heights[i], 0));
   }
-  const freeSlot = () => [0, 1, 2].find(i => !ecos.some(e => e.slot === i)) ?? 0;
+  const freeSlot = () => [0, 1, 2].find(i => !ecos.some(e => e.slot === i && !e.follow)) ?? 0;
+  /** Where Acompañamiento's eco floats: at its ally's shoulder, on the side away from the foes' middle. */
+  function shoulder(id: string) {
+    const c = chest(id); if (!c) return undefined;
+    const cam = camera(), right = cam ? cam.right.clone() : new pc.Vec3(1, 0, 0); right.y = 0; right.normalize();
+    return c.add(new pc.Vec3(0, ECO.beside.up * heightOf(id), 0)).add(right.mulScalar(-ECO.beside.side));
+  }
 
   // ——— One eco ———
   function build(kind: EcoKind, slot: number): Eco {
     const home = slotAt(slot), seed = Math.random() * 40, warm = kind === 'bordon' ? 1 : 0;
-    const e = new pc.Entity(kind === 'ostinato' ? 'Eco de Ostinato' : 'Eco de Bordón'); root.addChild(e); e.setPosition(home);
+    const e = new pc.Entity(kind === 'ostinato' ? 'Eco de Ostinato' : kind === 'bordon' ? 'Eco de Bordón' : 'Eco de Acompañamiento'); root.addChild(e); e.setPosition(home);
     const shape = ECO.shape[kind], { fwd } = sides(), cam = camera();
     // Ostinato's mouth leans towards the foes, whichever side of the screen they are on.
     const lean = shape.turn * (cam && fwd.dot(cam.right) < 0 ? -1 : 1);
@@ -271,20 +288,20 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     }, { lam: .17 / reach, warm: e.kind === 'bordon' ? .6 : 0 });
     gpu()?.burst('eco-floor', { at: { x: p.x, y: floor + .02, z: p.z }, shape: 'ring', spread: .2, count: muffled ? 8 : 20, outward: .9 + e.grade * .5, life: [.8, 1.3] });
   }
-  function pulse(e: Eco, accent = false) {
+  function pulse(e: Eco, accent = false, on?: string[]) {
     e.pulseAt = time; e.flash = accent ? 1.4 : 1;
     strike(e, accent ? 1.1 : .9, accent ? .9 : .65);
     const at = e.root.getPosition().clone(), { party, foes } = sides(), k = muffled ? .45 : 1;
     if (!accent) ripple(e);
-    if (e.kind === 'ostinato') {
-      const targets = e.grade === 2 ? foes.map(f => f.id) : [e.target && foes.some(f => f.id === e.target) ? e.target : foes[0]?.id].filter((id): id is string => !!id);
+    if (e.kind !== 'bordon') {
+      const targets = on ?? (e.grade === 2 ? foes.map(f => f.id) : [e.target && foes.some(f => f.id === e.target) ? e.target : foes[0]?.id].filter((id): id is string => !!id));
       for (const id of targets) {
         const to = chest(id); if (!to) continue;
         beam(at, to, k, accent, .28);
         after(.28, () => closeHalo(to, accent, e.grade === 2 ? .8 : .7, e.grade));
       }
     } else {
-      const hurt = e.grade === 2 ? party.map(f => f.id) : [party[0]?.id].filter((id): id is string => !!id);
+      const hurt = on ?? (e.grade === 2 ? party.map(f => f.id) : [party[0]?.id].filter((id): id is string => !!id));
       for (const id of hurt) fallHalo(id, accent);
     }
     if (accent) gpu()?.burst('eco-spark', { at, count: 24, spread: .08, speed: 1.2, life: [.25, .5] });
@@ -292,12 +309,13 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
 
   // ——— The calls ———
   /** Ostinato or Bordón from `wearer` on `target`: the blow or the cure, then its eco rises into place. */
-  function call(kind: EcoKind, wearer: string, target?: string) {
+  function call(kind: EcoKind, wearer: string, target?: string, rule?: number) {
     if (ecos.length >= 3) drop(ecos[0]);
     const slot = freeSlot(), from = chest(wearer), { foes, party } = sides();
     const aimed = kind === 'ostinato' ? target && foes.some(f => f.id === target) ? target : foes[0]?.id : target && party.some(f => f.id === target) ? target : party[0]?.id;
     const to = aimed ? chest(aimed) : undefined;
-    const e = build(kind, slot); e.target = aimed; ecos.push(e);
+    const e = build(kind, slot); e.target = aimed; e.rule = rule; ecos.push(e);
+    if (kind === 'acompanamiento' && aimed) { e.follow = aimed; e.home = shoulder(aimed) ?? e.home; }
     shown(e, false);
     if (beatAt < 0) beatAt = time;
     if (from && to && kind === 'ostinato') {
@@ -385,7 +403,7 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
    * figures from the last to the first while rings close in on it, and the ecos start over.
    */
   function dacapo() {
-    if (ecos.length < 3 || muffled) return false;
+    if (ecos.length < (scene.driven ? 0 : 3) || muffled) return false;
     const { us, party } = sides(), at = { x: us.x, y: us.y + .05, z: us.z };
     for (const e of ecos) { e.left = ECO.life; e.swellAt = time; e.flash = 1.3; strike(e, 1.4, 1); }
     rewind = 1.2;
@@ -414,7 +432,8 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     const appear = back((time - e.born) / .55), seen = Math.min(1, Math.max(0, (time - e.born) / .35)), since = time - e.pulseAt;
     const breath = since < .15 ? 1 - .1 * Math.sin(since / .15 * Math.PI / 2) : since < .4 ? .9 + .1 * (since - .15) / .25 : 1;
     const pop = 1 + .22 * Math.sin(Math.PI * Math.min(1, Math.max(0, (time - e.swellAt) / .5)));
-    const gone = 1 - e.fade, size = breath * pop * appear * (1 + gone * (e.to ? -.35 : .6));
+    if (e.follow && !e.going) { const home = shoulder(e.follow); if (home) e.home.copy(home); }
+    const gone = 1 - e.fade, size = breath * pop * appear * (1 + gone * (e.to ? -.35 : .6)) * (e.follow ? ECO.beside.size : 1);
     const bob = e.going ? 0 : Math.sin((time - Math.max(0, beatAt)) / ECO.beat * Math.PI * 2) * .04;
     const at = e.to ? new pc.Vec3().lerp(e.home, e.to, ease(gone)) : new pc.Vec3(e.home.x, e.home.y + bob, e.home.z);
     e.root.setPosition(at);
@@ -459,14 +478,14 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
       if (k >= 1) { tweens.splice(tweens.indexOf(tw), 1); tw.end?.(); }
     }
     // The compás: every eco sounds together on the beat.
-    if (beatAt >= 0 && ecos.length) {
+    if (scene.driven) { if (!ecos.length) beatAt = -1; }
+    else if (beatAt >= 0 && ecos.length) {
       if (time - beatAt >= ECO.beat) { beatAt += ECO.beat; for (const e of ecos) if (e.root.enabled) pulse(e); if (ecos.length === 3) chord(); }
     } else if (!ecos.length) beatAt = -1;
     const floor = sides().us.y;
     rewind = Math.max(0, rewind - dt);
     for (const e of [...ecos]) {
-      e.left -= dt;
-      if (e.left <= 0) { drop(e); continue; }
+      if (!scene.driven) { e.left -= dt; if (e.left <= 0) { drop(e); continue; } }
       if (e.root.enabled) draw(e, dt, floor);
     }
     for (const e of [...leaving]) {
@@ -499,8 +518,26 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
 
   const onUpdate = (dt: number) => { update(dt); placeLamp(dt); };
   app.on('update', onUpdate);
+  const byRule = (rule: number) => ecos.find(e => e.rule === rule);
   return {
     call, crescendo, contratiempo, tutti, dacapo, setMuffled,
+    /** Driven: the fight's eco `rule` sounds now, on `on` (foes it strikes or allies it cures), accented off the beat. */
+    sound(rule: number, on: string[], accent = false) { const e = byRule(rule); if (e?.root.enabled) pulse(e, accent, on); else if (e) after(1.1, () => { if (ecos.includes(e)) pulse(e, accent, on); }); },
+    /** Driven: the beat falls now (the ecos bob with it), three at once a chord. */
+    beat() { beatAt = time; if (ecos.length >= 3) chord(); },
+    /** Driven: the fight's eco `rule` swells to `grade` (Crescendo), its clock over. */
+    raise(rule: number, grade: Grade) {
+      const e = byRule(rule); if (!e) return;
+      e.grade = grade; e.swellAt = time; e.flash = 1.2; strike(e, 1.6, 1);
+      const at = e.root.getPosition();
+      wave(at, 1.1 + .25 * e.grade, 'face', .75, (k, w, w2) => { w[0] = .15 + .78 * ease(k); w[1] = .14; w[2] = .14; w[3] = (1 - k) * .8; w2[1] = .7; }, { lam: .08 });
+      gpu()?.burst('eco-mote', { at, shape: 'ring', spread: .35, count: 40, around: 2.4, up: .7, life: [1, 1.8] });
+      post?.pulse(.02, .5); swellLight(.9);
+    },
+    /** Driven: the fight's eco `rule` goes out (its time is up, a fourth took its place, its wearer fell). */
+    out(rule: number) { const e = byRule(rule); if (e) drop(e); },
+    /** Driven: the fight's ecos as they are, by number; any shown that the fight no longer has goes. */
+    keep(rules: readonly number[]) { for (const e of [...ecos]) if (e.rule !== undefined && !rules.includes(e.rule)) drop(e); },
     get muffled() { return muffled; },
     /** Development: where each eco is and how it is drawn now. */
     debug() { return ecos.map(e => ({ kind: e.kind, grade: e.grade, shown: e.shown, at: e.root.getPosition().toString(), figure: e.figure, mode: e.mode, light: e.glow })); },

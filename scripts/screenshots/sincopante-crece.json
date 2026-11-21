@@ -1,0 +1,237 @@
+{
+  "title": "Sincopante en combate: los ecos",
+  "description": "Sincopante, el ánima de Marta (docs/animas/sincopante/), entera en un combate de prueba a nivel 7 con Da capo comprada: Ostinato y su eco, el pulso en el compás, Bordón, Crescendo hasta f, tres ecos que hacen un acorde y despiertan Da capo, Da capo y Tutti.",
+  "steps": [
+    {
+      "open": "/?story=sincopante-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22sincopante%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22sincopante%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22sincopante%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = (side = 'foes', i = 0) => document.querySelectorAll('.battle-target[data-side=\"' + side + '\"]:not(:disabled)')[i]?.click(); window.aimAlly = id => document.querySelector('.roster-target[data-target=\"' + id + '\"]:not(:disabled), .battle-target[data-side=\"allies\"][data-target=\"' + id + '\"]:not(:disabled)')?.click(); window.defend = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); window.fresh = () => ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); }); window.fresh();"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 400,
+      "caption": "Sincopante a nivel 7: Ostinato y Bordón (Nv 1), Crescendo (Nv 2), Acompañamiento (Nv 5) y Tutti (Nv 7), con cuatro círculos de maná desde el nivel 4"
+    },
+    {
+      "eval": "window.skill('ostinato')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "ostinato",
+      "seconds": 2.6,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim('foes', 1)",
+      "caption": "Ostinato: el golpe astral, y un anillo y su eco suben del perro hasta quedarse flotando sobre el equipo"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.st?.ecos?.length && window.st.compas > 3.6",
+      "timeout": 30000
+    },
+    {
+      "record": "pulso",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "El compás: cada 5 s el eco se encoge, deja ir su anillo al perro que golpeó y le hace daño (número «Eco»)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'aitor').hp = 30; }); window.skill('bordon')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "bordon",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aimAlly('aitor')",
+      "caption": "Bordón: un halo cálido baja sobre Aitor y lo cura, y su eco, tumbado como un halo, sube junto al primero"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('crescendo')"
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "shot": "crescendo-mf",
+      "delay": 200,
+      "caption": "Crescendo: los dos ecos suben a mf, dos anillos, más luz, y su reloj vuelve a empezar"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('crescendo')"
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "shot": "crescendo-f",
+      "delay": 300,
+      "caption": "A f: tres anillos y dos alas de arcos a los lados. Desde ahora el de Ostinato golpea a todos los perros y el de Bordón cura a todo el equipo"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.fresh(); window.skill('ostinato')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "window.aim('foes', 2)"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.st?.dacapo?.woke",
+      "timeout": 30000
+    },
+    {
+      "shot": "acorde",
+      "delay": 500,
+      "caption": "Tres ecos a la vez: el acorde. Líneas de luz los unen y Da capo despierta en Gerard («Definitiva · despierta»)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "da-capo-en-la-lista",
+      "delay": 300,
+      "caption": "Da capo encabeza la lista: una vez en este combate, sin maná"
+    },
+    {
+      "eval": "ui.tweak(s => { s.usedDuals = ['rayo-solar']; s.allies.forEach(a => { a.secondary = 0; }); }); window.skill('da-capo')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "da-capo",
+      "seconds": 2.8,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Da capo: los relojes de los ecos corren hacia atrás, una placa bajo el equipo toca sus figuras al revés, y el maná de todos se llena"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); })); window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('tutti')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "tutti",
+      "seconds": 3,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Tutti: los ecos vuelan juntos sobre los perros, se hacen una gran placa que baja sobre todos con una columna de luz, y suenan una última vez"
+    },
+    {
+      "shot": "tutti-despues",
+      "delay": 400,
+      "caption": "Después de Tutti: ni un eco en el aire; el Compás desaparece de la placa"
+    }
+  ]
+}
