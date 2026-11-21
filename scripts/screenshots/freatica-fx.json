@@ -1,6 +1,6 @@
 {
   "title": "Freática · el agua contenida en el motor",
-  "description": "The contained water of Emilie's ánima in the effects lab over a fight at the campsite (?fxlab, src/freatica-fx.ts, src/freatica-lab.ts; docs/animas/freatica/README.md § Look and interface, docs/animas/README.md § Agua contenida). Every foe has its own cell: a straight prism with a staff gauge, water that wells up to three marks and whose colour is its depth, the current, the steam, the sinking and the cells breaking; then each of the ánima's skills as it shows on them (Recarga, Sondeo eléctrico, Bombeo, Riada, Golpe de ariete) and its definitiva, Bajo cero: the ice, its cracks, its break and its turns. Only the look, never a fight's numbers. Run it with --gpu.",
+  "description": "The contained water of Emilie's ánima in the effects lab over a fight at the campsite (?fxlab, src/freatica-fx.ts, src/freatica-lab.ts; docs/animas/freatica/README.md § Look and interface, docs/animas/README.md § Agua contenida). Every foe has its own cell: a straight prism with a staff gauge, water that wells up to three marks and whose colour is its depth, the current, the steam, the sinking and the cells breaking; then each of the ánima's skills as it shows on them (Recarga, Sondeo eléctrico, Bombeo, Riada, Golpe de ariete) and its definitiva, Bajo cero: the ice, its melting on the clock, its cracks and its break. Only the look, never a fight's numbers. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fxlab&battle=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22camping-magos%22%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
@@ -274,7 +274,7 @@
     {
       "shot": "bajo-cero",
       "delay": 900,
-      "caption": "Frozen: three turns of ice for the one that was sunk, one for the other. Neither can act",
+      "caption": "Frozen: 60 s of ice for the one that was sunk, 20 s for the other, both melting from now on. Neither can act",
       "clip": [
         860,
         130,
@@ -284,9 +284,9 @@
     },
     {
       "record": "hielo-se-rompe",
-      "seconds": 4.6,
-      "each": "if (frame === 4 || frame === 50 || frame === 96) window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0])",
-      "caption": "Blows from outside: each opens cracks from the middle of every face out, and at the third the ice breaks in shards. The other foe is still in its own",
+      "seconds": 5.4,
+      "each": "if (frame === 4 || frame === 44 || frame === 84 || frame === 124) window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0], 2)",
+      "caption": "Blows from outside: the ice holds eight, and a hard one counts two. Here four hard ones, the cracks opening from the middle of every face out. Cracked through, it breaks in shards. The other foe's ice goes on melting meanwhile",
       "clip": [
         860,
         130,
@@ -301,12 +301,12 @@
       "wait": 1200
     },
     {
-      "eval": "window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1])"
+      "eval": "window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[0], 1); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1], 2); window.freaticaLab.fx.strike(window.freaticaLab.fx.foes()[1], 2)"
     },
     {
       "shot": "hielo-agrietado",
       "delay": 700,
-      "caption": "Each ice cracks on its own: one blow on the tall block, two on the other",
+      "caption": "Each ice cracks on its own: one blow of its eight on the tall block, two hard ones (four of eight) on the other",
       "clip": [
         860,
         130,
@@ -315,10 +315,46 @@
       ]
     },
     {
-      "record": "hielo-baja",
-      "seconds": 5,
-      "each": "if (frame === 4 || frame === 70) window.freaticaLab.fx.turn()",
-      "caption": "A turn goes by and every ice comes down a mark; the one that had two is gone with the second, and its water with it",
+      "record": "hielo-se-derrite",
+      "seconds": 6,
+      "each": "if (frame === 2) window.freaticaLab.fx.setRate(8)",
+      "caption": "The ice melts on the fight's clock, a mark every 20 s (here eight times as fast): it sinks all the while, giving off cold and running with water, its gauge going down with it. The one that had two marks is gone first, and its water with it",
+      "clip": [
+        860,
+        130,
+        560,
+        560
+      ]
+    },
+    {
+      "eval": "window.freaticaLab.fx.setRate(1); window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.cast.bajoCero()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "record": "hielo-rafaga",
+      "seconds": 3.4,
+      "each": "if (frame === 6) window.freaticaLab.fx.flurry(window.freaticaLab.fx.foes()[0], 8)",
+      "caption": "A flurry: each strike counts one, so the eight of a dual break a whole fresh ice at once, with the most ice left to burst",
+      "clip": [
+        860,
+        130,
+        560,
+        560
+      ]
+    },
+    {
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.cast.bajoCero()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "record": "hielo-llama",
+      "seconds": 3,
+      "each": "if (frame === 6) window.freaticaLab.fx.melt(window.freaticaLab.fx.foes()[0])",
+      "caption": "A flame does not crack the ice: a mark of it melts at once, in steam",
       "clip": [
         860,
         130,

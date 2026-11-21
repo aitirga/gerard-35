@@ -17,8 +17,10 @@ import type { GpuEmitter, GpuKind } from './fight-particles';
  *   depth. So the level is read three times: by where the surface is, by the gauge, by the hue.
  * - **The surface is the clock**: within a mark it sinks slowly from full to the mark's own tick
  *   over the mark's 20 s, then drops to the one below.
- * - **Bajo cero**: the water freezes into a block round each foe, to where it stood. The ice comes
- *   down a mark a turn, cracks with each blow from outside and breaks at the third.
+ * - **Bajo cero**: the water freezes into a block round each foe, to where it stood. The ice melts
+ *   as the fight's clock runs (a mark every `AGUA.ice` seconds, sinking all the while), cracks with
+ *   each blow from outside (it holds `AGUA.blows`; a hard one counts two, each strike of a flurry
+ *   one) and breaks when cracked through.
  * - **Corriente**: arcs skate over the surface and run along the edges; each pulse the whole
  *   volume flickers yellow. **Vapor**: the top slab flashes white and goes up as steam, which
  *   stays over the foes. **Hundido**: at the third mark the water closes over the tallest head
@@ -36,8 +38,13 @@ export const AGUA = {
   mark: 20, current: 10, pulse: 2,
   /** How far the cell reaches past the outermost foe (m), and its line width (px). */
   margin: .24, line: 1.4,
-  /** Blows from outside a frozen foe's ice takes before it breaks. */
-  blows: 3,
+  /** Seconds a mark of ice takes to melt: what a mark of water lasts. */
+  ice: 20,
+  /**
+   * Blows from outside a frozen foe's ice holds before it breaks. A leve or medio blow counts one, an
+   * alto or muy alto two (so four to eight blows), and each strike of a flurry one.
+   */
+  blows: 8,
 } as const;
 
 export const AGUA_KINDS = {
@@ -545,7 +552,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     const soak = sheet(`Lo que quita el hielo ${i + 1}`, cube, materials.iceAbsorb, { uIce: ice, uCrack: crack }, root, () => .36);
     const e = sheet(`Hielo ${i + 1}`, cube, materials.ice, { uIce: ice, uCrack: crack }, root, () => .26);
     e.enabled = soak.enabled = false;
-    return { e, soak, ice, crack, foe: '', blows: 0, x: 0, z: 0, side: 1 };
+    return { e, soak, ice, crack, foe: '', cracked: 0, x: 0, z: 0, side: 1 };
   });
   // The gauge stands in the world, turned to the camera, at the corner nearest it.
   const gauge = sheet('Regla', quad, materials.gauge, { uGauge: u.gauge, uTicks: u.ticks }, app.root as pc.Entity);
@@ -555,7 +562,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
 
   // ——— The state ———
   let time = 0, on = false, marks = 0, level = 0, clock = AGUA.mark, rate = 1, moving = false, grey = false;
-  let current = 0, pulseIn = 0, flash = 0, steamFlash = 0, breaking = false, hammer = 0, frozen = false, ice = 0;
+  let current = 0, pulseIn = 0, flash = 0, steamFlash = 0, breaking = false, hammer = 0, frozen = false, ice = 0, iceLeft = 0, breath = 0;
   const half = { w: 1.5, d: 1.5 }, fwd = new pc.Vec3(0, 0, 1), across = new pc.Vec3(1, 0, 0);
   let yaw = 0, height = 2.6;
   const ticks = [...AGUA.ticks];
@@ -565,6 +572,8 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   const bubbles = new Map<string, GpuEmitter>();
   let cloud: GpuEmitter | undefined, cloudLeft = 0;
   const full = (n: number) => n > 0 ? ticks[n - 1] + AGUA.bands[n - 1] : 0;
+  /** How tall the ice stands with `left` marks of it still to melt (it sinks all the while, not a mark at a time). */
+  const iceTall = (left: number) => { const m = Math.min(3, Math.ceil(left)); return m <= 0 ? 0 : full(m - 1) + (full(m) - full(m - 1)) * (left - (m - 1)); };
   const camera = () => (app.root.findComponents('camera') as pc.CameraComponent[]).find(c => c.enabled && c.entity.enabled)?.entity;
   const foes = () => scene.fighters().filter(f => !f.party).map(f => ({ id: f.id, p: scene.at(f.id), model: scene.model(f.id) })).filter((f): f is { id: string; p: V3; model: pc.Entity } => !!f.p && !!f.model);
   const party = () => scene.fighters().filter(f => f.party).map(f => scene.at(f.id)).filter((p): p is V3 => !!p);
@@ -751,18 +760,19 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       return true;
     },
     /**
-     * Bajo cero: the water freezes round every foe in it, to where it stood. The ice then lasts a
-     * turn a mark (`turn`), cracks with each blow from outside (`strike`) and breaks at the third.
+     * Bajo cero: the water freezes round every foe in it, to where it stood. The ice then melts on
+     * the clock, `AGUA.ice` seconds a mark (a flame takes a mark off at once, `melt`), and cracks
+     * with each blow from outside (`strike`) until it breaks.
      */
     bajoCero() {
       if (!on || !marks || breaking || frozen || moving) return false;
       hammer = 1; current = 0; stopBubbles();
       after(.12, () => {
-        frozen = true; clock = AGUA.mark; level = full(marks);
+        frozen = true; clock = AGUA.mark; level = full(marks); iceLeft = marks; breath = 0; u.ticks[3] = 0;
         const them = foes();
         blocks.forEach((b, i) => {
           const f = them[i];
-          b.e.enabled = b.soak.enabled = !!f; b.foe = f?.id ?? ''; b.blows = 0; b.crack[0] = 0; b.crack[1] = 0; b.crack[2] = 1;
+          b.e.enabled = b.soak.enabled = !!f; b.foe = f?.id ?? ''; b.cracked = 0; b.crack[0] = 0; b.crack[1] = 0; b.crack[2] = 1;
           if (!f) return;
           const q = local(f.p), body = bodyOf(f.model, f.p);
           b.x = q.x; b.z = q.z; b.side = Math.max(body.radius * 2 + .1, Math.min(half.w, half.d) * 2 - .08);
@@ -775,7 +785,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   };
   const alive = () => blocks.filter(b => b.e.enabled && b.foe);
   /** The ice is gone, and with it the water it was. */
-  function thawed() { frozen = false; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } marks = 0; level = 0; show(false); }
+  function thawed() { frozen = false; iceLeft = 0; u.ticks[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } marks = 0; level = 0; show(false); }
 
   const api = {
     /** The water rises `n` marks (three at most), the cell drawing itself in first if it is not there. */
@@ -836,35 +846,45 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     },
     /** A skill's own look: `recarga`, `sondeo`, `bombeo`, `riada`, `ariete`, `bajoCero`. */
     cast: casts,
-    /** Frozen: a turn goes by. The ice comes down a mark, and with the last it is gone. */
-    turn() {
-      if (!frozen || moving) return false;
-      marks--; u.ticks[3] = level;
-      for (const b of alive()) gpu()?.burst('agua-frio', { at: world(b.x, level, b.z), count: 30, spread: b.side * .5, speed: .25, life: [.8, 1.6] });
-      move(full(marks), .6, 0, () => { if (!marks) thawed(); });
+    /** Frozen: a flame on the ice. It does not crack it: `n` marks of it melt at once, in steam. With the last it is gone. */
+    melt(n = 1) {
+      if (!frozen) return false;
+      u.ticks[3] = level;
+      let last = 0;
+      tween(.5, k => { const e = ease(k); iceLeft -= n * (e - last); last = e; });
+      for (const b of alive()) {
+        gpu()?.burst('agua-vapor', { at: world(b.x, level, b.z), count: 60, spread: b.side * .5, up: 1.4, speed: .9, life: [.8, 1.6] });
+        gpu()?.burst('agua-gota', { at: world(b.x, level * .8, b.z), count: 40, shape: 'ring', spread: b.side * .55, outward: .4, speed: .3, life: [.4, .8] });
+      }
       return true;
     },
-    /** Frozen: a blow from outside on the foe `id` (the first still in its ice otherwise). It cracks, and at the third it breaks. */
-    strike(id?: string) {
+    /**
+     * Frozen: a blow from outside on the foe `id` (the first still in its ice otherwise). It counts
+     * `blows` of the `AGUA.blows` the ice holds (two for a hard one), and cracked through it breaks.
+     */
+    strike(id?: string, blows = 1) {
+      const share = blows / AGUA.blows;
       if (!frozen) return false;
       const b = alive().find(x => x.foe === id) ?? alive()[0]; if (!b) return false;
-      b.blows++; b.crack[2] = 1;
-      const from = b.crack[0], to = Math.min(1, b.blows / AGUA.blows), g = gpu(), at = world(b.x, Math.max(.15, level * .55), b.z);
+      const from = b.crack[0], to = Math.min(1, b.cracked + share), g = gpu(), at = world(b.x, Math.max(.15, level * .55), b.z);
+      b.cracked = to; b.crack[2] = 1;
       tween(.16, k => { b.crack[0] = from + (to - from) * ease(k); });
-      if (b.blows < AGUA.blows) { g?.burst('agua-hielo', { at, count: 14 + 10 * b.blows, spread: b.side * .45, speed: 1.6, up: 1.2, life: [.4, .8], size: .6 }); return true; }
+      if (to < .999) { g?.burst('agua-hielo', { at, count: Math.round(10 + 120 * share + 20 * to), spread: b.side * .45, speed: 1.6, up: 1.2, life: [.4, .8], size: .6 }); return true; }
       // It breaks: the block goes at once, in shards and a white flash.
       after(.1, () => {
         b.e.enabled = b.soak.enabled = false; b.foe = '';
         // The more ice is left, the harder it breaks.
-        g?.burst('agua-hielo', { at, count: 30 + 40 * marks, spread: b.side * .5, speed: 2.4 + .6 * marks, up: 2.4, life: [.6, 1.3], size: .9, light: { intensity: 3, range: 5, colour: '#dff8ff' } });
+        const left = Math.max(0, iceLeft);
+        g?.burst('agua-hielo', { at, count: Math.round(30 + 40 * left), spread: b.side * .5, speed: 2.4 + .6 * left, up: 2.4, life: [.6, 1.3], size: .9, light: { intensity: 1.2 + .6 * left, range: 5, colour: '#dff8ff' } });
         g?.burst('agua-frio', { at, count: 60, spread: b.side * .6, speed: 1.2, life: [.8, 1.6] });
         if (!alive().length) thawed();
       });
       return true;
     },
-    /** Whether the water is ice, and how cracked each frozen foe's is (blows taken). */
+    /** Whether the water is ice, how many marks of it are left to melt (it goes down all the while), and how cracked each frozen foe's is (0–1). */
     get frozen() { return frozen; },
-    get cracks() { return alive().map(b => ({ foe: b.foe, blows: b.blows })); },
+    get ice() { return frozen ? Math.max(0, iceLeft) : 0; },
+    get cracks() { return alive().map(b => ({ foe: b.foe, cracked: b.cracked })); },
     /** Whoever held it has fallen: the edges go out and the water runs out over the floor. */
     break() {
       if (!on || breaking) return false;
@@ -888,7 +908,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     get current() { return current; },
     get on() { return on; },
     /** Nothing left: no cell, no water, no steam. */
-    clear() { tweens.length = 0; moving = false; breaking = false; marks = 0; level = 0; current = 0; flash = 0; steamFlash = 0; cloudLeft = 0; hammer = 0; frozen = false; ice = 0; u.cast[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } show(false); },
+    clear() { tweens.length = 0; moving = false; breaking = false; marks = 0; level = 0; current = 0; flash = 0; steamFlash = 0; cloudLeft = 0; hammer = 0; frozen = false; ice = 0; iceLeft = 0; u.cast[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } show(false); },
     destroy() {
       api.clear(); app.off('update', update);
       root.destroy(); gauge.destroy(); lamp.destroy(); cube.destroy();
@@ -910,9 +930,17 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     aim();
     // The surface is the clock: within its mark it sinks from full to the mark's own tick, then drops to the one below.
     if (frozen) {
-      // Ice does not drain: it stands where the water stood, and comes down a turn at a time.
+      // Ice melts on the clock: it stands where the water stood and sinks all the while, a mark every `AGUA.ice` seconds.
       clock = AGUA.mark;
+      iceLeft -= dt * rate / AGUA.ice; marks = Math.max(0, Math.min(3, Math.ceil(iceLeft))); level = iceTall(iceLeft);
+      const drip = (breath -= dt) <= 0; if (drip) breath = .45;
+      if (iceLeft <= 0) thawed();
       for (const b of alive()) {
+        // It gives off cold from its top and runs with water down its faces.
+        if (drip) {
+          gpu()?.burst('agua-frio', { at: world(b.x, level, b.z), count: 3, spread: b.side * .45, speed: .1, life: [.8, 1.5] });
+          gpu()?.burst('agua-gota', { at: world(b.x, level * .9, b.z), count: 4, shape: 'ring', spread: b.side * .52, outward: .1, speed: .1, life: [.4, .7], size: .8 });
+        }
         const tall = Math.max(.03, level);
         b.ice[0] = b.side; b.ice[1] = tall; b.ice[2] = b.side;
         for (const e of [b.e, b.soak]) { e.setLocalPosition(b.x, tall / 2, b.z); e.setLocalScale(b.side, tall, b.side); }
@@ -943,7 +971,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     // How deep it reads: green at the first mark, blue at the third.
     u.water[1] = Math.min(1, Math.max(0, (level - ticks[0]) / Math.max(.1, ticks[2] - ticks[0])));
     u.elec[0] = current > 0 ? Math.min(1, current / .6) * (.55 + .15 * marks) : 0; u.elec[1] = flash; u.elec[2] = steamFlash; u.elec[3] = grey ? 1 : 0;
-    u.slab[3] = marks && !moving && clock * (1 / rate) < 3 ? 1 : 0;
+    u.slab[3] = marks && !moving && (frozen ? iceLeft * AGUA.ice : clock) / rate < 3 ? 1 : 0;
     u.gauge[2] = marks;
     lamp.setPosition(centre.x, centre.y + Math.min(level, 1.4) + .3, centre.z);
     lamp.light!.intensity = flash * (1.2 + .5 * marks);
@@ -1008,22 +1036,28 @@ export function createFreaticaField(app: pc.AppBase, effects: Effects, scene: Ag
       bombeo() { return (wet().sort((a, b) => b.marks - a.marks)[0] ?? every()[0])?.cast.bombeo() ?? false; },
       riada() { return every().map(c => c.cast.riada(1)).some(Boolean); },
       ariete() { return wet().map(c => c.cast.ariete()).some(Boolean); },
-      /** Only with a foe at the third mark; then every foe with water freezes, for as many turns as it has marks. */
+      /** Only with a foe at the third mark; then every foe with water freezes, for longer the more marks it has. */
       bajoCero() {
         const all = wet();
         if (!all.some(c => c.marks === 3)) return false;
         return all.map(c => c.cast.bajoCero()).some(Boolean);
       },
     },
-    /** Frozen: a turn goes by for every block of ice. */
-    turn() { return every().filter(c => c.frozen).map(c => c.turn()).some(Boolean); },
-    /** Frozen: a blow from outside on the foe `id`'s ice, or on the first still frozen. */
-    strike(id?: string) { const named = id ? one(id) : undefined; return (named?.frozen ? named : every().find(c => c.frozen))?.strike() ?? false; },
+    /** Frozen: a flame on the foe `id`'s ice (the first still frozen otherwise) melts `n` marks of it at once. */
+    melt(id?: string, n = 1) { const named = id ? one(id) : undefined; return (named?.frozen ? named : every().find(c => c.frozen))?.melt(n) ?? false; },
+    /** Frozen: a blow from outside on the foe `id`'s ice, or on the first still frozen. It counts `blows` of the `AGUA.blows` it holds. */
+    strike(id?: string, blows?: number) { const named = id ? one(id) : undefined; return (named?.frozen ? named : every().find(c => c.frozen))?.strike(undefined, blows) ?? false; },
+    /** Frozen: a flurry on that ice, `strikes` little blows `gap` seconds apart, each counting one: eight break a whole ice. */
+    flurry(id?: string, strikes = 4, gap = .11) {
+      const named = id ? one(id) : undefined, c = named?.frozen ? named : every().find(x => x.frozen); if (!c) return false;
+      for (let i = 0; i < strikes; i++) timers.push(setTimeout(() => c.strike(), i * gap * 1000));
+      return true;
+    },
     setGrey(yes: boolean) { grey = yes; cells.forEach(c => c.setGrey(yes)); },
     get grey() { return grey; },
     setRate(k: number) { rate = k; cells.forEach(c => c.setRate(k)); },
     /** Each foe's water, for a readout. */
-    state() { return foes().map(id => { const c = cells.get(id); return { id, marks: c?.on ? c.marks : 0, left: c?.left ?? 0, current: c?.current ?? 0, frozen: !!c?.frozen, blows: c?.cracks[0]?.blows ?? 0 }; }); },
+    state() { return foes().map(id => { const c = cells.get(id); return { id, marks: c?.on ? c.marks : 0, left: c?.left ?? 0, current: c?.current ?? 0, frozen: !!c?.frozen, ice: c?.ice ?? 0, cracked: c?.cracks[0]?.cracked ?? 0 }; }); },
     clear() { timers.forEach(clearTimeout); timers.length = 0; cells.forEach(c => c.clear()); },
     destroy() { timers.forEach(clearTimeout); cells.forEach(c => c.destroy()); cells.clear(); },
   };

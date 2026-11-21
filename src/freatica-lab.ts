@@ -1,5 +1,5 @@
 import type { createGame } from './game';
-import { createFreaticaField, type FreaticaField } from './freatica-fx';
+import { AGUA, createFreaticaField, type FreaticaField } from './freatica-fx';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -30,8 +30,11 @@ const SKILLS: [string, string, string][] = [
   ['riada', 'Riada', 'Una ola cruza cada celda y el agua de todos sube una marca'],
   ['ariete', 'Golpe de ariete', 'A cada uno, un golpe por cada marca de su agua, que se gasta entera'],
   ['bajoCero', 'Bajo cero', 'La definitiva: con alguno en la tercera marca, se congelan todos los que tienen agua, hasta donde les llegaba'],
-  ['golpe', 'Golpe al hielo', 'Un golpe desde fuera: el hielo se agrieta, y al tercero se rompe'],
-  ['turno', 'Pasa un turno', 'Cada hielo baja una marca; con la última se va'],
+  ['golpe', 'Golpe al hielo', 'Un golpe leve o medio desde fuera: el hielo aguanta ocho'],
+  ['golpeFuerte', 'Golpe alto al hielo', 'Un golpe alto cuenta por dos: cuatro lo rompen. Cuanto menos hielo queda, menos estalla'],
+  ['rafaga', 'Ráfaga de cuatro', 'Cada golpe de una ráfaga cuenta uno: cuatro zarpazos son medio hielo'],
+  ['rafagaDual', 'Ráfaga de ocho', 'Los ocho de un dúo rompen un hielo entero de una vez'],
+  ['fundir', 'Llama al hielo', 'El fuego no lo agrieta: derrite una marca de golpe. Solo, se derrite una marca cada 20 s'],
 ];
 const ROMAN = ['0', 'I', 'II', 'III'];
 
@@ -60,8 +63,11 @@ export function mountFreaticaLab(game: Game, body: HTMLElement) {
     const foe = target.value || undefined;
     if (id === 'recarga' || id === 'sondeo') e.cast[id](foe);
     else if (id === 'bombeo' || id === 'riada' || id === 'ariete' || id === 'bajoCero') e.cast[id]();
-    else if (id === 'golpe') e.strike(foe);
-    else if (id === 'turno') e.turn();
+    else if (id === 'golpe') e.strike(foe, 1);
+    else if (id === 'golpeFuerte') e.strike(foe, 2);
+    else if (id === 'rafaga') e.flurry(foe, 4);
+    else if (id === 'rafagaDual') e.flurry(foe, 8);
+    else if (id === 'fundir') e.melt(foe);
     else if (id === 'subir') e.raise(foe);
     else if (id === 'corriente') e.bolt(foe);
     else if (id === 'vapor') e.steam(foe);
@@ -91,7 +97,7 @@ export function mountFreaticaLab(game: Game, body: HTMLElement) {
   });
   const tick = setInterval(() => {
     if (!fx) return;
-    readout.textContent = fx.state().map((c, i) => `${i + 1}: ${c.frozen ? `hielo ${ROMAN[c.marks]}${c.blows ? ` · ${c.blows} grieta${c.blows > 1 ? 's' : ''}` : ''}` : c.marks ? `agua ${ROMAN[c.marks]} · ${Math.ceil(c.left * 20)} s${c.current > 0 ? ` · corriente ${Math.ceil(c.current)} s` : ''}${c.marks === 3 ? ' · hundido' : ''}` : 'seco'}`).join('   ') + (fx.grey ? '   · gris' : '');
+    readout.textContent = fx.state().map((c, i) => `${i + 1}: ${c.frozen ? `hielo ${ROMAN[c.marks]} · ${Math.ceil(c.ice * AGUA.ice)} s${c.cracked ? ` · ${Math.round(c.cracked * AGUA.blows)} de ${AGUA.blows} golpes` : ''}` : c.marks ? `agua ${ROMAN[c.marks]} · ${Math.ceil(c.left * 20)} s${c.current > 0 ? ` · corriente ${Math.ceil(c.current)} s` : ''}${c.marks === 3 ? ' · hundido' : ''}` : 'seco'}`).join('   ') + (fx.grey ? '   · gris' : '');
   }, 100);
 
   const api = {

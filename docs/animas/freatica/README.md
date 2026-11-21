@@ -23,13 +23,17 @@ guesses ([`../README.md`](../README.md) § Order of work).
 | 2026-11-20 | **At three of water the foes sink** and start losing **a share of their PV over time** |
 | 2026-11-20 | Its name is **Freática**, and its colour is **blue with green** |
 | 2026-11-20 | **The visual base first**, shown to him, and the rest polished from there |
-| 2026-11-20 | Its definitiva is ***Bajo cero***: it **freezes the foes that have water, for as many turns as water they have**, and **each turn the freezing goes down** |
+| 2026-11-20 | Its definitiva is ***Bajo cero***: it **freezes the foes that have water, for as many turns as water they have**, and **each turn the freezing goes down** (later that day he moved it from turns to time: three rows down) |
 | 2026-11-20 | **A frozen foe cannot attack and takes little damage; if the ice is broken, a very large blow** |
 | 2026-11-20 | **Cracks show, and it splits more as it takes damage from outside** |
 | 2026-11-20 | It can wake **when a foe is full of water** |
 | 2026-11-20 | **Broken at the start the ice does a huge amount of damage; the more it has melted, the less, but still a lot** |
 | 2026-11-20 | **Every foe that has water at that moment freezes, but one of them must have its water at the maximum.** So **each foe carries its own water** (until then the design had one body of water for the whole enemy side) |
 | 2026-11-20 | **A boss can be frozen too**, and like anyone it takes little damage unless its ice is broken |
+| 2026-11-20 | **The ice goes by time**, not by turns: it **comes down little by little, melting live, and breaking it is worth less all the while**. More water is still more ice |
+| 2026-11-20 | **The ice breaks by percentage, at four to seven blows**. Read here as: each blow from outside cracks a share of the ice, more the harder the blow |
+| 2026-11-21 | **A flurry is a shortcut through the ice, and that is good**: *Zarpazos de fuego* is a dual that is hard to set up. He put it as Zarpazos three blows, Zarpazos de fuego five, **the ice four to eight**, «or a better combination» |
+| 2026-11-20 | **Hundido takes its share of the PV the foe has in all**, not of what it has left |
 
 **What the first sketch of La crecida loses** (it was a proposal): the water reaching the party at
 the third mark. Held on the foes' side, it never wets the party while its wearer stands (§ Signature,
@@ -175,7 +179,7 @@ whatever spends it. One passive, and not from the start.
 | 5 | Passive · **Nivel de base** | — | — | — | «Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.» | Designed |
 | 6 | **Riada** | The wearer | 2 | 12 magic, water | `Daño mágico de agua leve a todos los enemigos. Sube el agua de cada uno una marca.` | Designed |
 | 7 | **Golpe de ariete** | The wearer | 2 | 26 magic, water, once a mark | `Daño mágico de agua medio a todos los enemigos. Gasta el agua de cada uno: un golpe por cada marca.` | Designed |
-| Jar | Definitiva · **Bajo cero** | The wearer | — | 90, 70 or 50 on breaking, by the marks of ice left | *Abstract*: `Congela a los enemigos que tienen agua, un turno por cada marca de la suya. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto.` | Designed; its look built |
+| Jar | Definitiva · **Bajo cero** | The wearer | — | 90 on breaking a fresh ice of three marks, falling to 40 as it melts | *Abstract*: `Congela a los enemigos que tienen agua, más tiempo cuanta más tengan. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto, menor cuanto más derretido esté.` | Designed; its look built |
 
 Every skill's look is built in the effects lab (§ Look and interface); none is in the game.
 *Golpe de ariete* does nothing to a foe with no water: its sentence keeps the shape's
@@ -209,34 +213,59 @@ What is his is in the table at the top; the numbers here are proposals.
 | --- | --- |
 | **Wakes in a fight when** | **A foe has its water at the third mark** (Aitor) |
 | **Then** | Once in that fight, for the turn and no maná |
-| **In the game** | *Abstract*: `Congela a los enemigos que tienen agua, un turno por cada marca de la suya. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto.` |
+| **In the game** | *Abstract*: `Congela a los enemigos que tienen agua, más tiempo cuanta más tengan. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto, menor cuanto más derretido esté.` |
 
 **What it does.** Every foe that has water at that moment is frozen in it: its water turns to a
 block of ice round it, as tall as it stood. A dry foe is not. The rule is shared, **Congelado**:
 [`../README.md`](../README.md) § Congelado.
 
-1. **As many turns as its marks**: the foe at III is held three rounds, one at II two, one at I
-   one. At the end of each round every ice comes down a mark; with its last it is gone.
-2. **A frozen foe does not act** and **takes a quarter** of every blow. **A boss too** (Aitor): it
-   can be frozen, and takes as little as anyone while its ice holds.
-3. **Each blow from outside cracks its ice**, a third of the way; a flurry cracks it once a
-   strike. **The third breaks it**: the foe takes magic water damage by the marks its ice still
-   has (Aitor: huge at the start, less as it melts, still a lot): base **90 at III, 70 at II, 50
-   at I**, all three *muy alto*, and is free and acts again.
-4. **The ice is the water.** A frozen foe has no water: no Mojado, no Corriente, no Hundido, and
+1. **It melts on the fight's clock** (Aitor: by time, live, little by little): a mark of ice
+   lasts what a mark of water does, **20 s** (proposal), so the foe at III is held a minute, one
+   at II 40 s, one at I 20 s. The block sinks all the while, never a mark at a time; when
+   nothing is left the foe is free.
+2. **A frozen foe does not act** (a turn that comes while it is in the ice is lost) and **takes a
+   quarter** of every blow (proposal). **A boss too** (Aitor): it can be frozen, and takes as
+   little as anyone while its ice holds.
+3. **The ice holds eight blows from outside** (Aitor: four to eight). A *leve* or *medio* blow
+   counts **one**, an *alto* or *muy alto* **two**: eight Atacar break it, or four hard blows.
+   **Each strike of a flurry counts one** (the combination proposed, below): *Zarpazos*, four,
+   is half an ice in one turn; a dual's eight (*Zarpazos de fuego*) break a whole one at once.
+   The cracks do not heal as the ice melts. A physical blow cracks it whatever its element; only
+   a flame (magic fire) melts it instead.
+4. **Cracked through, it breaks**: the foe takes magic water damage by the ice still there at
+   that moment (Aitor: huge at the start, less all the while as it melts, still a lot): base
+   **90 with three marks of ice, 73 with two, 57 with one, down to 40** as the last of it goes
+   (proposal: 40 + 50 × the ice left over three marks), and is free and acts again. A foe frozen
+   at I starts at 57: the deep ice is the one worth breaking.
+5. **The ice is the water.** A frozen foe has no water: no Mojado, no Corriente, no Hundido, and
    nothing raises it. When its block melts or breaks, its cell is empty. Bajo cero spends the
-   water as *Golpe de ariete* does, for another pay: rounds without their turns, and one blow
+   water as *Golpe de ariete* does, for another pay: time without its turns, and one blow
    instead of three.
 
 **The decision it adds.** Before it: how many foes to have in water when it wakes, and how deep
 each (the one at III is the key that opens it; *Riada* puts the rest in). After it: to break or
-to wait. Breaking at once is the largest blow the ánima has, but it takes three blows of the
-party's that land at a quarter, and it gives the foe its turns back. Waiting is up to three
-rounds in which that foe hits nobody, and an ice that is worth less each round. With several
-frozen the party chooses whose ice to break and who stays in.
+to wait, and the clock is running under the choice. Breaking soon is the largest blow the ánima
+has, but it takes four to eight blows of the party's that land at a quarter, the ice is worth
+less with every second spent on them, and it gives the foe its turns back. Waiting is up to a
+minute in which that foe hits nobody. With several frozen the party chooses whose ice to break
+and who stays in.
+
+**How fast a pair breaks a fresh ice** (the reason for counting each strike of a flurry; a round
+is 10 to 20 s of the ice's 60):
+
+| The pair has | Turns | Ice left, about | Break's base |
+| --- | --- | --- | --- |
+| Only Atacar | 8 (four rounds) | None: it has melted first | — |
+| Hard blows (*altos*) | 4 (two rounds) | 1 to 2 marks | 57 to 73 |
+| *Zarpazos*, and a hard blow from the other | 3 (*Zarpazos* 4 + hard 2, then 2 more) | 1½ to 2½ | 65 to 80 |
+| The dual *Zarpazos de fuego* | 2, in one round | 2 to 2½ | 73 to 82 |
+
+With Aitor's first numbers (*Zarpazos* three, the dual five) the dual took four turns, as four
+hard blows do, and two *Zarpazos* and a hard blow took three: the dual was the slow way. Counting
+every strike keeps one rule (a strike is a blow) and makes the dual the shortcut he wants.
 
 **Against the elements** (proposal): a flame does not crack the ice, it melts a mark off it at
-once, with its steam (Cegado, as on the water); electricity does nothing to it.
+once (20 s of it), with its steam (Cegado, as on the water); electricity does nothing to it.
 
 ## What a round looks like
 
@@ -252,7 +281,7 @@ foes of 260 PV, Espíritu 10. Numbers rounded, first guesses.
 | 3 · Aitor | *Recarga* on A | A's water at **III**: *¡Hundido!* −5 every 2 s (2 % of 260), and the current −6: about 55 PV in ten seconds, with nobody striking. B has not been touched |
 | 4 · A announces a heavy blow | Gerard: Atacar · Fuego on A | *Vapor*: A's water drops to II, A is **Cegado III** (its blows at 30 %) and is not sunk now |
 | 4 · Aitor | *Recarga* on A, or at level 6 *Riada* | A back at III; with *Riada*, B at I as well |
-| 5 · Aitor | *Bajo cero* (A is at III) | A frozen for three rounds, B for one if it had water. Then three blows on A's ice, each at a quarter: it breaks for about −105 |
+| 5 · Aitor | *Bajo cero* (A is at III) | A frozen for a minute, B for 20 s if it had water, both melting from that moment. Then blows on A's ice, each at a quarter: four hard ones (two of its eight each) break it two rounds later, with about a mark and a half of ice left, for about −75; with Atacar alone it melts before the eighth |
 
 What it shows: the third turn on a foe is where its fight turns, and from there every turn is a
 choice between keeping it under, widening the water to the others and spending it.
@@ -309,7 +338,7 @@ same lab section has a button for each, and the scenario a clip.
 | **Bombeo** | 0 s: the surface of the foe with the most water sinks a mark (0.6 s), with a notch left on its gauge. The water goes back along the floor to each of the party (0.3 s). 0.3 s: green beads rise in a ring round each of them, one after another |
 | **Riada** | 0 s: every foe's water starts to rise a mark, the dry ones' cells drawing themselves in first. A wave crosses each cell from the party's side to its far wall (1 s): a steep white crest with a trough and foam behind, seen on the surface and in profile on the walls it runs along. It breaks on the foe as it reaches it |
 | **Golpe de ariete** | In every cell with water at once, one blow a mark, 0.42 s apart: three in the deep one while the shallow one takes its one. Each: the whole body of water goes white from its walls in and the edges flare (0.3 s), drops are thrown off the foe, and the level slams down a mark (0.12 s). After a cell's last there is no water in it and it goes |
-| **Bajo cero** | 0 s: a white flash through every body of water (0.12 s). Then each water is gone from its cell and stands as **a block of ice round its foe**, as tall as that water stood (a tall block for the one that was sunk, ankle-high for one at I), setting in 0.3 s with a low breath of cold round its foot. The cells' edges stay, brighter; each gauge keeps its marks, which are now turns left. **A blow from outside**: the block flashes white, chips fly, and cracks open from the middle of each face out, a third of the way a blow. **The third**: 0.1 s later the block bursts in shards with a flash of light, more and faster the more ice was left, and that foe is out. **A turn going by**: every ice sinks a mark (0.6 s), its pointer with it, cold coming off its top; with its last it is gone |
+| **Bajo cero** | 0 s: a white flash through every body of water (0.12 s). Then each water is gone from its cell and stands as **a block of ice round its foe**, as tall as that water stood (a tall block for the one that was sunk, ankle-high for one at I), setting in 0.3 s with a low breath of cold round its foot. The cells' edges stay, brighter; each gauge keeps its marks, which are now the ice left. **It melts all the while**: the block sinks, a mark every 20 s, its pointer going down with it, giving off cold from its top and running with water down its faces; with the last of it, it is gone. **A blow from outside**: the block flashes white, chips fly, and cracks open from the middle of each face out, an eighth of the way a blow, a quarter for a hard one; a flurry cracks it strike by strike. **Cracked through**: 0.1 s later the block bursts in shards with a flash of light, more and faster the more ice was left, and that foe is out. **A flame**: a mark of it goes at once, in steam, and nothing cracks |
 
 ### On the plates and over the field (proposal)
 
@@ -321,8 +350,9 @@ status that is always there, never a new panel.
   over the top mark's 20 s and blinks in the last three. With it, while they apply: a bolt and its
   ring for *Corriente*, pulsing every 2 s as Quemado does; *Hundido* at the third mark (a head
   under a line), pulsing every 2 s; *Cegado* after steam, as today.
-- **Frozen**, the *Agua* icon is replaced by *Congelado*: a crystal with the turns left as a
-  number, the crystal itself splitting once and twice as its ice cracks.
+- **Frozen**, the *Agua* icon is replaced by *Congelado*: a crystal with the clock every timed
+  status has round it, draining as the ice melts, and the crystal itself splitting further with
+  each blow, by the share cracked.
 - **Named pops**, over the foe's cell: «AGUA I», «AGUA II», «AGUA III» on a rise, in the water's colour at
   that depth; «HUNDIDO» when the third mark closes over a foe; «CORRIENTE» in yellow when the water
   is charged; «VAPOR» in white with the steam; «BAJO CERO» as the water freezes and «¡ROTO!» with the break, whose
@@ -398,8 +428,8 @@ fight tester can put it on. **No rule and no skill**: it is not unlocked by Emil
 - **The water on each foe** in `BattleState` (its marks, its top mark's clock, its current and
   that clock, its ice and cracks), stepped by `runClock`, read by `react` (a foe with water counts
   as wet) and by the fight's summary.
-- **Corriente** and **Hundido** as pulses, and **Congelado**: a status counted in rounds that
-  stops a foe, quarters what it takes and breaks.
+- **Corriente** and **Hundido** as pulses, and **Congelado**: a status on the clock that stops a
+  foe, quarters what it takes, cracks by a share with each blow and breaks.
 - **The cells** driven by the fight (their look exists, `createFreaticaField`, and waits for the
   state above), the plate's icon, the pops.
 - The bots of `just fight-sim` holding a level on purpose.
@@ -426,7 +456,7 @@ Nothing measured: there is nothing to play. To watch when there is:
 - **Hundido is the one pulse in the game that is a pure share of PV** (Aitor's direction). Every
   other pulse counts PV only up to 100 (`pulseDamage`), for the reason in `docs/combat.md`: a pure
   share is the same answer to a boss as to a dog. At 2 % every 2 s a foe held under dies in 100 s
-  whatever its PV. If bosses fall to it alone: 1 %, a share of the PV it has left, or a top.
+  whatever its PV. If bosses fall to it alone: 1 %, or a top (the share is of the PV in all: Aitor).
 - **Holding the third mark**: a mark's 20 s against a round's 10 to 20 s. With a quick wearer
   alternating Recarga and Defender it never drains; with a slow one it does. Whether that is the
   right tension, or too easy with a partner who hits with water for free.
@@ -441,13 +471,22 @@ Nothing measured: there is nothing to play. To watch when there is:
   ([`../README.md`](../README.md) § How long a clock status lasts).
 - **Golpe de ariete**: the largest blow is three of base 26 on each foe at the third mark, each its own golpe
   crítico roll; ×1.5 on a foe weak to water (Vertitrón).
+- **Hundido on PV in all** (Aitor): it can end a fight by itself, so the sim has to say what a
+  minute under does to each boss.
 - **Bajo cero at III on a boss** (Aitor: a boss can be frozen, and takes little unless broken):
-  three rounds without its turns is the strongest thing in the design, and the fight-sim has to
+  a minute without its turns is the strongest thing in the design, and the fight-sim has to
   say what that does to each boss's pair of targets.
-- **Breaking it**: three blows at a quarter to land 90, 70 or 50 (first guesses for Aitor's
-  «muchísimo al principio, menos al fundirse, aún bastante»). Whether that is worth more than three
-  blows at full and the foe frozen, by level and by party. A flurry (Papagato's claws) breaks it
-  in one turn.
+- **How long a mark of ice lasts**: 20 s, as a mark of water, so the whole ánima has one number.
+  The fight's clock runs while the players choose, so a slow party gets fewer blows in: whether
+  a pair can break a fresh ice while it is still worth it (four hard blows are two rounds, 20 to
+  40 s: between two and one marks of ice left).
+- **Breaking it**: four to eight blows at a quarter to land 90 falling to 40 (first guesses for
+  Aitor's «muchísimo al principio, menos al fundirse, aún bastante»). Whether that is worth more
+  than the same blows at full and the foe frozen, by level and by party.
+- **The flurry's shortcut** (Aitor wants one): *Zarpazos* is half an ice for 2 maná, and the
+  dual a whole one. Whether Papagato then breaks every ice too easily, and whether any party
+  that can freeze can also reach *Zarpazos de fuego* (it takes Papagato's and Matemágico's
+  skills beside Freática's).
 - **The largest blow**: 90 of base as magic water damage on each frozen foe, ×1.5 on one weak to
   water. It is not a blow of anyone's: never a golpe crítico.
 
@@ -458,12 +497,14 @@ Nothing measured: there is nothing to play. To watch when there is:
   deep blue sits near Prismático's proposed ultramarine (`#3d5fe0`); the green keeps them apart.
 - **Grey in the first round**: built as grey edges and gauge over the same water. Or the water
   itself loses its colour until the second round.
-- **Hundido's share**: of the PV the foe has in all (proposed, it can end a fight) or of what it
-  has left (it never kills, a blow has to finish).
 - **When the wearer falls, the water wets both sides** (proposed): the cost of leaning on it, or
   one rule too many.
-- **A turn of ice** is a round here (the ice comes down when the round ends). Or each foe's own
-  turn, which makes quick foes thaw sooner.
-- **What breaks the ice**: three blows (proposed: it can be counted, and each is a crack on
-  screen) or an amount of damage.
+- **How a flurry counts**: each strike one (proposed: *Zarpazos* four of the eight, *Zarpazos
+  de fuego* all eight), or Aitor's first numbers, three and five, with which the dual is no
+  quicker than four hard blows.
+- **«Porcentual»** is read as the share of the ice each blow cracks (an eighth, or a quarter for
+  a hard one). If the percentage meant was the break's damage (a share of the
+  foe's PV instead of a blow of base 90 to 40), that is the other reading: it would make the
+  break weigh the same on a boss as on a dog, as Hundido does. Proposed: keep it a blow, so the
+  wearer's Magia and a weakness to water count, and Hundido stays the one pure share.
 - **The ice spends the water** (proposed). Or the water is back at the mark the ice melted to.
