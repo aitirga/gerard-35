@@ -99,6 +99,67 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 - Confusión and Rayo encogedor are `abstract`: the fixed shape only knows rounds, and these last
   seconds.
 
+## Grade III: what the castle opens (2026-11-20)
+
+Aitor asked (2026-11-20), with Matemágico's grade III (`../matemagico/README.md` § Grade III),
+for more skills and interactions here too. Tecnópata's ground is **the clock**: Rayo de energía
+stretches what runs out, Telemetría feeds it. Second round, the same day (Aitor): the first
+proposal, *Sobrecarga*, emptied the clocks at once; he wanted **the opposite, the clocks started
+over**, and *Virus* as a passive through Confusión did not convince him (the idea yes, how it
+applied no: it is now an active skill, § Virus atómico and Escudo de bits). Numbers are first guesses.
+
+| Line | Node | Ecos | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bip | **Reinicio** | 2 | 3 | 14 magic, all | `Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.` | Built |
+
+- **Reinicio**: Bip reboots every foe's clocks. Each status on the clock a foe carries (Quemado and
+  Combustión, Mojado, Cegado, Confusión, Encogido, Envenenado, Cristalizado; never a cure) starts
+  over from its whole time, at the level it has; one with more left than that keeps it (after Rayo
+  de energía). Explosión's blinding, which ends with the round, is not a clock and stays as it is.
+  Rayo de energía buys five seconds on one; Reinicio buys the whole time back on everyone, for his
+  whole pool. With Vulcano and Combustión it keeps the field burning at its top; with Confusión it
+  is thirty seconds more of a foe hitting its own.
+- **Look, built** (`just screenshots grado-iii --gpu`): a wave of nanites leaves Bip along the
+  floor; over each foe a dial of cyan turns backwards and closes while a scan climbs it from its
+  feet to its head; *Reinicio* over each, with the statuses it started over, and the rings on the
+  plates fill again.
+
+### Virus atómico and Escudo de bits (Aitor 2026-11-20, built)
+
+| Line | Skill | Ecos | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mente | **Virus atómico** | 2 | 2 | 14 magic | `Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.` | Built |
+| Taller | **Escudo de bits** | 2 | 2 | wall of 40 PV | `Protege a todo el equipo durante 2 rondas. Un escudo de bits para la mitad del daño de cada golpe hasta que se rompe.` | Built |
+
+- **Virus atómico** (Aitor: *se ve como un enjambre de Bips; los estados alterados que recibe se
+  propagan a los enemigos*): a swarm of tiny Bips weaves from Bip into a foe and keeps buzzing round
+  it (the timed status *Virus*, 20 s, `spread` in `src/battle.ts`). Every status that lands on it
+  afterwards (a new one, a level up, one lit again; stacks of Sangrado too) lands on every other foe
+  standing, at its level and with its time, carried by a stream of tiny Bips: *¡Contagio!* over each.
+  What it carried before stays its own; the virus itself never spreads; Reinicio starts it over.
+- **Escudo de bits** (Aitor: *usa las animaciones de escudo con partículas; los ataques se dirigen
+  ahí y nos protegen un porcentaje mientras dure o se rompa*): a wall of Bip's bits in front of the
+  party, the GPU lattice the effects lab's shields are made of (`effects.bitWall`), turned half to the
+  camera so it reads from the fight's side. It has **40 PV** of its own; **every blow on the party goes
+  into it first and it stops half of it** out of those PV, until they run out (it shatters) or two
+  rounds pass (it melts back into nanites). Pulses go past it. On the party's plates, its icon with
+  the PV it has left; each blow says *Escudo −N*, the last *¡Escudo roto!* (`BITS`, `bitsOf`).
+  It answers the old question of Bip as a shield.
+
+**Duals of the shield** (Aitor: *otro dual que hace que el escudo explote al combinarlo con Foc
+Binari, etc.*). *Cortafuegos* is taken (the Sobremesa's foes' shield), so the fire one is:
+
+| Dual | Halves | Maná | Description | State |
+| --- | --- | --- | --- | --- |
+| **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 + 2 | `Daño mágico de fuego alto a todos los enemigos. Los quema con fuego de nivel II. Lo que queda del escudo protege a todo el equipo durante 2 rondas.` | Built |
+| *Jaula de Faraday* | Descarga + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo recibe una descarga y puede quedar en shock.` | Idea |
+| *Muro de agua* | Vasos comunicantes + Escudo de bits | 2 + 2 | `Protege a todo el equipo durante 2 rondas. Quien golpee el escudo queda mojado.` | Idea |
+
+Sobrecalentamiento: Bip raises the wall, Gerard's binary fire runs into it, it glows and goes off over
+the foes (36 of fire on each, Quemado II), and what is left (20 PV) falls back in front of the party.
+The two ideas make the wall a trap of the element that meets it; with Shock and Mojado they feed
+Matemágico's reactions. Not built: to choose.
+
 ## Combined skills
 
 | With | Dual | Halves | What it does |

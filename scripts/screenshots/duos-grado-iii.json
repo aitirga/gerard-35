@@ -1,0 +1,104 @@
+{
+  "title": "Dúos de grado III: Sobrecalentamiento y Vulcano",
+  "description": "docs/animas/README.md § Dúos mayores. The two new duals from the fight tester's «Probar un dúo»: Sobrecalentamiento (Foc Binari + Escudo de bits) and the dúo mayor Vulcano (Foc Binari + Ostinato), its node bought. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22sobrecalentamiento%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('sobrecalentamiento'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"sobrecalentamiento\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"sobrecalentamiento\"]').click()"
+    },
+    {
+      "shot": "sobrecalentamiento-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "sobrecalentamiento",
+      "caption": "Sobrecalentamiento: Bip levanta el muro de bits, el fuego binario de Gerard entra en él, se pone al rojo y estalla sobre los tres perros; lo que queda del muro cae delante del equipo.",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "sobrecalentamiento-despues",
+      "delay": 900,
+      "caption": "Después: el muro que queda delante del equipo y los perros en Quemado II."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22vulcano%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('vulcano'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"vulcano\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"vulcano\"]').click()"
+    },
+    {
+      "shot": "vulcano-pareja",
+      "caption": "La pareja elige el dúo en el menú del combate.",
+      "delay": 300
+    },
+    {
+      "eval": "preview.confirm()"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "vulcano",
+      "caption": "Vulcano, dúo mayor: el fuego de Gerard se mete en el suelo detrás de los perros, el eco de Marta late tres veces y la tierra se abre cada vez más; el volcán se levanta y lanza lava a cada uno.",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 360
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "vulcano-despues",
+      "delay": 900,
+      "caption": "Después: el volcán sigue en pie detrás de los perros, humeando; cada 5 segundos vuelve a escupir lava y les sube el fuego."
+    },
+    {
+      "wait": 4200
+    },
+    {
+      "shot": "vulcano-latido",
+      "delay": 0,
+      "caption": "Un latido del volcán: lava sobre cada perro y su fuego un nivel más arriba."
+    }
+  ]
+}

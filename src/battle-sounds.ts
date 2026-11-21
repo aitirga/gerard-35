@@ -15,6 +15,14 @@ interface Sounds { start?: Cue[]; impact: Cue[] }
 export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   ostinato: { start: [{ id: 'cast-soft' }], impact: [{ id: 'clink' }] },
   punado: { impact: [{ id: 'hit', volume: .55 }] },
+  // Colorista's powder is dry and soft: a muffled thud, never a ring. The screens are a boost (`stat-up` from the scene).
+  cortina: { start: [{ id: 'cast-soft', volume: .6 }], impact: [] },
+  telon: { start: [{ id: 'cast-soft', volume: .7 }], impact: [] },
+  rociada: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash', volume: .7 }] },
+  polvareda: { impact: [{ id: 'hit', volume: .5 }, { id: 'hit', volume: .4, delay: .1 }, { id: 'hit', volume: .35, delay: .2 }] },
+  // Traca's first puff lands here, the rest from the scene.
+  traca: { impact: [{ id: 'hit', volume: .5 }] },
+  'fin-de-fiesta': { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'hit', volume: .6 }, { id: 'fire-hit', delay: .35 }, { id: 'splash', delay: .8 }, { id: 'zap', delay: 1.25 }] },
   'foc-binari': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }] },
   // A boost's stats going up sound on their own (`stat-up`, from the scene).
   analisis: { start: [{ id: 'think' }], impact: [] },
@@ -33,10 +41,14 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   'rayo-encogedor': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap', volume: .6 }, { id: 'sink' }] },
   // Matemágico's elements: fire forking to everyone, water rising to one level, a bolt out of the sky.
   'factor-comun': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }, { id: 'burn', delay: .08 }] },
+  integral: { start: [{ id: 'think' }], impact: [{ id: 'heal' }, { id: 'clink', volume: .5, delay: .15 }] },
   vasos: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .12 }] },
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
   // Bip's signal takes; the foe's own blow lands from the scene.
   'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
+  virus: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .35, delay: .06 }, { id: 'glitch', volume: .5, delay: .18 }] },
+  'escudo-de-bits': { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'mana' }, { id: 'clink', volume: .6, delay: .1 }] },
+  reinicio: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'glitch', volume: .6 }, { id: 'zap', volume: .5, delay: .08 }, { id: 'clink', volume: .5, delay: .2 }] },
   // Dadista's faces are dice thrown: they click as they leave the hand and land with their weight
   // (the brackets more softly: they land on a friend).
   // Tirar dado itself never lands: its die's face does (`effect.skill` is the face's move).

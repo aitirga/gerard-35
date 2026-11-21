@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleFigure, castleModel, figureClips, type FigureClips } from './castle-models';
@@ -34,6 +34,7 @@ import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 /** How a fight is laid out round its centre (src/arena.ts), whether it was moved to a pocket (src/pocket.ts), and how far apart its sides stand (1 as always). */
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
+import { createPowderFx, powderMix, FIESTA, TRACA_GAP } from './powder-fx';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
 import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
 import { TONES, type ToneId } from './song';
@@ -65,7 +66,15 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo']);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta']);
+/**
+ * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
+ * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
+ */
+const POWDER_SKILLS: Record<string, { contact: number; end: number }> = {
+  cortina: { contact: .2, end: 1 }, telon: { contact: .2, end: 1.2 }, rociada: { contact: .5, end: 1.3 }, polvareda: { contact: .2, end: 1.4 },
+  traca: { contact: .25, end: 1.4 }, 'fin-de-fiesta': { contact: FIESTA.contact, end: FIESTA.contact + FIESTA.end },
+};
 /** Matemágico's circle on a boy (chapter 1): to his size. */
 const CHILD_CIRCLE = .76;
 /** Seconds a fallen fighter of the party takes to go down, and to get back up if something brings them round. */
@@ -97,6 +106,8 @@ const DUO = {
   'relevo-de-sangre': { contact: CONTACT_SECONDS, end: 1.35, relayed: 1.85 },
   'bombardeo-orbital': { contact: .7, end: 1.65 },
   'reserva-de-color': { contact: 1.15, end: 1.85 },
+  vulcano: { contact: 1.05, end: 2.1 },
+  sobrecalentamiento: { contact: .95, end: 1.9 },
 } as const;
 /** The blasts they leave: Bombardeo orbital's three salvos (the number with the last), the paint going up. */
 const BLAST = {
@@ -515,6 +526,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   // Statuses on the fighters (src/status-fx.ts); Quemado burns through `igniteFighter`.
   const statusFx = createStatusFx(effects, { ignite: (id, level) => igniteFighter(id, level) });
+  // Colorista's powder (src/powder-fx.ts): the handful, the powder that stays on whoever is Empolvado, and what an element makes of it.
+  const powderFx = createPowderFx(app, effects, { model: id => fighters.get(id)?.model });
+  let powderTurn = 0;
+  const nextMix = () => powderMix(powderTurn++);
+  /** The middle of the foes standing: the side a cortina faces. */
+  const foesCentre = () => {
+    const at = { x: 0, y: 0, z: 0 }, list = (state?.foes ?? []).flatMap(f => { const fighter = f.hp > 0 ? fighters.get(f.id) : undefined; return fighter ? [fighter] : []; });
+    for (const f of list) { at.x += f.base.x / list.length; at.z += f.base.z / list.length; }
+    return at;
+  };
+  /** Actions of Colorista's whose powder is in the air before they land, already started; and Traca's puffs gone off so far. */
+  const powderPlayed = new WeakSet<BattleEffect>();
+  let volleyed: { effect: BattleEffect; landed: number } | undefined;
   /** The campaign's statuses as last shown, by fighter and status, so a change of stacks updates them. */
   const shownStacks = new Map<string, number>();
   /**
@@ -523,6 +547,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * Timed ones (`TIMED`: Quemado) show at their own level, their time kept in step with the fight's clock.
    */
   function syncStatuses(id: string, statuses: Partial<Record<StatusId, number>> | undefined, timed: Combatant['timed']) {
+    powderFx.track(id, timed?.empolvado?.left, nextMix);
     for (const look of ['sangrado', 'mareo', 'llorera'] as const) {
       const n = statuses?.[look] ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) === n) continue;
@@ -531,7 +556,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (n <= 0) statusFx.remove(id, look);
       else statusFx.apply(id, look, { level: Math.ceil(n / most * 3), seconds: most, left: n, held: true });
     }
-    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado', 'envenenado'] as const) {
+    for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado', 'envenenado', 'virus'] as const) {
       const on = timed?.[look], level = on?.level ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) !== level) {
         shownStacks.set(key, level);
@@ -539,6 +564,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         else statusFx.apply(id, look, { level, seconds: TIMED[look].seconds, left: on.left, held: true });
       } else if (on) statusFx.hold(id, look, on.left);
     }
+    // Fire at IV is Combustión: over the white fire, its own look (status-fx `combustion`).
+    const hot = (timed?.quemado?.level ?? 0) >= COMBUSTION.level, hotKey = `${id}:combustion`;
+    if ((shownStacks.get(hotKey) ?? 0) !== (hot ? 1 : 0)) {
+      shownStacks.set(hotKey, hot ? 1 : 0);
+      if (hot) statusFx.apply(id, 'combustion', { level: 3, seconds: TIMED.quemado.seconds, left: timed!.quemado!.left, held: true });
+      else statusFx.remove(id, 'combustion');
+    } else if (hot) statusFx.hold(id, 'combustion', timed!.quemado!.left);
   }
   // Each fighter owns its material copies, so a flash never lights up the whole pack.
   function ownMaterials(model: pc.Entity, party = false) {
@@ -587,7 +619,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const classOf = (id: string) => state?.allies.find(a => a.id === id)?.classId;
   /** Atacar by whoever wears Tecnópata: Bip goes and rams the target, the wearer stays put with a hand up. */
   /** Tecnópata's skills are Bip's too: it fires them, or blows itself up among the foes (Explosión), while its wearer points. */
-  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto']);
+  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto', 'reinicio', 'virus', 'escudo-de-bits']);
   /** How much of its size someone Encogido keeps (Rayo encogedor). */
   const SHRUNK = .62;
   /** Whether an action is Bip's, decided once for it (Explosión's Bip is gone before the action ends). */
@@ -888,6 +920,41 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       dualFx.fuseFlare(v3(chestOf(target).add(new pc.Vec3(v.x, v.y, v.z).mulScalar(.4))), view, BLAST['reserva-de-color'].contact);
       cue('burn'); hit(target, flame, .8);
     }
+    if (id === 'vulcano' && e.dual) {
+      // Gerard's binary fire goes into the ground where the volcano will stand; Marta's eco beats on it
+      // three times, the floor cracking wider each time; then it rises and erupts over every foe.
+      const math = wearer('matemagico'), site = volcanoSite(), hand = handOf(math), up = { x: 0, y: 1, z: 0 }, base = { x: site.x, y: site.y + .06, z: site.z };
+      if (hand) for (const phase of [0, Math.PI]) effects.trails.comet(hand, base, ['#fff2c4', MAGMA], .5, { arc: .9, width: .07, life: .55, intensity: 3, core: .5, additive: 1, twist: { turns: 2, radius: .12, phase } });
+      [.42, .62, .82].forEach((at, k) => dualFx.after(at, () => {
+        dualFx.ring(base, up, .45 + k * .3, '#8fe3c4', { count: 90, outward: 2.4, life: .45, size: 1.2, light: 1.6 });
+        dualFx.ring(base, up, .3 + k * .25, MAGMA, { count: 60 + k * 30, around: 2, life: .6, size: 1.3, light: 2 + k });
+        dualFx.burst('crackle', { at: base, count: 40 + k * 40, spread: .2 + k * .15, velocity: { x: 0, y: 3 + k * 2, z: 0 }, cone: .5, speed: 1, life: [.3, .6], colour: '#ffb84a' });
+        shake = Math.max(shake, .12 + k * .08);
+      }));
+      dualFx.after(DUO.vulcano.contact - .08, () => eruption((e.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [f] : []; }), 1.6));
+      cue('fire-cast', { delay: .1 }); [.42, .62, .82].forEach(at => cue('clink', { delay: at }));
+    }
+    if (id === 'sobrecalentamiento' && e.dual) {
+      // Bip's bits stand as a wall, Gerard's binary fire runs into it, it glows and goes off over the foes.
+      const math = wearer('matemagico'), hand = handOf(math), wall = raiseWall(), up = { x: 0, y: 1, z: 0 };
+      if (wall && hand) dualFx.after(.3, () => effects.binaryFire(hand, wall.centre, { seconds: .3, gap: 0, burn: true }));
+      dualFx.after(.62, () => {
+        if (!wall) return;
+        dualFx.burst('crackle', { at: wall.centre, count: 220, spread: .6, speed: 1.4, up: .6, life: [.3, .6], colour: '#ffb84a' });
+        dualFx.ring(wall.centre, wall.face, .9, '#ff9a3c', { count: 120, outward: 3, life: .4, size: 1.4, light: 4 });
+      });
+      dualFx.after(DUO.sobrecalentamiento.contact - .12, () => {
+        wall?.shatter();
+        for (const h of e.hits ?? []) {
+          const f = fighters.get(h.target);
+          if (!f || !wall) continue;
+          effects.trails.comet(wall.centre, v3(chestOf(f)), ['#fff2c4', '#ff8a2e'], .14, { arc: .2, width: .14, life: .35, intensity: 3.4, core: .7, additive: 1, taper: .6 });
+          dualFx.after(.14, () => { effects.element('fire', v3(chestOf(f)), { strength: 1.3, feet: v3(floorUnder(f)) }); hit(f, flame, 1.4); });
+        }
+        if (wall) dualFx.ring(wall.centre, up, 1.2, '#ffb84a', { count: 160, outward: 6, life: .45, size: 1.4, light: 5 });
+      });
+      cue('charge'); cue('fire-cast', { delay: .3 }); cue('fire-hit', { delay: .85 });
+    }
     if (id === 'reserva-de-color' && e.dual && target) {
       const painter = wearer('prismatico'), math = wearer('matemagico');
       dualFx.paintFuse({ at: v3(chestOf(target)), size: spotOf(target).size, hand: handOf(math), painter: painter && v3(chestOf(painter)), view, lit: DUO['reserva-de-color'].contact });
@@ -936,10 +1003,25 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (spot && spotAmount > .002) spot(spotAmount, points);
   }
   /** Fight seconds the next glint of a lasting dual is due in: Sutura's stitches, a lit fuse, Bombardeo's beat. */
-  const holds = { suture: 0, fuse: 0, orbit: 0, fleck: 0 };
+  const holds = { suture: 0, fuse: 0, orbit: 0, fleck: 0, volcano: 0 };
+  /** Each foe's Volcán clock as last seen: when it jumps back up, a beat went off. */
+  const volcanoNext = new Map<string, number>();
   /** The duals that last show while they do (`sutureHold`, `fuseHold`, `orbitHold`), unless their own dual is still drawing them. */
   function holdTells(dt: number, t: number) {
+    wallFrame();
     if (!state || !dualFx.on) return;
+    // Vulcano's volcano stands while any foe has it; each beat of its clock it erupts on whoever it is under.
+    const under = state.foes.filter(f => f.timed?.volcan);
+    if (under.length && !(effect?.dual?.id === 'vulcano' && t < DUO.vulcano.contact)) {
+      if ((holds.volcano -= dt) <= 0) { holds.volcano = .09; volcanoIdle(); }
+      const beat = under.filter(f => (f.timed!.volcan!.next) > (volcanoNext.get(f.id) ?? 99) + 1);
+      if (beat.length) eruption(beat.flatMap(f => { const x = fighters.get(f.id); return x && f.hp > 0 ? [x] : []; }), .8);
+    }
+    // The last beat takes the volcano with it.
+    const gone = [...volcanoNext.keys()].filter(id => !state!.foes.find(f => f.id === id)?.timed?.volcan && (volcanoNext.get(id) ?? 9) < 1.5);
+    if (gone.length) eruption(gone.flatMap(id => { const x = fighters.get(id); const u = state!.foes.find(f => f.id === id); return x && u && u.hp > 0 ? [x] : []; }), 1);
+    volcanoNext.clear();
+    for (const f of under) volcanoNext.set(f.id, f.timed!.volcan!.next);
     const own = (id: string, until: number) => effect?.dual?.id === id && t < until;
     if ((holds.suture -= dt) <= 0) {
       holds.suture = .75;
@@ -1426,6 +1508,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return;
     }
     if (dual?.id === 'bombardeo-orbital') { pulse?.(.2, .5); return; }
+    if (dual?.id === 'vulcano' || dual?.id === 'sobrecalentamiento') { pulse?.(.9, 1, .3); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.4); shake = Math.max(shake, .6); return; }
     if (target && dual?.id === 'sutura-de-luz') {
       hit(target, gold, .9); pulse?.(.3, .6); zoom.x = Math.max(zoom.x, HIT.punch.size * .8);
       effects.heal(floorUnder(target)); cue('heal'); return;
@@ -1443,8 +1526,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return landed;
     }
     if (target && dual?.id === 'reserva-de-color') { hit(target, flame, 1.2); pulse?.(.4, .8); shake = Math.max(shake, .2); cue('fire-hit'); return; }
+    // Colorista's skills thrown from afar: each its own powder (src/powder-fx.ts).
+    if (action.skill === 'polvareda' && action.hits) { powderFx.nube(action.actor, action.hits.map(h => h.target), action.hits.map(() => nextMix())); pulse?.(.05, .3); return; }
+    if (action.skill === 'rociada' && action.hits) { cue('splash'); return; }
+    if (action.skill === 'traca' && action.volley?.[0]) { powderFx.pop(action.volley[0].target, nextMix()); const f = fighters.get(action.volley[0].target); if (f) hit(f, white, .5); shake = Math.max(shake, .1); return; }
+    if (action.skill === 'fin-de-fiesta') { for (const h of action.hits ?? []) { const f = fighters.get(h.target); if (f) hit(f, flame, 1.2); } pulse?.(.5, .9, .3); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.2); shake = Math.max(shake, .55); return; }
+    if (action.skill === 'cortina' || action.skill === 'telon') { hit(actor, white, .4); pulse?.(0, .25); return; }
     if (target && action.skill === 'punado') {
-      dualFx.paintFuse({ at: v3(chestOf(target)), size: spotOf(target).size, painter: v3(chestOf(actor)), view: viewDir(), lit: 1.6, fire: false });
+      // Puñado: a handful thrown, which bursts on them and leaves them covered.
+      if (action.actor && action.target) powderFx.lanzar(action.actor, action.target, nextMix(), 0, .14);
       cue('hit'); return;
     }
     if (target && action.skill === 'ostinato') {
@@ -1464,6 +1554,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.skill === 'analisis') { pulse?.(.1, .3); hit(actor, gold, 1.1); effects.insight(new pc.Vec3(actor.base.x, groundHeight(actor.base.x, actor.base.z) + 2.1 * actor.scale.y, actor.base.z)); return; }
     // Cardioide: a heart-shaped curve of green light under whoever it cures, and the cure rising up them.
     if (action.skill === 'cardioide') { pulse?.(0, .3); hit(target, green, 1); effects.cardioid(target.model); return; }
+    if (action.skill === 'integral') {
+      // Integral: the sign drawn in gold over the party, then a cardioid of light under each one it cures.
+      const party = (action.cures ?? []).flatMap(c => { const f = fighters.get(c.target); return f ? [f] : []; });
+      const mid = party.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / Math.max(1, party.length));
+      const { right, up } = screenAxes(viewDir()), at = (x: number, y: number) => ({ x: mid.x + right.x * x + up.x * y, y: groundHeight(mid.x, mid.z) + 2.3 + right.y * x + up.y * y, z: mid.z + right.z * x + up.z * y });
+      const sign: [number, number][] = [[-.3, -.62], [-.18, -.72], [-.06, -.62], [0, -.35], [0, .35], [.06, .62], [.18, .72], [.3, .62]];
+      sign.slice(1).forEach(([x, y], i) => dualFx.after(i * .03, () => dualFx.line(at(...sign[i]), at(x, y), '#f3cf78', { count: 30, life: .9, size: 1.6 })));
+      party.forEach((f, i) => dualFx.after(.25 + i * .08, () => { hit(f, green, 1); effects.cardioid(f.model); }));
+      pulse?.(0, .35);
+      return;
+    }
     // Dadista: the face of the die draws itself where it lands (src/dice-fx.ts).
     if (action.die?.as) {
       // Tijeras cut: the blood goes the way the die came.
@@ -1657,6 +1758,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   /** Matemágico's skills of the elements (docs/animas/README.md § The jar): thrown from his circle, like Foc Binari. */
   const ELEMENTAL: ReadonlySet<string> = new Set(['factor-comun', 'vasos', 'descarga']);
+  const MAGMA = '#ff5a1f', MAGMA_HOT = '#ffd27a';
   const WATER = '#6cc8f2', WATER_PALE = '#dff4ff', BOLT = '#ffe45c', BOLT_HOT = '#fffbe0';
   /** Who a skill on everyone reached, with what it did to each. */
   const reachedBy = (e: BattleEffect) => (e.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [{ f, h }] : []; });
@@ -1763,9 +1865,106 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }));
       return;
     }
-    // Powder's own (Estallido, the poison, the shards): shown by what they leave, for now.
-    if (reaction.id === 'estallido' || reaction.id === 'veneno' || reaction.id === 'cristal') return;
+    // Powder's own (docs/animas/README.md § Empolvado): it blows up on everyone covered, runs green, or sets as shards.
+    if (reaction.id === 'estallido') { powderFx.ignite((reaction.hits ?? []).map(h => h.target)); shake = Math.max(shake, .45); return; }
+    if (reaction.id === 'veneno') { powderFx.soak(reaction.targets); return; }
+    if (reaction.id === 'cristal') { powderFx.crystallise(reaction.targets ?? []); return; }
     if (e.target) statusFx.react(reaction.id, e.target);
+  }
+  /** Where Vulcano's volcano stands: behind the foes, on the far side from the party. */
+  function volcanoSite() {
+    const foes = [...fighters.values()].filter(f => !f.party && f.hp > 0 && !f.part), party = [...fighters.values()].filter(f => f.party && f.hp > 0);
+    const mid = (list: Fighter[]) => list.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / Math.max(1, list.length));
+    const c = foes.length ? mid(foes) : anchor.clone(), from = party.length ? mid(party) : c.clone().add(new pc.Vec3(-3, 0, 0));
+    const way = new pc.Vec3().sub2(c, from); way.y = 0; way.normalize();
+    const at = c.clone().add(way.mulScalar(1.15));
+    return { x: at.x, y: groundHeight(at.x, at.z), z: at.z };
+  }
+  /** Vulcano's volcano erupts: a column of fire out of its mouth, smoke, and a bomb of lava to each of `to`. */
+  function eruption(to: Fighter[], k = 1) {
+    const site = volcanoSite(), mouth = { x: site.x, y: site.y + .9, z: site.z }, up = { x: 0, y: 1, z: 0 };
+    dualFx.burst('crackle', { at: mouth, count: Math.round(260 * k), spread: .25, velocity: { x: 0, y: 9, z: 0 }, cone: .28, speed: 2, life: [.4, .9], colour: '#ffb84a' });
+    dualFx.burst('ember', { at: mouth, count: Math.round(140 * k), spread: .3, velocity: { x: 0, y: 6, z: 0 }, cone: .5, speed: 1.6, life: [.9, 1.8], colour: MAGMA_HOT });
+    dualFx.burst('smog', { at: { ...mouth, y: mouth.y + .6 }, count: Math.round(90 * k), spread: .4, up: 1.6, speed: .7, life: [1.4, 2.4] });
+    dualFx.ring({ x: site.x, y: site.y + .06, z: site.z }, up, .9, MAGMA, { count: 110, outward: 2.2, around: 1.2, life: .6, size: 1.4, light: 4 });
+    shake = Math.max(shake, .35 * k); pulse?.(.3 * k, .4); cue('fire-hit');
+    to.forEach((f, i) => {
+      const chest = v3(chestOf(f)), feet = floorUnder(f), flight = .42 + i * .05;
+      effects.trails.comet(mouth, chest, [MAGMA_HOT, MAGMA], flight, { arc: 1.3, width: .16, life: .55, intensity: 3.4, core: .7, additive: 1, taper: .6 });
+      dualFx.after(flight, () => {
+        dualFx.ring({ x: feet.x, y: feet.y + .06, z: feet.z }, up, Math.max(.45, extent(f).radius), MAGMA, { count: 80, outward: 1.4, around: 2, life: .5, size: 1.3, light: 2.5 });
+        dualFx.burst('crackle', { at: chest, count: 90, spread: .2, speed: 3, up: 1.2, life: [.3, .6], colour: '#ffb84a' });
+        hit(f, flame, 1.2);
+      });
+    });
+  }
+  /** Vulcano's volcano while it stands: lava glowing at its foot, embers and smoke rising from its mouth. */
+  function volcanoIdle() {
+    const site = volcanoSite(), mouth = { x: site.x, y: site.y + .9, z: site.z }, up = { x: 0, y: 1, z: 0 };
+    // Its body: rings of embers stacked narrower as they climb, a cone of particles that keeps being redrawn.
+    [[.05, 1.05], [.3, .8], [.55, .55], [.8, .32]].forEach(([h, r], k) => dualFx.ring({ x: site.x, y: site.y + h, z: site.z }, up, r, k % 2 ? '#c2410c' : '#ff7a2a', { kind: 'crackle', count: 22 - k * 3, around: .6, life: .5, size: 1.15 }));
+    dualFx.burst('ember', { at: mouth, count: 10, spread: .22, velocity: { x: 0, y: 2.6, z: 0 }, cone: .4, speed: .8, life: [.8, 1.6], colour: MAGMA_HOT });
+    dualFx.burst('crackle', { at: { x: site.x, y: site.y + .45, z: site.z }, count: 14, shape: 'ring', spread: .55, outward: .2, up: 1.2, speed: .5, around: .4, life: [.3, .6], colour: MAGMA });
+    dualFx.burst('smog', { at: { ...mouth, y: mouth.y + .4 }, count: 4, spread: .25, up: 1, speed: .4, life: [1.6, 2.6] });
+    dualFx.burst('crackle', { at: { x: site.x, y: site.y + .08, z: site.z }, count: 8, shape: 'ring', spread: .95, speed: .2, around: .5, life: [.35, .6], colour: '#ff7a2a' });
+  }
+  /** Escudo de bits standing in front of the party (effects.bitWall), and the shield it shows. */
+  let wallFx: ReturnType<typeof effects.bitWall>, wallFor: BitShield | undefined;
+  function raiseWall() {
+    const party = [...fighters.values()].filter(f => f.party && f.hp > 0), foes = [...fighters.values()].filter(f => !f.party && f.hp > 0);
+    if (!party.length) return undefined;
+    const mid = (list: Fighter[]) => list.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / Math.max(1, list.length));
+    const p = mid(party), q = foes.length ? mid(foes) : p.clone().add(new pc.Vec3(3, 0, 0)), way = new pc.Vec3().sub2(q, p); way.y = 0; way.normalize();
+    const at = p.clone().add(way.clone().mulScalar(1.35)), wide = Math.max(2, party.reduce((most, f) => Math.max(most, f.base.distance(p)), 0) * 2 + 1.4);
+    // Its face half towards the foes and half towards whoever looks: from the fight's side camera a wall
+    // square to the foes would be seen edge on.
+    const v = viewDir(), face = new pc.Vec3(way.x + v.x * 1.4, 0, way.z + v.z * 1.4).normalize();
+    return effects.bitWall({ x: at.x, y: groundHeight(at.x, at.z) + .85, z: at.z }, Math.atan2(face.x, face.z) * 180 / Math.PI, { width: wide, height: 1.5 });
+  }
+  /** Each frame: the wall follows the shield in the rules, raised once its action lands, gone when it is. */
+  function wallFrame() {
+    const shield = state ? bitsOf(state) : undefined;
+    const raising = !!effect?.bits?.raised && !impacted;
+    if (shield && shield !== wallFor && !raising) { wallFx?.fade(); wallFx = raiseWall(); wallFor = shield; }
+    // Broken by a blow still on its way: it gives way when that blow lands.
+    if (!shield && wallFor && !(effect?.bits?.broke && !impacted)) { if (wallFor.broken) wallFx?.shatter(); else wallFx?.fade(); wallFx = undefined; wallFor = undefined; }
+  }
+  /** Virus atómico: what spread leaves its host as a stream of tiny Bips and settles on each of the others. */
+  function spreadFx(e: BattleEffect) {
+    const up = { x: 0, y: 1, z: 0 };
+    for (const s of e.spread ?? []) {
+      const host = fighters.get(s.from);
+      if (!host) continue;
+      const from = v3(chestOf(host));
+      s.to.forEach((id, i) => {
+        const f = fighters.get(id);
+        if (!f) return;
+        const to = v3(chestOf(f));
+        dualFx.after(.12 + i * .06, () => {
+          for (const phase of [0, 2.1, 4.2]) effects.trails.comet(from, to, ['#ffffff', BIP.cyan], .35, { arc: .5, width: .03, life: .4, intensity: 2.4, core: .4, additive: 1, twist: { turns: 3, radius: .16, phase } });
+          dualFx.after(.35, () => { dualFx.ring(to, up, .42, BIP.cyan, { kind: 'nanite', count: 70, outward: -1.2, around: 5, life: .5, size: 1.1, light: 1.5 }); hit(f, cyanFlash, .6); });
+        });
+      });
+    }
+  }
+  /**
+   * Combustión goes off on the foe a physical blow found at IV (docs/animas/README.md § Combustión):
+   * a breath in, then the ball of fire and its ring along the floor, embers out to every other foe,
+   * and each of them flaring as the blast reaches it.
+   */
+  function combustFx(e: BattleEffect) {
+    const c = e.combustion!, origin = fighters.get(c.target);
+    if (!origin) return;
+    const raised = new Set([...c.burns.map(b => b.target), ...c.steamed ?? []]);
+    statusFx.combust(c.target, c.hits.map(h => h.target).filter(id => id !== c.target && raised.has(id)));
+    dualFx.after(.1, () => {
+      const feet = floorUnder(origin);
+      dualFx.shock({ x: feet.x, y: feet.y, z: feet.z }, 3, '#ff9a2e', { chips: 140, light: true, heavy: true });
+      hit(origin, white, 1.6); shake = Math.max(shake, .75); pulse?.(.9, .5); zoom.x = Math.max(zoom.x, HIT.punch.size);
+      cue('hit');
+    });
+    c.hits.filter(h => h.target !== c.target).forEach((h, i) => dualFx.after(.32 + i * .08, () => { const f = fighters.get(h.target); if (f) hit(f, flame, 1.3); }));
+    c.steamed?.forEach((id, i) => dualFx.after(.4 + i * .08, () => statusFx.react('vapor', id)));
   }
   /**
    * Bip's skill lands (`botStrikes`): a ray from where it floats (energy cyan, a cure's green, the
@@ -1818,6 +2017,42 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         });
       });
       return;
+    }
+    if (action.skill === 'virus') {
+      // Virus atómico: a swarm of tiny Bips off Bip, weaving its way in, closing round them and getting in.
+      const to = v3(chest);
+      for (let k = 0; k < 7; k++) effects.trails.comet(v3(from), to, ['#ffffff', BIP.cyan], .32 + k * .025, { arc: .2 + (k % 3) * .25, width: .025, life: .35, intensity: 2.2, core: .4, additive: 1, twist: { turns: 2 + k % 3, radius: .1 + (k % 2) * .08, phase: k * .9 } });
+      dualFx.after(.3, () => { dualFx.ring(to, up, .5, BIP.cyan, { kind: 'nanite', count: 110, outward: -1.6, around: 7, life: .6, size: 1.1, light: 2 }); dualFx.burst('glyph', { at: to, count: 18, spread: .3, speed: .5, life: [.4, .8], colour: BIP.cyan, size: 1.3 }); });
+      hit(target, cyanFlash, .8);
+      return land(felt, ax, 0, az);
+    }
+    if (action.skill === 'escudo-de-bits') {
+      // Escudo de bits: Bip throws its bits ahead of the party; the wall stands where they gather (`wallFrame`).
+      const wall = raiseWall();
+      if (wall) {
+        wallFx?.fade(); wallFx = wall; wallFor = state ? bitsOf(state) : undefined;
+        for (let k = 0; k < 5; k++) effects.trails.comet(v3(from), { x: wall.centre.x + (k - 2) * .3, y: wall.centre.y + (k % 2 ? .3 : -.2), z: wall.centre.z }, ['#ffffff', BIP.cyan], .22, { arc: .3, width: .04, life: .35, intensity: 2.4, core: .5, additive: 1 });
+      }
+      pulse?.(0, .3);
+      return;
+    }
+    if (action.skill === 'reinicio') {
+      // Reinicio: Bip's eye goes white and a wave of cyan leaves it along the floor. Over each foe a
+      // dial of nanites turns backwards and closes, and a scan rises from their feet to their head:
+      // whatever runs on their clock is full again.
+      const floor = groundHeight(from.x, from.z);
+      dualFx.ring({ x: from.x, y: floor + .08, z: from.z }, up, .4, BIP.cyan, { kind: 'nanite', count: 160, outward: 6.5, life: .55, size: 1.2, light: 3 });
+      dualFx.burst('bipzap', { at: v3(from), count: 40, speed: 2.6, life: [.2, .45] });
+      reachedBy(action).forEach(({ f }, i) => dualFx.after(.18 + i * .07, () => {
+        const feet = floorUnder(f), { height, radius } = extent(f), r = Math.max(.5, radius * 1.1), head = { x: feet.x, y: feet.y + height + .25, z: feet.z };
+        dualFx.ring(head, up, .42, BIP.cyan, { kind: 'nanite', count: 90, around: -6, outward: -.4, life: .7, size: 1.2, light: 2 });
+        dualFx.ring(head, up, .26, '#ffffff', { count: 40, around: -9, life: .55, size: 1.1 });
+        [.05, .3, .55, .8, 1].forEach((k, j) => dualFx.after(j * .05, () => dualFx.ring({ x: feet.x, y: feet.y + .05 + height * k, z: feet.z }, up, r, j === 4 ? '#ffffff' : '#9ff4ff', { count: 56, around: 2, life: .4, size: 1.05 })));
+        dualFx.burst('glyph', { at: v3(chestOf(f)), count: 14, spread: radius * .6, speed: .5, up: .6, life: [.4, .8], colour: BIP.cyan, size: 1.3 });
+        hit(f, cyanFlash, .8);
+      }));
+      shake = Math.max(shake, .3); pulse?.(.2, .35);
+      return land(felt, ax, 0, az);
     }
     if (action.exploded) {
       // Bip blows itself up among them: a ball of fire, a shockwave along the floor, every foe flaring.
@@ -2750,7 +2985,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
       if (!next) {
-        dualFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
+        dualFx.clear(); powderFx.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
@@ -2822,7 +3057,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
+      if (effect?.skill && POWDER_SKILLS[effect.skill] && animate && !powderPlayed.has(effect)) {
+        powderPlayed.add(effect);
+        const ids = (effect.hits ?? []).map(h => h.target);
+        if (effect.skill === 'rociada') powderFx.rociada(effect.actor, ids);
+        if (effect.skill === 'fin-de-fiesta') powderFx.fiesta(effect.actor, ids, ids.map(() => nextMix()));
+      }
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
         // Without motion Rayo solar reaches everyone at once.
@@ -2832,6 +3074,21 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const landed = animate && effect ? contactBurst(effect, actor, target) : undefined;
         // What the blow's element turned: its moment, as it lands (docs/combat.md § Reacciones entre elementos).
         if (animate && effect.reaction) reactFx(effect);
+        // Combustión: the physical blow found a fire at IV, and it goes off.
+        if (animate && effect.combustion) combustFx(effect);
+        // Virus atómico: what spread goes from its host to the others.
+        if (animate && effect.spread) spreadFx(effect);
+        // Escudo de bits: a blow that went into the wall dents it, and the one that breaks it shatters it.
+        if (animate && effect.bits?.took) {
+          const from = fighters.get(effect.actor);
+          wallFx?.hit(from ? v3(chestOf(from)) : wallFx.centre, Math.min(2, effect.bits.took / 10));
+          if (effect.bits.broke) wallFx?.shatter();
+        }
+        // A cortina of powder: the one that stands up now, and the one this blow went through, which bursts over whoever dealt it (Rebufo).
+        if (animate && effect.cortina?.raised) powderFx.telon(effect.cortina.raised, foesCentre(), effect.cortina.raised.map(() => nextMix()));
+        if (animate) for (const id of effect.cortina?.broke ?? []) powderFx.romper(id, effect.cortina!.rebufo);
+        // A blow on someone full of shards knocks a few out.
+        if (animate) effect.amplified?.forEach(a => { if (a.shards) powderFx.splinter(a.target); });
         // Punto débil spent: its mark bursts and the blow lands bigger (three times as hard).
         const spent = markSpent(effect) ? [effect.target] : effect.hits?.filter(h => h.weakSpot).map(h => h.target) ?? [];
         if (spent.length) {
@@ -2898,6 +3155,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           }
         }
         clawed = blows;
+      }
+      // Traca: each puff after the first goes off in turn and tells the fight screen (its own number and PV); the last leaves them covered.
+      if (effect?.volley && impacted) {
+        if (volleyed?.effect !== effect) volleyed = { effect, landed: 1 };
+        for (; volleyed.landed < effect.volley.length && (!animate || t >= contact + volleyed.landed * TRACA_GAP); volleyed.landed++) {
+          impact?.(volleyed.landed);
+          if (!animate) continue;
+          const puff = effect.volley[volleyed.landed], f = fighters.get(puff.target);
+          powderFx.pop(puff.target, nextMix()); cue('hit');
+          if (f) hit(f, white, .5);
+          shake = Math.max(shake, .1);
+          if (volleyed.landed === effect.volley.length - 1) for (const h of effect.hits ?? []) if (h.burn?.id === 'empolvado') powderFx.soon(h.target, nextMix(), .15);
+        }
       }
       peels.update(dt);
       // Vertitrón only steps in to stomp: it sweeps and fires from where it stands.
@@ -3171,6 +3441,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
           ? { ...unit.timed, quemado: shown ? { ...unit.timed!.quemado!, level: shown } : undefined } : unit.timed);
       }
+      // A cortina follows the fight's word as the powder does: one a passive raised stands up, one whose rounds are over comes down.
+      if (state) for (const ally of state.allies) powderFx.trackScreen(ally.id, cortinaRounds(state, ally) > 0, foesCentre, nextMix);
       statusFx.update(dt, time);
       // Stats that stay up or down give off motes from the head (src/stat-motes.ts). What this
       // action changes waits for its blow to land, and the motes start as its chevrons pass.
@@ -3285,7 +3557,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

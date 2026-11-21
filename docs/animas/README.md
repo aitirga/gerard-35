@@ -65,7 +65,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
 | [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | Ostinato and Bombardeo orbital are playable. The full eco system and the later skills are pending. |
 | [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
-| [**Colorista**](prismatico/README.md) | Luca's mission (the Sagrada Família), `docs/quests/luca.md` | `#617ce2` dusty blue (built, to confirm) | Defensa +3, Espíritu +2, Fuerza −1 (built, a first guess) | Dry coloured powder, by the handful. Empolvado does nothing and waits for an element: fire blows it up (and every foe burns a level more), water poisons (blows on it land harder), electricity leaves shards (every blow does more than the one before). *Cortina* and *Telón* raise the party's Defensa and stand a screen of powder that halves the next blow; whoever breaks it is powdered | Designed 2026-11-20 round the puff and agreed by Aitor that day (the name too: it was Prismático; its id stays `prismatico`). Playable under their paint names: Brochazo, Pintado with no reactions, and the dual Reserva de color. The powder's look is built in the effects lab. |
+| [**Colorista**](prismatico/README.md) | Luca's mission (the Sagrada Família), `docs/quests/luca.md` | `#617ce2` dusty blue (built, to confirm) | Defensa +3, Espíritu +2, Fuerza −1 (built, a first guess) | Dry coloured powder, by the handful. Empolvado does nothing and waits for an element: fire blows it up (and every foe burns a level more), water poisons (blows on it land harder), electricity leaves shards (every blow does more than the one before). *Cortina* and *Telón* raise the party's Defensa and stand a screen of powder that halves the next blow; whoever breaks it is powdered | **Playable whole** (built 2026-11-21): designed 2026-11-20 round the puff and agreed by Aitor that day (the name too: it was Prismático; its id stays `prismatico`). Seven levels, the cortina and *Rebufo*, *Remolino* at level 5, and *Fin de fiesta*, the first definitiva in the game. Not built: its trial inside the salon, grey in the first round |
 | [**Freática**](freatica/README.md) | Emilie's mission (Poble Sec, her model), `docs/quests/emilie.md` | Blue with green (Aitor): the water is green where thin (`#27c2a0`), blue where deep (`#1f5fd8`) | Proposal: Magia +3, Espíritu +2, Fuerza −1 | *La crecida*: water held in a cell under each foe that rises to three marks. With water a foe is wet; electricity stays in it as a current, fire turns it to steam and blinds, and at the third mark it sinks. Its definitiva, *Bajo cero*, freezes every foe that has water | Designed whole 2026-11-20 round Aitor's direction (La crecida; agua contenida, the mathematical part; electricity that electrifies the water; fire that blinds; sunk at three, losing a share of PV over time; each foe its own water; the definitiva *Bajo cero*), waiting for his yes. Its look is built: the cells and each skill in the effects lab (`src/freatica-fx.ts`), its colours and pieces on the wearer and its interface (the fight tester can put it on). No rule and no skill yet |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
@@ -110,27 +110,24 @@ Sketch: `output/mockups/bote/index.html`.
 - **One sky, a constellation per ánima** (decided by Aitor 2026-11-15, over a page per ánima
   with tabs). The jar below keeps every eco in sight: lit while free, dark and tinted by where
   it went once it is in an ánima. A light flies from the jar to the node it turns on, and back.
-- **Folded, a constellation is its own tree made small and soft**: joins and all, what is lit
-  brighter, its name under it. They are **scattered over the sky, never in a row or a grid**
-  (decided by Aitor 2026-11-15: the sky must not say how many ánimas there will be; `SEATS`
-  holds ten places, the game will have about eight). One sharpens a little under a cursor, and
-  steps back, faint, while another is unfolded over it.
-- **A player opens the one they choose**: it comes down from the row onto their side (player 1
-  left, player 2 right: `STAGES`), growing to full size, each ring of nodes coming up after the
-  one before (a little over a second). They work inside it (their cursor moves only there)
-  until they step back out; it goes back to the row when nobody is in it. Each player can be
-  in a different one, or both in the same. `inside`, `stages`, `enter`, `leave`, `settle`.
+- **Every constellation open at once** (§ The jar as one sky, built 2026-11-21; until then each
+  one was folded small and a player unfolded one onto their side). Gerard's tree on the left,
+  Aitor's on the right, the shared ones small and **scattered round and between them, never in a
+  row or a grid** (decided by Aitor 2026-11-15: the sky must not say how many ánimas there will
+  be). Each has its place in `SKY` (`SPARE` for one that has none yet). The constellation under
+  a cursor is pushed in on, slowly (`PUSH`), its glow filling in; away from the cursors the
+  names of what is not lit step back a little.
 - **A node** is a disc with its drawing and its name (a passive a rounded square); lit, a flat
   pane of glass in its line's colour, never a ball. A node needs the one before it on its line;
   taking one out takes out what hangs from it (`without`).
 - **Two cursors**, with no shape of their own: what a player points at takes their colour on its
   own border (Gerard gold, Aitor cyan, a dashed cyan outline round the gold when both are on the
-  same thing) and breathes slowly (`jar-pick`); a folded constellation has no ring and does not beat: it comes into
-  focus and its name is underlined in that colour. Nothing
-  jumps from one thing to the next. Aitor's comes in on his own ánima
-  the first time player 2 touches the pad. Each has a floating note threaded to what it is on
-  (what it is, what it does, what it costs, what pressing would do or why it cannot be done);
-  either can turn anything on or off. `cursors`, `place`, `tipSide`.
+  same thing) and breathes slowly (`jar-pick`). Nothing jumps from one thing to the next. Each
+  moves over the whole sky by the nearest light the way pressed; Q / E jump from core to core.
+  Aitor's comes in on his own ánima the first time player 2 touches the pad. Each has a floating
+  note threaded to what it is on (what it is, what it does, what it costs, what pressing would do
+  or why it cannot be done), set where it covers least and never over a dúo mayor; either can turn
+  anything on or off. `cursors`, `place`, `tipSide`.
 - **A shared ánima's constellation** has two nodes: **Maná +1** (2 ecos) and **the Definitiva**
   (3). What it has learned fighting (its levels reached, never the ones to come) is in its
   core's note. **Dadista** also has there a node for *Agitar*, *Otra vez*
@@ -173,6 +170,11 @@ If that feels too tight in play, lower the passives from 2 to 1 before adding li
   is the trigger.
 - Three lines that need each other (a reaction takes two elements), and never the ecos for all
   three whole: deep in one or wide in two is the choice.
+- **Grade III** (Aitor 2026-11-20; meant for after the castle's first boss, § Growth opens with the
+  castle): Fuego adds the passive *Combustión*, fire's fourth level (2, § Combustión), and past it the
+  node of the dúo mayor *Vulcano* (2, § Dúos mayores); Cálculo *Integral* (2; a cure for everyone);
+  all built. Agua *Punto de congelación* and Eléctrico *Resonancia* are designed, waiting for the
+  freezing rule. [matemagico/README.md](matemagico/README.md) § Grade III.
 
 **Tecnópata's tree.** Root: Rayo de energía and Rayo de sanación.
 
@@ -183,12 +185,17 @@ If that feels too tight in play, lower the passives from 2 to 1 before adding li
 | **Taller** | Rayo encogedor | Passive · *Nanitos*: Sanación on an ally also takes one clock status off them |
 | — | | Maná +1 |
 
+**Grade III** (Aitor 2026-11-20, after the castle's first boss): Bip adds *Reinicio* (2 ecos; every
+clock on every foe starts over), Mente *Virus atómico* (2; what lands on a foe spreads to the others),
+Taller *Escudo de bits* (2; a wall in front of the party), all built.
+[tecnopata/README.md](tecnopata/README.md) § Grade III.
+
 **How it is built.** A node is an `Improvement` in `src/ecos.ts` with its `line` (`LINES`) and
 what it gives: an `element`, a `skill` (a `SkillId` marked `node: true` in `SKILLS`: known only
 if bought, `skillKnown`), a `passive` (`PASSIVES` in `src/battle.ts`) or `mana`. `TREE_ANIMAS`
 are the ánimas with a tree (the owned ones); every other ánima's page offers Maná +1 and the
 sleeping definitiva. `improvedBy` turns what is bought into the fight's `Improved` (`elements`,
-`mana`, `skills`, `passives`). The screen is `src/jar-ui.ts` (`layout` places each constellation, `SHAPES` says which way each line grows); the
+`mana`, `skills`, `passives`). The screen is `src/jar-ui.ts` (`layout` places each constellation and each dúo mayor, `SKY` says where each sits and which way each line grows); the
 status screen's Ánimas page lists a tree ánima's bought passives under *Con ecos de luz* and no
 level. The fight tester's *Ecos de luz* chips and `"improved"` in a `?fight=` link give any node.
 
@@ -208,7 +215,7 @@ has it, in their ánima's colour, with a sound (`BattleEffect.passives`, `pop` k
 (itself if alone; power 34, with its own Fuerza) and forgets what it had announced. `abstract`.
 The new skills' numbers are first guesses: no `just fight-sim` target holds them yet.
 
-Screenshots: `just screenshots ecos --gpu` (the jar, both kinds of page) and
+Screenshots: `just screenshots ecos --gpu` (the one sky with all seven ánimas, Vulcano coming in) and
 `just screenshots arbol-combate --gpu` (every new skill, reaction and passive in a fight).
 
 ## Levels
@@ -291,7 +298,7 @@ Its whole table: [dadaista/README.md](dadaista/README.md) § Skills per level.
 
 Its whole table: [sincopante/README.md](sincopante/README.md) § Skills per level.
 
-| Level | Colorista (agreed 2026-11-20; *Puñado* is playable as *Brochazo*) |
+| Level | Colorista (agreed 2026-11-20; **built** 2026-11-21) |
 | --- | --- |
 | 1 | Its rule, *Rebufo*: whoever breaks a cortina is powdered. *Puñado*: a light physical blow that powders; *Cortina*: Defensa up for the party and a screen that halves the next blow on one ally |
 | 2 | *Rociada*: light water on every foe (the powdered ones are poisoned, as by any water) |
@@ -301,7 +308,9 @@ Its whole table: [sincopante/README.md](sincopante/README.md) § Skills per leve
 | 6 | *Telón*: Defensa up for the party and a cortina in front of each ally |
 | 7 | *Traca*: five light physical blows on foes at random, each powdering |
 
-Its whole table: [prismatico/README.md](prismatico/README.md) § Skills per level.
+Its whole table: [prismatico/README.md](prismatico/README.md) § Skills per level. Its level 5 is
+the first that teaches only a passive (`passivesAt` in `src/levels.ts`): the level-up shows it as
+*PASIVA NUEVA* and the Ánimas page lists it under *PASIVA*.
 
 | Level | Freática (proposal 2026-11-20; only its look built) |
 | --- | --- |
@@ -323,7 +332,7 @@ need one from the start** (Aitor 2026-11-20): a passive is something it grows in
 
 | Where it comes from | Ánimas | Example |
 | --- | --- | --- |
-| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Colorista's *Remolino*, Freática's *Nivel de base* |
+| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Colorista's *Remolino* (built), Freática's *Nivel de base* |
 | **A node at the jar** (2 ecos) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* |
 
 A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it
@@ -387,6 +396,8 @@ The castle these stages belong to, and what each boss opens in full: [castle.md]
 - **How it shows** (to settle, within the HUD rule: what the player has, never what is missing): at
   the jar a constellation simply has fewer stars until it expands; the expansion is seen happening
   the first time the jar is opened after the boss. A level cap reached says nothing about the next.
+  In the one sky (§ The jar as one sky) a stage's new stars come in the way a dúo mayor does: a
+  light runs out along each new join and the star opens at its end, where it will always be.
 - It fits what is already decided: the definitiva bought at the jar with its condition
   (§ Definitivas), which this places after the second boss. It corrects the slots: one more after
   the first boss only, three at most, not four (§ Two ways to grow).
@@ -415,9 +426,28 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take |
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
 | Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
-| Colorista | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado (proposal 2026-11-20) | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once |
+| Colorista | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once. **Built** (2026-11-21), the first: § The one that is built |
 | Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, 20 s a mark of its own, melting live. Frozen they do not act and take little; breaking the ice with four to eight blows lands a very large one, larger the sooner. Designed; its look built |
 | Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
+
+### The one that is built
+
+*Fin de fiesta* (Colorista, 2026-11-21) is the first definitiva in the game, and how it is made is
+how the next ones are:
+
+- **A skill with `ulti: true` and `node: true`** in `SKILLS` (`src/battle.ts`), cost 0. The jar
+  unveils an ánima's definitiva as soon as such a skill exists for it (`ulti` in `src/ecos.ts`);
+  the others stay veiled.
+- **Its condition** is a function of the fight's state (`finaleReady`, over `state.finale`): what
+  the fight has seen while the ánima was worn by someone standing, and whether it was used.
+  `skillsFor` only lists the skill while it is true, at the head of the list, with *Definitiva*
+  where the cost goes.
+- **How it reads**: the moment it is met, *Definitiva · despierta* pops over the wearer
+  (`effect.awoken`) and an icon stays on their plate until it is used.
+- The fight tester's *Sin límites* (`unbound`) has it awake from the start.
+
+Not built: the line at the jar that says the condition, and the castle's gate (§ Growth opens with
+the castle) on buying it.
 
 ## Combined skills
 
@@ -466,9 +496,81 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Dadista | **Relevo de sangre** | Zarpa en la llaga + Estrella fugaz | 3 · 3 | Playable. On a killing blow the wound passes to the enemy with the most remaining PV |
 | Tecnópata + Sincopante | **Bombardeo orbital** | Explosión + Ostinato | node · 1 | Playable. Three volleys on every foe next round, with Cegado II for 20 s |
 | Matemágico + Colorista | **Reserva de color** | Foc Binari + Brochazo | 1 · 1 | Playable. A fuse of powder on a foe explodes after its turn or when it falls (its text still says paint) |
+| Matemágico + Tecnópata | **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 · node | Built (2026-11-20). The bit wall overheats and goes off over every foe; what is left shields the party |
+| Matemágico + Sincopante | **Vulcano** (dúo mayor) | Foc Binari + Ostinato | 1 · 1, and its node | Built (2026-11-20). A volcano of particles for 20 s that raises every foe's fire each 5 s |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
+
+### Dúos mayores (Aitor 2026-11-20; Vulcano built)
+
+Aitor's idea (2026-11-20): **some very strong duals are unlocked, not there from the start**, and
+they **live between the branches** of two ánimas: available only when **both ends have reached
+them**. The first is **Vulcano**: Foc Binari with Marta's Ostinato, *a volcano of particles that
+keeps setting fire to every foe for a while*.
+
+**What they are.** A step between the duals and the definitivas: skill → dual → **dúo mayor** →
+definitiva. Few (one a pair at most, three or four in the game), each the top of a mechanic both
+halves share. Worth about **twice** the two skills used apart, not a dual's 1.3 to 1.5.
+
+**How they open (built):** both halves known (as any dual), **and its node bought at the jar** (2
+ecos), in the constellation of the own ánima that brings a half (`kind: 'dual'` in `src/ecos.ts`,
+drawn as two discs joined; `Improved.duals`; `major` in `DUALS`; `dualBlock` says *level* without
+it). Its card: *Dúo mayor de Foc Binari y Ostinato.* and what it does (it only shows once both ends
+are lit, threaded to both, so it can say with whom). In the jar its node is no longer on the fire
+line but a gold star between Matemágico and Sincopante (§ The jar as one sky). In a fight it
+is a dual like the others (both turns, each half's maná, once a fight, found the first time by
+chance), under **DÚO MAYOR DESBLOQUEADO** and then **DÚO MAYOR**, its kicker gold and burning. Not
+built: the castle's stage that should hide the node until Aurelià (§ Growth opens with the castle).
+
+**Vulcano** (built): `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20
+segundos, un volcán les sube el fuego un nivel cada 5 segundos.` Gerard's binary fire goes into the
+ground behind the foes; Marta's eco beats on it three times, the floor cracking wider each time; the
+volcano rises and erupts, a bomb of lava on each foe. While it stands (the timed status *Volcán*,
+20 s, a beat every 5 s, `runClock`): a cone of embers redrawn all the time, smoke from its mouth,
+lava glowing at its foot; each beat an eruption and a bomb on each foe under it, whose fire goes up
+a level (to IV with Combustión). Fight tester: *Probar un dúo · Vulcano*; `just screenshots
+duos-grado-iii --gpu`.
+
+**Others it makes room for** (one line each): *Marea*, Vasos comunicantes + Freática's *Recarga*
+(every foe's water to its third mark at once); one of Tecnópata's with a shared ánima's first skill.
+
+### The jar as one sky (built 2026-11-21, kept by Aitor)
+
+Aitor (2026-11-20): *maybe we have to show all the constellations together again, so these duals
+have room between them and fit well.* Until then a player unfolded one constellation at a time onto
+their side, and a dual between two ánimas had nowhere to be drawn. Aitor said yes (2026-11-21) and
+decided that **the normal duals are not in the sky** (*igual al final los colocamos, pero no*):
+only the dúos mayores are. Seeing it built with all seven ánimas he kept it (2026-11-21: *me gusta
+este diseño, mantén esta idea de todo incluido en el mismo cielo*): **the jar is one sky with
+everything in it**, and whatever grows next (a stage of the castle, a new ánima, another dúo mayor)
+comes into that same sky, never as a page or a constellation opened on its own. Built in
+`src/jar-ui.ts`:
+
+- **Everything open at once** on the 1600 × 900 sheet: Gerard's tree on the left, Aitor's on the
+  right (`SKY`: where each core sits and which way each line grows; `RINGS` a little tighter than
+  the old unfolded tree), and each shared ánima a small constellation scattered round and between
+  them, never a grid: its jar nodes one way (`nodes`), **the skills it has learned fighting** the
+  other (`skills`) as small stars of its colour, chained faintly from the core (by level, never
+  bought, a die's faces not counted; not pointable, their names come out when the constellation is
+  pushed in on). They sit on a gentle arc a fixed step apart, every name on the same side
+  (`SPARK`), so Dadista's eight at level 7 still read a line apart.
+- **A dúo mayor is a gold star between two constellations** (`Bridge`), larger and ringed, with
+  *DÚO MAYOR* over its name, on an arc that bows up from the star that ends its own half's line
+  (Vulcano: Combustión, its `after`) to the other half's learned star (Ostinato), a gold thread to
+  each. **It is not in the sky until both ends are lit** (that star bought, the other half
+  learned); then it comes in where both can see it: a light runs along each thread towards the
+  middle and the star opens there a second later (`data-born`), the other half's star grows and
+  shows its name. Bought, its threads burn gold. Taking out what it hangs from takes it out too, its
+  light flies back to the jar and it goes out of the sky with its threads, leaving no mark.
+- **Cursors** move over the whole sky by the nearest light the way pressed; Q / E jump from core to
+  core; a core is only read (pressing it does nothing). The constellation under a cursor, both
+  ends of a dúo mayor under one, is pushed in on slowly (`PUSH`: 1.05 an own tree, 1.14 a shared
+  one), its glow filling in. Esc closes.
+- `just screenshots ecos --gpu`: the sky with all seven ánimas (picker levels), Vulcano coming in
+  as Combustión is lit, Gerard and Aitor at work at once, a shared ánima pushed in on.
+- **Not built**: where the castle's stages (§ Growth opens with the castle) would add stars as they
+  open. A future ánima without a place in `SKY` takes one of `SPARE` until it is given its own.
 
 ## Ánima points
 
@@ -632,6 +734,37 @@ look.
   (`drain`); the icon flashes as one does. Landing, it says so in orange over the numbers
   (*¡Quemado!*, `pop(…, 'status')`).
 
+### Combustión (fire's fourth level, set off by a blow)
+
+Aitor's, 2026-11-20: at the end of Matemágico's fire line, **a Fuego IV with its own icon** whose
+change is that **physical blows spread the fire in explosions**
+([matemagico/README.md](matemagico/README.md) § Grade III). Built (`COMBUSTION`, `fireTop`,
+`combust` in `src/battle.ts`; `tests/grado-iii.test.mjs`). Numbers are first guesses.
+
+- **While Matemágico is worn by someone standing with *Combustión* bought**, fire climbs one level
+  past Quemado III: fire landing on III (Foc Binari, a claw of Zarpazos de fuego, an Estallido)
+  raises it to **IV, Combustión**. Without the passive in the fight it stops at III, as before.
+- **It pulses ×7** the base pulse (Quemado is ×1, ×3, ×5): 14 every 2 s on a boss.
+- **Any physical blow on a foe in Combustión makes it burst**: fire magic (24, with the Matemágico
+  wearer's Magia) on **every foe, that one included**, and every other foe's fire **goes up a level**
+  (lit at I where there was none, to IV at most; on a wet one it is Vapor). The one that burst goes
+  back to **III**, its clock full: it is fed again and set off again.
+- **By kind of blow, never by who**: Atacar (Gerard's ball is physical), a claw, a die, Bip's ram,
+  a dual's physical blow, a physical blow on every foe, and a foe's physical blow on one of its own
+  (Confusión, Control remoto). Never a pulse, a reaction or a magic blow, so a burst never sets
+  off another. A reaction of the blow itself goes first: Atacar · Agua on it is Humo, and nothing
+  bursts.
+- A burst is fire: it melts the pringue and meets fire's weakness and resistance. Toma de tierra
+  counts it when the blow is the wearer's.
+
+**How it shows** (built): at IV the fire burns white-hot (`effects.fire` level `white`), sparks gone
+blue-white spin round them and a heartbeat of heat throws a ring of embers every second
+(`STATUS_LOOKS.combustion`). Its icon on the plate is the flame inside a burst, white-gold, breathing.
+Landing, *¡Combustión!* (*Un golpe físico la hace estallar*). The burst: the white fire draws into
+the chest (0.1 s), a white flash and a ball of fire with a ring of flame along the floor, embers arc
+to every other foe and their fires flare; *¡Combustión!* and its 24 on each, *PASIVA · Combustión*
+over Matemágico's wearer.
+
 ### Cegado (blinded, timed)
 
 - A **timed** status that hurts nobody: 10 s on the fight's clock, its level the level of the fire it
@@ -773,7 +906,7 @@ Its look is built in the effects lab (`src/freatica-fx.ts`); no rule.
   counts one** (proposal): *Zarpazos* is half an ice, a dual's eight a whole one. The cracks do
   not heal as it melts. A physical blow cracks it whatever its element.
 - **Cracked through, it breaks**: the foe takes magic water damage by the ice still there (Aitor:
-  huge broken at the start, less as it melts, still a lot; proposed base 90 with three marks of
+  huge broken at the start, less as it melts, still a lot, and a blow, not a share of its PV; proposed base 90 with three marks of
   ice, falling with it to 40 as the last goes), and is free at once.
 - The break is nobody's blow: never a golpe crítico, and it spends no wound.
 - A flame (magic fire) does not crack it: it melts a mark off at once, with its steam. Electricity does nothing.
@@ -842,13 +975,14 @@ three mixed in every puff; never saturated pink or violet.
 
 Aitor's, 2026-11-20: left by water on Empolvado; **the foe takes damage and the physical and magic
 damage it receives is amplified while it lasts**. Its look is built (`STATUS_LOOKS.envenenado`);
-no rule yet. Numbers are first guesses.
+and so is its rule. Numbers are first guesses.
 
 - A **timed** status that pulses: every **4 s** for **20 s**, about two rounds, so it does not
   need feeding every round as Quemado does.
 - **While it lasts, every blow on whoever is poisoned, physical or magic, lands 25 % harder**, at
-  any level. The bonus is added to a wound's and a golpe crítico's, never multiplied by them.
-  Pulses and a reaction's own damage are not blows. Over the number, *Veneno +25 %*.
+  any level. The quarter multiplies the blow as it lands, after a wound's and a golpe crítico's
+  bonus, as a weakness does. Pulses are not blows; a reaction's blast is one. Over the number,
+  *Veneno +25 %*.
 - **Escalates** as Quemado: poisoned again while it lasts, a level more (I → II → III) and its
   20 s start over. Each level costs powder and water again; the level only raises the pulse.
 - First guess for the pulse: twice Quemado's base (2 PV plus 2 % of the carrier's PV counted up to
@@ -861,7 +995,7 @@ no rule yet. Numbers are first guesses.
 ### Cristalizado (full of shards, timed)
 
 Aitor's, 2026-11-20: left by electricity on Empolvado; **every attack it receives does more, and
-each one more than the last, because the shards dig in**. (Not *Cristalino*: that is a foe of Las
+each one more than the last, because the shards dig in**. Built. (Not *Cristalino*: that is a foe of Las
 cuerdas.)
 
 - A **timed** status: 20 s on the clock, no levels, no pulses. Crystallised again, its 20 s start
@@ -881,17 +1015,19 @@ cuerdas.)
 
 Aitor's, 2026-11-20: a protective spell that raises everyone's Defensa and stands **a physical
 shield of particles in front** of an ally that **halves the next attack**; Colorista's first
-protects one (*Cortina*), its second both (*Telón*). Nothing built in the rules; its look is in
-the effects lab. *Sutura de luz* already halves the next damage of a round: this is that rule
-with a body.
+protects one (*Cortina*), its second both (*Telón*). **Built** 2026-11-21 (`CORTINA`,
+`cortinaRounds` and `changeHealth` in `src/battle.ts`; `tests/powder.test.mjs`). *Sutura de luz*
+already halves the next damage of a round: this is that rule with a body.
 
 - **The next damage a blow does to whoever stands behind it is halved, and the cortina breaks.**
   One blow: of a flurry it stops the first hit. Pulses pass through and do not break it. Halved
   first; Defender's or a protection's third comes after.
-- It stands until a blow breaks it or **three rounds** pass (proposal). One on each fighter;
-  raised again, it starts over. A blow on everyone breaks each one it meets.
-- ***Rebufo*** (proposal, Colorista's rule while it is worn): whoever breaks a cortina is left
-  **Empolvado**: the screen bursts over them.
+- It stands until a blow breaks it or **three rounds** pass. One on each fighter; raised again,
+  it starts over. A blow on everyone breaks each one it meets.
+- ***Rebufo*** (Colorista's rule, `ANIMA_RULES`): whoever breaks a cortina is left **Empolvado**:
+  the screen bursts over them.
+- The Defensa it comes with is one boost: *Cortina* and *Telón* do not add up, the later one
+  starts the three rounds again.
 - In descriptions: `Una cortina de polvo reduce a la mitad el siguiente daño que reciba un
   aliado.` (`cada aliado` for both).
 
@@ -922,19 +1058,19 @@ Sanación (15 s, a cure in five pulses) stays: it pulses, it does not wait for a
 | Golpe crítico | A rule: a wound of five spent under Papagato's *Olor a sangre*, *Acecho*. By chance: the Crítico attribute, +20 % on whoever bleeds (*Olor a sangre*), +10 % a die spent (Dadista's *Racha*, built) and the party's doubled (*Ases en dúo*, a proposal) | Whoever lands the blow |
 | Mareo (mental) | None now (it was El Vértigo's) | Papagato (*Ronroneo* cleanses it) |
 | Llorera (mental) | The onions (foe) | Papagato (*Ronroneo* cleanses it) |
-| Quemado | Matemágico (*Foc Binari*; the dual *Zarpazos de fuego*, on a coin) | Atacar · Agua (Humo) |
+| Quemado | Matemágico (*Foc Binari*; the dual *Zarpazos de fuego*, on a coin; *Vulcano*) | Atacar · Agua (Humo); any physical blow at IV, *Combustión*; Tecnópata's *Reinicio* starts it over |
 | Sangrado (reaction) | Papagato (Haru) | Atacar · Fuego (Cauterizado) |
 | Cegado | Atacar · Agua on Quemado | Atacar · Eléctrico (Tormenta) |
 | Punto débil | The dual *Punto débil*; Dadista (*Ojo*) | Any blow, the next one |
 | Crítico past 100 % | Dadista (*Racha*, *Ases en dúo*; proposal) | Dadista (*Dados astrales*: a die of light for each 15 %) |
-| Empolvado (built as Pintado; its reactions are a proposal) | Colorista (*Puñado*, *Polvareda*, *Traca*; whoever breaks a cortina, by *Rebufo*) | Any fire (Estallido), any water (Envenenado), any electricity (Cristalizado) |
+| Empolvado | Colorista (*Puñado*, *Polvareda*, *Traca*; whoever breaks a cortina, by *Rebufo*) | Any fire (Estallido), any water (Envenenado), any electricity (Cristalizado) |
 | Cristalizado | Electricity on Empolvado | Whoever hits often: every blow does more than the one before (flurries, ecos, *Traca*) |
-| Envenenado (proposal) | Water on Empolvado; Colorista (*Rociada*) | Whoever hits hard: every blow lands 25 % harder. Whatever stretches a clock (Tecnópata's *Rayo de energía*, *Telemetría*) |
-| Cortina de polvo (proposal) | Colorista (*Cortina*, *Telón*, *Remolino*) | Whoever stands behind it: the next blow at half |
+| Envenenado | Water on Empolvado; Colorista (*Rociada*) | Whoever hits hard: every blow lands 25 % harder. Whatever stretches a clock (Tecnópata's *Rayo de energía*, *Telemetría*) |
+| Cortina de polvo | Colorista (*Cortina*, *Telón*, *Remolino*) | Whoever stands behind it: the next blow at half |
 | Agua contenida, on each foe (proposal) | Freática (*Recarga*, *Riada*); any water blow keeps it from draining | Any electricity (Corriente), any fire (Vapor on that foe, at its water's level), powder (Envenenado, to settle); Freática (*Bombeo*, *Golpe de ariete*) |
 | Corriente (proposal) | Any electricity on a foe with water, through every foe that has some; Freática (*Sondeo eléctrico*, twice as long) | The water's level: its pulse is ×1, ×2, ×3 |
 | Hundido (proposal) | A foe's water at its third mark | Whoever keeps it there |
-| Congelado (Aitor's; numbers a proposal) | Freática's definitiva, *Bajo cero*, on every foe with water when one has it at the third mark | Whoever breaks the ice: three blows from outside, a flurry at once (Papagato) |
+| Congelado (Aitor's; numbers a proposal) | Freática's definitiva, *Bajo cero*, on every foe with water when one has it at the third mark | Whoever breaks the ice before it melts: four to eight blows from outside, the hard ones counting two; a flurry is the shortcut (*Zarpazos* half of it, a dual's eight all) |
 | The astral | Tecnópata (*Rayo de energía*), Dadista (its astral skills), Sincopante (every blow and eco; proposals) | Nothing on purpose: it is the damage nothing resists |
 
 ## How an ánima is built

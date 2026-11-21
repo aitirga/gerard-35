@@ -1,4 +1,4 @@
-import { ANIMA_OWNERS, ELEMENTS, MANA_POINTS, SKILLS, type ClassId } from './battle';
+import { ANIMA_OWNERS, DUALS, ELEMENTS, MANA_POINTS, SKILLS, type ClassId, type SkillId } from './battle';
 import { animaOf, CLASSES } from './classes';
 import { isDpad, type ControllerEvent } from './controller';
 import { ELEMENT_ICONS, IMPROVEMENTS, LINES, TREE_ANIMAS, costOf, improvementOf, type Improvement, type LineId } from './ecos';
@@ -8,14 +8,16 @@ import type { SoundId } from './sfx';
 import type { Story } from './story';
 
 /**
- * The jar at home (docs/animas/README.md § The jar): the one place the party's Ecos de luz are put
- * into its ánimas and taken back. A window over the living room, not the whole screen: one sky
- * with a cluster of lights per ánima (its core, and its tree branching out of it), and the jar
- * below with every eco in it (lit while free, dark and tinted once it is in an ánima). Each ánima
- * is a constellation, closed at first: only its core and the stars already lit. A player opens
- * the one they choose and its tree unfolds out of the core; they work inside it until they step
- * back out. A light flies from the jar to the node it turns on, and back. Gerard and Aitor each
- * move their own cursor, each with its own floating note; each can be in a different constellation. Moves and buttons read the device in use (input-glyphs.ts).
+ * The jar at home (docs/animas/README.md § The jar, § The jar as one sky): the one place the party's
+ * Ecos de luz are put into its ánimas and taken back. A window over the living room, not the whole
+ * screen: one sky with every ánima's constellation open at once (Gerard's tree on the left, Aitor's
+ * on the right, the shared ones small and scattered round and between them, the skills they have
+ * learned fighting as small stars), the dúos mayores as gold stars between two constellations once
+ * both their ends are lit, and the jar below with every eco in it (lit while free, dark and tinted
+ * once it is in an ánima). A light flies from the jar to the star it turns on, and back. Gerard and
+ * Aitor each move their own cursor over the whole sky, each with its own floating note, and the
+ * constellation under a cursor is pushed in on, slowly. Moves and buttons read the device in use
+ * (input-glyphs.ts).
  */
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 const svg = (paths: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${paths}</svg>`;
@@ -26,9 +28,13 @@ const KIND_ICONS = {
   mana: '<circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2.5"/>',
   passive: '<path d="M8 1.5 14 4v4.2c0 3.2-2.5 5.4-6 6.3-3.5-.9-6-3.1-6-6.3V4z" fill="none" stroke="currentColor" stroke-width="1.5"/>',
   ulti: '<path d="M8 1.2 9.9 6l5 .4-3.8 3.2 1.2 5L8 11.9l-4.3 2.7 1.2-5L1.1 6.400l5-.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+  // A dúo mayor: two discs joined, something done with someone.
+  dual: '<circle cx="4.9" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11.1" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.6 8h2.8" stroke="currentColor" stroke-width="1.8"/>',
 };
 const iconOf = (item: Improvement) => item.element ? ELEMENT_ICONS[item.element] : KIND_ICONS[item.kind as keyof typeof KIND_ICONS];
-export const colourOf = (item: Improvement) => item.element ? ELEMENTS[item.element].colour : item.line ? LINES[item.line].colour : CLASSES[item.anima].colour;
+/** A dúo mayor is gold, whatever its halves (docs/animas/README.md § Dúos mayores). */
+const MAJOR = '#ffd36b';
+export const colourOf = (item: Improvement) => item.kind === 'dual' ? MAJOR : item.element ? ELEMENTS[item.element].colour : item.line ? LINES[item.line].colour : CLASSES[item.anima].colour;
 const ecoWord = (n: number) => n === 1 ? 'eco' : 'ecos';
 
 type Player = 1 | 2;
@@ -36,26 +42,56 @@ const PLAYERS: Player[] = [1, 2];
 const WHO: Record<Player, string> = { 1: 'Gerard', 2: 'Aitor' };
 /** The sky is drawn on a sheet of 1600 × 900 and scaled with the window. */
 const W = 1600, H = 900;
-/** How far from its core each node of a line sits. */
-const RINGS = [96, 180, 264, 348];
-/** Which way each line of an own ánima's tree grows (degrees, 0 to the right, clockwise). */
-const SHAPES: Partial<Record<ClassId, { lines: Partial<Record<LineId, number>>; mana?: number; ulti: number }>> = {
-  matemagico: { lines: { calculo: 180, fuego: -65, electrico: 0, agua: 65 }, ulti: -128 },
-  tecnopata: { lines: { bip: -120, mente: 0, taller: 120 }, mana: 55, ulti: -55 },
-};
+/** How far from its core each node of an own tree's line sits. */
+const RINGS = [80, 142, 204, 266, 328];
 /**
- * Where a folded constellation waits: its own tree made small (style.css), somewhere in the sky.
- * Scattered on purpose, never a row or a grid: the sky must not say how many there will be.
+ * Where each constellation sits in the one sky. Gerard's tree on the left and Aitor's on the right,
+ * each line growing its own way (degrees, 0 to the right, clockwise); the shared ones small and
+ * scattered round and between them, never a row or a grid (the sky must not say how many ánimas
+ * there will be), their nodes one way (`nodes`) and the skills they have learned the other
+ * (`skills`). Sincopante sits by the top of Matemágico's fire, so that Vulcano has room between.
  */
-const SEATS: [number, number][] = [[470, 250], [1130, 225], [800, 385], [215, 455], [1395, 430], [1010, 560], [585, 590], [1345, 705], [270, 700], [830, 165]];
-/** Where a constellation unfolds: on the left for whoever opens it as player 1, on the right for player 2. */
-const STAGES: Record<Player, [number, number]> = { 1: [440, 560], 2: [1160, 560] };
+interface Seat { at: [number, number]; lines?: Partial<Record<LineId, number>>; mana?: number; ulti?: number; nodes?: number; skills?: number }
+const SKY: Partial<Record<ClassId, Seat>> = {
+  matemagico: { at: [396, 500], lines: { calculo: 180, fuego: -60, electrico: 0, agua: 60 }, ulti: -120 },
+  tecnopata: { at: [1236, 468], lines: { bip: -120, mente: 0, taller: 120 }, mana: 58, ulti: -58 },
+  dadaista: { at: [244, 286], nodes: 0, skills: 190 },
+  sincopante: { at: [862, 150], nodes: 0, skills: 180 },
+  papagato: { at: [1112, 176], nodes: 10, skills: -140 },
+  prismatico: { at: [906, 428], nodes: 95, skills: -70 },
+  freatica: { at: [1404, 736], nodes: -145, skills: 35 },
+};
+/** Places for an ánima the sky has none for yet. */
+const SPARE: [number, number][] = [[1456, 196], [640, 610], [214, 770]];
+/** How much the constellation under a cursor is pushed in on. */
+const PUSH = { own: 1.05, shared: 1.14 };
+/** How big each kind of light is on the sheet, for the joins to stop short of it and the notes to keep clear. */
+const RADIUS = { own: 48, shared: 38, node: 20, small: 18, dual: 28 };
 const JAR_AT: [number, number] = [800, 724];
-interface Spot { key: string; x: number; y: number; shape: 'node' | 'core' | 'mini' | 'pill' }
-interface Star { key: string; x: number; y: number; ring: number; label: 'above' | 'below' }
+/** Where the jar's name ends, from the top left corner. */
+const TITLE: [number, number] = [330, 124];
+type Side = 'above' | 'below' | 'left' | 'right';
+interface Spot { key: string; x: number; y: number; r: number; pill?: true }
+interface Star { key: string; x: number; y: number; ring: number; label: Side }
 interface Link { from: string; to: string; d: string; colour: string; ring: number }
-interface Tree { id: ClassId; stars: Star[]; links: Link[] }
+/** A skill a shared ánima has learned fighting: a small star of its constellation, never bought. */
+interface Spark { skill: SkillId; x: number; y: number; ring: number; label: Side }
+interface Tree { id: ClassId; own: boolean; x: number; y: number; stars: Star[]; links: Link[]; sparks: Spark[]; chain: string }
+/** A dúo mayor's gold star, between the star that ends one half's line and the other half's skill. */
+interface Bridge { item: Improvement; partner: ClassId; skill: SkillId; x: number; y: number; threads: [string, string] }
 const pct = (x: number, y: number) => `left:${(x / W * 100).toFixed(2)}%;top:${(y / H * 100).toFixed(2)}%`;
+const at = (x: number, y: number) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+/** Where a label goes for a light that sits `angle` from its core: beside it unless it is nearly straight above or below (`flat`, how far from upright still counts as beside). */
+function sideOf(angle: number, flat = .45): Side {
+  const c = Math.cos(angle * Math.PI / 180), s = Math.sin(angle * Math.PI / 180);
+  return Math.abs(c) > flat ? (c > 0 ? 'right' : 'left') : s < 0 ? 'above' : 'below';
+}
+/**
+ * A shared ánima's learned skills: small stars on a gentle arc on its `skills` side, at least
+ * `radius` from the core and `gap` apart across that side, every name on the same side of its star,
+ * so they always read a line apart, however many it has learned (Dadista has eight at level 7).
+ */
+const SPARK = { radius: 70, gap: 24, flat: .2 };
 
 export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: (paused: boolean) => void; sound: (id: SoundId) => void; changed: () => void }) {
   const root = document.createElement('section');
@@ -65,15 +101,11 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   let open = false, closing = false, openedAt = 0, timer = 0;
   /** What each player's cursor is on; player 2's shows once they move. */
   const cursors: Partial<Record<Player, string>> = {};
-  /** The constellation each player has opened and is working in, if any. */
-  const inside: Partial<Record<Player, ClassId>> = {};
-  const animaOfKey = (key: string | undefined) => !key ? undefined : key.startsWith('core:') ? key.slice(5) as ClassId : improvementOf(key)?.anima;
-  const unfolded = (id: ClassId | undefined) => !!id && PLAYERS.some(p => inside[p] === id);
-  /** Which constellation is unfolded on each side. */
-  const stages: Partial<Record<Player, ClassId>> = {};
-  let spots: Spot[] = [], trees: Tree[] = [];
-  /** Whose cursor is riding a constellation that is unfolding or folding: it goes at its pace. */
-  const gliding = new Set<Player>();
+  let spots: Spot[] = [], trees: Tree[] = [], bridges: Bridge[] = [];
+  /** The constellations under a cursor, and whose (`'1'`, `'2'` or `'12'`). */
+  let pushed = new Map<ClassId, string>();
+  /** The dúos mayores already in the sky, so one that comes in while the jar is open is seen arriving. */
+  const shown = new Set<string>();
   let closed: (() => void) | undefined;
   /** The own ánimas first (each its owner's tree), then the shared ones. */
   const pages = () => [...story.classes.filter(id => TREE_ANIMAS.includes(id)), ...story.classes.filter(id => !TREE_ANIMAS.includes(id))];
@@ -83,52 +115,76 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     : item.veiled ? 'veiled'
     : item.after && !story.improvements.includes(item.after) ? 'needs'
     : item.cost > story.ecosFree ? 'short' : 'open';
+  /** What a shared ánima has learned fighting (its levels reached, never the ones to come); a die's faces are its die. */
+  const learned = (id: ClassId) => SKILLS.filter(skill => skill.class === id && !('node' in skill) && !('face' in skill) && ('level' in skill ? skill.level : 1) <= (story.levels[id] ?? 1));
+  /** A dúo mayor is in the sky once both its ends are lit: its own half's line as far as it, and the other half learned (it is only laid out then). */
+  const isShown = (bridge: Bridge) => isOn(bridge.item.after!);
+  /** The constellations a light belongs to: a dúo mayor's, both. */
+  function animasAt(key: string | undefined): ClassId[] {
+    if (!key) return [];
+    if (key.startsWith('core:')) return [key.slice(5) as ClassId];
+    const item = improvementOf(key);
+    return !item ? [] : item.kind === 'dual' && item.partner ? [item.anima, item.partner] : [item.anima];
+  }
 
-  /** Each ánima's tree round its own core, at full size: where each node is and what joins what. */
+  /** Every constellation in its place in the sky, round its own core: where each light is and what joins what. */
   function layout() {
+    let spare = 0;
     trees = pages().map(id => {
-      const shape = SHAPES[id], items = IMPROVEMENTS.filter(item => item.anima === id);
-      const stars: Star[] = [], links: Link[] = [], core = `core:${id}`;
-      const place = (item: Improvement, angle: number, radius: number, ring: number, flip: boolean) => {
+      const seat = SKY[id] ?? { at: SPARE[spare++ % SPARE.length], nodes: 90, skills: -90 }, own = TREE_ANIMAS.includes(id);
+      const items = IMPROVEMENTS.filter(item => item.anima === id && item.kind !== 'dual');
+      const stars: Star[] = [], links: Link[] = [], core = `core:${id}`, coreR = own ? RADIUS.own : RADIUS.shared, nodeR = own ? RADIUS.node : RADIUS.small;
+      const place = (item: Improvement, angle: number, radius: number, ring: number, label: Side) => {
         const a = angle * Math.PI / 180, x = Math.cos(a) * radius, y = Math.sin(a) * radius;
-        stars.push({ key: item.id, x, y, ring, label: flip ? 'above' : 'below' });
+        stars.push({ key: item.id, x, y, ring, label });
         const from = stars.find(s => s.key === item.after) ?? { key: core, x: 0, y: 0 };
         // The join stops short of both discs.
-        const length = Math.hypot(x - from.x, y - from.y), near = from.key === core ? 56 : 30, far = 30;
-        const at = (k: number) => `${(from.x + (x - from.x) * k).toFixed(1)} ${(from.y + (y - from.y) * k).toFixed(1)}`;
-        links.push({ from: from.key, to: item.id, d: `M${at(near / length)}L${at(1 - far / length)}`, colour: colourOf(item), ring });
+        const length = Math.hypot(x - from.x, y - from.y), near = (from.key === core ? coreR : nodeR) + 5, far = nodeR + 5;
+        const point = (k: number) => at(from.x + (x - from.x) * k, from.y + (y - from.y) * k);
+        links.push({ from: from.key, to: item.id, d: `M${point(near / length)}L${point(1 - far / length)}`, colour: colourOf(item), ring });
       };
       const apart = items.filter(item => !item.line);
-      if (shape) {
-        for (const [line, angle] of Object.entries(shape.lines) as [LineId, number][]) {
+      if (seat.lines) {
+        for (const [line, angle] of Object.entries(seat.lines) as [LineId, number][]) {
           const flat = Math.abs(Math.cos(angle * Math.PI / 180)) > .8;
-          items.filter(item => item.line === line).forEach((item, i) => place(item, angle, RINGS[i], i + 1, flat && i % 2 === 1));
+          items.filter(item => item.line === line).forEach((item, i) => place(item, angle, RINGS[i], i + 1, flat ? (i % 2 ? 'above' : 'below') : sideOf(angle)));
         }
-        for (const item of apart) place(item, item.kind === 'ulti' ? shape.ulti : shape.mana ?? 90, 132, 1, false);
-      } else apart.forEach((item, i) => place(item, apart.length === 1 ? 90 : 152 - i * (124 / (apart.length - 1)), 112, 1, false));
-      return { id, stars, links };
+        for (const item of apart) { const angle = item.kind === 'ulti' ? seat.ulti ?? -90 : seat.mana ?? 90; place(item, angle, 102, 1, sideOf(angle)); }
+      } else apart.forEach((item, i) => { const angle = (seat.nodes ?? 90) + (i - (apart.length - 1) / 2) * 46; place(item, angle, 82, 1, sideOf(angle)); });
+      // What it has learned: small stars on its other side, in an arc, a faint chain from the core through them.
+      const skills = own ? [] : learned(id), n = skills.length;
+      const face = (seat.skills ?? -90) * Math.PI / 180, reach = Math.max(SPARK.radius, (n - 1) * SPARK.gap / 2 + 24), label = sideOf(seat.skills ?? -90, SPARK.flat);
+      const sparks = skills.map((skill, i) => {
+        // `across` along the side, `out` from the core on a circle through them; a slight zigzag, so it reads as stars and not a ring.
+        const across = (i - (n - 1) / 2) * SPARK.gap, out = Math.sqrt(reach * reach - across * across) + (i % 2) * 7;
+        return { skill: skill.id, x: Math.cos(face) * out - Math.sin(face) * across, y: Math.sin(face) * out + Math.cos(face) * across, ring: 1 + Math.floor(i / 2), label };
+      });
+      const first = sparks[0], chain = first ? `M${at(first.x * coreR / Math.hypot(first.x, first.y), first.y * coreR / Math.hypot(first.x, first.y))}${sparks.map(s => `L${at(s.x, s.y)}`).join('')}` : '';
+      return { id, own, x: seat.at[0], y: seat.at[1], stars, links, sparks, chain };
+    });
+    // A dúo mayor between two constellations in the sky: on an arc from its own half's last star to the other half's skill, bowed upwards.
+    bridges = IMPROVEMENTS.filter(item => item.kind === 'dual' && item.dual && item.partner && item.after).flatMap(item => {
+      const mine = trees.find(t => t.id === item.anima), theirs = trees.find(t => t.id === item.partner);
+      const spec = DUALS.find(d => d.id === item.dual)!, skill = SKILLS.find(s => (spec.parts as readonly string[]).includes(s.id) && s.class === item.partner)?.id;
+      const end = mine?.stars.find(s => s.key === item.after), spark = theirs?.sparks.find(s => s.skill === skill);
+      if (!mine || !theirs || !end || !spark || !skill) return [];
+      const ax = mine.x + end.x, ay = mine.y + end.y, bx = theirs.x + spark.x, by = theirs.y + spark.y;
+      const length = Math.hypot(bx - ax, by - ay), bow = (bx > ax ? -1 : 1) * length * .3;
+      const cx = (ax + bx) / 2 + (ay - by) / length * bow, cy = (ay + by) / 2 + (bx - ax) / length * bow;
+      const x = (ax + 2 * cx + bx) / 4, y = (ay + 2 * cy + by) / 4;
+      return [{ item, partner: item.partner!, skill, x, y, threads: [`M${at(ax, ay)}Q${at((ax + cx) / 2, (ay + cy) / 2)} ${at(x, y)}`, `M${at(bx, by)}Q${at((bx + cx) / 2, (by + cy) / 2)} ${at(x, y)}`] as [string, string] }];
     });
   }
-  /** Where a constellation waits folded: its own place in the sky. */
-  function skySeat(id: ClassId) {
-    const [x, y] = SEATS[pages().indexOf(id) % SEATS.length];
-    return { x, y };
-  }
-  /** Where it is now: on a stage at full size if someone is in it, at its place in the sky if not. */
-  function seat(id: ClassId) {
-    const stage = PLAYERS.find(s => stages[s] === id);
-    return stage ? { x: STAGES[stage][0], y: STAGES[stage][1], open: true } : { ...skySeat(id), open: false };
-  }
-  /** Who is unfolded where, and from that what can be pointed at and where it is on the sheet. */
+  /** Who points where, and from that what can be pointed at and where it is on the sheet. */
   function settle() {
-    for (const s of PLAYERS) if (stages[s] && !unfolded(stages[s])) delete stages[s];
-    // A constellation unfolds on its opener's side, or on the other if that one is taken.
-    for (const p of PLAYERS) { const id = inside[p]; if (id && !PLAYERS.some(s => stages[s] === id)) stages[stages[p] ? (p === 1 ? 2 : 1) : p] = id; }
+    pushed = new Map();
+    for (const p of PLAYERS) for (const id of animasAt(cursors[p])) pushed.set(id, (pushed.get(id) ?? '') + p);
     spots = trees.flatMap(tree => {
-      const at = seat(tree.id);
-      return [{ key: `core:${tree.id}`, x: at.x, y: at.y, shape: at.open ? 'core' as const : 'mini' as const }, ...at.open ? tree.stars.map(s => ({ key: s.key, x: at.x + s.x, y: at.y + s.y, shape: 'node' as const })) : []];
+      const k = pushed.has(tree.id) ? PUSH[tree.own ? 'own' : 'shared'] : 1, r = tree.own ? RADIUS.node : RADIUS.small;
+      return [{ key: `core:${tree.id}`, x: tree.x, y: tree.y, r: (tree.own ? RADIUS.own : RADIUS.shared) * k }, ...tree.stars.map(s => ({ key: s.key, x: tree.x + s.x * k, y: tree.y + s.y * k, r: r * k }))];
     });
-    spots.push({ key: 'reset', x: JAR_AT[0], y: 862, shape: 'pill' }, { key: 'close', x: 1508, y: 52, shape: 'pill' });
+    spots.push(...bridges.filter(isShown).map(b => ({ key: b.item.id, x: b.x, y: b.y, r: RADIUS.dual })));
+    spots.push({ key: 'reset', x: JAR_AT[0], y: 862, r: 20, pill: true }, { key: 'close', x: 1508, y: 52, r: 20, pill: true });
   }
   /** A marble per eco, packed from the bottom of the jar: the ones in an ánima below, dark and tinted by where they went; the free ones on top, lit. */
   function marbles() {
@@ -162,44 +218,50 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       <p class="jar-count"><strong>${free}</strong><span>${free === 1 ? 'eco libre' : 'ecos libres'}${used ? `<small>${used} en las ánimas</small>` : ''}</span></p>`;
   }
   const manaPips = (id: ClassId) => Array.from({ length: story.manaOf(id) }, (_, i) => `<i ${i >= MANA_POINTS ? 'data-extra' : ''}></i>`).join('');
-  function node(item: Improvement, star: Star) {
+  function node(item: Improvement, star: { x: number; y: number; ring: number; label: Side }) {
     return `<button type="button" class="jar-node" data-key="${item.id}" data-improve="${item.id}" data-kind="${item.kind}" data-label="${star.label}" style="--x:${star.x.toFixed(1)};--y:${star.y.toFixed(1)};--item:${colourOf(item)};--ring:${star.ring}">
       <span class="jar-node-star">${item.veiled ? '<b>?</b>' : svg(iconOf(item))}</span>
-      <span class="jar-node-name">${escape(item.name)}</span>
+      <span class="jar-node-name">${item.kind === 'dual' ? '<small>Dúo mayor</small>' : ''}${escape(item.name)}</span>
     </button>`;
   }
-  /** A constellation: its glow, its joins, its core and its nodes, all round one point so it can shrink into the row and grow onto a stage. */
-  function constellation(tree: Tree) {
-    const id = tree.id, own = TREE_ANIMAS.includes(id), name = escape(animaOf(id, story.adult).name), whose = own ? ownerOf(id) : `Nivel ${story.levels[id] ?? 1}`;
-    return `<div class="jar-constellation" data-anima="${id}" data-own="${own}" style="--anima:${CLASSES[id].colour}">
+  /** A constellation: its glow, its joins, its core, its nodes and what it has learned, all round one point. */
+  function constellation(tree: Tree, index: number) {
+    const id = tree.id, name = escape(animaOf(id, story.adult).name), whose = tree.own ? ownerOf(id) : `Nivel ${story.levels[id] ?? 1}`;
+    const sparks = tree.sparks.map(s => {
+      const skill = SKILLS.find(k => k.id === s.skill)!;
+      return `<i class="jar-spark" data-skill="${s.skill}" data-label="${s.label}" style="--x:${s.x.toFixed(1)};--y:${s.y.toFixed(1)};--ring:${s.ring}">${svg(KIND_ICONS.skill)}<span>${escape(skill.name)}</span></i>`;
+    }).join('');
+    return `<div class="jar-constellation" data-anima="${id}" data-own="${tree.own}" style="--anima:${CLASSES[id].colour};--push:${PUSH[tree.own ? 'own' : 'shared']};--i:${index};${pct(tree.x, tree.y)}">
         <i class="jar-nebula"></i>
-        <svg class="jar-links" viewBox="-420 -420 840 840" aria-hidden="true">${tree.links.map(l => `<path d="${l.d}" data-from="${l.from}" data-to="${l.to}" style="--item:${l.colour};--ring:${l.ring}"/>`).join('')}</svg>
+        <svg class="jar-links" viewBox="-420 -420 840 840" aria-hidden="true">${tree.chain ? `<path class="jar-chain" d="${tree.chain}"/>` : ''}${tree.links.map(l => `<path d="${l.d}" data-from="${l.from}" data-to="${l.to}" style="--item:${l.colour};--ring:${l.ring}"/>`).join('')}</svg>
+        ${sparks}
         <button type="button" class="jar-core" data-key="core:${id}" data-core="${id}"><strong>${name}</strong><small>${whose}</small><span class="jar-pips"></span></button>
         ${tree.stars.map(s => node(improvementOf(s.key)!, s)).join('')}
-      </div>
-      <span class="jar-mini-name" data-name="${id}" style="--anima:${CLASSES[id].colour}"><strong>${name}</strong><small>${whose}</small></span>`;
+      </div>`;
   }
+  /** The threads of each dúo mayor, from each end to its star; a light runs along them when it first comes in. */
+  const threads = (b: Bridge) => `<g class="jar-bridge" data-bridge="${b.item.id}">${b.threads.map(d => `<path class="jar-bridge-thread" d="${d}"/><path class="jar-bridge-run" d="${d}" pathLength="1"/>`).join('')}</g>`;
   /** What a player's cursor is on: what it is, what it does, what it costs and what pressing would do now. */
-  function tip(key: string, player: Player) {
+  function tip(key: string) {
     if (key === 'reset') return '<span class="battle-kicker">EL BOTE</span><strong>Recoger todos los ecos</strong><p>Todas las luces vuelven al bote. No se pierde nada.</p>';
     if (key === 'close') return '<span class="battle-kicker">EL BOTE</span><strong>Cerrar</strong><p>Aquí dentro se pueden mover siempre que queráis. Fuera de casa, no.</p>';
     if (key.startsWith('core:')) {
       const id = key.slice(5) as ClassId, spec = animaOf(id, story.adult), own = TREE_ANIMAS.includes(id);
       const count = costOf(story.improvements.filter(i => improvementOf(i)?.anima === id));
-      const has = SKILLS.filter(skill => skill.class === id && !('node' in skill) && (own || ('level' in skill ? skill.level : 1) <= (story.levels[id] ?? 1)));
+      const has = own ? SKILLS.filter(skill => skill.class === id && !('node' in skill)) : learned(id);
       return `<span class="battle-kicker">${own ? `ÁNIMA DE ${ownerOf(id).toUpperCase()} · SIEMPRE PUESTA` : `ÁNIMA · NIVEL ${story.levels[id] ?? 1}`}</span><strong>${escape(spec.name)}</strong><p>${escape(spec.motto)}</p>
         <p class="jar-tip-has"><b>${own ? 'Desde el principio' : 'Aprendido luchando'}</b>${has.map(skill => escape(skill.name)).join(' · ')}</p>
-        <span class="jar-tip-foot"><span>Maná ${story.manaOf(id)} · ${count ? `${count} ${ecoWord(count)} dentro` : 'sin ecos'}</span><span class="jar-tip-action" data-glyph-template="${inside[player] === id ? '{cancel} · Plegar' : '{confirm} · Desplegar'}"></span></span>`;
+        <span class="jar-tip-foot"><span>Maná ${story.manaOf(id)}</span><span>${count ? `${count} ${ecoWord(count)} dentro` : 'Sin ecos'}</span></span>`;
     }
     const item = improvementOf(key);
     if (!item) return '';
     const state = stateOf(item), skill = item.skill ? SKILLS.find(s => s.id === item.skill) : undefined;
-    const kind = item.kind === 'ulti' ? 'DEFINITIVA' : item.passive ? 'PASIVA' : item.kind === 'mana' ? 'MANÁ' : item.element ? 'PARA ATACAR' : `HABILIDAD · ${skill?.cost ?? 0} DE MANÁ`;
+    const kind = item.kind === 'dual' ? 'DÚO MAYOR' : item.kind === 'ulti' ? 'DEFINITIVA' : item.passive ? 'PASIVA' : item.kind === 'mana' ? 'MANÁ' : item.element ? 'PARA ATACAR' : `HABILIDAD · ${skill?.cost ?? 0} DE MANÁ`;
     const action = state === 'on' ? `{confirm} · Apagar: vuelve${item.cost > 1 ? 'n' : ''} ${item.cost} ${ecoWord(item.cost)}` : state === 'open' ? `{confirm} · Encender` : '';
     const why = state === 'short' ? `Hacen falta ${item.cost} ${ecoWord(item.cost)} libres.`
       : state === 'needs' ? `Primero: ${improvementOf(item.after!)!.name}.`
       : state === 'veiled' ? 'Aún no se puede despertar.' : '';
-    return `<span class="battle-kicker">${kind}${item.line ? ` · ${LINES[item.line].name.toUpperCase()}` : ''}</span><strong>${escape(item.name)}</strong><p>${escape(item.description)}</p>
+    return `<span class="battle-kicker">${kind}${item.line && item.kind !== 'dual' ? ` · ${LINES[item.line].name.toUpperCase()}` : ''}</span><strong>${escape(item.name)}</strong><p>${escape(item.description)}</p>
       <span class="jar-tip-foot"><span class="jar-tip-cost" style="--item:${colourOf(item)}">${'<i></i>'.repeat(item.cost)}${item.cost} ${ecoWord(item.cost)}</span>${action ? `<span class="jar-tip-action" data-glyph-template="${action}"></span>` : `<span class="jar-tip-why">${escape(why)}</span>`}</span>`;
   }
   /**
@@ -207,18 +269,21 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
    * on the sheet and keeps off the other player's note.
    */
   function tipSide(spot: Spot, other?: { x: number; y: number }) {
-    const w = 330, h = 184, gap = spot.shape === 'core' ? 76 : spot.shape === 'mini' ? 100 : spot.shape === 'pill' ? 40 : 48;
-    const dx = gap + w / 2 + (spot.shape === 'pill' ? 90 : 0), dy = gap + h / 2;
+    const w = 330, h = 184, gap = spot.r + (spot.pill ? 20 : 28);
+    const dx = gap + w / 2 + (spot.pill ? 90 : 0), dy = gap + h / 2;
     // Beside it first, then above and below, then the corners; a little further out if all of those cover something.
     const around = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
     let best = { x: spot.x + dx, y: spot.y }, least = Infinity;
-    for (const far of [0, 70]) around.forEach(([sx, sy], i) => {
+    for (const far of [0, 60, 120]) around.forEach(([sx, sy], i) => {
       const x = spot.x + sx * (dx + far) * (sx && sy ? .86 : 1), y = spot.y + sy * (dy + far + (sy > 0 && !sx ? 24 : 0)) * (sx && sy ? .9 : 1);
       const covers = (s: Spot, pad: number) => Math.abs(s.x - x) < w / 2 + pad && Math.abs(s.y - y) < h / 2 + pad;
-      let score = i * .05 + far * .01;
-      for (const s of spots) if (covers(s, s.shape === 'mini' ? 84 : s.shape === 'core' ? 58 : 32)) score += s === spot ? 40 : s.shape === 'node' ? 1 : 3;
+      let score = i * .05 + far * .012;
+      // A dúo mayor or a core costs more to cover than a node: a note never hides one arriving.
+      for (const s of spots) if (covers(s, s.r + 10)) score += s === spot ? 40 : s.r === RADIUS.dual ? 8 : s.r > RADIUS.dual ? 3 : 1;
       if (x - w / 2 < 14 || x + w / 2 > W - 14 || y - h / 2 < 14 || y + h / 2 > H - 14) score += 50;
       if (Math.abs(JAR_AT[0] - x) < w / 2 + 80 && Math.abs(JAR_AT[1] - y) < h / 2 + 96) score += 4;
+      // Nor over the jar's name, top left.
+      if (x - w / 2 < TITLE[0] && y - h / 2 < TITLE[1]) score += 6;
       if (other && Math.abs(other.x - x) < w + 8 && Math.abs(other.y - y) < h + 8) score += 20;
       if (score < least) { least = score; best = { x, y }; }
     });
@@ -235,19 +300,34 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       if (!note) continue;
       note.hidden = !spot;
       if (!spot || !key) continue;
-      if (gliding.has(player)) note.dataset.glide = ''; else delete note.dataset.glide;
-      const at = tipSide(spot, first);
-      first ??= at;
-      note.style.cssText = pct(at.x, at.y);
+      const to = tipSide(spot, first);
+      first ??= to;
+      note.style.cssText = pct(to.x, to.y);
       // A thread from the light to its note, so a note set apart still reads as its own.
-      for (const [name, value] of [['x1', spot.x], ['y1', spot.y], ['x2', at.x], ['y2', at.y]] as const) tether?.setAttribute(name, value.toFixed(1));
-      note.innerHTML = `<b class="jar-tip-who">${WHO[player]}</b>${tip(key, player)}`;
+      for (const [name, value] of [['x1', spot.x], ['y1', spot.y], ['x2', to.x], ['y2', to.y]] as const) tether?.setAttribute(name, value.toFixed(1));
+      note.innerHTML = `<b class="jar-tip-who">${WHO[player]}</b>${tip(key)}`;
     }
-    gliding.clear();
     root.querySelectorAll<HTMLElement>('[data-key]').forEach(el => { el.dataset.cursor = PLAYERS.filter(p => cursors[p] === el.dataset.key).join('') || ''; if (!el.dataset.cursor) delete el.dataset.cursor; });
+    // The constellation under a cursor is pushed in on, slowly; the others keep to their place.
+    root.querySelectorAll<HTMLElement>('.jar-constellation').forEach(el => { const who = pushed.get(el.dataset.anima as ClassId); if (who) el.dataset.focus = who; else delete el.dataset.focus; });
   }
-  /** What is on, what could be, what joins them, and what is left in the jar. */
+  /** What is on, what could be, what joins them, which dúos mayores are in the sky, and what is left in the jar. */
   function refresh(landing: string[] = []) {
+    for (const bridge of bridges) {
+      const id = bridge.item.id, on = isShown(bridge), born = on && !shown.has(id);
+      if (on) shown.add(id); else shown.delete(id);
+      const star = root.querySelector<HTMLElement>(`.jar-node[data-key="${id}"]`), lines = root.querySelector<SVGGElement>(`.jar-bridge[data-bridge="${id}"]`);
+      const spark = root.querySelector<HTMLElement>(`.jar-constellation[data-anima="${bridge.partner}"] .jar-spark[data-skill="${bridge.skill}"]`);
+      for (const el of [star, lines, spark]) {
+        if (!el) continue;
+        if (on) el.dataset.shown = ''; else delete el.dataset.shown;
+        if (born && open) { delete el.dataset.born; void (el as HTMLElement).offsetWidth; el.dataset.born = ''; }
+      }
+      if (star) star.hidden = !on;
+      lines?.setAttribute('data-state', story.improvements.includes(id) ? 'on' : 'next');
+      // A cursor left on a star that has just gone out of the sky goes back to the end it hung from.
+      for (const p of PLAYERS) if (!on && cursors[p] === id) cursors[p] = bridge.item.after;
+    }
     root.querySelectorAll<HTMLButtonElement>('.jar-node').forEach(button => {
       const item = improvementOf(button.dataset.improve!)!, state = stateOf(item);
       button.dataset.state = state; button.setAttribute('aria-pressed', String(state === 'on'));
@@ -257,19 +337,9 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       const to = improvementOf(path.dataset.to!)!;
       path.dataset.state = isOn(path.dataset.from!) && isOn(to.id) ? 'on' : isOn(path.dataset.from!) && !to.veiled ? 'next' : 'off';
     });
-    root.querySelectorAll<HTMLElement>('.jar-core').forEach(button => {
-      const id = button.dataset.core as ClassId;
-      button.querySelector('.jar-pips')!.innerHTML = manaPips(id);
-    });
+    root.querySelectorAll<HTMLElement>('.jar-core').forEach(button => { button.querySelector('.jar-pips')!.innerHTML = manaPips(button.dataset.core as ClassId); });
+    root.querySelectorAll<HTMLElement>('.jar-constellation').forEach(el => { el.dataset.lit = String(story.improvements.some(i => improvementOf(i)?.anima === el.dataset.anima)); });
     settle();
-    root.querySelectorAll<HTMLElement>('.jar-constellation').forEach(el => {
-      const id = el.dataset.anima as ClassId, at = seat(id), home = skySeat(id), name = root.querySelector<HTMLElement>(`.jar-mini-name[data-name="${id}"]`);
-      el.style.left = `${(at.x / W * 100).toFixed(2)}%`; el.style.top = `${(at.y / H * 100).toFixed(2)}%`;
-      // Folded where another has unfolded over it, it steps back until someone points at it.
-      el.dataset.behind = String(!at.open && PLAYERS.some(s => stages[s] && Math.abs(STAGES[s][0] - at.x) < 330 && Math.abs(STAGES[s][1] - at.y) < 270));
-      el.dataset.open = String(at.open); el.dataset.lit = String(story.improvements.some(i => improvementOf(i)?.anima === id));
-      if (name) { name.style.cssText += `;${pct(home.x, home.y + 96)}`; name.dataset.open = String(at.open); name.dataset.behind = el.dataset.behind; }
-    });
     const holder = root.querySelector('.jar-jar');
     if (holder) holder.innerHTML = jar();
     const reset = root.querySelector<HTMLButtonElement>('[data-jar-reset]');
@@ -277,44 +347,35 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     place();
   }
   function render() {
-    layout(); settle();
-    const list = pages(), at = (key: string) => spots.find(s => s.key === key)!;
+    layout();
+    shown.clear();
+    for (const b of bridges) if (isShown(b)) shown.add(b.item.id);
     root.innerHTML = `<div class="jar-veil" aria-hidden="true"></div>
       <div class="jar-window"><div class="jar-sky">
         <header class="jar-title"><span class="battle-kicker">EN CASA · EL COMEDOR</span><h1>El bote <em>de las luces</em></h1></header>
+        <svg class="jar-bridges" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bridges.map(threads).join('')}</svg>
         <svg class="jar-threads" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${PLAYERS.map(p => `<line class="jar-tether" data-player="${p}"/>`).join('')}</svg>
         ${trees.map(constellation).join('')}
+        <div class="jar-duals">${bridges.map(b => node(b.item, { x: b.x, y: b.y, ring: 6, label: 'above' })).join('')}</div>
         <div class="jar-jar" style="${pct(...JAR_AT)}"></div>
-        <button type="button" class="jar-pill" data-key="reset" data-jar-reset style="${pct(at('reset').x, at('reset').y)}">Recoger todos los ecos</button>
-        <button type="button" class="jar-pill" data-key="close" data-jar-close data-back style="${pct(at('close').x, at('close').y)}">Cerrar <kbd data-glyph="cancel"></kbd></button>
+        <button type="button" class="jar-pill" data-key="reset" data-jar-reset style="${pct(JAR_AT[0], 862)}">Recoger todos los ecos</button>
+        <button type="button" class="jar-pill" data-key="close" data-jar-close data-back style="${pct(1508, 52)}">Cerrar <kbd data-glyph="cancel"></kbd></button>
         ${PLAYERS.map(p => `<aside class="jar-tip" data-player="${p}" hidden></aside>`).join('')}
-        <p class="jar-help" data-glyph-template="{arrows} · Moverse  ·  {confirm} · Desplegar, encender o apagar  ·  {prev} / {next} · Ánima  ·  {cancel} · Plegar o cerrar"></p>
+        <p class="jar-help" data-glyph-template="{arrows} · Moverse  ·  {confirm} · Encender o apagar  ·  {prev} / {next} · Ánima  ·  {cancel} · Cerrar"></p>
       </div></div>`;
-    if (!list.length) root.querySelector('.jar-sky')!.insertAdjacentHTML('beforeend', '<p class="jar-empty">Ninguna ánima todavía.</p>');
+    if (!trees.length) root.querySelector('.jar-sky')!.insertAdjacentHTML('beforeend', '<p class="jar-empty">Ninguna ánima todavía.</p>');
+    settle();
     cursors[1] = spots.some(s => s.key === cursors[1]) ? cursors[1] : spots[0]?.key;
     if (cursors[2] && !spots.some(s => s.key === cursors[2])) delete cursors[2];
     refresh();
   }
-  /** What a player can reach: inside a constellation, its core and its nodes; out in the sky, the cores and the jar's buttons. */
-  const targets = (player: Player) => [...root.querySelectorAll<HTMLButtonElement>('button[data-key]')].filter(b => inside[player] ? animaOfKey(b.dataset.key) === inside[player] : !b.dataset.improve);
+  /** What a player can reach: every light in the sky and the jar's buttons, wherever they are. */
+  const targets = () => [...root.querySelectorAll<HTMLButtonElement>('button[data-key]')].filter(b => !b.hidden);
   const buttonOf = (key: string | undefined) => key ? root.querySelector<HTMLButtonElement>(`button[data-key="${key}"]`) : null;
   function point(player: Player, key: string | undefined) {
     if (!key || cursors[player] === key) return;
     cursors[player] = key;
-    place();
-  }
-  /** A player opens a constellation: its tree unfolds out of the core and they are in it. */
-  function enter(player: Player, id: ClassId) {
-    if (inside[player] === id) return;
-    inside[player] = id; cursors[player] = `core:${id}`; gliding.add(player);
-    callbacks.sound('glass-tick'); refresh();
-  }
-  /** And steps back out to the sky: it folds again unless the other is still in it. */
-  function leave(player: Player) {
-    const id = inside[player];
-    if (!id) return;
-    delete inside[player]; cursors[player] = `core:${id}`; gliding.add(player);
-    callbacks.sound('glass-tick'); refresh();
+    settle(); place();
   }
   /** Player 2's cursor comes in on their own ánima the first time they touch anything. */
   function wake(player: Player) {
@@ -326,35 +387,40 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   function move(player: Player, direction: Direction) {
     const from = buttonOf(cursors[player]);
     if (!from) { point(player, spots[0]?.key); return; }
-    point(player, (nearestButton(targets(player), from, direction) as HTMLButtonElement | undefined)?.dataset.key);
+    point(player, (nearestButton(targets(), from, direction) as HTMLButtonElement | undefined)?.dataset.key);
   }
-  /** To the next ánima: its core out in the sky, or straight into it from inside another. */
+  /** To the next ánima's core, wherever the cursor is. */
   function turn(player: Player, step: 1 | -1) {
-    const list = pages(), on = animaOfKey(cursors[player]);
+    const list = pages(), on = animasAt(cursors[player])[0];
     if (!list.length) return;
-    const index = on ? list.indexOf(on) : step > 0 ? -1 : 0, next = list[(index + step + list.length) % list.length];
-    if (inside[player]) enter(player, next); else point(player, `core:${next}`);
+    const index = on ? list.indexOf(on) : step > 0 ? -1 : 0;
+    point(player, `core:${list[(index + step + list.length) % list.length]}`);
   }
   /** An eco crosses the sky, out of the jar and into a node, or back. */
   function fly(a: DOMRect | undefined, b: DOMRect | undefined, colour: string, delay = 0) {
     if (!a || !b || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const box = root.getBoundingClientRect();
     const eco = document.createElement('i');
-    eco.className = 'jar-flight'; eco.style.setProperty('--where', colour); root.append(eco);
+    eco.className = 'jar-flight'; eco.style.setProperty('--where', colour);
     const x0 = a.left + a.width / 2 - box.left, y0 = a.top + a.height / 2 - box.top, x1 = b.left + b.width / 2 - box.left, y1 = b.top + b.height / 2 - box.top;
     const lift = Math.min(y0, y1) - 50, mid = (x0 + x1) / 2 + (y1 - y0) * .12;
-    const at = (x: number, y: number, s: number) => ({ transform: `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${s})` });
-    eco.animate([at(x0, y0, .8), { ...at(mid, lift, 1.4), offset: .5 }, at(x1, y1, .7)], { duration: 460, delay, fill: 'backwards', easing: 'cubic-bezier(.3,.05,.3,1)' }).finished.then(() => eco.remove(), () => eco.remove());
+    const to = (x: number, y: number, s: number) => ({ transform: `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${s})` });
+    // Already where it leaves from, so it never shows in the corner before its flight starts.
+    eco.style.transform = to(x0, y0, .8).transform;
+    root.append(eco);
+    eco.animate([to(x0, y0, .8), { ...to(mid, lift, 1.4), offset: .5 }, to(x1, y1, .7)], { duration: 460, delay, fill: 'backwards', easing: 'cubic-bezier(.3,.05,.3,1)' }).finished.then(() => eco.remove(), () => eco.remove());
   }
   const mouth = () => ([...root.querySelectorAll('.jar-marble[data-free]')].at(-1) ?? root.querySelector('.jar-marbles'))?.getBoundingClientRect();
-  function press(button: HTMLButtonElement, player: Player) {
+  function press(button: HTMLButtonElement) {
     if (button.hasAttribute('data-jar-close')) { close(); return; }
-    if (button.dataset.core) { const id = button.dataset.core as ClassId; if (inside[player] === id) leave(player); else enter(player, id); return; }
+    // A core is only read: everything of it is already in the sky.
+    if (button.dataset.core) return;
     const before = [...story.improvements];
     const back = () => before.filter(id => !story.improvements.includes(id)).forEach((id, i) => fly(buttonOf(id)?.getBoundingClientRect(), mouth(), colourOf(improvementOf(id)!), i * 70));
     if (button.hasAttribute('data-jar-reset')) {
       if (!before.length) { callbacks.sound('denied'); return; }
-      story.clearImprovements(); callbacks.sound('clink'); callbacks.changed(); refresh(); back();
+      // Each light finds its own way back before the stars it leaves go out of the sky.
+      back(); story.clearImprovements(); callbacks.sound('clink'); callbacks.changed(); refresh();
       return;
     }
     const id = button.dataset.improve, item = id ? improvementOf(id) : undefined;
@@ -362,7 +428,9 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     const state = stateOf(item);
     if (state === 'on') {
       // Whatever hangs from it goes out with it: each light finds its own way back.
-      story.unimprove(id); callbacks.sound('glass-tick'); callbacks.changed(); refresh(); back();
+      const rects = new Map(before.map(other => [other, buttonOf(other)?.getBoundingClientRect()]));
+      story.unimprove(id); callbacks.sound('glass-tick'); callbacks.changed(); refresh();
+      before.filter(other => !story.improvements.includes(other)).forEach((other, i) => fly(rects.get(other), mouth(), colourOf(improvementOf(other)!), i * 70));
     } else if (state === 'open') {
       const from = mouth();
       story.improve(id); callbacks.changed(); refresh([id]);
@@ -376,11 +444,11 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   /** Opens the jar; resolves when it is closed, so the story's next beat waits for it. */
   function show() {
     if (open) return Promise.resolve();
-    open = true; closing = false; openedAt = performance.now(); delete cursors[1]; delete cursors[2]; delete inside[1]; delete inside[2]; delete stages[1]; delete stages[2];
+    open = true; closing = false; openedAt = performance.now(); delete cursors[1]; delete cursors[2];
     root.hidden = false; root.dataset.phase = 'in'; hud.dataset.jar = 'open'; callbacks.pause(true);
     render();
     clearTimeout(timer);
-    timer = window.setTimeout(() => { if (open && !closing) root.dataset.phase = 'open'; }, 1300);
+    timer = window.setTimeout(() => { if (open && !closing) root.dataset.phase = 'open'; }, 1600);
     return new Promise<void>(resolve => { closed = resolve; });
   }
   /** The window folds back into the jar, and then the room is theirs again. */
@@ -399,25 +467,22 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   }
   function control(action: ControllerEvent, player: Player = 1) {
     if (!open || closing) return;
-    if (action === 'menu' || (action === 'cancel' && !inside[player])) { close(); return; }
+    if (action === 'menu' || action === 'cancel') { close(); return; }
     if (wake(player)) return;
-    if (action === 'cancel') { leave(player); return; }
     if (action === 'prev' || action === 'next') turn(player, action === 'prev' ? -1 : 1);
-    else if (action === 'confirm') { const button = buttonOf(cursors[player]); if (button) press(button, player); }
+    else if (action === 'confirm') { const button = buttonOf(cursors[player]); if (button && !button.hidden) press(button); }
     else if (action !== 'overview' && action !== 'character' && !isDpad(action)) move(player, action);
   }
-  // The mouse is player 1's: a node can only be reached unfolded, and reaching one puts them in its constellation.
-  const within = (button: HTMLButtonElement) => { const id = button.dataset.improve ? animaOfKey(button.dataset.key) : undefined; if (id && inside[1] !== id) { inside[1] = id; refresh(); } };
+  // The mouse is player 1's.
   root.addEventListener('click', event => {
     if (closing) return;
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-key]');
-    if (button) { within(button); point(1, button.dataset.key); press(button, 1); }
+    if (button) { point(1, button.dataset.key); press(button); }
   });
   root.addEventListener('pointerover', event => {
     if (closing) return;
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-key]');
-    if (!button || (inside[1] && !button.dataset.improve && animaOfKey(button.dataset.key) !== inside[1])) return;
-    within(button); point(1, button.dataset.key);
+    if (button) point(1, button.dataset.key);
   });
   // Ahead of the game and the menu: while it is open the keys are its own.
   function keydown(event: KeyboardEvent) {

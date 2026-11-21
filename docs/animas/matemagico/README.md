@@ -81,6 +81,66 @@ and half of *Punto débil*. A foe that already carries the mark cannot take it a
   boost; it used to cost 10 Secundaria).
 - *Cardioide*: `Cura media a un aliado herido.` (24 heal, light rising from a cardioid; cost 8).
 
+## Grade III: what the castle opens (2026-11-20)
+
+Aitor's direction (2026-11-20): **higher-grade magic that plays with the statuses**. His: a
+**Vulcano** for 3 maná that leaves every foe at Quemado III, and at the end of the fire line
+**Combustión**. Second round, the same day (Aitor): **Combustión is fire's fourth level**, *Fuego
+IV* with its own icon and its own change (physical blows set it off); **water's top is the same
+idea, freezing**; Punto de rocío and Diferencia de potencial are out. Shock (water and electricity)
+was built already (`docs/combat.md` § Reacciones entre elementos). Numbers are first guesses.
+
+They are the nodes the constellation gains after the castle's first boss (`../README.md` § Growth
+opens with the castle, stage 2; the stages are not built, so today they show at once). Each line
+keeps its job: **fire piles up, water sets up, electricity cashes in**; grade III is each one's top.
+
+| Line | Node | Ecos | Cost | Base | Description | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| Fuego | Passive · **Combustión** | 2 | — | 24 magic, fire, all | `Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.` | Built |
+| Fuego | Dúo mayor · **Vulcano**, with Sincopante's Ostinato | 2 | 1 + 2 | 28 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20 segundos, un volcán les sube el fuego un nivel cada 5 segundos.` | Built |
+| Cálculo | **Integral** | 2 | 3 | 26 heal, party | `Cura media a todo el equipo.` | Built |
+| Agua | Passive · **Punto de congelación** | 2 | — | — | `Pasiva. El agua puede subir hasta un nivel III y, un nivel más, congela: el enemigo no actúa hasta que el hielo se rompe o se derrite.` | Designed |
+| Eléctrico | **Resonancia** | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Designed (Aitor liked it, 2026-11-20); built with the freezing rule |
+
+- **Vulcano, a dúo mayor** (Aitor 2026-11-20: Foc Binari with Marta's Ostinato, unlocked; `../README.md`
+  § Dúos mayores): Gerard's binary fire goes into the ground behind the foes, Marta's eco beats on it
+  three times and a **volcano of particles** rises there. For 20 s, every 5 s, it throws lava on each
+  foe and raises its fire a level (with Combustión, to IV): Quemado I to III over the first three
+  beats. A wet foe steams instead. Only with its node bought, besides both halves known. It replaces
+  the skill built that morning. In the jar its node is a gold star between Matemágico's fire and
+  Sincopante, there once Combustión is lit and Ostinato learned (`../README.md` § The jar as one sky).
+- **Integral** (Aitor's yes, 2026-11-20): the sign drawn in gold over the party, then a cardioid of
+  light under each one it cures. The first cure for everyone in either own ánima.
+- **Combustión, fire IV** (the rule: `../README.md` § Combustión): with the passive in the fight,
+  fire landing on Quemado III climbs once more. At IV it pulses ×7 (14 on a boss every 2 s), burns
+  white with its own icon on the plate (the flame inside a burst, breathing), and **any physical
+  blow on it makes it burst**: 24 of fire on every foe and every other fire a level up; the one that
+  burst goes back to III, so it can be fed and set off again. Gerard's own Atacar is a physical blow
+  (§ Casting): Foc Binari to IV, then Atacar, is his loop alone; with Papagato, Dadista or Bip beside
+  him, every claw, die and ram is a match.
+- **Punto de congelación, water's top** (designed, waiting for the freezing rule): Mojado gets
+  levels as fire does (water on a wet foe raises it, I → III; Vapor leaves Cegado at the water's
+  level, as Humo does at the fire's), and **a fourth water freezes it**: *Congelado*, the shared
+  rule Freática's *Bajo cero* already uses (`../README.md` § Congelado), with one mark of ice
+  (20 s). Frozen it does not act and takes a quarter of every blow; four to seven blows break the
+  ice for a big water blow. **The mirror of Combustión**: both tops are cashed by physical blows,
+  fire spreads, ice breaks. Freática's water marks and Mojado's levels are to be one count
+  (`../freatica/README.md` § Crecida, Open).
+
+**Look, built** (`just screenshots grado-iii --gpu`): Vulcano's arcs of molten light leave his circle
+for the floor under each foe; the floor cracks into a ring of magma and a column of fire bursts up
+through each one with three rings climbing it. Fire IV burns white-hot (`effects.fire` level
+`white`: taller, the heart nearly white, flaring often) with blue-white sparks spinning round them and
+a heartbeat of heat every second (`status-fx` `combustion`). Its burst: the fire draws into the chest,
+a white flash and a ball of fire, a ring of flame along the floor, embers arcing to every other foe,
+whose fire flares as they land; *¡Combustión!* over it and *PASIVA · Combustión* over the wearer.
+
+### Still proposed
+
+- **Marea** (Agua, 3 maná): `Daño mágico de agua leve a todos los enemigos. Los moja con agua de nivel III.`
+  Water's own Vulcano, waiting on Punto de congelación; or a dúo mayor with Freática's Recarga
+  (`../README.md` § Dúos mayores).
+
 ## Foc Binari: the look
 
 Gerard raises his hand, his circle opens (§ Casting) and two streams of fire leave it for one foe, braided round each other
@@ -194,3 +254,6 @@ duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined 
 
 - Whether Análisis Parálisis and Cardioide keep their look, or get their own (a chalkboard of sums for
   Análisis, the cardioid drawn by hand).
+- Grade III (§ Grade III): Vulcano and Combustión take the tree from 17 to 21 ecos, Punto de
+  congelación to 23, when the whole game gives 12 to 16. They only show after Aurelià; keep them at
+  2 each and settle the total with the stages.

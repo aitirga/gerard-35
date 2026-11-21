@@ -32,6 +32,7 @@ guesses ([`../README.md`](../README.md) § Order of work).
 | 2026-11-20 | **A boss can be frozen too**, and like anyone it takes little damage unless its ice is broken |
 | 2026-11-20 | **The ice goes by time**, not by turns: it **comes down little by little, melting live, and breaking it is worth less all the while**. More water is still more ice |
 | 2026-11-20 | **The ice breaks by percentage, at four to seven blows**. Read here as: each blow from outside cracks a share of the ice, more the harder the blow |
+| 2026-11-21 | **The damage of breaking the ice is not a share of PV**: it is a blow, so the wearer's Magia and a weakness to water count, and Hundido stays the one pure share |
 | 2026-11-21 | **A flurry is a shortcut through the ice, and that is good**: *Zarpazos de fuego* is a dual that is hard to set up. He put it as Zarpazos three blows, Zarpazos de fuego five, **the ice four to eight**, «or a better combination» |
 | 2026-11-20 | **Hundido takes its share of the PV the foe has in all**, not of what it has left |
 
@@ -233,7 +234,7 @@ block of ice round it, as tall as it stood. A dry foe is not. The rule is shared
    The cracks do not heal as the ice melts. A physical blow cracks it whatever its element; only
    a flame (magic fire) melts it instead.
 4. **Cracked through, it breaks**: the foe takes magic water damage by the ice still there at
-   that moment (Aitor: huge at the start, less all the while as it melts, still a lot): base
+   that moment (Aitor: huge at the start, less all the while as it melts, still a lot; a blow, never a share of its PV): base
    **90 with three marks of ice, 73 with two, 57 with one, down to 40** as the last of it goes
    (proposal: 40 + 50 × the ice left over three marks), and is free and acts again. A foe frozen
    at I starts at 57: the deep ice is the one worth breaking.
@@ -502,9 +503,4 @@ Nothing measured: there is nothing to play. To watch when there is:
 - **How a flurry counts**: each strike one (proposed: *Zarpazos* four of the eight, *Zarpazos
   de fuego* all eight), or Aitor's first numbers, three and five, with which the dual is no
   quicker than four hard blows.
-- **«Porcentual»** is read as the share of the ice each blow cracks (an eighth, or a quarter for
-  a hard one). If the percentage meant was the break's damage (a share of the
-  foe's PV instead of a blow of base 90 to 40), that is the other reading: it would make the
-  break weigh the same on a boss as on a dog, as Hundido does. Proposed: keep it a blow, so the
-  wearer's Magia and a weakness to water count, and Hundido stays the one pure share.
 - **The ice spends the water** (proposed). Or the water is back at the mark the ice melted to.

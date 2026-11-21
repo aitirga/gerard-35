@@ -87,7 +87,7 @@ export type EffectKind = keyof typeof KINDS;
 
 // ── Fire ────────────────────────────────────────────────────────────────────────────────────────
 /** How big a fire is: a small flicker, a campfire or a blaze (`effects.fire`). */
-export type FireLevel = 'light' | 'medium' | 'high';
+export type FireLevel = 'light' | 'medium' | 'high' | 'white';
 /**
  * Each level of fire: half the width of its flames and how tall they stand (m), how much taller its
  * smoke rises (× height), how white-hot it burns (past 0 its heart blooms), its sparks a second, the
@@ -103,6 +103,9 @@ const FIRE: Record<FireLevel, { width: number; height: number; wrap: number; spr
   medium: { width: .42, height: 1, wrap: .85, spread: .72, lick: .44, heats: 1, smoke: .9, heat: .6, sparks: 7, light: { intensity: 2.4, range: 3 }, crackle: { every: [1, 2.5], sparks: 6 } },
   // A blaze roaring and flaring, spitting sparks into a column of dark smoke. On someone, all of them engulfed.
   high: { width: .75, height: 2.2, wrap: 1.35, spread: 1, lick: .62, heats: 1.1, smoke: 1.1, heat: .7, sparks: 22, light: { intensity: 4.5, range: 5 }, crackle: { every: [.4, 1.2], sparks: 16 } },
+  // Combustión (Quemado IV): past the blaze, white-hot. Taller, tongues that lick further, a heart that
+  // blooms almost white, and it flares often: something about to go off. Less smoke: it burns clean.
+  white: { width: .85, height: 2.6, wrap: 1.55, spread: 1, lick: .78, heats: 1.35, smoke: .7, heat: 1.6, sparks: 34, light: { intensity: 6.5, range: 6 }, crackle: { every: [.25, .6], sparks: 22 } },
 };
 /** How much bigger than on someone Gerard's size a fire's tongues are on someone this tall (m): a cat's small, a giant's big but never to scale. */
 const lickScale = (height: number) => Math.max(.55, Math.min(2, Math.sqrt(height / 1.7)));
@@ -297,6 +300,7 @@ const FIRE_GPU: Record<FireLevel, { embers: number; crackle: number; smoke: numb
   light: { embers: 8, crackle: 3, smoke: 6, ash: 2, swirl: 2.5, lift: 1.2 },
   medium: { embers: 26, crackle: 14, smoke: 18, ash: 7, swirl: 5, lift: 2.5 },
   high: { embers: 75, crackle: 30, smoke: 42, ash: 16, swirl: 8, lift: 4.5 },
+  white: { embers: 120, crackle: 56, smoke: 24, ash: 8, swirl: 11, lift: 6 },
 };
 
 /** Someone an effect is on: how wide (m from their middle) and how tall they stand. */
@@ -1286,6 +1290,60 @@ export function createEffects(app: pc.Application) {
      * engine's kinds, fields, chains and neighbours. Returns false where it cannot play (no GPU
      * simulation, not in a fight, reduced motion).
      */
+    /**
+     * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a wall of Bip's bits standing at
+     * `centre`, its face turned `yaw` degrees, `width` × `height` m. It unfolds from its middle, ripples
+     * a little while it stands, dents and glints where a blow lands in it (`hit`), and gives way from
+     * where it is struck (`shatter`) or melts back to nanites (`fade`). A lattice on the GPU: nothing
+     * where the engine cannot run.
+     */
+    bitWall(centre: Vec, yaw: number, o: { width?: number; height?: number; colour?: string } = {}) {
+      if (!gpu || !gpuOn) return undefined;
+      const colour = o.colour ?? '#4fe0ff', half = { x: (o.width ?? 1.6) / 2, y: (o.height ?? 1) / 2, z: .02 };
+      const rotation = new pc.Quat().setFromEulerAngles(0, yaw, 0), face = rotation.transformVector(new pc.Vec3(0, 0, 1));
+      const at = { x: centre.x, y: centre.y, z: centre.z };
+      const wall = gpu.lattice('node', {
+        grid: [48, 30, 1], size: { x: .02, y: .02, z: .005 }, shape: 'box', at, rotation, life: 40, hold: .9, colour, scale: .55,
+        rigidity: 260, bonds: 480, damping: 9, viscosity: 2, toughness: 0, glow: 2.4, rim: 3.2, hitRadius: .08, transfer: .5, bounce: .35, reform: 0,
+        opacity: .9, fresnel: .35, wave: { height: .012, length: .45, speed: .7 }, light: { intensity: 1.4, range: 2.6, colour },
+      });
+      let end = Infinity, how: 'shatter' | 'fade' = 'fade';
+      lattices.push({ lattice: wall, age: 0, seconds: 1e9, step: t => {
+        const k = 1 - (1 - span(t, 0, .45)) ** 2;
+        if (t < 1) wall.size.set(half.x * k + .02, half.y * k + .02, half.z);
+        // Whole, it mends what a blow dents; it only gives way once it has unfolded.
+        wall.toughness = t > .6 ? .55 : 0; wall.reform = t > .6 && end === Infinity ? 40 : 0;
+        if (end !== Infinity) {
+          wall.dissolve = span(t, end, end + (how === 'shatter' ? .35 : .8));
+          if (t > end + 1.2) wall.remove();
+        }
+      } });
+      const ageOf = () => lattices.find(l => l.lattice === wall)?.age ?? 0;
+      return {
+        get alive() { return wall.alive && end === Infinity; },
+        /** A blow from `from` goes into it: a spray of sparks it catches, a dent and a glint. */
+        hit(from: Vec, strength = 1) {
+          if (!wall.alive) return;
+          const dx = at.x - from.x, dy = at.y - from.y, dz = at.z - from.z, d = Math.hypot(dx, dy, dz) || 1, speed = 9 + 5 * strength;
+          const batch = gpu.burst('spark', { at: from, count: Math.round(40 + 60 * strength), spread: .08, velocity: { x: dx / d * speed, y: dy / d * speed, z: dz / d * speed }, speed: 1, cone: .2, life: [.5, .9], colour: '#dffbff' });
+          wall.hitBy(batch);
+          glint(at, colour, 2 + strength, 2.6, .3);
+        },
+        /** It gives way where it was struck, in chips. */
+        shatter() {
+          if (end !== Infinity || !wall.alive) return;
+          end = ageOf(); how = 'shatter';
+          wall.breakInto = 'chip'; wall.dissolveFrom = 'push';
+          wall.push({ x: at.x - face.x * .2, y: at.y, z: at.z - face.z * .2 }, half.x + .4, 4);
+          gpu.burst('spark', { at, count: 120, spread: half.x * .6, speed: 3, life: [.3, .7], colour: '#dffbff', light: { intensity: 4, range: 3, colour } });
+          glint(at, colour, 4, 3.4, .4);
+        },
+        /** It melts back into nanites, quietly (its time is over). */
+        fade() { if (end === Infinity && wall.alive) { end = ageOf(); how = 'fade'; } },
+        /** Its middle, and the way its face looks. */
+        centre: at, face: { x: face.x, y: face.y, z: face.z },
+      };
+    },
     fightFx(name: FightFx, o: { model: pc.Entity; from?: Vec; colour?: string; strength?: number }) {
       if (!gpu || !gpuOn) return false;
       // Where they stand: the scene's floor may not reach under the fight (it reads −1 there), so never below them.

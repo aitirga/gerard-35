@@ -11,7 +11,7 @@ import type { GpuEmitter, GpuField, GpuKind } from './fight-particles.ts';
  * body and a way of moving.
  * Particles are only sparks, drops, crystals and haze, never sprites with a shape of their own.
  */
-export type StatusLookId = 'quemado' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido';
+export type StatusLookId = 'quemado' | 'combustion' | 'virus' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido';
 export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
 /** How a status moves whoever carries it (battle-scene plays it). */
 export type StatusMotion = 'freeze' | 'twitch' | 'sway';
@@ -117,6 +117,23 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
     shows: 'Arde él mismo: prende en unos puntos de su cuerpo y se extiende por sus piezas dejando carbón con vetas al rojo, y de ellas salen lenguas de fuego en 3D (I unas manchas y llamitas, II casi todo, III envuelto entero); brasas, chispas, ceniza y humo saltan de su superficie.',
     streams: [],
   },
+  // Combustión (Quemado IV, docs/animas/README.md § Combustión): over the white-hot fire (`ignite`
+  // 'white'), what says it is about to go: sparks gone blue-white, the hottest a flame gets, spinning
+  // round them fast, and a heartbeat of heat that throws a ring of embers off their body every second.
+  combustion: {
+    name: 'Combustión', family: 'físico', seconds: 10,
+    shows: 'Arde al rojo blanco, más alto que un incendio; chispas blancas y azuladas le giran alrededor y cada segundo late: un anillo de brasas sale de su cuerpo, como algo a punto de estallar.',
+    streams: [
+      { kind: 'spark', rate: [40, 40, 40], from: 'body', above: .25, outward: 1.4, up: 1.2, speed: .9, life: [.25, .55], colour: '#e8f4ff' },
+      { kind: 'twinkle', rate: [14, 14, 14], from: 'body', above: .4, outward: .5, up: .8, speed: .4, life: [.3, .6], colour: '#bfe0ff', size: .8 },
+    ],
+    field: { height: .55, swirl: 14, pull: 4, lift: 2.5, turbulence: .3, reach: .55 },
+    pulse: { every: 1, streams: [
+      { kind: 'crackle', count: [70, 70, 70], rate: [0, 0, 0], from: 'body', above: .2, outward: 2.6, up: .5, speed: 1.6, life: [.35, .7], colour: '#fff1c8' },
+      { kind: 'ember', count: [30, 30, 30], rate: [0, 0, 0], from: 'body', above: .3, outward: 1.8, up: 1.4, speed: 1.1, life: [.6, 1.1], colour: '#ffd27a' },
+    ] },
+    tint: [.12, .07, .03],
+  },
   mojado: {
     name: 'Mojado', family: 'físico', seconds: 20,
     shows: 'Gotas que se forman en su cuerpo y bajan resbalando por sus piezas hasta dejar charquitos; un brillo frío y destellos de agua.',
@@ -201,6 +218,17 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
     field: { height: 1.1, swirl: -12, pull: 6, lift: 0, reach: .45 },
     tint: [0, .03, .05],
     motion: 'sway',
+  },
+  // Virus atómico: a swarm of tiny Bips round them, cyan dots darting in a tight cloud, never still.
+  virus: {
+    name: 'Virus', family: 'tecnópata', seconds: 20,
+    shows: 'Un enjambre de Bips diminutos le rodea: puntos cian que zumban en una nube apretada alrededor de su cuerpo y no paran.',
+    streams: [
+      { kind: 'mote', rate: [34, 34, 34], from: 'body', above: .3, outward: .9, speed: .6, life: [.7, 1.2], colour: '#7fe9ff', size: .9 },
+      { kind: 'twinkle', rate: [10, 10, 10], from: 'body', above: .4, outward: .6, speed: .5, life: [.2, .4], colour: '#e8fdff', size: .6 },
+    ],
+    field: { height: .55, swirl: 18, pull: 9, lift: .3, turbulence: 1.2, reach: .6 },
+    tint: [0, .025, .04],
   },
   encogido: {
     name: 'Encogido', family: 'tecnópata', seconds: 15,
@@ -288,13 +316,47 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
       const list = on.get(id) ?? [];
       on.set(id, list);
       let a = list.find(s => s.look === look && !s.ending);
+      // Fire at IV burns white (Combustión); the look's own levels stop at III.
+      const white = look === 'quemado' && (o.level ?? 0) >= 4;
       const seconds = o.seconds ?? STATUS_LOOKS[look].seconds;
       if (a) { a.level = levelOf(o.level ?? a.level + 1); a.total = seconds; a.left = o.left ?? seconds; a.held = !!o.held; }
       else {
         a = { look, level: levelOf(o.level ?? 1), left: o.left ?? seconds, total: seconds, held: !!o.held, emitters: [], beat: 0, ending: false };
         list.push(a);
       }
-      if (STATUS_LOOKS[look].fire) hooks.ignite(id, fireLevel(a.level));
+      if (STATUS_LOOKS[look].fire) hooks.ignite(id, white ? 'white' : fireLevel(a.level));
+    },
+    /**
+     * Combustión bursts on `id` (docs/animas/README.md § Combustión): the white fire pulls into their
+     * chest, then a flash and a ball of fire that swallows them, a ring of flame along the floor, and
+     * embers arcing out to each of `to` (the other foes), whose fires flare as they land.
+     */
+    combust(id: string, to: string[]) {
+      const f = find(id), g = gpu();
+      if (!f || !g) return;
+      ensureKinds();
+      const body = bodyFor(f), chest = { x: f.feet.x, y: f.feet.y + body.height * .55, z: f.feet.z };
+      // It draws in: sparks off their body pulled into the chest.
+      g.burst('spark', { at: chest, count: 90, shape: 'surface', fighter: f.index, outward: -1.4, speed: .9, life: [.1, .18], colour: '#fff6dc' });
+      timed.push({ left: .1, end: () => {
+        const h = gpu();
+        if (!h) return;
+        // The ball: a white heart, a skin of gold and orange crackle, embers thrown wide, and smoke after.
+        h.burst('spark', { at: chest, count: 160, spread: .2, speed: 6.5, life: [.25, .6], colour: '#ffffff', light: { intensity: 9, range: 6, colour: '#ffcf7a' } });
+        h.burst('crackle', { at: chest, count: 340, spread: body.radius * .6, speed: 4.2, up: 1, life: [.4, .9], colour: '#ffb84a' });
+        h.burst('ember', { at: chest, count: 180, spread: body.radius * .5, speed: 3.2, up: 2.4, life: [.9, 1.8], colour: '#ffd27a' });
+        h.burst('smog', { at: chest, count: 120, spread: body.radius, up: 1.6, speed: .8, life: [1, 1.8] });
+        // A ring of flame running out along the floor.
+        h.burst('crackle', { at: { x: f.feet.x, y: f.feet.y + .08, z: f.feet.z }, count: 220, shape: 'ring', spread: body.radius + .1, outward: 7, speed: 1, around: .2, life: [.35, .6], colour: '#ff9a3c' });
+        // Embers arc to every other foe: their own fire goes up as they land.
+        for (const other of to) {
+          const o = find(other);
+          if (!o) continue;
+          const at = { x: o.feet.x, y: o.feet.y + bodyFor(o).height * .55, z: o.feet.z };
+          h.burst('ember', { at: chest, to: at, shape: 'line', count: 70, speed: .6, life: [.35, .7], colour: '#ffcf6a', light: { intensity: 3, range: 2.4, colour: '#ffb84a' } });
+          timed.push({ left: .28, end: () => gpu()?.burst('crackle', { at, count: 90, shape: 'surface', fighter: o.index, outward: 1.8, up: 1.4, speed: 1.2, life: [.3, .6], colour: '#ffb84a' }) });
+        }
+      } });
     },
     /** Sets how long a status shown as `held` has left (the fight's clock keeps it, src/battle.ts `runClock`). */
     hold(id: string, look: StatusLookId, left: number) {

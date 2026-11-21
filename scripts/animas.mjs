@@ -125,7 +125,7 @@ function built(id) {
   const rule = ANIMA_RULES[id] ? `<li><strong>${esc(ANIMA_RULES[id].name)}</strong> <small>regla · nivel 1</small><br>${esc(ANIMA_RULES[id].description)}</li>` : '';
   const passives = Object.values(PASSIVES).filter(p => p.anima === id).map(p => { const node = nodes.find(n => n.kind === 'passive' && n.name === p.name); return `<li><strong>${esc(p.name)}</strong>${node ? ` <small>bote · ${node.cost} ecos</small><br>${esc(node.description)}` : ''}</li>`; }).join('');
   const duals = DUALS.filter(d => d.parts.some(part => skillOf(part)?.class === id)).map(dualRow).join('');
-  const jar = nodes.filter(n => n.kind !== 'skill' && n.kind !== 'passive').map(n => `<span class="chip">${esc(n.name)} · ${n.cost} eco${n.cost > 1 ? 's' : ''}${n.veiled ? ' · duerme' : ''}</span>`).join('');
+  const jar = nodes.filter(n => n.kind !== 'skill' && n.kind !== 'passive').map(n => `<span class="chip">${n.kind === 'dual' ? 'Dúo mayor · ' : ''}${esc(n.name)} · ${n.cost} eco${n.cost > 1 ? 's' : ''}${n.veiled ? ' · duerme' : ''}</span>`).join('');
   return `
     <div class="facts">
       <div><small>De quién</small><b>${ANIMA_OWNERS[id] ? `Propia de ${PEOPLE[ANIMA_OWNERS[id]]}` : 'Compartida'}</b></div>

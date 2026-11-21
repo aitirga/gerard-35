@@ -325,10 +325,10 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
   const targets = { foes: 'a un enemigo', 'all-foes': 'a todos los enemigos', allies: 'a un aliado herido', party: 'a todo el equipo' };
   for (const skill of SKILLS.filter(s => !('abstract' in s && s.abstract))) {
     const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
-    const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets[skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
+    const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets['screen' in skill ? 'party' : skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
-      : skill.kind === 'guard' ? `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
-      : `^Daño ${damageKind(skill)} ${intensity(skill.power)} ${'rain' in skill ? 'a enemigos al azar' : targets[skill.side]}\\.${extra}$`;
+      : skill.kind === 'guard' ? skill.side === 'party' ? `^Protege a todo el equipo durante \\d rondas\\.${extra}$` : `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
+      : `^Daño ${damageKind(skill)} ${intensity(skill.power)} ${'rain' in skill || 'volley' in skill ? 'a enemigos al azar' : targets[skill.side]}\\.${extra}$`;
     assert.match(skill.description, new RegExp(shape), skill.name);
   }
 });
@@ -551,7 +551,7 @@ test('Ronroneo is for one ally: a cure at once, Sanación running on them, and t
 test('dual descriptions follow the plain shape too, and each dual pairs a skill of each of two ánimas, in either order', async () => {
   const { DUALS, dualOf, dualCost } = await import('../src/battle.ts');
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
-  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color']);
+  assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color', 'sobrecalentamiento', 'vulcano']);
   for (const d of DUALS) {
     const [a, b] = d.parts.map(id => SKILLS.find(s => s.id === id));
     assert.notEqual(a.class, b.class, `${d.name}: two ánimas`);

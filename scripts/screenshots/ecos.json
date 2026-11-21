@@ -1,6 +1,6 @@
 {
-  "title": "El bote de las luces: el cielo de las ánimas",
-  "description": "docs/animas/README.md § The jar, src/jar-ui.ts. The jar at home opens as a window over the living room: one sky with a constellation per ánima, folded small and scattered until a player opens it onto their side and works inside; the jar below with every eco. Lights fly from the jar to the node they turn on and back; Gerard and Aitor each have their own cursor and floating note. Run it with --gpu.",
+  "title": "El bote de las luces: un solo cielo",
+  "description": "docs/animas/README.md § The jar, § The jar as one sky, src/jar-ui.ts. The jar at home opens as a window over the living room: one sky with every ánima's constellation open at once (Gerard's tree on the left, Aitor's on the right, the shared ones small and scattered between, with what they have learned as small stars), the dúos mayores as gold stars between two constellations once both ends are lit, and the jar below with every eco. Here with all seven ánimas. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=luz-uri&day=8"
@@ -10,7 +10,7 @@
       "timeout": 60000
     },
     {
-      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements(); window.gerard.story.debugEcos = 14; window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`)"
+      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements(); window.gerard.story.debugEcos = 24; window.gerard.story.debugAnimas = { matemagico: 1, papagato: 3, tecnopata: 1, dadaista: 7, sincopante: 1, prismatico: 2, freatica: 1 }; window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`)"
     },
     {
       "teleport": "meridiana",
@@ -40,28 +40,15 @@
     {
       "shot": "cielo",
       "delay": 300,
-      "caption": "The sky, every constellation folded: each ánima's own tree, joins and all, small and soft, scattered over the sky (never a row: nothing says how many there will be), its name under it; the jar below with the ecos. Gerard points at his: it comes into focus and its name is underlined in gold"
-    },
-    {
-      "record": "desplegar",
-      "seconds": 2.2,
-      "fps": 30,
-      "tiles": 16,
-      "each": "window.frame === 3 && void jar.control('confirm', 1)",
-      "caption": "Gerard opens Matemágico: it leaves its place in the sky for his side, growing and sharpening, each ring of nodes coming up after the one before"
-    },
-    {
-      "shot": "matemagico-abierta",
-      "delay": 300,
-      "caption": "Matemágico unfolded: Cálculo, Fuego, Eléctrico, Agua and the definitiva asleep. He now moves only inside it"
+      "caption": "The one sky with all seven ánimas, nothing lit yet: Matemágico on the left and Tecnópata on the right, whole; Dadista, Sincopante, Papagato, Colorista and Freática small and scattered round and between them, each with its Maná +1 and its definitiva, and what it has learned fighting as small stars of its colour. Gerard's cursor on his core pushes Matemágico in a little"
     },
     {
       "press": "ArrowRight"
     },
     {
       "shot": "nota-nodo",
-      "delay": 350,
-      "caption": "On a node: the floating note says what it is, what it does, what it costs and what pressing would do"
+      "delay": 400,
+      "caption": "Moving over the whole sky by nearest star: on a node, the floating note says what it is, what it does, what it costs and what pressing would do"
     },
     {
       "record": "encender",
@@ -69,117 +56,116 @@
       "fps": 30,
       "tiles": 12,
       "each": "window.frame === 3 && void jar.control('confirm', 1)",
-      "caption": "Turning a node on: a light leaves the jar, crosses the sky and lands; the node becomes a pane of lit glass, a ring runs out of it and its join lights"
-    },
-    {
-      "press": "ArrowRight"
-    },
-    {
-      "press": "Enter"
-    },
-    {
-      "wait": 900
-    },
-    {
-      "eval": "jar.control('confirm', 2)"
-    },
-    {
-      "wait": 300
-    },
-    {
-      "shot": "llega-aitor",
-      "delay": 400,
-      "caption": "Player 2 touches the pad: Aitor comes in pointing at Tecnópata (its name underlined in cyan), still folded, while Gerard works inside Matemágico"
-    },
-    {
-      "record": "desplegar-aitor",
-      "seconds": 2.2,
-      "fps": 30,
-      "tiles": 16,
-      "each": "window.frame === 3 && void jar.control('confirm', 2)",
-      "caption": "Aitor opens his own onto the right side: each player in a different constellation at once"
-    },
-    {
-      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
-    },
-    {
-      "wait": 900
-    },
-    {
-      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
-    },
-    {
-      "wait": 900
-    },
-    {
-      "shot": "los-dos",
-      "delay": 300,
-      "caption": "Both unfolded, both at work: Gerard electricity as far as Descarga, Aitor Mente whole. Two notes, each edged in its player's colour and threaded to its node"
+      "caption": "Turning a node on: a light leaves the jar, crosses the sky and lands; the node becomes a pane of lit glass and its join lights"
     },
     {
       "eval": "node('matemagico:fuego').click()"
     },
     {
-      "wait": 700
+      "wait": 600
     },
     {
-      "eval": "node('matemagico:agua').click()"
+      "eval": "node('matemagico:factor-comun').click()"
     },
     {
-      "wait": 700
+      "wait": 600
     },
     {
-      "eval": "node('matemagico:vasos').click()"
-    },
-    {
-      "wait": 700
-    },
-    {
-      "eval": "node('matemagico:capilaridad').click()"
-    },
-    {
-      "wait": 900
-    },
-    {
-      "eval": "node('matemagico:toma-de-tierra').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
-    },
-    {
-      "shot": "muchas-luces",
-      "delay": 400,
-      "caption": "More lights in: lit nodes are flat panes of glass in their line's colour, a passive a rounded square; the jar keeps every eco, the ones in an ánima dark and tinted by where they went"
-    },
-    {
-      "record": "plegar",
-      "seconds": 2.2,
-      "fps": 30,
-      "tiles": 16,
-      "each": "window.frame === 3 && void jar.control('cancel', 1)",
-      "caption": "Gerard steps back out: Matemágico shrinks back to its place in the sky; what is lit stays brighter in the small tree"
-    },
-    {
-      "eval": "jar.control('cancel', 2)"
-    },
-    {
-      "shot": "cielo-con-luces",
-      "delay": 1500,
-      "caption": "The sky again, both folded: each small constellation shows its lit stars and lit joins"
-    },
-    {
-      "eval": "jar.control('confirm', 1); jar.control('down', 1)"
+      "eval": "node('matemagico:rescoldo').click()"
     },
     {
       "wait": 700
     },
     {
-      "eval": "node('matemagico:agua').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+      "eval": "node('matemagico:combustion').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
     },
     {
-      "record": "apagar",
-      "seconds": 1.4,
+      "wait": 500
+    },
+    {
+      "eval": "node('matemagico:combustion').click(); document.getAnimations().forEach(a => { a.pause(); a.currentTime = 420; })"
+    },
+    {
+      "shot": "llega-vulcano",
+      "delay": 200,
+      "caption": "Combustión lit, the top of the fire line, held still a moment after: Sincopante's Ostinato is already learned, so both ends of Vulcano are lit and a light runs along each thread towards the place between the two constellations"
+    },
+    {
+      "eval": "document.getAnimations().forEach(a => { a.pause(); a.currentTime = 1380; })"
+    },
+    {
+      "shot": "nace-vulcano",
+      "delay": 200,
+      "caption": "A second later the gold star opens there, swelling bright before it settles; Ostinato's name comes out over its star, and the note moves off so as not to hide it"
+    },
+    {
+      "eval": "document.getAnimations().forEach(a => a.play())"
+    },
+    {
+      "eval": "node('matemagico:vulcano').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "vulcano",
+      "delay": 1600,
+      "caption": "Vulcano, the first dúo mayor, between Matemágico's fire and Sincopante: gold, larger, ringed, threaded to Combustión and to Ostinato (whose name now always shows). Its note names both halves and what it does; 2 ecos to wake it. Both constellations are pushed in on"
+    },
+    {
+      "record": "despertar-vulcano",
+      "seconds": 1.6,
       "fps": 30,
       "tiles": 12,
       "each": "window.frame === 3 && void jar.control('confirm', 1)",
-      "caption": "Turning Atacar · Agua off takes everything after it on its line too: each light flies back to the jar, nothing is lost"
+      "caption": "Waking Vulcano: two lights fly from the jar and its threads burn gold"
+    },
+    {
+      "eval": "jar.control('confirm', 2)"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "jar.control('right', 2); jar.control('confirm', 2)"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "shot": "los-dos",
+      "delay": 900,
+      "caption": "Both at work at once: Gerard on Vulcano, Aitor inside Tecnópata (Mente lit as far as Control remoto, his cursor on it). Two notes, each edged in its player's colour and threaded to its light; each constellation under a cursor pushed in"
+    },
+    {
+      "eval": "jar.control('next', 2); jar.control('next', 2)"
+    },
+    {
+      "shot": "compartida",
+      "delay": 1400,
+      "caption": "Aitor jumps to a shared ánima with Q/E: Dadista at level 7 is pushed in on and the names of what it has learned come out beside its small stars; its note lists them, with its Maná +1, Otra vez and its definitiva as nodes"
+    },
+    {
+      "eval": "node('matemagico:rescoldo').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "apagar",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 14,
+      "each": "window.frame === 3 && void jar.control('confirm', 1)",
+      "caption": "Turning Rescoldo off takes Combustión and Vulcano with it: each light flies back to the jar and the dúo mayor goes out of the sky with its threads"
+    },
+    {
+      "shot": "sin-vulcano",
+      "delay": 600,
+      "caption": "Without Combustión there is no Vulcano in the sky: nothing marks where it was"
     },
     {
       "record": "cerrar",

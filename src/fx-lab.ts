@@ -47,7 +47,7 @@ const ATTACKS: Record<FightFx, { name: string; element?: Element; ally?: boolean
 const ELEMENTS: Record<Element, string> = {
   fire: 'Fuego', ice: 'Hielo', air: 'Viento', energy: 'Energía', water: 'Agua', earth: 'Tierra', light: 'Luz', shadow: 'Sombra', gum: 'Chicle',
 };
-const FIRES: Record<FireLevel, string> = { light: 'Llamita', medium: 'Hoguera', high: 'Incendio' };
+const FIRES: Record<FireLevel, string> = { light: 'Llamita', medium: 'Hoguera', high: 'Incendio', white: 'Combustión' };
 const LOOKS = Object.keys(STATUS_LOOKS) as StatusLookId[];
 /**
  * The tower's fears' abilities the lab can play (battle-scene.ts `worldFx`), each as the fight would

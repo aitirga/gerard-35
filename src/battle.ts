@@ -47,7 +47,21 @@ export const canWear = (who: string, id: ClassId) => who !== 'bernat' && (!ANIMA
  */
 export const SKILLS = [
   { id: 'ostinato', name: 'Ostinato', cost: 2, side: 'foes', power: 14, kind: 'magic', class: 'sincopante', description: 'Daño mágico no elemental leve a un enemigo. Un eco repite el golpe cada 5 segundos durante 20 segundos.' },
-  { id: 'punado', name: 'Puñado', cost: 1, side: 'foes', power: 16, kind: 'physical', class: 'prismatico', description: 'Daño físico leve a un enemigo. Lo empolva durante 20 segundos.' },
+  // Colorista (docs/animas/prismatico/): dry coloured powder. A blow that powders (`powders`) leaves whoever it
+  // took PV from Empolvado, for an element to turn into something (`powder`, POWDER_RULES).
+  { id: 'punado', name: 'Puñado', cost: 1, side: 'foes', power: 16, kind: 'physical', powders: true, class: 'prismatico', description: 'Daño físico leve a un enemigo. Lo empolva durante 20 segundos.' },
+  // Cortina and Telón raise the party's Defensa and stand a screen of powder (`screen`): in front of the ally picked,
+  // or of everyone. It halves the next blow and bursts over whoever dealt it (`CORTINA`; Rebufo, `ANIMA_RULES`).
+  { id: 'cortina', name: 'Cortina', cost: 1, side: 'allies', power: 3, kind: 'boost', stats: ['defensa'], screen: 'one', class: 'prismatico', description: 'Sube Defensa de todo el equipo durante 3 rondas. Una cortina de polvo reduce a la mitad el siguiente daño que reciba un aliado.' },
+  // Rociada: the ánima's own water. It wets nobody; on powder it is poison, on a fire smoke, as any water.
+  { id: 'rociada', name: 'Rociada', cost: 2, side: 'all-foes', power: 14, kind: 'magic', element: 'agua', level: 2, class: 'prismatico', description: 'Daño mágico de agua leve a todos los enemigos.' },
+  { id: 'polvareda', name: 'Polvareda', cost: 2, side: 'all-foes', power: 12, kind: 'physical', powders: true, level: 3, class: 'prismatico', description: 'Daño físico leve a todos los enemigos. Los empolva durante 20 segundos.' },
+  { id: 'telon', name: 'Telón', cost: 2, side: 'party', power: 3, kind: 'boost', stats: ['defensa'], screen: 'all', level: 6, class: 'prismatico', description: 'Sube Defensa de todo el equipo durante 3 rondas. Una cortina de polvo reduce a la mitad el siguiente daño que reciba cada aliado.' },
+  // Traca: a string of small puffs (`volley`), each on a foe standing picked on the fight's dice.
+  { id: 'traca', name: 'Traca', cost: 3, side: 'all-foes', power: 10, kind: 'physical', volley: 5, powders: true, level: 7, class: 'prismatico', description: 'Daño físico leve a enemigos al azar. Golpea cinco veces. Los empolva durante 20 segundos.' },
+  // Fin de fiesta, its definitiva (`ulti`): bought at the jar, it wakes in a fight once the powder has been all three
+  // things in it (`finaleReady`), and goes off once, for the turn and no maná.
+  { id: 'fin-de-fiesta', name: 'Fin de fiesta', cost: 0, side: 'all-foes', power: 0, kind: 'magic', ulti: true, node: true, abstract: true, class: 'prismatico', description: 'Empolva a todos los enemigos. Su polvo estalla, envenena y cristaliza a la vez.' },
   // Matemágico's first spell: two streams of fire. It sets the foe on fire (`burn`, a timed status:
   // again while it burns, the fire goes up a level); fire also melts the palace minion's gum.
   // Foc Binari: a zero and a one, two streams that land one after the other (`split`).
@@ -65,6 +79,8 @@ export const SKILLS = [
   // out into smoke. Electricity cashes in: Descarga jumps to everyone wet (`react`, Conducción).
   { id: 'factor-comun', name: 'Factor común', cost: 2, side: 'all-foes', power: 24, kind: 'magic', element: 'fuego', melts: true, evens: 'quemado', node: true, description: 'Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.', class: 'matemagico' },
   { id: 'vasos', name: 'Vasos comunicantes', cost: 2, side: 'all-foes', power: 16, kind: 'magic', element: 'agua', wets: 'mojado', node: true, description: 'Daño mágico de agua leve a todos los enemigos. Los moja.', class: 'matemagico' },
+  // Integral (Cálculo, grade III): everything the party lost, added up and given back, to everyone.
+  { id: 'integral', name: 'Integral', cost: 3, side: 'party', power: 26, kind: 'heal', node: true, description: 'Cura media a todo el equipo.', class: 'matemagico' },
   { id: 'descarga', name: 'Descarga', cost: 2, side: 'foes', power: 26, kind: 'magic', element: 'electrico', node: true, description: 'Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.', class: 'matemagico' },
   // Papagato's skills are Haru's and Yuki's: the wearer only asks (docs/animas/papagato/). Haru cuts
   // (`bleed`: Sangrado stacks, which pile up) and the party cashes the wound in with a blow that adds none.
@@ -98,6 +114,15 @@ export const SKILLS = [
   // Control remoto: Bip takes a foe over for a moment. It turns on one of its own right now, with its
   // own strength (`control`, `power` the blow at average stats), and forgets what it had announced.
   { id: 'control-remoto', name: 'Control remoto', cost: 2, side: 'foes', power: 34, kind: 'debuff', stats: [], control: true, abstract: true, node: true, description: 'Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.', class: 'tecnopata' },
+  // Reinicio (grade III, Bip's line): Bip reboots the foes' clocks; every status on the clock on each
+  // of them (never a cure) starts over from its whole time, at the level it has (`restart`).
+  { id: 'reinicio', name: 'Reinicio', cost: 3, side: 'all-foes', power: 14, kind: 'magic', restart: true, node: true, description: 'Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.', class: 'tecnopata' },
+  // Virus atómico (Mente): a swarm of tiny Bips gets into a foe (`infect`: the timed status Virus);
+  // while it lasts, every status that lands on it lands on every other foe too (`spread`).
+  { id: 'virus', name: 'Virus atómico', cost: 2, side: 'foes', power: 14, kind: 'magic', infect: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.', class: 'tecnopata' },
+  // Escudo de bits (Taller): Bip's bits stand as a wall in front of the party (`bits`: its PV, BITS);
+  // every blow on the party goes into it first, and it stops a share of it until it breaks or wears off.
+  { id: 'escudo-de-bits', name: 'Escudo de bits', cost: 2, side: 'party', power: 40, kind: 'guard', bits: true, node: true, description: 'Protege a todo el equipo durante 2 rondas. Un escudo de bits para la mitad del daño de cada golpe hasta que se rompe.', class: 'tecnopata' },
   // Dadista's skill is a die thrown (docs/animas/dadaista/): its maná is dice, each with a face in
   // view that is a move of its own. Tirar dado (`die`) spends the die chosen and does what its face
   // says, so what it does depends on the die: it skips the fixed shape.
@@ -140,6 +165,8 @@ export interface Improved {
   mana?: Partial<Record<ClassId, number>>; elements?: Partial<Record<ClassId, readonly Element[]>>;
   /** The skills bought as nodes of a tree (`node` in SKILLS), and the passives. */
   skills?: readonly SkillId[]; passives?: readonly PassiveId[];
+  /** The dúos mayores whose node is bought (docs/animas/README.md § Dúos mayores). */
+  duals?: readonly DualId[];
 }
 /**
  * Passives (docs/animas/README.md § The jar): bought as nodes, always on while their ánima is worn,
@@ -149,16 +176,21 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'telemetria' | 'nanitos' | 'olor-a-sangre' | 'otra-vez';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'olor-a-sangre' | 'otra-vez' | 'remolino';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
   'toma-de-tierra': { name: 'Toma de tierra', anima: 'matemagico' },
+  // The fire line's end (grade III): fire climbs to a fourth level, Combustión, while Matemágico is worn
+  // by someone standing; any physical blow on it makes it burst (`combust`, COMBUSTION). Reaches the whole party.
+  combustion: { name: 'Combustión', anima: 'matemagico', description: 'El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.' },
   telemetria: { name: 'Telemetría', anima: 'tecnopata' },
   nanitos: { name: 'Nanitos', anima: 'tecnopata' },
   // Not a node of the jar: it comes with a level of its ánima (`level`, SCENT) and reaches the whole party.
   // Dadista's node at the jar: Agitar a second time in a fight (`shakesLeft`).
   'otra-vez': { name: 'Otra vez', anima: 'dadaista' },
+  // Colorista's, with its level 5 (`remolinoOf`): each time a foe's powder turns into something, a cortina stands in front of its wearer.
+  remolino: { name: 'Remolino', anima: 'prismatico', level: 5, description: 'Cuando el polvo de un enemigo reacciona, se levanta una cortina ante quien la lleva.' },
   'olor-a-sangre': { name: 'Olor a sangre', anima: 'papagato', level: 5, description: 'Los golpes a un enemigo que sangra tienen un 20 % más de Crítico. Gastar una herida de cinco cargas o más es siempre un golpe crítico.' },
 };
 export const RESCOLDO = 15, TELEMETRIA = 3;
@@ -574,7 +606,7 @@ export const WEAK_SPOT = 3;
  * the surprise dish). `burn`/`burnChance`: each strike landing on a foe without layers may light or
  * raise that status, on the fight's dice (`roll`). `weakSpot`: it leaves Punto débil on its target.
  */
-export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color';
+export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color' | 'sobrecalentamiento' | 'vulcano';
 export interface DualSpec {
   id: DualId; name: string;
   parts: readonly [SkillId, SkillId];
@@ -590,6 +622,15 @@ export interface DualSpec {
    * chooses (`nextRound`, as news). Whoever holds it falling first loses it.
    */
   charge?: boolean;
+  /** Vulcano: it leaves a volcano under every foe it reaches (the timed status Volcán). */
+  volcano?: boolean;
+  /** Sobrecalentamiento: what is left of the shield stands in front of the party, with these PV (BITS). */
+  bits?: number;
+  /**
+   * A dúo mayor (docs/animas/README.md § Dúos mayores): far stronger than a dual, and it exists only
+   * once its node at the jar is bought (`Improved.duals`), besides both halves being known.
+   */
+  major?: boolean;
   description: string; abstract?: boolean;
 }
 export const DUALS: DualSpec[] = [
@@ -602,6 +643,12 @@ export const DUALS: DualSpec[] = [
   { id: 'relevo-de-sangre', name: 'Relevo de sangre', parts: ['llaga', 'estrella-fugaz'], side: 'foes', kind: 'physical', power: 38, description: 'Daño físico alto a un enemigo. Gasta su sangrado. Si lo derrota, traslada la herida al enemigo con más PV.' },
   { id: 'bombardeo-orbital', name: 'Bombardeo orbital', parts: ['explosion', 'ostinato'], side: 'all-foes', kind: 'magic', power: 14, strikes: 3, charge: true, description: 'Daño mágico no elemental leve a todos los enemigos. Al empezar la ronda siguiente golpea tres veces. Los ciega durante 20 segundos.' },
   { id: 'reserva-de-color', name: 'Reserva de color', parts: ['foc-binari', 'punado'], side: 'foes', kind: 'magic', element: 'fuego', power: 38, abstract: true, description: 'Deja una mecha de polvo en un enemigo. Cuando termine su turno o caiga, estalla con daño mágico de fuego alto a todos los enemigos.' },
+  // Sobrecalentamiento: Gerard's binary fire into Bip's bits; the shield overheats and goes off over the
+  // foes, and what is left of it falls back in front of the party as a smaller shield.
+  { id: 'sobrecalentamiento', name: 'Sobrecalentamiento', parts: ['foc-binari', 'escudo-de-bits'], side: 'all-foes', kind: 'magic', element: 'fuego', power: 36, burn: 'quemado', burnLevel: 2, bits: 20, description: 'Daño mágico de fuego alto a todos los enemigos. Los quema con fuego de nivel II. Lo que queda del escudo protege a todo el equipo durante 2 rondas.' },
+  // Vulcano, a dúo mayor: Gerard's fire goes into the ground and Marta's eco keeps it sounding. A volcano
+  // of particles stands among the foes for 20 s, and every 5 s it throws lava on each and raises its fire.
+  { id: 'vulcano', name: 'Vulcano', parts: ['foc-binari', 'ostinato'], side: 'all-foes', kind: 'magic', element: 'fuego', power: 28, burn: 'quemado', burnLevel: 1, volcano: true, major: true, description: 'Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20 segundos, un volcán les sube el fuego un nivel cada 5 segundos.' },
 ];
 /** The dual two skills make, in either order. */
 export const dualOf = (a: SkillId, b: SkillId) => DUALS.find(d => (d.parts[0] === a && d.parts[1] === b) || (d.parts[0] === b && d.parts[1] === a));
@@ -647,7 +694,7 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
   electrico: { name: 'Eléctrico', colour: '#ffe45c' },
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
-export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'ostinato' | 'empolvado' | 'envenenado' | 'cristalizado';
+export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'ostinato' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus';
 export interface TimedSpec {
   /** `element`: the one that lights it, for the reactions; `heal`: its pulses give PV back instead of taking it. */
   name: string; element?: Element; heal?: boolean; seconds: number; every: number;
@@ -666,7 +713,8 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   envenenado: { name: 'Envenenado', seconds: 20, every: 4, levels: [1, 3, 5], flat: 2, share: .02, cap: 100 },
   // Cristalizado (electricity on powder): it hurts nobody by itself; its level is how deep the shards are (`POWDER_RULES.shard` more a blow for each).
   cristalizado: { name: 'Cristalizado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
-  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 5], flat: 1, share: .01, cap: 100 },
+  // Its fourth level is Combustión (`COMBUSTION`): only reached while the passive is in the fight (`fireTop`).
+  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 5, 7], flat: 1, share: .01, cap: 100 },
   // Cegado (Humo, below): it hurts nobody, the foe's blows land lighter while it lasts (`sighted`).
   cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0 },
   // Sanación (Rayo de sanación): Quemado's other side, a pulse of PV back every few seconds.
@@ -677,6 +725,10 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   encogido: { name: 'Encogido', seconds: 15, every: 15, levels: [], flat: 0, share: 0, cap: 0, cut: { defensa: .25 } },
   // Mojado (Vasos comunicantes, Capilaridad): it hurts nobody; it waits for electricity (Conducción) or fire (Vapor).
   mojado: { name: 'Mojado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  // Volcán (the dúo mayor Vulcano): every beat a bomb of lava on its carrier, and its fire a level up (`runClock`).
+  volcan: { name: 'Volcán', element: 'fuego', seconds: 20, every: 5, levels: [1], flat: 6, share: 0, cap: 0 },
+  // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
+  virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
 };
 const TIMED_IDS = Object.keys(TIMED) as TimedId[];
 /**
@@ -696,6 +748,24 @@ export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'c
  */
 export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5 };
 /**
+ * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a wall of Bip's bits in front of the
+ * party. Every blow on one of them goes into it first: it stops `share` of it, out of its own PV, until
+ * they run out (it breaks) or the round `until` is over. Pulses go past it. Tunable (`just fight-sim`).
+ */
+export const BITS = { share: .5, rounds: 2 };
+export interface BitShield { hp: number; max: number; until: number; share: number; broken?: boolean; hot?: boolean }
+/** The shield standing in front of the party, if any. */
+export const bitsOf = (state: BattleState) => state.allies.find(a => a.bits && a.bits.hp > 0 && !a.bits.broken)?.bits;
+/** How high fire climbs by itself: Quemado III. */
+export const FIRE_TOP = 3;
+/**
+ * Combustión (docs/animas/README.md § Combustión): with Matemágico's passive in the fight, fire climbs
+ * one more, to `level` (IV, its own icon and look). A physical blow on a foe there makes it burst:
+ * `blast` of fire magic on every foe, that one included, and every other foe's fire goes a level up
+ * (Vapor on a wet one). The fire that burst goes back to `after`. Tunable (`just fight-sim`).
+ */
+export const COMBUSTION = { level: 4, blast: 24, after: 3 };
+/**
  * Powder (docs/animas/README.md § Empolvado): it does nothing by itself and waits for a blow of an
  * element, whoever lands it. Fuego is Estallido: the powder explodes, `blast` of fire magic on its
  * carrier and `splash` of that on every other foe, which sets off the powder on any of them too, and
@@ -705,6 +775,22 @@ export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6
  * `shards`. Tunable (`just fight-sim`, book `powder`).
  */
 export const POWDER_RULES = { blast: 22, splash: .5, poison: 1.25, shard: 4, shards: 5 };
+/**
+ * The cortina (docs/animas/README.md § Cortina de polvo): a screen of powder in front of an ally. The
+ * next blow on them (never a pulse) lands at `share` of itself and breaks it; unbroken, it stands
+ * `rounds` rounds, this one included. Whoever breaks it is left Empolvado (Rebufo). Tunable.
+ */
+export const CORTINA = { share: .5, rounds: 3 };
+/** Rounds the cortina in front of `c` still stands, this one included (0: none). */
+export const cortinaRounds = (state: BattleState, c: Combatant) => c.cortina !== undefined && c.cortina >= state.round && c.hp > 0 ? c.cortina - state.round + 1 : 0;
+/** The reactions of powder, the three things it can be: Fin de fiesta wakes once a fight has seen them all. */
+export const POWDER_TURNS = ['estallido', 'veneno', 'cristal'] as const;
+export type PowderTurn = typeof POWDER_TURNS[number];
+/** Whether Fin de fiesta is awake in this fight: bought, the powder has been all three things while Colorista was worn, and not used yet. */
+export const finaleReady = (state: BattleState) => skillKnown('fin-de-fiesta', state.levels, state.improved)
+  && (state.unbound || (!state.finale?.used && POWDER_TURNS.every(id => state.finale?.seen.includes(id))));
+/** Whoever wears Colorista with Remolino learned, standing. */
+export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
 /** What the poison and the shards added to the blows of the action being resolved; `amplify` hands it to its effect. */
 const dug: { target: string; venom?: true; shards?: number }[] = [];
 /** The blows of this action that landed on someone poisoned or full of shards: who, and what the shards added. */
@@ -771,9 +857,9 @@ export function pulseDamage(id: TimedId, level: number, maxHp: number) {
  * An element lands on `c`: the timed statuses it lights. One already on goes up a level and starts
  * its clock over; otherwise it starts at level I. Returns how it is now.
  */
-export function inflict(c: Combatant, id: TimedId): Timed {
+export function inflict(c: Combatant, id: TimedId, top = id === 'quemado' ? FIRE_TOP : TIMED[id].levels.length || 1): Timed {
   const spec = TIMED[id], on = c.timed?.[id];
-  const timed = { level: on ? Math.min(spec.levels.length, on.level + 1) : 1, left: spec.seconds, next: spec.every };
+  const timed = { level: on ? Math.max(on.level, Math.min(top, on.level + 1)) : 1, left: spec.seconds, next: spec.every };
   c.timed = { ...c.timed, [id]: timed };
   return timed;
 }
@@ -834,6 +920,12 @@ export interface Combatant {
   rushFirst?: number;
   /** A dual charged and still to go off (Rayo solar, `DualSpec.charge`): which, and whose stats it hits with. */
   suture?: boolean;
+  /** A cortina of powder in front of them: the round it stands until (`CORTINA`, `cortinaRounds`). */
+  cortina?: number;
+  /** Escudo de bits in front of the party: one shield, the same object on every ally it covers (`BitShield`). */
+  bits?: BitShield;
+  /** Virus atómico: what the foe carried when it was last looked at, so what lands on it after spreads (`spread`). */
+  virusSeen?: { timed: Partial<Record<TimedId, Timed>>; statuses: Partial<Record<StatusId, number>> };
   fuse?: string; // The caster whose fire is in the paint.
   charge?: { dual: DualId; striker: string };
   /** The round this fighter sits out (Explosión: Bip is putting itself back together). */
@@ -1000,6 +1092,8 @@ export interface BattleState {
   spent?: string[];
   /** Duals already played this fight: each one goes off once a fight (`dualBlock` 'used'). */
   usedDuals?: DualId[];
+  /** What the powder has been in this fight while Colorista was worn (`POWDER_TURNS`), and whether Fin de fiesta went off already. */
+  finale?: { seen: PowderTurn[]; used?: true };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1140,7 +1234,9 @@ const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.clas
 export function skillsFor(state: BattleState, actor: Combatant) {
   // A die's faces are not skills of the list: Tirar dado reaches them (`FACE_SKILLS`).
   // …and the meteor is one row: the size it comes in now.
-  return SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)));
+  const known = SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)) && (!('ulti' in skill) || finaleReady(state)));
+  // An awake definitiva heads the list: it is there for one use, and not below the fold.
+  return [...known.filter(skill => 'ulti' in skill), ...known.filter(skill => !('ulti' in skill))];
 }
 /** Rounds a party boost has left, this one included (0 when it is not running); without `skill`, the longest. */
 export function boostRounds(state: BattleState, skill?: SkillId): number {
@@ -1316,8 +1412,26 @@ export interface BattleEffect {
   reaction?: { id: ElementReaction; level?: number; stacks?: number; hits?: { target: string; amount: number }[]; targets?: string[]; burns?: { target: string; level: number }[] };
   /** Blows of this action that landed on someone Envenenado (`venom`) or Cristalizado (`shards`: what they added). */
   amplified?: { target: string; venom?: true; shards?: number }[];
+  /** Cortinas of powder: the allies one stood up in front of, the ones whose screen this blow broke, and whoever it burst over (Rebufo). */
+  cortina?: { raised?: string[]; broke?: string[]; rebufo?: string };
+  /** Traca: each puff in the order it went off, and the foe it found. */
+  volley?: { target: string; amount: number; crit?: true }[];
+  /** Fin de fiesta: the blast on each foe and the fire it left, whom the water poisoned and whom the spark crystallised. */
+  finale?: { hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; poisoned: { target: string; level: number }[]; crystallised: string[] };
+  /** A definitiva woke with this action: the powder has now been all three things. */
+  awoken?: SkillId;
   /** Rayo de energía: the timed statuses it made last longer on its target, and by how many seconds. */
   extended?: { statuses: TimedId[]; seconds: number };
+  /** Combustión burst on `target` (a physical blow found its fire at IV): the fire blast on each foe, and the fires it raised. */
+  combustion?: { target: string; hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; steamed?: string[] };
+  /** Reinicio: the clocks it started over on each foe. */
+  restarted?: { target: string; statuses: TimedId[] }[];
+  /** Escudo de bits raised (its PV), or what it took in this action and whether it broke. */
+  bits?: { raised?: number; took?: number; broke?: boolean };
+  /** Virus atómico: what spread from an infected foe to the others in this action. */
+  spread?: { from: string; to: string[]; statuses: string[] }[];
+  /** A cure on the whole party (Integral): what each one got back. */
+  cures?: { target: string; amount: number }[];
   /** Rayo de sanación: the cure over time it left on its target, at this level. */
   regen?: { id: TimedId; level: number };
   /** Explosión: Bip blew itself up; who it blinded until the round ends. */
@@ -1420,16 +1534,56 @@ export function statNames(stats: readonly (keyof Stats)[]) {
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names.at(-1)}` : names[0] ?? '';
 }
 /** Bridge the campaign's flat resources to the core; positive healing never revives. */
-function changeHealth(target: Combatant, delta: number) {
+function changeHealth(target: Combatant, delta: number, pulse = false) {
   if (target.suture && delta < 0) {
     delete target.suture;
     delta = -Math.ceil(-delta / 2);
+  }
+  // A cortina of powder: the next blow (never a pulse) lands at half and breaks it (`cortinaSay`).
+  if (target.cortina !== undefined && delta < 0 && !pulse) {
+    delete target.cortina; screenTook.push(target.id);
+    delta = -Math.ceil(-delta * CORTINA.share);
+  }
+  // Escudo de bits: a blow (never a pulse) goes into the shield first, which stops its share of it.
+  const wall = target.bits;
+  if (wall && !wall.broken && wall.hp > 0 && delta < 0 && !pulse) {
+    const stopped = Math.min(wall.hp, Math.round(-delta * wall.share));
+    wall.hp -= stopped; delta += stopped;
+    wallTook.took += stopped;
+    if (wall.hp <= 0) { wall.broken = true; wallTook.broke = true; }
   }
   const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
   target.hp = result.resource.current;
   // Whoever falls loses the Racha.
   if (target.hp <= 0) { delete target.racha; delete target.meteor; }
   return Math.abs(result.amount);
+}
+/** What the bit shield took during the action being resolved (`changeHealth`), for its effect (`wallSay`). */
+const wallTook = { took: 0, broke: false };
+/** The allies whose cortina a blow broke during the action being resolved (`changeHealth`), for its effect (`cortinaSay`). */
+const screenTook: string[] = [];
+/** A cortina stands in front of `ally`; one already there starts over. */
+function raiseCortina(state: BattleState, ally: Combatant, effect: BattleEffect) {
+  ally.cortina = state.round + CORTINA.rounds - 1;
+  effect.cortina = { ...effect.cortina, raised: [...new Set([...effect.cortina?.raised ?? [], ally.id])] };
+}
+/**
+ * Hands the cortinas this action broke to `effect`. Rebufo: the screen is powder, so it bursts over
+ * whoever broke it (`breaker`, a foe standing) and leaves them Empolvado, whoever wears what.
+ */
+function cortinaSay(state: BattleState, effect: BattleEffect, breaker?: Combatant) {
+  if (!screenTook.length) return;
+  effect.cortina = { ...effect.cortina, broke: screenTook.splice(0) };
+  const said = state.phase !== 'lost';
+  if (breaker && breaker.hp > 0 && state.foes.includes(breaker)) {
+    kindle(breaker, 'empolvado', 1); effect.cortina.rebufo = breaker.id;
+    if (said) state.message += ` La cortina revienta sobre ${breaker.name}: ¡${TIMED.empolvado.name}!`;
+  } else if (said) state.message += ' La cortina se rompe.';
+}
+/** Hands what the shield took in this action to `effect`, and clears it. */
+function wallSay(effect: BattleEffect) {
+  if (wallTook.took || wallTook.broke) effect.bits = { ...effect.bits, took: (effect.bits?.took ?? 0) + wallTook.took, ...wallTook.broke ? { broke: true } : {} };
+  wallTook.took = 0; wallTook.broke = false;
 }
 /** Damage on a foe, from anything (a blow, a tick, a pulse). */
 function hurt(state: BattleState, c: Combatant, amount: number) {
@@ -1575,6 +1729,7 @@ export const RACHA = { crit: 10, comodin: 3, star: 3, deal: 2 };
  */
 export const ANIMA_RULES: Partial<Record<ClassId, { name: string; description: string }>> = {
   dadaista: { name: 'Racha', description: `Cada dado gastado suma 1 de racha: Crítico +${RACHA.crit} % por cada uno. Se pierde al cambiar de ánima o al caer.` },
+  prismatico: { name: 'Rebufo', description: 'Quien rompe una cortina de polvo queda empolvado.' },
 };
 /** Dados astrales: a die of light for each `per` % of Crítico, never fewer than `least` nor more than `most`. */
 export const RAIN = { per: 15, least: 2, most: 12 };
@@ -1888,6 +2043,8 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);
   // A cure only reaches someone hurt and still standing (or carrying a status it takes away): it never gets anyone back up.
   if (ability.kind === 'heal') return state.allies.filter(a => a.hp > 0 && (a.hp < a.maxHp || ('cleanse' in ability && cleansable(a).length > 0)));
+  // A cortina can always be raised: again, it starts over, and so does the Defensa it comes with.
+  if (ability.kind === 'boost' && 'screen' in ability) return state.allies.filter(a => a.hp > 0);
   // A boost already running has nothing to add until it wears off.
   if (ability.kind === 'boost') return boostRounds(state, ability.id) ? [] : state.allies.filter(a => a.hp > 0);
   // Nor a debuff on a foe that still carries its mark.
@@ -2113,10 +2270,11 @@ function powder(state: BattleState, actor: Combatant, target: Combatant, element
       }
     }
     // Everyone left standing burns a level more (an onion's wet layers do not catch).
-    const burns = state.foes.filter(f => f.hp > 0 && !f.layers).map(f => { const fire = inflict(f, 'quemado'); bank(state, actor, f, effect); return { target: f.id, level: fire.level }; });
+    const burns = state.foes.filter(f => f.hp > 0 && !f.layers).map(f => { const fire = inflict(f, 'quemado', fireTop(state)); bank(state, actor, f, effect); return { target: f.id, level: fire.level }; });
     const hits = [...totals].map(([id, amount]) => ({ target: id, amount }));
     effect.reaction = { id: 'estallido', hits, burns };
     state.message += ` ¡El polvo estalla! ${hits.map(h => `−${h.amount}`).join(', ')} PV. Todos arden un nivel más.`;
+    powderTurned(state, 'estallido', effect);
     return true;
   }
   delete target.timed.empolvado;
@@ -2131,7 +2289,26 @@ function powder(state: BattleState, actor: Combatant, target: Combatant, element
     effect.reaction = { id: 'cristal', targets: [...turned, target.id] };
     state.message += ` ¡El polvo cristaliza! ${TIMED.cristalizado.name}.`;
   }
+  powderTurned(state, element === 'agua' ? 'veneno' : 'cristal', effect);
   return true;
+}
+/** Two boosts that are the same screen (Cortina, Telón) do not add up: raising one takes the other's Defensa with it. */
+function screenBoost(state: BattleState, kept: SkillId) {
+  for (const other of SKILLS) if ('screen' in other && other.id !== kept && state.boosts?.[other.id]) delete state.boosts[other.id];
+}
+/**
+ * A foe's powder has turned into something. While Colorista is worn by someone standing the fight
+ * remembers which (Fin de fiesta wakes at the third, `finaleReady`), and with Remolino a cortina
+ * stands in front of its wearer: one, however many foes turned at once.
+ */
+function powderTurned(state: BattleState, id: PowderTurn, effect: BattleEffect) {
+  if (state.allies.some(a => a.hp > 0 && a.classId === 'prismatico')) {
+    const finale = state.finale ??= { seen: [] }, was = finaleReady(state);
+    if (!finale.seen.includes(id)) finale.seen.push(id);
+    if (!was && finaleReady(state) && !state.unbound) effect.awoken = 'fin-de-fiesta';
+  }
+  const wearer = remolinoOf(state);
+  if (wearer) { raiseCortina(state, wearer, effect); note(effect, 'remolino', wearer); }
 }
 /** An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`, `POWDER_RULES`), if it finds anything to turn. */
 function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect, reach = false) {
@@ -2201,11 +2378,82 @@ function bank(state: BattleState, actor: Combatant, c: Combatant, effect: Battle
   if (!passive(state, actor, 'rescoldo') || !c.timed?.quemado) return;
   c.timed.quemado.left = RESCOLDO; note(effect, 'rescoldo', actor);
 }
+/** Escudo de bits: a wall of `hp` in front of everyone standing in the party, for BITS.rounds. */
+function raiseBits(state: BattleState, hp: number) {
+  const wall: BitShield = { hp, max: hp, until: state.round + BITS.rounds - 1, share: BITS.share };
+  for (const ally of state.allies) if (ally.hp > 0) ally.bits = wall; else delete ally.bits;
+}
+/** What a foe carries now, as Virus atómico remembers it. */
+const seen = (c: Combatant) => ({ timed: { ...c.timed }, statuses: { ...c.statuses } });
+/**
+ * Virus atómico (docs/animas/tecnopata/README.md § Grade III): every status that has landed on an
+ * infected foe since it was last looked at (a new one, a level up, one lit again) lands on every
+ * other foe standing too, at its level and with its time; stacks add the same stacks. The virus
+ * itself never spreads. A fire on a wet foe is Vapor, water on a burning one Humo, as anywhere.
+ */
+function spread(state: BattleState, effect: BattleEffect) {
+  for (const host of state.foes) {
+    if (!host.timed?.virus || !host.virusSeen || host.hp <= 0) { delete host.virusSeen; continue; }
+    const before = host.virusSeen, others = state.foes.filter(f => f !== host && f.hp > 0 && !f.part);
+    const fresh = TIMED_IDS.filter(id => id !== 'virus' && !TIMED[id].heal && host.timed![id] && (host.timed![id] !== before.timed[id] || host.timed![id]!.level > (before.timed[id]?.level ?? 0)));
+    const piled = STATUS_IDS.filter(id => stacks(host, id) > (before.statuses[id] ?? 0));
+    host.virusSeen = seen(host);
+    if (!others.length || (!fresh.length && !piled.length)) continue;
+    for (const o of others) {
+      for (const id of fresh) {
+        const on = host.timed![id]!, mine = o.timed?.[id];
+        if (id === 'quemado' && o.timed?.mojado) { steam(o); continue; }
+        if (id === 'mojado' && o.timed?.quemado) { smoke(o); continue; }
+        o.timed = { ...o.timed, [id]: { level: Math.max(on.level, mine?.level ?? 0), left: Math.max(on.left, mine?.left ?? 0), next: mine?.next ?? TIMED[id].every } };
+      }
+      for (const id of piled) addStatus(o, id, stacks(host, id) - (before.statuses[id] ?? 0));
+      if (o.virusSeen) o.virusSeen = seen(o);
+    }
+    const names = [...fresh.map(id => TIMED[id].name), ...piled.map(id => STATUSES[id].name)];
+    (effect.spread ??= []).push({ from: host.id, to: others.map(o => o.id), statuses: names });
+    state.message += ` El virus contagia: ${names.join(', ')}.`;
+  }
+}
+/** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
+const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
+/** How high fire can climb in this fight: Combustión (IV) while its passive is in it, Quemado III otherwise. */
+export const fireTop = (state: BattleState) => combustor(state) ? COMBUSTION.level : FIRE_TOP;
+/**
+ * A physical blow has landed on `target`, by whoever (an ally, a confused foe): if its fire is at
+ * Combustión it bursts (COMBUSTION). Never from a pulse, a reaction or magic, so a burst never sets
+ * off another. Say it in `effect.combustion`; Toma de tierra counts it as a reaction of its wearer's.
+ */
+function combust(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
+  const fire = target.timed?.quemado, owner = combustor(state);
+  if (!owner || !fire || fire.level < COMBUSTION.level || state.foes.indexOf(target) < 0) return;
+  if (target.hp > 0) { fire.level = COMBUSTION.after; fire.left = Math.max(fire.left, TIMED.quemado.seconds); } else delete target.timed!.quemado;
+  const blast = (foe: Combatant) => hurt(state, foe, fearDamage(state, foe, magical(COMBUSTION.blast, current(state, owner), current(state, foe)) * affinityScale(foe, 'fuego'), 'magic', 'fuego'));
+  const hits: { target: string; amount: number }[] = [], burns: { target: string; level: number }[] = [], steamed: string[] = [];
+  for (const foe of state.foes.filter(f => f.hp > 0 || f === target)) {
+    if (foe.hp > 0) hits.push({ target: foe.id, amount: blast(foe) });
+    if (foe.shell) foe.shell = false;
+    if (foe === target || foe.hp <= 0 || foe.layers) continue;
+    if (foe.timed?.mojado) { steam(foe); steamed.push(foe.id); continue; }
+    const raised = inflict(foe, 'quemado', fireTop(state));
+    if (actor === owner) bank(state, owner, foe, effect);
+    burns.push({ target: foe.id, level: raised.level });
+  }
+  effect.combustion = { target: target.id, hits, burns, ...steamed.length ? { steamed } : {} };
+  note(effect, 'combustion', owner);
+  state.message += ` ¡Combustión! ${target.name} estalla: ${hits.map(h => `−${h.amount}`).join(', ')} PV. El fuego salta a los demás.`;
+  if (actor === owner) ground(state, owner, effect);
+}
+/** Reinicio: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
+function restartClocks(foe: Combatant) {
+  const statuses = TIMED_IDS.filter(id => !TIMED[id].heal && foe.timed?.[id] && foe.timed[id]!.until === undefined);
+  for (const id of statuses) { const on = foe.timed![id]!; on.left = Math.max(on.left, TIMED[id].seconds); }
+  return statuses;
+}
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId, die?: number): BattleEffect | undefined {
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
-  dug.length = 0;
+  dug.length = 0; screenTook.length = 0;
   // Tirar dado: the die spent decides the move, its face's own (`FACE_SKILLS`); a blank repeats the last face spent.
   let cast: number | undefined, paid: number | undefined;
   const streak = rachaOf(actor);
@@ -2264,6 +2512,18 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (actor.classId === DICED && effect.charged) effect.dealt = diceOf(state, actor).slice(-effect.charged);
     state.message = state.song ? `${actor.name} se cubre: aguanta su voz hasta que vuelva a moverse.${effect.charged ? ` Maná +${effect.charged}.` : ''}`
       : `${actor.name} se prepara para el siguiente golpe.${effect.charged ? ` Maná +${effect.charged}.` : ''}`;
+  } else if (party && ability!.kind === 'heal') {
+    // Integral: everyone standing who is hurt gets back what the curve adds up, more with Magia.
+    spendSecondary(actor, ability!.cost); effect.skill = skill; effect.target = actor.id; effect.healed = true;
+    effect.cures = targets.map(ally => ({ target: ally.id, amount: changeHealth(ally, healing(ability!.power, current(state, actor))) }));
+    effect.amount = effect.cures[0]?.amount;
+    state.message = `${actor.name} usa ${ability!.name}. ${effect.cures.map(c => `+${c.amount}`).join(', ')} PV para el equipo.`;
+  } else if (party && ability && 'bits' in ability) {
+    // Escudo de bits: one wall in front of everyone standing (a new one replaces the old).
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = actor.id;
+    raiseBits(state, ability.power);
+    effect.bits = { raised: ability.power };
+    state.message = `${actor.name} usa ${ability.name}. Bip levanta un muro de bits delante del equipo: ${ability.power} PV durante ${BITS.rounds} rondas.`;
   } else if (party && ability!.kind === 'boost') {
     if (paid === undefined) spendSecondary(actor, ability!.cost);
     effect.skill = skill; effect.target = actor.id;
@@ -2272,6 +2532,21 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     effect.stats = targets.map(ally => ({ target: ally.id, way: 'up' as const, stats: [...ability!.stats] }));
     state.message = 'double' in ability! ? `${actor.name} usa ${ability!.name}. El Crítico de todo el equipo cuenta el doble durante ${BOOST_ROUNDS} rondas.`
       : `${actor.name} usa ${ability!.name}. ${boostedStats(ability!.id)} +${ability!.power} para el equipo durante ${BOOST_ROUNDS} rondas.`;
+    // Telón: a cortina in front of everyone standing.
+    if ('screen' in ability!) {
+      screenBoost(state, ability!.id);
+      for (const ally of targets) raiseCortina(state, ally, effect);
+      state.message += ' Una cortina de polvo delante de cada uno.';
+    }
+  } else if (ability?.kind === 'boost' && 'screen' in ability && target) {
+    // Cortina: Defensa for everyone standing, and the screen in front of the ally picked.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
+    state.boosts = { ...state.boosts, [ability.id]: { amount: ability.power, until: state.round + BOOST_ROUNDS - 1 } };
+    screenBoost(state, ability.id);
+    effect.boosted = targets.map(ally => ally.id);
+    effect.stats = targets.map(ally => ({ target: ally.id, way: 'up' as const, stats: [...ability.stats] }));
+    raiseCortina(state, target, effect);
+    state.message = `${actor.name} usa ${ability.name}. ${boostedStats(ability.id)} +${ability.power} para el equipo durante ${BOOST_ROUNDS} rondas. Una cortina de polvo delante de ${target.name}.`;
   } else if (ability?.kind === 'heal' && target && 'regen' in ability) {
     // Rayo de sanación: the cure comes bit by bit on the fight's clock; again while it lasts, a level up.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
@@ -2326,6 +2601,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const amount = hurt(state, victim, fearDamage(state, victim, physical(ability.power, current(state, target), current(state, victim)), 'physical'));
     effect.controlled = { victim: victim.id, amount };
     state.message = victim === target ? `${actor.name} usa ${ability.name}. ${target.name} se golpea a sí mismo. −${amount} PV.` : `${actor.name} usa ${ability.name}. ${target.name} golpea a ${victim.name}. −${amount} PV.`;
+    if (amount > 0) combust(state, target, victim, effect);
   } else if (ability?.kind === 'debuff' && target) {
     // Ángulo exacto: a mark on the foe, its stats down for a few rounds (every hit on it lands harder).
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.spell = true;
@@ -2366,6 +2642,60 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (spent) { actor.racha = 0; effect.starred = spent; }
     state.message = `${actor.name} usa ${ability!.name}. Caen ${effect.rain.length} dados de luz: −${effect.amount} PV entre todos.${spent ? ' La racha empieza de cero.' : ''}`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+  } else if (everyone && 'ulti' in ability!) {
+    // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.
+    effect.skill = skill; effect.target = target!.id;
+    (state.finale ??= { seen: [] }).used = true;
+    const standing = () => targets.filter(foe => foe.hp > 0), dust = () => { for (const foe of standing()) kindle(foe, 'empolvado', 1); };
+    state.message = `${actor.name} usa ${ability!.name}.`;
+    // What each puff turned into is the definitiva's own (`effect.finale`), not a reaction of the blow's.
+    const take = () => { const reaction = effect.reaction; delete effect.reaction; return reaction; };
+    dust();
+    if (standing()[0]) powder(state, actor, standing()[0], 'fuego', effect);
+    const blown = take();
+    dust();
+    for (const foe of standing()) powder(state, actor, foe, 'agua', effect);
+    const poisoned = (take()?.targets ?? []).map(id => ({ target: id, level: targets.find(foe => foe.id === id)?.timed?.envenenado?.level ?? 1 }));
+    dust();
+    for (const foe of standing()) powder(state, actor, foe, 'electrico', effect);
+    const crystallised = take()?.targets ?? [];
+    delete effect.awoken;
+    effect.finale = { hits: blown?.hits ?? [], burns: blown?.burns ?? [], poisoned, crystallised };
+    effect.hits = targets.map(foe => ({ target: foe.id, amount: effect.finale!.hits.find(h => h.target === foe.id)?.amount ?? 0 }));
+    effect.amount = effect.hits[0]?.amount;
+  } else if (everyone && 'volley' in ability!) {
+    // Traca: a string of puffs, each on a foe still standing picked on the fight's dice. Each is a blow of its own
+    // (its golpe crítico, its layer, what a poison or the shards add); a wound is spent by the first that finds it.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target!.id;
+    const totals = new Map<string, { amount: number; bled?: number; crit?: true; weakSpot?: true; peeled?: number }>();
+    effect.volley = [];
+    for (let i = 0; i < ability.volley; i++) {
+      const left = targets.filter(foe => foe.hp > 0);
+      if (!left.length) break;
+      const foe = left[Math.floor(roll(state) * left.length)], weak = weakScale(state, foe), sum = totals.get(foe.id) ?? { amount: 0 };
+      const blocked = foe.shell || singing(state, foe);
+      const { bled, scale } = totals.has(foe.id) || blocked ? { bled: 0, scale: 1 } : wound(foe, true, skill);
+      const crit = !blocked && critical(state, actor, foe, sureCrit(state, bled, effect));
+      const amount = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * (scale + (crit ? CRIT_RULES.bonus : 0)) * weak * affinityScale(foe, undefined), 'physical'));
+      sum.amount += amount;
+      if (bled) { delete foe.statuses!.sangrado; sum.bled = bled; }
+      if (crit && amount > 0) { effect.crit = true; sum.crit = true; }
+      if (weak > 1 && amount > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; sum.weakSpot = true; }
+      spendShield(state, foe, amount, effect);
+      if (foe.layers && !blocked) { sum.peeled = (sum.peeled ?? 0) + 1; if (!--foe.layers) bare(foe); }
+      totals.set(foe.id, sum);
+      effect.volley.push({ target: foe.id, amount, ...crit && amount > 0 ? { crit: true as const } : {} });
+    }
+    effect.hits = [...totals].map(([id, sum]) => {
+      const foe = targets.find(f => f.id === id)!, dusted = sum.amount > 0 && foe.hp > 0;
+      if (dusted) kindle(foe, 'empolvado', 1);
+      return { target: id, ...sum, ...dusted ? { burn: { id: 'empolvado' as const, level: 1 } } : {} };
+    });
+    effect.amount = effect.volley.reduce((sum, puff) => sum + puff.amount, 0);
+    state.message = `${actor.name} usa ${ability.name}. ${effect.volley.length} estallidos de polvo: −${effect.amount} PV entre todos.`;
+    if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    if (effect.crit) state.message += ' ¡Golpe crítico!';
+    for (const foe of targets) if ((totals.get(foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
   } else if (everyone) {
     // A blow on every foe at once: Factor común, Explosión; the Comodín, a hand on each (its die paid already).
     if (cast === undefined && paid === undefined) spendSecondary(actor, ability!.cost);
@@ -2409,16 +2739,18 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (landing) for (const foe of targets) if (powder(state, actor, foe, landing, effect)) powdered.add(foe.id);
     if (powdered.size) ground(state, actor, effect);
     const powderSaid = state.message;
-    // Vasos comunicantes: water on everyone standing. On a fire it is Humo; otherwise they are left Mojado.
-    if ('wets' in ability!) {
-      let smoked = 0;
+    // A blow that powders (Polvareda): whoever it took PV from and still stands is Empolvado.
+    if ('powders' in ability!) for (const foe of targets) if (foe.hp > 0 && hitOf(foe).amount > 0) { kindle(foe, 'empolvado', 1); hitOf(foe).burn = { id: 'empolvado', level: 1 }; }
+    // Water on everyone standing: on a fire it is Humo, whoever throws it. Vasos comunicantes leaves the rest Mojado (`wets`); Rociada wets nobody.
+    let smoked = 0;
+    if (landing === 'agua') {
       for (const foe of targets.filter(f => f.hp > 0)) {
-        // Whoever's powder took the water is poisoned, not wet.
-        if (powdered.has(foe.id)) hitOf(foe).burn = { id: 'envenenado', level: foe.timed!.envenenado!.level };
-        else if (foe.timed?.quemado) { const level = smoke(foe); smoked = Math.max(smoked, level); Object.assign(hitOf(foe), { burn: { id: 'cegado', level }, smoked: true }); }
-        else { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; hitOf(foe).burn = { id: 'mojado', level: 1 }; }
+        // Whoever's powder took the water is poisoned, not wet (the reaction says so over each, `reaction.targets`).
+        if (powdered.has(foe.id)) continue;
+        if (foe.timed?.quemado) { const level = smoke(foe); smoked = Math.max(smoked, level); Object.assign(hitOf(foe), { burn: { id: 'cegado', level }, smoked: true }); }
+        else if ('wets' in ability!) { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; hitOf(foe).burn = { id: 'mojado', level: 1 }; }
       }
-      if (smoked) { effect.reaction = { id: 'humo', level: smoked }; ground(state, actor, effect); }
+      if (smoked) { if (!effect.reaction) effect.reaction = { id: 'humo', level: smoked }; ground(state, actor, effect); }
     }
     // Factor común: the highest fire among them is everyone's (wet layers never catch; on water it is Vapor).
     if ('evens' in ability!) {
@@ -2434,6 +2766,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       }
       if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
     }
+    // Reinicio: the clocks on every foe start over.
+    if ('restart' in ability!) effect.restarted = targets.filter(f => f.hp > 0).map(foe => ({ target: foe.id, statuses: restartClocks(foe) })).filter(r => r.statuses.length);
     effect.amount = effect.hits[0]?.amount;
     // The last layer off breaks an onion's defence.
     const broken = effect.hits.filter(h => h.peeled && !targets.find(foe => foe.id === h.target)?.layers && targets.find(foe => foe.id === h.target)!.hp > 0);
@@ -2441,11 +2775,16 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message = `${actor.name} usa ${ability!.name}. ${effect.hits.length === 1 ? `−${effect.amount} PV.` : `Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`}`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.blinded?.length) state.message += ' ¡Cegados hasta que acabe la ronda!';
-    if ('wets' in ability!) state.message += effect.reaction ? ' El agua apaga los fuegos y moja al resto.' : ' ¡Mojados!';
+    if ('wets' in ability!) state.message += smoked ? ' El agua apaga los fuegos y moja al resto.' : powdered.size === targets.length ? '' : ' ¡Mojados!';
+    else if (smoked) state.message += ' El agua apaga los fuegos.';
+    if ('powders' in ability! && effect.hits.some(h => h.burn?.id === 'empolvado')) state.message += ` ¡${TIMED.empolvado.name}s!`;
     if ('evens' in ability! && effect.hits.some(h => h.burn?.id === 'quemado')) state.message += ` El fuego de todos: ${TIMED.quemado.name} ${roman(Math.max(...effect.hits.map(h => h.burn?.id === 'quemado' ? h.burn.level : 0)))}.`;
+    if ('restart' in ability!) state.message += effect.restarted?.length ? ' Sus relojes vuelven a empezar.' : ' No llevan nada con reloj.';
     if (effect.mana) state.message += ' Toma de tierra: maná +1.';
     if (actor.out !== undefined && actor.out > state.round) state.message += ` ${actor.name} pierde su siguiente turno.`;
     state.message += powderSaid;
+    // Combustión: a physical blow on everyone sets off each fire at IV it finds.
+    if (ability!.kind === 'physical') for (const foe of targets) if ((effect.hits.find(h => h.target === foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
   } else if (target) {
     // Dadista's die was spent already (`spendDie`): its maná with it.
     if (action === 'skill') { if (cast === undefined && paid === undefined) spendSecondary(actor, ability!.cost); effect.skill = skill; }
@@ -2527,7 +2866,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) react(state, actor, target, 'fuego', effect);
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0) {
-        const fire = inflict(target, ability.burn);
+        const fire = inflict(target, ability.burn, fireTop(state));
         bank(state, actor, target, effect);
         effect.burn = { id: ability.burn, level: fire.level };
         state.message += fire.level > 1 ? ` ¡El fuego sube: ${TIMED[ability.burn].name} ${roman(fire.level)}!` : ' ¡Se quema!';
@@ -2560,9 +2899,18 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.afflicted = { id: 'mojado', level: 1 }; note(effect, 'capilaridad', actor);
         state.message += ' ¡Mojado!';
       }
+      // Combustión: a physical blow (Atacar, a claw, a die, Bip's ram) on a fire at IV makes it burst.
+      if (!magic && effect.amount > 0) combust(state, actor, target, effect);
+      // Virus atómico: the swarm gets in; from now on what lands on it lands on the others.
+      if (action === 'skill' && ability && 'infect' in ability && target.hp > 0) {
+        target.timed = { ...target.timed, virus: { level: 1, left: TIMED.virus.seconds, next: TIMED.virus.every } };
+        target.virusSeen = seen(target);
+        effect.afflicted = { id: 'virus', level: 1 };
+        state.message += ' ¡Virus! Lo que reciba se contagia a los demás.';
+      }
     }
   }
-  if ((skill === 'punado' || skill === 'ostinato') && target && target.hp > 0 && effect.amount && !effect.annulled) {
+  if ((skill === 'punado' || skill === 'ostinato') && target && state.foes.includes(target) && target.hp > 0 && effect.amount && !effect.annulled) {
     const id = skill === 'punado' ? 'empolvado' : 'ostinato';
     kindle(target, id, 1);
     effect.afflicted = { id, level: 1 };
@@ -2584,6 +2932,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   }
   // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
   if (effect.converged) for (const f of state.foes) if (f.kind === 'no-converge' && f.diverged && f.hp > 0) soak(f);
+  cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
+  spread(state, effect); wallSay(effect);
   amplify(effect); checkEye(state, effect);
   if (fallen(state)) return effect;
   settle(state);
@@ -2620,6 +2970,8 @@ export function dualTargets(state: BattleState, d: DualSpec): Combatant[] {
 
 export function dualBlock(state: BattleState, d: DualSpec, a: Combatant, b?: Combatant): DualBlock | undefined {
   if (!d.parts.every(id => learned(state, id))) return 'level';
+  // A dúo mayor needs its node at the jar as well.
+  if (d.major && !state.improved?.duals?.includes(d.id) && !state.unbound) return 'level';
   if (state.usedDuals?.includes(d.id) && !state.unbound) return 'used';
   if (!b) return 'acted';
   if (b.hp <= 0) return 'down';
@@ -2722,6 +3074,34 @@ export function actDual(state: BattleState, id: DualId, targetId?: string, die?:
     settle(state);
     return effect;
   }
+  if (d.side === 'all-foes') {
+    // On every foe at once: Vulcano and Sobrecalentamiento.
+    state.message = `¡Ataque dual! ${d.name}.`;
+    const standing = state.foes.filter(f => f.hp > 0);
+    let steamed = 0;
+    effect.hits = standing.map(foe => {
+      const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * affinityScale(foe, elementOf(d)), 'dual'));
+      if (melts && foe.shell) foe.shell = false;
+      const hit: NonNullable<BattleEffect['hits']>[number] = { target: foe.id, amount, ...amount > 0 && affinityOf(foe, elementOf(d)) ? { affinity: affinityOf(foe, elementOf(d)) } : {} };
+      if (foe.hp <= 0 || foe.layers) return hit;
+      if (d.burn && foe.timed?.mojado) { steamed = steam(foe); return { ...hit, burn: { id: 'cegado' as const, level: steamed }, smoked: true as const }; }
+      if (d.burn) {
+        const on = foe.timed?.quemado, level = Math.min(fireTop(state), Math.max(d.burnLevel ?? 1, on ? on.level + (d.volcano ? 1 : 0) : 0));
+        foe.timed = { ...foe.timed, quemado: { level, left: TIMED.quemado.seconds, next: on?.next ?? TIMED.quemado.every } };
+        hit.burn = { id: 'quemado', level };
+      }
+      if (d.volcano) foe.timed = { ...foe.timed, volcan: { level: 1, left: TIMED.volcan.seconds, next: TIMED.volcan.every } };
+      return hit;
+    });
+    if (steamed) effect.reaction = { id: 'vapor', level: steamed };
+    effect.amount = effect.hits[0]?.amount;
+    state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+    if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
+    if (d.bits) { raiseBits(state, d.bits); effect.bits = { raised: d.bits }; state.message += ' Lo que queda del escudo cae delante del equipo.'; }
+    spread(state, effect); amplify(effect); checkEye(state, effect);
+    settle(state);
+    return effect;
+  }
   state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
   const eaten = annulled(state, a, elementOf(d), d.kind);
   if (eaten) {
@@ -2745,7 +3125,7 @@ export function actDual(state: BattleState, id: DualId, targetId?: string, die?:
       if (!d.burn) continue;
       // Fire never catches on wet layers; each strike checks after its own peel.
       const coin = dealt > 0 && target.hp > 0 && !target.layers && (chance >= 1 || roll(state) < chance) ? 1 : 0;
-      if (coin) fire = inflict(target, d.burn);
+      if (coin) fire = inflict(target, d.burn, fireTop(state));
       coins.push(coin); burns.push(coin ? fire!.level : 0);
     }
     if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
@@ -2767,6 +3147,7 @@ export function actDual(state: BattleState, id: DualId, targetId?: string, die?:
     if (bled) state.message += ` La herida se abre: +${Math.round((scale - 1) * 100)} %.`;
     if (fire && target.hp > 0) state.message += fire.level > 1 ? ` ¡El fuego sube: ${TIMED[d.burn!].name} ${roman(fire.level)}!` : ' ¡Se quema!';
     else if (d.burn && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
+    if (d.kind === 'physical' && effect.amount > 0) combust(state, striker, target, effect);
     if (id === 'relevo-de-sangre' && bled && !target.hp) {
       const next = state.foes.filter(f => f.hp > 0 && !f.part).sort((x, y) => y.hp - x.hp)[0];
       if (next) {
@@ -2939,8 +3320,10 @@ export function takeNews(state: BattleState): BattleEffect[] {
 export function enemyAct(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   if (state.phase !== 'enemy' || state.enemyActions.includes(id)) return;
   const protectedAlly = state.allies.find(a => a.suture);
+  screenTook.length = 0;
   const effect = enemyMove(state, id, targetId);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
+  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(effect); spread(state, effect); } else { wallTook.took = 0; screenTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);
@@ -2998,6 +3381,7 @@ function confusedAct(state: BattleState, actor: Combatant): BattleEffect {
   const amount = hurt(state, victim, fearDamage(state, victim, sighted(actor, physical(CONFUSED_BLOW, current(state, actor), current(state, victim))), 'physical'));
   state.message = victim === actor ? `${actor.name}, confundido, se golpea a sí mismo. −${amount} PV.` : `${actor.name}, confundido, golpea a ${victim.name}. −${amount} PV.`;
   const effect: BattleEffect = { actor: actor.id, kind: 'enemy', target: victim.id, amount, confused: true };
+  if (amount > 0) combust(state, actor, victim, effect);
   amplify(effect); checkEye(state, effect);
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   return effect;
@@ -4517,7 +4901,7 @@ export function nextRound(state: BattleState): StatusTick[] {
     for (const id of STATUS_IDS) {
       const count = stacks(c, id), spec = STATUSES[id];
       if (!count) continue;
-      const amount = spec.tick && c.hp > 0 ? foeSide ? hurt(state, c, spec.tick * count) : changeHealth(c, -spec.tick * count) : 0;
+      const amount = spec.tick && c.hp > 0 ? foeSide ? hurt(state, c, spec.tick * count) : changeHealth(c, -spec.tick * count, true) : 0;
       // Sangrado goes little by little: a wound cut this round keeps every stack.
       const fed = id === 'sangrado' && c.cutRound === state.round;
       const left = c.hp > 0 ? Math.max(0, count - (fed ? 0 : spec.decay)) : 0;
@@ -4547,6 +4931,10 @@ export function nextRound(state: BattleState): StatusTick[] {
     ally.worn = ally.classId ? [ally.classId] : [];
   }
   for (const ally of state.allies) delete ally.suture;
+  // A cortina nobody broke comes down with its last round.
+  for (const ally of state.allies) if (ally.cortina !== undefined && (ally.cortina <= state.round || ally.hp <= 0)) delete ally.cortina;
+  // Escudo de bits: broken, or its last round over, it is gone.
+  for (const ally of state.allies) if (ally.bits && (ally.bits.broken || ally.bits.hp <= 0 || ally.bits.until < state.round)) delete ally.bits;
   state.round++;
   // Against La Voz's song a guard lasts until that fighter acts again (`act`), not to the round's end.
   if (!state.song) state.allies.forEach(a => { a.guarding = false; });
@@ -4597,7 +4985,12 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       // A cure's pulse (Sanación) gives PV back, never past the most.
       if (TIMED[id].heal) pulses.push({ target: c.id, status: id, level: on.level, amount: changeHealth(c, amount), heal: true });
       // A fire on La Voz burns on, but while she sings it takes nothing: no pulse to show.
-      else if (!(foeSide && singing(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount) });
+      else if (!(foeSide && singing(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount, true) });
+      // Vulcano's volcano: each beat raises the fire on whoever it stands under (a wet one steams instead).
+      if (id === 'volcan' && foeSide && c.hp > 0 && !c.layers) {
+        if (c.timed?.mojado) steam(c);
+        else { const fire = inflict(c, 'quemado', fireTop(state)); pulses[pulses.length - 1] = { ...pulses[pulses.length - 1], level: fire.level }; }
+      }
       // Vertitrón's eye burnt out: no more Rayo.
       if (c.kind === 'vertigo-ojo' || isCuerdas(c.kind) || isCastle(c.kind)) checkEye(state);
     }

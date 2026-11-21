@@ -31,16 +31,22 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.skill ? [i.skill] : []).sort(), SKILLS.filter(s => s.node).map(s => s.id).sort());
   // A passive is a node too, unless it comes with a level of its ánima (Olor a sangre, Papagato's).
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.passive ? [i.passive] : []).sort(), Object.keys(PASSIVES).filter(id => !PASSIVES[id].level).sort());
-  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level), ['olor-a-sangre']);
+  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level).sort(), ['olor-a-sangre', 'remolino']);
+  // A definitiva whose move is built is awake: it is that skill, bought here (Colorista's Fin de fiesta, the first).
+  const fiesta = IMPROVEMENTS.find(i => i.id === 'prismatico:definitiva');
+  assert.equal(fiesta.veiled, undefined); assert.equal(fiesta.skill, 'fin-de-fiesta'); assert.equal(fiesta.name, 'Fin de fiesta');
+  assert.deepEqual(improvedBy(['prismatico:definitiva']).skills, ['fin-de-fiesta']);
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['prismatico']);
   for (const item of IMPROVEMENTS) {
     if (item.skill) assert.equal(SKILLS.find(s => s.id === item.skill).class, item.anima, item.id);
     if (item.passive) assert.equal(PASSIVES[item.passive].anima, item.anima, item.id);
     if (item.after) { const before = IMPROVEMENTS.find(i => i.id === item.after); assert.ok(before && before.anima === item.anima && before.line === item.line, `${item.id} needs one of its own line`); }
     if (item.line) assert.ok(LINES[item.line], item.id);
   }
-  // Nobody can have everything: both trees cost far more than a few lights.
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 17);
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 11);
+  // Nobody can have everything: both trees cost far more than a few lights (grade III: Combustión, the
+  // dúo mayor Vulcano and Integral, 6 more for Matemágico; Reinicio, Virus atómico and Escudo de bits, 6 more for Tecnópata).
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 23);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 17);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {
   assert.deepEqual(withinEcos(['matemagico:vasos', 'matemagico:agua', 'matemagico:vasos'], 5), ['matemagico:agua', 'matemagico:vasos']);
@@ -49,7 +55,7 @@ test('what stands: in order, within the ecos, and what needs something goes with
   assert.deepEqual(without(['matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'matemagico:fuego'], 'matemagico:agua'), ['matemagico:fuego'], 'a node goes with everything after it on its line');
   assert.equal(costOf(['papagato:mana-1', 'matemagico:agua']), 3);
   assert.deepEqual(improvedBy(['papagato:mana-1', 'matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'tecnopata:explosion']),
-    { mana: { papagato: 1 }, elements: { matemagico: ['agua'] }, skills: ['vasos', 'explosion'], passives: ['capilaridad'] });
+    { mana: { papagato: 1 }, elements: { matemagico: ['agua'] }, skills: ['vasos', 'explosion'], passives: ['capilaridad'], duals: [] });
 });
 test('more maná: the ánima holds more, starts full, rests up to it, and goes with the ánima', () => {
   const s = createBattle(party, 1, false, undefined, ['matemagico', 'papagato']);

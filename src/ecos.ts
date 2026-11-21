@@ -4,9 +4,9 @@
  * back and put somewhere else whenever they are at the jar. What is bought lives in the browser,
  * like the loadout. Pure.
  */
-import { ANIMA_NAMES, ANIMA_OWNERS, PASSIVES, SKILLS, type ClassId, type Element, type Improved, type PassiveId, type SkillId } from './battle.ts';
+import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, PASSIVES, SKILLS, type ClassId, type DualId, type Element, type Improved, type PassiveId, type SkillId } from './battle.ts';
 
-export type ImprovementKind = 'mana' | 'element' | 'skill' | 'passive' | 'ulti';
+export type ImprovementKind = 'mana' | 'element' | 'skill' | 'passive' | 'ulti' | 'dual';
 /** The lines of a tree (docs/animas/README.md § The jar): Matemágico's three elements and its trunk, Tecnópata's three. */
 export type LineId = 'fuego' | 'agua' | 'electrico' | 'calculo' | 'bip' | 'mente' | 'taller';
 export const LINES: Record<LineId, { name: string; note: string; colour: string }> = {
@@ -28,6 +28,8 @@ export interface Improvement {
   element?: Element;
   /** A node of a tree: its line, and the skill or the passive it gives. */
   line?: LineId; skill?: SkillId; passive?: PassiveId;
+  /** A dúo mayor it opens (docs/animas/README.md § Dúos mayores), and the ánima that brings its other half. */
+  dual?: DualId; partner?: ClassId;
   /** A place kept for what is still to design: it shows, asleep, and cannot be bought. */
   veiled?: true;
 }
@@ -41,6 +43,17 @@ export const ELEMENT_ICONS: Record<Element | 'none', string> = {
 };
 /** The ánimas that grow by a tree at the jar and never by level: the ones that are someone's own. */
 export const TREE_ANIMAS = Object.keys(ANIMA_OWNERS) as ClassId[];
+/**
+ * A dúo mayor's node (docs/animas/README.md § Dúos mayores, § The jar as one sky): bought with the
+ * own ánima that brings a half, it is what lets the dual exist. In the jar it is a gold star between
+ * that ánima's constellation and `partner`'s, and only there once both ends are lit (`after`, and
+ * the partner's half learned), so its card can name both halves.
+ */
+const dualNode = (anima: ClassId, line: LineId, dual: DualId, partner: ClassId, cost: number, after: string): Improvement => {
+  const spec = DUALS.find(d => d.id === dual)!, halves = spec.parts.map(part => SKILLS.find(s => s.id === part)!);
+  const one = halves.find(s => s.class === anima)!, two = halves.find(s => s.class !== anima)!;
+  return { id: `${anima}:${dual}`, anima, kind: 'dual', line, dual, partner, name: spec.name, cost, description: `Dúo mayor de ${one.name} y ${two.name}. ${spec.description}`, after: `${anima}:${after}` };
+};
 const skillNode = (anima: ClassId, line: LineId, skill: SkillId, cost: number, after?: string): Improvement => {
   const spec = SKILLS.find(s => s.id === skill)!;
   return { id: `${anima}:${skill}`, anima, kind: 'skill', line, skill, name: spec.name, cost, description: spec.description, ...after ? { after: `${anima}:${after}` } : {} };
@@ -51,10 +64,15 @@ const manaNode = (anima: ClassId, line?: LineId, after?: string): Improvement =>
   ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
 /**
  * The definitiva: a place kept on every ánima (docs/animas/README.md § Definitivas), 2 ecos each
- * (Aitor, 2026-11-20). Asleep until its move is built: none is yet.
+ * (Aitor, 2026-11-20). Asleep until its move is built: Colorista's Fin de fiesta is the first.
  */
 const DEFINITIVA_COST = 2;
-const ulti = (anima: ClassId): Improvement => ({ id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: DEFINITIVA_COST, veiled: true, description: 'Todavía duerme.' });
+const ulti = (anima: ClassId): Improvement => {
+  // One whose move is built (`ulti` in SKILLS) is awake: it is that skill, bought here and woken in each fight by its condition.
+  const built = SKILLS.find(skill => skill.class === anima && 'ulti' in skill);
+  return built ? { id: `${anima}:definitiva`, anima, kind: 'ulti', skill: built.id, name: built.name, cost: DEFINITIVA_COST, description: `Definitiva. ${built.description} Despierta en cada combate, una vez, sin gastar maná.` }
+    : { id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: DEFINITIVA_COST, veiled: true, description: 'Todavía duerme.' };
+};
 /**
  * Matemágico's tree: a line per element (the element on Atacar, the skill that lays or cashes it,
  * its passive) and the trunk, Cálculo. Each node needs the one before it on its line.
@@ -63,6 +81,9 @@ const MATEMAGICO: Improvement[] = [
   { id: 'matemagico:fuego', anima: 'matemagico', kind: 'element', line: 'fuego', element: 'fuego', name: 'Fuego', cost: 1, description: 'Atacar puede llevar fuego. No quema. Sobre un enemigo con sangrado, cauteriza: gasta el sangrado de golpe y le hace más daño. Sobre uno mojado, lo ciega con el vapor.' },
   skillNode('matemagico', 'fuego', 'factor-comun', 1, 'fuego'),
   passiveNode('matemagico', 'fuego', 'rescoldo', 2, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
+  // Grade III (docs/animas/matemagico/README.md § Grade III): the fire line's top, and the dúo mayor past it.
+  passiveNode('matemagico', 'fuego', 'combustion', 2, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.'),
+  dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 2, 'combustion'),
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
   passiveNode('matemagico', 'agua', 'capilaridad', 2, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
@@ -73,15 +94,19 @@ const MATEMAGICO: Improvement[] = [
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
+  skillNode('matemagico', 'calculo', 'integral', 2, 'mana-1'),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'bip', 'explosion', 1),
   passiveNode('tecnopata', 'bip', 'telemetria', 2, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
+  skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria'),
   skillNode('tecnopata', 'mente', 'confusion', 1),
   skillNode('tecnopata', 'mente', 'control-remoto', 2, 'confusion'),
+  skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto'),
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
   passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
+  skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos'),
   manaNode('tecnopata'),
 ];
 /** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */
@@ -114,7 +139,7 @@ export function without(list: readonly string[], id: string): string[] {
 }
 /** What `list` adds up to in a fight. */
 export function improvedBy(list: readonly string[]): Improved {
-  const improved: { mana: Partial<Record<ClassId, number>>; elements: Partial<Record<ClassId, Element[]>>; skills: SkillId[]; passives: PassiveId[] } = { mana: {}, elements: {}, skills: [], passives: [] };
+  const improved: { mana: Partial<Record<ClassId, number>>; elements: Partial<Record<ClassId, Element[]>>; skills: SkillId[]; passives: PassiveId[]; duals: DualId[] } = { mana: {}, elements: {}, skills: [], passives: [], duals: [] };
   for (const id of list) {
     const item = improvementOf(id);
     if (!item) continue;
@@ -122,6 +147,7 @@ export function improvedBy(list: readonly string[]): Improved {
     if (item.element) (improved.elements[item.anima] ??= []).push(item.element);
     if (item.skill) improved.skills.push(item.skill);
     if (item.passive) improved.passives.push(item.passive);
+    if (item.dual) improved.duals.push(item.dual);
   }
   return improved;
 }

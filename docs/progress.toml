@@ -642,6 +642,41 @@ in = "docs/animas/tecnopata/README.md"
 title = "El bote: árboles de Matemágico y Tecnópata"
 used = "TREE_ANIMAS"
 
+# Aitor 2026-11-20 (docs/animas/matemagico/README.md § Grade III, docs/animas/README.md § Combustión):
+# the nodes the trees gain after the castle's first boss. Five more active skills are proposed there.
+[[block.item]]
+title = "Matemágico: grado III (Combustión, el fuego IV, e Integral)"
+grep = "id: 'integral'"
+in = "src/battle.ts"
+
+# Designed 2026-11-20 (docs/animas/matemagico/README.md § Grade III): water's levels and a fourth that
+# freezes, on the shared Congelado rule (not built yet either).
+[[block.item]]
+title = "Matemágico: Punto de congelación y Resonancia (niveles de agua, el cuarto congela, el rayo lo rompe)"
+priority = "animas"
+note = "Grado III de agua y de eléctrico (matemagico/README § Grade III). Usan la regla Congelado, la misma que Bajo cero: hacer antes esa regla."
+grep = "'punto-de-congelacion'"
+in = "src/battle.ts"
+
+# Proposal 2026-11-20 (docs/animas/README.md § Dúos mayores): strong duals unlocked by the castle and a
+# node at the jar; Vulcano first, as Foc Binari + Ostinato.
+[[block.item]]
+title = "Dúos mayores: Vulcano (Foc Binari + Ostinato), desbloqueado en el bote"
+grep = "major: true"
+in = "src/battle.ts"
+
+# Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
+# the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).
+[[block.item]]
+title = "El bote como un solo cielo: todas las constelaciones a la vez y los dúos mayores entre ellas"
+grep = "interface Bridge"
+in = "src/jar-ui.ts"
+
+[[block.item]]
+title = "Tecnópata: grado III (Reinicio, Virus atómico y Escudo de bits) y el dúo Sobrecalentamiento"
+grep = "id: 'sobrecalentamiento'"
+in = "src/battle.ts"
+
 [[block.item]]
 title = "Sincopante, la de Marta"
 grep = "sincopante"
@@ -678,6 +713,7 @@ in = "src/battle.ts"
 
 # Designed 2026-11-20 round the puff and agreed by Aitor that day (docs/animas/prismatico/README.md;
 # it was Prismático, and its id stays `prismatico`): powder that waits for an element, and screens of it.
+# Built whole 2026-11-21: seven levels, the cortina, Remolino and Fin de fiesta, the first definitiva.
 [[block.item]]
 title = "Colorista: el polvo y sus tres reacciones (Empolvado; Estallido, Envenenado, Cristalizado)"
 grep = "cristalizado"
@@ -697,6 +733,16 @@ in = "src/battle.ts"
 title = "Colorista: la definitiva Fin de fiesta"
 grep = "fin-de-fiesta"
 in = "src/battle.ts"
+
+[[block.item]]
+title = "Colorista: a prueba dentro del salón de Luca (Puñado y Cortina antes de ganarla)"
+priority = "animas"
+note = "En la puerta Luca da sus prismáticos y el ánima despierta a prueba; el salón es donde se aprende, con la luz que se come un elemento. Diseñado en docs/animas/prismatico/README.md § In the world."
+
+[[block.item]]
+title = "Colorista: polvo gris en la primera vuelta"
+priority = "animas"
+note = "El laboratorio ya lo tiene (Color); el combate lanza siempre los colores. Espera a la segunda vuelta de la misión de Luca."
 
 # The coloured powder's look (a Holi's dry pigment), built in the effects lab ahead of the ánima
 # (src/powder-fx.ts, being built 2026-11-20): done once a lab of the fx panel plays it.

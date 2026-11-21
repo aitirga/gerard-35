@@ -107,6 +107,9 @@ const DUAL_TRIALS = {
   'relevo-de-sangre': { gerard: 'papagato', aitor: 'dadaista', encounter: 'crias-2', improved: [] },
   'bombardeo-orbital': { gerard: 'sincopante', aitor: 'tecnopata', encounter: 'camping-dados', improved: ['tecnopata:explosion'] },
   'reserva-de-color': { gerard: 'matemagico', aitor: 'prismatico', encounter: 'luca-recepcion', improved: [] },
+  // Grade III (docs/animas/README.md § Dúos mayores): the bit wall going off, and the volcano (its node bought, with Combustión).
+  sobrecalentamiento: { gerard: 'matemagico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'] },
+  vulcano: { gerard: 'matemagico', aitor: 'sincopante', encounter: 'dogs', improved: ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:combustion', 'matemagico:vulcano'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
