@@ -89,18 +89,26 @@ export const CASTLE_FIGHT_HOURS = 1, CASTLE_REST_HOURS = 1;
 
 // ——— What each boss opens ———————————————————————————————————————————————————————————————
 /**
- * The three stages of growth (docs/animas/README.md § Growth opens with the castle). Slots: the
- * extra ánimas each can equip besides their own (two after Aurelià: three ánimas each, the most in
- * a fight). Cap: the level a shared ánima can reach (the game's own top level is lower than every
- * cap today, so it holds nothing back yet). The definitivas come with Dirección.
+ * The three stages of growth (docs/animas/README.md § Growth opens with the castle): 1 from the
+ * start, 2 once Aurelià has fallen, 3 once Dirección has. The one number the jar (which nodes are
+ * in the sky, src/ecos.ts `stageOf`), the levels (`levelCap`) and the slots read.
  */
-export const CASTLE_UNLOCKS = {
-  slots: { start: 1, aurelia: 2 },
-  cap: { start: 4, aurelia: 6, direccion: 7 },
-} as const;
-export const extraSlots = (flags: Flags) => flags.has('aurelia') ? CASTLE_UNLOCKS.slots.aurelia : CASTLE_UNLOCKS.slots.start;
-export const levelCap = (flags: Flags) => flags.has('direccion') ? CASTLE_UNLOCKS.cap.direccion : flags.has('aurelia') ? CASTLE_UNLOCKS.cap.aurelia : CASTLE_UNLOCKS.cap.start;
-export const definitivasOpen = (flags: Flags) => flags.has('direccion');
+export type GrowthStage = 1 | 2 | 3;
+export const growthStage = (flags: Flags): GrowthStage => flags.has('direccion') ? 3 : flags.has('aurelia') ? 2 : 1;
+/**
+ * What each stage opens. Slots: the extra ánimas each can equip besides their own (two from Aurelià:
+ * three ánimas each, the most in a fight). Cap: the level a shared ánima can reach; the EXP earned
+ * over it is kept and counts once it rises (src/levels.ts `award`). Definitivas: whether the jar
+ * wakes them. The grade III nodes of the own ánimas' trees come with stage 2 (src/ecos.ts).
+ */
+export const CASTLE_UNLOCKS: Record<GrowthStage, { slots: number; cap: number; definitivas: boolean }> = {
+  1: { slots: 1, cap: 4, definitivas: false },
+  2: { slots: 2, cap: 6, definitivas: false },
+  3: { slots: 2, cap: 7, definitivas: true },
+};
+export const extraSlots = (stage: GrowthStage) => CASTLE_UNLOCKS[stage].slots;
+export const levelCap = (stage: GrowthStage) => CASTLE_UNLOCKS[stage].cap;
+export const definitivasOpen = (stage: GrowthStage) => CASTLE_UNLOCKS[stage].definitivas;
 /** Whose lights each boss gives when it falls: the Ecos de luz for the jar. */
 export const CASTLE_LIGHTS = { aurelia: ['aurelia'], direccion: ['mar', 'montse', 'pilar'] } as const;
 

@@ -12,7 +12,7 @@ import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
 import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_REVEAL, DUAL_SLOW, holdAfter } from './battle-motion';
-import { award, fightXp, levelForXp, levelProgress, participants, toNextLevel, topOf, type Growth } from './levels';
+import { award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
 import type { SoundId } from './sfx';
@@ -309,6 +309,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let previousFocus: HTMLElement | null = null;
   /** Each ánima's EXP when the fight started (src/levels.ts): where the victory screen's bars start. */
   let xpBefore: Partial<Record<ClassId, number>> = {};
+  /** The level the castle lets a shared ánima reach (src/castle.ts `levelCap`); none in the fight tester. */
+  let levelCap: number | undefined;
   /** The victory screen's ánimas are shown once per fight. */
   let rewarded = false;
   let rewardFrame = 0;
@@ -1067,7 +1069,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     resetRewards();
     const token = rewardToken;
     const won = state?.phase === 'won', who = won ? participants(state!) : [], gained = won ? fightXp(state!) : 0;
-    const growth = won ? award(who.map(p => p.id), gained, xpBefore, state!.levels ?? {}) : [];
+    const growth = won ? award(who.map(p => p.id), gained, xpBefore, state!.levels ?? {}, levelCap) : [];
     result.toggleAttribute('data-rewards', !!growth.length);
     total.hidden = !won || !gained;
     total.querySelector('strong')!.textContent = `+${gained} EXP`;
@@ -1076,7 +1078,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const names = (ids: string[]) => ids.map(id => state!.allies.find(a => a.id === id)?.name ?? id).join(' · ');
     list.innerHTML = growth.map((g, i) => {
       const wearers = who.find(p => p.id === g.id)!.wearers, grown = wearers.some(id => grownUp(state!.allies.find(a => a.id === id)!.profile));
-      return `<li class="xp-card" data-anima="${g.id}" style="--chip:${CLASSES[g.id].colour};--i:${i};--fill:${levelProgress(g.xpBefore, topOf(g.id))}">
+      return `<li class="xp-card" data-anima="${g.id}" style="--chip:${CLASSES[g.id].colour};--i:${i};--fill:${levelProgress(g.xpBefore, g.reach)}">
         <div class="xp-head"><strong>${animaOf(g.id, grown).name}</strong><small>${names(wearers)}</small></div>
         <div class="xp-row"><span class="xp-level">NIVEL <b>${g.levelBefore}</b></span><span class="xp-count">${g.levelBefore >= topOf(g.id) ? 'MÁXIMO' : `+${g.xpAfter - g.xpBefore} EXP`}</span></div>
         <div class="xp-bar" aria-hidden="true"><i></i></div>
@@ -1096,8 +1098,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const t = still ? 1 : Math.max(0, Math.min(1, (now - start - 700 - i * 160) / 1300));
         if (t < 1) running = true;
         const eased = 1 - (1 - t) ** 3, xp = g.xpBefore + (g.xpAfter - g.xpBefore) * eased;
-        const level = Math.max(g.levelBefore, Math.min(g.levelAfter, levelForXp(xp, topOf(g.id))));
-        cards[i].style.setProperty('--fill', String(levelProgress(xp, topOf(g.id))));
+        const level = Math.max(g.levelBefore, Math.min(g.levelAfter, levelForXp(xp, g.reach)));
+        cards[i].style.setProperty('--fill', String(levelProgress(xp, g.reach)));
         if (level > shown[i]) { shown[i] = level; levelUp(cards[i], g, level, token); }
       });
       if (running) rewardFrame = requestAnimationFrame(step);
@@ -2502,7 +2504,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (moment === 'won' || moment === 'won-level' || moment === 'lost') {
       for (const unit of moment === 'lost' ? state.allies : state.foes) unit.hp = 0;
       // Enough EXP for the ánima furthest from its next level: every one in the fight goes up.
-      if (moment === 'won-level') state.extraXp = Math.max(0, Math.max(0, ...participants(state).map(p => toNextLevel(xpBefore[p.id] ?? 0, state!.levels?.[p.id] ?? 1, topOf(p.id)))) - fightXp({ foes: state.foes }));
+      if (moment === 'won-level') state.extraXp = Math.max(0, Math.max(0, ...participants(state).map(p => toNextLevel(xpBefore[p.id] ?? 0, state!.levels?.[p.id] ?? 1, reachOf(p.id, levelCap)))) - fightXp({ foes: state.foes }));
       state.phase = moment === 'lost' ? 'lost' : 'won';
       state.message = moment === 'lost' ? 'Depuración: combate perdido.' : moment === 'won-level' ? 'Depuración: combate ganado, con experiencia para subir de nivel.' : 'Depuración: combate ganado.';
     } else if (moment === 'foes-low' || moment === 'party-low') {
@@ -2605,7 +2607,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
     /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. `guards` sizes the palace guards. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; improved?: Improved } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; cap?: number; improved?: Improved } = {}) {
       if (state) return;
       const count = foeCount;
       reopen = (): void => { ui.open(party, count, options); };
@@ -2616,7 +2618,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night }); busy = true;
       state.levels = options.levels;
       improve(state, options.improved);
-      xpBefore = { ...options.xp }; rewarded = false; resetRewards();
+      xpBefore = { ...options.xp }; levelCap = options.cap; rewarded = false; resetRewards();
       foeCount = state.foes.length;
       root.toggleAttribute('data-possessed', possessed);
       root.dataset.encounter = encounter;

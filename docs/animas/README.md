@@ -85,12 +85,13 @@ among their own and their extras, one at a time (`docs/party.md`).
 **Slots** (decided 2026-11-14, corrected by Aitor 2026-11-15): each of them starts with **two
 ánimas** (their own and one shared) and ends with **three, the most worn in a fight at once**. The
 third slot comes with the castle's **first boss**; the second boss gives no slot, it opens the
-definitivas (§ Growth opens with the castle). `EXTRA_SLOTS` is 1 today.
+definitivas (§ Growth opens with the castle). Built: `extraSlots` in `src/castle.ts`, by the stage.
 
 **Built 2026-11-15** (the own ánimas' half): Matemágico is out of `LEVELLED` (`src/levels.ts`,
 only Papagato levels today) and its old level-2 and level-3 skills are nodes of its tree; so are
-three of Tecnópata's five. The jar's Maná +2 and sleeping Pasiva are gone. Not built: the seven
-levels, the slot growing from two to three, the definitiva's waking. No save is migrated: a save
+three of Tecnópata's five. The jar's Maná +2 and sleeping Pasiva are gone. Built since: the seven
+levels, and the castle's stages (the third slot, the caps, grade III, the definitiva's waking: § Growth
+opens with the castle). No save is migrated: a save
 that had those skills by level has them again once their nodes are bought. To settle: how many
 ecos the whole game gives against what two trees and the definitivas cost (the fights were tuned
 with those skills in hand), and whether the victory screen shows a card for an ánima that earns
@@ -136,9 +137,10 @@ Sketch: `output/mockups/bote/index.html`.
   level.
 - **Maná**: 3 from the start; a shared ánima gets +1 at level 4 and +1 at the jar; an own ánima
   +1 in its tree. Five is the top, and only for a shared one. Today's Maná +2 goes.
-- **The definitiva sleeps** on every page (*Todavía duerme*, as today) until the castle's first
-  boss is beaten. Back home that day the jar is different: a line from Gerard or Aitor, and the
-  cards are awake. Its use in a fight: § Definitivas.
+- **The definitiva sleeps** on every page (*Todavía duerme*, a «?») until the castle's second boss,
+  el Equipo de dirección, is beaten (§ Growth opens with the castle, built 2026-11-21); Gerard says
+  it as they fall (*Y algo más. Algo que no sé usar todavía.*), and the next time the jar opens the
+  ones whose move is built wake in the sky. Its use in a fight: § Definitivas.
 - **One jar for both**: the ecos are the party's, not each player's. What goes into Tecnópata
   does not go into Matemágico; with two players that is a conversation at home.
 - **Not here**: who wears which shared ánima stays where it is (the status screen).
@@ -170,8 +172,8 @@ If that feels too tight in play, lower the passives from 2 to 1 before adding li
   is the trigger.
 - Three lines that need each other (a reaction takes two elements), and never the ecos for all
   three whole: deep in one or wide in two is the choice.
-- **Grade III** (Aitor 2026-11-20; meant for after the castle's first boss, § Growth opens with the
-  castle): Fuego adds the passive *Combustión*, fire's fourth level (2, § Combustión), and past it the
+- **Grade III** (Aitor 2026-11-20; in the sky once the castle's first boss has fallen, § Growth opens
+  with the castle): Fuego adds the passive *Combustión*, fire's fourth level (2, § Combustión), and past it the
   node of the dúo mayor *Vulcano* (2, § Dúos mayores); Cálculo *Integral* (2; a cure for everyone);
   all built. Agua *Punto de congelación* and Eléctrico *Resonancia* are designed, waiting for the
   freezing rule. [matemagico/README.md](matemagico/README.md) § Grade III.
@@ -235,8 +237,9 @@ one stronger.
 Built today (2026-11-20): levels go to seven (`MAX_LEVEL`, `LEVEL_XP` in `src/levels.ts`; the EXP of 4 to 7
 a first guess), and each shared ánima grows as far as it has been designed (`topOf`): Papagato to 3,
 Dadista to 7. Level 4 is Maná +1 (`MANA_LEVEL`, in `manaMax`). A level left empty on purpose is
-named in `EMPTY_LEVELS`. The castle's caps (`levelCap` in `src/castle.ts`) are not wired in yet.
-Matemágico and Tecnópata grow at the jar.
+named in `EMPTY_LEVELS`. The castle caps them (built 2026-11-21, § Growth opens with the castle):
+4, 6 after Aurelià, 7 after Dirección (`levelCap` in `src/castle.ts`, `reachOf`). Matemágico and
+Tecnópata grow at the jar.
 
 **Proposal: seven levels, for shared ánimas only** (2026-11-14, Aitor's direction; not built;
 Matemágico and Tecnópata do not level, § Two ways to grow). A level gives one of three
@@ -375,38 +378,47 @@ A new improvement is an entry in `IMPROVEMENTS` (`src/ecos.ts`); the screen and 
 read it from there. What it does in a fight comes through `Improved` (`BattleState.improved`,
 `improve`). Screenshots: `just screenshots ecos --gpu`, `just screenshots elementos --gpu`.
 
-## Growth opens with the castle (idea, 2026-11-15)
+## Growth opens with the castle (built 2026-11-21)
 
-Aitor's idea, written down to keep; **not built, numbers to settle**. How far an ánima can grow is
-not open from the start: it **opens in three stages, with progress through La Reina Bubbaloo's
-castle**. Both ways to grow follow it: the own ánimas' constellations at the jar show and sell more
-nodes, and the shared ánimas' level cap rises.
+Aitor's idea (2026-11-15), built 2026-11-21. How far an ánima can grow is not open from the start:
+it **opens in three stages, with progress through La Reina Bubbaloo's castle**. Both ways to grow
+follow it: the own ánimas' constellations at the jar show and sell more nodes, and the shared
+ánimas' level cap rises. The castle these stages belong to, and what each boss opens in full:
+[castle.md](../castle.md).
 
 | Stage | Opens when | Constellations (own ánimas) | Levels (shared ánimas) | Also |
 | --- | --- | --- | --- | --- |
-| 1 | From the start | A few skills only: the inner nodes | Up to level 3–4 | Two ánimas each |
-| 2 | The castle's first great boss is beaten (Aurelià) | They expand: new nodes | Up to level 6 or so | **A slot for one more ánima: three each, the most in a fight at once.** New ways to travel, etc. |
-| 3 | The second boss is beaten (el Equipo de dirección) | **The definitivas** (the supreme skills) | Up to the top (7) | — |
+| 1 | From the start | Grades I and II: every node but grade III | Up to level 4 | Two ánimas each |
+| 2 | The castle's first great boss is beaten (Aurelià) | **Grade III**: Combustión, Integral, Reinicio, Virus atómico, Escudo de bits, and what hangs from them (Redundancia, the dúo mayor Vulcano) | Up to level 6 | **A slot for one more ánima: three each, the most in a fight at once.** The dúos mayores stand in the sky as a «?» |
+| 3 | The second boss is beaten (el Equipo de dirección) | **The definitivas** wake | Up to the top (7) | — |
 
-- **The definitivas** only exist from the second boss on. Even then each one **costs to unlock**
-  (ecos at the jar) and has **its own special requirement to fire** in a fight (§ Definitivas).
-The castle these stages belong to, and what each boss opens in full: [castle.md](../castle.md).
-
+- **One number**: `growthStage` in `src/castle.ts` (from the flags `aurelia` and `direccion`), and
+  what each stage opens in `CASTLE_UNLOCKS` (`extraSlots`, `levelCap`, `definitivasOpen`).
+  `Story.stage` is read by the jar, the levels and the slots.
+- **The jar**: a node has the stage it opens at (`stage` in `src/ecos.ts`, `gradeIII`), and whatever
+  hangs from it opens with it (`stageOf`: Redundancia and Vulcano follow their line). A node of a
+  later stage is not in the sky (`inSky`) and does not stand among what is bought (`withinEcos` with
+  the story's stage): ecos put in it come back, and come back to it once the stage is reached (a
+  rewound day works the same). A definitiva is always in the sky as a place kept, asleep (`asleep`)
+  until stage 3; then the ones whose move is built (Fin de fiesta today) can be bought.
+- **The levels**: a shared ánima stops at the cap (`reachOf`, `award`'s `cap`) and **keeps the EXP
+  it earns**; when a boss raises the cap, the EXP kept gives its levels at once (`Story.ripen`, after
+  the boss's fight), each with its note, back home after the flash. On the victory screen and the
+  status screen an ánima at the cap has its bar full and never says MÁXIMO: the cap is not its top.
+- **How it shows** (the HUD rule: what the player has, never what is missing): a constellation simply
+  has fewer stars until it expands, and nothing says more will come. The first time the jar opens
+  after the boss (`gerard35.jar-stage.v1`, the stage it last showed), once the sky is up a light runs
+  out along each new join and the star opens at its end, where it will always be, with a chime; a
+  dúo mayor's threads run after it and its «?» opens between them (`data-arriving`). A definitiva
+  that wakes opens the same way. A level cap reached says nothing about the next.
 - **Why**: growth is paced by the story, the castle's bosses are felt as steps up, and it gives
   **control over balance**: a fight before a boss can be tuned knowing the most the party can have.
-- **How it shows** (to settle, within the HUD rule: what the player has, never what is missing): at
-  the jar a constellation simply has fewer stars until it expands; the expansion is seen happening
-  the first time the jar is opened after the boss. A level cap reached says nothing about the next.
-  In the one sky (§ The jar as one sky) a stage's new stars come in the way a dúo mayor does: a
-  light runs out along each new join and the star opens at its end, where it will always be.
-- It fits what is already decided: the definitiva bought at the jar with its condition
-  (§ Definitivas), which this places after the second boss. It corrects the slots: one more after
-  the first boss only, three at most, not four (§ Two ways to grow).
-- **To settle**: which nodes are in each stage of each tree; the exact caps (3 or 4, then 6); what
-  EXP earned over a cap does (kept and applied when it rises, or lost); what "new ways to travel"
-  are; whether ecos already put in a node can outrun a stage (they cannot if the node is not shown).
-- For the tools when built: `TARGETS` (`src/battle-sim.ts`) and the picker should take the stage,
-  so a fight is balanced and tried at the growth it will be met with.
+- **Cut** (Aitor 2026-11-21): the "new ways to travel" of stage 2 (the snow globe inside the
+  castle) are not needed. The tools see everything: the fight tester's chips and `withinEcos`
+  without a stage open every node, and `TARGETS` (`src/battle-sim.ts`) do not take the stage yet
+  (the missions' builds hold nothing past grade II); the picker reaches each stage by its story
+  points (Aurelià, Dirección).
+- Tests: `tests/crecimiento.test.mjs`. Screenshots: `just screenshots crecimiento --gpu`.
 
 ## Definitivas
 
@@ -447,8 +459,8 @@ how the next ones are:
   (`effect.awoken`) and an icon stays on their plate until it is used.
 - The fight tester's *Sin límites* (`unbound`) has it awake from the start.
 
-Not built: the line at the jar that says the condition, and the castle's gate (§ Growth opens with
-the castle) on buying it.
+The castle's gate on buying it is built (§ Growth opens with the castle): it sleeps until Dirección
+has fallen. Not built: the line at the jar that says the condition.
 
 ## Combined skills
 
@@ -517,12 +529,15 @@ halves share. Worth about **twice** the two skills used apart, not a dual's 1.3 
 **How they open (built):** both halves known (as any dual), **and its node bought at the jar** (2
 ecos), in the constellation of the own ánima that brings a half (`kind: 'dual'` in `src/ecos.ts`,
 drawn as two discs joined; `Improved.duals`; `major` in `DUALS`; `dualBlock` says *level* without
-it). Its card: *Dúo mayor de Foc Binari y Ostinato.* and what it does (it only shows once both ends
-are lit, threaded to both, so it can say with whom). In the jar its node is no longer on the fire
-line but a gold star between Matemágico and Sincopante (§ The jar as one sky). In a fight it
-is a dual like the others (both turns, each half's maná, once a fight, found the first time by
-chance), under **DÚO MAYOR DESBLOQUEADO** and then **DÚO MAYOR**, its kicker gold and burning. Not
-built: the castle's stage that should hide the node until Aurelià (§ Growth opens with the castle).
+it). Its card: *Dúo mayor de Foc Binari y Ostinato.* and what it does (it only says so once both
+ends are lit, threaded to both, so it can say with whom). In the jar its node is no longer on the
+fire line but a gold star between Matemágico and Sincopante (§ The jar as one sky). **The castle
+gates it** (built 2026-11-21, § Growth opens with the castle): nothing of it before Aurelià; from
+him on it stands in the sky as a **«?»** (Aitor 2026-11-21: *los dúos buenos hagamos que se vean
+después de Aurelià también, pero con un ?*), and it is revealed, and can be bought, when both
+sides reach it: its own half's line lit as far as it, the other half learned. In a fight it is a
+dual like the others (both turns, each half's maná, once a fight, found the first time by chance),
+under **DÚO MAYOR DESBLOQUEADO** and then **DÚO MAYOR**, its kicker gold and burning.
 
 **Vulcano** (built): `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20
 segundos, un volcán les sube el fuego un nivel cada 5 segundos.` Gerard's binary fire goes into the
@@ -559,19 +574,28 @@ comes into that same sky, never as a page or a constellation opened on its own. 
 - **A dúo mayor is a gold star between two constellations** (`Bridge`), larger and ringed, with
   *DÚO MAYOR* over its name, on an arc that bows up from the star that ends its own half's line
   (Vulcano: Combustión, its `after`) to the other half's learned star (Ostinato), a gold thread to
-  each. **It is not in the sky until both ends are lit** (that star bought, the other half
-  learned); then it comes in where both can see it: a light runs along each thread towards the
-  middle and the star opens there a second later (`data-born`), the other half's star grows and
-  shows its name. Bought, its threads burn gold. Taking out what it hangs from takes it out too, its
-  light flies back to the jar and it goes out of the sky with its threads, leaving no mark.
+  each. **From Aurelià it is in the sky as a «?»** (Aitor 2026-11-21; until then the castle keeps it
+  out with the rest of grade III): dim gold, *DÚO MAYOR* over it and no name; its note says only
+  *Todavía no se ve qué es.*, nothing of its halves or its cost. Each thread is faint until its own
+  end is lit (`data-lit`: that star bought, the other half learned; while that half is not learned
+  the thread hangs from its constellation's core). **It is revealed once both ends are lit** (that
+  star bought, the other half learned): a light runs along each thread towards the middle and the
+  «?» opens as its name a second later (`data-born`), the other half's star grows and shows its name.
+  Bought, its threads burn gold. Taking out what it hangs from takes it out too: its light flies back
+  to the jar and the star goes back to a «?», its threads faint. (Until 2026-11-21 it was not in the
+  sky at all until both ends were lit.)
 - **Cursors** move over the whole sky by the nearest light the way pressed; Q / E jump from core to
   core; a core is only read (pressing it does nothing). The constellation under a cursor, both
   ends of a dúo mayor under one, is pushed in on slowly (`PUSH`: 1.05 an own tree, 1.14 a shared
   one), its glow filling in. Esc closes.
-- `just screenshots ecos --gpu`: the sky with all seven ánimas (picker levels), Vulcano coming in
-  as Combustión is lit, Gerard and Aitor at work at once, a shared ánima pushed in on.
-- **Not built**: where the castle's stages (§ Growth opens with the castle) would add stars as they
-  open. A future ánima without a place in `SKY` takes one of `SPARE` until it is given its own.
+- **The castle's stages add stars to this same sky** (§ Growth opens with the castle): a node of a
+  stage still to come is simply not there; the first time the jar opens after the boss, a light runs
+  out along each new join and the star opens at its end (`arriving`, `data-arriving`).
+- `just screenshots ecos --gpu`: the sky with all seven ánimas after Aurelià (picker levels), Vulcano
+  revealed as Combustión is lit, Gerard and Aitor at work at once, a shared ánima pushed in on.
+  `just screenshots crecimiento --gpu`: the sky before Aurelià, the stars he brings coming in,
+  Vulcano's «?», and the definitiva that wakes after Dirección.
+- A future ánima without a place in `SKY` takes one of `SPARE` until it is given its own.
 
 ## Ánima points
 

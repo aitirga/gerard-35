@@ -113,14 +113,21 @@ priority = "historia"
 grep = 'each boss of her\s+castle beaten'
 in = "docs/chapter-2.md"
 
-# docs/castle.md § What each boss opens. Built: the third ánima slot after Aurelià (extraSlots).
-# Not yet: the constellations' outer ring after Aurelià, levelCap applied (defined in castle.ts,
-# used nowhere: the check waits for that) and the definitivas after Dirección (their own item).
+# docs/castle.md § What each boss opens, docs/animas/README.md § Growth opens with the castle. Built
+# 2026-11-21: one stage (growthStage in castle.ts) for the jar, the levels and the slots.
 [[block.item]]
 title = "Crecimiento, etapa 2 (tras Aurelià): el grado III sale en el bote y las ánimas compartidas suben al nivel 6"
 priority = "crecimiento"
-note = "Al vencer a Aurelià: el bote enseña los nodos del grado III (Combustión, Vulcano, Integral, Reinicio, Virus atómico, Escudo de bits), que hoy salen desde el principio, y las ánimas compartidas pasan del tope 4 al 6 (levelCap en src/castle.ts, hoy sin usar). El hueco extra ya se abre. La EXP de más se guarda y cuenta al subir el tope. Cuando se haga, una sola función con la etapa (1-3) para el bote y los niveles."
+note = "Hecho: antes de Aurelià el bote no enseña el grado III (Combustión, Integral, Reinicio, Virus atómico, Escudo de bits y lo que cuelga de ellos); tras él entran en el cielo la primera vez que se abre, cada estrella al final de su unión. Las compartidas se quedan en el nivel 4 guardando la EXP, y al caer Aurelià suben de golpe hasta el 6 con lo guardado. Una sola etapa (growthStage en src/castle.ts) para el bote, los niveles y los huecos."
 used = "levelCap"
+
+# Aitor 2026-11-21: the dúos mayores show after Aurelià too, as a «?», and open when both sides reach them.
+[[block.item]]
+title = "Dúos mayores con «?» en el bote desde Aurelià, que se abren al llegar a ellos por los dos lados"
+priority = "crecimiento"
+note = "Hecho: tras Aurelià cada dúo mayor está en el cielo como un «?» dorado entre sus dos constelaciones, sin nombre ni mitades; cada hilo se enciende al llegar su lado (la línea propia hasta él, la otra mitad aprendida) y con los dos se revela y se puede comprar."
+grep = "Todavía no se ve qué es"
+in = "src/jar-ui.ts"
 
 # ——— Motor ———
 [[block]]
@@ -921,12 +928,12 @@ title = "Tercer hueco de ánima tras Aurelià"
 priority = "historia"
 used = "extraSlots"
 
-# The gate is there (castle.ts definitivasOpen, unused) and each ánima's definitiva sleeps in the jar
-# ("Todavía duerme"); done when the jar opens them after Dirección. Each one's move is ánima work.
+# Built 2026-11-21: each definitiva sleeps in the jar ("Todavía duerme") until Dirección (definitivasOpen,
+# read by src/ecos.ts); then the ones whose move is built wake. Each one's move is ánima work.
 [[block.item]]
 title = "Definitivas en el bote tras Dirección"
 priority = "crecimiento"
-note = "Etapa 3. Al vencer al Equipo de dirección despiertan las definitivas en el bote (hoy duermen siempre): cada una cuesta 2 ecos y luego pide su condición en combate. El tope de nivel de las compartidas pasa a 7."
+note = "Hecho: hasta vencer al Equipo de dirección cada definitiva duerme en el bote (un «?», Todavía duerme); tras él despiertan las que tienen su golpe hecho (hoy Fin de fiesta): 2 ecos y luego su condición en combate. El tope de nivel de las compartidas pasa a 7 con la EXP guardada."
 used = "definitivasOpen"
 
 [[block.item]]
@@ -1225,5 +1232,5 @@ weight = 2
 [[block.item]]
 title = "Lo exportado que nadie usa, conectado o quitado"
 priority = "pruebas"
-note = "13 nombres exportados que nada usa el 21-11 (rollFace, POSES, roomFights, CASTLE_FIGHT_HOURS, YEARS, QUEEN_RETURN_HP…): conectar lo que falta (levelCap y definitivasOpen van con el crecimiento) y quitar el resto."
+note = "Nombres exportados que nada usa el 21-11 (rollFace, POSES, roomFights, CASTLE_FIGHT_HOURS, YEARS, QUEEN_RETURN_HP…): conectar lo que falta y quitar el resto (levelCap y definitivasOpen ya los usa el crecimiento)."
 

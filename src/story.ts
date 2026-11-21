@@ -13,7 +13,7 @@ import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
-import { award, levelFlag, levelOf, type Level } from './levels.ts';
+import { award, levelFlag, levelOf, type Growth, type Level } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
@@ -25,7 +25,7 @@ import { APSE, BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE,
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
-import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, isCastlePlace, nightGroup, type CastleEncounter, type NightFight } from './castle.ts';
+import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, growthStage, isCastlePlace, levelCap, nightGroup, type CastleEncounter, type GrowthStage, type NightFight } from './castle.ts';
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleZone, isCastleZone } from './castle-mood.ts';
@@ -480,8 +480,8 @@ export class Story {
   get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
   /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */
   get ecos() { return this.jar.length + this.debugEcos; }
-  /** What stands of what the ecos are in: a rewound day can take a light back. */
-  get improvements() { return withinEcos(this.bought, this.ecos); }
+  /** What stands of what the ecos are in: a rewound day can take a light back, and what the castle has not opened yet is not there. */
+  get improvements() { return withinEcos(this.bought, this.ecos, this.stage); }
   /** A saved list; `improvements` drops whatever does not stand. */
   set improvements(list: readonly string[]) { this.bought = Array.isArray(list) ? list.filter(id => typeof id === 'string') : []; }
   /** The dual attacks found so far, in the order they were found. */
@@ -507,7 +507,7 @@ export class Story {
   /** Puts ecos into `id`: only one awake, with what it needs first, and ecos enough. Returns whether it took. */
   improve(id: string) {
     const item = improvementOf(id), now = this.improvements;
-    if (!item || now.includes(id) || withinEcos([...now, id], this.ecos).length !== now.length + 1) return false;
+    if (!item || now.includes(id) || withinEcos([...now, id], this.ecos, this.stage).length !== now.length + 1) return false;
     this.bought = [...now, id];
     return true;
   }
@@ -558,15 +558,27 @@ export class Story {
   private grow(worn: ClassId[] = [], xp = 0, quiet = false): StoryEffect[] {
     // Levels the picker chose stay as they are.
     if (this.debugAnimas) return [];
-    const effects: StoryEffect[] = [];
-    for (const growth of award(worn.filter(id => this.storyClasses.includes(id)), xp, this.xp, this.storyLevels)) {
+    return award(worn.filter(id => this.storyClasses.includes(id)), xp, this.xp, this.storyLevels, this.levelCap).flatMap(growth => {
       this.xp[growth.id] = growth.xpAfter;
-      for (let level = growth.levelBefore + 1; level <= growth.levelAfter; level++) {
-        this.set(levelFlag(growth.id, level as Level) as StoryFlag);
-        effects.push({ kind: 'learn', classId: growth.id, level, skills: SKILLS.filter(skill => skill.class === growth.id && 'level' in skill && skill.level === level).map(skill => skill.id), ...quiet ? { quiet } : {} });
-      }
+      return this.reached(growth, quiet);
+    });
+  }
+  /** The flags of the levels `growth` reached, and a note for each with what it learned. */
+  private reached(growth: Growth, quiet: boolean): StoryEffect[] {
+    const effects: StoryEffect[] = [];
+    for (let level = growth.levelBefore + 1; level <= growth.levelAfter; level++) {
+      this.set(levelFlag(growth.id, level as Level) as StoryFlag);
+      effects.push({ kind: 'learn', classId: growth.id, level, skills: SKILLS.filter(skill => skill.class === growth.id && 'level' in skill && skill.level === level).map(skill => skill.id), ...quiet ? { quiet } : {} });
     }
     return effects;
+  }
+  /**
+   * The level cap has risen (a castle boss fallen, docs/castle.md § What each boss opens): the EXP
+   * each ánima kept over the old one gives its levels now, each with its note.
+   */
+  private ripen(): StoryEffect[] {
+    if (this.debugAnimas) return [];
+    return award(this.storyClasses, 0, this.xp, this.storyLevels, this.levelCap).filter(growth => growth.levelAfter > growth.levelBefore).flatMap(growth => this.reached(growth, false));
   }
   /**
    * Development (the picker's Ánimas column): `id` earns `xp` EXP as if from a fight, levels and
@@ -857,8 +869,15 @@ export class Story {
       hour: () => story.spend('castle'), scream: boss => story.screamed(boss), fall: () => story.endDay('fall'), morning: () => story.newMorning(),
     };
   }
+  /**
+   * How far the ánimas can grow (docs/animas/README.md § Growth opens with the castle): 1 from the
+   * start, 2 once Aurelià has fallen, 3 once Dirección has. The jar, the levels and the slots read it.
+   */
+  get stage(): GrowthStage { return growthStage(this.flags); }
   /** How many extra ánimas each can equip besides their own: one, and one more once Aurelià has fallen (docs/castle.md § What each boss opens). */
-  get extraSlots() { return extraSlots(this.flags); }
+  get extraSlots() { return extraSlots(this.stage); }
+  /** The level a shared ánima can reach at this stage: 4, 6 after Aurelià, 7 after Dirección. */
+  get levelCap() { return levelCap(this.stage); }
   /**
    * A place as it is today: a castle floor is generated from the save and the day (src/castle-floor.ts),
    * a zone of the school is dressed by the bosses fallen (src/castle-mood.ts), any other place is its own. The game builds what this says, and a simulator walks its grid and its doors.
@@ -1643,7 +1662,9 @@ export class Story {
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];
       case 'battle': {
         const learned = event.won ? this.grow(event.worn, event.xp, true) : [];
-        return [...this.afterBattle(event), ...learned];
+        const after = this.afterBattle(event);
+        // A castle boss beaten raises the cap: what each ánima kept over the old one comes now, back home.
+        return [...after, ...learned, ...this.ripen()];
       }
       case 'palace':
         if (!this.has('first-fight') || !this.set('palace')) return [];

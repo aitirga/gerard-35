@@ -63,7 +63,7 @@ test('award: EXP whole to each, levels crossed and what they teach; the top leve
   const [p, none] = award(['papagato', 'matemagico'], LEVEL_XP[0], { papagato: 10 }, { papagato: 1 });
   assert.equal(none, undefined, 'Matemágico earns none: it grows by its tree');
   const [m] = award(['papagato'], LEVEL_XP[0], {}, { papagato: 3 });
-  assert.deepEqual(p, { id: 'papagato', xpBefore: 10, xpAfter: 10 + LEVEL_XP[0], levelBefore: 1, levelAfter: 2, learned: ['zarpazos', 'ronroneo'] });
+  assert.deepEqual(p, { id: 'papagato', xpBefore: 10, xpAfter: 10 + LEVEL_XP[0], levelBefore: 1, levelAfter: 2, reach: 3, learned: ['zarpazos', 'ronroneo'] });
   assert.equal(m.xpBefore, xpFloor(3), 'from the floor of a level the story gave');
   assert.equal(m.xpAfter, m.xpBefore); assert.equal(m.levelAfter, 3); assert.deepEqual(m.learned, []);
   const jump = award(['papagato'], 9999, {}, {})[0];

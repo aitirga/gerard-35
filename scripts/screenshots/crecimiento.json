@@ -1,0 +1,180 @@
+{
+  "title": "Crecimiento por el castillo: lo que abre cada jefe",
+  "description": "docs/animas/README.md § Growth opens with the castle, docs/castle.md § What each boss opens, src/castle.ts growthStage, src/ecos.ts stageOf, src/jar-ui.ts. Before Aurelià the jar's trees end before grade III and the shared ánimas stop at level 4, keeping the EXP; after him grade III comes into the one sky (a light runs out along each new join and the star opens at its end), the dúos mayores stand as a «?» between two constellations until both their ends are lit, and the levels kept come at once; after Dirección the definitivas wake. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&with=nuria,universidad,marta,emilie,luca&at=home"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "for (const key of ['gerard35.ecos.v1', 'gerard35.jar-stage.v1', 'gerard35.xp.v1']) localStorage.removeItem(key); window.story = window.gerard.story; story.clearImprovements(); story.debugEcos = 14; story.xp = {}; story.giveXp('prismatico', 3200); for (const id of ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'tecnopata:explosion', 'tecnopata:telemetria', 'tecnopata:rayo-encogedor', 'tecnopata:nanitos']) story.improve(id); window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`); window.hold = ms => document.getAnimations().forEach(a => { a.pause(); a.currentTime = ms; }); window.go = () => document.getAnimations().forEach(a => a.play())"
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        21,
+        9
+      ],
+      "settle": 1500
+    },
+    {
+      "eval": "void jar.open()"
+    },
+    {
+      "until": "document.querySelector('#jar-panel').dataset.phase === 'open'",
+      "timeout": 20000
+    },
+    {
+      "eval": "node('matemagico:rescoldo').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "antes-de-aurelia",
+      "delay": 900,
+      "caption": "Before Aurelià (stage 1): Matemágico's fire line ends at Rescoldo and Cálculo at Maná +1; Tecnópata's three lines end at Telemetría, Control remoto and Nanitos. No grade III and no dúo mayor in the sky, and nothing says more will come; every definitiva is a place kept, asleep"
+    },
+    {
+      "eval": "jar.close()"
+    },
+    {
+      "until": "document.querySelector('#jar-panel').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "window.gerard.exploration.show('animas')"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "tope-nivel-4",
+      "delay": 900,
+      "caption": "Colorista has earned what level 6 is worth, but the castle holds the shared ánimas at level 4: NV 4 with its bar full, the EXP kept (its sheet counts it), and no MÁX, because it is not its top"
+    },
+    {
+      "eval": "window.gerard.exploration.close?.(); story.merge(['aurelia', 'luz-aurelia']); void window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'night-guard', worn: [], xp: 0 })"
+    },
+    {
+      "shot": "niveles-guardados",
+      "delay": 700,
+      "caption": "Aurelià beaten (stage 2; here as the next fight after it): the cap goes to 6 and the EXP Colorista kept gives its levels at once, each with its note (level 5 brings the passive Remolino, which the note does not name yet; level 6 Telón)"
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "eval": "void jar.open()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "hold(1750)"
+    },
+    {
+      "shot": "llega-grado-iii",
+      "delay": 250,
+      "caption": "The first time the jar opens after Aurelià, held still: once the sky is up, a light runs out along each new join, from Rescoldo, Maná +1, Telemetría, Control remoto and Nanitos"
+    },
+    {
+      "eval": "hold(2600)"
+    },
+    {
+      "shot": "abren-grado-iii",
+      "delay": 250,
+      "caption": "A moment later the new stars open at their ends, where they will always be: Combustión, Integral, Reinicio, Virus atómico, Escudo de bits (and Redundancia past it), with a chime"
+    },
+    {
+      "eval": "hold(3500)"
+    },
+    {
+      "shot": "llega-duo",
+      "delay": 250,
+      "caption": "Then the gold threads run from Combustión and from Sincopante's Ostinato towards the place between the two constellations"
+    },
+    {
+      "eval": "go()"
+    },
+    {
+      "eval": "node('matemagico:vulcano').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "duo-incognito",
+      "delay": 2600,
+      "caption": "And the dúo mayor stands there as a «?» of dim gold: DÚO MAYOR over it, no name, no halves, no cost, «Todavía no se ve qué es». Its thread from Ostinato is lit (that end is learned), the one from Combustión faint (not lit yet): it opens when both sides reach it"
+    },
+    {
+      "eval": "node('matemagico:combustion').click()"
+    },
+    {
+      "eval": "node('matemagico:vulcano').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "duo-revelado",
+      "delay": 2600,
+      "caption": "Combustión lit: both sides have reached it, a light runs along each thread and the «?» opens as Vulcano, its name and both halves on its note, 2 ecos to wake it"
+    },
+    {
+      "eval": "node('matemagico:rescoldo').click()"
+    },
+    {
+      "shot": "duo-vuelve",
+      "delay": 1400,
+      "caption": "Turning Rescoldo off takes Combustión with it: Vulcano goes back to a «?», its threads faint again"
+    },
+    {
+      "eval": "node('prismatico:definitiva').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "definitiva-duerme",
+      "delay": 900,
+      "caption": "Colorista's definitiva is built, but before Dirección it is still a place kept: a «?», «Todavía duerme», it cannot be woken"
+    },
+    {
+      "eval": "jar.close()"
+    },
+    {
+      "until": "document.querySelector('#jar-panel').hidden",
+      "timeout": 10000
+    },
+    {
+      "eval": "story.merge(['direccion', 'luz-mar', 'luz-montse', 'luz-pilar']); void jar.open()"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "hold(2500)"
+    },
+    {
+      "shot": "despierta-definitiva",
+      "delay": 250,
+      "caption": "Dirección beaten (stage 3), the jar's first opening after: Fin de fiesta opens in Colorista's constellation, awake; the definitivas whose move is not built yet sleep on"
+    },
+    {
+      "eval": "go(); node('prismatico:definitiva').dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))"
+    },
+    {
+      "shot": "definitiva",
+      "delay": 1600,
+      "caption": "Fin de fiesta awake: its note says what it does, 2 ecos to buy it, and then its condition wakes it in each fight"
+    }
+  ]
+}

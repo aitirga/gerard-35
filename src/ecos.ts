@@ -5,6 +5,7 @@
  * like the loadout. Pure.
  */
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, PASSIVES, SKILLS, type ClassId, type DualId, type Element, type Improved, type PassiveId, type SkillId } from './battle.ts';
+import { definitivasOpen, type GrowthStage } from './castle.ts';
 
 export type ImprovementKind = 'mana' | 'element' | 'skill' | 'passive' | 'ulti' | 'dual';
 /** The lines of a tree (docs/animas/README.md § The jar): Matemágico's three elements and its trunk, Tecnópata's three. */
@@ -32,6 +33,11 @@ export interface Improvement {
   dual?: DualId; partner?: ClassId;
   /** A place kept for what is still to design: it shows, asleep, and cannot be bought. */
   veiled?: true;
+  /**
+   * The castle's stage it opens at, if not the first (docs/animas/README.md § Growth opens with the
+   * castle): grade III after Aurelià, the definitivas after Dirección. What hangs from it opens with it (`stageOf`).
+   */
+  stage?: GrowthStage;
 }
 
 /** Each element on Atacar's block (SVG on a 16 × 16 box); no element is the empty set. */
@@ -52,7 +58,8 @@ export const TREE_ANIMAS = Object.keys(ANIMA_OWNERS) as ClassId[];
 const dualNode = (anima: ClassId, line: LineId, dual: DualId, partner: ClassId, cost: number, after: string): Improvement => {
   const spec = DUALS.find(d => d.id === dual)!, halves = spec.parts.map(part => SKILLS.find(s => s.id === part)!);
   const one = halves.find(s => s.class === anima)!, two = halves.find(s => s.class !== anima)!;
-  return { id: `${anima}:${dual}`, anima, kind: 'dual', line, dual, partner, name: spec.name, cost, description: `Dúo mayor de ${one.name} y ${two.name}. ${spec.description}`, after: `${anima}:${after}` };
+  // Never before Aurelià, whatever it hangs from (Aitor 2026-11-21: the dúos mayores come after him, a «?» until both ends are lit).
+  return { id: `${anima}:${dual}`, anima, kind: 'dual', line, dual, partner, name: spec.name, cost, description: `Dúo mayor de ${one.name} y ${two.name}. ${spec.description}`, after: `${anima}:${after}`, stage: 2 };
 };
 const skillNode = (anima: ClassId, line: LineId, skill: SkillId, cost: number, after?: string): Improvement => {
   const spec = SKILLS.find(s => s.id === skill)!;
@@ -62,16 +69,21 @@ const passiveNode = (anima: ClassId, line: LineId, passive: PassiveId, cost: num
   ({ id: `${anima}:${passive}`, anima, kind: 'passive', line, passive, name: PASSIVES[passive].name, cost, description, after: `${anima}:${after}` });
 const manaNode = (anima: ClassId, line?: LineId, after?: string): Improvement =>
   ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
+/** Grade III of a tree: in the sky once Aurelià has fallen, with whatever hangs from it (docs/castle.md § What each boss opens). */
+const gradeIII = (item: Improvement): Improvement => ({ ...item, stage: 2 });
+/** The first stage that wakes the definitivas (src/castle.ts `CASTLE_UNLOCKS`): Dirección's. */
+const DEFINITIVAS = ([1, 2, 3] as const).find(definitivasOpen) ?? 3;
 /**
  * The definitiva: a place kept on every ánima (docs/animas/README.md § Definitivas), 2 ecos each
- * (Aitor, 2026-11-20). Asleep until its move is built: Colorista's Fin de fiesta is the first.
+ * (Aitor, 2026-11-20). Asleep until its move is built (Colorista's Fin de fiesta is the first) and
+ * the castle's stage wakes the definitivas; until then it shows as a place kept (`asleep`).
  */
 const DEFINITIVA_COST = 2;
 const ulti = (anima: ClassId): Improvement => {
-  // One whose move is built (`ulti` in SKILLS) is awake: it is that skill, bought here and woken in each fight by its condition.
+  // One whose move is built (`ulti` in SKILLS) wakes with the stage: it is that skill, bought here and woken in each fight by its condition.
   const built = SKILLS.find(skill => skill.class === anima && 'ulti' in skill);
-  return built ? { id: `${anima}:definitiva`, anima, kind: 'ulti', skill: built.id, name: built.name, cost: DEFINITIVA_COST, description: `Definitiva. ${built.description} Despierta en cada combate, una vez, sin gastar maná.` }
-    : { id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: DEFINITIVA_COST, veiled: true, description: 'Todavía duerme.' };
+  return built ? { id: `${anima}:definitiva`, anima, kind: 'ulti', skill: built.id, name: built.name, cost: DEFINITIVA_COST, stage: DEFINITIVAS, description: `Definitiva. ${built.description} Despierta en cada combate, una vez, sin gastar maná.` }
+    : { id: `${anima}:definitiva`, anima, kind: 'ulti', name: 'Definitiva', cost: DEFINITIVA_COST, stage: DEFINITIVAS, veiled: true, description: 'Todavía duerme.' };
 };
 /**
  * Matemágico's tree: a line per element (the element on Atacar, the skill that lays or cashes it,
@@ -81,8 +93,8 @@ const MATEMAGICO: Improvement[] = [
   { id: 'matemagico:fuego', anima: 'matemagico', kind: 'element', line: 'fuego', element: 'fuego', name: 'Fuego', cost: 1, description: 'Atacar puede llevar fuego. No quema. Sobre un enemigo con sangrado, cauteriza: gasta el sangrado de golpe y le hace más daño. Sobre uno mojado, lo ciega con el vapor.' },
   skillNode('matemagico', 'fuego', 'factor-comun', 1, 'fuego'),
   passiveNode('matemagico', 'fuego', 'rescoldo', 2, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
-  // Grade III (docs/animas/matemagico/README.md § Grade III): the fire line's top, and the dúo mayor past it.
-  passiveNode('matemagico', 'fuego', 'combustion', 2, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.'),
+  // Grade III (docs/animas/matemagico/README.md § Grade III): the fire line's top, and the dúo mayor past it, both after Aurelià.
+  gradeIII(passiveNode('matemagico', 'fuego', 'combustion', 2, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.')),
   dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 2, 'combustion'),
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
@@ -94,19 +106,20 @@ const MATEMAGICO: Improvement[] = [
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
-  skillNode('matemagico', 'calculo', 'integral', 2, 'mana-1'),
+  gradeIII(skillNode('matemagico', 'calculo', 'integral', 2, 'mana-1')),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'bip', 'explosion', 1),
   passiveNode('tecnopata', 'bip', 'telemetria', 2, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
-  skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria'),
+  // Grade III (docs/animas/tecnopata/README.md § Grade III): each line's top, after Aurelià.
+  gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria')),
   skillNode('tecnopata', 'mente', 'confusion', 1),
   skillNode('tecnopata', 'mente', 'control-remoto', 2, 'confusion'),
-  skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto'),
+  gradeIII(skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto')),
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
   passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
-  skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos'),
+  gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos')),
   passiveNode('tecnopata', 'taller', 'redundancia', 2, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
   manaNode('tecnopata'),
 ];
@@ -118,17 +131,30 @@ export const IMPROVEMENTS: readonly Improvement[] = (Object.keys(ANIMA_NAMES) as
 export const improvementOf = (id: string) => IMPROVEMENTS.find(item => item.id === id);
 /** What `list` costs, in ecos. */
 export const costOf = (list: readonly string[]) => list.reduce((sum, id) => sum + (improvementOf(id)?.cost ?? 0), 0);
+/** The castle's stage `item` opens at: its own, or that of what it hangs from if later (whatever is past grade III is grade III too). */
+export function stageOf(item: Improvement): GrowthStage {
+  const before = item.after ? improvementOf(item.after) : undefined;
+  return Math.max(item.stage ?? 1, before ? stageOf(before) : 1) as GrowthStage;
+}
+/**
+ * Whether `item` is in the jar's sky at `stage`: a node once its stage has come (until then the
+ * constellation simply has fewer stars), a definitiva always, as a place kept (`asleep`).
+ */
+export const inSky = (item: Improvement, stage: GrowthStage) => item.kind === 'ulti' || stageOf(item) <= stage;
+/** Whether `item` shows but cannot be bought at `stage`: still to design, or a definitiva before the stage that wakes them. */
+export const asleep = (item: Improvement, stage: GrowthStage) => !!item.veiled || stageOf(item) > stage;
 /**
  * What stands of `list` with `ecos` to spend, in the order it was bought: nothing unknown or asleep,
- * nothing without what it needs first, and nothing past what the ecos pay for (a rewound day can
- * take a light back; what it paid for comes back with it).
+ * nothing the castle's `stage` has not opened yet, nothing without what it needs first, and nothing
+ * past what the ecos pay for (a rewound day can take a light back, or a boss beaten; what it paid
+ * for comes back with it). The development tools leave `stage` at the last: everything.
  */
-export function withinEcos(list: readonly string[], ecos: number) {
+export function withinEcos(list: readonly string[], ecos: number, stage: GrowthStage = 3) {
   const kept: string[] = [];
   let left = ecos;
   for (const id of list) {
     const item = improvementOf(id);
-    if (!item || item.veiled || kept.includes(id) || item.cost > left || (item.after && !kept.includes(item.after))) continue;
+    if (!item || asleep(item, stage) || kept.includes(id) || item.cost > left || (item.after && !kept.includes(item.after))) continue;
     kept.push(id); left -= item.cost;
   }
   return kept;

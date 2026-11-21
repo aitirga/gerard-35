@@ -141,7 +141,7 @@ test('the castle in the story: the gym leads into the floor, each boss moves the
   assert.equal(end.at(-1).kind, 'credits', 'the Monday after, then the credits');
   assert.deepEqual(story.handle({ type: 'ending', choice: 'acabar' }), [], 'only once');
   assert.equal(story.redirect('patio-gimnasio'), undefined, 'after her, the school is a school');
-  assert.equal(extraSlots(new Set()), 1);
+  assert.equal(extraSlots(1), 1); assert.equal(extraSlots(2), 2);
 });
 
 test('each castle boss beaten holds her back as an ánima does, so a castle begun late can be finished', () => {

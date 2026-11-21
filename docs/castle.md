@@ -218,12 +218,15 @@ The three stages of growth (animas/README.md § Growth opens with the castle), m
 
 | Beaten | Opens |
 | --- | --- |
-| **Aurelià** | **A slot for one more ánima**: three each, the most worn in a fight at once. The constellations **expand** (their outer ring) and the level cap rises to 6. **Travel**: the snow globe works inside the castle (home without losing the day) and the entry moves to his room. He comes back to himself, and his light is an **eco** for the jar |
-| **Mar, Montse and Pilar** | **The definitivas** appear at the jar: each costs ecos to unlock and has its own requirement to fire in a fight (animas/README.md § Definitivas). Levels go to the top. The entry moves to Direcció. Three lights, three ecos |
+| **Aurelià** | **A slot for one more ánima**: three each, the most worn in a fight at once. The constellations **expand** (grade III, and the dúos mayores as a «?») and the level cap rises from 4 to 6, the EXP kept over 4 giving its levels at once. The entry moves to his room (Aitor 2026-11-21: no snow globe inside the castle, not needed). He comes back to himself, and his light is an **eco** for the jar |
+| **Mar, Montse and Pilar** | **The definitivas** wake at the jar: each costs ecos to unlock and has its own requirement to fire in a fight (animas/README.md § Definitivas). Levels go to the top (7). The entry moves to Direcció. Three lights, three ecos |
 | **La Reina Bubbaloo** | The end ([castle-bosses.md](castle-bosses.md) § The last scene) |
 
 What a growth stage opens shows by itself: a constellation has more stars the next time the jar is
-opened, a third slot is there on the Ánimas page. Nothing lists what is still to come.
+opened (they come in as it opens, once), a third slot is there on the Ánimas page. Nothing lists what
+is still to come. Built 2026-11-21: `growthStage` and `CASTLE_UNLOCKS` in
+`src/castle.ts`, read by the jar, the levels and the slots (animas/README.md § Growth opens with the
+castle).
 
 ## Built so far
 
@@ -273,8 +276,9 @@ Placeholders and decisions taken for now (each one Aitor's to change):
     reached. Fire burns whoever it hits, water reaches everyone and leaves them wet, electricity
     leaves them in shock (a turn lost), a wound bleeds; a blow on everyone comes back on everyone.
     Its plate says what it will give back. Shapeless, it only leans on one, lightly.
-- Not built: the definitivas, the outer rings and level caps (`levelCap` exists, unused), the snow
-  globe inside, the props that drift along a floor, portraits for the four bosses, the six-note
+- Built since (2026-11-21): what each boss opens for the ánimas (the outer rings, the level caps, the
+  definitivas' waking: § What each boss opens).
+- Not built: the props that drift along a floor, portraits for the four bosses, the six-note
   motif in the music, the Queen's final rules (left for last, docs/castle-bosses.md).
 
 Measured with `just fight-sim check` (the castle's `TARGETS` in `src/battle-sim.ts`): with the dual
@@ -306,7 +310,7 @@ Each step with Aitor's OK, and each reachable from the picker as it lands.
 
 1. The generator and phase 1's floor, as a place in the picker.
 2. The first four pupils and La Delegada; then Aurelià.
-3. Stage 2 of growth (the slot, the outer ring, the cap, the snow globe).
+3. Stage 2 of growth (the slot, the outer ring, the cap).
 4. Phase 2, El Ausente and El Castigado, the second year's fillings; then Mar, Montse and Pilar.
 5. The definitivas at the jar.
 6. Phase 3, El Montón, the third year; then La Reina Bubbaloo.

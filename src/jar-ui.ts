@@ -1,7 +1,7 @@
 import { ANIMA_OWNERS, DUALS, ELEMENTS, MANA_POINTS, SKILLS, type ClassId, type SkillId } from './battle';
 import { animaOf, CLASSES } from './classes';
 import { isDpad, type ControllerEvent } from './controller';
-import { ELEMENT_ICONS, IMPROVEMENTS, LINES, TREE_ANIMAS, costOf, improvementOf, type Improvement, type LineId } from './ecos';
+import { ELEMENT_ICONS, IMPROVEMENTS, LINES, TREE_ANIMAS, asleep, costOf, improvementOf, inSky, stageOf, type Improvement, type LineId } from './ecos';
 import { nearestButton } from './menu-nav';
 import type { Direction } from './movement';
 import type { SoundId } from './sfx';
@@ -12,12 +12,14 @@ import type { Story } from './story';
  * Ecos de luz are put into its ánimas and taken back. A window over the living room, not the whole
  * screen: one sky with every ánima's constellation open at once (Gerard's tree on the left, Aitor's
  * on the right, the shared ones small and scattered round and between them, the skills they have
- * learned fighting as small stars), the dúos mayores as gold stars between two constellations once
- * both their ends are lit, and the jar below with every eco in it (lit while free, dark and tinted
- * once it is in an ánima). A light flies from the jar to the star it turns on, and back. Gerard and
- * Aitor each move their own cursor over the whole sky, each with its own floating note, and the
- * constellation under a cursor is pushed in on, slowly. Moves and buttons read the device in use
- * (input-glyphs.ts).
+ * learned fighting as small stars), the dúos mayores as gold stars between two constellations (a
+ * «?» until both their ends are lit), and the jar below with every eco in it (lit while free, dark
+ * and tinted once it is in an ánima). A light flies from the jar to the star it turns on, and back.
+ * Gerard and Aitor each move their own cursor over the whole sky, each with its own floating note,
+ * and the constellation under a cursor is pushed in on, slowly. The castle's stages
+ * (docs/animas/README.md § Growth opens with the castle) add stars to the same sky: the first time
+ * it opens after a boss, a light runs out along each new join and the star opens at its end. Moves
+ * and buttons read the device in use (input-glyphs.ts).
  */
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 const svg = (paths: string) => `<svg viewBox="0 0 16 16" aria-hidden="true">${paths}</svg>`;
@@ -77,8 +79,11 @@ interface Link { from: string; to: string; d: string; colour: string; ring: numb
 /** A skill a shared ánima has learned fighting: a small star of its constellation, never bought. */
 interface Spark { skill: SkillId; x: number; y: number; ring: number; label: Side }
 interface Tree { id: ClassId; own: boolean; x: number; y: number; stars: Star[]; links: Link[]; sparks: Spark[]; chain: string }
-/** A dúo mayor's gold star, between the star that ends one half's line and the other half's skill. */
-interface Bridge { item: Improvement; partner: ClassId; skill: SkillId; x: number; y: number; threads: [string, string] }
+/**
+ * A dúo mayor's gold star, between the star that ends one half's line and the other half's skill
+ * (`learned`: that skill is a star of its constellation; until then the thread hangs from its core).
+ */
+interface Bridge { item: Improvement; partner: ClassId; skill: SkillId; learned: boolean; x: number; y: number; threads: [string, string] }
 const pct = (x: number, y: number) => `left:${(x / W * 100).toFixed(2)}%;top:${(y / H * 100).toFixed(2)}%`;
 const at = (x: number, y: number) => `${x.toFixed(1)} ${y.toFixed(1)}`;
 /** Where a label goes for a light that sits `angle` from its core: beside it unless it is nearly straight above or below (`flat`, how far from upright still counts as beside). */
@@ -92,13 +97,29 @@ function sideOf(angle: number, flat = .45): Side {
  * so they always read a line apart, however many it has learned (Dadista has eight at level 7).
  */
 const SPARK = { radius: 70, gap: 24, flat: .2 };
+/**
+ * The castle's stage the jar was last opened at, so what a stage brings is seen coming in once: in
+ * the browser, like the ecos (and in memory if storage is off, so it plays once a session at most).
+ */
+const STAGE_KEY = 'gerard35.jar-stage.v1';
+let stageSeen = 1;
+function seenStage() {
+  try { const saved = Number(localStorage.getItem(STAGE_KEY)); if (saved >= 1 && saved <= 3) stageSeen = saved; } catch { /* Storage is optional. */ }
+  return stageSeen;
+}
+function keepStage(stage: number) {
+  stageSeen = stage;
+  try { localStorage.setItem(STAGE_KEY, String(stage)); } catch { /* Storage is optional. */ }
+}
 
 export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: (paused: boolean) => void; sound: (id: SoundId) => void; changed: () => void }) {
   const root = document.createElement('section');
   root.id = 'jar-panel'; root.hidden = true; root.tabIndex = -1;
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'El bote de las luces');
   hud.append(root);
-  let open = false, closing = false, openedAt = 0, timer = 0;
+  let open = false, closing = false, openedAt = 0, timer = 0, chime = 0;
+  /** The stage the jar was last seen at when it opened: what a later one brings comes in (`arriving`). */
+  let seen = 1;
   /** What each player's cursor is on; player 2's shows once they move. */
   const cursors: Partial<Record<Player, string>> = {};
   let spots: Spot[] = [], trees: Tree[] = [], bridges: Bridge[] = [];
@@ -111,14 +132,23 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   const pages = () => [...story.classes.filter(id => TREE_ANIMAS.includes(id)), ...story.classes.filter(id => !TREE_ANIMAS.includes(id))];
   const ownerOf = (id: ClassId) => ANIMA_OWNERS[id] === 'gerard' ? 'Gerard' : ANIMA_OWNERS[id] === 'aitor' ? 'Aitor' : '';
   const isOn = (key: string) => key.startsWith('core:') || story.improvements.includes(key);
+  /**
+   * A dúo mayor is in the sky from the castle's stage that brings it, a «?» (Aitor 2026-11-21); it
+   * is revealed, and can be bought, once both its ends are lit: its own half's line as far as it,
+   * and the other half learned.
+   */
+  const revealed = (bridge: Bridge) => bridge.learned && isOn(bridge.item.after!);
+  const bridgeOf = (id: string) => bridges.find(b => b.item.id === id);
+  /** What a star is now: lit, a «?» still to reach, asleep, missing what comes before it, short of ecos, or there to light. */
   const stateOf = (item: Improvement) => story.improvements.includes(item.id) ? 'on'
-    : item.veiled ? 'veiled'
+    : item.kind === 'dual' && !(bridgeOf(item.id) && revealed(bridgeOf(item.id)!)) ? 'unknown'
+    : asleep(item, story.stage) ? 'veiled'
     : item.after && !story.improvements.includes(item.after) ? 'needs'
     : item.cost > story.ecosFree ? 'short' : 'open';
+  /** Whether a star is new in the sky since the jar was last opened: a stage of the castle has brought it (or woken it, a definitiva). */
+  const arriving = (item: Improvement) => story.stage > seen && stageOf(item) > seen && !asleep(item, story.stage);
   /** What a shared ánima has learned fighting (its levels reached, never the ones to come); a die's faces are its die. */
   const learned = (id: ClassId) => SKILLS.filter(skill => skill.class === id && !('node' in skill) && !('face' in skill) && ('level' in skill ? skill.level : 1) <= (story.levels[id] ?? 1));
-  /** A dúo mayor is in the sky once both its ends are lit: its own half's line as far as it, and the other half learned (it is only laid out then). */
-  const isShown = (bridge: Bridge) => isOn(bridge.item.after!);
   /** The constellations a light belongs to: a dúo mayor's, both. */
   function animasAt(key: string | undefined): ClassId[] {
     if (!key) return [];
@@ -132,7 +162,8 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     let spare = 0;
     trees = pages().map(id => {
       const seat = SKY[id] ?? { at: SPARE[spare++ % SPARE.length], nodes: 90, skills: -90 }, own = TREE_ANIMAS.includes(id);
-      const items = IMPROVEMENTS.filter(item => item.anima === id && item.kind !== 'dual');
+      // Only what the castle's stage has opened: until then a constellation simply has fewer stars.
+      const items = IMPROVEMENTS.filter(item => item.anima === id && item.kind !== 'dual' && inSky(item, story.stage));
       const stars: Star[] = [], links: Link[] = [], core = `core:${id}`, coreR = own ? RADIUS.own : RADIUS.shared, nodeR = own ? RADIUS.node : RADIUS.small;
       const place = (item: Improvement, angle: number, radius: number, ring: number, label: Side) => {
         const a = angle * Math.PI / 180, x = Math.cos(a) * radius, y = Math.sin(a) * radius;
@@ -162,17 +193,21 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       const first = sparks[0], chain = first ? `M${at(first.x * coreR / Math.hypot(first.x, first.y), first.y * coreR / Math.hypot(first.x, first.y))}${sparks.map(s => `L${at(s.x, s.y)}`).join('')}` : '';
       return { id, own, x: seat.at[0], y: seat.at[1], stars, links, sparks, chain };
     });
-    // A dúo mayor between two constellations in the sky: on an arc from its own half's last star to the other half's skill, bowed upwards.
-    bridges = IMPROVEMENTS.filter(item => item.kind === 'dual' && item.dual && item.partner && item.after).flatMap(item => {
+    // A dúo mayor between two constellations in the sky, from the stage that brings it: on an arc from
+    // its own half's last star to the other half's skill (its core while that is not learned), bowed upwards.
+    bridges = IMPROVEMENTS.filter(item => item.kind === 'dual' && item.dual && item.partner && item.after && inSky(item, story.stage)).flatMap(item => {
       const mine = trees.find(t => t.id === item.anima), theirs = trees.find(t => t.id === item.partner);
       const spec = DUALS.find(d => d.id === item.dual)!, skill = SKILLS.find(s => (spec.parts as readonly string[]).includes(s.id) && s.class === item.partner)?.id;
       const end = mine?.stars.find(s => s.key === item.after), spark = theirs?.sparks.find(s => s.skill === skill);
-      if (!mine || !theirs || !end || !spark || !skill) return [];
-      const ax = mine.x + end.x, ay = mine.y + end.y, bx = theirs.x + spark.x, by = theirs.y + spark.y;
+      if (!mine || !theirs || !end || !skill) return [];
+      const ax = mine.x + end.x, ay = mine.y + end.y;
+      // Without its star yet, the thread starts at the edge of the other constellation's core, on the side facing this end.
+      const toward = Math.atan2(ay - theirs.y, ax - theirs.x), rim = RADIUS.shared + 6;
+      const bx = spark ? theirs.x + spark.x : theirs.x + Math.cos(toward) * rim, by = spark ? theirs.y + spark.y : theirs.y + Math.sin(toward) * rim;
       const length = Math.hypot(bx - ax, by - ay), bow = (bx > ax ? -1 : 1) * length * .3;
       const cx = (ax + bx) / 2 + (ay - by) / length * bow, cy = (ay + by) / 2 + (bx - ax) / length * bow;
       const x = (ax + 2 * cx + bx) / 4, y = (ay + 2 * cy + by) / 4;
-      return [{ item, partner: item.partner!, skill, x, y, threads: [`M${at(ax, ay)}Q${at((ax + cx) / 2, (ay + cy) / 2)} ${at(x, y)}`, `M${at(bx, by)}Q${at((bx + cx) / 2, (by + cy) / 2)} ${at(x, y)}`] as [string, string] }];
+      return [{ item, partner: item.partner!, skill, learned: !!spark, x, y, threads: [`M${at(ax, ay)}Q${at((ax + cx) / 2, (ay + cy) / 2)} ${at(x, y)}`, `M${at(bx, by)}Q${at((bx + cx) / 2, (by + cy) / 2)} ${at(x, y)}`] as [string, string] }];
     });
   }
   /** Who points where, and from that what can be pointed at and where it is on the sheet. */
@@ -183,7 +218,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       const k = pushed.has(tree.id) ? PUSH[tree.own ? 'own' : 'shared'] : 1, r = tree.own ? RADIUS.node : RADIUS.small;
       return [{ key: `core:${tree.id}`, x: tree.x, y: tree.y, r: (tree.own ? RADIUS.own : RADIUS.shared) * k }, ...tree.stars.map(s => ({ key: s.key, x: tree.x + s.x * k, y: tree.y + s.y * k, r: r * k }))];
     });
-    spots.push(...bridges.filter(isShown).map(b => ({ key: b.item.id, x: b.x, y: b.y, r: RADIUS.dual })));
+    spots.push(...bridges.map(b => ({ key: b.item.id, x: b.x, y: b.y, r: RADIUS.dual })));
     spots.push({ key: 'reset', x: JAR_AT[0], y: 862, r: 20, pill: true }, { key: 'close', x: 1508, y: 52, r: 20, pill: true });
   }
   /** A marble per eco, packed from the bottom of the jar: the ones in an ánima below, dark and tinted by where they went; the free ones on top, lit. */
@@ -218,11 +253,23 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       <p class="jar-count"><strong>${free}</strong><span>${free === 1 ? 'eco libre' : 'ecos libres'}${used ? `<small>${used} en las ánimas</small>` : ''}</span></p>`;
   }
   const manaPips = (id: ClassId) => Array.from({ length: story.manaOf(id) }, (_, i) => `<i ${i >= MANA_POINTS ? 'data-extra' : ''}></i>`).join('');
+  /** What a star shows: a «?» while it sleeps or is still to reach (a dúo mayor names only what it is), its drawing and name otherwise. */
+  function face(item: Improvement) {
+    const state = stateOf(item), hidden = state === 'unknown' || state === 'veiled';
+    const name = state === 'unknown' ? '' : state === 'veiled' && item.kind === 'ulti' ? 'Definitiva' : item.name;
+    return { star: hidden ? '<b>?</b>' : svg(iconOf(item)), name: `${item.kind === 'dual' ? '<small>Dúo mayor</small>' : ''}${escape(name)}` };
+  }
   function node(item: Improvement, star: { x: number; y: number; ring: number; label: Side }) {
-    return `<button type="button" class="jar-node" data-key="${item.id}" data-improve="${item.id}" data-kind="${item.kind}" data-label="${star.label}" style="--x:${star.x.toFixed(1)};--y:${star.y.toFixed(1)};--item:${colourOf(item)};--ring:${star.ring}">
-      <span class="jar-node-star">${item.veiled ? '<b>?</b>' : svg(iconOf(item))}</span>
-      <span class="jar-node-name">${item.kind === 'dual' ? '<small>Dúo mayor</small>' : ''}${escape(item.name)}</span>
+    const { star: drawing, name } = face(item);
+    return `<button type="button" class="jar-node" data-key="${item.id}" data-improve="${item.id}" data-kind="${item.kind}" data-label="${star.label}"${arriving(item) ? ' data-arriving' : ''} style="--x:${star.x.toFixed(1)};--y:${star.y.toFixed(1)};--item:${colourOf(item)};--ring:${star.ring}">
+      <span class="jar-node-star">${drawing}</span>
+      <span class="jar-node-name">${name}</span>
     </button>`;
+  }
+  /** A join between two stars; one a stage has just brought has a light that runs out along it to the new star (`jar-link-run`). */
+  function link(l: Link) {
+    const coming = arriving(improvementOf(l.to)!);
+    return `<path d="${l.d}" data-from="${l.from}" data-to="${l.to}"${coming ? ' data-arriving' : ''} style="--item:${l.colour};--ring:${l.ring}"/>${coming ? `<path class="jar-link-run" d="${l.d}" pathLength="1" style="--item:${l.colour};--ring:${l.ring}"/>` : ''}`;
   }
   /** A constellation: its glow, its joins, its core, its nodes and what it has learned, all round one point. */
   function constellation(tree: Tree, index: number) {
@@ -233,14 +280,18 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     }).join('');
     return `<div class="jar-constellation" data-anima="${id}" data-own="${tree.own}" style="--anima:${CLASSES[id].colour};--push:${PUSH[tree.own ? 'own' : 'shared']};--i:${index};${pct(tree.x, tree.y)}">
         <i class="jar-nebula"></i>
-        <svg class="jar-links" viewBox="-420 -420 840 840" aria-hidden="true">${tree.chain ? `<path class="jar-chain" d="${tree.chain}"/>` : ''}${tree.links.map(l => `<path d="${l.d}" data-from="${l.from}" data-to="${l.to}" style="--item:${l.colour};--ring:${l.ring}"/>`).join('')}</svg>
+        <svg class="jar-links" viewBox="-420 -420 840 840" aria-hidden="true">${tree.chain ? `<path class="jar-chain" d="${tree.chain}"/>` : ''}${tree.links.map(link).join('')}</svg>
         ${sparks}
         <button type="button" class="jar-core" data-key="core:${id}" data-core="${id}"><strong>${name}</strong><small>${whose}</small><span class="jar-pips"></span></button>
         ${tree.stars.map(s => node(improvementOf(s.key)!, s)).join('')}
       </div>`;
   }
-  /** The threads of each dúo mayor, from each end to its star; a light runs along them when it first comes in. */
-  const threads = (b: Bridge) => `<g class="jar-bridge" data-bridge="${b.item.id}">${b.threads.map(d => `<path class="jar-bridge-thread" d="${d}"/><path class="jar-bridge-run" d="${d}" pathLength="1"/>`).join('')}</g>`;
+  /**
+   * The threads of each dúo mayor, from each end to its star (its own half's first, then the other's):
+   * faint while that end is not lit; a light runs along them when the star is revealed, or when a
+   * stage brings it into the sky.
+   */
+  const threads = (b: Bridge) => `<g class="jar-bridge" data-bridge="${b.item.id}"${arriving(b.item) ? ' data-arriving' : ''}>${b.threads.map((d, i) => `<path class="jar-bridge-thread" data-end="${i}" d="${d}"/><path class="jar-bridge-run" d="${d}" pathLength="1"/>`).join('')}</g>`;
   /** What a player's cursor is on: what it is, what it does, what it costs and what pressing would do now. */
   function tip(key: string) {
     if (key === 'reset') return '<span class="battle-kicker">EL BOTE</span><strong>Recoger todos los ecos</strong><p>Todas las luces vuelven al bote. No se pierde nada.</p>';
@@ -256,12 +307,16 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     const item = improvementOf(key);
     if (!item) return '';
     const state = stateOf(item), skill = item.skill ? SKILLS.find(s => s.id === item.skill) : undefined;
+    // A dúo mayor not reached yet says only what it is: nothing of its halves, its cost or how.
+    if (state === 'unknown') return '<span class="battle-kicker">DÚO MAYOR</span><strong>?</strong><p>Todavía no se ve qué es.</p>';
+    // A definitiva the castle has not woken yet is a place kept, whatever its move.
+    const { name, description } = state === 'veiled' && item.kind === 'ulti' ? { name: 'Definitiva', description: 'Todavía duerme.' } : item;
     const kind = item.kind === 'dual' ? 'DÚO MAYOR' : item.kind === 'ulti' ? 'DEFINITIVA' : item.passive ? 'PASIVA' : item.kind === 'mana' ? 'MANÁ' : item.element ? 'PARA ATACAR' : `HABILIDAD · ${skill?.cost ?? 0} DE MANÁ`;
     const action = state === 'on' ? `{confirm} · Apagar: vuelve${item.cost > 1 ? 'n' : ''} ${item.cost} ${ecoWord(item.cost)}` : state === 'open' ? `{confirm} · Encender` : '';
     const why = state === 'short' ? `Hacen falta ${item.cost} ${ecoWord(item.cost)} libres.`
       : state === 'needs' ? `Primero: ${improvementOf(item.after!)!.name}.`
       : state === 'veiled' ? 'Aún no se puede despertar.' : '';
-    return `<span class="battle-kicker">${kind}${item.line && item.kind !== 'dual' ? ` · ${LINES[item.line].name.toUpperCase()}` : ''}</span><strong>${escape(item.name)}</strong><p>${escape(item.description)}</p>
+    return `<span class="battle-kicker">${kind}${item.line && item.kind !== 'dual' ? ` · ${LINES[item.line].name.toUpperCase()}` : ''}</span><strong>${escape(name)}</strong><p>${escape(description)}</p>
       <span class="jar-tip-foot"><span class="jar-tip-cost" style="--item:${colourOf(item)}">${'<i></i>'.repeat(item.cost)}${item.cost} ${ecoWord(item.cost)}</span>${action ? `<span class="jar-tip-action" data-glyph-template="${action}"></span>` : `<span class="jar-tip-why">${escape(why)}</span>`}</span>`;
   }
   /**
@@ -311,10 +366,10 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     // The constellation under a cursor is pushed in on, slowly; the others keep to their place.
     root.querySelectorAll<HTMLElement>('.jar-constellation').forEach(el => { const who = pushed.get(el.dataset.anima as ClassId); if (who) el.dataset.focus = who; else delete el.dataset.focus; });
   }
-  /** What is on, what could be, what joins them, which dúos mayores are in the sky, and what is left in the jar. */
+  /** What is on, what could be, what joins them, which dúos mayores are revealed, and what is left in the jar. */
   function refresh(landing: string[] = []) {
     for (const bridge of bridges) {
-      const id = bridge.item.id, on = isShown(bridge), born = on && !shown.has(id);
+      const id = bridge.item.id, on = revealed(bridge), born = on && !shown.has(id);
       if (on) shown.add(id); else shown.delete(id);
       const star = root.querySelector<HTMLElement>(`.jar-node[data-key="${id}"]`), lines = root.querySelector<SVGGElement>(`.jar-bridge[data-bridge="${id}"]`);
       const spark = root.querySelector<HTMLElement>(`.jar-constellation[data-anima="${bridge.partner}"] .jar-spark[data-skill="${bridge.skill}"]`);
@@ -323,10 +378,11 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
         if (on) el.dataset.shown = ''; else delete el.dataset.shown;
         if (born && open) { delete el.dataset.born; void (el as HTMLElement).offsetWidth; el.dataset.born = ''; }
       }
-      if (star) star.hidden = !on;
-      lines?.setAttribute('data-state', story.improvements.includes(id) ? 'on' : 'next');
-      // A cursor left on a star that has just gone out of the sky goes back to the end it hung from.
-      for (const p of PLAYERS) if (!on && cursors[p] === id) cursors[p] = bridge.item.after;
+      // Revealed or back to a «?» as its end is lit or put out.
+      if (star) { const { star: drawing, name } = face(bridge.item); star.querySelector('.jar-node-star')!.innerHTML = drawing; star.querySelector('.jar-node-name')!.innerHTML = name; }
+      lines?.setAttribute('data-state', story.improvements.includes(id) ? 'on' : on ? 'next' : 'unknown');
+      // Each thread is lit from its own end: this half's line as far as it, the other half learned.
+      lines?.querySelectorAll<SVGPathElement>('.jar-bridge-thread').forEach(thread => thread.toggleAttribute('data-lit', thread.dataset.end === '0' ? isOn(bridge.item.after!) : bridge.learned));
     }
     root.querySelectorAll<HTMLButtonElement>('.jar-node').forEach(button => {
       const item = improvementOf(button.dataset.improve!)!, state = stateOf(item);
@@ -335,7 +391,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     });
     root.querySelectorAll<SVGPathElement>('.jar-links path[data-to]').forEach(path => {
       const to = improvementOf(path.dataset.to!)!;
-      path.dataset.state = isOn(path.dataset.from!) && isOn(to.id) ? 'on' : isOn(path.dataset.from!) && !to.veiled ? 'next' : 'off';
+      path.dataset.state = isOn(path.dataset.from!) && isOn(to.id) ? 'on' : isOn(path.dataset.from!) && !asleep(to, story.stage) ? 'next' : 'off';
     });
     root.querySelectorAll<HTMLElement>('.jar-core').forEach(button => { button.querySelector('.jar-pips')!.innerHTML = manaPips(button.dataset.core as ClassId); });
     root.querySelectorAll<HTMLElement>('.jar-constellation').forEach(el => { el.dataset.lit = String(story.improvements.some(i => improvementOf(i)?.anima === el.dataset.anima)); });
@@ -349,7 +405,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   function render() {
     layout();
     shown.clear();
-    for (const b of bridges) if (isShown(b)) shown.add(b.item.id);
+    for (const b of bridges) if (revealed(b)) shown.add(b.item.id);
     root.innerHTML = `<div class="jar-veil" aria-hidden="true"></div>
       <div class="jar-window"><div class="jar-sky">
         <header class="jar-title"><span class="battle-kicker">EN CASA · EL COMEDOR</span><h1>El bote <em>de las luces</em></h1></header>
@@ -446,7 +502,13 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
     if (open) return Promise.resolve();
     open = true; closing = false; openedAt = performance.now(); delete cursors[1]; delete cursors[2];
     root.hidden = false; root.dataset.phase = 'in'; hud.dataset.jar = 'open'; callbacks.pause(true);
+    // The first time it opens after a castle boss, what that stage brings comes into the sky (and is never seen coming again).
+    seen = Math.min(seenStage(), story.stage);
     render();
+    keepStage(story.stage);
+    clearTimeout(chime);
+    // A chime as the new stars open at the ends of their joins (style.css: `data-arriving`, at 2.2 s).
+    if (root.querySelector('.jar-node[data-arriving]')) chime = window.setTimeout(() => { if (open && !closing) callbacks.sound('unlock'); }, 2200);
     clearTimeout(timer);
     timer = window.setTimeout(() => { if (open && !closing) root.dataset.phase = 'open'; }, 1600);
     return new Promise<void>(resolve => { closed = resolve; });
@@ -455,7 +517,7 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
   function close(now = false) {
     if (!open || (closing && !now)) return;
     const end = () => {
-      clearTimeout(timer);
+      clearTimeout(timer); clearTimeout(chime);
       open = closing = false; root.hidden = true; root.replaceChildren(); delete root.dataset.phase; delete hud.dataset.jar; callbacks.pause(false);
       document.querySelector<HTMLElement>('#game')?.focus({ preventScroll: true });
       closed?.(); closed = undefined;

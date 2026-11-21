@@ -61,6 +61,12 @@ export { MANA_LEVEL };
 /** The top level of `id`: the highest its skills name (1 for an ánima that grows by its tree). */
 export const topOf = (id: ClassId) => !LEVELLED.includes(id) ? 1
   : Math.min(MAX_LEVEL, Math.max(1, ...SKILLS.map(skill => skill.class === id && 'level' in skill && skill.level ? skill.level : 1)));
+/**
+ * How far `id` can grow now: its own top, or the castle's cap if that is lower (src/castle.ts
+ * `levelCap`; docs/animas/README.md § Growth opens with the castle). A cap reached is not the top:
+ * the EXP goes on being kept, and gives its levels once the cap rises.
+ */
+export const reachOf = (id: ClassId, cap: number = MAX_LEVEL) => Math.min(topOf(id), cap);
 /** The level `id` has reached, from the flags it holds: the highest one, so a story event can grant any. */
 export function levelOf(id: ClassId, has: (flag: LevelFlag) => boolean) {
   for (let level = MAX_LEVEL; level > 1; level--) if (has(levelFlag(id, level as Level))) return level;
@@ -100,22 +106,27 @@ export function participants(state: Pick<BattleState, 'allies' | 'animas' | 'fou
   const order = (id: ClassId) => { const i = state.animas.indexOf(id); return i < 0 ? Infinity : i; };
   return [...wearers].sort(([a], [b]) => order(a) - order(b)).map(([id, who]) => ({ id, wearers: state.allies.map(a => a.id).filter(name => who.has(name)) }));
 }
-/** How one ánima grew from a fight: its EXP and level before and after, and what it learned. */
-export interface Growth { id: ClassId; xpBefore: number; xpAfter: number; levelBefore: number; levelAfter: number; learned: SkillId[]; passives?: PassiveId[] }
+/**
+ * How one ánima grew from a fight: its EXP and level before and after, what it learned, and how far
+ * it could grow (`reach`: its top, or the castle's cap below it).
+ */
+export interface Growth { id: ClassId; xpBefore: number; xpAfter: number; levelBefore: number; levelAfter: number; reach: number; learned: SkillId[]; passives?: PassiveId[] }
 /**
  * `gained` EXP for each of `ids`, starting from the EXP they have (`xp`) and never below the floor
- * of the level they hold (`levels`: a level granted by the story, or an old save). An ánima at the
- * top level keeps its EXP where it is. Pure: the fight shows it and the story keeps it.
+ * of the level they hold (`levels`: a level granted by the story, or an old save). An ánima at its
+ * top level keeps its EXP where it is; one held at the castle's `cap` goes on keeping what it earns,
+ * so `gained` 0 with a higher cap gives the levels that EXP was already worth. Pure: the fight shows
+ * it and the story keeps it.
  */
-export function award(ids: readonly ClassId[], gained: number, xp: Partial<Record<ClassId, number>>, levels: Partial<Record<ClassId, number>>): Growth[] {
+export function award(ids: readonly ClassId[], gained: number, xp: Partial<Record<ClassId, number>>, levels: Partial<Record<ClassId, number>>, cap: number = MAX_LEVEL): Growth[] {
   return [...new Set(ids)].filter(id => LEVELLED.includes(id)).map(id => {
-    const top = topOf(id), levelBefore = Math.max(1, Math.min(top, levels[id] ?? 1));
+    const top = topOf(id), reach = reachOf(id, cap), levelBefore = Math.max(1, Math.min(top, levels[id] ?? 1));
     const xpBefore = Math.max(xp[id] ?? 0, xpFloor(levelBefore));
     const xpAfter = levelBefore >= top ? xpBefore : Math.max(xpBefore, xpBefore + Math.max(0, gained));
-    const levelAfter = Math.max(levelBefore, levelForXp(xpAfter, top));
+    const levelAfter = Math.max(levelBefore, levelForXp(xpAfter, reach));
     const learned: SkillId[] = [], passives: PassiveId[] = [];
     for (let level = levelBefore + 1; level <= levelAfter; level++) { learned.push(...skillsAt(id, level)); passives.push(...passivesAt(id, level)); }
-    return { id, xpBefore, xpAfter, levelBefore, levelAfter, learned, ...passives.length ? { passives } : {} };
+    return { id, xpBefore, xpAfter, levelBefore, levelAfter, reach, learned, ...passives.length ? { passives } : {} };
   });
 }
 /** Development: the EXP that takes `id` from where it is to its next level (0 at the top). */

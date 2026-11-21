@@ -12,7 +12,7 @@ import { createJarUI } from './jar-ui';
 import { createParcelasUI } from './parcelas-ui';
 import { createCandadoUI } from './candado-ui';
 import { CAMP_HUNTERS } from './friends/universidad';
-import { MAX_LEVEL, toNextLevel, topOf } from './levels';
+import { MAX_LEVEL, reachOf, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
 import { createStoryUI } from './story-ui';
 import { createEndings } from './endings';
@@ -695,7 +695,7 @@ try {
       animas: () => ({ now: story.levels, story: story.storyLevels, xp: story.xp, changed: !!story.debugAnimas, adult: story.adult }),
       giveXp: (id, amount) => {
         const levels = story.storyLevels;
-        const effects = story.giveXp(id, amount === 'level' ? toNextLevel(story.xp[id] ?? 0, levels[id] ?? 1, topOf(id)) : amount);
+        const effects = story.giveXp(id, amount === 'level' ? toNextLevel(story.xp[id] ?? 0, levels[id] ?? 1, reachOf(id, story.levelCap)) : amount);
         keepXp(); storyChanged();
         battleUI.setAnimas(story.classes, story.levels, { gerard: story.kitOf('gerard'), aitor: story.kitOf('aitor') });
         void (async () => { for (const effect of effects) await play(effect); })();
@@ -829,7 +829,7 @@ try {
       exploration.close(); dialogue.close();
       // A patrol of the campsite's maze: its foes shout their word as they fall (docs/quests/universidad.md § Las palabras).
       const patrol = currentLocation === 'camping' ? CAMP_HUNTERS.find(h => h.id === story.uni.fighting && h.encounter === options.encounter) : undefined;
-      battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, improved: story.improved, guards: palaceGuards(story.animas.length) });
+      battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, cap: story.levelCap, improved: story.improved, guards: palaceGuards(story.animas.length) });
       // Fran's salon: the light the nave's mirrors brought to the chaplains' chairs (docs/quests/luca.md).
       if (story.dazzled(options.encounter)) battleUI.tweak(dazzle);
       if (import.meta.env.DEV && help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }

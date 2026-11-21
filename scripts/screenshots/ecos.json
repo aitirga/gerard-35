@@ -1,6 +1,6 @@
 {
   "title": "El bote de las luces: un solo cielo",
-  "description": "docs/animas/README.md § The jar, § The jar as one sky, src/jar-ui.ts. The jar at home opens as a window over the living room: one sky with every ánima's constellation open at once (Gerard's tree on the left, Aitor's on the right, the shared ones small and scattered between, with what they have learned as small stars), the dúos mayores as gold stars between two constellations once both ends are lit, and the jar below with every eco. Here with all seven ánimas. Run it with --gpu.",
+  "description": "docs/animas/README.md § The jar, § The jar as one sky, src/jar-ui.ts. The jar at home opens as a window over the living room: one sky with every ánima's constellation open at once (Gerard's tree on the left, Aitor's on the right, the shared ones small and scattered between, with what they have learned as small stars), the dúos mayores as gold stars between two constellations (after Aurelià, a «?» until both ends are lit), and the jar below with every eco. Here with all seven ánimas, after Aurelià. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=luz-uri&day=8"
@@ -10,7 +10,7 @@
       "timeout": 60000
     },
     {
-      "eval": "localStorage.removeItem('gerard35.ecos.v1'); window.gerard.story.clearImprovements(); window.gerard.story.debugEcos = 24; window.gerard.story.debugAnimas = { matemagico: 1, papagato: 3, tecnopata: 1, dadaista: 7, sincopante: 1, prismatico: 2, freatica: 1 }; window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`)"
+      "eval": "localStorage.removeItem('gerard35.ecos.v1'); localStorage.setItem('gerard35.jar-stage.v1', '2'); window.gerard.story.merge(['aurelia', 'luz-aurelia']); window.gerard.story.clearImprovements(); window.gerard.story.debugEcos = 24; window.gerard.story.debugAnimas = { matemagico: 1, papagato: 3, tecnopata: 1, dadaista: 7, sincopante: 1, prismatico: 2, freatica: 1 }; window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`)"
     },
     {
       "teleport": "meridiana",
@@ -40,7 +40,7 @@
     {
       "shot": "cielo",
       "delay": 300,
-      "caption": "The one sky with all seven ánimas, nothing lit yet: Matemágico on the left and Tecnópata on the right, whole; Dadista, Sincopante, Papagato, Colorista and Freática small and scattered round and between them, each with its Maná +1 and its definitiva, and what it has learned fighting as small stars of its colour. Gerard's cursor on his core pushes Matemágico in a little"
+      "caption": "The one sky with all seven ánimas after Aurelià (grade III in it), nothing lit yet: Matemágico on the left and Tecnópata on the right, whole; Dadista, Sincopante, Papagato, Colorista and Freática small and scattered round and between them, each with its Maná +1 and its definitiva, and what it has learned fighting as small stars of its colour; Vulcano a «?» of dim gold between Matemágico's fire and Sincopante. Gerard's cursor on his core pushes Matemágico in a little"
     },
     {
       "press": "ArrowRight"
@@ -88,7 +88,7 @@
     {
       "shot": "llega-vulcano",
       "delay": 200,
-      "caption": "Combustión lit, the top of the fire line, held still a moment after: Sincopante's Ostinato is already learned, so both ends of Vulcano are lit and a light runs along each thread towards the place between the two constellations"
+      "caption": "Combustión lit, the top of the fire line, held still a moment after: Sincopante's Ostinato is already learned, so both sides have reached Vulcano and a light runs along each thread towards its «?»"
     },
     {
       "eval": "document.getAnimations().forEach(a => { a.pause(); a.currentTime = 1380; })"
@@ -96,7 +96,7 @@
     {
       "shot": "nace-vulcano",
       "delay": 200,
-      "caption": "A second later the gold star opens there, swelling bright before it settles; Ostinato's name comes out over its star, and the note moves off so as not to hide it"
+      "caption": "A second later the «?» opens as Vulcano, swelling bright before it settles; Ostinato's name comes out over its star, and the note moves off so as not to hide it"
     },
     {
       "eval": "document.getAnimations().forEach(a => a.play())"
@@ -160,12 +160,12 @@
       "fps": 30,
       "tiles": 14,
       "each": "window.frame === 3 && void jar.control('confirm', 1)",
-      "caption": "Turning Rescoldo off takes Combustión and Vulcano with it: each light flies back to the jar and the dúo mayor goes out of the sky with its threads"
+      "caption": "Turning Rescoldo off takes Combustión and Vulcano with it: each light flies back to the jar and the dúo mayor goes back to a «?», its threads faint"
     },
     {
       "shot": "sin-vulcano",
       "delay": 600,
-      "caption": "Without Combustión there is no Vulcano in the sky: nothing marks where it was"
+      "caption": "Without Combustión Vulcano is a «?» again: no name, nothing of its halves"
     },
     {
       "record": "cerrar",

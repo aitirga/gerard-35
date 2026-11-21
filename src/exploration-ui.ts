@@ -9,7 +9,7 @@ import { type MemberId, type PartyMember, type Story } from './story';
 import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, PASSIVES, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
 import { nearestButton } from './menu-nav';
-import { LEVELLED, levelProgress, passivesAt, topOf, xpFloor } from './levels';
+import { LEVELLED, levelProgress, passivesAt, reachOf, topOf, xpFloor } from './levels';
 import { animaOf, CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { currentThought, diary, storyClock } from './journal';
@@ -122,9 +122,10 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   /** An ánima's level and how far into it its EXP is: the level is the ánima's, whoever wears it. */
   const levelOf = (id: ClassId) => {
     const level = story.levels[id] ?? 1, xp = Math.max(story.xp[id] ?? 0, xpFloor(level));
-    // One without its level table yet (Tecnópata) shows its level and nothing more.
+    // One without its level table yet (Tecnópata) shows its level and nothing more. Held at the castle's
+    // cap its bar stays full, keeping what it earns, and never says MÁX: the cap is not its top.
     const grows = LEVELLED.includes(id), top = grows && level >= topOf(id);
-    return { level, xp, fill: !grows ? 0 : top ? 1 : levelProgress(xp, topOf(id)), top };
+    return { level, xp, fill: !grows ? 0 : top ? 1 : levelProgress(xp, reachOf(id, story.levelCap)), top };
   };
   const bonusChips = (classId: ClassId) => (Object.entries(CLASS_STATS[classId]) as [keyof Stats, number][])
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
