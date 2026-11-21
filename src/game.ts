@@ -317,8 +317,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** How tall the view is while it looks at La Sobremesa's faces. */
   const FACE_ZOOM = 3.4;
   const aims: Partial<Record<1 | 2, string>> = {};
-  function aimAt(id?: string, player: 1 | 2 = 1) {
-    battleScene.selectTarget(id, player);
+  function aimAt(id?: string, player: 1 | 2 = 1, by?: string) {
+    battleScene.selectTarget(id, player, by);
     aims[player] = id;
     const onFace = battle?.encounter === 'sobremesa' && [aims[1], aims[2]].some(a => a && battle!.foes.some(f => f.id === a));
     const friends = onFace && battle ? battle.foes.filter(f => f.hp > 0).map(f => battleScene.modelOf(f.id)?.getPosition()).filter((p): p is pc.Vec3 => !!p) : [];

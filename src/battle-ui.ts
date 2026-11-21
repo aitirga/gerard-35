@@ -181,8 +181,8 @@ export type FightMoment = 'won' | 'won-level' | 'lost' | 'foes-low' | 'party-low
 export function createBattleUI(hud: HTMLElement, callbacks: {
   /** `onImpact` runs as each blow lands: 0 at contact, then a flurry's others (`BattleEffect.strikes`). */
   change: (state: BattleState | undefined, effect?: BattleEffect, onImpact?: (blow: number) => void) => Promise<void>;
-  /** Whom `player` is aiming at (none: nobody), each player in their own colour (gold Gerard's, cyan Aitor's). */
-  target: (id: string | undefined, player: PlayerId) => void;
+  /** Whom `player` is aiming at (none: nobody), each player in their own colour (gold Gerard's, cyan Aitor's); `by` is the fighter choosing, who turns towards it. */
+  target: (id: string | undefined, player: PlayerId, by?: string) => void;
   /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: nobody is picking). */
   aimDie?: (unit?: string, index?: number) => void;
   /** Dadista shook the hand (Agitar): `unit`'s dice tumble again in the fight. */
@@ -1066,6 +1066,26 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     });
     renderSummary();
     armDualBanner();
+    reaim();
+  }
+  /**
+   * Split, the partner's move can take an aim away from under a player (the foe falls, a cure is no
+   * longer needed): their cursor moves on to whom they can still pick, or back out if nobody is left,
+   * instead of sitting on a plate their confirm no longer works on.
+   */
+  let reaiming = false;
+  function reaim() {
+    if (!state || !split() || reaiming) return;
+    reaiming = true;
+    try {
+      for (const p of [1, 2] as PlayerId[]) withPlayer(p, () => {
+        if (!targeting || locked() || !aimedBy[p]) return;
+        // By the rules, not by the plates: one out of the camera's sight for a moment is still theirs.
+        const ids = ownTargets();
+        if (ids.includes(aimedBy[p]!)) return;
+        if (ids.length) focusOn(targetButtons()[0]); else back();
+      }, true);
+    } finally { reaiming = false; }
   }
   /** The menu being worked on (`ctx`): its commands, its target picker, its help line; and what it is aiming at. */
   function renderPanel() {
@@ -1376,11 +1396,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    */
   const aimedBy: Partial<Record<PlayerId, string>> = {};
   const aimSlot = (): PlayerId => !state ? 1 : split() ? ctx : state.allies[state.active]?.id === 'aitor' ? 2 : 1;
+  /** The fighter choosing each aim (split, the player's own; alone, whose turn it is): in the fight they turn towards it. */
+  const aimers: Partial<Record<PlayerId, string>> = {};
   function highlight(id?: string) {
     const slot = aimSlot();
     aimedBy[slot] = id;
+    aimers[slot] = !state ? undefined : split() ? allyOf(slot)?.id : state.allies[state.active]?.id;
     if (!state || !split()) aimedBy[slot === 1 ? 2 : 1] = undefined;
-    ([1, 2] as PlayerId[]).forEach(p => callbacks.target(aimedBy[p], p));
+    ([1, 2] as PlayerId[]).forEach(p => callbacks.target(aimedBy[p], p, aimers[p]));
     aimName(id); showAims();
   }
   function showAims() {
@@ -1825,11 +1848,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     newsPlaying = true;
     const token = generation;
     // Whatever was half chosen closes: the fight shows what just happened, then the turn goes on.
-    if (state.phase === 'player') collapse();
+    // Split, nothing a move plays shuts either menu (`locked`), so each keeps what they had.
+    if (state.phase === 'player' && !split()) collapse();
     busy = true;
     try { await flushNews(token); } finally { newsPlaying = false; }
     if (token !== generation || !state) return;
     busy = false; render();
+    // Split, one may have confirmed while it played: theirs goes now, or it would wait for good.
+    if (pending.length && state.phase === 'player') { void run(); return; }
     if (state.phase === 'player' && !targeting && !selected && !root.contains(document.activeElement)) focusFirst();
   }
   /** Atacar asks for a target, Habilidad opens its flyout to the right, Defender and Huir happen at once. */
@@ -2442,6 +2468,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   async function execute(target?: string) {
     if (!state || !selected || locked()) return;
     if ((selected === 'attack' || selected === 'dual' || (selected === 'skill' && (!selectedSkill || aimed(selectedSkill)))) && !targeting) return;
+    // Split, a plate or a card can be lit for the other player's move: picked for this one, it is not theirs to take.
+    if (targeting && target && !ownTargets().includes(target)) { callbacks.sound('denied'); return; }
     const me = split() ? allyOf(ctx)! : state.allies[state.active];
     const named = (id?: string) => [...state!.allies, ...state!.foes].find(c => c.id === id)?.name;
     let job: Job;
@@ -2587,8 +2615,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // Mouse and keyboard belong to player 1, a controller's confirm to its player (`control`): each only in their own dock.
     if (!split()) { if (turnDriver() !== pointerPlayer || busy) return; clickIn(target); return; }
+    // A fighter's card stands in their player's dock, yet anyone may aim at it (a cure for the partner):
+    // only the dock's own commands are its player's.
     const dock = target.closest<HTMLElement>('.battle-dock');
-    if (dock && Number(dock.dataset.dock) !== pointerPlayer) return;
+    if (dock && !target.matches('[data-target]') && Number(dock.dataset.dock) !== pointerPlayer) return;
     withPlayer(pointerPlayer, () => { if (!locked()) clickIn(target); });
   });
   function clickIn(target: HTMLButtonElement) {
@@ -2637,7 +2667,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   for (const eventName of ['pointerover', 'focusin']) root.addEventListener(eventName, event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-target]');
     if (!button || button.disabled) return;
-    const aim = () => { if (targeting && !locked()) highlight(button.dataset.target); };
+    // Split, the other player's cure lights the cards up too: Gerard's attack never moves onto them.
+    const aim = () => { if (targeting && !locked() && ownTargets().includes(button.dataset.target!)) highlight(button.dataset.target); };
     if (state && split()) withPlayer(1, aim, true); else if (!busy) aim();
   });
   /** Who the click being handled comes from: the mouse and keyboard, unless `control` is pressing for a controller. */
@@ -2914,6 +2945,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
      * the keyboard player's move ready ahead), so Escape backs out of it (or takes it back) before pausing.
      */
     get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
+    /**
+     * The same for one player's controller. Split, it is that player's own menu and whether their
+     * fighter can choose: a press is held back while their own screen changes, never because the
+     * partner opened a menu or a move started playing.
+     */
+    controllerContextOf(player: PlayerId) {
+      if (!state || !split()) return ui.controllerContext;
+      const m = player === ctx ? { selected, selectedSkill, pickingDie, targeting } : menus[player];
+      return `battle:${state.phase}:${m.selected ?? (summaryOpen ? 'summary' : '')}:${m.selectedSkill ?? m.pickingDie ?? ''}:${m.targeting}:${canAct(allyOf(player)) ? 'choosing' : 'waiting'}`;
+    },
     /** △ / Y (X on a Switch pad): the details window beside the focused skill; on the commands, or aiming Atacar, its next element. */
     details(player: PlayerId = 1) {
       if (!state) return;
@@ -3011,6 +3052,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
           setTimeout(() => { if (token === generation) delete root.dataset.introEnd; }, 900);
         }
         for (const p of [1, 2] as PlayerId[]) withPlayer(p, focusFirst);
+        // Split, a move confirmed while the fight was coming in goes now.
+        if (pending.length) void run();
       });
     },
     /** La Reina Bubbaloo's entrance (src/game.ts): it has started (the skip hint), her name is up, the camera pulls back (the bars open). */

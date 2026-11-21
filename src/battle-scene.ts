@@ -535,8 +535,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     return { player, entity, lift };
   });
   const aimedBy: Partial<Record<1 | 2, string>> = {};
-  /** The latest aim, the one the fighter whose turn it is turns towards. */
-  let selectedTarget: string | undefined;
+  /** Who is aiming for each player: that fighter turns towards their own player's aim, never the partner's. */
+  const aimer: Partial<Record<1 | 2, string>> = {};
   /** Confetti falls once per won fight. */
   let celebrated = false;
   const face = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
@@ -3686,7 +3686,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
     },
     /** Whom `player` aims at (none: nobody); each has their ring. */
-    selectTarget(id?: string, player: 1 | 2 = 1) { aimedBy[player] = id; selectedTarget = id ?? aimedBy[player === 1 ? 2 : 1]; },
+    /** Whom `player` aims at (none: nobody), with `by` (the fighter choosing) turning towards it; each has their ring. */
+    selectTarget(id?: string, player: 1 | 2 = 1, by?: string) { aimedBy[player] = id; aimer[player] = id ? by : undefined; },
     /** Dadista: the die of `unit`'s hand the cursor is on while one is being picked (none: back in line). */
     aimDie(unit?: string, index?: number) { aimedDie = unit !== undefined && index !== undefined ? { unit, index } : undefined; },
     /** Agitar: `unit`'s dice are thrown again, so each drops in tumbling once more, one after another, with a few stars off the hand. */
@@ -3849,7 +3850,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -4098,7 +4099,6 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const dualEnd = times ? times.at(-1)! + dualPace(effect!).tail : 0;
       // Into place gathering speed: off slowly, then a rush, then a short brake (`surge`).
       const entryMove = surge((entryTime - .1) / .75);
-      const selected = selectedTarget ? fighters.get(selectedTarget) : undefined;
       for (const { player, entity, lift } of markers) {
         const on = aimedBy[player] ? fighters.get(aimedBy[player]!) : undefined;
         entity.enabled = !!on && on.hp > 0 && !effect && entryTime >= ENTRY_SECONDS;
@@ -4114,9 +4114,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         updateOnion(id, f, dt, blows, animate, actor);
         const opponents = [...fighters.values()].filter(other => partySide(other) !== partySide(f) && other.hp > 0);
         const opponent = opponents[0];
-        // At rest everyone squares up to the middle of the other side; the active ally turns toward whatever is being picked.
+        // At rest everyone squares up to the middle of the other side; an ally choosing turns toward whatever their player is picking.
         const center = opponents.length ? opponents.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / opponents.length) : undefined;
-        const aiming = !effect && f.party && !!selected && selected !== f && selected.hp > 0 && state?.phase === 'player' && state.allies[state.active]?.id === id;
+        const own = f.party ? ([1, 2] as const).find(p => aimer[p] === id && aimedBy[p]) : undefined;
+        const selected = own ? fighters.get(aimedBy[own]!) : undefined;
+        const aiming = !effect && !!selected && selected !== f && selected.hp > 0 && state?.phase === 'player';
         // The giant does not turn round to whoever hits it: it keeps facing the party.
         const dualing = !!dual && (id === roles!.caster || id === roles!.claws);
         // Vertitrón sweeping or firing faces the middle of everyone it reaches.

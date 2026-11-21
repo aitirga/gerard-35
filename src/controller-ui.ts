@@ -34,7 +34,8 @@ export function clickControllerButton(root: HTMLElement) {
   return true;
 }
 export function createControllerUI(callbacks: {
-  context: () => string;
+  /** Where `player`'s input goes (player 1 when not said: the keyboard is theirs). */
+  context: (player?: PlayerId) => string;
   direction: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
   /** Player 2's stick or D-pad (Aitor, docs/party.md). */
   partnerDirection: (direction: Direction | null, stick: Stick | null, running: boolean) => void;
@@ -266,7 +267,8 @@ export function createControllerUI(callbacks: {
     const apart = !mapping && !root.open && !!callbacks.dpadApart?.();
     const state2 = second ? readController(second, profiles[second.id], previousDirection2, apart) : idleController();
     previousDirection2 = focused ? state2.direction : null;
-    const where = () => mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context();
+    // Player 2's own context: in a fight, their own menu, so player 1's choices never swallow their presses.
+    const where = () => mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context(2);
     const context2 = `${secondIdentity}:${where()}`;
     const input2 = edges2.update(state2, context2, now, focused && !mapping);
     // Player 2's half of the screen (their status sheet, their fight dock) shows their own pad.

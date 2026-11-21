@@ -21,7 +21,7 @@ import { LINES_CASTLE, type EndingChoice } from './castle-story';
 import { onThroneStage } from './throne-arena';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
 import { NIGHT_DEV, nightMight } from './night';
-import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
+import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode, type PlayerId } from './party';
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
 import { createTravelUI } from './travel-ui';
@@ -418,7 +418,7 @@ try {
       if (effect?.dual && !testing && story.discover(effect.dual.id)) keepDuals();
       return game.setBattle(state, effect, effect ? blow => { if (state && !blow) playCues(impactSounds(effect, state)); onImpact?.(blow); } : onImpact);
     },
-    target: (id, player) => game.selectTarget(id, player),
+    target: (id, player, by) => game.selectTarget(id, player, by),
     aimDie: (unit, index) => game.aimDie(unit, index),
     shakeDice: unit => game.shakeDice(unit),
     sound: id => sfx.play(id),
@@ -1043,7 +1043,7 @@ try {
   // The song a place asks for changes as Gerard walks into a boss room or out of it, and as night falls.
   let songNow: TrackId | undefined;
   const songTimer = setInterval(() => { const song = place && songHere(place); if (song === songNow) return; songNow = song; if (place) scorePlace(place); }, 500);
-  const controllerContext = () => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContext
+  const controllerContext = (player: PlayerId = 1) => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContextOf(player)
     : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
