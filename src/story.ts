@@ -1055,6 +1055,8 @@ export class Story {
       ...this.has('anima-universidad') ? ['dadaista' as const] : [],
       ...this.has('anima-marta') ? ['sincopante' as const] : [],
       ...this.has('anima-luca') ? ['prismatico' as const] : [],
+      // Emilie's, once El que no converge is beaten (docs/animas/freatica/).
+      ...this.has('anima-emilie') ? ['freatica' as const] : [],
     ];
   }
   /**
