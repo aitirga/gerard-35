@@ -137,6 +137,8 @@ export const STORY_ARCS = [
   ] },
   { id: 'papagato', chapter: 2, title: 'Papagato crece', detail: 'Experiencia de combate', after: 'papagato', steps: [
     { flags: ['papagato-2'], label: 'Papagato, nivel 2' }, { flags: ['papagato-3'], label: 'Papagato, nivel 3' },
+    { flags: ['papagato-4'], label: 'Papagato, nivel 4' }, { flags: ['papagato-5'], label: 'Papagato, nivel 5' },
+    { flags: ['papagato-6'], label: 'Papagato, nivel 6' }, { flags: ['papagato-7'], label: 'Papagato, nivel 7' },
   ] },
   { id: 'dadaista', chapter: 2, title: 'Dadista crece', detail: 'Experiencia de combate', after: 'anima-universidad', steps: [
     { flags: ['dadaista-2'], label: 'Dadista, nivel 2' }, { flags: ['dadaista-3'], label: 'Dadista, nivel 3' },

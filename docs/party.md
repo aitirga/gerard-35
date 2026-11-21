@@ -102,6 +102,9 @@ cannot pay says *Sin ánima*.
 | Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion and rolls its own Crítico; adds one Sangrado stack |
 | Ronroneo | **Papagato**, level 2 | 2 | 16 heal | One hurt ally: cures at once, leaves Sanación for 15 s, and takes away their mental statuses (Mareo, Llorera) |
 | Zarpa en la llaga | **Papagato**, level 3 | 2 | 26 physical | Spends the target's Sangrado, each stack counting double (+40 %) |
+| Acecho | **Papagato**, level 6 | 2 | 38 physical | Charges a turn: lands as the next round starts, a sure golpe crítico that spends the wound |
+| Cacería | **Papagato**, level 7 | 3 | 10 physical, a claw a stack | One claw for each Sangrado stack on the field, on whoever bleeds; sure críticos on a wound of five; spends it |
+| Siete vidas | **Papagato**'s definitiva, bought at the jar | 0 | 14 physical | Wakes when a wound of five or more is spent; every foe, Sangrado +2, and the next blow that would kill someone in the party cures them instead |
 | Puñado | Whoever wears **Colorista** | 1 | 16 physical | Leaves the foe Empolvado for 20 s: fire blows it up, water poisons, electricity leaves shards |
 | Cortina | **Colorista** | 1 | Defensa +3 | For the party, 3 rounds; a cortina in front of one ally halves the next blow, and whoever breaks it is Empolvado (*Rebufo*) |
 | Rociada | **Colorista**, level 2 | 2 | 14 magic, water | Every foe. It does not wet: whoever is Empolvado is poisoned |
@@ -123,7 +126,7 @@ lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) low
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
 
 **Levels** (`src/levels.ts`): fights won wearing an ánima make it grow; 3 wins give level 2 and 8
-level 3, each a story flag. Papagato, Dadista and Colorista level (`LEVELLED`); Colorista to level 7, with Maná +1 at 4 and its passive *Remolino* at 5 (`docs/animas/prismatico/README.md`). Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
+level 3, each a story flag. Papagato, Dadista and Colorista level (`LEVELLED`); all three to level 7, with Maná +1 at 4: Colorista with its passive *Remolino* at 5 (`docs/animas/prismatico/README.md`), Papagato with *Olor a sangre* at 5, *Acecho* at 6 and *Cacería* at 7 (`docs/animas/papagato/README.md`). Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.

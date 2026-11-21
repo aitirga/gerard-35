@@ -2041,6 +2041,20 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="cristalizado"], .summary-tags [data-status="cristalizado"], .damage-pop[data-kind="status"][data-status="cristalizado"] { --status: #bfd0ea; }
 .unit-statuses i[data-status="cortina"], .summary-tags [data-status="cortina"], .damage-pop[data-kind="status"][data-status="cortina"] { --status: #dcc388; }
 .unit-statuses i[data-status="definitiva"], .summary-tags [data-status="definitiva"] { --status: #f0e4c8; }
+/* Papagato (docs/animas/papagato/): Acecho's slit eye in the ánima's orange over whoever's cat crouches; Siete vidas'
+   cat head in Yuki's white over each of the party while the ward holds, breathing slowly. */
+.unit-statuses i[data-status="acecho"], .summary-tags [data-status="acecho"], .damage-pop[data-kind="status"][data-status="acecho"] { --status: #f0954a; }
+.unit-statuses i[data-status="siete-vidas"], .summary-tags [data-status="siete-vidas"], .damage-pop[data-kind="status"][data-status="siete-vidas"] { --status: #f6f0e2; }
+.unit-statuses i[data-status="siete-vidas"] { animation: lives-breathe 2.6s ease-in-out infinite; }
+@keyframes lives-breathe { 0%, 100% { box-shadow: 0 0 0 1px #f6f0e266; } 50% { box-shadow: 0 0 0 1px #f6f0e2aa, 0 0 9px 1px #f6f0e266; } }
+@media (prefers-reduced-motion: reduce) { .unit-statuses i[data-status="siete-vidas"] { animation: none; } }
+/* Siete vidas going off: the blow's number lands as a crítico's would, red, and turns over into the cure it became,
+   green; the definitiva's name under it, in Yuki's white. */
+.damage-pop[data-kind="lives"] > * { animation: pop-crit 1.9s cubic-bezier(.2,.9,.3,1) both; }
+.damage-pop[data-kind="lives"] strong { font-size: 54px; color: #ff7a7a; -webkit-text-stroke-width: 7px; text-shadow: 4px 4px 0 #162823cc, 0 0 22px #ff5b5b99; transition: transform .34s cubic-bezier(.3,1.4,.5,1), color .08s .14s, text-shadow .08s .14s; }
+.damage-pop[data-kind="lives"][data-turned] strong { transform: rotateX(360deg) scale(1.12); color: #a6f2bd; text-shadow: 4px 4px 0 #162823cc, 0 0 28px #7fe3a0, 0 0 44px #7fe3a066; }
+.damage-pop[data-kind="lives"] small { font-size: 12px; font-weight: 900; letter-spacing: .24em; color: #f6f0e2; text-shadow: 0 1px 2px #102019, 0 0 8px #102019, 0 0 14px #f6f0e280; animation-delay: .04s; }
+@media (prefers-reduced-motion: reduce) { .damage-pop[data-kind="lives"] strong { transition: none; } .damage-pop[data-kind="lives"][data-turned] strong { transform: none; } }
 .unit-statuses i[data-status="confusion"], .summary-tags [data-status="confusion"] { --status: #4fe0ff; }
 .damage-pop[data-kind="status"][data-status="confusion"] { --status: #7fe9ff; }
 .unit-statuses i[data-status="encogido"], .summary-tags [data-status="encogido"] { --status: #9fe8ff; }

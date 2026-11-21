@@ -31,6 +31,11 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   zarpazo: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }, { id: 'hit', volume: .45 }] },
   zarpazos: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }] },
   llaga: { start: [{ id: 'meow' }], impact: [{ id: 'claw-deep' }] },
+  // Acecho: crouching makes no sound but a creak of the floor; its pounce, as the round starts, lands deep (from the scene).
+  acecho: { start: [{ id: 'creak', volume: .35 }], impact: [] },
+  // Cacería's first claw lands here, the rest from the scene; Siete vidas' too, and a rise as Yuki's ward settles.
+  caceria: { start: [{ id: 'meow' }, { id: 'meow-soft', delay: .12 }], impact: [{ id: 'claw' }] },
+  'siete-vidas': { start: [{ id: 'meow' }, { id: 'meow-soft', delay: .1 }], impact: [{ id: 'claw-deep' }, { id: 'rise', volume: .4, delay: .25 }] },
   angulo: { start: [{ id: 'think' }], impact: [] },
   ronroneo: { start: [{ id: 'meow-soft' }], impact: [{ id: 'heal' }] },
   // Tecnópata's are Bip's: it charges up and fires, blows up, or hums its waves.

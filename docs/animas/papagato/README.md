@@ -1,11 +1,11 @@
 # Papagato
 
-Status: playable up to level 3, as **redesigned 2026-11-20** round physical blows, Sangrado and
-golpes críticos (Aitor's direction). **Built**: the golpe crítico and its look, Crítico on the
-sheet, cuts that pile up and fade slowly, liquid blood, the new Ronroneo, Zarpazos that cuts; Yuki
-se esconde and Las dos a la vez are out. **Designed, not built**: levels 4 to 7 (Maná +1, Acecho,
-Cacería) and Siete vidas; Olor a sangre is written but out of reach until level 5 exists · Comes
-from: Nuria's mission, [`docs/quests/nuria.md`](../../quests/nuria.md)
+Status: **playable whole** (2026-11-21), as **redesigned 2026-11-20** round physical blows, Sangrado
+and golpes críticos (Aitor's direction). **Built**: the golpe crítico and its look, Crítico on the
+sheet, cuts that pile up and fade slowly, liquid blood, the new Ronroneo, Zarpazos that cuts; seven
+levels (Maná +1 at 4, Olor a sangre at 5, Acecho at 6, Cacería at 7); and its definitiva, Siete
+vidas. Yuki se esconde and Las dos a la vez are out · Comes from: Nuria's mission,
+[`docs/quests/nuria.md`](../../quests/nuria.md)
 
 What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
 guesses: the balance comes after every ánima and every dual is designed (`../README.md` § Order of
@@ -123,8 +123,8 @@ to close as it has stacks. Built (`cutRound`, `nextRound`).
 
 ## Skills per level
 
-Seven levels, by EXP from fights won wearing it (`../README.md` § Levels). Levels 1 to 3 are built
-as they are here; 4 to 7 are designed (the game's levels stop at 3 today). Cost is in maná (3 from the start).
+Seven levels, by EXP from fights won wearing it (`../README.md` § Levels), all built as they are
+here (4 to 7 on 2026-11-21). Cost is in maná (3 from the start, 4 from level 4).
 
 | Level | What it gives | Cat | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -132,10 +132,10 @@ as they are here; 4 to 7 are designed (the game's levels stop at 3 today). Cost 
 | 2 | **Zarpazos** | Haru | 2 | 7 physical, four claws, Sangrado +1 | `Daño físico leve a un enemigo. Golpea cuatro veces. Añade sangrado.` | Built |
 | 2 | **Ronroneo** | Yuki | 2 | 16 heal at once and Sanación for 15 s, one ally; cleanses their mental statuses | `Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos. Quita sus efectos de estado mentales.` | Built |
 | 3 | **Zarpa en la llaga** | Haru | 2 | 26 physical; the wound counts double | `Daño físico medio a un enemigo. Gasta el sangrado: cada uno suma el doble de daño.` | Built |
-| 4 | **Maná +1** | — | — | 3 → 4 | — | Designed |
-| 5 | Passive · **Olor a sangre** | Haru | — | Crítico +20 % on whoever bleeds; sure at five stacks | `Los golpes a un enemigo que sangra tienen un 20 % más de Crítico. Gastar una herida de cinco cargas o más es siempre un golpe crítico.` | Written (`SCENT`), out of reach: no level 5 yet |
-| 6 | **Acecho** | Haru | 2 | 38 physical, lands as the next round starts | `Daño físico alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro.` | Designed |
-| 7 | **Cacería** | Both | 3 | 10 physical a claw, one claw a stack on the field | `Daño físico leve a todos los enemigos. Golpea una vez por cada sangrado que haya en el campo, repartido entre quienes sangran. Gasta el sangrado.` | Designed |
+| 4 | **Maná +1** | — | — | 3 → 4 | — | Built |
+| 5 | Passive · **Olor a sangre** | Haru | — | Crítico +20 % on whoever bleeds; sure at five stacks | `Los golpes a un enemigo que sangra tienen un 20 % más de Crítico. Gastar una herida de cinco cargas o más es siempre un golpe crítico.` | Built (`SCENT`) |
+| 6 | **Acecho** | Haru | 2 | 38 physical, lands as the next round starts | `Daño físico alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro.` | Built |
+| 7 | **Cacería** | Both | 3 | 10 physical a claw, one claw a stack on the field | `Daño físico leve a todos los enemigos. Golpea una vez por cada sangrado que haya en el campo, repartido entre quienes sangran. Gasta el sangrado.` | Built |
 
 - **No cat in a skill's name** (Aitor 2026-11-20): *Ronroneo*, not *Ronroneo de Yuki*. The *Cat*
   column says who does it on screen; the game's text does not.
@@ -162,11 +162,20 @@ as they are here; 4 to 7 are designed (the game's levels stop at 3 today). Cost 
 - **Acecho** (new): Haru crouches, and nothing happens this turn. As the next round starts, before
   anyone chooses, she lands a high blow that is a crítico whatever the foe has, and spends its
   wound if it has one. It is the plan made visible: the partner cuts this round, Haru collects.
-  Charges as Rayo solar does (`charge`). If the wearer falls or takes Papagato off first, it is lost.
+  Charges as Rayo solar does, on its own (`stalk` on the wearer, `pounce` as the round starts, kept
+  as news). If the wearer falls or takes Papagato off first, it is lost; if the prey falls first,
+  she takes whoever standing bleeds most. Built: the wound it spends is the one left after the
+  round's end (a wound nobody cut loses a stack then). On screen Haru creeps low two fifths of the
+  way to the prey and stays crouched there, the wearer's plate shows a slit cat's eye (*Acecho*),
+  and as the round starts she springs from there.
 - **Cacería** (new): the whole field's blood at once. One claw for each stack on any foe, shared
   among those bleeding, none with the wound's bonus (the count already is the bonus). The claws on
   a foe whose wound was five or more are críticos (it comes after Olor a sangre); the rest roll. Ten stacks on the field are ten claws. Costs the whole base pool, so it is
-  prepared, and its many small claws also peel layers.
+  prepared, and its many small claws also peel layers. Built: each foe takes as many claws as it
+  has stacks (its own wound, not the field's shared out at random), one foe after another; it
+  only reaches whoever bleeds, so with no blood on the field it has nobody to aim at (*Sin
+  objetivo*), and its list says *Quienes sangran*. On screen both cats go from claw to claw, Haru
+  the even ones and Yuki the odd ones, and each foe's first claw bursts the blood it held.
 
 ## Definitiva: Siete vidas
 
@@ -195,6 +204,16 @@ cats do something.
 - A blow that takes 80 from someone with 30 PV left leaves them at 110, never over their PV. Any
   damage that would kill counts, a status's pulse too. A blow on everyone saves the first it would
   have killed.
+- **Built** (2026-11-21): `siete-vidas` in `SKILLS` (`ulti`, `node`, `lives`), its node at the jar
+  unveiled by it (2 ecos); `wakeLives` from every blow that spends a wound of five or more while
+  someone standing wears Papagato (a cut never does, nor fire that cauterizes); `livesReady` lists
+  it at the head of the wearer's skills, once. Its claws land one after another (`hunt`), and the
+  ward is one object on every ally (`LivesWard`): `changeHealth` spends it on the first blow, pulse
+  or round's tick that would kill any of them, and the fight shows it as `effect.lives` (or
+  `saved` on the pulse or the tick). The look as written above: Yuki walks among the party with a
+  ring of her white at each one's feet, the cat's-head icon on every plate while it holds, and when
+  it goes off she dashes in front of whoever it saves, the fight stops on the blow, the picture
+  drains but round them, and the red number turns over into the green cure (*¡Siete vidas!*).
 
 ## What a round looks like
 
@@ -316,18 +335,30 @@ in `SKILLS` (`src/battle.ts`), by `level` (`src/levels.ts`, three levels); `CLAS
 - **Ronroneo** on one ally: a cure at once, `regen: 'sanacion'` and the cleanse; Yuki goes to them.
 - **The fight tester**: *Crítico seguro* among its helps (`FightSetup.crit`, `state.sureCrits`).
 
-**To build**, in this order, each a `feat:` commit with its tests:
+And of 2026-11-21 (`tests/papagato.test.mjs`):
 
-1. **Seven levels** (`MAX_LEVEL`, `LEVEL_XP`, a level that gives maná or a passive, their flags in
-   the picker), which puts Olor a sangre in reach; then Acecho (a skill that charges) and Cacería.
-2. *Siete vidas* with the definitivas: Haru's blow on every foe, a ward on the party and a killing
-   blow turned into a cure.
-3. **Crítico on the status screen**, and Velocidad out of the engine's turn order.
-4. `just fight-sim`: its targets moved with the new rules (`just fight-sim check` fails on
-   `platitos-sin-pensar`); they are set again with the balance, last.
+- **Seven levels**: `acecho` (6) and `caceria` (7) in `SKILLS`, so `topOf('papagato')` is 7; its
+  flags `papagato-4` to `papagato-7` (`src/story.ts`, `server.py`, the picker's arc in
+  `src/story-points.ts`, `just dev-chapter`). Level 4 is the shared Maná +1 (`MANA_LEVEL`) and 5
+  brings Olor a sangre; the victory card and the note outside a fight say both (*Gana Maná +1*,
+  *Aprende Olor a sangre*), for every ánima that grows by level.
+- **Acecho** (`stalk`, `pounce` in `nextRound`) and **Cacería** (`hunt`, `validTargets` only on
+  whoever bleeds), with their sounds (`src/battle-sounds.ts`) and the cats' choreography
+  (`updateCats`, `huntClaw` in `src/battle-scene.ts`).
+- **Siete vidas** (§ Definitiva).
+- In the game simulation (`src/game-sim.ts`) the tower still grinds Papagato no further than 3.
+
+**To build**, in this order:
+
+1. **Crítico on the status screen**, and Velocidad out of the engine's turn order.
+2. `just fight-sim`: its targets moved with the new rules (`just fight-sim check` fails on
+   `platitos-sin-pensar`); they are set again with the balance, last. The smart bot does not know
+   how to value Acecho, Cacería nor Siete vidas yet (it never or hardly uses them), and with Papagato
+   at 4 or more it does worse on Lo Directo (98 % → 84 %) because of how it spends the fourth maná.
 
 Screenshots: `just screenshots papagato` (the ánima's sheet: look, cats, interface, each skill),
-`cats`, `cats-fight`, `duals`, `nuria-won`.
+`papagato-crece` (levels 4 to 7 and Siete vidas: Acecho, Cacería, the definitiva waking, its ward
+saving someone, the victory screen at 4, 5 and 7), `cats`, `cats-fight`, `duals`, `nuria-won`.
 
 ## For the balance, later
 

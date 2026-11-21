@@ -847,7 +847,8 @@ export class Playing {
       // The young first, up to the level the player wants before the fears (they come back, so there is always one).
       const young = () => this.hunters.filter(h => h.respawn && h.away <= 0 && this.encounterOf(h.id)?.startsWith('crias') && reach(h) < 250).sort((a, b) => reach(a) - reach(b))[0];
       const shared = () => Math.max(1, ...this.story.classes.filter(id => LEVELLED.includes(id)).map(id => this.story.storyLevels[id] ?? 1));
-      const wanted = Math.min(topOf('papagato'), this.player.seekLevel + Math.floor((this.tries.nuria ?? 0) / 2));
+      // Never past level 3 in the tower: what Papagato learns there ends with Zarpa en la llaga; its later levels come with the rest of the game.
+      const wanted = Math.min(topOf('papagato'), 3, this.player.seekLevel + Math.floor((this.tries.nuria ?? 0) / 2));
       for (let i = 0; i < 16 && shared() < wanted; i++) { const h = young(); if (!h) break; this.seek(h); if (this.at.environment !== MAZE) return; }
       for (let i = 0; i < this.player.grind; i++) { const h = young(); if (!h) break; this.seek(h); if (this.at.environment !== MAZE) return; }
       const near = this.hunters.filter(h => !h.respawn && h.away <= 0 && reach(h) < 40);

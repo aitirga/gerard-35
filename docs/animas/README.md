@@ -61,7 +61,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | --- | --- | --- | --- | --- | --- |
 | [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari; Análisis Parálisis, Ángulo exacto (2); Cardioide (3) | Playable |
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
-| [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Fuerza +2, Crítico +15 %, Espíritu −1 (built 2026-11-20, a first guess) | Haru and Yuki: physical blows, Sangrado and golpes críticos | Playable to level 3, redesigned 2026-11-20. Built: the golpe crítico, cuts that pile up, liquid blood, Ronroneo on one ally; Yuki se esconde and Las dos a la vez are out. Designed, not built: levels 4 to 7 (with the passive *Olor a sangre* at level 5: Crítico +20 % on whoever bleeds, sure on a wound of five) and Siete vidas |
+| [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Fuerza +2, Crítico +15 %, Espíritu −1 (built 2026-11-20, a first guess) | Haru and Yuki: physical blows, Sangrado and golpes críticos | **Playable whole** (built 2026-11-21), redesigned 2026-11-20: the golpe crítico, cuts that pile up, liquid blood, Ronroneo on one ally; seven levels, with *Olor a sangre* at 5 (Crítico +20 % on whoever bleeds, sure on a wound of five), *Acecho* at 6 and *Cacería* at 7; and *Siete vidas*, the second definitiva in the game |
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designing (2026-11-05): look, drone-HUD interface and Bip, his robot, first |
 | [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | Ostinato and Bombardeo orbital are playable. The full eco system and the later skills are pending. |
 | [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
@@ -235,8 +235,8 @@ one stronger.
 - Every ánima has its level table in its own folder.
 
 Built today (2026-11-20): levels go to seven (`MAX_LEVEL`, `LEVEL_XP` in `src/levels.ts`; the EXP of 4 to 7
-a first guess), and each shared ánima grows as far as it has been designed (`topOf`): Papagato to 3,
-Dadista to 7. Level 4 is Maná +1 (`MANA_LEVEL`, in `manaMax`). A level left empty on purpose is
+a first guess), and each shared ánima grows as far as it has been designed (`topOf`): Papagato,
+Dadista and Colorista to 7 (Papagato since 2026-11-21). Level 4 is Maná +1 (`MANA_LEVEL`, in `manaMax`). A level left empty on purpose is
 named in `EMPTY_LEVELS`. The castle caps them (built 2026-11-21, § Growth opens with the castle):
 4, 6 after Aurelià, 7 after Dirección (`levelCap` in `src/castle.ts`, `reachOf`). Matemágico and
 Tecnópata grow at the jar.
@@ -436,7 +436,7 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Ánima | Condition | Definitiva |
 | --- | --- | --- |
 | Matemágico | Three different reactions between elements in one fight | *Q.E.D.*: very high magic on every foe, of every element he has: each lays its status |
-| Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take |
+| Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take. **Built** (2026-11-21), the second |
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
 | Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
 | Colorista | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once. **Built** (2026-11-21), the first: § The one that is built |
@@ -458,6 +458,11 @@ how the next ones are:
 - **How it reads**: the moment it is met, *Definitiva · despierta* pops over the wearer
   (`effect.awoken`) and an icon stays on their plate until it is used.
 - The fight tester's *Sin límites* (`unbound`) has it awake from the start.
+- **Each definitiva's condition is its own** (`ultiReady` names them; `awakeUlti` is the one awake
+  for a fighter, for their plate). *Siete vidas* (Papagato, 2026-11-21) is the second: it wakes
+  with `wakeLives` when a wound of five or more is spent while someone standing wears Papagato
+  (`state.lives`), and its ward is one object shared by the party (`LivesWard`), spent in
+  `changeHealth` by the first blow, pulse or tick that would kill any of them.
 
 The castle's gate on buying it is built (§ Growth opens with the castle): it sleeps until Dirección
 has fallen. Not built: the line at the jar that says the condition.

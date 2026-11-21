@@ -5,7 +5,8 @@
 // .anima-banner, .anima-count).
 import { ITEMS, ITEM_KIND_LABELS, type ItemId } from './items';
 import { STORY_CARDS, STORY_HINTS } from './story';
-import { ANIMA_NAMES, SKILLS, type ClassId, type SkillId } from './battle';
+import { ANIMA_NAMES, MANA_LEVEL, PASSIVES, SKILLS, type ClassId, type SkillId } from './battle';
+import { LEVELLED, passivesAt } from './levels';
 import { CLASSES } from './classes';
 
 const ITEM_NOTE_MS = 4200;
@@ -182,9 +183,12 @@ export function createStoryUI(hud: HTMLElement) {
       el.className = 'story-note'; el.style.setProperty('--note-accent', CLASSES[classId].colour);
       el.innerHTML = `<span class="battle-kicker"></span><strong></strong><p></p>`;
       el.querySelector('span')!.textContent = `ÁNIMA · ${ANIMA_NAMES[classId].toUpperCase()} · NIVEL ${level}`;
-      const learned = SKILLS.filter(skill => skills.includes(skill.id));
-      el.querySelector('strong')!.textContent = learned.length ? `Aprende ${learned.map(skill => skill.name).join(' y ')}` : 'Se hace más fuerte';
-      el.querySelector('p')!.textContent = learned.map(skill => skill.description).join(' ');
+      // A level that teaches no skill says what it gives: a passive (Olor a sangre, Remolino) or, at level 4, a point of maná.
+      const learned = SKILLS.filter(skill => skills.includes(skill.id)), passives = passivesAt(classId, level);
+      const gifts = [...learned.map(skill => ({ name: skill.name, description: skill.description })), ...passives.map(id => ({ name: PASSIVES[id].name, description: PASSIVES[id].description ?? '' }))];
+      const mana = level === MANA_LEVEL && LEVELLED.includes(classId);
+      el.querySelector('strong')!.textContent = gifts.length ? `Aprende ${gifts.map(g => g.name).join(' y ')}` : mana ? 'Maná +1' : 'Se hace más fuerte';
+      el.querySelector('p')!.textContent = gifts.length ? gifts.map(g => g.description).join(' ') : mana ? `Sube en 1 el maná de ${ANIMA_NAMES[classId]}.` : '';
       notes.append(el);
       setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
     },

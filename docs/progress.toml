@@ -615,19 +615,20 @@ title = "Papagato: golpe crítico, sangrado que se acumula y sangre líquida"
 grep = "CRIT_RULES"
 in = "src/battle.ts"
 
-# Designed, not built: seven levels put the passive Olor a sangre (level 5, written) in reach.
+# Built 2026-11-21 (docs/animas/papagato/README.md § Skills per level): seven levels, Maná +1 at 4, Olor a sangre
+# at 5, Acecho at 6 (a blow that waits for the next round) and Cacería at 7 (a claw for each stack on the field).
 [[block.item]]
 title = "Papagato: niveles 4 a 7 (Maná +1, Olor a sangre, Acecho, Cacería)"
-priority = "animas"
-note = "Diseñado en docs/animas/papagato. Falta Acecho (nivel 6: se carga un turno y sale al empezar la ronda siguiente, crítico seguro), Cacería (nivel 7: un zarpazo por cada sangrado del campo), el Maná +1 del nivel 4, y que llegue al nivel 5 para Olor a sangre, que ya está escrito."
+note = "Hecho: siete niveles. Acecho se carga un turno y sale al empezar la ronda siguiente, crítico seguro; Cacería da un zarpazo por cada sangrado del campo y lo gasta. Sus flags papagato-4 a papagato-7 están en el picker."
 grep = "id: 'acecho'"
 in = "src/battle.ts"
 
+# Built 2026-11-21 (docs/animas/papagato/README.md § Definitiva): bought at the jar, it wakes once a wound of five or
+# more is spent while Papagato is worn; Haru cuts every foe and Yuki's ward turns the next killing blow into a cure.
 [[block.item]]
 title = "Papagato: la definitiva Siete vidas"
-priority = "animas"
-note = "La definitiva de Papagato (papagato/README § Definitiva), con su condición para despertar en el bote."
-grep = "siete-vidas"
+note = "Hecho: se compra en el bote y despierta al gastar una herida de cinco o más con Papagato puesto. Haru corta a todos; el siguiente golpe que fuera a tumbar a alguien del equipo lo cura."
+grep = "id: 'siete-vidas'"
 in = "src/battle.ts"
 
 [[block.item]]

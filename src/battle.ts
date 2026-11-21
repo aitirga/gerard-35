@@ -93,6 +93,15 @@ export const SKILLS = [
   { id: 'ronroneo', name: 'Ronroneo', cost: 2, side: 'allies', power: 16, kind: 'heal', regen: 'sanacion', instant: true, cleanse: 'mental', level: 2, description: 'Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos. Quita sus efectos de estado mentales.', class: 'papagato' },
   // Zarpa en la llaga: a blow that spends Sangrado (`wound`); this one opens the wound twice as far (`deep`).
   { id: 'llaga', name: 'Zarpa en la llaga', cost: 2, side: 'foes', power: 26, kind: 'physical', deep: true, level: 3, description: 'Daño físico medio a un enemigo. Gasta el sangrado: cada uno suma el doble de daño.', class: 'papagato' },
+  // Acecho: Haru crouches and nothing happens this turn (`stalk`, Combatant.stalk). As the next round starts, before
+  // anyone chooses, she lands on the foe picked (`pounce`): a golpe crítico for sure, that spends its wound.
+  { id: 'acecho', name: 'Acecho', cost: 2, side: 'foes', power: 38, kind: 'physical', stalk: true, level: 6, description: 'Daño físico alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro.', class: 'papagato' },
+  // Cacería: the whole field's blood at once (`hunt`). A claw for each stack on each foe that bleeds, none with the
+  // wound's bonus (the count is the bonus); the claws on a wound of five or more are críticos with Olor a sangre.
+  { id: 'caceria', name: 'Cacería', cost: 3, side: 'all-foes', power: 10, kind: 'physical', hunt: true, level: 7, description: 'Daño físico leve a todos los enemigos. Golpea una vez por cada sangrado que haya en el campo, repartido entre quienes sangran. Gasta el sangrado.', class: 'papagato' },
+  // Siete vidas, its definitiva (`ulti`): bought at the jar, it wakes in a fight once a wound of five or more is spent
+  // (`livesReady`). Haru goes through every foe and cuts; Yuki walks among the party and stays (`lives`, LivesWard).
+  { id: 'siete-vidas', name: 'Siete vidas', cost: 0, side: 'all-foes', power: 14, kind: 'physical', bleed: 2, lives: true, ulti: true, node: true, class: 'papagato', description: 'Daño físico leve a todos los enemigos. Añade sangrado. El próximo golpe que fuera a matar a alguien del equipo no lo mata: lo cura.' },
   // Tecnópata's skills are Bip's: Aitor points, Bip does it (docs/animas/tecnopata/). Its ánima does
   // not level: the two rays are there from the start, the rest are nodes of its tree (`node`).
   // Rayo de energía: a beam; what is running out on the foe by the clock (TIMED: a fire, the smoke,
@@ -758,6 +767,14 @@ export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6
  */
 export const BITS = { share: 1, rounds: 2, redundancia: 3 };
 export interface BitShield { hp: number; max: number; cap: number; until: number; share: number; broken?: boolean; hot?: boolean }
+/**
+ * Siete vidas' ward (docs/animas/papagato/README.md § Definitiva): one object shared by every ally
+ * it covers. The first blow that would kill any of them, a pulse too, cures them instead what it was
+ * going to take (never past their PV), and spends it for everyone (`changeHealth`).
+ */
+export interface LivesWard { spent?: { target: string; blow: number; amount: number } }
+/** Whether `c` is still under Siete vidas' ward. */
+export const warded = (c: Combatant) => !!c.lives && !c.lives.spent;
 /** The shield standing in front of the party, if any. */
 export const bitsOf = (state: BattleState) => state.allies.find(a => a.bits && a.bits.hp > 0 && !a.bits.broken)?.bits;
 /** Under a bit dome a cure can still patch (`changeHealth`). */
@@ -795,6 +812,13 @@ export type PowderTurn = typeof POWDER_TURNS[number];
 /** Whether Fin de fiesta is awake in this fight: bought, the powder has been all three things while Colorista was worn, and not used yet. */
 export const finaleReady = (state: BattleState) => skillKnown('fin-de-fiesta', state.levels, state.improved)
   && (state.unbound || (!state.finale?.used && POWDER_TURNS.every(id => state.finale?.seen.includes(id))));
+/** Whether Siete vidas is awake in this fight: bought, a wound of five stacks or more spent while Papagato was worn (`wakeLives`), and not used yet. */
+export const livesReady = (state: BattleState) => skillKnown('siete-vidas', state.levels, state.improved)
+  && (state.unbound || (!!state.lives?.woke && !state.lives.used));
+/** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : false;
+/** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
+export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whoever wears Colorista with Remolino learned, standing. */
 export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
 /** What the poison and the shards added to the blows of the action being resolved; `amplify` hands it to its effect. */
@@ -851,7 +875,9 @@ export interface Timed {
   until?: number;
 }
 /** What one pulse of a timed status did. */
-export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean; mended?: number }
+export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean; mended?: number; saved?: Saved }
+/** Siete vidas' ward went off on a pulse or a round's tick: what it would have taken (`blow`), and the cure it gave instead. */
+export interface Saved { blow: number; amount: number }
 /** Level in roman numerals, as the fight shows it ("Quemado II"). */
 export const roman = (level: number) => ['I', 'II', 'III', 'IV', 'V'][level - 1] ?? String(level);
 /** How much one pulse of `id` at `level` takes from someone with `maxHp` PV. */
@@ -934,6 +960,10 @@ export interface Combatant {
   virusSeen?: { timed: Partial<Record<TimedId, Timed>>; statuses: Partial<Record<StatusId, number>> };
   fuse?: string; // The caster whose fire is in the paint.
   charge?: { dual: DualId; striker: string };
+  /** Acecho: Haru crouched for this wearer, the foe she waits on; she lands as the next round starts (`pounce`). */
+  stalk?: { target: string };
+  /** Siete vidas: Yuki among the party, the same ward on every ally it covers, until a blow that would kill one of them (`LivesWard`). */
+  lives?: LivesWard;
   /** The round this fighter sits out (Explosión: Bip is putting itself back together). */
   out?: number;
   /** In Shock (a bolt found them wet): their next turn is lost, and it is gone with it. Shown as a status. */
@@ -1100,6 +1130,8 @@ export interface BattleState {
   usedDuals?: DualId[];
   /** What the powder has been in this fight while Colorista was worn (`POWDER_TURNS`), and whether Fin de fiesta went off already. */
   finale?: { seen: PowderTurn[]; used?: true };
+  /** Siete vidas in this fight: whether a wound of five or more has been spent while Papagato was worn (`woke`), and whether it went off. */
+  lives?: { woke?: true; used?: true };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1240,7 +1272,7 @@ const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.clas
 export function skillsFor(state: BattleState, actor: Combatant) {
   // A die's faces are not skills of the list: Tirar dado reaches them (`FACE_SKILLS`).
   // …and the meteor is one row: the size it comes in now.
-  const known = SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)) && (!('ulti' in skill) || finaleReady(state)));
+  const known = SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)) && (!('ulti' in skill) || ultiReady(state, skill.id)));
   // An awake definitiva heads the list: it is there for one use, and not below the fold.
   return [...known.filter(skill => 'ulti' in skill), ...known.filter(skill => !('ulti' in skill))];
 }
@@ -1350,7 +1382,7 @@ export function addStatus(c: Combatant, id: StatusId, count = 1) {
   return next;
 }
 /** What happens to one fighter's statuses at the end of a round. */
-export interface StatusTick { target: string; status: StatusId; amount: number; stacks: number }
+export interface StatusTick { target: string; status: StatusId; amount: number; stacks: number; saved?: Saved }
 export interface BattleEffect {
   kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number };
   /** A cure: `amount` is the PV it gave back to `target`. */
@@ -1384,9 +1416,23 @@ export interface BattleEffect {
   /** Whose stats this action changed, and which (the last layer off an onion breaks its defence). */
   stats?: StatChange[];
   /** A skill that reaches every foe: what it did to each one (`target` is the first). */
-  hits?: { target: string; amount: number; status?: { id: StatusId; stacks: number }; peeled?: number; bled?: number; crit?: true; weakSpot?: true; burn?: { id: TimedId; level: number }; smoked?: true; affinity?: Affinity }[];
+  hits?: { target: string; amount: number; status?: { id: StatusId; stacks: number }; peeled?: number; bled?: number; drained?: number; crit?: true; weakSpot?: true; burn?: { id: TimedId; level: number }; smoked?: true; affinity?: Affinity }[];
   /** Sangrado stacks a physical blow spent on its target, each one making it land harder (`woundScale`). */
   bled?: number;
+  /**
+   * Papagato's claws one after another, in the order they land, each on the foe it found and with its
+   * own golpe crítico: Cacería's (a claw for each stack; `hits[].drained` is the wound each foe lost) and
+   * Siete vidas' (one on each foe).
+   */
+  hunt?: { target: string; amount: number; crit?: true }[];
+  /** Acecho: Haru crouched for the wearer, waiting on this foe; she lands as the next round starts. */
+  stalking?: string;
+  /** Acecho landing as the round starts (news, `takeNews`): Haru's pounce on `target`. */
+  pounce?: true;
+  /** Siete vidas: the allies Yuki's ward now covers. */
+  ward?: string[];
+  /** Siete vidas' ward went off: the blow that would have killed `target` (`blow` PV) cured them `amount` instead. */
+  lives?: { target: string; blow: number; amount: number };
   /** The blow, or one strike of it at least, was a golpe crítico (CRIT_RULES); `crits` says which strikes of a flurry. */
   crit?: boolean;
   crits?: boolean[];
@@ -1563,6 +1609,14 @@ function changeHealth(target: Combatant, delta: number, pulse = false) {
     const mended = Math.min(Math.max(0, delta - (target.maxHp - target.hp)), wall.cap - wall.hp);
     if (mended > 0) { wall.hp += mended; wallTook.mended += mended; }
   }
+  // Siete vidas: the blow that would kill them (whatever is left of it, a pulse too) cures them that much instead, once for the whole party.
+  if (target.lives && !target.lives.spent && delta < 0 && target.hp > 0 && target.hp + delta <= 0) {
+    const cure = Math.min(-delta, target.maxHp - target.hp);
+    target.hp += cure;
+    target.lives.spent = { target: target.id, blow: -delta, amount: cure };
+    livesTook.push(target.lives.spent);
+    return 0;
+  }
   const result = adjustResource({ current: target.hp, max: target.maxHp }, delta, false);
   target.hp = result.resource.current;
   // Whoever falls loses the Racha.
@@ -1571,6 +1625,21 @@ function changeHealth(target: Combatant, delta: number, pulse = false) {
 }
 /** What the bit shield took during the action being resolved (`changeHealth`), for its effect (`wallSay`). */
 const wallTook = { took: 0, broke: false, mended: 0 };
+/** Siete vidas going off during the action being resolved (`changeHealth`): whom it saved, for its effect (`livesSay`). */
+const livesTook: { target: string; blow: number; amount: number }[] = [];
+/** Hands Siete vidas going off in this action to `effect`, and says so. */
+function livesSay(state: BattleState, effect: BattleEffect) {
+  const saved = livesTook.splice(0)[0];
+  if (!saved) return;
+  effect.lives = saved;
+  const who = state.allies.find(a => a.id === saved.target);
+  if (who && state.phase !== 'lost') state.message += ` ¡Siete vidas! El golpe no tumba a ${who.name}: +${saved.amount} PV.`;
+}
+/** Siete vidas going off on a pulse or a tick (no action to carry it): what it saved (the ward's own record), taken off the list. */
+const livesOn = (id: string): Saved | undefined => {
+  const i = livesTook.findIndex(s => s.target === id);
+  return i < 0 ? undefined : livesTook.splice(i, 1)[0];
+};
 /** The allies whose cortina a blow broke during the action being resolved (`changeHealth`), for its effect (`cortinaSay`). */
 const screenTook: string[] = [];
 /** A cortina stands in front of `ally`; one already there starts over. */
@@ -2069,6 +2138,8 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if (ability.kind === 'boost') return boostRounds(state, ability.id) ? [] : state.allies.filter(a => a.hp > 0);
   // Nor a debuff on a foe that still carries its mark.
   if (ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0 && !markRounds(state, f, ability.id));
+  // Cacería hunts whoever bleeds: with no blood on the field it has nobody to reach.
+  if ('hunt' in ability) return state.foes.filter(f => f.hp > 0 && stacks(f, 'sangrado') > 0);
   return state.foes.filter(f => f.hp > 0);
 }
 /** Whether a skill needs a target picked, or simply happens (Análisis Parálisis reaches the whole party, Factor común every foe). */
@@ -2142,9 +2213,20 @@ function critical(state: BattleState, actor: Combatant, target: Combatant, sure 
 }
 /** Whether spending `bled` stacks is a sure crítico (Olor a sangre), and says so over whoever wears it. */
 function sureCrit(state: BattleState, bled: number, effect: BattleEffect) {
+  if (bled >= SCENT.sure) wakeLives(state, effect);
   const wearer = bled >= SCENT.sure ? scentOf(state) : undefined;
   if (wearer) note(effect, 'olor-a-sangre', wearer);
   return !!wearer;
+}
+/**
+ * A wound of five stacks or more spent, by anyone, while someone standing wears Papagato: Siete vidas
+ * wakes for the rest of the fight (`livesReady`), and the action that woke it says so (`awoken`).
+ */
+function wakeLives(state: BattleState, effect: BattleEffect) {
+  if (!state.allies.some(a => a.hp > 0 && a.classId === 'papagato')) return;
+  const was = livesReady(state);
+  (state.lives ??= {}).woke = true;
+  if (!was && livesReady(state) && !state.unbound) effect.awoken = 'siete-vidas';
 }
 /** What kind of blow lands: a dual counts as every kind against a foe's kind-based rules. */
 type Blow = 'physical' | 'magic' | 'dual';
@@ -2474,7 +2556,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
-  dug.length = 0; screenTook.length = 0;
+  dug.length = 0; screenTook.length = 0; livesTook.length = 0;
   // Tirar dado: the die spent decides the move, its face's own (`FACE_SKILLS`); a blank repeats the last face spent.
   let cast: number | undefined, paid: number | undefined;
   const streak = rachaOf(actor);
@@ -2629,6 +2711,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.marks = { ...target.marks, [ability.id]: { amount: ability.power, stats: [...ability.stats], until: state.round + BOOST_ROUNDS - 1 } };
     effect.stats = [{ target: target.id, way: 'down', stats: [...ability.stats] }];
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ${statNames(ability.stats)} −${ability.power} durante ${BOOST_ROUNDS} rondas.`;
+  } else if (ability && 'stalk' in ability && target) {
+    // Acecho: nothing lands this turn. The wearer's cat crouches on the foe picked, and lands as the next round starts (`pounce`).
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.stalking = target.id;
+    actor.stalk = { target: target.id };
+    state.message = `${actor.name} usa ${ability.name} contra ${target.name}. Saldrá al empezar la siguiente ronda.`;
+    if (effect.interposed) state.message += ` ${target.name} se ha puesto delante.`;
   } else if (everyone && annulled(state, actor, elementOf(ability), ability?.kind)) {
     // Fran's salon: the light eats a blow on everyone of its element too.
     if (cast === undefined && paid === undefined) spendSecondary(actor, ability!.cost);
@@ -2663,7 +2751,38 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (spent) { actor.racha = 0; effect.starred = spent; }
     state.message = `${actor.name} usa ${ability!.name}. Caen ${effect.rain.length} dados de luz: −${effect.amount} PV entre todos.${spent ? ' La racha empieza de cero.' : ''}`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
-  } else if (everyone && 'ulti' in ability!) {
+  } else if (everyone && 'hunt' in ability!) {
+    // Cacería: a claw for each stack on each foe that bleeds, one foe after another (`targets`: only they). None lands with
+    // the wound's bonus: the count is the bonus. With Olor a sangre the claws on a wound of five or more are golpes
+    // críticos for sure (and spending it wakes Siete vidas); the rest roll. Each claw peels a layer. It spends the wound.
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target!.id;
+    const hunt: NonNullable<BattleEffect['hunt']> = effect.hunt = [];
+    effect.hits = targets.map(foe => {
+      const drained = stacks(foe, 'sangrado'), sure = sureCrit(state, drained, effect), layered = foe.layers ?? 0;
+      let amount = 0, crit = false, marked = false;
+      for (let i = 0; i < drained && foe.hp > 0; i++) {
+        const blocked = foe.shell || singing(state, foe), weak = weakScale(state, foe);
+        const hard = !blocked && critical(state, actor, foe, sure);
+        const dealt = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * (1 + (hard ? CRIT_RULES.bonus : 0)) * weak * affinityScale(foe, undefined), 'physical'));
+        if (weak > 1 && dealt > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; marked = true; }
+        spendShield(state, foe, dealt, effect);
+        if (foe.layers && !blocked && !--foe.layers) bare(foe);
+        amount += dealt;
+        if (hard && dealt > 0) { crit = true; effect.crit = true; }
+        hunt.push({ target: foe.id, amount: dealt, ...hard && dealt > 0 ? { crit: true as const } : {} });
+      }
+      delete foe.statuses!.sangrado;
+      const peeled = layered - (foe.layers ?? 0);
+      return { target: foe.id, amount, drained, ...crit ? { crit: true as const } : {}, ...peeled ? { peeled } : {}, ...marked ? { weakSpot: true as const } : {} };
+    });
+    effect.amount = hunt.reduce((sum, claw) => sum + claw.amount, 0);
+    const broken = effect.hits.filter(h => h.peeled && !targets.find(foe => foe.id === h.target)?.layers && targets.find(foe => foe.id === h.target)!.hp > 0);
+    if (broken.length) effect.stats = broken.map(h => ({ target: h.target, way: 'down' as const, stats: ['defensa' as const] }));
+    state.message = `${actor.name} usa ${ability.name}. ${hunt.length === 1 ? 'Un zarpazo' : `${hunt.length} zarpazos`}: −${effect.amount} PV entre ${targets.length === 1 ? targets[0].name : 'quienes sangraban'}. La sangre se gasta.`;
+    if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    if (effect.crit) state.message += ' ¡Golpe crítico!';
+    for (const foe of targets) if ((effect.hits.find(h => h.target === foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
+  } else if (everyone && skill === 'fin-de-fiesta') {
     // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.
     effect.skill = skill; effect.target = target!.id;
     (state.finale ??= { seen: [] }).used = true;
@@ -2806,6 +2925,16 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message += powderSaid;
     // Combustión: a physical blow on everyone sets off each fire at IV it finds.
     if (ability!.kind === 'physical') for (const foe of targets) if ((effect.hits.find(h => h.target === foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
+    // Siete vidas: Haru's claw went through every foe, one after another (`hunt`, for the fight to land them so);
+    // Yuki walks among the party and stays: one ward on all of them, until a blow that would kill one (`changeHealth`).
+    if ('lives' in ability!) {
+      (state.lives ??= {}).used = true;
+      const ward: LivesWard = {};
+      for (const ally of state.allies) ally.lives = ward;
+      effect.ward = state.allies.filter(a => a.hp > 0).map(a => a.id);
+      effect.hunt = effect.hits.map(h => ({ target: h.target, amount: h.amount, ...h.crit ? { crit: true as const } : {} }));
+      state.message += ' Hasta el final del combate, el próximo golpe que fuera a tumbar a alguien del equipo lo curará.';
+    }
   } else if (target) {
     // Dadista's die was spent already (`spendDie`): its maná with it.
     if (action === 'skill') { if (cast === undefined && paid === undefined) spendSecondary(actor, ability!.cost); effect.skill = skill; }
@@ -2954,6 +3083,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   // In Diverge, El que no converge comes out of the blow that converged it soaked: the next bolt is Conducción.
   if (effect.converged) for (const f of state.foes) if (f.kind === 'no-converge' && f.diverged && f.hp > 0) soak(f);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
+  livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
   amplify(effect); checkEye(state, effect);
   if (fallen(state)) return effect;
@@ -3273,6 +3403,48 @@ function release(state: BattleState, holder: Combatant) {
   return said;
 }
 /**
+ * Acecho lands (`stalk`) as the round starts, before anyone chooses: the wearer's cat on the foe she
+ * waited on, or, if it fell, on whoever standing bleeds most. A high physical blow with the wearer's
+ * stats, a golpe crítico for sure, that spends the foe's wound (it adds none). Its wearer fallen, or
+ * out of Papagato by now: the moment is lost and nothing happens. Kept as news (`takeNews`).
+ */
+function pounce(state: BattleState, holder: Combatant) {
+  const stalk = holder.stalk!;
+  delete holder.stalk;
+  const ability = SKILLS.find(s => s.id === 'acecho')!;
+  const standing = state.foes.filter(f => f.hp > 0);
+  const target = standing.find(f => f.id === stalk.target) ?? [...standing].sort((a, b) => stacks(b, 'sangrado') - stacks(a, 'sangrado'))[0];
+  if (holder.hp <= 0 || holder.classId !== ability.class || !target) return;
+  dug.length = 0; screenTook.length = 0;
+  const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true };
+  let said: string;
+  const light = annulled(state, holder, undefined, 'physical');
+  if (light) { effect.amount = 0; effect.annulled = light; said = `¡${ability.name}! ${annulledText(light)}`; }
+  else if (target.shell) { effect.amount = 0; effect.swallowed = true; said = `¡${ability.name}! El chicle de ${target.name} se lo traga.`; }
+  else if (singing(state, target)) { effect.amount = 0; effect.sung = true; said = `¡${ability.name}! Atraviesa a ${target.name} mientras canta.`; }
+  else {
+    const layered = target.layers ?? 0, { bled, scale } = wound(target, true, 'acecho'), weak = weakScale(state, target), chord = chordScale(state, holder, target);
+    // For sure, whatever the foe has: spending a wound of five or more still says Olor a sangre, and wakes Siete vidas.
+    sureCrit(state, bled, effect);
+    effect.crit = true;
+    effect.amount = hurt(state, target, fearDamage(state, target, strike(state, holder, target, ability) * (scale + CRIT_RULES.bonus) * weak * chord * affinityScale(target, undefined), 'physical'));
+    if (target.layers && !--target.layers) bare(target);
+    if (bled) { delete target.statuses!.sangrado; effect.bled = bled; }
+    landed(state, holder, target, effect.amount, chord, effect);
+    const spent = weak > 1 && effect.amount > 0;
+    if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
+    spendShield(state, target, effect.amount, effect);
+    const peeled = layered - (target.layers ?? 0);
+    if (peeled) { effect.peeled = peeled; if (!target.layers && target.hp > 0) effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }]; }
+    said = `¡${ability.name}! Cae sobre ${target.name}: −${effect.amount} PV.${spent ? ' ¡Punto débil!' : ''}${bled ? ` La herida se abre: +${Math.round((scale - 1) * 100)} %.` : ''} ¡Golpe crítico!`;
+    iterate(state, target, undefined, effect);
+    if (effect.amount > 0) combust(state, holder, target, effect);
+  }
+  spread(state, effect); amplify(effect); checkEye(state, effect);
+  (state.news ??= []).push(effect);
+  return said;
+}
+/**
  * Queues `allyId`'s choice ahead (or clears it, with `null`): only an ally later in the round than
  * the active one, standing, not spent, wearing ánimas, in the party's turn; a skill they have on now
  * and can pay for, aimed at someone it can reach. Returns whether it took.
@@ -3341,10 +3513,10 @@ export function takeNews(state: BattleState): BattleEffect[] {
 export function enemyAct(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   if (state.phase !== 'enemy' || state.enemyActions.includes(id)) return;
   const protectedAlly = state.allies.find(a => a.suture);
-  screenTook.length = 0;
+  screenTook.length = 0; livesTook.length = 0;
   const effect = enemyMove(state, id, targetId);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
-  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(state, effect); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; screenTook.length = 0; }
+  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); livesSay(state, effect); wallSay(state, effect); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; screenTook.length = 0; livesTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);
@@ -4927,7 +5099,9 @@ export function nextRound(state: BattleState): StatusTick[] {
       const fed = id === 'sangrado' && c.cutRound === state.round;
       const left = c.hp > 0 ? Math.max(0, count - (fed ? 0 : spec.decay)) : 0;
       if (left) c.statuses[id] = left; else delete c.statuses[id];
-      if (amount) ticks.push({ target: c.id, status: id, amount, stacks: left });
+      // Siete vidas took the tick that would have killed them: it cured them instead.
+      const saved = foeSide ? undefined : livesOn(c.id);
+      if (amount || saved) ticks.push({ target: c.id, status: id, amount, stacks: left, ...saved ? { saved } : {} });
     }
   }
   checkEye(state);
@@ -4979,6 +5153,9 @@ export function nextRound(state: BattleState): StatusTick[] {
   // A dual charged last round goes off now, before anyone chooses (Rayo solar).
   const released = state.allies.filter(a => a.charge).map(a => release(state, a)).filter(Boolean);
   if (released.length) state.message = `${released.join(' ')} ${state.message}`;
+  // …and so does a cat that crouched last round (Acecho).
+  const pounced = state.allies.filter(a => a.stalk).map(a => pounce(state, a)).filter(Boolean);
+  if (pounced.length) state.message = `${pounced.join(' ')} ${state.message}`;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); return ticks; }
   // Nobody left to choose this round: the foes go again.
   if (state.active < 0) { state.active = 0; state.phase = 'enemy'; }
@@ -5006,7 +5183,10 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       // A cure's pulse (Sanación) gives PV back, never past the most.
       if (TIMED[id].heal) { const healed = changeHealth(c, amount), mended = wallMended(); pulses.push({ target: c.id, status: id, level: on.level, amount: healed, heal: true, ...mended ? { mended } : {} }); }
       // A fire on La Voz burns on, but while she sings it takes nothing: no pulse to show.
-      else if (!(foeSide && singing(state, c))) pulses.push({ target: c.id, status: id, level: on.level, amount: foeSide ? hurt(state, c, amount) : changeHealth(c, -amount, true) });
+      else if (!(foeSide && singing(state, c))) {
+        const dealt = foeSide ? hurt(state, c, amount) : changeHealth(c, -amount, true), saved = foeSide ? undefined : livesOn(c.id);
+        pulses.push({ target: c.id, status: id, level: on.level, amount: dealt, ...saved ? { saved } : {} });
+      }
       // Vulcano's volcano: each beat raises the fire on whoever it stands under (a wet one steams instead).
       if (id === 'volcan' && foeSide && c.hp > 0 && !c.layers) {
         if (c.timed?.mojado) steam(c);

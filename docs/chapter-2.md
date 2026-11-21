@@ -447,7 +447,7 @@ A proposal, to be decided with the story (`docs/lore.md` has the theme):
 - `src/story.ts`: the flags and the rules, for both chapters. Chapter 2's flags: `tv-news`,
   `metro`, `rec-comtal`, `palace-tried`, `clue-r4`, and one `anima-<friend>` per friend.
   `party`, `battleParty` and `palaceGuards` read the ánimas from them. Nuria's mission adds
-  `cardedeu`, `nuria-uri`, `papagato` (and its levels `papagato-2`, `papagato-3`), one
+  `cardedeu`, `nuria-uri`, `papagato` (and its levels `papagato-2` to `papagato-7`), one
   `luz-<person>` per light; `jar`, `ecos` and `catsAtHome` read them. The mission itself is never saved (`story.nuria`).
 - `src/friends/nuria.ts`: Nuria's mission (places, lines, fears); `src/tower.ts` and
   `src/tower-scene.ts`: Uri's tower; `src/chasers.ts`: the fears that hunt it; `src/fears.ts`:
