@@ -1786,6 +1786,11 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-building-shadow { fill: #3b30201f; }
 .map-building { fill: #d3c6ad; stroke: #a8987a; stroke-linejoin: round; }
 .map-street { fill: #6a5d49; font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: .12em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #fbf8f0; stroke-width: .3px; stroke-linejoin: round; }
+/* Station entrances: the totem's sign (TMB's red M, Rodalies' orange R, the long line's colour), and its name. */
+.map-station-halo { fill: #fbf8f0; stroke: #3b2a2055; stroke-width: .06; }
+.map-station-sign { fill: var(--station); }
+.map-station-letter { fill: #fff; font-family: 'Manrope', sans-serif; font-weight: 900; text-anchor: middle; dominant-baseline: central; }
+.map-station-name { fill: #3b2a20; font-family: 'Manrope', sans-serif; font-weight: 800; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: #fbf8f0; stroke-linejoin: round; }
 /* The party: their faces ringed in the colour of the ánima they wear; Gerard's ring breathes. */
 .map-marker { --marker: var(--ui-gold); }
 .map-marker-ring { fill: none; stroke: var(--marker); stroke-width: calc(var(--marker-stroke, .18) * 1px); }

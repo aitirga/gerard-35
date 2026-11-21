@@ -1,6 +1,7 @@
 import type { Environment, Room } from './environments';
 import type { GeoPoint, GeoScene } from './geo';
 import type { Cell } from './movement';
+import { STATIONS, linesAt, stationOf } from './transit.ts';
 
 /**
  * The local map (M): where the party stands in the place, never what there is to do (AGENTS.md).
@@ -238,6 +239,31 @@ function geoMap(environment: Environment, scene: GeoScene) {
   return { body, bounds, kind: 'geo' as const, labels: (_avoid: Spot[]) => '' };
 }
 
+/**
+ * The way down to the trains: each station entrance of the place (an interaction `station-<id>`) as
+ * the sign on its totem, TMB's red diamond with its M, Rodalies' orange one with its R, and the long
+ * line's own colour (Alegia's station back to Barcelona), with the station's name under it. It sits on
+ * the stair when the entrance has one, else on the cell the station is used from.
+ */
+function stationSigns(environment: Environment, unit: number) {
+  return environment.interactions.map(interaction => {
+    const id = stationOf(interaction.id);
+    if (!id) return '';
+    const station = STATIONS[id], line = linesAt(id)[0];
+    const metro = !line || line.kind === 'metro';
+    const colour = metro ? '#d6252f' : line.id.startsWith('r') ? '#e57d1e' : line.colour;
+    const letter = metro ? 'M' : 'R';
+    const s = interaction.step;
+    const x = n(s ? s.x + s.w / 2 : interaction.cell.x + 0.5), z = n(s ? s.z + s.d / 2 : interaction.cell.z + 0.5);
+    const half = n(unit * 0.72);
+    return `<g class="map-station" data-station="${id}" transform="translate(${x} ${z})" style="--station:${colour}"><title>${escape(`${metro ? 'Metro' : 'Estación'}: ${station.name}`)}</title>`
+      + `<rect class="map-station-halo" x="${-half}" y="${-half}" width="${n(half * 2)}" height="${n(half * 2)}" rx="${n(unit * 0.12)}" transform="rotate(45) scale(1.22)"/>`
+      + `<rect class="map-station-sign" x="${-half}" y="${-half}" width="${n(half * 2)}" height="${n(half * 2)}" rx="${n(unit * 0.1)}" transform="rotate(45)"/>`
+      + `<text class="map-station-letter" font-size="${n(unit * 1.05)}">${letter}</text>`
+      + `<text class="map-station-name" y="${n(unit * 1.95)}" font-size="${n(unit * 0.68)}" stroke-width="${n(unit * 0.22)}">${escape(station.name)}</text></g>`;
+  }).join('');
+}
+
 /** A face in a ring (their initial without a portrait); Gerard's pulses. */
 function marker(m: MapMarker, cls: string, unit: number) {
   const id = `map-face-${++drawn}`, x = n(m.cell.x + 0.5), z = n(m.cell.z + 0.5), r = n(unit), inner = n(unit * 0.84);
@@ -285,7 +311,7 @@ export function renderWorldMap(environment: Environment, player: Cell, partner?:
   const room = roomAt(environment, player);
   const label = `Mapa de ${escape(environment.name)}. ${escape(options.player?.name ?? 'Gerard')}${room ? ` en ${escape(room)}` : ''}.`;
   return `<svg class="world-map" data-map="${map.kind}"${cropped ? ` data-cropped="${cropped}"` : ''} viewBox="${n(view.x)} ${n(view.z)} ${n(view.w)} ${n(view.d)}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${label}">
-    ${map.body}${map.labels(avoid)}
+    ${map.body}${map.labels(avoid)}${stationSigns(environment, unit)}
     ${mate ? marker(mate, 'map-partner', unit * 0.82) : ''}
     ${marker({ name: 'Gerard', ...options.player, cell: player }, 'map-player', unit)}
   </svg>`;

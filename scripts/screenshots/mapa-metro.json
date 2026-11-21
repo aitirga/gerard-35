@@ -1,0 +1,106 @@
+{
+  "title": "Bocas de metro en el mapa local",
+  "description": "M en un lugar real marca cada entrada a los trenes donde está: el rombo rojo del metro con su M, el naranja de Rodalies con su R y, en Alegia, la estación de la línea larga que vuelve a Barcelona, con el nombre de la estación debajo.",
+  "steps": [
+    {
+      "open": "/?story=got-backpack"
+    },
+    {
+      "until": "!document.querySelector('#hud[data-dialogue]')"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        205,
+        58
+      ],
+      "settle": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "eval": "if (!document.querySelector('.map-station[data-station=fabra-i-puig]')) throw Error('Fabra i Puig missing from the local map');"
+    },
+    {
+      "shot": "meridiana",
+      "delay": 1500,
+      "caption": "La Meridiana: la boca de Fabra i Puig (L1) donde está, con su M roja."
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "alegia",
+      "cell": [
+        30,
+        111
+      ],
+      "settle": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "eval": "if (!document.querySelector('.map-station[data-station=alegia]')) throw Error('Alegia station missing from the local map');"
+    },
+    {
+      "shot": "alegia",
+      "delay": 1500,
+      "caption": "Alegia: la estación del tren de vuelta a Barcelona, al final de la calle."
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "placa-espanya",
+      "cell": [
+        80,
+        70
+      ],
+      "settle": 2500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "shot": "espanya",
+      "delay": 1500,
+      "caption": "Plaça d'Espanya: la boca de Espanya (L1 L3)."
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "teleport": "cardedeu",
+      "cell": [
+        168,
+        190
+      ],
+      "settle": 1500
+    },
+    {
+      "press": "KeyM"
+    },
+    {
+      "until": "document.querySelector('#exploration-panel').dataset.mapLevel === 'local'"
+    },
+    {
+      "eval": "if (!document.querySelector('.map-station[data-station=cardedeu]')) throw Error('Cardedeu station missing from the local map');"
+    },
+    {
+      "shot": "cardedeu",
+      "delay": 400,
+      "caption": "Cardedeu: la estación de Rodalies (R4), con su R naranja."
+    }
+  ]
+}
