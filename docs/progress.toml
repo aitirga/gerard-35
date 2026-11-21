@@ -706,7 +706,7 @@ grep = "id: 'golpe-de-ariete'"
 in = "src/battle.ts"
 
 [[block.item]]
-title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se rompe a golpes)"
+title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se derrite en vivo y se rompe a golpes)"
 grep = "id: 'bajo-cero'"
 in = "src/battle.ts"
 

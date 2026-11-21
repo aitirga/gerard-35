@@ -416,7 +416,7 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 | Tecnópata | Three different clock statuses running on the field at once | *Enjambre*: Bip comes apart over the foes: high magic on all, and every clock on the field starts over |
 | Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
 | Colorista | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado (proposal 2026-11-20) | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once |
-| Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, a turn a mark of its own. Frozen they do not act and take little; breaking the ice with blows lands a very large one, larger the sooner. Designed; its look built |
+| Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, 20 s a mark of its own, melting live. Frozen they do not act and take little; breaking the ice with four to eight blows lands a very large one, larger the sooner. Designed; its look built |
 | Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
 
 ## Combined skills
@@ -733,7 +733,7 @@ notch for each pulse to come.
 ### Hundido (sunk)
 
 Proposal 2026-11-20, with Agua contenida (Aitor: at three of water it sinks them and they start
-losing a share of their PV over time). Nothing built.
+losing a share of their PV over time, of the PV they have in all). Nothing built.
 
 - **Not laid by a blow: it is where the water is.** While a foe's water stands at the third
   mark, that foe is Hundido; the moment it drops below, it is not.
@@ -751,45 +751,53 @@ string of bubbles from the foe to the surface, where they break in a small ring,
 in the water's colour. Its icon on each foe's plate, a figure under a line, with no ring: the
 water's own surface says how long.
 
-### Congelado (frozen, by turns)
+### Congelado (frozen, on the clock)
 
 Aitor's, 2026-11-20, for Freática's definitiva *Bajo cero*: **frozen foes cannot attack and take
 little damage; if the ice is broken, a very large blow; cracks show, and it splits more as it takes
-damage from outside; it lasts as many turns as water there was, a turn less each turn.** The
-numbers are first guesses. Its look is built in the effects lab (`src/freatica-fx.ts`); no rule.
+damage from outside; it goes by time, melting live, little by little, and breaking it is worth less
+all the while; it breaks at four to eight blows, and a flurry is a shortcut through it.** The numbers are first guesses.
+Its look is built in the effects lab (`src/freatica-fx.ts`); no rule.
 
 **The rule**
 
 - **Laid on every foe that has water**, when one of them has it at the third mark (Freática's
   *Bajo cero*). A dry foe is not frozen.
-- **By turns, not on the clock**: each has its own count, 1 to 3, the marks its water had. At
-  the end of each round the count drops one; at 0 the foe is free.
-- **A frozen foe does not act**, and **takes a quarter** of every blow.
-- **Its ice cracks**: each blow from outside (each strike of a flurry; never a pulse or a
-  reaction) cracks it a third of the way. **The third breaks it**: the foe takes magic water damage by the count
-  its ice still has (Aitor: huge broken at the start, less as it melts, still a lot; proposed
-  base 90 at 3, 70 at 2, 50 at 1, all *muy alto*), and is free at once.
+- **On the clock**: a mark of ice lasts what a mark of water does, 20 s, so each foe's ice lasts
+  20, 40 or 60 s by the marks its water had. It melts all the while, never a mark at a time; when
+  nothing is left the foe is free.
+- **A frozen foe does not act** (a turn that comes while it is in the ice is lost), and **takes a
+  quarter** of every blow.
+- **Its ice holds eight blows from outside** (never a pulse or a reaction): a *leve* or *medio*
+  blow counts one, an *alto* or *muy alto* two, so four to eight blows. **Each strike of a flurry
+  counts one** (proposal): *Zarpazos* is half an ice, a dual's eight a whole one. The cracks do
+  not heal as it melts. A physical blow cracks it whatever its element.
+- **Cracked through, it breaks**: the foe takes magic water damage by the ice still there (Aitor:
+  huge broken at the start, less as it melts, still a lot; proposed base 90 with three marks of
+  ice, falling with it to 40 as the last goes), and is free at once.
 - The break is nobody's blow: never a golpe crítico, and it spends no wound.
-- Fire does not crack it: it takes a count off at once, with its steam. Electricity does nothing.
+- A flame (magic fire) does not crack it: it melts a mark off at once, with its steam. Electricity does nothing.
 - **A boss can be frozen too** (Aitor), and takes as little as anyone while its ice holds.
 
-**How it shows** (built as a look: the lab's *Bajo cero*, *Golpe al hielo*, *Pasa un turno*)
+**How it shows** (built as a look: the lab's *Bajo cero*, *Golpe al hielo*, *Golpe alto al hielo*,
+*Ráfaga de cuatro*, *Ráfaga de ocho*, *Llama al hielo*)
 
 | Beat | What is seen |
 | --- | --- |
 | It freezes | A white flash through the water (0.12 s). The water is gone and stands as a block of pale blue-green ice round each foe, as tall as the water stood, set in 0.3 s; a low breath of cold round its foot. Seen through it the foe is darker and greener, never pink |
-| While it lasts | The foe holds its pose. The cell's edges stay, brighter, and its gauge shows the count as its lit marks |
-| A blow from outside | The block flashes white (0.3 s), a few chips fly, and cracks open from the middle of each face outwards: a third of the way with the first blow, two thirds with the second. Each piece the cracks cut off catches the light its own way. The number is small |
-| It breaks | 0.1 s after the third blow the block bursts: 150 shards that fly, fall and skid, a flash of cold light, a breath of cold. «¡ROTO!» and the largest number the ánima shows, with the hold of a golpe crítico |
-| A turn goes by | The ice sinks a mark (0.6 s) with cold coming off its top; the gauge's pointer goes down with it and leaves a notch. With the last it is gone |
-| On the plate | A crystal with the count as a number; the crystal splits once and twice as the ice cracks |
+| While it lasts | The foe holds its pose. The block sinks all the while, a mark every 20 s, giving off cold from its top and running with water down its faces; the gauge's pointer goes down with it, and its edges blink in the last three seconds |
+| A blow from outside | The block flashes white (0.3 s), chips fly, more the harder the blow, and cracks open from the middle of each face outwards, an eighth of the way a blow and a quarter for a hard one; a flurry cracks it strike by strike. Each piece the cracks cut off catches the light its own way. The number is small |
+| It breaks | 0.1 s after the blow that cracks it through, the block bursts: 150 shards from a fresh ice of three marks, fewer and slower the less is left, a flash of cold light, a breath of cold. «¡ROTO!» and the largest number the ánima shows, with the hold of a golpe crítico |
+| A flame | A mark of the ice goes at once (0.5 s) in steam and running water; nothing cracks |
+| On the plate | A crystal with the clock of a timed status round it, draining as the ice melts; the crystal splits further with each blow |
 
 ### Empolvado (powdered, timed)
 
 Aitor's, 2026-11-20 (fifth round), for Colorista: dry coloured powder, as at a Holi, that **does
 nothing by itself and waits for an element**. The three reactions are his; the numbers are first
-guesses. Built today: the status alone, under its paint name (*Pintado*, laid by *Brochazo*),
-with no reactions. It replaces that day's paint proposal (Pintado, Endurecido, Añicos, the cover).
+guesses. **Built** that day (`powder` and `POWDER_RULES` in `src/battle.ts`,
+`tests/powder.test.mjs`): the status, laid by *Puñado*, and its three reactions. It replaces that
+day's paint proposal (Pintado, Endurecido, Añicos, the cover).
 
 **The rule**
 

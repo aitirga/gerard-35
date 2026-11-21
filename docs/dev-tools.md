@@ -517,8 +517,9 @@ before the ánima is in the game. Every foe has its own cell; *Enemigo* chooses 
 
 A second row plays each skill's own look: *Recarga*, *Sondeo eléctrico*, *Bombeo*, *Riada*,
 *Golpe de ariete* and its definitiva, *Bajo cero* (it needs a foe at III), with *Golpe al hielo*
-(a blow from outside: the ice cracks, and breaks at the third) and *Pasa un turno* (every ice
-comes down a mark).
+and *Golpe alto al hielo* (the ice holds eight blows from outside, a hard one counting two),
+*Ráfaga de cuatro* and *Ráfaga de ocho* (each strike of a flurry counts one) and *Llama al hielo*
+(a mark of it melts at once). The ice melts by itself, a mark every 20 s.
 
 A line under the buttons shows each foe's level, the seconds left on its top mark, its current
 and its ice.
