@@ -1,6 +1,6 @@
 {
   "title": "Trofeos en Objetos",
-  "description": "The trophies (docs/chapter-2.md § Trophies): La Voz beaten leaves Marta's trophy with its note, and Objetos keeps one for each mission won and one for each castle boss, each with what it adds to the party for good.",
+  "description": "The trophies (docs/chapter-2.md § Trophies): La Voz beaten leaves Marta's trophy with its note, and Objetos keeps one for each mission won and one for each castle boss, each writing down what winning it gave.",
   "steps": [
     { "open": "/?story=cuerdas&solo=1" },
     { "until": "!!window.gerard?.story && !document.querySelector('#hud[data-dialogue]')", "timeout": 60000 },
@@ -11,13 +11,13 @@
     { "skipDialogue": true, "settle": 2500 },
     { "skipDialogue": true, "settle": 300 },
     { "until": "!!document.querySelector('.story-note strong')?.textContent.includes('Trofeo')", "timeout": 20000 },
-    { "shot": "nota", "delay": 600, "caption": "La Voz vencida: el trofeo de la voz, con lo que sube" },
+    { "shot": "nota", "delay": 600, "caption": "La Voz vencida: el trofeo de la voz, con lo que dio" },
     { "eval": "window.gerard.story.merge(['sobremesa', 'fran', 'aurelia', 'direccion']); window.gerard.game.refreshStory()" },
     { "press": "KeyI" },
     { "shot": "objetos", "delay": 900, "caption": "Objetos: la bola y un trofeo por cada misión y jefe" },
     { "eval": "document.querySelector('[data-item=\"trofeo-marta\"]').focus()" },
-    { "shot": "trofeo-voz", "delay": 700, "caption": "El trofeo de la voz: «Siempre», Espíritu a todo el equipo" },
+    { "shot": "trofeo-voz", "delay": 700, "caption": "El trofeo de la voz: «Siempre»: lo que da su ánima al equipo" },
     { "eval": "document.querySelector('[data-item=\"trofeo-direccion\"]').focus()" },
-    { "shot": "trofeo-direccion", "delay": 700, "caption": "El de Dirección, más grande: Fuerza y Magia" }
+    { "shot": "trofeo-direccion", "delay": 700, "caption": "El de Dirección, más grande: el nivel 7 y las definitivas" }
   ]
 }

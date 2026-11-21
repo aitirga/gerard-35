@@ -280,8 +280,8 @@ in = "src/story-points.ts"
 
 # src/items.ts TROPHIES: one per ánima mission and one per castle boss, kept in Objetos.
 [[block.item]]
-title = "Trofeos: uno por misión y uno por jefe del castillo, cada uno sube un poco las estadísticas del equipo"
-used = ["trophiesFor", "trophyBonus"]
+title = "Trofeos: uno por misión y uno por jefe del castillo, cada uno escribe lo que dio"
+used = "trophiesFor"
 
 # ——— Escenarios ———
 [[block]]

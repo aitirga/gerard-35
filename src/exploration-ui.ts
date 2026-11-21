@@ -4,7 +4,7 @@ import type { Cell, Direction } from './movement';
 import { renderWorldMap, roomAt } from './world-map';
 import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaGrowth } from './animas';
-import { ITEMS, ITEM_KIND_LABELS, sortItems, trophyBonus, type ItemId } from './items';
+import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
 import { type MemberId, type PartyMember, type Story } from './story';
 import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, PASSIVES, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
@@ -133,11 +133,9 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
   const facesOf = (classId: ClassId) => [...SKILLS.filter(s => s.class === classId && 'face' in s && s.face !== 'comodin').map(s => ({ name: s.name, description: s.description })),
     ...SKILLS.some(s => s.class === classId && 'face' in s) ? [{ name: 'En blanco', description: 'Repite la última cara gastada.' }] : []];
   function statRows(member: PartyMember) {
-    // The trophies count for everyone, like the ánima's own bonus, and add to its chip.
-    const won = member.id === 'bernat' ? {} : trophyBonus(story.trophies);
-    const stats = withBonus(withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined), won);
+    const stats = withBonus(PROFILES[member.profile], member.classId ? CLASS_STATS[member.classId] : undefined);
     return `<dl class="status-bars">${STAT_ORDER.map(key => {
-      const bonus = (member.classId ? CLASS_STATS[member.classId][key] ?? 0 : 0) + (won[key] ?? 0);
+      const bonus = member.classId ? CLASS_STATS[member.classId][key] ?? 0 : 0;
       return `<div data-stat="${key}"><dt>${STAT_LABELS[key]}</dt><dd><i style="--fill:${Math.min(100, stats[key] / STAT_SCALE * 100).toFixed(1)}%"></i><b>${stats[key]}</b>${bonus ? `<small data-sign="${bonus > 0 ? 'up' : 'down'}">${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}</small>` : ''}</dd></div>`;
     }).join('')}</dl>`;
   }

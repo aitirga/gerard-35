@@ -9,7 +9,7 @@ import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.t
 import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
 import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { canWalk, facingToward, type Cell } from './movement.ts';
-import { trophiesFor, trophyBonus, type ItemId } from './items.ts';
+import { trophiesFor, type ItemId } from './items.ts';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
@@ -1339,13 +1339,12 @@ export class Story {
     const gerard: PartyMember = { id: 'gerard', name: 'Gerard', profile: 'gerard', classId, equipment: this.items.filter(i => i !== 'pocion' && i !== 'chicle'), note };
     return this.has('bernat-joined') ? [gerard, { id: 'bernat', name: 'Bernat', profile: 'bernat', equipment: [], note: 'Modo escuela: nada equipado.' }] : [gerard];
   }
-  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, what their last afternoon left them and the trophies won. */
+  /** Who fights: Gerard, plus his partner when the partner is there with him (`withPartner`). Ánimas strengthen everyone, and so does what their last afternoon left them. */
   battleParty(withPartner: boolean): PartySlot[] {
     const grown = this.animas.length ? animaGrowth(this.animas) : undefined;
     const left = this.boost && boostOf(this.boost), evening = left && { shifts: { ...left.stats }, from: left.name };
-    const won = this.trophies, trophies = won.length ? trophyBonus(won) : undefined;
     return this.party.filter(m => m.id === 'gerard' || withPartner)
-      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(grown ? { grown } : {}), ...(evening ? { evening } : {}), ...(trophies ? { trophies } : {}) }));
+      .map(({ id, name, profile, classId }) => ({ id, name, profile, classId, kit: id === 'bernat' ? [] : this.kitOf(id), ...(grown ? { grown } : {}), ...(evening ? { evening } : {}) }));
   }
   /** What the last afternoon spent left the party, while it lasts: that night and the day after (src/days.ts `EVENINGS`). */
   get boost(): BoostId | undefined {

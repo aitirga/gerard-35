@@ -1297,8 +1297,6 @@ export interface Combatant {
   lasting?: { shifts: Partial<Record<keyof Stats, number>>; from: string };
   /** What the party's last afternoon left them (src/days.ts `EVENINGS`: En forma, Afinados…): a few points for the whole fight, shown with the other shifts. */
   evening?: { shifts: Partial<Record<keyof Stats, number>>; from: string };
-  /** The trophies' stats, kept so a change of ánima or level counts them again (`statsWith`). */
-  trophies?: StatBonus;
   /** Joan's place on his scale (NOTES): his next note. */
   note?: number;
   /** Cortafuegos: the next damaging blow on this foe lands at SOBREMESA.shield, and spends it. It fades at the end of round `shielded`. */
@@ -1538,8 +1536,6 @@ export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId
 export interface PartySlot {
   id: string; name: string; profile: ProfileId; classId?: ClassId; grown?: number;
   evening?: { shifts: Partial<Record<keyof Stats, number>>; from: string };
-  /** What the trophies won add to their stats for good (src/items.ts `TROPHIES`): part of who they are, so no arrow shows it. */
-  trophies?: StatBonus;
   /** The ánimas they can switch between: their own and their extras. Missing: their own (if unlocked) and the one they wear. */
   kit?: ClassId[];
 }
@@ -2295,9 +2291,9 @@ function spendSecondary(actor: Combatant, cost: number) {
   actor.secondary = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, -cost).resource.current;
 }
 function fighter(slot: PartySlot, unlocked: readonly ClassId[] = []): Combatant {
-  const stats = withBonus(grown(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.grown), slot.trophies);
+  const stats = grown(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.grown);
   const points = slot.profile === 'bernat' ? 0 : MANA_POINTS;
-  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, ...slot.grown ? { grown: slot.grown } : {}, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, worn: slot.classId ? [slot.classId] : [], kit: kitOf(slot, unlocked), ...slot.trophies ? { trophies: { ...slot.trophies } } : {}, ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
+  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, ...slot.grown ? { grown: slot.grown } : {}, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, worn: slot.classId ? [slot.classId] : [], kit: kitOf(slot, unlocked), ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
 }
 /** The fighter's maná goes with the ánima: the one taken off keeps what it had, the one put on brings its own, up to what it holds. */
 function swapMana(state: BattleState, actor: Combatant, to: ClassId | undefined) {
@@ -2333,10 +2329,10 @@ export function improve(state: BattleState, improved: Improved | undefined) {
  * earned fighting makes the game easier. Tunable (`--tune growth.level.pct=0:.03:.05`).
  */
 export const LEVEL_GROWTH = { pct: .03 };
-/** `ally`'s attributes wearing `id` in this fight: profile, ánima, the share the friends' ánimas and its level add, and the trophies. */
+/** `ally`'s attributes wearing `id` in this fight: profile, ánima, and the share the friends' ánimas and its level add. */
 function statsWith(state: BattleState, ally: Combatant, id?: ClassId): Stats {
   const level = id ? state.levels?.[id] ?? 1 : 1;
-  return withBonus(grown(withBonus(PROFILES[ally.profile], id ? CLASS_STATS[id] : undefined), (ally.grown ?? 0) + LEVEL_GROWTH.pct * (level - 1)), ally.trophies);
+  return grown(withBonus(PROFILES[ally.profile], id ? CLASS_STATS[id] : undefined), (ally.grown ?? 0) + LEVEL_GROWTH.pct * (level - 1));
 }
 /** The elements `actor`'s Atacar can carry now: those the ánima worn has, in the order X walks through them. */
 export function elementsFor(state: BattleState, actor: Combatant): Element[] {
