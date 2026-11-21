@@ -2681,6 +2681,8 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   if ('pumps' in ability && !watered.length) return [];
   if ('hammer' in ability) return watered;
   if ('freezes' in ability) return watered.some(f => waterOf(f) >= CRECIDA.marks) ? watered : [];
+  // Escolta lasts two rounds: anyone standing Bip is not with already, even someone Defending this one.
+  if (ability.kind === 'guard' && 'escort' in ability) return state.allies.filter(a => a.hp > 0 && !a.escort);
   // A cure for everyone is worth it while someone standing is hurt, or carries a status it takes away.
   if (state.unbound && (ability.kind === 'heal' || ability.kind === 'boost')) return state.allies.filter(a => a.hp > 0);
   if (state.unbound && ability.kind === 'debuff') return state.foes.filter(f => f.hp > 0);

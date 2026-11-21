@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
@@ -22,6 +22,7 @@ import type { ParticleBody } from './particles';
 import { CRIT, FightClock, HIT, landing, spring, wobble, type Blow } from './hit-feel';
 import { createCat, type Cat, type CatAction } from './cats';
 import { BIP, createBip, type Bip } from './bip';
+import { BOMB, createBomb, type Bomb } from './bomb';
 import { createOnionPeels, skinOf, tintSkin } from './onion-peels';
 import type { StatWay } from './stat-fx';
 import { createStatArrows } from './stat-arrows';
@@ -355,6 +356,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    */
   /** Each Tecnópata wearer's Bip: shown or not, since when, its power, where it is, the chest it streams into, how sun yellow it is (Rayo solar), and whether it blew up (Explosión). */
   const bips = new Map<string, { bip: Bip; shown: boolean; since: number; power: number; at: pc.Vec3; chest: pc.Entity; solar: number; gone?: boolean }>();
+  /**
+   * Bombas remotas on the foes (src/bomb.ts): each foe's bomb, the seconds to its next flash, how far it has grown in (below 0:
+   * still on its way, Bip's throw from an Escolta or Enjambre's swarm), and `fuse`: set off by Explosión, it waits for the blast.
+   */
+  const bombs = new Map<string, { bomb: Bomb; next: number; shown: number; fuse?: boolean }>();
+  /** Escolta: the ring Bip keeps under whoever it stands by, its tether's beat, and how far it has faded in. */
+  const escorts = new Map<string, { ring: pc.Entity; inner: pc.Entity; mat: pc.StandardMaterial; beat: number; shown: number }>();
+  /** Where Bip set off from when it went to stand by someone (Escolta), to fly there in an arc. */
+  const escortFrom = new WeakMap<BattleEffect, pc.Vec3>();
   const peels = createOnionPeels(battleRoot, groundHeight);
   let cue: (id: SoundId, options?: { delay?: number }) => void = () => {};
   /** How many of this action's little claws have landed. */
@@ -745,9 +755,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     'rayo-energia': { contact: .66, flight: .2, hold: .8 },
     'rayo-encogedor': { contact: .7, flight: .32, hold: .8 },
     'rayo-sanacion': { contact: .74, flight: .4, hold: .75 },
-    // Bomba remota and Escolta borrow the rays' flight for now (docs/animas/tecnopata/README.md § Look: their own is to do).
-    'bomba-remota': { contact: .7, flight: .28, hold: .8 },
-    escolta: { contact: .74, flight: .4, hold: .75 },
+  };
+  /**
+   * Bip's moves that are not rays (docs/animas/tecnopata/README.md § Look): Bomba remota, it flies to the foe, sticks the bomb on
+   * at `contact` and comes home; Escolta, it flies in an arc to the ally and stands by them; Enjambre, it rises over the foes
+   * and comes apart into a swarm that sticks a bomb on each. Fight seconds from the action's start.
+   */
+  const BIP_MOVES: Record<string, { contact: number; end: number }> = {
+    'bomba-remota': { contact: .66, end: 1.45 },
+    escolta: { contact: .72, end: 1.25 },
+    enjambre: { contact: .85, end: 1.9 },
   };
   /**
    * Rayo solar letting go, in fight seconds from its start: Bip rises gathering the sun until
@@ -783,13 +800,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** When Bip's skill lands, in fight seconds from its start (CONTACT_SECONDS for the rest of its moves). */
   function bipContact(e: BattleEffect) {
     if (e.release) return solarPlan(e).contact;
-    return (e.skill && BIP_RAYS[e.skill]?.contact) || CONTACT_SECONDS;
+    return (e.skill && (BIP_RAYS[e.skill]?.contact ?? BIP_MOVES[e.skill]?.contact)) || CONTACT_SECONDS;
   }
   /** When Bip's skill is over, in fight seconds from its start. */
   function bipEnd(e: BattleEffect) {
     if (e.release) return SOLAR.ignite + SOLAR.span + SOLAR.tail;
-    const ray = e.skill ? BIP_RAYS[e.skill] : undefined;
-    return ray ? ray.contact + ray.hold : ACTION_SECONDS;
+    const ray = e.skill ? BIP_RAYS[e.skill] : undefined, move = e.skill ? BIP_MOVES[e.skill] : undefined;
+    return ray ? ray.contact + ray.hold : move ? move.end : ACTION_SECONDS;
   }
   /** Which of Bip's actions have started their charge, fired their ray, and how far Rayo solar's sweep has burned. */
   const bipCharged = new WeakSet<BattleEffect>(), bipFired = new WeakSet<BattleEffect>();
@@ -2367,6 +2384,40 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       dualFx.burst('mote', { at: v3(chest), count: 40, spread: .35, speed: .6, up: .8, life: [.6, 1.2], colour: '#8dffb8', size: 1.2 });
       return;
     }
+    if (action.skill === 'bomba-remota') {
+      // Bomba remota: Bip presses it on; the clamps bite with a clank, nanites close round it and its lamp wakes.
+      const spot = bombSpot(target), v = viewDir();
+      if (action.target) ensureBomb(action.target);
+      dualFx.ring(v3(spot), v, .26 * target.scale.y, BIP.cyan, { kind: 'nanite', count: 60, outward: -1.6, around: 3, life: .32, size: 1.1, light: 1.6 });
+      dualFx.burst('bipzap', { at: v3(spot), count: 26, speed: 2.2, life: [.15, .35] });
+      dualFx.after(.1, () => dualFx.ring(v3(spot), v, .14 * target.scale.y, BOMB.red, { count: 30, outward: 2, life: .25, size: 1.1, light: 1.2 }));
+      hit(target, cyanFlash, .5); cue('clink');
+      return;
+    }
+    if (action.skill === 'escolta') {
+      // Escolta: Bip arrives in front of them; a shield of cyan flares round them from the floor up, and the ring stays (`updateEscorts`).
+      const feet = floorUnder(target), { height, radius } = extent(target), r = Math.max(.55, radius * 1.25);
+      [.05, .35, .7, 1].forEach((k, i) => dualFx.after(i * .05, () => dualFx.ring({ x: feet.x, y: feet.y + .05 + height * k, z: feet.z }, up, r * (1 - .15 * k), i === 3 ? '#ffffff' : BIP.cyan, { count: 70, around: i % 2 ? -3 : 3, life: .45, size: 1.2, ...i === 0 ? { light: 2.5 } : {} })));
+      dualFx.burst('glyph', { at: v3(chest), count: 16, spread: radius * .7, speed: .4, up: .6, life: [.4, .8], colour: BIP.cyan, size: 1.3 });
+      hit(target, cyanFlash, .8); pulse?.(0, .25);
+      return;
+    }
+    if (action.skill === 'enjambre') {
+      // Enjambre: Bip comes apart into a swarm of little Bips that splits over every foe; each stream sticks a bomb, already at its top.
+      const ids = action.planted ?? [];
+      dualFx.ring(v3(from), up, .45, BIP.cyan, { kind: 'nanite', count: 200, outward: 3, life: .45, size: 1.2, light: 3 });
+      dualFx.burst('bipzap', { at: v3(from), count: 60, speed: 3, life: [.2, .5] });
+      ids.forEach((id, i) => {
+        const f = fighters.get(id);
+        if (!f) return;
+        const spot = bombSpot(f);
+        for (let k = 0; k < 6; k++) effects.trails.comet(v3(from), v3(spot), ['#ffffff', BIP.cyan], .3 + k * .03 + i * .06, { arc: .3 + (k % 3) * .25, width: .03, life: .35, intensity: 2.4, core: .4, additive: 1, twist: { turns: 1.5 + k % 3, radius: .12, phase: k * 1.1 } });
+        dualFx.after(.32 + i * .06, () => { dualFx.ring(v3(spot), viewDir(), .3 * f.scale.y, BIP.cyan, { kind: 'nanite', count: 70, outward: -1.4, life: .35, size: 1.1, light: 2 }); hit(f, cyanFlash, .6); });
+        ensureBomb(id, .36 + i * .06);
+      });
+      shake = Math.max(shake, .35); pulse?.(.3, .4);
+      return;
+    }
     if (action.skill === 'confusion') {
       const head = v3(chest.clone().add(new pc.Vec3(0, .45 * target.scale.y, 0)));
       for (const phase of [0, 2.1, 4.2]) effects.trails.comet(v3(from), head, ['#dffbff', BIP.cyan], .22, { arc: .1, width: .045, life: .35, intensity: 2, core: .4, twist: { turns: 2.5, radius: .14, phase } });
@@ -2957,6 +3008,152 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (t >= diceEnd(action)) { die.entity.destroy(); d.thrown = undefined; }
     }
   }
+  /** Where a Bomba remota sits on `f`: on its chest, on the side the camera sees, a little up. */
+  function bombSpot(f: Fighter) {
+    const chest = chestOf(f), v = viewDir(), { radius } = extent(f);
+    return new pc.Vec3(chest.x + v.x * radius * .8, chest.y + .08 * f.scale.y, chest.z + v.z * radius * .8);
+  }
+  /** A bomb on `id`, made now if it has none: `wait` seconds before it shows (Bip's throw on its way). */
+  function ensureBomb(id: string, wait = 0) {
+    let b = bombs.get(id);
+    if (!b) { b = { bomb: createBomb(app), next: 0, shown: -wait / .25 }; battleRoot.addChild(b.bomb.entity); bombs.set(id, b); }
+    return b;
+  }
+  /**
+   * Each foe's Bomba remota, every frame: stuck on its chest facing the camera, bigger the more it has grown, its lamp flashing
+   * red on a beat that quickens as its time runs out (a beep with each flash once it is close, and a red flare round it).
+   * A bomb gone from the foe without a blast (the foe fell) just goes; one Explosión set off waits for its blast.
+   */
+  function updateBombs(dt: number, animate: boolean) {
+    for (const [id, f] of fighters) {
+      if (f.party) continue;
+      const unit = state?.foes.find(u => u.id === id), on = unit?.timed?.bomba;
+      let b = bombs.get(id);
+      if (!on) {
+        if (b && !b.fuse && !(animate && effect && !impacted && effect.detonated?.some(d => d.target === id))) { b.bomb.destroy(); bombs.delete(id); }
+        if (!bombs.has(id)) continue;
+        b = bombs.get(id)!;
+      } else if (!b) {
+        // Stuck on as the action that planted it lands (`ensureBomb` from its burst); without motion, at once.
+        if (animate && effect && !impacted && effect.planted?.includes(id)) continue;
+        b = ensureBomb(id);
+      }
+      const left = on?.left ?? 0, heat = on ? 1 - clamp01(left / BOMBA.seconds) : 1;
+      const charge = on ? clamp01((bombPower(on.age ?? 0) - BOMBA.base) / (BOMBA.top - BOMBA.base)) : 1;
+      b.shown = animate ? Math.min(1, b.shown + dt / .25) : 1;
+      const entity = b.bomb.entity;
+      entity.enabled = b.shown > 0 && f.model.enabled;
+      const spot = bombSpot(f), size = BOMB.size * f.scale.y * (1 + BOMB.grows * charge);
+      entity.setPosition(spot); entity.lookAt(chestOf(f)); entity.setLocalScale(size, size, size);
+      if (b.shown > 0 && on && animate) {
+        b.next -= dt;
+        if (b.next <= 0) {
+          const beat = BOMB.fast + (BOMB.longest - BOMB.fast) * clamp01(left / BOMB.slow) ** 1.3;
+          b.next = beat; b.bomb.flash(heat);
+          const close = clamp01((heat - .3) / .7);
+          dualFx.ring(v3(spot), viewDir(), (.1 + .12 * close) * f.scale.y, BOMB.red, { count: Math.round(14 + 40 * close), outward: 1 + 2 * close, life: .2 + .1 * close, size: 1 + .4 * close, ...close > .4 ? { light: 1 + 2.5 * close } : {} });
+          if (heat > .35) cue('bomb-beep');
+        }
+      }
+      b.bomb.animate(dt, { heat, charge, shown: Math.max(0, b.shown), animate });
+    }
+    for (const [id, b] of bombs) if (!fighters.has(id)) { b.bomb.destroy(); bombs.delete(id); }
+  }
+  /** A Bomba remota goes off on `id` (its clock, or Explosión): a white flash, a fireball, red shock along the floor, Bip's sparks. */
+  function bombBlast(id: string) {
+    const b = bombs.get(id), f = fighters.get(id);
+    if (!b) return;
+    const at = b.bomb.entity.getPosition().clone(), big = b.bomb.entity.getLocalScale().x / BOMB.size;
+    b.bomb.destroy(); bombs.delete(id);
+    if (!animating) return;
+    const floor = groundHeight(at.x, at.z);
+    dualFx.ring(v3(at), viewDir(), .2, '#ffffff', { count: 90, outward: 7, life: .22, size: 1.6, light: 5 });
+    fluidFx.fireball({ x: at.x, y: Math.max(floor + .45, at.y), z: at.z }, .55 + .35 * big, 1.1);
+    effects.element('fire', v3(at), { strength: 1.1 + .5 * big });
+    dualFx.shock({ x: at.x, y: floor, z: at.z }, 1.6 + .8 * big, BOMB.red, { chips: 80, light: true, heavy: big > 1.3 });
+    dualFx.burst('bipzap', { at: v3(at), count: 70, speed: 4.5, up: .8, life: [.25, .6] });
+    dualFx.after(.05, () => dualFx.ring(v3(at), { x: 0, y: 1, z: 0 }, .35, BOMB.red, { count: 70, outward: 5, life: .3, size: 1.4 }));
+    if (f) hit(f, flame, 1.6);
+    shake = Math.max(shake, .45 + .2 * big); pulse?.(.4, .45);
+    cue('slam'); cue('fire-hit', { delay: .02 });
+  }
+  /** Whom the Bip of `wearer` stands by now (Escolta), if anyone. */
+  function escortOf(wearer: string) {
+    if (!state) return undefined;
+    const by = state.allies.find(a => a.id === wearer);
+    if (!by || by.hp <= 0 || by.classId !== 'tecnopata') return undefined;
+    return state.allies.find(a => a.escort?.by === wearer && a.hp > 0 && a.escort.until >= state!.round);
+  }
+  /**
+   * Escolta's lasting look, every frame: under whoever Bip stands by, a double ring of cyan light on the floor turning slowly,
+   * its glow breathing; Bip's tether crackles from it to them now and then, and bits of light rise round them.
+   */
+  function updateEscorts(dt: number, animate: boolean) {
+    const kept = new Set<string>();
+    for (const [wearer, b] of bips) {
+      const ally = b.shown ? escortOf(wearer) : undefined, f = ally ? fighters.get(ally.id) : undefined;
+      if (!ally || !f) continue;
+      // It shows once Bip has arrived (Escolta's own action at its contact).
+      if (animate && effect?.skill === 'escolta' && effect.target === ally.id && !impacted) continue;
+      kept.add(ally.id);
+      let e = escorts.get(ally.id);
+      if (!e) {
+        const mat = new pc.StandardMaterial(); mat.diffuse.set(0, 0, 0); mat.emissive.fromString(BIP.cyan); mat.emissiveIntensity = 1.6; mat.useLighting = false;
+        mat.blendType = pc.BLEND_ADDITIVEALPHA; mat.opacity = 0; mat.depthWrite = false; mat.cull = pc.CULLFACE_NONE; mat.update();
+        // Two thin rings of light (a unit ring, scaled to them), the outer one dashed by its own segments turning.
+        const thin = (name: string, tube: number, sector = 360) => {
+          const mesh = pc.Mesh.fromGeometry(app.graphicsDevice, new pc.TorusGeometry({ ringRadius: .5, tubeRadius: tube, sectorAngle: sector, segments: 72, sides: 6 }));
+          const e = new pc.Entity(name); e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, mat)], castShadows: false, receiveShadows: false });
+          return e;
+        };
+        const ring = thin('Escolta', .012), inner = thin('Escolta, aro de dentro', .008, 300);
+        battleRoot.addChild(ring); battleRoot.addChild(inner);
+        e = { ring, inner, mat, beat: 0, shown: 0 };
+        escorts.set(ally.id, e);
+        if (animate) { const feet = floorUnder(f); dualFx.ring({ x: feet.x, y: feet.y + .06, z: feet.z }, { x: 0, y: 1, z: 0 }, Math.max(.55, extent(f).radius * 1.3), BIP.cyan, { kind: 'nanite', count: 120, outward: -1.2, life: .5, size: 1.2, light: 2 }); }
+      }
+      e.shown = animate ? Math.min(1, e.shown + dt / .35) : 1;
+      const feet = floorUnder(f), r = Math.max(.55, extent(f).radius * 1.25), time = real;
+      e.ring.setPosition(feet.x, feet.y + .04, feet.z); e.ring.setLocalScale(r * 2, r * 2, r * 2); e.ring.setEulerAngles(0, time * 40, 0);
+      e.inner.setPosition(feet.x, feet.y + .05, feet.z); e.inner.setLocalScale(r * 1.6, r * 1.6, r * 1.6); e.inner.setEulerAngles(0, -time * 70, 0);
+      e.mat.opacity = e.shown * (.75 + .25 * Math.sin(time * 4)); e.mat.update();
+      if (!animate) continue;
+      e.beat -= dt;
+      if (e.beat <= 0) {
+        e.beat = .45;
+        const chest = chestOf(f), from = b.bip.entity.getPosition();
+        dualFx.line(v3(from), v3(chest), BIP.cyan, { count: Math.round(from.distance(chest) * 18), life: .3, size: .9 });
+        dualFx.burst('glyph', { at: { x: feet.x, y: feet.y + .2, z: feet.z }, count: 3, spread: r * .8, speed: .25, up: .9, life: [.5, .9], colour: BIP.cyan, size: 1 });
+      }
+    }
+    for (const [id, e] of escorts) if (!kept.has(id)) {
+      e.shown = animate ? e.shown - dt / .3 : 0;
+      e.mat.opacity = Math.max(0, e.shown) * .75; e.mat.update();
+      if (e.shown <= 0) { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); escorts.delete(id); }
+    }
+  }
+  /**
+   * What Tecnópata's bombs and Bip's guard do as an action lands: the bombs Explosión set off go up one after another; a foe that
+   * struck someone Bip stands by meets a cyan shield where the blow lands, and Bip throws a bomb on it.
+   */
+  function tecnoLanded(e: BattleEffect) {
+    e.detonated?.forEach((d, i) => { const b = bombs.get(d.target); if (b) b.fuse = true; dualFx.after(.08 + i * .09, () => bombBlast(d.target)); });
+    const striker = e.planted && state?.foes.some(f => f.id === e.actor) ? fighters.get(e.actor) : undefined;
+    const ally = striker && e.target ? fighters.get(e.target) : undefined, guard = e.target ? state?.allies.find(a => a.id === e.target)?.escort : undefined;
+    if (!striker || !ally) return;
+    const chest = chestOf(ally), to = chestOf(striker), dir = new pc.Vec3().sub2(to, chest).normalize(), shield = chest.clone().add(dir.clone().mulScalar(.45 * ally.scale.x));
+    dualFx.ring(v3(shield), v3(dir), .5 * ally.scale.y, BIP.cyan, { count: 90, life: .35, size: 1.4, light: 3 });
+    dualFx.ring(v3(shield), v3(dir), .32 * ally.scale.y, '#ffffff', { count: 50, outward: 1.5, life: .25, size: 1.2 });
+    dualFx.burst('bipzap', { at: v3(shield), count: 40, speed: 3, life: [.2, .45] });
+    const bip = guard ? bips.get(guard.by) : undefined;
+    if (!bip) return;
+    dualFx.after(.12, () => {
+      const from = bip.bip.entity.getPosition(), spot = bombSpot(striker);
+      effects.trails.comet(v3(from), v3(spot), ['#ffffff', BIP.cyan], .2, { arc: .25, width: .07, life: .35, intensity: 3, core: .6, additive: 1 });
+      dualFx.after(.2, () => { dualFx.ring(v3(spot), viewDir(), .22, BIP.cyan, { kind: 'nanite', count: 50, outward: -1.4, life: .3, size: 1.1, light: 1.5 }); cue('clink'); });
+    });
+    ensureBomb(e.actor, .32);
+  }
   /**
    * Bip floats by the shoulder of whoever wears Tecnópata, a step ahead and on the side away from the
    * others, watching the foes (src/bip.ts). Atacar is Bip's: it pulls back, darts at the target, rams
@@ -2983,7 +3180,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // On the side away from the others on screen.
       const others = party.filter(([other, o]) => other !== id && o.hp > 0).reduce((sum, [, o]) => sum + (f.base.x - o.base.x) * across.x + (f.base.z - o.base.z) * across.z, 0);
       const out = Math.sign(others) || 1, floor = groundHeight(f.base.x, f.base.z), reach = BIP.beside * f.scale.x;
-      const rest = new pc.Vec3(f.base.x + across.x * reach * out + toCamera.x * .2, floor + BIP.height * f.scale.y, f.base.z + across.z * reach * out + toCamera.z * .2);
+      let rest = new pc.Vec3(f.base.x + across.x * reach * out + toCamera.x * .2, floor + BIP.height * f.scale.y, f.base.z + across.z * reach * out + toCamera.z * .2);
+      // Escolta: Bip stands in front of whoever it guards, between them and the foes, a little to the camera's side.
+      const guarded = wearing ? escortOf(id) : undefined, guard = guarded ? fighters.get(guarded.id) : undefined;
+      if (guard) {
+        const mid = foes.length ? foes.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / foes.length) : guard.base.clone().add(new pc.Vec3(ahead.x, 0, ahead.z));
+        const toFoes = new pc.Vec3(mid.x - guard.base.x, 0, mid.z - guard.base.z).normalize(), ground = groundHeight(guard.base.x, guard.base.z);
+        rest = new pc.Vec3(guard.base.x + toFoes.x * .62 * guard.scale.x + toCamera.x * .25, ground + BIP.height * .82 * guard.scale.y, guard.base.z + toFoes.z * .62 * guard.scale.x + toCamera.z * .25);
+      }
       if (!b) {
         const chest = new pc.Entity('Pecho de Bip'); f.model.addChild(chest); chest.setLocalPosition(0, .62, 0);
         const bip = createBip(app); battleRoot.addChild(bip.entity);
@@ -3017,6 +3221,30 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         b.at.lerp(b.at, beside, 1 - Math.exp(-dt * 8)); look = chest; lean = .3;
       } else if (orbiting) {
         b.at.lerp(b.at, new pc.Vec3(center.x, floor + 3.5, center.z), 1 - Math.exp(-dt * 4)); lean = .7;
+      } else if (acting && effect!.skill === 'bomba-remota') {
+        // Bomba remota: back a touch, an arc to the foe, a push in to stick the bomb on its chest (`contact`), a beat there, home.
+        const { contact, end } = BIP_MOVES['bomba-remota'], spot = bombSpot(target!), away = new pc.Vec3().sub2(rest, spot);
+        away.y = 0; away.normalize();
+        const near = spot.clone().add(away.clone().mulScalar(.34 * target!.scale.x + .12)), press = spot.clone().add(away.clone().mulScalar(.16 * target!.scale.x));
+        const back = rest.clone().add(away.clone().mulScalar(.18)), at = new pc.Vec3(), reach = contact - .1;
+        if (t < .14) { at.lerp(rest, back, smooth(t / .14)); lean = -.35; }
+        else if (t < reach) { const u = smooth((t - .14) / (reach - .14)); at.lerp(back, near, u); at.y += Math.sin(u * Math.PI) * .38; lean = .85; }
+        else if (t < contact + .08) { at.lerp(near, press, Math.sin(clamp01((t - reach) / .18) * Math.PI)); lean = 1; }
+        else if (t < contact + .32) { at.copy(near); at.y += Math.sin((t - contact) * 30) * .006; lean = -.15; }
+        else { const u = smooth((t - contact - .32) / Math.max(.1, end - contact - .45)); at.lerp(near, rest, u); at.y += Math.sin(u * Math.PI) * .25; lean = -.3 * (1 - u); }
+        b.at.copy(at); look = spot;
+      } else if (acting && effect!.skill === 'escolta') {
+        // Escolta: an arc from wherever it was to its place in front of the ally; there it turns to face the foes.
+        if (!escortFrom.has(effect!)) escortFrom.set(effect!, b.at.clone());
+        const from = escortFrom.get(effect!)!, { contact } = BIP_MOVES.escolta, u = smooth(t / contact);
+        b.at.lerp(from, rest, u); b.at.y += Math.sin(u * Math.PI) * .6;
+        lean = t < contact ? .8 * Math.sin(u * Math.PI) : 0; look = t < contact * .8 ? rest.clone().add(new pc.Vec3().sub2(rest, from)) : look;
+      } else if (acting && effect!.skill === 'enjambre') {
+        // Enjambre: up over the foes, trembling as it comes apart; at `contact` its swarm goes (`bipBurst`), and it gathers again.
+        const { contact } = BIP_MOVES.enjambre, over = new pc.Vec3(center.x, floor + 2.4, center.z), u = smooth(t / contact);
+        const back = smooth((t - contact - .5) / .6), shiver = t < contact ? u * .04 : 0;
+        b.at.lerp(rest, over, u * (1 - back)); b.at.x += (Math.random() - .5) * shiver; b.at.y += (Math.random() - .5) * shiver; lean = .5 * (1 - back);
+        look = new pc.Vec3(center.x, floor, center.z);
       } else if (acting && effect!.exploded) {
         // Explosión: up and into the middle of the foes, faster and faster; it blows up there (`bipBurst`).
         const over = new pc.Vec3(center.x, floor + 1.1, center.z), u = clamp01(t / CONTACT_SECONDS);
@@ -3049,7 +3277,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         else if (t < CONTACT_SECONDS + .14) { at.lerp(hitAt, bounce, smooth((t - CONTACT_SECONDS) / .14)); lean = -.7; }
         else { const u = smooth((t - CONTACT_SECONDS - .14) / .5); at.lerp(bounce, rest, u); lean = -.3 * (1 - u); }
         b.at.copy(at); look = chest;
-      } else b.at.lerp(b.at, rest, animate ? 1 - Math.exp(-dt * 6) : 1);
+      } else {
+        // Home, or to whoever it guards: from afar it flies there in an arc, slower; close by it settles.
+        const gap = b.at.distance(rest), aim = rest.clone();
+        if (animate && gap > .6) aim.y += Math.min(.5, gap * .2);
+        b.at.lerp(b.at, aim, animate ? 1 - Math.exp(-dt * (gap > .6 ? 3.5 : 6)) : 1);
+        if (gap > .6) lean = .5;
+      }
       const entity = b.bip.entity;
       entity.setPosition(b.at);
       // Going, it spins down; coming, it grows out of its nanites with a little overshoot.
@@ -3427,6 +3661,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     pulse(id: string, status?: string, by?: string) {
       const f = fighters.get(id), unit = state && [...state.allies, ...state.foes].find(u => u.id === id);
       if (!f || !unit) return;
+      // A Bomba remota went off: its own blast, not a pulse's flare.
+      if (status === 'bomba') { bombBlast(id); f.hp = unit.hp; return; }
       // The newer duals' own lasting looks draw their beat (src/duo-fx `pulsed`).
       if (status && animating && dualFx.on) {
         const stage = duoStage(effect), target = stage.fighter(id);
@@ -3557,7 +3793,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -3641,6 +3877,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
+        // Tecnópata's bombs going up, and Bip's guard answering a blow (`tecnoLanded`).
+        if (animate) tecnoLanded(effect);
         // What the blow did to Freática's water and ice (a bolt, steam, a crack, the break), as it lands.
         if (state) freatica.play(effect, state);
         // Without motion Rayo solar reaches everyone at once.
@@ -4089,6 +4327,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       motes.update(dt, moteAnchor, animate);
       updateCats(dt, t, animate, target);
       updateBips(dt, t, animate, target);
+      updateBombs(dt, animate); updateEscorts(dt, animate);
       updateDice(dt, t, animate, target);
       if (animate) holdTells(dt, t);
       if (effect && actor && skyOf(effect)) skyStep(effect, actor, target, t, animate);

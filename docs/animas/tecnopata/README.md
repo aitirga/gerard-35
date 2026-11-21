@@ -1,8 +1,7 @@
 # Tecnópata
 
 Status: designed whole and built (2026-11-21, `/anima`, Aitor's OK): Bip, the tree, grade III,
-Bomba remota, Escolta, its stats and Enjambre. Still to do: Escolta's own look (Bip hovering by the
-ally), the bomb's own look over the foe, the balance · Comes from: Aitor's own, his from chapter
+Bomba remota, Escolta, its stats and Enjambre, with their looks. Still to do: the balance · Comes from: Aitor's own, his from chapter
 2's first morning (it replaces the placeholder *Físico*, `fisico` in old saves)
 
 What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
@@ -112,6 +111,23 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 | 16 s | Aitor: Rayo de energía on A | A: 16; its bomb +5 s |
 | 22 s | B's bomb goes off | B: 28 |
 | 29 s | A's bomb goes off, 29 s on | A: about 50; Enjambre wakes |
+
+### Look (built 2026-11-21, `just screenshots bomba-remota --gpu`)
+
+- **Bomba remota** (`src/bomb.ts`, `BIP_MOVES` and `updateBombs` in `src/battle-scene.ts`): Bip draws back, flies to the
+  foe in an arc, presses the bomb onto its chest (a clank, nanites closing round it) and flies home. The bomb is a
+  graphite puck with a cyan band, four clamps, a red lamp under a dark dome and a short antenna, stuck on the side the
+  camera sees, drawn bigger the more it has grown. Its lamp flashes red on a beat that quickens as its clock runs out
+  (about once a second with 9 s or more left, down to 13 a second at the end), each flash a red flare round it that
+  lights the foe, with a beep once it is close; its band turns from cyan to red, and in its last stretch it trembles
+  and swells. It goes off as a white flash, a fireball, red shock along the floor and Bip's sparks, *¡Estalla!* over the
+  number. Explosión sets them off one after another as its blast lands.
+- **Escolta** (`updateEscorts`): Bip flies in an arc to stand in front of the ally, between them and the foes; a shield
+  of cyan rings flares up round them, and two thin rings of light keep turning under them, Bip's tether crackling to
+  them now and then. A blow on them meets a cyan shield where it lands, and Bip throws a bomb onto whoever struck.
+  Escolta can be put on someone who is Defending (it lasts two rounds), never on someone Bip already stands by.
+- **Enjambre**: Bip rises over the foes trembling and comes apart into a swarm of little Bips that splits over every
+  foe, each stream sticking a bomb on.
 
 ### What it offers a dual
 

@@ -725,6 +725,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
+      // A Bomba remota went off: its number with its own word, and the scene blows it up.
+      else if (p.blast) { pop(p.target, `−${p.amount}`, 'damage', '¡Estalla!'); callbacks.pulse(p.target, p.status, p.by); }
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
     render();
