@@ -499,6 +499,12 @@ title = "Amigos de la universidad: monstruos del càmping"
 grep = "camping-negra"
 in = ["src/battle.ts"]
 
+# 2026-11-21: they speak in SPEAKERS (src/dialogue.ts) with drawn faces only; the audit lists them.
+[[block.item]]
+title = "Amigos de la universidad: retratos del mago de camping y el agente (just character)"
+grep = "(?s)(?=.*portrait: 'mago')(?=.*portrait: 'agente')"
+in = "src/dialogue.ts"
+
 [[block.item]]
 title = "Amigos de la universidad: La Sobremesa y el final"
 # The boss at the long table comes apart and frees the seven, the photo with the melon, their five lights, the spiral home for everyone (story.ts winUni).
@@ -1075,6 +1081,12 @@ file = "src/title.ts"
 [[block.item]]
 title = "Una canción en cada sitio de las misiones"
 grep = "'sagrada-familia-interior': 'mazmorra-oscuro'"
+in = "src/main.ts"
+
+# 2026-11-21: the audit's only place left without a song (Bernat's shop, docs/places/nucli.md).
+[[block.item]]
+title = "Canción de El Nucli"
+grep = "'el-nucli':"
 in = "src/main.ts"
 
 [[block.item]]
