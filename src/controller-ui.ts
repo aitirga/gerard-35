@@ -55,7 +55,7 @@ export function createControllerUI(callbacks: {
   lights: (section: HTMLElement) => void;
   /** Fills the "Sonido" page (src/sound-ui.ts). */
   sound: (section: HTMLElement) => void;
-  /** Whether the artilugio's real board is reaching the server now (src/artilugio.ts): a quiet dot on the Configuración page. */
+  /** Whether the artilugio's real board is reaching the server now (src/artilugio.ts): a dot on the Configuración page, green while it is, an empty ring while it is not. */
   board?: (listener: (connected: boolean) => void) => () => void;
 }) {
   const profiles: Record<string, ControllerProfile> = Object.create(null);
@@ -77,7 +77,7 @@ export function createControllerUI(callbacks: {
       </nav>
     </section>
     <section data-page="settings" hidden>
-      <span class="artilugio-dot" data-artilugio-dot hidden aria-hidden="true"></span>
+      <span class="artilugio-dot" data-artilugio-dot aria-hidden="true"></span>
       <p class="menu-intro">Haz que el juego se sienta como en casa.</p>
       <nav class="settings-options" aria-label="Configuración">
         <button data-open="controller"><span class="menu-option-icon">${padIcon}</span><strong>Mando</strong><small>Conectar, probar y asignar controles</small><span class="setting-tag" data-pad-summary>Sin conectar</span></button>
@@ -120,7 +120,7 @@ export function createControllerUI(callbacks: {
   callbacks.lights(root.querySelector<HTMLElement>('[data-page="lights"]')!);
   callbacks.sound(root.querySelector<HTMLElement>('[data-page="sound"]')!);
   const boardDot = get('[data-artilugio-dot]');
-  const stopBoard = callbacks.board?.(connected => { boardDot.hidden = !connected; });
+  const stopBoard = callbacks.board?.(connected => { boardDot.classList.toggle('on', connected); });
   const edges = new ControllerEdges();
   // Player 2: whichever other connected controller the game can read.
   const edges2 = new ControllerEdges();
