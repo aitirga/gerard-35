@@ -247,7 +247,7 @@ function geoMap(environment: Environment, scene: GeoScene) {
  */
 function stationSigns(environment: Environment, unit: number) {
   return environment.interactions.map(interaction => {
-    const id = stationOf(interaction.id);
+    const id = interaction.id && stationOf(interaction.id);
     if (!id) return '';
     const station = STATIONS[id], line = linesAt(id)[0];
     const metro = !line || line.kind === 'metro';
