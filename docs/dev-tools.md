@@ -441,7 +441,9 @@ that order, then what the simulated game never says (talking twice, optional loo
 and saves `output/guion/fotos/<entry>.jpg`; a thing looked at gets its photo from the first visit to
 its place. Only what is missing is taken (`--todas` redoes them all, `--solo <section or id>` some,
 `--ver` shows the browser); a moment whose point starts a fight is tried again from the first visit
-to its place. About 200 photos in 15 minutes on this machine's GPU. A photo is the place and the line,
+to its place; each load is a fresh tab (one tab reloaded dozens of times runs out of GPU memory). About
+200 photos in half an hour on this machine's GPU; a few never come out, where a fight starts on arriving
+anywhere near (a castle room's pupils, the patrols of Emilie's model). A photo is the place and the line,
 not the exact scene: people the mission moves may stand elsewhere.
 
 **Editing.** Hovering a line offers *Editar*, *Sugerir* and *Comentar*; clicking its text edits it.

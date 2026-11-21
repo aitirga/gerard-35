@@ -248,8 +248,14 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
   await vite.listen();
   const base = vite.resolvedUrls.local[0];
   const browser = await chromium.launch({ headless: !headed, args: ['--enable-unsafe-webgpu', ...(gpu ? ['--enable-gpu'] : ['--use-webgpu-adapter=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', '--no-proxy-server'] });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  await page.route(url => !['localhost', '127.0.0.1'].includes(url.hostname), route => route.abort());
+  // A fresh tab for each load: one tab reloaded dozens of times runs out of GPU memory.
+  let page, lastError = '';
+  const freshPage = async () => {
+    await page?.close().catch(() => {});
+    page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await page.route(url => !['localhost', '127.0.0.1'].includes(url.hostname), route => route.abort());
+    page.on('pageerror', error => { lastError = error.message.split('\n')[0]; });
+  };
   const wait = ms => page.waitForTimeout(ms);
   const until = async (expression, timeout) => {
     const end = Date.now() + timeout;
@@ -262,13 +268,15 @@ async function fotos({ all = false, only, headed = false, gpu = true } = {}) {
     while (queue.length) {
       const { url, group } = queue.shift();
       try {
+        await freshPage();
+        lastError = '';
         await page.goto(new URL(url, base).href, { waitUntil: 'domcontentloaded' });
         await until('!!window.gerard?.started && !!window.gerard.dialogue', 60000);
         await wait(1500);
         await quiet();
       } catch (error) {
         failed += group.length;
-        console.log(`  ✗ ${url}: ${error.message}`);
+        console.log(`  ✗ ${url}: ${error.message}${lastError ? ` (la página: ${lastError})` : ''}`);
         continue;
       }
       while (group.length) {
