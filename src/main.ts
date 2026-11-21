@@ -101,6 +101,10 @@ const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
   // ends) and Alegia as Sant Quirze.
   'home-floor-2': 'triste', 'home-floor-1': 'triste', 'home-entrance': 'triste', maresme: 'triste', cardedeu: 'triste', 'cardedeu-calle': 'triste', alegia: 'triste',
   meridiana: 'home',
+  // El Nucli, Bernat's shop (inside, off the city's day and night): home's song, the one warm place
+  // in Sants, where the friends still sit down to play (2026-11-21: the soundtrack is closed, so a
+  // place without a song of its own takes one of these).
+  'el-nucli': 'home',
   // The friends' missions start on the dark mazmorra song (Logic's song-mazmorra-4), sad and plain;
   // three of their boss rooms change it for mazmorra-3 (`inBossRoom`). Marta's has her own voice.
   'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-oscuro', 'poble-sec': 'mazmorra-oscuro', 'piso-emilie': 'mazmorra-oscuro', modelo: 'mazmorra-oscuro',
