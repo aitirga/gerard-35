@@ -36,8 +36,13 @@ data/
 # Local browser verification artifacts
 .playwright-cli/
 
-# Scratch/generated outputs (approved artwork is copied into assets/ and public/)
-output/
+# Scratch/generated outputs (approved artwork is copied into assets/ and public/), except the figures
+# `just character-3d` makes (output/characters/3d/): the bestiary shows them on every machine.
+output/*
+!output/characters/
+output/characters/*
+!output/characters/3d/
+output/characters/3d/**/*.log
 
 # The artilugio's Wi-Fi and key (firmware/artilugio/secrets.example.h), and the binaries that carry them
 firmware/**/secrets.h
