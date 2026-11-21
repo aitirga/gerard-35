@@ -69,7 +69,7 @@ function fromModel(spec: AnimalSpec): CatBody {
     tail: Array.from({ length: spec.rig.tailSegments }, (_, i) => find(`Cola ${i + 1}`)),
     blink(open) { for (const node of lids) node.enabled = open < .5; },
     // The glare covers each painted eye as its lid does, a little larger.
-    eyes: ['Ojo izquierdo', 'Ojo derecho'].map(name => ({ node: find(name), size: spec.lids.size.map(v => v * 1.15) as [number, number, number] })),
+    eyes: ['Ojo izquierdo', 'Ojo derecho'].map(name => ({ node: find(name), size: spec.lids.size.map(v => v * 1.5) as [number, number, number] })),
     materials: [lid], rig: spec.rig,
   };
 }
@@ -143,7 +143,7 @@ function fromPrimitives(id: CatId): CatBody {
   }
   return {
     cat, body, head, ears, tail, legs, rig: CAT_RIG, materials: [...mats.values()],
-    eyes: eyes.map(({ eye }) => ({ node: eye, size: [1.2, 1.2, 1.6] as const })),
+    eyes: eyes.map(({ eye }) => ({ node: eye, size: [1.5, 1.5, 1.8] as const })),
     blink(open) { eyes.forEach(({ eye, open: wide }) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, wide * open, s.z); }); },
   };
 }
@@ -198,8 +198,10 @@ function animated({ cat, body, head, ears, tail, legs, blink, eyes, materials, r
       if (Math.abs(next - glare) < .005) return;
       glare = next;
       for (const glow of glows) glow.enabled = glare > .01;
-      glowing.emissiveIntensity = 1.5 + 6.5 * glare; glowing.update();
+      glowing.emissiveIntensity = 2 + 10 * glare; glowing.update();
     },
+    /** Where each eye is in the world now (to light a flare on them). */
+    eyesAt: () => glows.map(glow => glow.getPosition().clone()),
     // The model's own materials stay with its file: only what this cat made goes.
     destroy() { cat.destroy(); materials.forEach(m => m.destroy()); glowing.destroy(); },
   };

@@ -51,7 +51,7 @@ const KINDS = {
   // rises (never violet: that is fear's and possession's, docs/visual-style.md).
   umbra: { shape: 'smoke', colour: ['#1c1819', '#0b0a0b'], opacity: .88, life: [.7, 1.2], size: [.16, .26], sizeEnd: 2.2, fadeIn: .06, fadeOut: .55, speed: [.35, .9], rise: [.05, .3], gravity: -.08, drag: 2.6, wander: .25, wanderRate: 2, flow: .3, spin: [20, 70], front: .3 },
   // Two red eyes lighting up in that dark, a flare at each.
-  glare: { shape: 'glow', colour: ['#ff6a4a', '#ff2414'], additive: 1, glow: 1, intensity: 3.4, life: [.45, .7], size: [.06, .09], sizeEnd: .6, fadeIn: .05, fadeOut: .55, front: 1 },
+  glare: { shape: 'glow', colour: ['#ff6a4a', '#ff2414'], additive: 1, glow: 1, intensity: 3.4, life: [.22, .34], size: [.06, .09], sizeEnd: .6, fadeIn: .05, fadeOut: .55, front: 1 },
   // …ice…
   shard: { shape: 'spark', orient: 'velocity', colour: ['#f4fdff', '#9fdcff'], additive: .6, glow: .8, life: [.6, 1.1], size: [.035, .06], fadeOut: .3, speed: [3, 5.5], rise: [1.5, 3], gravity: 9, drag: .8, collide: true, bounce: .3, friction: .6, stretch: .08, bodies: 1, front: .7 },
   flake: { shape: 'flake', colour: '#eaf8ff', additive: .5, glow: .7, life: [2, 3.5], size: [.05, .1], fadeOut: .25, speed: [.3, .8], rise: [.5, 1.5], gravity: .45, drag: 1.5, wander: .25, wanderRate: 1.5, flow: .25, spin: [20, 90], collide: true, stick: true, bodies: .5 },

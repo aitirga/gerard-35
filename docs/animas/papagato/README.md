@@ -168,8 +168,8 @@ here (4 to 7 on 2026-11-21). Cost is in maná (3 from the start, 4 from level 4)
   round's end (a wound nobody cut loses a stack then). On screen (Aitor 2026-11-21) the dark pools under Haru
   and she sinks into it, her eyes flaring red, and is gone; only the slit cat's eye on the wearer's
   plate says she is out there. As the round starts the dark wells up behind the prey (on the
-  camera's side), two red eyes light in it, she rises out of it and holds a beat, springs onto its
-  back and lands hard; then she melts into the dark and comes out of it at her place (`ACECHO` in
+  camera's side), two red eyes light in it, she rises out of it and turns her face to the camera, eyes
+  burning red, holds that look a beat, turns back, springs onto its back and lands hard; then she melts into the dark and comes out of it at her place (`ACECHO` in
   `src/battle-scene.ts`, `glare` in `src/cats.ts`, the `umbra` and `glare` particles).
 - **Cacería** (new): the whole field's blood at once. One claw for each stack on any foe, shared
   among those bleeding, none with the wound's bonus (the count already is the bonus). The claws on

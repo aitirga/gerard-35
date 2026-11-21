@@ -55,10 +55,11 @@ const WARD_STEP = .42;
  * Acecho, in fight seconds (docs/animas/papagato/README.md § Acecho). Charging: Haru crouches, the dark
  * pools under her at `pool` and she sinks into it from `sink` till `gone`; she stays gone until the round
  * starts. Her pounce: the dark wells up behind the prey at 0, two red eyes light in it at `eyes`, she rises
- * out of it from `rise` to `risen` and holds, springs at `spring`, lands on its back at `contact`, melts into
+ * out of it from `rise` to `risen`, turns her face to the camera, red eyes burning, by `stare`, holds that
+ * look, turns back and springs at `spring`, lands on its back at `contact`, melts into
  * the dark at `melt` (gone by `away`), comes back out of it at her place by `home`, and it is over at `end`.
  */
-const ACECHO = { pool: .2, sink: .3, gone: .66, eyes: .22, rise: .32, risen: .62, spring: .9, contact: 1.04, melt: 1.34, away: 1.56, home: 1.92, end: 2.15 } as const;
+const ACECHO = { pool: .2, sink: .3, gone: .66, eyes: .22, rise: .32, risen: .62, stare: .74, spring: 1.08, contact: 1.22, melt: 1.52, away: 1.74, home: 2.1, end: 2.35 } as const;
 /**
  * Dadista's throw, in fight seconds (docs/animas/dadaista/): the die leaves the hand at `launch`,
  * lands on whom its face reaches at `contact`, and bounces off to the floor over `tail`.
@@ -2476,7 +2477,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
             cue('creak');
           });
         } else if (t < ACECHO.risen) { const u = smooth((t - ACECHO.rise) / (ACECHO.risen - ACECHO.rise)); at = from; size = u; lift = -.3 * (1 - u); }
-        else if (t < ACECHO.spring) at = from;
+        else if (t < ACECHO.spring) {
+          // She looks at us: her face turned to the camera, the eyes burning, and back to the prey to spring.
+          at = from;
+          const view = viewDir(), vl = Math.hypot(view.x, view.z) || 1, stare = Math.min(smooth((t - ACECHO.risen) / (ACECHO.stare - ACECHO.risen)), 1 - smooth((t - ACECHO.spring + .1) / .1));
+          const camera = new pc.Vec3(from.x + view.x / vl * 3, 0, from.z + view.z / vl * 3);
+          look = new pc.Vec3().lerp(target.base, camera, stare);
+          if (t >= ACECHO.stare) once(effect, `stare:${id}`, () => { for (const eye of pair.haru.eyesAt()) effects.emit('glare', eye, 1, 0); cue('creak'); });
+        }
         else if (t < ACECHO.contact) { const u = smooth((t - ACECHO.spring) / (ACECHO.contact - ACECHO.spring)); at = new pc.Vec3().lerp(from, onBack, u); lift = Math.sin(u * Math.PI) * .75; leap = u; crouch = 0; }
         else if (t < ACECHO.melt) at = onBack;
         else if (t < ACECHO.away) {
