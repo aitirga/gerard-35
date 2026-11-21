@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -97,6 +97,12 @@ const STATUS_ICONS: Record<IconId, string> = {
   confusion: '<path d="M5.3 5.7a2.7 2.7 0 1 1 4 2.4c-.8.5-1.3 1-1.3 2v.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="13.2" r="1.15"/>',
   // A drop over two ripples (Mojado).
   mojado: '<path d="M8 1.2C6.4 3.8 4.9 5.6 4.9 7.6a3.1 3.1 0 0 0 6.2 0C11.1 5.6 9.6 3.8 8 1.2z"/><path d="M2 12.2c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 2-1.1 3-.3M3.2 14.8c1.2-.8 2.4-.8 3.6 0s2.4.8 3.6 0" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  // La crecida (Freática): Agua, a staff gauge in its water, its three marks; Corriente, a bolt into the water's line;
+  // Hundido, a head under a line; Congelado, a split crystal of ice.
+  agua: '<path d="M3 1.5v13" stroke="currentColor" stroke-width="1.4"/><path d="M3 4h4.5M3 7.5h3.5M3 11h4.5" stroke="currentColor" stroke-width="1.3"/><path d="M8.6 9.4c1.1-.8 2.1-.8 3.2 0s2.1.8 3.2 0v5.1H8.6z"/>',
+  corriente: '<path d="M9.4 1 4.6 7.6h3L6.6 11.2l4.8-6H8.6z"/><path d="M1.4 13.2c1.6-1.2 3.2-1.2 4.8 0s3.2 1.2 4.8 0 2.4-1 3.6-.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+  hundido: '<circle cx="8" cy="10.2" r="2.6"/><path d="M5.2 15c.4-1.6 1.4-2.3 2.8-2.3s2.4.7 2.8 2.3" /><path d="M1.2 4.6c1.6-1.2 3.2-1.2 4.8 0s3.2 1.2 4.8 0 2.4-1 4-.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11.6" cy="7.2" r=".8"/>',
+  congelado: '<path d="M8 .8 13.6 4.4v7.2L8 15.2 2.4 11.6V4.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 .8v14.4M2.4 4.4 13.6 11.6M13.6 4.4 2.4 11.6" stroke="currentColor" stroke-width=".9" opacity=".75"/>',
   // Four arrows pointing in (Encogido).
   encogido: '<path d="M2 2l4 4M14 2l-4 4M2 14l4-4M14 14l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 6H6V3.5M12.5 6H10V3.5M3.5 10H6v2.5M12.5 10H10v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
 };
@@ -138,7 +144,8 @@ const remarked = new Set<string>();
  * every ánima in it to level up. The rest are moments the fight stages itself (`stageMoment`):
  * Vertitrón's moments and El Plato's surprise, each offered only in its own fight.
  */
-export type FightMoment = 'won' | 'won-level' | 'lost' | 'foes-low' | 'party-low' | 'beat' | StagedMoment;
+/** `agua-N`: every foe standing with N marks of water (La crecida, Freática; 0 dries them), `stageWater`. */
+export type FightMoment = 'won' | 'won-level' | 'lost' | 'foes-low' | 'party-low' | 'beat' | 'agua-0' | 'agua-1' | 'agua-2' | 'agua-3' | StagedMoment;
 
 export function createBattleUI(hud: HTMLElement, callbacks: {
   /** `onImpact` runs as each blow lands: 0 at contact, then a flurry's others (`BattleEffect.strikes`). */
@@ -294,7 +301,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const was = held.before?.level ?? 0, level = Math.max(was, ...held.burns?.slice(0, held.landed) ?? []);
     return level > was ? { level, left: TIMED.quemado.seconds, next: TIMED.quemado.every } : held.before;
   }
-  const shownTimed = (c: Combatant) => ({ ...c.timed, quemado: shownFire(c) });
+  // Water held under a foe (La crecida) is its own Mojado: the plate shows the water, not the two.
+  const shownTimed = (c: Combatant) => ({ ...c.timed, quemado: shownFire(c), ...c.timed?.agua ? { mojado: undefined } : {} });
   /** An action chosen whose first blow has not landed: nobody's statuses change on screen until it does. */
   let unlanded = false;
   /** Runs `action`, and what it changes on the fighters waits to show until it lands (`present`). */
@@ -410,6 +418,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
       ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => id === 'quemado' && on.level >= COMBUSTION.level
         ? { id: 'combustion' as const, name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
+        // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
+        : id === 'hundido' ? { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' }
+        : id === 'congelado' ? { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
         : { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }),
     ] : [];
   }
@@ -662,6 +673,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (p.heal) { if (p.amount) pop(p.target, `+${p.amount}`, 'heal', `${TIMED[p.status].name} ${roman(p.level)}`); if (p.mended) pop(p.target, `Cúpula +${p.mended}`, 'status', 'Se recompone', 'bits'); }
       // Siete vidas took the pulse that would have killed them: it turns into a cure.
       else if (p.saved) livesPop(p.target, p.saved);
+      // La crecida's pulses come off in their own colour: the current's yellow, the sinking's blue-green.
+      else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target); }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
@@ -1615,6 +1628,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const everyone = [...s.allies, ...s.foes], who = s.foes.find(c => c.id === effect.actor);
     if (!who) return;
     const named = (id?: string) => everyone.find(c => c.id === id)?.name ?? '';
+    if (effect.iced) return { who, name: 'Congelado', detail: 'Pierde el turno' };
     if (effect.stunned) return { who, name: 'Shock', detail: 'Pierde el turno' };
     if (effect.confused) return { who, name: 'Confundido', detail: effect.target === who.id ? 'Se golpea a sí mismo' : `Golpea a ${named(effect.target)}` };
     if (effect.ability) {
@@ -1656,6 +1670,35 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       el.dataset.leaving = 'true';
       calloutTimer = setTimeout(() => { el.hidden = true; delete el.dataset.leaving; }, 200);
     }, after);
+  }
+  /**
+   * La crecida's named pops (docs/animas/freatica/README.md § On the plates): «Agua I/II/III» on a rise in the water's colour
+   * at that depth and «Hundido» as the third mark closes, Bombeo's mark spent, «Corriente» as a bolt charges the water,
+   * «Bajo cero» as it freezes, and on the ice each blow's cracks, a flame's melt and «¡Roto!» with the break's own number.
+   */
+  function waterSays(effect: BattleEffect): { target: string; id: string; text: string; detail: string }[] {
+    const says: { target: string; id: string; text: string; detail: string }[] = [];
+    for (const w of effect.water ?? []) {
+      if (w.to > w.from) says.push({ target: w.target, id: `agua-${w.to}`, text: w.to >= CRECIDA.marks && w.from < CRECIDA.marks ? '¡Hundido!' : `Agua ${roman(w.to)}`, detail: w.to >= CRECIDA.marks && w.from < CRECIDA.marks ? `Agua ${roman(w.to)}` : '' });
+      else if (effect.skill === 'bombeo') says.push({ target: w.target, id: `agua-${Math.max(1, w.to)}`, text: w.to ? `Agua ${roman(w.to)}` : 'Sin agua', detail: 'Bombeo' });
+      else if (effect.reaction?.id === 'vapor' || effect.hits?.some(h => h.target === w.target && h.smoked)) says.push({ target: w.target, id: 'vapor', text: '¡Vapor!', detail: w.to ? `Agua ${roman(w.to)}` : 'Sin agua' });
+    }
+    for (const id of effect.current?.targets ?? []) says.push({ target: id, id: 'corriente', text: effect.current!.renewed ? 'Corriente' : '¡Corriente!', detail: effect.current!.renewed ? `Otra vez ${effect.current!.seconds} s` : `${effect.current!.seconds} s` });
+    for (const f of effect.frozen ?? []) says.push({ target: f.target, id: 'congelado', text: '¡Bajo cero!', detail: `Hielo ${roman(f.marks)}` });
+    for (const i of effect.ice ?? []) {
+      if (i.melted) says.push({ target: i.target, id: 'congelado', text: 'Se derrite', detail: 'Una marca de hielo' });
+      else if (i.broke === undefined) says.push({ target: i.target, id: 'congelado', text: `Hielo ${i.cracks}/${CRECIDA.blows}`, detail: (i.added ?? 1) > 1 ? 'Golpe alto: cuenta por dos' : 'Se agrieta' });
+    }
+    if (effect.cells) for (const id of effect.cells.wetted) says.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: 'Las celdas se rompen' });
+    return says;
+  }
+  /** The break of a frozen foe's ice: the largest number the ánima shows, slammed on as a golpe crítico's, «¡Roto!» under it. */
+  function iceBreaks(effect: BattleEffect, token: number) {
+    (effect.ice ?? []).filter(i => i.broke !== undefined).forEach((i, k) => setTimeout(() => {
+      if (token !== generation) return;
+      pop(i.target, `−${i.broke}`, 'crit', '¡Roto!', 'congelado');
+      callbacks.sound('crit');
+    }, 260 + k * 220));
   }
   /** One action on screen: a dual's banner or a foe's move named up top, Uri's shout from up on Vertitrón, then the action itself. */
   async function play(effect: BattleEffect, token: number) {
@@ -1735,7 +1778,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const available = free ? uses > 0 && diceOf(state!, actor).length > 0 : validTargets(state!, 'skill', skill.id).length > 0;
       const reason = free ? !uses ? 'Usado' : available ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados'
         : !affordable ? 'Sin maná' : available ? 'ulti' in skill ? 'Definitiva' : costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
-      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill) && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'hammer' in skill || 'freezes' in skill ? 'Quienes tienen agua' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill) && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
     fitSkills();
   }
@@ -1986,7 +2029,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const sweepOwed = new Map(sweep?.map(h => [h.target, owed.get(h.target) ?? 0] as const));
     // Dados astrales: each die of light takes its own PV off and shows its own number as it lands (blow = its place in `rain`).
     // Papagato's claws one after another (Cacería, Siete vidas): the same, each on the foe it found.
-    const rain = effect.rain?.length ? effect.rain : effect.volley?.length ? effect.volley : effect.hunt?.length ? effect.hunt : undefined;
+    // Golpe de ariete's blows too: one a mark of each foe's water, each with its own number.
+    const rain = effect.rain?.length ? effect.rain : effect.volley?.length ? effect.volley : effect.hunt?.length ? effect.hunt : effect.hammer?.length ? effect.hammer : undefined;
     const scatter = (i: number) => ((i * 7) % 5 / 4 - .5) * 64;
     // Statuses that landed show a beat after the last blow.
     const landed: { target: string; id: string; text: string; detail: string }[] = [];
@@ -2128,6 +2172,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Sincopante's that strike nobody (Crescendo, Acompañamiento, Da capo): what they did pops below, with no number.
       else if (effect.ecosRaised || effect.dacapo || (effect.ecoCalled?.kind === 'acompanamiento')) { /* its pops below */ }
       else if (sweep) { /* each foe's number comes as the beam crosses them (above) */ }
+      // Bajo cero: no blow; the ice says so over each foe it took (below).
+      else if (effect.frozen) { /* its stamps below */ }
       // The bit dome stopped the whole blow: nothing reached them, the dome's own pop says what it took (below).
       else if (effect.kind === 'enemy' && effect.bits?.took && !effect.amount && !effect.hits?.some(h => h.amount > 0)) { /* the dome's pop */ }
       else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0), 'crit' in rain[0] && !!rain[0].crit);
@@ -2195,6 +2241,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.charging) landed.push({ target: effect.charging, id: 'carga', text: '¡Cargado!', detail: 'Sale al empezar la ronda' });
       if (effect.stalking) landed.push({ target: effect.actor, id: 'acecho', text: 'Al acecho', detail: 'Salta al empezar la ronda' });
       effect.ward?.forEach(id => landed.push({ target: id, id: 'siete-vidas', text: 'Siete vidas', detail: 'El golpe mortal, en cura' }));
+      waterSays(effect).forEach(l => landed.push(l));
       if (!sweep) effect.hits?.forEach(h => { if (h.status) landed.push({ target: h.target, id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }); });
       // What the element turned: what it leaves, in its colour, and any PV it takes, on top of the blow's own number.
       const reaction = effect.reaction;
@@ -2269,6 +2316,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (markLeft(effect) && effect.target) landed.push({ target: effect.target, id: 'punto-debil', text: '¡Punto débil!', detail: `×${WEAK_SPOT} al siguiente golpe` });
       spentOn.forEach(id => landed.push({ target: id, id: 'punto-debil', text: `×${WEAK_SPOT}`, detail: 'Punto débil' }));
       if (!strikes) stamp();
+      iceBreaks(effect, token);
     });
     // A blow the scene never got to (the fight cut short) still comes off.
     if (owed.size || heldFire.size || unlanded) { owed.clear(); heldFire.clear(); unlanded = false; if (token === generation && state) render(); }
@@ -2612,6 +2660,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       state.message = moment === 'lost' ? 'Depuración: combate perdido.' : moment === 'won-level' ? 'Depuración: combate ganado, con experiencia para subir de nivel.' : 'Depuración: combate ganado.';
     } else if (moment === 'foes-low' || moment === 'party-low') {
       for (const unit of moment === 'foes-low' ? state.foes : state.allies) if (unit.hp > 0) unit.hp = 1;
+    } else if (moment.startsWith('agua-')) {
+      // Freática's water at will: every foe standing at that mark (`stageWater`).
+      if (!stageWater(state, Number(moment.slice('agua-'.length)))) return;
     } else if (moment in STAGED_MOMENTS) {
       // Vertitrón's moments, El Plato's surprise: the fight stages them itself (`stageMoment`).
       if (!stageMoment(state, moment as StagedMoment)) return;

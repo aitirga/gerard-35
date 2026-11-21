@@ -36,6 +36,7 @@ export interface FightStage { layout: Layout; pocket?: boolean; spread?: number 
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 import { createPowderFx, powderMix, FIESTA, TRACA_GAP } from './powder-fx';
 import { createEcoFx, type EcoFx } from './eco-fx';
+import { createFreaticaFight, FREATICA_SKILLS, HAMMER_GAP } from './freatica-fight';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
 import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
 import { TONES, type ToneId } from './song';
@@ -80,7 +81,7 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo']);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', ...Object.keys(FREATICA_SKILLS)]);
 /**
  * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
  * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
@@ -584,6 +585,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.dacapo) { fx?.dacapo(); pulse?.(.2, .6, .15); }
     fx?.setMuffled(ecosMuffled());
   }
+  // Freática's water (src/freatica-fight.ts): a cell under each foe, the look of the effects lab driven by the fight's state.
+  const freatica = createFreaticaFight(app, effects, {
+    fighters: () => [...fighters].filter(([, f]) => !f.part && f.model.enabled && (f.party || f.hp > 0)).map(([id, f]) => ({ id, party: f.party })),
+    at: id => { const p = fighters.get(id)?.model.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
+    model: id => fighters.get(id)?.model,
+  });
   /** The middle of the foes standing: the side a cortina faces. */
   const foesCentre = () => {
     const at = { x: 0, y: 0, z: 0 }, list = (state?.foes ?? []).flatMap(f => { const fighter = f.hp > 0 ? fighters.get(f.id) : undefined; return fighter ? [fighter] : []; });
@@ -595,6 +602,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let volleyed: { effect: BattleEffect; landed: number } | undefined;
   /** Cacería's and Siete vidas' claws landed so far, and the party Siete vidas' ward has reached so far. */
   let hunted: { effect: BattleEffect; landed: number } | undefined, wardSeen: { effect: BattleEffect; shown: number } | undefined;
+  /** Golpe de ariete's blows landed so far. */
+  let hammered: { effect: BattleEffect; landed: number } | undefined;
   /** The campaign's statuses as last shown, by fighter and status, so a change of stacks updates them. */
   const shownStacks = new Map<string, number>();
   /**
@@ -613,7 +622,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       else statusFx.apply(id, look, { level: Math.ceil(n / most * 3), seconds: most, left: n, held: true });
     }
     for (const look of ['quemado', 'cegado', 'sanacion', 'confusion', 'encogido', 'mojado', 'envenenado', 'virus'] as const) {
-      const on = timed?.[look], level = on?.level ?? 0, key = `${id}:${look}`;
+      // Water held under a foe (Freática) is its Mojado: the cell shows it, not drips on the body.
+      const on = look === 'mojado' && timed?.agua ? undefined : timed?.[look], level = on?.level ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) !== level) {
         shownStacks.set(key, level);
         if (!on) statusFx.remove(id, look);
@@ -3271,8 +3281,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
       if (!next) foeTop = 0;
       state = next; effect = nextEffect; effectTime = 0; impact = onImpact; impacted = false; clawed = 0; fireWaits = undefined; clock.clear(!next);
+      freatica.pending(nextEffect);
       if (!next) {
-        dualFx.clear(); powderFx.clear(); ecoFx?.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
+        dualFx.clear(); powderFx.clear(); ecoFx?.clear(); freatica.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
@@ -3346,7 +3357,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      // Freática's skills start their look on the cells at once (Recarga's tape, Riada's wave): the numbers come at their contact.
+      if (effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' && state) freatica.play(effect, state);
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
       if (effect?.skill && POWDER_SKILLS[effect.skill] && animate && !powderPlayed.has(effect)) {
         powderPlayed.add(effect);
@@ -3356,6 +3369,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       }
       if (effect && !dual && !impacted && (!animate || effectTime >= contact)) {
         impacted = true; impact?.(0);
+        // What the blow did to Freática's water and ice (a bolt, steam, a crack, the break), as it lands.
+        if (state) freatica.play(effect, state);
         // Without motion Rayo solar reaches everyone at once.
         if (effect.release && !animate) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
         worldFx(effect, actor, target, animate);
@@ -3458,6 +3473,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (f) hit(f, white, .5);
           shake = Math.max(shake, .1);
           if (volleyed.landed === effect.volley.length - 1) for (const h of effect.hits ?? []) if (h.burn?.id === 'empolvado') powderFx.soon(h.target, nextMix(), .15);
+        }
+      }
+      // The water hammer's blows (Golpe de ariete): each after the first tells the fight screen as it lands, one after another.
+      if (effect?.hammer && impacted) {
+        if (hammered?.effect !== effect) hammered = { effect, landed: 1 };
+        for (; hammered.landed < effect.hammer.length && (!animate || t >= contact + hammered.landed * HAMMER_GAP); hammered.landed++) {
+          impact?.(hammered.landed);
+          if (animate) { const f = fighters.get(effect.hammer[hammered.landed].target); if (f) hit(f, white, .55); cue('thump'); shake = Math.max(shake, .12); }
         }
       }
       // Papagato's claws one after another (Cacería, Siete vidas): each after the first lands in turn on the foe it found.
@@ -3583,7 +3606,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (f.robot) { const extra = robotFrame(id, f, unit, t, dt, animate); roll += extra.roll; lean += extra.lean; }
         const idle = idlePose(time, f.seed);
         // Statuses move them too: frozen stands still, poisoned or dizzy sways, paralysed twitches.
-        const stance = statusFx.motion(id), lively = animate && stance !== 'freeze' && (f.party || f.downAt === undefined);
+        // In Bajo cero's ice (Freática) a foe holds its pose too, its ice drawn by the cell (src/freatica-fight.ts).
+        const iced = !!state?.foes.find(u => u.id === id)?.timed?.congelado;
+        const stance = statusFx.motion(id), lively = animate && stance !== 'freeze' && !iced && (f.party || f.downAt === undefined);
         const celebrating = animate && f.party && f.hp > 0 && state?.phase === 'won' && !effect;
         if (celebrating) hop = Math.abs(Math.sin(time * 5.5 + f.seed)) * .3;
         // Gerard and Aitor knocked out stay down where they fell, lying on their side, until the fight
@@ -3757,6 +3782,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // A cortina follows the fight's word as the powder does: one a passive raised stands up, one whose rounds are over comes down.
       if (state) for (const ally of state.allies) powderFx.trackScreen(ally.id, cortinaRounds(state, ally) > 0, foesCentre, nextMix);
       statusFx.update(dt, time);
+      freatica.sync(state, dt);
       // Stats that stay up or down give off motes from the head (src/stat-motes.ts). What this
       // action changes waits for its blow to land, and the motes start as its chevrons pass.
       if (state) {
@@ -3870,7 +3896,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

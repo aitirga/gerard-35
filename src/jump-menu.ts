@@ -395,6 +395,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       <div class="fight-row"><span>Saltar a</span><div class="fight-chips">
         ${moment('won', 'Victoria')}${moment('won-level', 'Victoria subiendo de nivel')}${moment('lost', 'Derrota')}${moment('foes-low', 'Enemigos a 1 PV')}${moment('party-low', 'Equipo a 1 PV')}
         ${now.encounter === 'palace-minion' ? moment('beat', 'Despierta Matemágico', now.awakened) : ''}</div></div>
+      <div class="fight-row"><span>Agua</span><div class="fight-chips">${moment('agua-0', 'Sin agua')}${moment('agua-1', 'Agua I')}${moment('agua-2', 'Agua II')}${moment('agua-3', 'Agua III')}</div></div>
       ${staged.length ? `<div class="fight-row"><span>Momentos</span><div class="fight-chips">${staged.map(id => moment(id, STAGED_MOMENTS[id].label)).join('')}</div></div>` : ''}
       ${ready ? '' : '<p class="jump-note">Los saltos esperan al turno de un jugador.</p>'}
       <button type="button" class="jump-go jump-leave" data-leave>Salir del combate</button>

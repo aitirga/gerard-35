@@ -561,8 +561,14 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   const lamp = new pc.Entity('Luz de la corriente'); lamp.addComponent('light', { type: 'omni', color: new pc.Color().fromString(AGUA.spark), intensity: 0, range: 4.5, castShadows: false }); app.root.addChild(lamp);
 
   // ——— The state ———
-  let time = 0, on = false, marks = 0, level = 0, clock = AGUA.mark, rate = 1, moving = false, grey = false;
+  let time = 0, on = false, marks = 0, level = 0, clock: number = AGUA.mark, rate = 1, moving = false, grey = false;
   let current = 0, pulseIn = 0, flash = 0, steamFlash = 0, breaking = false, hammer = 0, frozen = false, ice = 0, iceLeft = 0, breath = 0;
+  /**
+   * In a fight the clocks are the fight's, not the cell's (src/freatica-fight.ts): the top mark's seconds left, the current's,
+   * and the marks of ice left. While driven the surface sinks to them and the cell never drops a mark by itself: the fight
+   * lowers it when its water does.
+   */
+  let driven: { left?: number; current?: number; ice?: number } | undefined;
   const half = { w: 1.5, d: 1.5 }, fwd = new pc.Vec3(0, 0, 1), across = new pc.Vec3(1, 0, 0);
   let yaw = 0, height = 2.6;
   const ticks = [...AGUA.ticks];
@@ -901,6 +907,8 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     get grey() { return grey; },
     /** Development: the clock runs this many times as fast (to watch a mark drain). */
     setRate(k: number) { rate = k; },
+    /** A fight drives this cell's clocks from its own state (`driven`), or lets them run by themselves again (`undefined`). */
+    drive(d: { left?: number; current?: number; ice?: number } | undefined) { driven = d; },
     get marks() { return marks; },
     get level() { return level; },
     /** How much of the top mark is left (0–1). */
@@ -932,7 +940,8 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     if (frozen) {
       // Ice melts on the clock: it stands where the water stood and sinks all the while, a mark every `AGUA.ice` seconds.
       clock = AGUA.mark;
-      iceLeft -= dt * rate / AGUA.ice; marks = Math.max(0, Math.min(3, Math.ceil(iceLeft))); level = iceTall(iceLeft);
+      if (driven?.ice !== undefined) iceLeft = driven.ice; else iceLeft -= dt * rate / AGUA.ice;
+      marks = Math.max(0, Math.min(3, Math.ceil(iceLeft))); level = iceTall(iceLeft);
       const drip = (breath -= dt) <= 0; if (drip) breath = .45;
       if (iceLeft <= 0) thawed();
       for (const b of alive()) {
@@ -947,14 +956,15 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
         b.crack[2] = Math.max(0, b.crack[2] - dt * 3.4);
       }
     } else if (marks && !moving && !breaking) {
-      clock -= dt * rate;
+      if (driven?.left !== undefined) clock = Math.min(AGUA.mark, driven.left); else clock -= dt * rate;
       level = ticks[marks - 1] + AGUA.bands[marks - 1] * Math.max(0, clock / AGUA.mark);
-      if (clock <= 0) {
+      if (clock <= 0 && !driven) {
         marks--; clock = AGUA.mark; u.ticks[3] = 0;
         stopBubbles();
         move(full(marks), .5, 0, () => { if (!marks) show(false); });
       }
     }
+    if (driven?.current !== undefined && current > 0) current = driven.current;
     if (current > 0) {
       current -= dt;
       if ((pulseIn -= dt) <= 0 && current > 0) {

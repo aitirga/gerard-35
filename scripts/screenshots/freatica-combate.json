@@ -1,0 +1,321 @@
+{
+  "title": "Freática en combate",
+  "description": "Freática (docs/animas/freatica/), la de Emilie, jugable entera: a nivel 7 en un combate de prueba, con Bajo cero comprada en el bote. Recarga, Riada y las tres marcas; la corriente de un rayo y el vapor del fuego; Bajo cero, los congelados perdiendo el turno, el hielo agrietándose y rompiéndose; Golpe de ariete y Bombeo.",
+  "steps": [
+    {
+      "open": "/?story=freatica-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22freatica%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%2C%22freatica%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22freatica%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 420; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 400,
+      "caption": "Freática a nivel 7: Recarga, Sondeo eléctrico (Nv 2), Bombeo (Nv 3), Riada (Nv 6) y Golpe de ariete (Nv 7); cuatro círculos de maná desde el nivel 4"
+    },
+    {
+      "eval": "window.skill('recarga')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "recarga",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Recarga: la cinta corre por el suelo hasta el perro, el agua brota del suelo y sube a la primera marca. «Agua I»; el perro, mojado mientras tenga agua"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { window.st = s; s.water = { by: 'aitor' }; [2, 1, 0].forEach((n, i) => { const f = s.foes[i]; if (!f) return; const t = { ...f.timed }; delete t.agua; delete t.mojado; delete t.corriente; delete t.hundido; if (n) t.agua = { level: n, left: 20, next: 20 }; f.timed = t; }); })"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('riada')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "riada",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Riada: una ola cruza cada celda y el agua de todos sube una marca. El primero llega a la tercera: «¡Hundido!», y despierta Bajo cero"
+    },
+    {
+      "shot": "tres-niveles",
+      "delay": 1600,
+      "caption": "Tres celdas a tres alturas: Agua III (hundido, burbujas), II y I. En cada placa, el icono Agua con su reloj, y Hundido en el de la tercera marca"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').element = 'electrico'; })"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "corriente",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Atacar · Eléctrico sobre el primero: Conducción por todos los que tienen agua, y el agua no se va: se queda con la corriente 10 s. «¡Corriente!»"
+    },
+    {
+      "shot": "corriente-pulsa",
+      "delay": 1800,
+      "caption": "La corriente pulsa cada 2 s en cada agua, más fuerte cuanto más alta: sus números en amarillo; el Hundido, en verde azulado"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').element = 'fuego'; })"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "ArrowRight",
+      "gap": 250
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "vapor",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Atacar · Fuego sobre el segundo: no prende. La marca de arriba se va en vapor y lo ciega al nivel que tenía su agua: «¡Vapor!», Cegado II"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { window.st = s; s.water = { by: 'aitor' }; [3, 2, 1].forEach((n, i) => { const f = s.foes[i]; if (!f) return; const t = { ...f.timed }; delete t.agua; delete t.mojado; delete t.corriente; delete t.hundido; if (n) t.agua = { level: n, left: 20, next: 20 }; f.timed = t; }); })"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "definitiva-en-la-lista",
+      "delay": 400,
+      "caption": "Con un enemigo en la tercera marca, Bajo cero encabeza la lista: una vez por combate, sin maná"
+    },
+    {
+      "eval": "window.skill('bajo-cero')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "bajo-cero",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Bajo cero: un destello blanco y el agua de cada uno queda en un bloque de hielo, tan alto como estaba. «¡Bajo cero!» y el icono Congelado en cada placa"
+    },
+    {
+      "shot": "congelados",
+      "delay": 1200,
+      "caption": "Congelados: no actúan y reciben un cuarto de cada golpe. El hielo se derrite en vivo, una marca cada 20 s"
+    },
+    {
+      "until": "window.st && window.st.round >= 4 && window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "pierden-el-turno",
+      "delay": 200,
+      "caption": "La ronda de los enemigos: los congelados pierden el turno («Congelado · Pierde el turno»)"
+    },
+    {
+      "eval": "ui.tweak(s => { delete s.allies.find(a => a.id === 'gerard').element; })"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "golpe-al-hielo",
+      "seconds": 1.8,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Un golpe desde fuera: el hielo destella, saltan esquirlas y se agrieta un octavo. El número es pequeño; «Hielo 1/8»"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[0].cracks = 7; })"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "roto",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "El octavo golpe lo rompe: el bloque estalla en esquirlas y el golpe del hielo, el mayor número del ánima, cae con «¡Roto!»"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { if (f.timed) { delete f.timed.congelado; } delete f.cracks; }); s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .6); }); })"
+    },
+    {
+      "eval": "ui.tweak(s => { window.st = s; s.water = { by: 'aitor' }; [3, 2, 1].forEach((n, i) => { const f = s.foes[i]; if (!f) return; const t = { ...f.timed }; delete t.agua; delete t.mojado; delete t.corriente; delete t.hundido; if (n) t.agua = { level: n, left: 20, next: 20 }; f.timed = t; }); })"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('golpe-de-ariete')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "golpe-de-ariete",
+      "seconds": 2.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Golpe de ariete: en cada celda, un golpe por marca de su agua: tres en la del fondo mientras la de la primera marca da uno. Después, todas secas"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { window.st = s; s.water = { by: 'aitor' }; [2, 0, 0].forEach((n, i) => { const f = s.foes[i]; if (!f) return; const t = { ...f.timed }; delete t.agua; delete t.mojado; delete t.corriente; delete t.hundido; if (n) t.agua = { level: n, left: 20, next: 20 }; f.timed = t; }); })"
+    },
+    {
+      "wait": 1400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('bombeo')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "bombeo",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Bombeo: el agua del que más tiene baja una marca y vuelve por el suelo hasta el equipo, que se cura"
+    }
+  ]
+}
