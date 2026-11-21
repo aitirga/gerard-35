@@ -45,7 +45,8 @@ export function roomAt(environment: Environment, cell: Cell): string | undefined
 }
 
 /** A room's name inside it: across, on two lines, or along it when it is long and narrow; left out where it cannot be read. */
-function roomLabel(room: Room, here: boolean) {
+type Spot = { x: number; z: number; r: number };
+function roomLabel(room: Room, here: boolean, avoid: Spot[]) {
   const name = roomName(room).toUpperCase(), words = name.split(' ');
   const half = Math.ceil(words.length / 2);
   const fit = (lines: string[], length: number, across: number) => ({
@@ -59,7 +60,16 @@ function roomLabel(room: Room, here: boolean) {
   ].sort((a, b) => b.size / ('penalty' in b ? b.penalty! : 1) - a.size / ('penalty' in a ? a.penalty! : 1));
   const best = options[0];
   if (best.size < 0.3) return '';
-  const cx = room.x + room.w / 2, cz = room.z + room.d / 2;
+  // Its box, and where in the room it goes: the middle, or the end of the room furthest from a face standing on it.
+  const along = Math.max(...best.lines.map(l => l.length)) * best.size * 0.36 + 0.1, across = best.lines.length * best.size * 0.6 + 0.05;
+  const hw = best.turned ? across : along, hd = best.turned ? along : across;
+  const hits = (x: number, z: number) => avoid.reduce((worst, m) => Math.max(worst, m.r - Math.hypot(Math.max(Math.abs(m.x - x) - hw, 0), Math.max(Math.abs(m.z - z) - hd, 0))), -Infinity);
+  const middle = { x: room.x + room.w / 2, z: room.z + room.d / 2 };
+  const spots = [middle,
+    { x: middle.x, z: room.z + hd + 0.2 }, { x: middle.x, z: room.z + room.d - hd - 0.2 },
+    { x: room.x + hw + 0.2, z: middle.z }, { x: room.x + room.w - hw - 0.2, z: middle.z },
+  ].filter(p => p === middle || (p.x - hw >= room.x - 0.01 && p.x + hw <= room.x + room.w + 0.01 && p.z - hd >= room.z - 0.01 && p.z + hd <= room.z + room.d + 0.01));
+  const { x: cx, z: cz } = spots.find(p => hits(p.x, p.z) <= 0) ?? spots.reduce((a, b) => hits(b.x, b.z) < hits(a.x, a.z) ? b : a);
   const tspans = best.lines.map((line, i) => `<tspan x="${n(cx)}" dy="${i ? 1.2 : n((1 - best.lines.length) * 0.6)}em">${escape(line)}</tspan>`).join('');
   return `<text x="${n(cx)}" y="${n(cz)}" font-size="${n(best.size)}" class="map-room${here ? ' is-here' : ''}"${best.turned ? ` transform="rotate(-90 ${n(cx)} ${n(cz)})"` : ''}>${tspans}</text>`;
 }
@@ -153,8 +163,9 @@ function planMap(environment: Environment, player: Cell) {
     ${furniture.length ? `<path class="map-furniture" d="${cellsPath(furniture, 0)}"/>` : ''}
     ${environment.plan ? openings(rows) : ''}${stairsOf(environment)}
     ${environment.houses.map(h => `<rect x="${h.x + 0.35}" y="${h.z + 0.45}" width="${h.w}" height="${h.d}" class="map-house-shadow"/><rect x="${h.x}" y="${h.z}" width="${h.w}" height="${h.d}" class="map-house"/>`).join('')}
-    ${rooms.filter(r => r.w * r.d >= 4).map(r => roomLabel(r, r === here)).join('')}`;
-  return { body, bounds, kind: 'plan' as const };
+`;
+  const labels = (avoid: Spot[]) => rooms.filter(r => r.w * r.d >= 4).map(r => roomLabel(r, r === here, avoid)).join('');
+  return { body, bounds, kind: 'plan' as const, labels };
 }
 
 const polyPath = (poly: GeoPoint[]) => `M${poly.map(p => `${n(p[0])},${n(p[1])}`).join('L')}Z`;
@@ -224,7 +235,7 @@ function geoMap(environment: Environment, scene: GeoScene) {
       ${streetNames(scene, unit * 0.7)}`;
     geoBodies.set(environment.id, body);
   }
-  return { body, bounds, kind: 'geo' as const };
+  return { body, bounds, kind: 'geo' as const, labels: (_avoid: Spot[]) => '' };
 }
 
 /** A face in a ring (their initial without a portrait); Gerard's pulses. */
@@ -233,7 +244,7 @@ function marker(m: MapMarker, cls: string, unit: number) {
   const face = m.face
     ? `<clipPath id="${id}"><circle r="${inner}"/></clipPath><circle class="map-marker-back" r="${inner}"/><image href="${escape(m.face)}" x="${n(-inner * 1.1)}" y="${n(-inner * 1.05)}" width="${n(inner * 2.2)}" height="${n(inner * 2.6)}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id})"/>`
     : `<text class="map-marker-initial" font-size="${n(unit)}">${escape(m.name[0] ?? '')}</text>`;
-  return `<g class="map-marker ${cls}" transform="translate(${x} ${z})"${m.colour ? ` style="--marker:${escape(m.colour)}"` : ''}><title>${escape(m.name)}</title>${cls === 'map-player' ? `<circle class="map-marker-pulse" r="${r}"/>` : ''}<circle class="map-marker-ring" r="${r}"/>${face}</g>`;
+  return `<g class="map-marker ${cls}" transform="translate(${x} ${z})"${m.colour ? ` style="--marker:${escape(m.colour)}"` : ''}><title>${escape(m.name)}</title>${cls === 'map-player' ? `<circle class="map-marker-pulse" r="${r}"/>` : ''}<circle class="map-marker-halo" r="${n(unit * 1.12)}"/><circle class="map-marker-ring" r="${r}"/>${face}</g>`;
 }
 
 /** Whoever stands on Gerard's heels is drawn just beside him, so both faces show. */
@@ -268,11 +279,14 @@ export function renderWorldMap(environment: Environment, player: Cell, partner?:
   }
   // The faces keep about the same size on screen however large the place.
   const unit = Math.max(0.72, Math.max(view.w, view.d * aspect) / 44);
+  const mate = partner && beside(partner, player, unit * 1.75);
+  // Room names step aside from the faces on them.
+  const avoid: Spot[] = [{ x: player.x + 0.5, z: player.z + 0.5, r: unit * 1.15 }, ...mate ? [{ x: mate.cell.x + 0.5, z: mate.cell.z + 0.5, r: unit * 0.95 }] : []];
   const room = roomAt(environment, player);
   const label = `Mapa de ${escape(environment.name)}. ${escape(options.player?.name ?? 'Gerard')}${room ? ` en ${escape(room)}` : ''}.`;
   return `<svg class="world-map" data-map="${map.kind}"${cropped ? ` data-cropped="${cropped}"` : ''} viewBox="${n(view.x)} ${n(view.z)} ${n(view.w)} ${n(view.d)}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${label}">
-    ${map.body}
-    ${partner ? marker(beside(partner, player, unit * 1.75), 'map-partner', unit * 0.82) : ''}
+    ${map.body}${map.labels(avoid)}
+    ${mate ? marker(mate, 'map-partner', unit * 0.82) : ''}
     ${marker({ name: 'Gerard', ...options.player, cell: player }, 'map-player', unit)}
   </svg>`;
 }

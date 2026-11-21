@@ -39,6 +39,8 @@ const COMPANION: Record<Story['companion'], string> = { none: 'Por tu cuenta', f
 const STAT_ORDER: (keyof Stats)[] = ['fuerza', 'magia', 'defensa', 'espiritu'];
 const STAT_SCALE = 20;
 const SLOT_LABELS = { feet: 'Pies', back: 'Espalda' } as const;
+/** Who is who on the map: Gerard gold, Aitor cyan, Bernat his blue. */
+const MAP_COLOURS = { gerard: '#f3cf78', aitor: '#4fd6ea', bernat: '#9fc3d9' } as const;
 const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
 
 export interface StatusCallbacks {
@@ -311,11 +313,11 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     const world = !!sheet.world, environment = ENVIRONMENTS[location];
     const partnerAt = callbacks.partner();
     const partnerName = story.partner === 'aitor' ? 'Aitor' : story.partner === 'bernat' ? 'Bernat' : undefined;
-    // Each on the map is their face, ringed in the colour of the ánima they wear (or their own).
+    // Each on the map is their face, ringed in their own colour, the same whatever ánima they wear:
+    // with two players, gold is always Gerard and cyan always Aitor.
     const faceOf = (id: 'gerard' | 'aitor' | 'bernat') => {
       const speaker = id === 'gerard' ? (story.adult ? SPEAKERS.gerard35 : SPEAKERS.gerard) : SPEAKERS[id];
-      const member = story.party.find(m => m.id === id);
-      return { face: speaker.portrait ? `${import.meta.env.BASE_URL}portraits/${speaker.portrait}.png` : undefined, colour: (member && animaColour(member)) ?? speaker.accent };
+      return { face: speaker.portrait ? `${import.meta.env.BASE_URL}portraits/${speaker.portrait}.png` : undefined, colour: MAP_COLOURS[id] };
     };
     const partnerId = story.partner === 'aitor' || story.partner === 'bernat' ? story.partner : undefined;
     const partner = partnerAt && partnerName && partnerId ? { cell: { x: Math.round(partnerAt.x), z: Math.round(partnerAt.z) }, name: partnerName, ...faceOf(partnerId) } : undefined;

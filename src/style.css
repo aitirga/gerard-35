@@ -1732,17 +1732,17 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .world-map[data-cropped="z"] { mask-image: linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent); }
 /* Plan: thin cream walls, each room's floor in its material's tint, the room you are in lit. */
 .map-wall { fill: #e9e3cf; filter: drop-shadow(0 .5px 0 #0009); }
-.map-floor { fill: #34413c; transition: fill .3s; }
-.map-floor[data-floor="laminate"], .map-floor[data-floor="deck"] { fill: #5a4936; }
-.map-floor[data-floor="terracotta"] { fill: #6b4033; }
-.map-floor[data-floor="tile"] { fill: #3a4d55; }
-.map-floor[data-floor="hydraulic"] { fill: #35514e; }
+.map-floor { fill: #3a4843; transition: fill .3s; }
+.map-floor[data-floor="laminate"], .map-floor[data-floor="deck"] { fill: #644f38; }
+.map-floor[data-floor="terracotta"] { fill: #7a4534; }
+.map-floor[data-floor="tile"] { fill: #3d5560; }
+.map-floor[data-floor="hydraulic"] { fill: #355a55; }
 .map-floor[data-floor="terrazzo"] { fill: #4c4943; }
 .map-floor[data-floor="stone"] { fill: #4a4a43; }
 .map-floor[data-floor="gravel"] { fill: #4f4838; }
 .map-floor[data-floor="concrete"] { fill: #3c4442; }
-.map-floor[data-floor="grass"] { fill: #3a5538; }
-.map-floor.is-here { filter: brightness(1.32) saturate(1.1); }
+.map-floor[data-floor="grass"] { fill: #3d5f3a; }
+.map-floor.is-here { filter: brightness(1.35) saturate(1.15); }
 .map-furniture { fill: #f3efdc12; stroke: #f3efdc1c; stroke-width: .04; }
 .map-window { fill: #9fd6f5; }
 .map-door { fill: #e0a467; }
@@ -1751,7 +1751,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-house-shadow { fill: #0006; }
 .map-house { fill: #4a5a50; stroke: #e9e3cf66; stroke-width: .12; }
 .map-room { fill: #f3efdc; font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: .08em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #0b1512; stroke-width: .14px; stroke-linejoin: round; opacity: .82; }
-.map-room.is-here { fill: var(--ui-gold); opacity: 1; }
+.map-room.is-here { fill: #f3cf78; opacity: 1; }
 /* Street map: the same paper as the Mapa del mundo. */
 .map-ground { fill: #e4ddcb; }
 .map-area[data-area="grass"] { fill: #b9d29a; }
@@ -1768,8 +1768,10 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .map-street { fill: #6a5d49; font-family: 'Manrope', sans-serif; font-weight: 800; letter-spacing: .12em; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #fbf8f0; stroke-width: .3px; stroke-linejoin: round; }
 /* The party: their faces ringed in the colour of the ánima they wear; Gerard's ring breathes. */
 .map-marker { --marker: var(--ui-gold); }
-.map-marker-ring { fill: none; stroke: var(--marker); stroke-width: calc(var(--marker-stroke, .16) * 1px); filter: drop-shadow(0 0 .25px #000c); }
+.map-marker-ring { fill: none; stroke: var(--marker); stroke-width: calc(var(--marker-stroke, .18) * 1px); }
 .map-marker-back { fill: #0d1916; }
+/* A dark rim under each ring, so the faces stand out on a dark plan and on the light street map alike. */
+.map-marker-halo { fill: #0b1512; opacity: .55; }
 .map-marker-initial { fill: var(--marker); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
 .map-marker-pulse { fill: none; stroke: var(--marker); stroke-width: .1; transform-box: fill-box; transform-origin: center; animation: map-pulse 2.2s ease-out infinite; }
 .world-map[data-map="geo"] .map-marker { --marker-stroke: .5; }
