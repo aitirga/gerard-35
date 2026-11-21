@@ -43,7 +43,8 @@ of Jessica, his ánima or a boss, round 4 replaces them.
   3. a harder sum with a subtraction (yellow + cyan − green = magenta);
   4. the three primaries at once (red + green + blue = white).
 - **Then the performance**: every lamp goes off, one after another, while a pink, Bubbaloo light
-  comes on in the room where the artilugio is hidden (Gerard and Aitor's bedroom), and the
+  comes on in the room where the artilugio is hidden (Gerard and Aitor's bedroom; **round 8 changes
+  it: the comedor, the Mesa lamp in green**), and the
   artilugio, awake for the first time, beeps random notes of its scale until it is found
   (docs/story-outline.md § The device: someone in front of it for a few seconds, or a press). Flag
   `portal-nucli`, which brings `artilugio`.
@@ -120,6 +121,19 @@ blink and the performance stay).
 - **Built (2026-11-20)**: `src/portal-ui.ts` (read-only model, `keep` for the sum's lamps, the moon
   watched from the flat), the lines in `src/friends/bernat.ts`. Screenshots: `just screenshots
   bernat-nucli --gpu`.
+
+## Round 8 (Aitor, 2026-11-21): the artilugio is in the comedor
+
+**Decided** (replaces the bedroom and its pink light in the performance; the sums and the rest stay).
+
+- **Where it is hidden**: Aitor has put the real artilugio away in the **comedor** (the dining
+  room), not the bedroom.
+- **The end of the performance**: once the four sums are solved, every lamp goes off, and the
+  **Mesa** lamp (the dining table's, `mesa`) comes on **green**, alone: the only light left in the
+  flat points at where the artilugio is.
+- **To change in code** (not done yet): `HIDING_LAMP` to `'mesa'` and `HIDING_LIGHT` to a green in
+  `src/friends/bernat.ts`; the comments that say «the bedroom pink» in `src/portal-ui.ts`; and the
+  performance bullet above.
 
 ## Protagonist
 
