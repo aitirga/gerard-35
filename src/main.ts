@@ -219,7 +219,7 @@ const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart; home
   // &levels=matemagico:2,papagato:3 starts those ánimas at that level (their level flags, src/levels.ts).
   const levels = (params.get('levels') ?? '').split(',').flatMap(pair => {
     const [id, n] = pair.split(':');
-    return [2, 3].filter(l => l <= Number(n)).map(l => `${id}-${l}`);
+    return [2, 3, 4, 5, 6, 7].filter(l => l <= Number(n)).map(l => `${id}-${l}`);
   }).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f));
   const add = (flags: StoryFlag[]) => STORY_FLAGS.filter(f => flags.includes(f) || levels.includes(f));
   if (mission !== null) {

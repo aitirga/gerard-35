@@ -1,5 +1,5 @@
 import type { createGame } from './game';
-import { createPowderFx, POWDER_COLOURS, POWDER_GREY, type PowderFx, type PowderMix } from './powder-fx';
+import { createPowderFx, powderMix, POWDER_GREY, TRACA_GAP, type PowderFx, type PowderMix } from './powder-fx';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -7,7 +7,8 @@ type Game = Awaited<ReturnType<typeof createGame>>;
  * Development: the coloured powder of Luca's ánima in the effects lab (`?fxlab`, just dev-fx), a
  * section of its panel (src/fx-lab.ts). It plays the puff alone, a handful thrown at the foe picked,
  * one for every foe, the powder left on someone, what fire and water make of it afterwards, and the
- * cortina (the screen of powder in front of an ally, and the blow that breaks it), in the grey of
+ * cortina (the screen of powder in front of an ally, and the blow that breaks it), Rociada's fan of
+ * water, Traca's five puffs and the whole of Fin de fiesta, in the grey of
  * the ánima's first round or in its muted mixes (docs/animas/prismatico/README.md § Look and
  * interface). Only the look: nothing it does touches the fight's numbers.
  */
@@ -18,9 +19,14 @@ const BUTTONS: [string, string, string][] = [
   ['polvo', 'Cubierto', 'El estado solo: polvo pegado al cuerpo, que suelta granos'],
   ['fuego', 'Fuego', 'Fuego sobre el polvo: explota, alcanza a los de al lado y los deja quemados'],
   ['agua', 'Agua', 'Agua sobre el polvo: se corre, verdea y los envenena'],
+  ['cristal', 'Electricidad', 'Electricidad sobre el polvo: se hace esquirlas'],
+  ['golpe', 'Golpe', 'Un golpe sobre el enemigo elegido: saltan esquirlas'],
   ['cortina', 'Cortina', 'Una cortina de polvo ante un aliado: la mitad del siguiente golpe'],
   ['telon', 'Telón', 'Una cortina ante cada aliado'],
   ['romper', 'Romper', 'El golpe del enemigo elegido rompe una cortina: le cae encima y lo deja empolvado'],
+  ['rociada', 'Rociada', 'Un abanico de agua fina sobre todos: a quien lleva polvo se le corre y lo envenena'],
+  ['traca', 'Traca', 'Cinco puffs pequeños sobre enemigos al azar, y los deja cubiertos'],
+  ['fiesta', 'Fin de fiesta', 'La definitiva: un puñado para cada uno y sus tres salidas, una tras otra'],
   ['color', 'Color', 'Gris (primera vuelta) o mezclas apagadas (segunda)'],
   ['quitar', 'Quitar polvo', 'Sin polvo ni estados'],
 ];
@@ -50,12 +56,8 @@ export function mountPowderLab(game: Game, body: HTMLElement) {
   /** Who wears it: the second of the party (Aitor, or chapter 1's other boy), or the only one. */
   const wearer = () => party()[1] ?? party()[0];
   const picked = () => (document.querySelector<HTMLSelectElement>('.fx-lab [data-field="target"]')?.value) ?? foes()[0];
-  /** The next mix: always the grey in the first round; in the second, two parts of one colour of the palette and one each of two others, a different one leading each time. */
-  const colour = (): PowderMix => {
-    if (grey) return POWDER_GREY;
-    const n = POWDER_COLOURS.length, i = turn++ * 2;
-    return [POWDER_COLOURS[i % n], POWDER_COLOURS[i % n], POWDER_COLOURS[(i + 1) % n], POWDER_COLOURS[(i + 3) % n]];
-  };
+  /** The next mix: always the grey in the first round; in the second, the palette's mixes in turn. */
+  const colour = (): PowderMix => grey ? POWDER_GREY : powderMix(turn++);
   const say = () => { readout.textContent = grey ? 'Gris: primera vuelta' : 'Mezclas apagadas: segunda vuelta'; };
   /** Where the foes stand, as one point: what a cortina faces. */
   const front = () => {
@@ -72,9 +74,18 @@ export function mountPowderLab(game: Game, body: HTMLElement) {
     else if (id === 'polvo') e.dust(target, colour());
     else if (id === 'fuego') e.ignite(foes());
     else if (id === 'agua') e.soak();
+    else if (id === 'cristal') e.crystallise(e.powdered);
+    else if (id === 'golpe') e.splinter(target);
     else if (id === 'cortina') e.cortina(party().find(p => p !== wearer()) ?? wearer(), front(), colour());
     else if (id === 'telon') for (const ally of party()) e.cortina(ally, front(), colour());
     else if (id === 'romper') { const behind = e.screens[0]; if (behind) e.romper(behind, target); }
+    else if (id === 'rociada') { e.rociada(wearer(), foes()); setTimeout(() => e.soak(foes()), 300); }
+    else if (id === 'traca') {
+      const hit = Array.from({ length: 5 }, () => foes()[Math.floor(Math.random() * foes().length)]);
+      hit.forEach((foe, i) => setTimeout(() => e.pop(foe, colour()), i * TRACA_GAP * 1000));
+      for (const foe of new Set(hit)) e.soon(foe, colour(), 4 * TRACA_GAP);
+    }
+    else if (id === 'fiesta') e.fiesta(wearer(), foes(), [colour(), colour(), colour()]);
     else if (id === 'color') { grey = !grey; say(); }
     else if (id === 'quitar') { e.clear(); for (const f of foes()) { game.status(f, 'quemado', 0); game.status(f, 'envenenado', 0); } }
   }

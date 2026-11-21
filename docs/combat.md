@@ -51,6 +51,12 @@ IA). Pendiente en el código: hoy `src/stats.ts`, `src/battle.ts`, el laboratori
 sección *Orden de resolución y duración* describe ese motor actual. Ninguna ánima
 que se lleve puesta la da ya: Papagato la cambió por Crítico (2026-11-20).
 
+**Cortina de polvo** (hecha 2026-11-21, `CORTINA` en `src/battle.ts`; `docs/animas/README.md`
+§ Cortina de polvo): la primera barrera del juego. *Cortina* y *Telón*, de Colorista, suben la
+Defensa del equipo tres rondas y levantan una pantalla de polvo delante de un aliado o de cada
+uno: el siguiente golpe que reciba entra a la mitad y la rompe (los pulsos pasan; el tercio de
+Defender va encima). Quien la rompe queda Empolvado (*Rebufo*). Dura tres rondas si nadie la rompe.
+
 **Barreras** (idea por explorar, 2026-10-31): hechizos de protección que levantan una **barrera
 física y direccional** delante de alguien (encaja con las posiciones: cubre un lado o el frente).
 Combinando ciertos efectos de este tipo se **refuerza**: por ejemplo, una barrera con un segundo
@@ -461,6 +467,9 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 | Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
 | Fuego | Mojado | **Vapor** | El agua se va y deja Cegado I; mojado, no prende |
 | Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan. A quien recibió el golpe estando mojado, **Shock** la mitad de las veces: pierde su siguiente turno |
+| Fuego | Empolvado | **Estallido** | El polvo estalla: magia de fuego (22) a quien lo lleva y la mitad a cada uno de los demás; el de los otros empolvados estalla en cadena. Después todos arden un nivel más |
+| Agua | Empolvado | **Envenenado** | 20 s de veneno con pulsos, y cada golpe que recibe entra un 25 % más fuerte. No deja Mojado |
+| Eléctrico | Empolvado | **Cristalizado** | 20 s en los que cada golpe que recibe hace más que el anterior: +4, +8… hasta +20 |
 
 **Shock** (2026-11-17, `REACTION_RULES.shock`, `Combatant.shock`): un rayo sobre alguien mojado lo
 deja en Shock con un 50 %. Vale para los dos bandos y para cualquier golpe eléctrico (Atacar, una

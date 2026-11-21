@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createBattle, createFearBattle, validTargets, SKILLS, improve } from '../src/battle.ts';
-import { EMPTY_LEVELS, FOE_XP, LEVEL_XP, LEVELLED, MANA_LEVEL, MAX_LEVEL, award, topOf, levelOf, fightXp, levelForXp, levelProgress, participants, skillsAt, toNextLevel, xpFloor } from '../src/levels.ts';
+import { EMPTY_LEVELS, FOE_XP, LEVEL_XP, LEVELLED, MANA_LEVEL, MAX_LEVEL, award, topOf, levelOf, fightXp, levelForXp, levelProgress, participants, passivesAt, skillsAt, toNextLevel, xpFloor } from '../src/levels.ts';
 
 const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
 
@@ -22,11 +22,15 @@ test('EXP reaches each level at its threshold, and the bar runs from one to the 
 
 test('every ánima has its level table: one skill or more at each level past the first', () => {
   // Level 4 is a point of maná, and a level left empty on purpose is named (`EMPTY_LEVELS`).
-  for (const id of LEVELLED) for (let level = 2; level <= topOf(id); level++) assert.ok(skillsAt(id, level).length || level === MANA_LEVEL || EMPTY_LEVELS[id]?.includes(level), `${id} ${level}`);
+  for (const id of LEVELLED) for (let level = 2; level <= topOf(id); level++) assert.ok(skillsAt(id, level).length || passivesAt(id, level).length || level === MANA_LEVEL || EMPTY_LEVELS[id]?.includes(level), `${id} ${level}`);
   assert.equal(topOf('papagato'), 3); assert.equal(topOf('dadaista'), 7); assert.equal(topOf('matemagico'), 1);
   assert.equal(levelOf('dadaista', flag => flag === 'dadaista-5'), 5, 'the highest flag held is the level');
   assert.deepEqual(skillsAt('dadaista', 7), ['meteorito', 'meteoro', 'asteroide']);
-  assert.deepEqual(LEVELLED, ['papagato', 'dadaista'], 'the shared ánimas level; the own ánimas grow by their tree at the jar');
+  assert.deepEqual(LEVELLED, ['papagato', 'dadaista', 'prismatico'], 'the shared ánimas level; the own ánimas grow by their tree at the jar');
+  // Colorista: a skill at 2, 3, 6 and 7, and its passive at 5 (a level can teach a passive and nothing else).
+  assert.equal(topOf('prismatico'), 7); assert.deepEqual(skillsAt('prismatico', 5), []); assert.deepEqual(passivesAt('prismatico', 5), ['remolino']);
+  assert.deepEqual(passivesAt('papagato', 5), [], 'a passive past the ánima\'s top level is not reached yet');
+  assert.deepEqual(award(['prismatico'], 9999, {}, { prismatico: 4 })[0].passives, ['remolino']);
   assert.deepEqual(skillsAt('papagato', 2), ['zarpazos', 'ronroneo']);
   assert.deepEqual(skillsAt('matemagico', 2), []);
 });

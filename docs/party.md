@@ -102,6 +102,12 @@ cannot pay says *Sin ánima*.
 | Zarpazos | **Papagato**, level 2 | 2 | 7 physical, four times | Each claw takes a layer off an onion and rolls its own Crítico; adds one Sangrado stack |
 | Ronroneo | **Papagato**, level 2 | 2 | 16 heal | One hurt ally: cures at once, leaves Sanación for 15 s, and takes away their mental statuses (Mareo, Llorera) |
 | Zarpa en la llaga | **Papagato**, level 3 | 2 | 26 physical | Spends the target's Sangrado, each stack counting double (+40 %) |
+| Puñado | Whoever wears **Colorista** | 1 | 16 physical | Leaves the foe Empolvado for 20 s: fire blows it up, water poisons, electricity leaves shards |
+| Cortina | **Colorista** | 1 | Defensa +3 | For the party, 3 rounds; a cortina in front of one ally halves the next blow, and whoever breaks it is Empolvado (*Rebufo*) |
+| Rociada | **Colorista**, level 2 | 2 | 14 magic, water | Every foe. It does not wet: whoever is Empolvado is poisoned |
+| Polvareda | **Colorista**, level 3 | 2 | 12 physical | Every foe, and all of them Empolvado |
+| Telón | **Colorista**, level 6 | 2 | Defensa +3 | As Cortina, with a cortina in front of each ally |
+| Traca | **Colorista**, level 7 | 3 | 10 physical, five times | Each on a foe at random, a blow of its own; whoever it touches is Empolvado |
 
 Costs are in circles of Ánima.
 
@@ -117,7 +123,7 @@ lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) low
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
 
 **Levels** (`src/levels.ts`): fights won wearing an ánima make it grow; 3 wins give level 2 and 8
-level 3, each a story flag. Only Papagato levels: Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
+level 3, each a story flag. Papagato, Dadista and Colorista level (`LEVELLED`); Colorista to level 7, with Maná +1 at 4 and its passive *Remolino* at 5 (`docs/animas/prismatico/README.md`). Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.

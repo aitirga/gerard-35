@@ -6,10 +6,10 @@ import { renderExplorationWorldMap } from './exploration-world-map';
 import { ANIMAS, animaBonus } from './animas';
 import { ITEMS, ITEM_KIND_LABELS, sortItems, type ItemId } from './items';
 import { type MemberId, type PartyMember, type Story } from './story';
-import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, SKILLS, canWear, skillKnown, type ClassId } from './battle';
+import { ANIMA_OWNERS, ANIMA_RULES, CLASS_STATS, PASSIVES, SKILLS, canWear, skillKnown, type ClassId } from './battle';
 import { improvementOf } from './ecos';
 import { nearestButton } from './menu-nav';
-import { LEVELLED, levelProgress, topOf, xpFloor } from './levels';
+import { LEVELLED, levelProgress, passivesAt, topOf, xpFloor } from './levels';
 import { animaOf, CLASSES } from './classes';
 import { PROFILES, STAT_LABELS, withBonus, type Stats } from './stats';
 import { currentThought, diary, storyClock } from './journal';
@@ -130,6 +130,8 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
     .map(([key, value]) => `<li data-sign="${value > 0 ? 'up' : 'down'}">${STAT_LABELS[key]} ${value > 0 ? '+' : '−'}${Math.abs(value)}</li>`).join('');
   /** What an ánima knows so far: skills it has not learned yet are never shown (AGENTS.md: only what the party has). */
   const skillsOf = (classId: ClassId) => SKILLS.filter(s => s.class === classId && !('face' in s) && skillKnown(s.id, story.levels, story.improved));
+  /** The passives its levels have taught so far (Colorista's Remolino), never the ones to come. */
+  const passivesOf = (classId: ClassId) => Array.from({ length: story.levels[classId] ?? 1 }, (_, i) => passivesAt(classId, i + 1)).flat();
   /** Dadista's die, face by face: what each does when spent. The Comodín is not said (it is found), and the blank has no move of its own. */
   const facesOf = (classId: ClassId) => [...SKILLS.filter(s => s.class === classId && 'face' in s && s.face !== 'comodin').map(s => ({ name: s.name, description: s.description })),
     ...SKILLS.some(s => s.class === classId && 'face' in s) ? [{ name: 'En blanco', description: 'Repite la última cara gastada.' }] : []];
@@ -248,6 +250,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <section><span class="battle-kicker">CAMBIA</span><ul class="anima-bonus">${bonusChips(id) || '<li data-sign="none">Nada todavía</li>'}</ul></section>
         ${boughtFor(id)}
         ${ANIMA_RULES[id] ? `<section><span class="battle-kicker">SIEMPRE</span><ul class="anima-skills"><li><strong>${ANIMA_RULES[id]!.name}</strong><span>${ANIMA_RULES[id]!.description}</span></li></ul></section>` : ''}
+        ${passivesOf(id).length ? `<section><span class="battle-kicker">${passivesOf(id).length > 1 ? 'PASIVAS' : 'PASIVA'}</span><ul class="anima-skills">${passivesOf(id).map(k => `<li><strong>${PASSIVES[k].name}</strong><span>${PASSIVES[k].description ?? ''}</span></li>`).join('')}</ul></section>` : ''}
         <section><span class="battle-kicker">HABILIDADES</span><ul class="anima-skills">${skillsOf(id).map(s => `<li><strong>${s.name}</strong><small>${costPips(s.cost)}</small><span>${s.description}</span></li>`).join('') || '<li class="empty"><span>Ninguna todavía.</span></li>'}</ul></section>
         ${facesOf(id).length ? `<section><span class="battle-kicker">CARAS DEL DADO</span><ul class="anima-skills">${facesOf(id).map(f => `<li><strong>${f.name}</strong><span>${f.description}</span></li>`).join('')}</ul></section>` : ''}
       </article>`;

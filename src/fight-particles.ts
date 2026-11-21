@@ -982,7 +982,8 @@ fn shapeAt(uv: vec2f, shape: f32, seed: f32, aa: f32, light: f32) -> Shape {
     sh.a = smoothstep(0.0, 0.3, cloud + (grit - 0.5) * 0.35) * (0.35 + 0.65 * cloud);
     let nz = sqrt(max(0.0, 1.0 - min(r * r, 1.0)));
     let diffuse = 0.62 + 0.5 * max(0.0, dot(vec3f(uv * 0.9, nz), vec3f(-0.4, 0.55, 0.73)));
-    sh.tint *= uniform.uLight * diffuse * (0.86 + 0.28 * n);
+    // Lit by the place and by nothing of its own; in a dark place it keeps a floor of plain light, or its colours would be lost.
+    sh.tint *= max(uniform.uLight, vec3f(0.55)) * diffuse * (0.86 + 0.28 * n);
   } else {
     // A spark: a thin streak, white-hot at its head, its own colour behind it, cooling to deep red
     // down a tail that tapers and fades.

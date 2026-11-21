@@ -143,6 +143,11 @@ export const STORY_ARCS = [
     { flags: ['dadaista-4'], label: 'Dadista, nivel 4' }, { flags: ['dadaista-5'], label: 'Dadista, nivel 5' },
     { flags: ['dadaista-6'], label: 'Dadista, nivel 6' }, { flags: ['dadaista-7'], label: 'Dadista, nivel 7' },
   ] },
+  { id: 'prismatico', chapter: 2, title: 'Colorista crece', detail: 'Experiencia de combate', after: 'anima-luca', steps: [
+    { flags: ['prismatico-2'], label: 'Colorista, nivel 2' }, { flags: ['prismatico-3'], label: 'Colorista, nivel 3' },
+    { flags: ['prismatico-4'], label: 'Colorista, nivel 4' }, { flags: ['prismatico-5'], label: 'Colorista, nivel 5' },
+    { flags: ['prismatico-6'], label: 'Colorista, nivel 6' }, { flags: ['prismatico-7'], label: 'Colorista, nivel 7' },
+  ] },
 ] as const satisfies readonly Arc[];
 
 /**

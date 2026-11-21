@@ -9,22 +9,30 @@ import type { ClassId } from './battle';
  * light circling the wearer, turning to whoever looks. Tecnópata: a thin HUD visor (a cyan film on
  * a graphite frame), an earpiece with a short antenna whose tip blinks, and two thin cyan circuit
  * lines down the shirt. Dadista: a red bow tie at the throat and a monocle on a cord. Freática: a staff
- * gauge down the jacket and a water level meter at the hip. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
+ * gauge down the jacket and a water level meter at the hip. Colorista: pouches of pigment at the belt,
+ * dust on the clothes and binoculars round the neck. Built from primitives on the rig and the body's fit (`bodyFit`), so it fits
  * every character and follows every pose; with reduced motion it holds still.
  */
 const NAME = 'Atuendo de ánima';
 const HARU = '#e9894a', HARU_DARK = '#3a2c28', YUKI = '#f4efe6', INNER = '#f0a7a2', BELL = '#f3cf78', GOLD = '#f3cf78', CYAN = '#4fe0ff', GRAPHITE = '#141b21', BOW = '#d9422b', BRASS = '#c9a24a', IVORY = '#efe6cf', GAUGE_WHITE = '#f4fffc', SHALLOW = '#27c2a0';
 /** The binary ring: its height on the body, radius, tilt and the digits round it. */
 const RING = { y: .78, radius: .58, tilt: 12, digits: '10110' } as const;
+/** Colorista's dry pigments (src/powder-fx.ts `POWDER_COLOURS`): terracotta, mustard, sage, dusty teal, slate blue, brick. */
+const PIGMENTS = ['#c4907b', '#cdb276', '#9db191', '#7fa6a1', '#8a97b6', '#b98078'] as const;
 const reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : undefined;
 
 let solids: Map<string, pc.StandardMaterial> | undefined;
 /** Paint, lit like the clothes. */
-function solid(colour: string, gloss = .3) {
+function solid(colour: string, gloss = .3, own = 0) {
   solids ??= new Map();
-  const key = `${colour}:${gloss}`;
+  const key = `${colour}:${gloss}:${own}`;
   let m = solids.get(key);
-  if (!m) { m = new pc.StandardMaterial(); m.name = NAME; m.diffuse.fromString(colour); m.gloss = gloss; m.update(); solids.set(key, m); }
+  if (!m) {
+    m = new pc.StandardMaterial(); m.name = NAME; m.diffuse.fromString(colour); m.gloss = gloss;
+    // `own`: a little of its colour whatever the light, so a pigment keeps its hue in a night fight.
+    if (own) { m.emissive.fromString(colour); m.emissiveIntensity = own; }
+    m.update(); solids.set(key, m);
+  }
   return m;
 }
 const lights = new Map<string, pc.StandardMaterial>();
@@ -208,6 +216,42 @@ function freatica(body: pc.Entity): Look {
   return { root, time: Math.random() * 10, motion: { kind: 'blink', tip } };
 }
 
+/**
+ * Colorista: the clothes of someone who has been throwing powder all day. Three cloth pouches of dry
+ * pigment at the belt, each a chalk colour and tied at the neck with a cord, dust in the palette's
+ * colours across the chest and the shoulders, and Luca's old binoculars hanging from the neck. Matte,
+ * all of it: nothing here shines. Nothing in the hands: every skill is thrown.
+ */
+function prismatico(body: pc.Entity): Look {
+  const root = pivot(body, [0, 0, 0]);
+  const [, chest, front] = bodyFit(body, 'chest'), [wide, neck] = bodyFit(body, 'collar'), [, , spine] = bodyFit(body, 'back');
+  const belt = chest - .27, cord = solid('#5b4a3c', .1), pigment = (colour: string) => solid(colour, .03, .3);
+  // The pouches: on the side and the back the fight's camera sees, and one at the front of the hip, each sagging its own way.
+  const pouches: [number, number, string, number][] = [[-(wide + .05), -.07, PIGMENTS[0], 12], [-(wide - .1), spine - .005, PIGMENTS[1], 5], [wide - .1, spine - .005, PIGMENTS[3], -6], [-(wide - .07), front + .04, PIGMENTS[2], -6]];
+  for (const [x, z, colour, lean] of pouches) {
+    const bag = pivot(root, [x, belt, z], [0, 0, lean]);
+    part(bag, 'sphere', pigment(colour), [0, -.06, 0], [.125, .15, .105]);
+    part(bag, 'cone', pigment(colour), [0, .025, 0], [.075, .07, .065]);
+    part(bag, 'torus', cord, [0, .002, 0], [.075, .045, .065]);
+  }
+  // Dust on the clothes: flat matte patches, thrown from the hands up. On the chest, the shoulders and the back.
+  const dust: [number, number, number, number, number, string][] = [
+    [-.08, chest + .05, front + .002, .13, .1, PIGMENTS[2]], [.07, chest - .03, front + .002, .11, .09, PIGMENTS[1]], [0, chest - .14, front + .002, .14, .08, PIGMENTS[3]],
+    [-(wide - .01), neck - .07, 0, .1, .1, PIGMENTS[1]], [wide - .01, neck - .09, .02, .09, .09, PIGMENTS[0]],
+    [-.07, chest + .12, spine + .052, .15, .12, PIGMENTS[3]], [.06, chest - .02, spine + .034, .12, .1, PIGMENTS[0]], [-.03, chest - .16, spine + .02, .13, .08, PIGMENTS[1]],
+  ];
+  for (const [x, y, z, w, h, colour] of dust) part(root, 'sphere', pigment(colour), [x, y, z], [w, h, .022], [0, 0, (x + y) * 140 % 40 - 20], false);
+  // The binoculars: two short barrels on a strap round the neck.
+  const strap = solid('#3a3530', .15), glass = solid('#2f3a44', .5);
+  for (const side of [-1, 1]) {
+    part(root, 'box', strap, [side * .06, neck - .1, front], [.008, .21, .008], [-16, 0, side * 16]);
+    part(root, 'cylinder', solid('#40403f', .25), [side * .03, chest + .07, front + .04], [.05, .075, .05], [90, 0, 0]);
+    part(root, 'cylinder', glass, [side * .03, chest + .07, front + .079], [.04, .004, .04], [90, 0, 0]);
+  }
+  part(root, 'box', solid('#40403f', .25), [0, chest + .075, front + .035], [.03, .018, .03]);
+  return { root, time: 0, motion: { kind: 'still' } };
+}
+
 /** Puts on what the ánima `id` adds (or takes it all off). Safe to call again and again. */
 export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   const body = model.findByName(RIG.body) as pc.Entity | null;
@@ -216,7 +260,7 @@ export function dressAnima(model: pc.Entity, id: ClassId | undefined) {
   for (const look of looks) if (!look.root.parent || look.root.parent === body) looks.delete(look);
   body.find(node => node.name === NAME && node.parent?.name !== NAME).forEach(node => (node as pc.Entity).destroy());
   const head = (body.findByName(RIG.mount) ?? body.findByName(RIG.head)) as pc.Entity | null;
-  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : id === 'dadaista' ? dadaista(body, head) : id === 'freatica' ? freatica(body) : undefined;
+  const look = id === 'papagato' ? papagato(body, head) : id === 'matemagico' ? matemagico(body) : id === 'tecnopata' ? tecnopata(body, head) : id === 'dadaista' ? dadaista(body, head) : id === 'freatica' ? freatica(body) : id === 'prismatico' ? prismatico(body) : undefined;
   if (!look) return;
   looks.add(look);
   if (!ticking) { ticking = true; pc.AppBase.getApplication()?.on('update', tick); }

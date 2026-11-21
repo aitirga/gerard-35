@@ -1,0 +1,300 @@
+{
+  "title": "Colorista · la ficha del ánima",
+  "description": "El ánima de Luca tal como está construida (id `prismatico`, docs/animas/prismatico/README.md): el atuendo y la interfaz, y sus habilidades a nivel 7 una a una en un combate real. Cortina y Rebufo, Polvareda, Rociada, Telón, Traca, la pasiva Remolino, las tres reacciones del polvo (Estallido, Envenenado, Cristalizado) y la definitiva Fin de fiesta, más su fila en la página de Ánimas. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=prismatico-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22prismatico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22prismatico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22prismatico%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = () => document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click(); window.aimAlly = id => document.querySelector('.roster-target[data-target=\"' + id + '\"]:not(:disabled)')?.click(); ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "equipo",
+      "delay": 1500,
+      "caption": "El equipo con Colorista puesto en Aitor (nivel 7): su atuendo y, en su lado, la interfaz del ánima"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('aitor'); window.gerard.game.frame({ x: at.x, y: at.y + .9, z: at.z }, 1.25); }"
+    },
+    {
+      "shot": "aspecto",
+      "delay": 1500,
+      "caption": "El aspecto: bolsas de pigmento al cinto, polvo en la ropa y los prismáticos de Luca al cuello. Nada en las manos: todo se lanza"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 400,
+      "caption": "Sus habilidades a nivel 7: Puñado, Cortina, Rociada, Polvareda, Telón y Traca. Fin de fiesta no está: aún duerme"
+    },
+    {
+      "eval": "window.skill('cortina')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "cortina",
+      "seconds": 7.5,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aimAlly('gerard')",
+      "caption": "Nv 1 · Cortina: Defensa +3 para los dos y una cortina de polvo delante de Gerard. El primer perro que le pega la rompe, hace la mitad de daño y queda Empolvado (la regla del ánima, Rebufo)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "rebufo",
+      "delay": 500,
+      "caption": "Después del golpe: el perro que rompió la cortina, Empolvado, con su icono en la placa"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes[0].timed = { ...s.foes[0].timed, empolvado: { level: 1, left: 20, next: 20 } }; s.allies[0].element = 'fuego'; });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "record": "estallido-remolino",
+      "seconds": 3.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Fuego sobre el polvo: Estallido. Y la pasiva del nivel 5, Remolino: como el polvo ha reaccionado, se levanta una cortina delante de quien lleva el ánima"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "polvareda",
+      "seconds": 3.6,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.skill('polvareda')",
+      "caption": "Nv 3 · Polvareda: un puñado para cada enemigo; daño físico leve a todos y todos Empolvados"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "empolvados",
+      "delay": 500,
+      "caption": "Los tres Empolvados. La cortina de Remolino ya la rompió el que le pegó a Aitor"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes.forEach(f => { f.timed = { empolvado: { level: 1, left: 20, next: 20 } }; }); });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "rociada",
+      "seconds": 3.6,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.skill('rociada')",
+      "caption": "Nv 2 · Rociada: el agua propia del ánima, sobre todos. No moja; a quien lleva polvo lo deja Envenenado: pulsos, y cada golpe que reciba entra un 25 % más fuerte"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; });  s.foes[0].timed = { ...s.foes[0].timed, empolvado: { level: 1, left: 20, next: 20 } }; s.allies[0].element = 'electrico'; });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "record": "cristalizado",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Electricidad sobre el polvo: Cristalizado. Cada golpe que reciba hace más que el anterior (+4, +8… hasta +20)"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "traca",
+      "seconds": 4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.skill('traca')",
+      "caption": "Nv 7 · Traca: cinco estallidos pequeños sobre enemigos al azar, cada uno un golpe (el veneno y las esquirlas cuentan en cada uno), y a quien toca lo deja Empolvado"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "despierta",
+      "delay": 600,
+      "caption": "Las tres reacciones ya se han visto en el combate: Fin de fiesta despierta, con su icono en la placa de quien lleva el ánima"
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "definitiva-lista",
+      "delay": 400,
+      "caption": "La definitiva encabeza la lista mientras está despierta: sin coste de maná, una vez por combate"
+    },
+    {
+      "record": "telon",
+      "seconds": 7.5,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.skill('telon')",
+      "caption": "Nv 6 · Telón: Defensa +3 y una cortina delante de cada uno. Cada perro que rompe una queda Empolvado"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes.forEach(f => { f.timed = {}; }); });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "fin-de-fiesta",
+      "seconds": 5.2,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.skill('fin-de-fiesta')",
+      "caption": "Definitiva · Fin de fiesta: tres puñados sobre cada enemigo y cada uno sale a la vez. Estalla, envenena y cristaliza"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "estados",
+      "delay": 600,
+      "caption": "Después: los tres ardiendo, envenenados y llenos de esquirlas, cada estado con su reloj"
+    },
+    {
+      "open": "/?story=anima-luca&levels=prismatico:7&solo=1"
+    },
+    {
+      "until": "!!window.gerard?.story && !document.title.startsWith('Passatge Maresme') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "window.gerard.story.equip('aitor', 'prismatico')"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "KeyC",
+      "gap": 400
+    },
+    {
+      "press": "KeyE",
+      "gap": 600
+    },
+    {
+      "eval": "document.querySelector('[data-pick=\"aitor\"][data-class-id=\"prismatico\"]')?.focus()"
+    },
+    {
+      "shot": "estado",
+      "delay": 1200,
+      "caption": "La página de Ánimas: Colorista en el hueco extra de Aitor, a nivel 7, con su regla (Rebufo), su pasiva (Remolino) y lo que sabe"
+    }
+  ]
+}

@@ -213,6 +213,52 @@
       ]
     },
     {
+      "eval": "window.powderLab.act('quitar'); window.powderLab.act('nube')"
+    },
+    {
+      "record": "rociada",
+      "warmup": 2.2,
+      "seconds": 3.6,
+      "each": "if (frame === 4) window.powderLab.act('rociada')",
+      "caption": "Rociada: a fan of fine water from the wearer that falls over every foe and breaks into mist; the powder on them runs green",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar')"
+    },
+    {
+      "record": "traca",
+      "seconds": 3.4,
+      "each": "if (frame === 4) window.powderLab.act('traca')",
+      "caption": "Traca: five small puffs on foes picked at random, a breath apart, each in its own mix; whoever was hit is left covered",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
+      "eval": "window.powderLab.act('quitar')"
+    },
+    {
+      "record": "fin-de-fiesta",
+      "seconds": 5.2,
+      "each": "if (frame === 4) window.powderLab.act('fiesta')",
+      "caption": "Fin de fiesta, the definitiva: a handful on every foe and its three exits one after the other: the blast, a second puff and the water, a third and the spark that leaves them in shards",
+      "clip": [
+        150,
+        110,
+        1290,
+        560
+      ]
+    },
+    {
       "eval": "window.powderLab.act('quitar'); window.powderLab.setGrey(true)"
     },
     {

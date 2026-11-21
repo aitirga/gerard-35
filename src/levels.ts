@@ -1,4 +1,4 @@
-import { MANA_LEVEL, SKILLS, type BattleState, type ClassId, type FoeKind, type SkillId } from './battle.ts';
+import { MANA_LEVEL, PASSIVES, SKILLS, type BattleState, type ClassId, type FoeKind, type PassiveId, type SkillId } from './battle.ts';
 
 /**
  * Ánima levels (docs/animas/README.md § Levels): ánimas learn by fighting. Every foe beaten is worth
@@ -22,9 +22,9 @@ export const LEVEL_XP = [180, 660, 1290, 2070, 3000, 4080] as const;
 /**
  * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
  * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Each grows
- * as far as it has been designed: Papagato to 3, Dadista to 7 (`topOf`).
+ * as far as it has been designed: Papagato to 3, Dadista and Colorista to 7 (`topOf`).
  */
-export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista'];
+export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista', 'prismatico'];
 /**
  * Levels that teach nothing yet, on purpose: Dadista's 6 is empty since Estrella fugaz moved to 3,
  * and is not filled out of habit (docs/animas/dadaista/README.md § Skills per level).
@@ -81,6 +81,8 @@ export function levelProgress(xp: number, top: number = MAX_LEVEL) {
 }
 /** The skills `id` learns on reaching `level`. */
 export const skillsAt = (id: ClassId, level: number): SkillId[] => SKILLS.filter(skill => skill.class === id && 'level' in skill && skill.level === level).map(skill => skill.id);
+/** The passives that come with `level` of `id` (Colorista's Remolino), as far as the ánima grows. */
+export const passivesAt = (id: ClassId, level: number): PassiveId[] => level > topOf(id) ? [] : (Object.keys(PASSIVES) as PassiveId[]).filter(passive => PASSIVES[passive].anima === id && PASSIVES[passive].level === level);
 
 /** What a won fight is worth: every foe's EXP, plus whatever development adds (`extraXp`). */
 export function fightXp(state: Pick<BattleState, 'foes' | 'extraXp'>) {
@@ -99,7 +101,7 @@ export function participants(state: Pick<BattleState, 'allies' | 'animas' | 'fou
   return [...wearers].sort(([a], [b]) => order(a) - order(b)).map(([id, who]) => ({ id, wearers: state.allies.map(a => a.id).filter(name => who.has(name)) }));
 }
 /** How one ánima grew from a fight: its EXP and level before and after, and what it learned. */
-export interface Growth { id: ClassId; xpBefore: number; xpAfter: number; levelBefore: number; levelAfter: number; learned: SkillId[] }
+export interface Growth { id: ClassId; xpBefore: number; xpAfter: number; levelBefore: number; levelAfter: number; learned: SkillId[]; passives?: PassiveId[] }
 /**
  * `gained` EXP for each of `ids`, starting from the EXP they have (`xp`) and never below the floor
  * of the level they hold (`levels`: a level granted by the story, or an old save). An ánima at the
@@ -111,9 +113,9 @@ export function award(ids: readonly ClassId[], gained: number, xp: Partial<Recor
     const xpBefore = Math.max(xp[id] ?? 0, xpFloor(levelBefore));
     const xpAfter = levelBefore >= top ? xpBefore : Math.max(xpBefore, xpBefore + Math.max(0, gained));
     const levelAfter = Math.max(levelBefore, levelForXp(xpAfter, top));
-    const learned: SkillId[] = [];
-    for (let level = levelBefore + 1; level <= levelAfter; level++) learned.push(...skillsAt(id, level));
-    return { id, xpBefore, xpAfter, levelBefore, levelAfter, learned };
+    const learned: SkillId[] = [], passives: PassiveId[] = [];
+    for (let level = levelBefore + 1; level <= levelAfter; level++) { learned.push(...skillsAt(id, level)); passives.push(...passivesAt(id, level)); }
+    return { id, xpBefore, xpAfter, levelBefore, levelAfter, learned, ...passives.length ? { passives } : {} };
   });
 }
 /** Development: the EXP that takes `id` from where it is to its next level (0 at the top). */

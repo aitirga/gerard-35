@@ -504,13 +504,17 @@ it never touches the fight's numbers.
 
 **Polvo de colores · el ánima de Luca** is a section too ([src/powder-lab.ts](../src/powder-lab.ts),
 [src/powder-fx.ts](../src/powder-fx.ts)). It shows the dry coloured powder of Luca's ánima before
-its rules are in the game:
+the fight plays it (the rules are in the game since 2026-11-21, and the fight calls the same
+effects):
 - *Puff* is the puff alone, *Puñado* a handful thrown at the foe picked and *A todos* one for each;
 - *Cubierto* leaves the powder on the foe picked, as the status;
 - *Fuego* blows up whoever is covered and leaves every foe burning, *Agua* runs it green and
-  poisons them;
+  poisons them, *Electricidad* sets it as shards and *Golpe* knocks a few out of the foe picked;
 - *Cortina* stands a screen of powder in front of an ally, *Telón* one in front of each, and
   *Romper* is the picked foe's blow going through one: it bursts over them and leaves them covered;
+- *Rociada* is the fan of fine water over every foe (whoever is covered runs green), *Traca* five
+  small puffs on foes at random and *Fin de fiesta* the definitiva whole: the handfuls and the
+  blast, the water, the spark;
 - *Color* switches between grey (first round) and the muted mixes, and *Quitar polvo* clears it.
 
 `window.powderLab.act('lanzar')` drives it from the console, and `just screenshots polvo-fx --gpu`

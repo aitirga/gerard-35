@@ -12,7 +12,7 @@ Luca's colours have drained into the stained glass, and the brighter Fran shines
 gets. Luca waits outside, unable to go in; Gerard and Aitor cross the salon zone by zone, where
 **the light walks through colours and cancels the party's element of its colour**, and face Fran
 under the canopy of the altar. Luca's ánima is **Colorista** (its wearable form designed
-2026-11-20, `docs/animas/prismatico/`, not built).
+2026-11-20 and built 2026-11-21, `docs/animas/prismatico/`).
 
 ## Protagonist
 
@@ -395,7 +395,8 @@ shirts on hangers** (red, blue, gold) and the fight asks one thing: *which one, 
 ## Open
 
 - Luca's phrase, his day, what he was like as a kid (the second round).
-- Colorista's wearable form: agreed (`docs/animas/prismatico/README.md`, 2026-11-20); being built.
+- Colorista's wearable form: built (`docs/animas/prismatico/README.md`, 2026-11-21). Its trial
+  inside the salon is not.
 - Luca's photos and Fran's toy image.
 
 ## Implementation plan
