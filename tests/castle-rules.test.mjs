@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CASTLE, GUM_ORDER } from '../src/castle.ts';
+import { CASTLE, GUM_ORDER, SHREWD, closestToFalling } from '../src/castle.ts';
 import { castleAfter, castleAffinity, castleBlow, castleChips, castleIdle, castleRoundEnd, castleTaken } from '../src/castle-fight.ts';
 import { act, affinityOf, chooseElement, createFearBattle, enemyAct, improve, intentLabel, stageMoment, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
@@ -319,4 +319,22 @@ test('La Reina: La Pompa is a thing in front of her; burst in time it goes off i
   assert.equal(blown.ability.id, 'pompa');
   assert.ok(s.allies.every((a, i) => a.hp < allies[i]));
   assert.equal(second.hp, 0);
+});
+
+test('a boss goes for whoever is closest to falling; pupils still take turns, one each', () => {
+  const two = [{ id: 'a', hp: 90 }, { id: 'b', hp: 40 }];
+  assert.equal(closestToFalling(two, 0).id, 'b'); assert.equal(closestToFalling(two, 1).id, 'b');
+  // Level, whoever's turn it would have been.
+  const level = [{ id: 'a', hp: 50 }, { id: 'b', hp: 50 }];
+  assert.deepEqual([0, 1, 2].map(turn => closestToFalling(level, turn).id), ['a', 'b', 'a']);
+  for (const kind of ['aurelia', 'directiva', 'reina', 'campeon', 'voz', 'fran', 'no-converge']) assert.ok(SHREWD.includes(kind), kind);
+  assert.ok(!SHREWD.includes('repetidor') && !SHREWD.includes('directo'));
+  // Dirección's Expediente names the one with fewer PV, round after round.
+  const s = fight('direccion');
+  by(s, 'aitor').hp = 30;
+  for (let round = 1; round <= 3; round++) {
+    castleRoundEnd(s); s.round = round + 1;
+    const named = s.foes.filter(f => f.intent?.ability === 'expediente').map(f => f.intent.target);
+    assert.ok(named.every(id => id === 'aitor'), `round ${round}: ${named}`);
+  }
 });

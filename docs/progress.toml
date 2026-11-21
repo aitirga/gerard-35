@@ -1380,10 +1380,12 @@ used = "onVeil"
 # latter walled only at El Cebollón; «Sin pensar» finishes 96 % (33 % on 11-19) but in 890 min and 28
 # days, walled at El Cebollón, El Campeón, La Sobremesa, Los sillones, Lealtad, El que no converge,
 # Aurelià, Dirección and La Delegada. The palace guards on the first try are a wall on purpose.
+# After the final pass (2026-11-21, 6 games each): «Pensando» 100 % in 349 min (25 fights lost of
+# 110), «Con prisa» 100 % in 204 min, «Sin pensar» 5 of 6 in 1182 min (one cut at too many fights).
 [[block.item]]
 title = "Equilibrio del juego entero con el simulador: sin muros"
 priority = "pruebas"
-note = "just fight-sim check en verde (el 21-11, tras el update de combates del castillo, hay 29 de 117 objetivos fuera de rango; todos los números de CASTLE son primera estimación) y ninguna partida del simulador del juego que se atasque. Se marca a mano."
+note = "Pasada final hecha el 21-11: just fight-sim check en verde (170 objetivos) y, en partidas enteras, «pensando» y «corredor» acaban siempre (349 y 204 min) y «sin pensar» 5 de 6. Queda dicho a Aitor: Lo Directo con dos ánimas nuevas a nivel 1, y el castillo con menos misiones de las que pide. Lo marca Aitor cuando lo dé por bueno."
 weight = 2
 
 # AGENTS.md § Game philosophy: each fight keeps a pair of TARGETS (src/battle-sim.ts), one playing its

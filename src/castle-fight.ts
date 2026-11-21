@@ -10,7 +10,7 @@
 import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, STATUSES, TIMED, addStatus, affinityName, elementOf, inflict, roman, stacks, woundScale,
   type Affinity, type AffinityKey, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type StatusId, type TimedId } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
-import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, HANDS, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, gumOf, isCastle, yearOf,
+import { type HeldMove, AURELIA_PHASES, CASTLE, closestToFalling, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, HANDS, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, gumOf, isCastle, yearOf,
   type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type MontonForm, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
 
 /** What src/battle.ts lends: its own stats, PV and line-up, so a castle fight is measured as any other. */
@@ -118,7 +118,7 @@ function planDireccion(state: BattleState, round: number) {
     const elements = d.castle?.elements ?? ['fuego'], element = elements[(d.turns ?? 0) % elements.length];
     if (acta) d.intent = { ability: 'firma' };
     else if (element !== 'fuego') d.intent = { ability: MOVES[element], at: 'todos' };
-    else if (up.length) d.intent = { ability: 'expediente', target: up[(round + i) % up.length].id };
+    else if (up.length) d.intent = { ability: 'expediente', target: closestToFalling(up, round + i).id };
     else delete d.intent;
   });
 }
@@ -481,7 +481,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     const cycle: FoeAbilityId[] = phase === 'leccion' ? [...atril ? ['dictado' as const] : [], 'pregunta', 'castigo'] : phase === 'carrera' ? ['pregunta', 'castigo'] : ['expulsion', 'record'];
     const next = cycle[(actor.turns! - 1) % cycle.length], whom = up.filter(alive);
     if (whom.length) {
-      const at = whom[(state.round + actor.turns!) % whom.length];
+      const at = closestToFalling(whom, state.round + actor.turns!);
       if (next === 'dictado' || next === 'record' || next === 'castigo') { announce(next); if (next === 'castigo') actor.intent = { ability: 'castigo' }; }
       else announce(next, at);
       if (next === 'record') m.record = CASTLE.recordRounds;
@@ -587,7 +587,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     const tell = (after?: FoeAbilityId) => {
       const whom = standing(state).filter(a => alive(a) && !a.castle?.held), caught = state.allies.some(a => a.castle?.held && a.castle.held !== 'reina');
       const next = holder && alive(holder) && !caught && whom.length > 1 && after !== 'atrapar' ? 'atrapar' as const : crusher && alive(crusher) ? 'aplastar' as const : undefined;
-      if (next && whom.length) announce(next, whom[(state.round + actor.turns!) % whom.length]);
+      if (next && whom.length) announce(next, closestToFalling(whom, state.round + actor.turns!));
     };
     if (stage === 'manos' && !m.raised) {
       // Her two hands come out of the floor: each a thing to break, each taking a share of what reaches her. One holds, the other crushes.
@@ -597,7 +597,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       state.message = 'Del suelo salen dos manos de chicle, cada una del tamaño de una puerta. Una se abre. La otra se cierra en un puño.';
       // And she says at once what the first of them is going to do.
       const whom = up.filter(alive);
-      if (whom.length) announce(whom.length > 1 ? 'atrapar' : 'aplastar', whom[(state.round + actor.turns!) % whom.length]);
+      if (whom.length) announce(whom.length > 1 ? 'atrapar' : 'aplastar', closestToFalling(whom, state.round + actor.turns!));
       return;
     }
     if (stage === 'pompa') {

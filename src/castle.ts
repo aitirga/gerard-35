@@ -307,6 +307,18 @@ export interface NightFight { room: RoomEncounter; might: number }
  * of the night's groups it is. Tunable (`just fight-sim`, `castle.strong.*`).
  */
 export const STRONG = { pv: 1.3, power: 1.1, group: 2 };
+/**
+ * Whom a boss goes for when its move does not say: whoever is closest to falling, and on a tie whoever's turn it would
+ * have been. It is how someone playing against the party chooses (Jev at the foes' side, 2026-11-21, docs/fight-sim.md §
+ * Jev on both sides: in 169 choices, nine in ten for whoever had the fewest PV, holding on or not). Pupils and the small
+ * fights still take turns, one each.
+ */
+export function closestToFalling<T extends { hp: number }>(list: readonly T[], turn: number): T {
+  const low = Math.min(...list.map(a => a.hp)), tied = list.filter(a => a.hp === low);
+  return tied[((turn % tied.length) + tied.length) % tied.length];
+}
+/** The bosses that choose that way: the castle's three, and each open mission's last fight. */
+export const SHREWD: readonly string[] = ['aurelia', 'directiva', 'reina', 'mano', 'campeon', 'voz', 'fran', 'no-converge'];
 export const STRONG_LIGHTS = ['encarnado-1', 'encarnado-2', 'encarnado-3', 'encarnado-4', 'encarnado-5', 'encarnado-6'] as const;
 /**
  * Each of the castle's rooms (each combination of pupils, and each year's La Delegada) lets go of an

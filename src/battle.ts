@@ -4,7 +4,7 @@ import type { AnimaId } from './animas.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
-import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
+import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
 import { castleAffinity, castleBlow, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
@@ -2423,8 +2423,8 @@ export const FIGHT_GROWTH: Partial<Record<Encounter, { pv: number; stat: number 
   'no-converge': { pv: .075, stat: .25 },
   'luca-recepcion': { pv: .15, stat: 3.25 },
   'luca-sillones': { pv: .1, stat: .75 },
-  'luca-carta': { pv: .05, stat: 2 },
-  fran: { pv: 0, stat: 3 },
+  'luca-carta': { pv: .025, stat: 2 },
+  fran: { pv: .025, stat: 1.75 },
 };
 /** How `encounter`'s foes grow with each ánima gathered: its own rule, or the one for all. */
 export const growthOf = (encounter?: string) => (encounter ? FIGHT_GROWTH[encounter as Encounter] : undefined) ?? FOE_GROWTH;
@@ -4567,7 +4567,9 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
 function enemyMove(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   const actor = state.foes.find(f => f.id === id && f.hp > 0);
   const alive = state.allies.filter(a => a.hp > 0);
-  const target = alive.find(a => a.id === targetId) ?? alive[(state.round + state.foes.findIndex(f => f.id === id) - 1) % alive.length];
+  // A boss goes for whoever is closest to falling (`SHREWD`, src/castle.ts); everyone else takes turns, one each.
+  const turn = state.round + state.foes.findIndex(f => f.id === id) - 1;
+  const target = alive.find(a => a.id === targetId) ?? (actor && alive.length && SHREWD.includes(actor.kind ?? '') ? closestToFalling(alive, turn) : alive[turn % alive.length]);
   if (!actor || !target) return;
   // A part (Vertitrón's eye) has no turn of its own: it is through at once, with nothing to show.
   if (actor.part || castleIdle(actor)) { state.enemyActions.push(id); return; }
@@ -5115,7 +5117,7 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
   };
   /** Whom it said, if still standing; and who is next (next round's turn order). */
   const named = () => alive.find(a => a.id === actor.intent?.target) ?? target;
-  const next = () => alive[(state.round + state.foes.indexOf(actor)) % alive.length];
+  const next = () => SHREWD.includes(actor.kind ?? '') ? closestToFalling(alive, state.round + state.foes.indexOf(actor)) : alive[(state.round + state.foes.indexOf(actor)) % alive.length];
   const announce = (ability: 'destello' | 'golpe-directo' | 'en-linea' | 'estocada') => {
     const who = next();
     if (!who) return;

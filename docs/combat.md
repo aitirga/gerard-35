@@ -598,6 +598,14 @@ Los combates que no son de miedos dicen su golpe (*Empujón*, *Escupitajo*, *Pu�
 enemigo confundido, *Confundido* y a quién golpea. Las noticias que no son un movimiento (el ojo de
 Vertitrón que se apaga) no sacan rótulo.
 
+**A quién va cada uno** (2026-11-21). Los enemigos corrientes se turnan: un golpe a cada uno del
+equipo. **Un jefe va a por quien está más cerca de caer** (el que menos PV tiene; empatados, a
+quien le tocaba): los tres del castillo y las manos de la Reina, El Campeón, La Voz, Fran y El que
+no converge (`SHREWD` y `closestToFalling` en `src/castle.ts`, `enemyMove` en `src/battle.ts`). Lo
+avisa igual que antes, con su flecha en la placa, así que la respuesta no cambia: quien está
+señalado aguanta, se cura o lo cubre otro. Sale de ver jugar a Jev por los enemigos
+([fight-sim.md](fight-sim.md) § Jev on both sides).
+
 Es tinta con un borde coral (nunca rosa ni violeta), y cae **un momento antes de que el enemigo se
 mueva** (`BEAT.announce`, 0,34 s): se lee antes de que llegue el golpe. Ese momento es de lectura,
 así que **el reloj del combate se para** mientras dura; los estados en segundos no lo notan. Se
@@ -816,9 +824,12 @@ regla de cada combate; `FOE_GROWTH`, la de los que no tienen una propia; `growth
 - **Cada combate crece a su manera** (desde la pasada final, 2026-11-21). Un solo número para todos
   dejaba unos combates más duros hechos los últimos y otros más fáciles: La Sobremesa pega muchas
   veces poco y un punto de Magia le sube mucho más que al Campeón, que pega una vez y avisada. El
-  número de cada uno es el que deja su pregunta igual con un ánima detrás que con cuatro: de un
-  cuarto de punto por ánima (La Sobremesa, La Lealtad) a tres (Fran y su recepción), y de 0 a un
-  15 % más de PV por ánima.
+  número de cada uno es el que deja su pregunta igual con un ánima detrás que con cuatro: de
+  nada o un cuarto de punto por ánima (La Lealtad, La Sobremesa, Lo Directo, El que no converge) a
+  algo más de tres (la recepción de Luca), y de 0 a un 15 % más de PV por ánima. Se afinan con tres
+  equipos a la vez, no con uno: el dúo de Matemágico y Papagato ya crecidos, un equipo que lleva sus
+  dos ánimas más nuevas y ese mismo sin la respuesta ([fight-sim.md](fight-sim.md) § The final pass,
+  as done).
 - La primera misión abierta es el combate tal como está afinado; las otras tres suman una, dos y
   tres veces su regla.
 - No cuentan el ánima de Nuria (está antes de todas) ni la de la propia misión. Los combates de

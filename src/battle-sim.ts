@@ -1073,12 +1073,21 @@ const FLOOR_1 = storyPoint('castillo-1').setup, FLOOR_2 = storyPoint('castillo-2
 const AT_UNI = storyPoint('universidad:first').setup, AT_MARTA = storyPoint('marta:first').setup, AT_EMILIE = storyPoint('emilie:first').setup, AT_LUCA = storyPoint('luca:first').setup;
 const UNI_LAST = storyPoint('universidad:last').setup, MARTA_LAST = storyPoint('marta:last').setup, EMILIE_LAST = storyPoint('emilie:last').setup, LUCA_LAST = storyPoint('luca:last').setup;
 /**
- * A fight's pair done the last of the four open missions: the party has every other mission's ánima and what it grew on
- * the way, and the fight's foes have grown with them (`FIGHT_GROWTH`). It should be the fight it is done first.
+ * Whoever wears the two newest ánimas instead of the cats, as someone trying each friend's ánima out does
+ * (`just game-sim`'s players): the mission's last fights must be won that way too, not only with Papagato grown.
  */
-const doneLast = (fight: string, name: string, setup: typeof UNI_LAST, withIt: Pick<Target, 'win' | 'hpLeftWon' | 'roundsWon'>, without: readonly [number, number]): Target[] => [
+const NEW_WATER = 'gerard:matemagico/prismatico+aitor:tecnopata/freatica', NEW_SONG = 'gerard:matemagico/prismatico+aitor:tecnopata/sincopante', NEW_TIDE = 'gerard:matemagico/freatica+aitor:tecnopata/sincopante';
+/**
+ * A fight done the last of the four open missions: the party has every other mission's ánima and what it grew on the
+ * way, and the fight's foes have grown with them (`FIGHT_GROWTH`). Three targets: the dúo with its grown cats wins it
+ * (`withIt`); so does a party wearing its two newest ánimas (`newest`, at their first levels: harder and longer, never a
+ * wall), and that same party loses it without the answer (`without`). A careless dúo with the cats grown wins some of
+ * these: that much is what growing buys.
+ */
+const doneLast = (fight: string, name: string, setup: typeof UNI_LAST, withIt: Pick<Target, 'win' | 'hpLeftWon' | 'roundsWon'>, newest: string, fresh: readonly [number, number], without: readonly [number, number]): Target[] => [
   { id: `${fight}-la-ultima-bien`, fight, party: DUO, ...setup, policy: 'smart', ...withIt, why: `${name}, hecha su misión la última de las cuatro: sus enemigos han crecido con el equipo, y es la misma pelea con la misma respuesta.` },
-  { id: `${fight}-la-ultima-sin-pensar`, fight, party: DUO, ...setup, policy: 'casual', win: without, why: `${name}, la última y sin pensar: lo que el equipo ha crecido no sustituye a la respuesta.` },
+  { id: `${fight}-la-ultima-animas-nuevas`, fight, party: newest, ...setup, policy: 'smart', win: fresh, why: `${name}, la última y con las dos ánimas más nuevas puestas en vez de los gatos: más justo y más largo, pero con la respuesta se gana. Ninguna misión es un muro por lo que se lleve puesto.` },
+  { id: `${fight}-la-ultima-sin-pensar`, fight, party: newest, ...setup, policy: 'casual', win: without, why: `${name}, la última y sin pensar, con las ánimas nuevas: lo que el equipo ha crecido no sustituye a la respuesta.` },
 ];
 export const TARGETS: readonly Target[] = [
   // The first fights (`FIRST_FIGHTS`) only teach: won without a thought, and the fourth dog pack already costs something.
@@ -1169,10 +1178,10 @@ export const TARGETS: readonly Target[] = [
   { id: 'cristalino-bien', fight: 'cuerdas-cristalino', party: DUO, ...AT_MARTA, policy: 'smart', win: [.95, 1], why: 'Con los gatos y un dual, que no rebota, cae deprisa.' },
   { id: 'cristalino-a-lo-loco', fight: 'cuerdas-cristalino', party: TECH, ...AT_MARTA, policy: 'random', win: [.1, .7], why: 'Con dos ánimas de magia y sin mirar, la magia vuelve: se pierde a menudo.' },
   { id: 'directo-bien', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'smart', win: [.9, 1], hpLeftWon: [.28, .7], why: 'Lo Directo, pensando: agarrarse cuando te mira y pegar cuando mira al otro.' },
-  { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .2], why: 'Sin agarrarse a la Estocada ni guardarse para cuando se queda clavado, pega demasiado y aguanta demasiado.' },
+  { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .35], why: 'Sin agarrarse a la Estocada ni guardarse para cuando se queda clavado, pega demasiado y aguanta demasiado.' },
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
   { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
-  { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.65, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan.' },
+  { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.5, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan.' },
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
@@ -1183,16 +1192,16 @@ export const TARGETS: readonly Target[] = [
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, ...AT_MARTA, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
   // The four open missions done last (2026-11-21, the final pass): each fight that asks a question, held at the other end of the story too.
-  ...doneLast('camping-negra', 'La parcela negra', UNI_LAST, { win: [.85, 1], hpLeftWon: [.15, .6] }, [0, .4]),
-  ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [5.5, 11] }, [0, .3]),
-  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [10, 16] }, [0, .12]),
-  ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.82, 1] }, [0, .3]),
-  ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.85, 1] }, [0, .25]),
-  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.85, 1], roundsWon: [8, 14] }, [0, .4]),
-  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.9, 1], roundsWon: [7.5, 13] }, [0, .05]),
-  ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, [0, .45]),
-  ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, [0, .5]),
-  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [7.5, 13] }, [0, .15]),
+  ...doneLast('camping-negra', 'La parcela negra', UNI_LAST, { win: [.85, 1], hpLeftWon: [.15, .6] }, NEW_WATER, [.7, 1], [0, .2]),
+  ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [5.5, 11] }, NEW_WATER, [.82, 1], [0, .15]),
+  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [10, 16] }, NEW_WATER, [.82, 1], [0, .15]),
+  ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
+  ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.65, 1], [0, .3]),
+  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [7.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
+  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.9, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
+  ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
+  ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
+  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [7.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),
   // The castle (docs/castle.md, docs/castle-bosses.md), measured 2026-11-21 with the party as the story leaves it
   // (`storyPoint`): on arriving with Nuria's ánima and one side mission's (ONE), with two (TWO), and with them all
   // at each of the castle's stages. Its bosses ask for ánimas (docs/fight-sim.md § Power and the castle).
@@ -1266,7 +1275,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
   { id: 'carta-bien', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Las camisas de Luca, pensando: pegar solo a la que está en su luz, y con otra cosa que el elemento que esa luz se come.' },
   { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes sin mirar la luz, la mayoría caen sobre una camisa apagada y no hacen nada.' },
-  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .7], roundsWon: [7.5, 12], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.82, 1], hpLeftWon: [.22, .7], roundsWon: [7.5, 12], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
   { id: 'fran-sin-pensar', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo, sigue comiéndose los elementos y la Aspersión llega teñida de todas.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];

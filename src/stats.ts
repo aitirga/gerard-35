@@ -83,10 +83,10 @@ export const PROFILES = {
    * a wall, an Eco frail, Lo Cristalino has spirit to spare (magic does nothing to it anyway),
    * Lo Directo hits. La Voz is all of them.
    */
-  lealtad: base(280, 12, 9, 15, 12),
+  lealtad: base(260, 12, 9, 15, 12),
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
-  directo: base(470, 14, 10, 11, 10),
+  directo: base(440, 14, 10, 11, 10),
   voz: base(500, 12, 14, 12, 14),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first

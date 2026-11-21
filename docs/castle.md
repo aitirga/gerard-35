@@ -200,8 +200,9 @@ They are the same pupils and the same room, with the same question, and less roo
 - **What they are**: every pupil of the group has `STRONG.pv` times its PV (1.3) and hits
   `STRONG.power` times as hard (1.1), on top of its year and, at night, of the night's strength
   (`castleStrong` in `src/castle-fight.ts`). Bosses and their parts are never Encarnados. They were
-  ×1.6 and ×1.3 until the final pass: the rooms themselves are harder now (§ Balance), and on top of
-  that the old numbers made a room nobody won.
+  ×1.6 and ×1.3 until the final pass: the rooms themselves are harder now ([fight-sim.md](fight-sim.md) §
+  The castle, as tuned, which has every room's figures), and on top of that the old numbers made a
+  room nobody won.
 - **What they leave**: beaten, an **Eco de luz**, which flies into the party as a friend's does
   (`strongWon`; flags `luz-encarnado-1` to `-6`, `STRONG_LIGHTS`). One every other day and **six in a
   game**: when the sixth is taken they do not come out again. Lost against, nothing is taken and they are
@@ -357,10 +358,10 @@ Placeholders and decisions taken for now (each one Aitor's to change):
   bosses' designs for the party that reaches each (docs/castle-bosses.md). A second-year's filling
   shows through its figure; the Queen's crown loses a flavour with each layer torn off her. La Pompa
   is a thing of its own in her fight (`pompa`), drawn for now with the palace minion's model, like
-  her hands. **None of it is balanced**: every number in `CASTLE` is a first guess and `just
-  fight-sim check` is left for the balance round (27 of 117 targets were off before this round, 29
-  after). Still without a pair of `TARGETS`: rooms 1b, 1c, 2a–2c, 3a, 3c, delegada-1 and -2, and one
-  without the answer for each of the Queen's stages.
+  her hands. **Balanced in the final pass, the same night**: every room, elite and boss
+  has its pair of `TARGETS` and `just fight-sim check` holds them all
+  ([fight-sim.md](fight-sim.md) § The castle, as tuned, with what the castle is with fewer missions
+  behind it than it asks for).
 - Not built: the props that drift along a floor, Aurelià's portrait, the six-note motif in the music.
 
 Measured on 2026-11-19, before the weaknesses round, and not measured again since (the balance round

@@ -67,7 +67,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `anima` | `ANIMAS`' `bonus`, what each friend's ánima adds to everyone | `anima.nuria.pv`, `anima.marta.velocidad` |
 | `growth` | `ANIMA_GROWTH` (`src/animas.ts`) as `growth.rules`: every ánima's bonus times `scale`, and `pv` and `stat` more for each one gathered | `growth.rules.scale`, `growth.rules.stat` |
 | `level`, `xp`, `stage` | `LEVEL_XP` (`level.xp.0` is level 2's EXP, `level.xp.5` level 7's), `FOE_XP`, `XP_RULES` (what a fight inside the castle is worth, times its foes) and `CASTLE_UNLOCKS` | `level.xp.2`, `xp.foe.cebollita`, `xp.rules.castle`, `stage.2.cap` |
-| `foes` | `FOE_GROWTH` (`src/battle.ts`): how an open mission's foes grow with the other missions' ánimas behind it (§ Progression) | `foes.growth.pv`, `foes.growth.stat` |
+| `foes` | `FOE_GROWTH` and `FIGHT_GROWTH` (`src/battle.ts`): how an open mission's foes grow with the other missions' ánimas behind it, the rule for all and each fight's own (§ Progression, § The final pass, as done) | `foes.growth.pv`, `foes.growth.stat`, `foes.<fight>.pv`, `foes.<fight>.stat` |
 
 `just fight-sim levers --fight <fight>` lists the ones a fight reads, so nobody has to guess a path.
 
@@ -155,7 +155,8 @@ wearing nothing) cannot. Nobody hands an ánima over in a fight, so there is no 
 ## Targets
 
 `TARGETS` (`src/battle-sim.ts`) can hold `win`, `roundsWon`, `roundsLost`, `hpLeftWon` and `duals` to
-ranges; a target with any fight left unfinished at the round limit always fails. Uri's tower is held
+ranges, and `happens` (how many times an event comes about in a fight on average: the Queen's first
+fight cannot be won, so its pair is whether the party gets her to the tenth where she takes Aitor); a target with any fight left unfinished at the round limit always fails. Uri's tower is held
 with both parties: the mission party for the onions and the young, the dual party (`DUO`) for the
 duals, at the levels the tower reaches (Papagato 2, Matemágico 1 or 2; 3 for whoever grinds).
 
@@ -168,7 +169,10 @@ the fight's answer and one that does not. Name the answer in both `why`s.
 | Without the answer | `smart` with the answer banned (`ban`) when it is a skill, a dual or a kind of blow; `casual` when it is an order or a moment, which a ban cannot take away | `win` up to .2 |
 
 `attack` alone is not the pair's second half: a fight that only asks for "something other than Atacar"
-asks nothing. See § The pair, as retuned on 2026-11-15 for where each fight stands.
+asks nothing. A fight that only teaches needs no pair, just a target that holds it easy: the first
+fights of the game (`FIRST_FIGHTS`), each mission's way in and one room on each floor of the castle
+(`teaching` in `MISSIONS` and `CASTLE_STAGES`). `pairsOf` (`src/balance.ts`) is the rule in code:
+`just fight-sim coverage` and `just progress --audit` both read it. See § The pair, as retuned on 2026-11-15 for where each fight stands.
 
 Matemágico and Tecnópata no longer level (2026-11-15: their skills are nodes bought at the jar,
 `docs/animas/README.md` § The jar). The sim keeps the old shorthand so the targets still mean
@@ -632,23 +636,52 @@ once each on average, refights rooms of the floor and comes back. La Voz done la
 first try two times in three (`FOE_GROWTH.stat` 1.25; at 1.5 it was one in three, a wall, and at 1
 the last mission was the easy one: `--tune foes.growth.stat=1:1.25:1.5`).
 
-**What is still open**, for the final pass:
+#### The final pass, as done (2026-11-21, night)
 
-- `just fight-sim check`: 26 of 117 out of range (25 of 112 before this round). Every castle boss,
-  ánima and Encarnados target holds; `delegada-bien` came back in; the third year's room 3b went out
-  (`smart` leaves 3 fights in 200 unfinished, `casual` wins 75 %).
-- **A careless player with all five ánimas wins most plain rooms** of the second and third floors
-  (El Ausente, El Castigado, El Montón: `casual` 96 to 100 %). The elites, the Encarnados and the
-  bosses still punish; those rooms' «sin pensar» targets fail, as they did before.
-- **Sincopante is slow against Aurelià**: parties that wear it take 19 to 29 rounds where the rest
-  take 9 to 12. `pensando` goes in wearing it at level 1, and that is its long fight.
-- **Skills were measured, not changed** (`just fight-sim skills`, § Skills): what the bot never
-  uses (Cacería, Asteroide, the duals Bombardeo orbital, Reserva de color and Vulcano), what is cheap
-  for what it does (Sondeo eléctrico, Tutti) and what changes nothing when taken away (Telón, Bombeo,
-  Golpe de ariete, Ronroneo, Acecho) are a list to decide on, not numbers to move blind.
-- `just game-sim`'s players wear their newest ánimas, at level 1 or 2, into the bosses, so they read
-  them harder than someone who chooses; the story points' dual party reads them easier. The bosses
-  sit between both on purpose.
+`just fight-sim check`: 29 of 117 targets out of range before it, **0 of 170** after;
+`just fight-sim coverage` lists no fight without its pair; `npm test` passes. What it took, in the
+order it was learned:
+
+1. **Each open fight grows by its own rule** (`FIGHT_GROWTH`, book `foes.<fight>`): one number for
+   all (`FOE_GROWTH.stat` 1.25) left La Sobremesa a wall done last and Fran a walk.
+2. **Tuning with one party is tuning for one party.** The first numbers held every pair with the
+   dual party (Matemágico and Papagato) and made walls for anyone else: `just game-sim`'s thinking
+   player, who wears its two newest ánimas at level 1, took 785 minutes where it took 184, losing
+   Lo Directo 23 times in a row. Each mission's last fights are now held three ways (`doneLast`):
+   the dúo with its grown cats, a party wearing its two newest ánimas (`…-la-ultima-animas-nuevas`,
+   won 82 to 100 %, longer), and that party without the answer (0 to 25 %). The growth numbers came
+   down for it (La Voz 1.75 → 1.25 a mission, Fran 3 → 1.75, Lo Directo 1.5 → .25, El que no
+   converge 1.5 → .25), and Lo Directo and La Lealtad lost some PV (470 → 440, 280 → 260).
+3. **What that buys the careless.** A careless dúo with Papagato at level 4 wins some of the last
+   mission's fights (Lo Directo about half the time, La Voz seven in ten, in 18 rounds and on its
+   last PV). That much is what growing buys; with the newest ánimas the careless still lose.
+4. **The bots had three holes**, each of which read as a balance problem: `smart` stood behind
+   Defender and a cure for ever against El Repetidor's crust or two Gemelos at a few PV (fights
+   «sin acabar»); it hit La Pompa when it could not burst it; `casual` broke Fran's lamps by number.
+5. **The palace guards count the friends' ánimas**, as the game does (`story.animas`); the sim was
+   counting Matemágico and Tecnópata too, so it read the gate open from the start.
+
+| Whole games (`just game-sim`, 6 each) | Before the pass | With the dúo-only numbers | As it stands |
+| --- | --- | --- | --- |
+| `pensando`: finishes, median, fights (lost) | 100 %, 184 min, 66 (6) | 83 %, 785 min, 199 (62) | 100 %, 349 min, 110 (25) |
+| `corredor` | 100 %, 155 min, 61 (7) | 100 %, 189 min, 77 (11) | 100 %, 204 min, 92 (14) |
+| `casual` | 100 %, 603 min, 215 (63) | 17 % | 83 %, 1182 min, 399 (156) |
+
+Before the pass a careless player finished every game: no boss asked anything of it. Now it loses
+three fights in eight and takes twice as long, and a thinking one that insists on its newest
+ánimas loses one in four.
+
+**Still open, said to Aitor:**
+
+- **Lo Directo** is the one fight where what is worn decides: `pensando` in whole games, with two
+  ánimas at level 1 and no burst, wins it one try in five. It asks for a hard blow in the window
+  (the cats) or electricity. A softer Estocada lets the careless dúo through (it is a cliff: 54 → 48
+  on its blow takes `casual` from 10 % to 68 %).
+- **Long fights with the newest ánimas**: El Campeón 17 rounds, La Voz and Fran 15, against 7 to 10
+  with the cats. It is the base fight (El Campeón takes 15 with two magic ánimas done first too).
+- The trio rooms' cliff and what the castle is with fewer missions (§ The castle, as tuned).
+- The Queen does not strike while she wraps herself or blows; her return is five rounds.
+- Skills were measured, not retuned (§ Skills): the same list as before.
 
 ### The final pass
 
@@ -677,6 +710,16 @@ plays one real fight with Jev choosing for both sides, the party's action among 
 whom each foe goes for. It sees what a player sees (PV, maná, announced moves, skill descriptions,
 what just happened) and nobody's real name. About two calls a round and one per foe; it needs
 `TYPESAFE_API_KEY`.
+
+**What it was used for (2026-11-21, Aitor: «usa Jev para ver cómo piensa y aplícalo en los bosses»).**
+Eight fights against the bosses with Jev at both sides, 169 choices of whom a foe goes for: nine
+in ten for **whoever has the fewest PV**, whether or not that one is holding on (43 to 6 when the
+two pulled apart), to bring one down as soon as it can; and with Jev aiming, the foes won all
+eight. The bosses used to take turns, one blow each. Now a boss goes for whoever is closest to
+falling (`closestToFalling`, `SHREWD` in `src/castle.ts`: the castle's three, the Queen's hands, El
+Campeón, La Voz, Fran and El que no converge), on a tie whoever's turn it was; pupils and the small
+fights still take turns. Who plays the answer barely notices (Aurelià 97 %, Dirección 89 %, La Voz
+96 %; Fran went from 94 % to 88 %), since the answer is to hold on when a blow is said for you.
 
 ## From code
 
@@ -821,31 +864,47 @@ turnless foes still count a turn's time; the fights tuned with them were measure
 
 ## The castle, as tuned
 
-Preliminary (docs/castle.md § Built so far). Measured with `just fight-sim check` (200 fights, seed
-35): the dual party, Papagato 3, and Atacar's three elements with Vasos and Descarga (`ELEMENTAL`
-in `src/battle-sim.ts`). Its numbers are `CASTLE` (book `castle.rules`) and each kind's `PROFILES`.
+Final pass, 2026-11-21 (`just fight-sim story`, 200 fights, seed 35): the dual party at each floor's
+story point, every mission behind it. Its numbers are `CASTLE` (book `castle.rules`), `STRONG` and
+each kind's `PROFILES`.
 
-| Fight | Bot | Wins | Rounds won | PV left |
-| --- | --- | --- | --- | --- |
-| Primer curso · Chivata y Repetidor | casual | 100 % | 3.2 | 84 % |
-| Tercer curso · Empollón, Repetidor y Chivata | smart | 91 % | 10.9 | 43 % |
-| Tercer curso · Empollón, Repetidor y Chivata | casual | 0 % | – | – |
-| La Delegada · 3.º | smart | 83 % | 8.2 | 18 % |
-| La Delegada · 3.º | casual | 0 % | – | – |
-| Aurelià | smart | 82 % | 12.9 | 6 % |
-| Aurelià | casual | 0 % | – | – |
-| Dirección | smart | 92 % | 6.3 | 10 % |
-| Dirección | casual | 0 % | – | – |
-| La Reina, first meeting | smart | 0 % | – | – |
-| La Reina, with the artilugio | smart (plays the melody) | 100 % | 7.0 | 74 % |
-| La Reina, with the artilugio | casual (random buttons) | 0 % | – | – |
+| Fight | `smart` | `casual` | What it is |
+| --- | --- | --- | --- |
+| 1a, 1b, 1c | 100 %, 1 to 2 rounds | 99 to 100 % | The first floor teaches: fresh gum, one pupil's rule each |
+| La Delegada · 1.º | 100 %, 88 % of PV, 3.9 rounds | 38 % | The first room that asks to be read |
+| **Aurelià** | 97 %, 11.4 rounds | 8 % | With two side missions 92 %, with one 7 % |
+| 2a (Chivata, Repetidor, Empollón) | 94 %, 37 % of PV, 6 rounds | 39 % | The floor's tightest room |
+| 2b, 2d, 2e | 98 to 99 %, 4 rounds | 26 to 46 % | |
+| 2c (Gemelos, Repetidor) | 100 %, 4.2 rounds | 67 % | The floor's soft room (`teaching`) |
+| La Delegada · 2.º | 92 %, 4.2 rounds | 29 % | |
+| **Dirección** | 89 %, 7.4 rounds | 3 % | With two side missions 9 % |
+| 3a (Chivatas, Repetidor) | 99 %, 4.9 rounds | 74 % | The floor's soft room (`teaching`) |
+| 3b, 3c, 3d | 89 to 94 %, 4 to 6 rounds | 28 to 40 % | |
+| La Delegada · 3.º | 89 %, 4 rounds | 24 % | |
+| La Reina, first meeting | gets her to the tenth where she takes Aitor: every time with two friends' ánimas worn each, 88 % with the dual party | never gets there | Cannot be won; held by `happens` |
+| La Reina, with the artilugio | 100 %, 5 rounds (plays the melody) | 0 % (random buttons) | Short on purpose: the fight was the first one |
 
-Measured 2026-11-19. What changed for it: Dirección has 160 PV each and hits softer (Expediente 18,
-Horario 6, Circular 12, ×1.8 on the wet), and its Acta announces the Resolución a turn ahead; the
-third year hits ×1.25, not ×1.5; La Delegada's third room is her and the twins. Without Papagato
-(`TECH`), Aurelià and Dirección are still almost never won: the whole-game simulator
-(docs/game-sim.md) says whether a real party reaches them that way. In `playOut` the smart bot plays
-the artilugio's melody (two notes a turn) and casual presses random buttons.
+What moved to get there, from the first guesses of the redesign:
+
+| Number | Was | Is |
+| --- | --- | --- |
+| `year1`, `year2`, `year3` | 1.25, 1.4, 1.5 | 1.6, 1.4, 1.8 (second-years come in threes and with fillings, so their scale is the lowest) |
+| El Repetidor, El Empollón, La Delegada, El Ausente, El Castigado, El Montón (PV) | 110, 85, 130, 100, 120, 130 | 160, 125, 150, 140, 160, 250 |
+| `empujon`, `repaso`, `senalar`, `gemelo`, `orden`, `levantar` | 46, 24, 12, 20, 22, .5 | 54, 32, 16, 23, 12, .4 (the twins hit harder, La Delegada herself softer: her weight is the order) |
+| `presente`, `revienta`, `copia` | 55, 75, 1 | 80, 150, 1.2 |
+| Aurelià | 480 PV, Récord 70 | 560 PV, Récord 80 |
+| Each of Dirección | 185 PV, 19 Magia, Circular 12 (×1.8 wet), Resolución 90 | 245 PV, 20 Magia, Circular 16 (×2.6 wet), Resolución 100 |
+| The Queen | Pegote 34, Aplastar 26, La Pompa 80 on everyone | Pegote 74, Aplastar 44, La Pompa 300 PV and 155 on everyone; behind it she takes ×0.375; burst, it costs her 12 % |
+| `STRONG` (Encarnados) | PV ×1.6, blows ×1.3 | PV ×1.3, blows ×1.1 |
+| Night (`NIGHT_PUPILS`, src/night.ts) | start 8, 1.1 a friend | start 6, 1 a friend |
+
+**What it is not.** The rooms of three are on a cliff: a tenth less PV and blows takes the smallest
+party that can be there (two side missions on the second floor) from 55 % to 87 % playing well, and
+lets a careless full party win. They are tuned for the party with every mission behind it, which is
+where the game pushes; with fewer, the trio rooms and the elites say «go and get another ánima»
+before the boss does (2a 52 %, La Delegada · 2.º 65 % with two side missions; La Delegada · 3.º
+about 30 % with three). A castle story point can name the missions behind it to measure that:
+`just fight-sim story --at castillo-2:universidad/marta`.
 
 ## Emilie's model, as tuned
 

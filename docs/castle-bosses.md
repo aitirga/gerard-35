@@ -16,8 +16,14 @@ definitivas exist now; the first version was written before them) and for the ca
 ([castle.md](castle.md) § Weaknesses): the ring (water puts out fire, a spark runs through water,
 fire melts the wire) is learned on the second floor and asked again by Dirección and by the Queen.
 An element is always a prize and never a requirement: each boss has an answer within reach of fire,
-physical, astral and Sangrado. **Nothing here is balanced yet**: the numbers are first guesses and
-the `TARGETS` keep the ranges they had (the balance round is still to come).
+physical, astral and Sangrado. **Balanced in the final pass (2026-11-21)**: the numbers and each boss's pair of `TARGETS` are in
+[fight-sim.md](fight-sim.md) § The castle, as tuned.
+
+**Whom they go for.** A boss goes for whoever in the party is closest to falling (fewest PV; on a
+tie, whoever's turn it was), where pupils take turns: Aurelià's Pregunta and Expulsión, Dirección's
+Expediente, the Queen's Pegote and the hand that holds (`closestToFalling`, `SHREWD` in
+`src/castle.ts`). It is still said on the plate before it lands, so the answer is the same: the one
+named holds on, is cured or is covered.
 
 ## Aurelià
 
