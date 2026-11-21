@@ -763,8 +763,16 @@ in = "src/story.ts"
 title = "El castillo se vuelve más amenazante tras cada grito (sus texturas)"
 weight = 2
 priority = "palacio"
-absent = "The castle hardens with each scream\\*\\* \\(planned, not built\\)"
-in = "docs/castle.md"
+grep = "export function moodTheme"
+in = "src/castle-mood.ts"
+
+# docs/castle.md § The generated floor: the night's rules (src/night-pupils.ts) with the floor's numbers.
+[[block.item]]
+title = "Dentro del castillo cada alumno caza a su manera, como de noche en la Meridiana"
+weight = 2
+priority = "palacio"
+grep = "export function createFloorStreet"
+in = "src/castle-pupils.ts"
 
 [[block.item]]
 title = "Los alumnos de la Reina: los cinco primeros y sus tres cursos"
@@ -790,10 +798,17 @@ priority = "palacio"
 grep = "models/monsters/"
 in = "src/battle-scene.ts"
 
+# docs/castle-bosses.md § How they look: aurelia, mar, montse and pilar in src/monsters/ (the check
+# looks at the last of the four to land).
 [[block.item]]
 title = "Modelos propios de Aurelià y Dirección"
 priority = "palacio"
-file = "public/models/characters/aurelia.glb"
+file = "src/monsters/pilar.json"
+
+[[block.item]]
+title = "Modelo propio de El Atril"
+priority = "palacio"
+file = "src/creatures/atril.json"
 
 # All four in SPEAKERS (src/dialogue.ts), which today talk without one.
 [[block.item]]
@@ -840,9 +855,12 @@ priority = "palacio"
 grep = "palacio-trono"
 in = "src/castle.ts"
 
+# docs/castle.md § The castle after each boss: behind a beaten boss, a school again.
 [[block.item]]
 title = "Zonas ganadas que cambian de aspecto"
 priority = "palacio"
+grep = "export function castleZone"
+in = "src/castle-mood.ts"
 
 [[block.item]]
 title = "Modelo propio de los guardianes"

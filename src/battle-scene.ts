@@ -2354,7 +2354,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     return party ? partyModel(unit.id) : own?.template ?? fear ?? (minion ? minionTemplate! : dogs[i % dogs.length]);
   }
   /** A castle foe's own figure, if it has one loaded (src/castle-models.ts): El Repetidor's by his year. */
-  const ownFigure = (unit: Combatant, party: boolean) => !party && isCastle(unit.kind) ? castleModel(castleFigure(unit.kind, unit.castle?.year)) : undefined;
+  const ownFigure = (unit: Combatant, party: boolean) => !party && isCastle(unit.kind) ? castleModel(castleFigure(unit.kind, unit.castle?.year, unit.id)) : undefined;
   /**
    * Vertitrón's eye (a part, `vertigo-ojo`): a fighter with no model of its own. It is the eye in
    * Vertitrón's chest, so blows, plates, fire and particles go there; it stands, for whoever runs at
