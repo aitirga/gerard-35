@@ -2,10 +2,10 @@
 
 Status: designed whole 2026-11-20 around Aitor's direction of that day (*La crecida*: water held on
 the foes' side that rises to three marks; electricity stays in it as damage over time; fire turns
-it to steam and blinds; at the third mark the foes sink and lose a share of their PV over time). It
-is waiting for his yes to the whole. Of the ánima only **its look is built** (§ Look and
-interface): the cell and each skill in the effects lab, its colours and pieces on the wearer, its
-interface. No rule and no skill; Emilie's mission still gives only her light, a placeholder · Comes from: Emilie's mission, [`docs/quests/emilie.md`](../../quests/emilie.md)
+it to steam and blinds; at the third mark the foes sink and lose a share of their PV over time).
+Aitor's yes to the whole, 2026-11-21. **Playable whole since 2026-11-21**: the rule, its seven
+levels, the passive *Nivel de base* and the definitiva *Bajo cero* are in the fight rules, and the
+effects lab's look is driven by them in real fights (§ Implementation) · Comes from: Emilie's mission, [`docs/quests/emilie.md`](../../quests/emilie.md)
 
 What is **decided** says so and by whom. Everything else is a proposal, and its numbers are first
 guesses ([`../README.md`](../README.md) § Order of work).
@@ -35,6 +35,7 @@ guesses ([`../README.md`](../README.md) § Order of work).
 | 2026-11-21 | **The damage of breaking the ice is not a share of PV**: it is a blow, so the wearer's Magia and a weakness to water count, and Hundido stays the one pure share |
 | 2026-11-21 | **A flurry is a shortcut through the ice, and that is good**: *Zarpazos de fuego* is a dual that is hard to set up. He put it as Zarpazos three blows, Zarpazos de fuego five, **the ice four to eight**, «or a better combination» |
 | 2026-11-20 | **Hundido takes its share of the PV the foe has in all**, not of what it has left |
+| 2026-11-21 | **Yes to the whole design**, and into the fights now («pensaba que todo esto ya estaba en el combate») |
 
 **What the first sketch of La crecida loses** (it was a proposal): the water reaching the party at
 the third mark. Held on the foes' side, it never wets the party while its wearer stands (§ Signature,
@@ -172,17 +173,17 @@ whatever spends it. One passive, and not from the start.
 
 | Level | What it gives | Who | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | The rule · *Crecida* | — | — | — | «El agua queda contenida bajo cada enemigo y sube hasta 3 marcas…» (above) | Designed |
-| 1 | **Recarga** | The wearer | 1 | 16 magic, water | `Daño mágico de agua leve a un enemigo. Sube su agua una marca.` | Designed |
-| 2 | **Sondeo eléctrico** | The wearer | 1 | 18 magic, electric | `Daño mágico eléctrico leve a un enemigo. La corriente que deja en el agua dura el doble.` | Designed |
-| 3 | **Bombeo** | The wearer | 1 | 16 cure | `Cura leve a todo el equipo. Baja una marca el agua del enemigo que más tiene.` | Designed |
-| 4 | Maná +1 | — | — | — | — | Designed |
-| 5 | Passive · **Nivel de base** | — | — | — | «Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.» | Designed |
-| 6 | **Riada** | The wearer | 2 | 12 magic, water | `Daño mágico de agua leve a todos los enemigos. Sube el agua de cada uno una marca.` | Designed |
-| 7 | **Golpe de ariete** | The wearer | 2 | 26 magic, water, once a mark | `Daño mágico de agua medio a todos los enemigos. Gasta el agua de cada uno: un golpe por cada marca.` | Designed |
-| Jar | Definitiva · **Bajo cero** | The wearer | — | 90 on breaking a fresh ice of three marks, falling to 40 as it melts | *Abstract*: `Congela a los enemigos que tienen agua, más tiempo cuanta más tengan. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto, menor cuanto más derretido esté.` | Designed; its look built |
+| 1 | The rule · *Crecida* | — | — | — | «El agua queda contenida bajo cada enemigo y sube hasta 3 marcas…» (above) | Built |
+| 1 | **Recarga** | The wearer | 1 | 16 magic, water | `Daño mágico de agua leve a un enemigo. Sube su agua una marca.` | Built |
+| 2 | **Sondeo eléctrico** | The wearer | 1 | 18 magic, electric | `Daño mágico eléctrico leve a un enemigo. La corriente que deja en el agua dura el doble.` | Built |
+| 3 | **Bombeo** | The wearer | 1 | 16 cure | `Cura leve a todo el equipo. Baja una marca el agua del enemigo que más tiene.` | Built |
+| 4 | Maná +1 | — | — | — | — | Built |
+| 5 | Passive · **Nivel de base** | — | — | — | «Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.» | Built |
+| 6 | **Riada** | The wearer | 2 | 12 magic, water | `Daño mágico de agua leve a todos los enemigos. Sube el agua de cada uno una marca.` | Built |
+| 7 | **Golpe de ariete** | The wearer | 2 | 26 magic, water, once a mark | `Daño mágico de agua medio a todos los enemigos. Gasta el agua de cada uno: un golpe por cada marca.` | Built |
+| Jar | Definitiva · **Bajo cero** | The wearer | — | 90 on breaking a fresh ice of three marks, falling to 40 as it melts | *Abstract*: `Congela a los enemigos que tienen agua, más tiempo cuanta más tengan. Congelados no actúan y reciben poco daño. Romper el hielo a golpes les hace un daño muy alto, menor cuanto más derretido esté.` | Built |
 
-Every skill's look is built in the effects lab (§ Look and interface); none is in the game.
+Every skill's look is built in the effects lab (§ Look and interface), and plays in the fights.
 *Golpe de ariete* does nothing to a foe with no water: its sentence keeps the shape's
 `a todos los enemigos`, and the second sentence says who is struck.
 
@@ -418,41 +419,69 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
 
 ## Implementation
 
-**Built**: its look. The cell and each skill's look in the effects lab, and in the game the
-ánima's id, its colours and pieces on whoever wears it and its interface (`ClassId`,
-`ANIMA_NAMES`, `CLASS_STATS` as a first guess, `CLASSES`, `anima-looks.ts`, `style.css`), so the
-fight tester can put it on. **No rule and no skill**: it is not unlocked by Emilie's mission yet
-(`anima-emilie` still gives only her light, `ANIMAS.emilie`).
+**Built** (2026-11-21), following [`../README.md`](../README.md) § How an ánima is built:
 
-**What does not exist yet** and this design stands on:
+- **The rule** in [`src/battle.ts`](../../../src/battle.ts), one book `CRECIDA` (tunable in `just fight-sim`
+  as `crecida.rules.*`): each foe's water is the timed state `agua` (its level the marks, its clock the top
+  mark's 20 s), drained by `runWater` on the fight's clock; while it stands the foe keeps Mojado (so every
+  rule that asks whether a foe is wet finds it wet), `corriente` at its mark and `hundido` at the third.
+  `react` charges it (Conducción, then the current), `steam` takes a mark as Vapor, `holdWater` breaks the
+  cells when whoever raised them last falls. Bajo cero is `freeze`; the ice is the timed state `congelado`
+  (its level the marks of ice left), `enemyMove` loses a frozen foe's turn, `fearDamage` takes a quarter
+  of every blow on it, and `chill` counts the blows on its ice (`iceBlows`), melts a mark with a flame and
+  breaks it (`iceBreakPower`).
+- **Skills and levels**: `SKILLS` (Recarga, Sondeo eléctrico, Bombeo, Riada, Golpe de ariete, Bajo cero),
+  `PASSIVES['nivel-de-base']` (`baseOf`), `LEVELLED` in `src/levels.ts`, the flags `freatica-2` to `freatica-7`
+  (`src/story.ts`, `STORY_ARCS`, the picker), the definitiva at the jar (`IMPROVEMENTS`, by itself from
+  `ulti` in `SKILLS`), its sounds (`src/battle-sounds.ts`).
+- **The look in fights**: [`src/freatica-fight.ts`](../../../src/freatica-fight.ts) drives the effects lab's
+  cells (`createFreaticaField`) from the fight's state: each frame every foe's cell follows its marks, its
+  clock, its current and its ice (the cell's clocks are the fight's, `drive` in `src/freatica-fx.ts`), and
+  each action plays its own look once (each skill's `cast`, a bolt, steam, the ice's cracks, a flame's melt,
+  the break, the cells breaking). A frozen foe holds its pose. On the plates: *Agua* (a gauge, its ring the
+  top mark's clock), *Corriente*, *Hundido* and *Congelado* (its ring the ice left, the blows it has taken
+  in its name); pops «Agua I/II/III», «¡Hundido!», «¡Corriente!», «¡Vapor!», «¡Bajo cero!», «Hielo n/8»,
+  «Se derrite» and «¡Roto!» with the break's number; the current's and the sinking's pulses in their colours
+  (`src/battle-ui.ts`, `src/style.css`).
+- **The fight tester**: Freática at every level from the picker's ánimas column, Bajo cero from its jar list,
+  and in a fight *Agua*: every foe standing at no water, I, II or III at will (`stageWater`).
+- **The bots** (`src/battle-sim.ts`): `smart` values a mark raised, the sinking reached, a current set and
+  the turns a freeze takes away.
+- Tests: [`tests/freatica.test.mjs`](../../../tests/freatica.test.mjs). Screenshots:
+  `just screenshots freatica-combate --gpu`.
 
-- **The water on each foe** in `BattleState` (its marks, its top mark's clock, its current and
-  that clock, its ice and cracks), stepped by `runClock`, read by `react` (a foe with water counts
-  as wet) and by the fight's summary.
-- **Corriente** and **Hundido** as pulses, and **Congelado**: a status on the clock that stops a
-  foe, quarters what it takes, cracks by a share with each blow and breaks.
-- **The cells** driven by the fight (their look exists, `createFreaticaField`, and waits for the
-  state above), the plate's icon, the pops.
-- The bots of `just fight-sim` holding a level on purpose.
+**Choices taken where § Open left one** (2026-11-21, the simplest that fits the design):
 
-**To build**, once the design has a yes, following [`../README.md`](../README.md) § How an ánima
-is built:
+- **Its one colour**: `CLASSES` keeps the green of the first mark, as proposed.
+- **Grey in the first round**: the cells in fights are grey-edged (the ánima's first round, as the lab's
+  *Color*); the water is the same. The second round of Emilie's mission is not built, so nothing turns them white yet.
+- **When the wearer falls, the water wets both sides**: built as proposed. The water is held by whoever
+  raised it last; the ice is not water and stays.
+- **How a flurry counts**: each strike one, as proposed; a blow of power 35 or more (an *alto*) counts two.
+  A physical blow cracks whatever its element; magic fire melts a mark (Cegado at the ice's level, any fire
+  it lit put out); magic electricity does nothing; any other magic cracks.
+- **The ice spends the water**, as proposed.
+- **Bajo cero** wakes the first time a foe's water reaches III while Freática is worn, and can be used
+  while some foe is at III (the doc's «one of them must have its water at the maximum»). Its break hits
+  with the Magia of whoever froze them.
+- **Sondeo eléctrico on a dry foe** is a plain bolt on it, but as every electric skill (Descarga) it still
+  runs through the foes that are wet elsewhere.
+- **Bombeo** needs someone hurt, as every cure, and some water on the field; on a tie it takes the mark
+  from the first foe.
+- Rayo de energía and Telemetría lengthen the water's, the current's and the ice's clocks; Reinicio starts
+  the water's over, never the ice's; Virus atómico never spreads water, current, sinking or ice. A fire on
+  every foe (Explosión, a charged fire dual) steams each water as any fire does. A frozen La Voz sings no notes.
 
-1. The shared rules, with tests and in `just fight-sim`: Agua contenida (each foe's level and
-   its clock), Mojado from standing water, Corriente, Vapor, Hundido, Congelado.
-2. `ANIMA_RULES`, `SKILLS` (Recarga, Sondeo eléctrico, Bombeo), `LEVELLED` and its levels 1 to 3
-   (the id, its name and its first stats are there).
-3. `createFreaticaField` wired to the fight's state (raise, bolt, steam, lower, break, and each
-   skill's `cast`); the plate icons and pops.
-4. The wearer's cast (the probe let down), the look's first and second round.
-5. The unlock at the end of Emilie's mission, with *ÁNIMA DESBLOQUEADA*.
-6. The fight tester and the picker reaching every level and skill, with a help to set the water's
-   level at will; the sheet scenario `scripts/screenshots/freatica.json`; `docs/party.md`.
-7. Levels 4 to 7 and the definitiva.
+**Not built**: the wearer's cast (the probe let down, the dowser's rods), the first and second round for
+its pieces on the wearer, the foes moving slower and sounding duller under water, *Contener* in the world.
 
 ## For the balance, later
 
-Nothing measured: there is nothing to play. To watch when there is:
+First measured 2026-11-21 (`just fight-sim run`, level 7, Gerard in Matemágico with his elements, `smart`):
+against Colorista and Papagato at 7 it wins as often in Uri's roof, the black pitch, Fran and El Campeón
+(all 100 %), a little less in Aurelià (95 % against 98 %) and a third-year room (87 % against 100 %), and
+far less in Dirección (12 % against 100 % for Colorista, 47 % for Papagato, 13 % for Dadista): its blows
+are light and that fight is short. Its fights last longer (more rounds to win). To watch:
 
 - **Hundido is the one pulse in the game that is a pure share of PV** (Aitor's direction). Every
   other pulse counts PV only up to 100 (`pulseDamage`), for the reason in `docs/combat.md`: a pure
@@ -493,14 +522,17 @@ Nothing measured: there is nothing to play. To watch when there is:
 
 ## Open
 
-- **Its one colour** (for `CLASSES` and the interface, which take a single one). Proposed: the
-  green of the first mark, `#27c2a0`, with the blue as the deep end of the interface's ground. The
-  deep blue sits near Prismático's proposed ultramarine (`#3d5fe0`); the green keeps them apart.
-- **Grey in the first round**: built as grey edges and gauge over the same water. Or the water
-  itself loses its colour until the second round.
-- **When the wearer falls, the water wets both sides** (proposed): the cost of leaning on it, or
-  one rule too many.
-- **How a flurry counts**: each strike one (proposed: *Zarpazos* four of the eight, *Zarpazos
-  de fuego* all eight), or Aitor's first numbers, three and five, with which the dual is no
-  quicker than four hard blows.
-- **The ice spends the water** (proposed). Or the water is back at the mark the ice melted to.
+Each point below was taken the proposed way on 2026-11-21 to build the whole (§ Implementation,
+*Choices taken*); each is still Aitor's to change.
+
+- **Its one colour** (for `CLASSES` and the interface, which take a single one): the green of the
+  first mark, `#27c2a0`, with the blue as the deep end of the interface's ground. The deep blue sits
+  near Prismático's proposed ultramarine (`#3d5fe0`); the green keeps them apart.
+- **Grey in the first round**: grey edges and gauge over the same water, in the fights too. Or the
+  water itself loses its colour until the second round.
+- **When the wearer falls, the water wets both sides**: built. The cost of leaning on it, or one
+  rule too many.
+- **How a flurry counts**: each strike one (*Zarpazos* four of the eight, *Zarpazos de fuego* all
+  eight), built. Or Aitor's first numbers, three and five, with which the dual is no quicker than
+  four hard blows.
+- **The ice spends the water**: built. Or the water is back at the mark the ice melted to.

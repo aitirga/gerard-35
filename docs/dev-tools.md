@@ -222,6 +222,9 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
 
 - **Ayudas**: *Inmunidad*, *PM infinitos*, *Sin límites*, *Crítico seguro* and *Contratiempo seguro*, on or off at once (a test fight starts
   with its setup's; *Sin límites* off gives back the fight's own ánimas, levels and kits).
+- **Agua**: Freática's water at will (docs/animas/freatica/README.md): *Sin agua*, *Agua I*, *II* or *III* under
+  every foe standing at once (`stageWater` in `src/battle.ts`, held by whoever wears Freática), so the current,
+  the steam, the sinking and Bajo cero can be tried without raising it mark by mark.
 - **Saltar a**: *Victoria* or *Derrota* (its result screen, as if it had happened), *Enemigos a
   1 PV* or *Equipo a 1 PV* (the next blow decides), and against the palace minion *Despierta
   Matemágico*, its beat: Bernat on his knees begs Gerard to think, and Matemágico wakes. Jumps wait for a

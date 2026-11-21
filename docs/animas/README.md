@@ -66,7 +66,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 | [**Sincopante**](sincopante/README.md) | Marta's mission (Alegia, Las cuerdas), `docs/quests/marta.md` | Proposal: nácar, seafoam `#8fe3c4` | Proposal: Magia +2, Espíritu +2, Defensa +1, Fuerza −1 | Ecos floating over the party that strike or cure on their own beat (Ostinato, Bordón), raised by *Crescendo*; the astral | **Playable whole** (built 2026-11-21, Aitor's yes that day): the ecos and their compás, seven levels (Ostinato, Bordón, Crescendo, *A contratiempo*, Maná +1, Acompañamiento, *Pedal*, Tutti) and the definitiva *Da capo*; Marta's voice in the ecos. Not built: the reverb and the muffled filter on her voice, the compás on the song's downbeats |
 | [**Dadista**](dadaista/README.md) | The university friends' mission (Barceloneta, Càmping Eurosport), `docs/quests/universidad.md` | `#efe6cf` ivory (built, to confirm); the astral, bluish white `#bfe0ff` | Fuerza +2, Magia +2, Crítico +10 %, Defensa −1 (Aitor 2026-11-20, built) | Tirar dado: each die's face is a move (Mano, Tijeras, Ojo, Corchete, a blank that repeats, the Comodín). *Racha*: every die spent is Crítico +10 % | Playable to level 3: its dice as maná, the faces, the *Racha* with its count on the plate (the ánima's rule from level 1), *Agitar* at 2 (the hand rolled again for nothing, once a fight, twice with one eco; the Comodín with Racha 3) and *Estrella fugaz* at 3 (astral; 3 of Racha for two dice). Dice, luck and the astral (Aitor 2026-11-20). Designed, waiting for the seven levels: *Dados astrales* at level 4 with Maná +1 (Aitor's), *Ases en dúo* (Aitor's), *Meteorito → Meteoro → Asteroide* at level 7 (Aitor's) and the definitiva *Un golpe de dados*. Renamed from Dadaísta |
 | [**Colorista**](prismatico/README.md) | Luca's mission (the Sagrada Família), `docs/quests/luca.md` | `#617ce2` dusty blue (built, to confirm) | Defensa +3, Espíritu +2, Fuerza −1 (built, a first guess) | Dry coloured powder, by the handful. Empolvado does nothing and waits for an element: fire blows it up (and every foe burns a level more), water poisons (blows on it land harder), electricity leaves shards (every blow does more than the one before). *Cortina* and *Telón* raise the party's Defensa and stand a screen of powder that halves the next blow; whoever breaks it is powdered | **Playable whole** (built 2026-11-21): designed 2026-11-20 round the puff and agreed by Aitor that day (the name too: it was Prismático; its id stays `prismatico`). Seven levels, the cortina and *Rebufo*, *Remolino* at level 5, and *Fin de fiesta*, the first definitiva in the game. Not built: its trial inside the salon, grey in the first round |
-| [**Freática**](freatica/README.md) | Emilie's mission (Poble Sec, her model), `docs/quests/emilie.md` | Blue with green (Aitor): the water is green where thin (`#27c2a0`), blue where deep (`#1f5fd8`) | Proposal: Magia +3, Espíritu +2, Fuerza −1 | *La crecida*: water held in a cell under each foe that rises to three marks. With water a foe is wet; electricity stays in it as a current, fire turns it to steam and blinds, and at the third mark it sinks. Its definitiva, *Bajo cero*, freezes every foe that has water | Designed whole 2026-11-20 round Aitor's direction (La crecida; agua contenida, the mathematical part; electricity that electrifies the water; fire that blinds; sunk at three, losing a share of PV over time; each foe its own water; the definitiva *Bajo cero*), waiting for his yes. Its look is built: the cells and each skill in the effects lab (`src/freatica-fx.ts`), its colours and pieces on the wearer and its interface (the fight tester can put it on). No rule and no skill yet |
+| [**Freática**](freatica/README.md) | Emilie's mission (Poble Sec, her model), `docs/quests/emilie.md` | Blue with green (Aitor): the water is green where thin (`#27c2a0`), blue where deep (`#1f5fd8`) | Magia +3, Espíritu +2, Fuerza −1 (built, a first guess) | *La crecida*: water held in a cell under each foe that rises to three marks. With water a foe is wet; electricity stays in it as a current, fire turns it to steam and blinds, and at the third mark it sinks. Its definitiva, *Bajo cero*, freezes every foe that has water | **Playable whole** (built 2026-11-21, Aitor's yes that day): designed 2026-11-20 round his direction (La crecida; agua contenida; electricity that electrifies the water; fire that blinds; sunk at three; each foe its own water; *Bajo cero*). Its rule and its seven levels, *Nivel de base* at 5, and *Bajo cero*, the third definitiva; the effects lab's cells driven by the fight (`src/freatica-fight.ts`). Not built: the wearer's cast (the probe let down), its trial in the world (*Contener*) |
 | _Pedro's_ | Pedro's mission (`docs/quests/pedro.md`, to write) | _open_ | _open_ | _open_ | Idea (2026-11-05): a shared ánima from Pedro, a gay friend of Gerard and Aitor they see a lot |
 
 **Who has what** (2026-11-05): Matemágico is Gerard's own and Tecnópata Aitor's (`ANIMA_OWNERS`),
@@ -821,7 +821,7 @@ never by who wears what: any fire and any electricity do it.
 Proposal 2026-11-20, round Aitor's direction for Freática ([freatica/README.md](freatica/README.md):
 *La crecida*; water held between something on the foes' side, as if its wearer controlled it; three
 of water sinks them; and, later that day, **each foe carries its own water**). Its look is built
-in the effects lab (`src/freatica-fx.ts`); no rule. Numbers are first guesses.
+in the effects lab (`src/freatica-fx.ts`); **the rule is built** (2026-11-21, `CRECIDA`, `runWater` in `src/battle.ts`) and the fight drives that look (`src/freatica-fight.ts`). Numbers are first guesses.
 
 **The rule**
 
@@ -872,7 +872,7 @@ GPU. It is drawn as what it is, a control volume: exact edges, a gauge, a level.
 ### Corriente (current in the water, timed)
 
 Proposal 2026-11-20, with Agua contenida (Aitor: electric attacks electrify the water and it hurts
-the foes over time). Its look is built in the effects lab; no rule.
+the foes over time). Built 2026-11-21 (`TIMED.corriente`, `react` in `src/battle.ts`).
 
 - **Any electric blow on a foe with water** is Conducción as always: magic through every wet foe
   (`REACTION_RULES.conduct`), and every foe with water is wet; Shock on a coin for the one
@@ -896,7 +896,7 @@ notch for each pulse to come.
 ### Hundido (sunk)
 
 Proposal 2026-11-20, with Agua contenida (Aitor: at three of water it sinks them and they start
-losing a share of their PV over time, of the PV they have in all). Nothing built.
+losing a share of their PV over time, of the PV they have in all). Built 2026-11-21 (`TIMED.hundido`).
 
 - **Not laid by a blow: it is where the water is.** While a foe's water stands at the third
   mark, that foe is Hundido; the moment it drops below, it is not.
@@ -920,7 +920,7 @@ Aitor's, 2026-11-20, for Freática's definitiva *Bajo cero*: **frozen foes canno
 little damage; if the ice is broken, a very large blow; cracks show, and it splits more as it takes
 damage from outside; it goes by time, melting live, little by little, and breaking it is worth less
 all the while; it breaks at four to eight blows, and a flurry is a shortcut through it.** The numbers are first guesses.
-Its look is built in the effects lab (`src/freatica-fx.ts`); no rule.
+Built 2026-11-21 (`TIMED.congelado`, `freeze` and `chill` in `src/battle.ts`), its look driven by the fight (`src/freatica-fight.ts`).
 
 **The rule**
 

@@ -779,7 +779,7 @@ grep = "createPowderFx"
 in = "src/*-lab.ts"
 
 # The friends' wearable ánimas (src/classes.ts), each designed first with /anima.
-# Emilie's: designed whole 2026-11-20, waiting for Aitor's yes (docs/animas/freatica/README.md):
+# Emilie's: designed whole 2026-11-20, Aitor's yes 2026-11-21 (docs/animas/freatica/README.md):
 # water held on the foes' side that rises to three marks.
 [[block.item]]
 title = "Freática, la de Emilie: se desbloquea al acabar su misión"
@@ -799,26 +799,36 @@ title = "Freática: el aspecto del agua contenida y de cada habilidad, en el lab
 grep = "createFreaticaField"
 in = "src/freatica-lab.ts"
 
+# Built 2026-11-21 (docs/animas/freatica/README.md § Signature): each foe's own water, its three marks on the clock, wet while
+# it stands, Corriente from any bolt, Vapor from any fire, Hundido at the third mark; Recarga, Sondeo eléctrico and Bombeo.
 [[block.item]]
 title = "Freática: La crecida (el agua de cada enemigo y sus tres marcas, Corriente, Vapor, Hundido; Recarga, Sondeo eléctrico, Bombeo)"
-priority = "animas"
-note = "Su mecánica: el agua de cada enemigo y sus tres marcas, y las habilidades de los niveles 1 a 3. Ya se viste al ganar la misión de Emilie, pero sin habilidades propias hasta esto."
+note = "Hecho: el agua de cada enemigo sube a tres marcas y baja sola cada 20 s; con agua está mojado, la electricidad deja corriente, el fuego la evapora y lo ciega, y en la tercera marca se hunde. Recarga, Sondeo eléctrico y Bombeo."
 grep = "id: 'recarga'"
 in = "src/battle.ts"
 
+# Built 2026-11-21: seven levels, Maná +1 at 4, Nivel de base at 5, Riada at 6 and Golpe de ariete at 7; its flags
+# freatica-2 to freatica-7 are in the picker.
 [[block.item]]
 title = "Freática: niveles 4 a 7 (Maná +1, Nivel de base, Riada, Golpe de ariete)"
-priority = "animas"
-note = "Maná +1, Nivel de base, Riada y Golpe de ariete, y que crezca por niveles (LEVELLED)."
+note = "Hecho: crece por niveles (LEVELLED). Maná +1, Nivel de base (el agua no baja sola de la primera marca), Riada y Golpe de ariete. Sus flags freatica-2 a freatica-7 están en el picker."
 grep = "id: 'golpe-de-ariete'"
 in = "src/battle.ts"
 
+# Built 2026-11-21 (docs/animas/freatica/README.md § Definitiva): bought at the jar, it wakes once a foe's water reaches
+# the third mark while Freática is worn; every foe with water freezes, 20 s a mark, and its ice breaks in four to eight blows.
 [[block.item]]
 title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se derrite en vivo y se rompe a golpes)"
-priority = "animas"
-note = "La definitiva y la regla Congelado: no actúan, reciben poco, el hielo baja una marca cada 20 s y se rompe a golpes. Su aspecto ya está hecho."
+note = "Hecho: se compra en el bote y despierta con un enemigo en la tercera marca. Congelados no actúan y reciben un cuarto; el hielo baja una marca cada 20 s, aguanta ocho golpes (uno alto cuenta dos, cada golpe de una ráfaga uno) y al romperse hace un golpe de agua de 90 a 40 según el hielo que queda. Una llama lo derrite; la electricidad no le hace nada."
 grep = "id: 'bajo-cero'"
 in = "src/battle.ts"
+
+# Built 2026-11-21: the effects lab's cells driven by the fight's state (src/freatica-fight.ts), with the plate icons and pops.
+[[block.item]]
+title = "Freática: el agua y el hielo en combate (las celdas, los iconos y los avisos)"
+note = "Hecho: cada enemigo con agua tiene su celda, que sube, baja, se carga, se evapora y se congela con el estado del combate; en su placa, Agua, Corriente, Hundido y Congelado; avisos Agua I/II/III, ¡Hundido!, ¡Corriente!, ¡Vapor!, ¡Bajo cero! y ¡Roto!. just screenshots freatica-combate --gpu."
+grep = "createFreaticaFight"
+in = "src/battle-scene.ts"
 
 [[block.item]]
 title = "Colorista, la de Luca"

@@ -471,6 +471,13 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 | Agua | Empolvado | **Envenenado** | 20 s de veneno con pulsos, y cada golpe que recibe entra un 25 % más fuerte. No deja Mojado |
 | Eléctrico | Empolvado | **Cristalizado** | 20 s en los que cada golpe que recibe hace más que el anterior: +4, +8… hasta +20 |
 
+**El agua contenida** (Freática, `docs/animas/freatica/README.md`, `CRECIDA` en `src/battle.ts`): el agua que
+Freática sube bajo un enemigo lo deja mojado mientras dure, así que todo lo de arriba la encuentra. Pero no
+se va: un rayo hace Conducción y el agua se queda con la **Corriente** 10 s (pulsos ×1, ×2, ×3 con su marca),
+y otro rayo mientras corre solo la renueva; el fuego le quita la marca de arriba (**Vapor**) y lo ciega al
+nivel que tenía. En la tercera marca está **Hundido**: un 2 % de toda su vida cada 2 s. Su definitiva, *Bajo
+cero*, lo **congela**: no actúa, recibe un cuarto, y el hielo se rompe a golpes con un golpe de agua muy alto.
+
 **Shock** (2026-11-17, `REACTION_RULES.shock`, `Combatant.shock`): un rayo sobre alguien mojado lo
 deja en Shock con un 50 %. Vale para los dos bandos y para cualquier golpe eléctrico (Atacar, una
 habilidad, el movimiento de un enemigo), nunca por ánima. Quien lo tiene pierde su siguiente turno

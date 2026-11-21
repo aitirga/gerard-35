@@ -117,6 +117,12 @@ cannot pay says *Sin ánima*.
 | Acompañamiento | **Sincopante**, level 5 | 2 | 6 magic a repeat | An eco at one ally's shoulder for 20 s: each of their actions is repeated once with a light astral note |
 | Tutti | **Sincopante**, level 7 | 3 | 36 magic, astral | Every foe; then each eco sounds a last note, twice as strong, and goes out |
 | Da capo | **Sincopante**'s definitiva, bought at the jar | 0 | — | Wakes when three ecos sound at once; every dual already used can go off again, and every ánima of the party is full of maná |
+| Recarga | Whoever wears **Freática** | 1 | 16 magic, water | Raises the foe's water a mark (three at most): wet while it stands, sunk at the third (*La crecida*) |
+| Sondeo eléctrico | **Freática**, level 2 | 1 | 18 magic, electric | The current it leaves in the water lasts 20 s, not 10 |
+| Bombeo | **Freática**, level 3 | 1 | 16 heal | The whole party; a mark off the foe with most water. Not without water |
+| Riada | **Freática**, level 6 | 2 | 12 magic, water | Every foe, and each one's water up a mark |
+| Golpe de ariete | **Freática**, level 7 | 2 | 26 magic, water, once a mark | Each foe with water, a blow a mark of its own; then the water is spent |
+| Bajo cero | **Freática**'s definitiva, bought at the jar | 0 | — | Wakes when a foe's water reaches the third mark; every foe with water freezes, 20 s a mark: no turns, a quarter of every blow, and its ice breaks in 4 to 8 blows for 90 to 40 of magic water by the ice left |
 
 Costs are in circles of Ánima.
 
@@ -132,7 +138,7 @@ lowers Velocidad, Defensa and Espíritu; **Llorera** (up to 5, El Cebollón) low
 again before it goes out raises it to II and III (`docs/animas/README.md` § Quemado).
 
 **Levels** (`src/levels.ts`): fights won wearing an ánima make it grow; 3 wins give level 2 and 8
-level 3, each a story flag. Papagato, Dadista and Colorista level (`LEVELLED`); all three to level 7, with Maná +1 at 4: Colorista with its passive *Remolino* at 5 (`docs/animas/prismatico/README.md`), Papagato with *Olor a sangre* at 5, *Acecho* at 6 and *Cacería* at 7 (`docs/animas/papagato/README.md`). Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
+level 3, each a story flag. Papagato, Dadista, Colorista and Freática level (`LEVELLED`); all four to level 7, with Maná +1 at 4: Colorista with its passive *Remolino* at 5 (`docs/animas/prismatico/README.md`), Freática with *Nivel de base* at 5, *Riada* at 6 and *Golpe de ariete* at 7 (`docs/animas/freatica/README.md`), Papagato with *Olor a sangre* at 5, *Acecho* at 6 and *Cacería* at 7 (`docs/animas/papagato/README.md`). Matemágico and Tecnópata grow by a tree at the jar (`docs/animas/README.md` § The jar).
 
 Every skill comes with an ánima: whoever wears none has none. Bernat never wears one and only
 attacks (Habilidad is greyed out on his turn); Aitor has skills only while he wears an ánima.
