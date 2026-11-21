@@ -51,6 +51,8 @@ export const GLYPHS = {
   pick: { keyboard: '1–4', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
   /** The same in the development build, whose menu has a fifth command (Dual). */
   pickDev: { keyboard: '1–5', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
+  /** The same in the game with Huir off (`ESCAPE` in battle.ts): three commands. */
+  pickFew: { keyboard: '1–3', ...pad('Cruceta', 'Cruceta', 'Cruceta', 'Cruceta') },
   /** The artilugio's four buttons while the real one is not there (src/artilugio.ts): the number keys, or the face buttons with the left trigger held. */
   notes: { keyboard: '1 2 3 4', ...pad('LT + B Y A X', 'L2 + ○ △ ✕ □', 'ZL + A X B Y', 'Gatillo izquierdo + botones') },
   /** The fight's summary: both sides, PV, statuses and stats up or down. */

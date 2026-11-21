@@ -256,6 +256,9 @@ In any fight, the story's too, the Combate tab becomes the fight's own page:
   screenshots duo-descubierto` plays both). Outside development there is no such command and the menu is
   Atacar · Habilidad · Defender · Huir; duals only come as a surprise (docs/combat.md § Ataques
   duales).
+- **Huir** is there and always works in development; the game has none (`ESCAPE.mode = 'off'` in
+  `src/battle.ts`). `?escape=off` in the URL plays the fight's menu as the game does, `?escape=chance`
+  tries a Huir that can fail (docs/combat.md § Huir).
 - **Salir del combate**: the fight ends at once, with no result for the story. Picking a place in
   Lugares also leaves the fight first.
 

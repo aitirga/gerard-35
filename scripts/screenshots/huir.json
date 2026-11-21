@@ -1,0 +1,48 @@
+{
+  "title": "Huir · tried as chance",
+  "description": "Huir's chance mode, kept in the code but not played (?escape=chance, docs/combat.md § Huir): a try can fail, spending the fighter's turn with a «Sin salida» over them, and each failed try makes the next likelier.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&escape=chance"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 2, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "huir-menu",
+      "delay": 800,
+      "caption": "Huir in the menu with ?escape=chance"
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.escapeTries = -2; })"
+    },
+    {
+      "press": "Digit5"
+    },
+    {
+      "shot": "huir-falla",
+      "delay": 450,
+      "caption": "A failed try: «Sin salida» over Gerard, his turn spent, the fight goes on"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "huir-falla-sigue",
+      "delay": 600,
+      "caption": "The fight goes on with the next fighter"
+    }
+  ]
+}

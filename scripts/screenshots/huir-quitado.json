@@ -1,0 +1,28 @@
+{
+  "title": "Huir · the game has none",
+  "description": "The game plays without Huir (?escape=off in development, docs/combat.md § Huir): it is not in the fight's menu; losing is how the party backs off.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&escape=off"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 2, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "shot": "huir-quitado",
+      "delay": 800,
+      "caption": "As the game plays it: no Huir in the menu"
+    }
+  ]
+}

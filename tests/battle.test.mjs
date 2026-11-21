@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { improve, createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual } from '../src/battle.ts';
+import { improve, createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual, ESCAPE, escapeChance, escapeShown, cornered } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -53,6 +53,33 @@ test('escape ends cleanly and encounter state is fresh on reentry', () => {
   assert.equal(s.phase, 'escaped'); assert.equal(act(s, 'defend'), undefined);
   assert.equal(createBattle().phase, 'player'); assert.equal(createBattle().allies[0].hp, 100);
   assert.throws(() => createBattle(1, 0));
+});
+
+test('Huir is not in the game; tried as chance it can fail and grow likelier', async () => {
+  const { createGuardBattle, palaceGuards } = await import('../src/battle.ts');
+  try {
+    ESCAPE.mode = 'off';
+    const off = createBattle();
+    assert.equal(escapeShown(), false); assert.equal(cornered(off), true);
+    assert.equal(act(off, 'escape'), undefined);
+    const guards = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard' }], palaceGuards(0));
+    assert.equal(act(guards, 'escape'), undefined, 'not from the palace guards either');
+    ESCAPE.mode = 'chance';
+    let failed = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const s = createBattle(2); s.seed = seed;
+      assert.equal(escapeChance(s), ESCAPE.chance);
+      const effect = act(s, 'escape');
+      assert.ok(effect);
+      if (!effect.noWayOut) { assert.equal(s.phase, 'escaped'); continue; }
+      failed++;
+      assert.equal(s.phase, 'player', 'the fight goes on'); assert.equal(s.active, 1, 'the turn was spent');
+      assert.equal(s.escapeTries, 1); assert.equal(escapeChance(s), ESCAPE.chance + ESCAPE.step);
+    }
+    assert.ok(failed > 5 && failed < 35, `about half fail (${failed}/40)`);
+    const tries = createBattle(); tries.escapeTries = 9;
+    assert.equal(escapeChance(tries), 1, 'never past certain');
+  } finally { ESCAPE.mode = 'always'; }
 });
 
 test('every 2–4 foe encounter is winnable by focused attacks with either party size', () => {
@@ -347,7 +374,7 @@ test('the palace guards cannot be beaten without ánimas, and can be backed off 
     nextRound(state);
   }
   assert.equal(state.phase, 'lost');
-  // Backing off is allowed.
+  // Backing off, where Huir is there (development).
   const retreat = createGuardBattle(party, palaceGuards(0));
   assert.ok(act(retreat, 'escape'));
   assert.equal(retreat.phase, 'escaped');

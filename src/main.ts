@@ -29,7 +29,7 @@ import { isTicketStation, remember } from './tickets';
 import { createDayLog, sendLog } from './day-log';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { ANIMA_NAMES, CLASS_STATS, canWear, dazzle, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, ESCAPE, canWear, dazzle, kitOf, manaMax, palaceGuards, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
 import { ANIMA_IDS, animaBonus, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
@@ -232,6 +232,11 @@ const devJump = ((): { flags: StoryFlag[]; spot?: Spot; part?: MissionPart; home
   return { flags: add(flagsAt(at as StoryFlag, missions)), spot: spotAt(at as StoryFlag), home: params.get('at') === 'home' };
 })();
 const devStory = devJump?.flags;
+// Development: Huir always works (ESCAPE in battle.ts; the game has none); ?escape=off plays it as the game does, ?escape=chance tries it failing.
+if (import.meta.env.DEV) {
+  const escape = new URLSearchParams(location.search).get('escape');
+  ESCAPE.mode = escape === 'chance' || escape === 'off' ? escape as EscapeMode : 'always';
+}
 const story = new Story(devStory ?? []);
 // Development: ?day=<n> starts chapter 2 on that day, to see the Queen's spread (just dev-day);
 // ?hour=<h> at that hour: 21 is night, and on the Meridiana the way home starts at the station.

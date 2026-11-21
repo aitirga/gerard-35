@@ -1144,6 +1144,8 @@ export interface BattleState {
   seed?: number;
   /** The golpe crítico's own dice (`luck`), started from `seed`. */
   luck?: number;
+  /** Tries at Huir that failed in this fight (`escapeChance`): each one makes the next likelier. */
+  escapeTries?: number;
   /** Things that happened outside an action (a phase that a pulse or a round's end brought on): `takeNews`. */
   news?: BattleEffect[];
   /** The ánimas the party has unlocked, in the order L and R walk through them. */
@@ -1225,8 +1227,22 @@ export function kitOf(slot: PartySlot, unlocked: readonly ClassId[]): ClassId[] 
 export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[] {
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
+/**
+ * How Huir works (docs/combat.md § Huir). The game plays `off`: there is no Huir, and losing is how
+ * a party backs off (fought again in the side missions; inside the palace and the castle, Gerard
+ * wakes up at home to get stronger). `always`: it always works, as development plays it
+ * (src/main.ts). `chance`: it works with `chance`, `step` more for each try that failed in the same
+ * fight; a failed one spends that fighter's turn. `?escape=` in development tries the others.
+ */
+export type EscapeMode = 'always' | 'chance' | 'off';
+export const ESCAPE: { mode: EscapeMode; chance: number; step: number } = { mode: 'off', chance: .5, step: .25 };
+/** The chance the next Huir works in this fight. */
+export const escapeChance = (state: BattleState) => ESCAPE.mode === 'always' ? 1
+  : ESCAPE.mode === 'off' ? 0 : Math.min(1, ESCAPE.chance + ESCAPE.step * (state.escapeTries ?? 0));
+/** Whether Huir is in the menu at all. */
+export const escapeShown = () => ESCAPE.mode !== 'off';
 /** Nobody runs from possessed dogs, the palace minion or Vertitrón's roof; the palace guards and the maze's fears let them back off. */
-export const cornered = (state: BattleState) => state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa' || state.encounter === 'fran'
+export const cornered = (state: BattleState) => !escapeShown() || state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa' || state.encounter === 'fran'
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
   || state.encounter === 'camping-negra' || state.encounter === 'campeon'
   // Where every string meets there is nowhere to back off to.
@@ -1384,7 +1400,9 @@ export function addStatus(c: Combatant, id: StatusId, count = 1) {
 /** What happens to one fighter's statuses at the end of a round. */
 export interface StatusTick { target: string; status: StatusId; amount: number; stacks: number; saved?: Saved }
 export interface BattleEffect {
-  kind: BattleAction | 'enemy'; actor: string; target?: string; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number };
+  kind: BattleAction | 'enemy'; actor: string; target?: string;
+  /** Huir tried and not managed: the turn is spent and the fight goes on. */
+  noWayOut?: true; amount?: number; skill?: SkillId; swallowed?: boolean; boosted?: string[]; status?: { id: StatusId; stacks: number };
   /** A cure: `amount` is the PV it gave back to `target`. */
   healed?: boolean;
   /** A timed status the hit lit or raised (Foc Binari's fire), and the level it is at now. */
@@ -2600,6 +2618,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action !== 'escape') took(state, actor);
   // La Voz's song does not wait for rounds: a guard held against it lasts until that fighter acts again.
   if (state.song && action !== 'defend') actor.guarding = false;
+  if (action === 'escape' && escapeChance(state) < 1 && roll(state) >= escapeChance(state)) {
+    state.escapeTries = (state.escapeTries ?? 0) + 1;
+    effect.noWayOut = true;
+    state.message = `${actor.name} intenta salir, pero no encuentra hueco.`;
+    settle(state);
+    return effect;
+  }
   if (action === 'escape') {
     state.phase = 'escaped'; endFight(state);
     state.message = state.encounter === 'palace-guards' ? 'Retrocedéis hasta el vestíbulo. Los guardianes vuelven a pegarse a la cortina.'

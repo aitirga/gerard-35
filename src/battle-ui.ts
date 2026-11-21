@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
+import { PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -950,7 +950,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const waiting = !busy && s.phase === 'player' && callbacks.waiting(actor.id);
     get('.turn-meta').textContent = (split() ? !canAct(actor) : busy) || s.phase === 'enemy' ? 'EN ACCIÓN' : waiting ? 'CONECTA EL MANDO 2' : callbacks.driver(actor.id) === 2 ? 'MANDO 2' : 'TU TURNO';
     if (!split()) { root.dataset.player = String(turnDriver()); root.toggleAttribute('data-waiting', waiting); }
-    articles().forEach(article => { article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command); });
+    articles().forEach(article => {
+      article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command);
+      // With Huir off (the game) it is not in the menu.
+      if (article.dataset.command === 'escape') article.hidden = !escapeShown();
+    });
     showElements();
     const aiming = targeting && !locked() && s.phase === 'player';
     const dual = aimedDual();
@@ -962,7 +966,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Keys for the device in use (input-glyphs.ts fills the template).
     get('.command-help').dataset.glyphTemplate = targeting ? '{arrows} elegir · {confirm} aplicar · {cancel} volver'
       : selected === 'skill' || selected === 'dual' ? '{updown} elegir · {confirm} usar · {details} detalles · {cancel} volver'
-      : `{${COMMANDS.length > 4 ? 'pickDev' : 'pick'}} elegir · {confirm} confirmar · {prev} {next} ánima${elementsFor(s, actor).length ? ' · {element} elemento' : ''} · {cancel} volver`;
+      : `{${({ 3: 'pickFew', 4: 'pick', 5: 'pickDev' } as const)[COMMANDS.length - (escapeShown() ? 0 : 1)] ?? 'pick'}} elegir · {confirm} confirmar · {prev} {next} ánima${elementsFor(s, actor).length ? ' · {element} elemento' : ''} · {cancel} volver`;
     get('.flyout-hint').toggleAttribute('hidden', detailsLearned);
     return { aiming, eligible, cure };
   }
@@ -2057,6 +2061,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // The meteor grew: said over whoever threw it, so the list's new row is no surprise.
       if (effect.meteor) { const next = SKILLS.find(s => 'meteor' in s && s.meteor === effect.meteor)!; setTimeout(() => { if (token === generation) pop(effect.actor, next.name, 'status', 'En tu siguiente turno', 'racha'); }, effect.starred ? 900 : 420); }
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');
+      if (effect.noWayOut) pop(effect.actor, 'Sin salida', 'stat-down');
       else if (effect.boosted && effect.skill) { const skill = effect.skill; const spec = SKILLS.find(s => s.id === skill)!; effect.boosted.forEach(id => 'double' in spec ? pop(id, spec.name, 'status', 'Crítico ×2', 'racha') : pop(id, 'screen' in spec ? `${boostedStats(skill)} ▲` : spec.name.split(' ')[0], 'screen' in spec ? 'stat-up' : 'guard', 'screen' in spec ? '' : `${boostedStats(skill)} +${state!.boosts?.[skill]?.amount ?? 0}`)); }
       else if (effect.annulled) {
         // Fran's salon: the light ate the blow. Said over whoever it was aimed at, in the light's colour.

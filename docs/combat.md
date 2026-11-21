@@ -708,6 +708,21 @@ no se pueden, con el motivo (`DualBlock`; *Ya usado en este combate* tras salir)
 antes el ánima necesaria si está libre y pide objetivo, con su cartel ya armado. Fuera de desarrollo el menú es Atacar · Habilidad · Defender · Huir: la opción
 desconocida (*?????*) ya no existe. `docs/dev-tools.md` § Combate.
 
+## Huir
+
+En el juego no se huye: Huir no está en el menú (`ESCAPE.mode = 'off'` en `src/battle.ts`). Perder
+es la forma de echarse atrás: en las misiones de los amigos el combate se puede repetir, y dentro del
+palacio y del castillo es más peligroso, Gerard despierta en casa y toca volver más fuerte.
+
+El código guarda otros dos modos:
+
+- `always`: siempre funciona. Es el de desarrollo (`just dev`, el probador de combates).
+- `chance`: funciona con `ESCAPE.chance` (50 %), y cada intento fallido en el mismo combate suma
+  `ESCAPE.step` (25 %) al siguiente. Fallar gasta el turno de quien lo intenta: *«Gerard intenta
+  salir, pero no encuentra hueco.»* y un *Sin salida* sobre su placa; el combate sigue.
+
+En desarrollo, `?escape=off` en la URL juega como el juego y `?escape=chance` prueba el modo que falla.
+
 ## Ejecutar el laboratorio
 
 ```sh
