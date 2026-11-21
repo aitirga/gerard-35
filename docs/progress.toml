@@ -695,12 +695,12 @@ note = "Pasar /anima con Aitor: estadísticas, una mecánica propia y la definit
 absent = "^Status: designing"
 in = "docs/animas/tecnopata/README.md"
 
-# Designed 2026-11-21 (docs/animas/tecnopata/README.md § The design), waiting for Aitor's OK.
+# Built 2026-11-21 (docs/animas/tecnopata/README.md § The design).
 [[block.item]]
-title = "Tecnópata: Temporizador, Escolta, sus estadísticas y Enjambre en el juego"
+title = "Tecnópata: Bomba remota, Escolta, sus estadísticas y Enjambre en el juego"
 priority = "animas"
-note = "La bomba con reloj que cargan los golpes de Bip (ANIMA_RULES), Bip delante de un aliado (Escolta, en lugar de Rayo encogedor), Magia +2 Espíritu +1 Defensa +2 Fuerza −1 y su definitiva."
-grep = "tecnopata: { name: 'Temporizador'"
+note = "Una bomba en el enemigo que crece con el tiempo de su reloj (Bomba remota), Bip delante de un aliado (Escolta, en lugar de Rayo encogedor), Magia +2 Espíritu +1 Defensa +2 Fuerza −1 y su definitiva, Enjambre."
+grep = "id: 'bomba-remota'"
 in = "src/battle.ts"
 
 [[block.item]]

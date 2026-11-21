@@ -112,7 +112,7 @@ const DUAL_TRIALS = {
   'bombardeo-orbital': { gerard: 'sincopante', aitor: 'tecnopata', encounter: 'camping-dados', improved: ['tecnopata:explosion'] },
   'reserva-de-color': { gerard: 'matemagico', aitor: 'prismatico', encounter: 'luca-recepcion', improved: [] },
   // Grade III (docs/animas/README.md § Dúos mayores): the bit wall going off, and the volcano (its node bought, with Combustión).
-  sobrecalentamiento: { gerard: 'matemagico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'] },
+  sobrecalentamiento: { gerard: 'matemagico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'] },
   vulcano: { gerard: 'matemagico', aitor: 'sincopante', encounter: 'dogs', improved: ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:combustion', 'matemagico:vulcano'] },
   // The dúos mayores of the other lines, each with its line bought as far as its node.
   marea: { gerard: 'matemagico', aitor: 'freatica', encounter: 'dogs', improved: ['matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'matemagico:marea'] },
@@ -120,10 +120,10 @@ const DUAL_TRIALS = {
   'suceso-seguro': { gerard: 'matemagico', aitor: 'dadaista', encounter: 'dogs', improved: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'matemagico:integral', 'matemagico:suceso-seguro'] },
   metralla: { gerard: 'papagato', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:explosion', 'tecnopata:telemetria', 'tecnopata:reinicio', 'tecnopata:metralla'] },
   'idea-fija': { gerard: 'sincopante', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:confusion', 'tecnopata:control-remoto', 'tecnopata:virus', 'tecnopata:idea-fija'] },
-  caleidoscopio: { gerard: 'prismatico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:caleidoscopio'] },
+  caleidoscopio: { gerard: 'prismatico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:caleidoscopio'] },
   // The pairs that had no dual.
   geiser: { gerard: 'matemagico', aitor: 'freatica', encounter: 'dogs', improved: [] },
-  'a-escala': { gerard: 'freatica', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:rayo-encogedor'] },
+  'a-escala': { gerard: 'freatica', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:rayo-encogedor'] },
   seiche: { gerard: 'freatica', aitor: 'sincopante', encounter: 'dogs', improved: [] },
   staccato: { gerard: 'papagato', aitor: 'sincopante', encounter: 'dogs', improved: [] },
   'cadaver-exquisito': { gerard: 'prismatico', aitor: 'dadaista', encounter: 'dogs', improved: [] },

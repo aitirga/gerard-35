@@ -3,7 +3,7 @@
   "description": "docs/animas/tecnopata/README.md § Virus atómico and Escudo de bits. In the fight tester against three sturdy dogs, one player leading both, with Cardioide and Redundancia bought. Run it with --gpu.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Acardioide%22%2C%22tecnopata%3Arayo-encogedor%22%2C%22tecnopata%3Ananitos%22%2C%22tecnopata%3Aescudo-de-bits%22%2C%22tecnopata%3Aredundancia%22%5D%7D"
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Acardioide%22%2C%22tecnopata%3Aescolta%22%2C%22tecnopata%3Ananitos%22%2C%22tecnopata%3Aescudo-de-bits%22%2C%22tecnopata%3Aredundancia%22%5D%7D"
     },
     {
       "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",

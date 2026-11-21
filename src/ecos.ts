@@ -126,10 +126,14 @@ const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'mente', 'control-remoto', 1, 'confusion'),
   gradeIII(skillNode('tecnopata', 'mente', 'virus', 1, 'control-remoto')),
   dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 1, 'virus'),
-  skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
-  passiveNode('tecnopata', 'taller', 'nanitos', 1, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
+  // Taller is Bip as a protector since 2026-11-21: Escolta heads it where Rayo encogedor was (docs/animas/tecnopata/README.md).
+  skillNode('tecnopata', 'taller', 'escolta', 1),
+  passiveNode('tecnopata', 'taller', 'nanitos', 1, 'escolta', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
   gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 1, 'nanitos')),
   passiveNode('tecnopata', 'taller', 'redundancia', 1, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
+  // Rayo encogedor left the head of Taller for Escolta (Aitor 2026-11-21); it waits at the line's end only so its dual,
+  // A escala, can still be met, until the duals are looked at again.
+  skillNode('tecnopata', 'taller', 'rayo-encogedor', 1, 'redundancia'),
   dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 1, 'redundancia'),
   manaNode('tecnopata'),
 ];

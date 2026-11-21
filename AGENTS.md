@@ -34,7 +34,7 @@
   - Element: `de fuego`, `de agua`, `eléctrico`. Magic damage always says its element, or `no elemental` when it has none (`Daño mágico no elemental leve a un enemigo.`); physical damage says one only when it has it (`Daño físico de fuego leve a un enemigo.`).
   - Healing: `Cura <intensidad> a <objetivo>.`, e.g. `Cura leve a todo el equipo.`
   - Buffs and debuffs: `Sube|Baja <stats> de <objetivo> durante <N> rondas.`, e.g. `Sube Fuerza y Magia de todo el equipo durante 3 rondas.`
-  - Protection: `Protege a un aliado hasta el final de la ronda.` (the ally takes a third of each blow, as with Defender).
+  - Protection: `Protege a un aliado hasta el final de la ronda.` (the ally takes a third of each blow, as with Defender); one that lasts longer says `durante <N> rondas` (Escolta: `Protege a un aliado durante 2 rondas.`).
   - A charge on whoever uses it (`kind: 'charge'`): `Carga a quien la usa hasta <cuándo>, <qué hace>.`, e.g. ∂Q/∂t Condensador's `Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño.`
   - A screen: a buff that also stands a screen in front of an ally (`screen` in `SKILLS`) names the party in its first sentence whoever is picked, then the screen: `Sube Defensa de todo el equipo durante 3 rondas. Una cortina de polvo reduce a la mitad el siguiente daño que reciba un aliado.`
   - Ecos (Sincopante's, `kind: 'eco'`): a skill that only leaves an eco or acts on the ecos says so: `Deja un eco <junto a un aliado> durante <N> segundos. <Qué hace>.` or `Los ecos <qué les pasa>.`, e.g. `Los ecos suenan más fuerte y su reloj vuelve a empezar.` A blow or a cure that also leaves an eco keeps its own shape and says so in an extra sentence.

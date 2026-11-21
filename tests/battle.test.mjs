@@ -354,7 +354,7 @@ test('skill descriptions follow the plain shape in AGENTS.md, with the intensity
     const extra = '( [A-ZÁÉÍÓÚ][^.]*\\.)*';
     const shape = skill.kind === 'boost' || skill.kind === 'debuff' ? `^(Sube|Baja) [^.]+ de ${targets['screen' in skill ? 'party' : skill.side].slice(2)} durante ${BOOST_ROUNDS} rondas\\.${extra}$`
       : skill.kind === 'heal' ? `^Cura ${intensity(skill.power)} ${targets[skill.side]}\\.${extra}$`
-      : skill.kind === 'guard' ? skill.side === 'party' ? `^Protege a todo el equipo durante \\d rondas\\.${extra}$` : `^Protege a un aliado hasta el final de la ronda\\.${extra}$`
+      : skill.kind === 'guard' ? skill.side === 'party' ? `^Protege a todo el equipo durante \\d rondas\\.${extra}$` : `^Protege a un aliado (hasta el final de la ronda|durante \\d rondas)\\.${extra}$`
       // Sincopante's ecos (AGENTS.md § Ecos): one left at an ally's side, or the ecos themselves.
       // A charge on whoever uses it (∂Q/∂t Condensador).
       : skill.kind === 'charge' ? `^Carga a quien la usa [^.]+\\.${extra}$`
@@ -929,8 +929,8 @@ const turnOf = (s, id) => { s.phase = 'player'; s.active = s.allies.indexOf(byId
 
 test('Rayo de energía hits with magic and makes what runs out by the clock on the foe last 5 seconds more, never a cure', () => {
   const s = techFight();
-  assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'the two rays, and the nodes bought');
-  assert.deepEqual(skillsFor(createBattle(TECH, 1, false, undefined, ['matemagico']), byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'rayo-sanacion'], 'only the two rays from the start');
+  assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'the two rays and the bomb, and the nodes bought');
+  assert.deepEqual(skillsFor(createBattle(TECH, 1, false, undefined, ['matemagico']), byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion'], 'only the two rays and the bomb from the start');
   s.foes[0].timed = { quemado: { level: 2, left: 3, next: 1 }, cegado: { level: 1, left: 6, next: 6 } };
   turnOf(s, 'aitor');
   const ray = act(s, 'skill', 'dog-0', 'rayo-energia');
@@ -1154,4 +1154,94 @@ test('each new pair combines from the two individual skill choices in either tur
       assert.deepEqual(s.usedDuals, [id]);
     }
   }
+});
+
+// Bomba remota, Escolta and Enjambre (docs/animas/tecnopata/README.md § The design, Aitor 2026-11-21).
+test('Bomba remota: a bomb on a foe goes off when its clock is up, harder the longer it has been on', async () => {
+  const { BOMBA, bombPower } = await import('../src/battle.ts');
+  const s = techFight(), dog = s.foes[0];
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'bomba-remota');
+  assert.deepEqual(e.planted, ['dog-0']); assert.equal(e.amount, undefined, 'no blow now');
+  assert.equal(dog.timed.bomba.left, BOMBA.seconds); assert.equal(dog.hp, dog.maxHp);
+  const pulses = runClock(s, BOMBA.seconds - 1);
+  assert.equal(pulses.length, 0, 'it waits'); assert.equal(dog.hp, dog.maxHp);
+  const [blast] = runClock(s, 1.5);
+  assert.equal(blast.status, 'bomba'); assert.ok(blast.blast); assert.ok(blast.amount > 0);
+  assert.equal(dog.maxHp - dog.hp, blast.amount); assert.equal(dog.timed.bomba, undefined, 'gone once it blows');
+  // Stretched, it grows: Rayo de energía gives it 5 s, and it goes off later and harder.
+  const late = techFight();
+  turnOf(late, 'aitor'); act(late, 'skill', 'dog-0', 'bomba-remota');
+  runClock(late, 6); turnOf(late, 'aitor');
+  const ray = act(late, 'skill', 'dog-0', 'rayo-energia');
+  assert.ok(ray.extended.statuses.includes('bomba'));
+  const before = late.foes[0].hp;
+  assert.equal(runClock(late, 6.5).length, 0, 'still on: 5 s more');
+  const [big] = runClock(late, 5);
+  assert.ok(big.amount > blast.amount, `${big.amount} > ${blast.amount}`);
+  assert.equal(before - late.foes[0].hp, big.amount);
+  assert.ok(bombPower(0) < bombPower(12) && bombPower(1000) === BOMBA.top, 'it grows with time, up to its top');
+});
+
+test('Bomba remota again on its foe starts its clock over and keeps what it grew; Reinicio does the same on everyone', () => {
+  const s = techFight();
+  improve(s, { skills: ['explosion', 'confusion', 'reinicio'] });
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'bomba-remota');
+  runClock(s, 10);
+  turnOf(s, 'aitor'); const again = act(s, 'skill', 'dog-0', 'bomba-remota');
+  assert.match(s.message, /vuelve a contar/); assert.deepEqual(again.planted, ['dog-0']);
+  assert.equal(s.foes[0].timed.bomba.left, 12); assert.ok(s.foes[0].timed.bomba.age >= 10);
+  runClock(s, 10);
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'reinicio');
+  assert.equal(s.foes[0].timed.bomba.left, 12); assert.ok(s.foes[0].timed.bomba.age >= 20, 'grown for 20 s and counting');
+});
+
+test('Explosión sets off every bomb it finds now, as grown as it is', () => {
+  const s = techFight();
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'bomba-remota');
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-1', 'bomba-remota');
+  runClock(s, 4);
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'explosion');
+  assert.deepEqual(e.detonated.map(d => d.target), ['dog-0', 'dog-1']); assert.ok(e.detonated.every(d => d.amount > 0));
+  assert.ok(s.foes.every(f => !f.timed?.bomba)); assert.match(s.message, /Estallan las bombas/);
+});
+
+test('Escolta: Bip stands by an ally for 2 rounds; a foe that strikes them gets a bomb, and it ends if Aitor takes Tecnópata off', () => {
+  const s = techFight(1);
+  improve(s, { skills: ['escolta'] });
+  s.foes[0].hp = s.foes[0].maxHp = 9999;
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'gerard', 'escolta');
+  assert.equal(e.escorted, 2); assert.ok(byId(s, 'gerard').guarding); assert.match(s.message, /durante 2 rondas/);
+  // The dog goes for Gerard: he takes a third, and the dog leaves with a bomb.
+  s.phase = 'enemy'; s.enemyActions = [];
+  const g = byId(s, 'gerard'), hp = g.hp;
+  const hit = enemyAct(s, 'dog-0', 'gerard');
+  if (g.hp < hp) { assert.deepEqual(hit.planted, ['dog-0']); assert.ok(s.foes[0].timed.bomba); }
+  nextRound(s);
+  assert.ok(g.guarding, 'still guarded in its second round'); assert.ok(g.escort);
+  endRound(s);
+  assert.ok(!g.guarding && !g.escort, 'Bip goes back after its second round');
+  // Taken off, Bip goes back into Aitor at once.
+  turnOf(s, 'aitor'); act(s, 'skill', 'gerard', 'escolta');
+  byId(s, 'aitor').classId = undefined;
+  endRound(s);
+  assert.ok(!g.escort && !g.guarding);
+});
+
+test('Enjambre wakes when a bomb goes off at its top while Tecnópata is worn, and puts a bomb at its top on every foe', async () => {
+  const { BOMBA, swarmReady, ultiReady } = await import('../src/battle.ts');
+  const s = techFight();
+  improve(s, { skills: ['explosion', 'confusion', 'enjambre'] });
+  assert.equal(swarmReady(s), false);
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'bomba-remota');
+  s.foes[0].timed.bomba.age = 40;
+  const [blast] = runClock(s, BOMBA.seconds + .5);
+  assert.equal(blast.awoken, 'enjambre'); assert.ok(swarmReady(s)); assert.ok(ultiReady(s, 'enjambre'));
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'enjambre');
+  assert.deepEqual(e.planted, ['dog-0', 'dog-1']);
+  assert.ok(s.foes.every(f => f.timed.bomba && f.timed.bomba.age * BOMBA.perSecond + BOMBA.base >= BOMBA.top - 1e-9));
+  assert.equal(swarmReady(s), false, 'once a fight');
 });

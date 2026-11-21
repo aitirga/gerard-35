@@ -1,22 +1,25 @@
 # Tecnópata
 
-Status: designed whole (2026-11-21, `/anima`), waiting for Aitor's OK; built: Bip, the tree and
-grade III; designed and not built: Temporizador, Escolta, the stats and Enjambre · Comes from:
-Aitor's own, his from chapter 2's first morning (it replaces the placeholder *Físico*, `fisico` in
-old saves)
+Status: designed whole and built (2026-11-21, `/anima`, Aitor's OK): Bip, the tree, grade III,
+Bomba remota, Escolta, its stats and Enjambre. Still to do: Escolta's own look (Bip hovering by the
+ally), the bomb's own look over the foe, the balance · Comes from: Aitor's own, his from chapter
+2's first morning (it replaces the placeholder *Físico*, `fisico` in old saves)
 
 What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
 guesses (`../README.md` § Order of work).
 
 ## The design (2026-11-21)
 
-**Decided** (Aitor, 2026-11-21): the ánima hangs from **Temporizador**, a bomb on the clock that
-Bip's blows load, plus a part of *Bip as a piece*: **Bip standing by an ally to protect them**.
+**Decided** (Aitor, 2026-11-21): the ánima hangs from **a bomb on the clock** and a part of *Bip as
+a piece*: **Bip standing by an ally to protect them**. First proposed as *Temporizador*, a rule
+every Bip blow loaded; Aitor turned it into a skill the same day (*mejor como habilidad: una bomba
+remota en el enemigo que se puede cargar, y si dura más, más daño hace*): **Bomba remota**.
+Escolta replaces Rayo encogedor; the dome does not plant bombs; Atacar stays Bip's while it escorts.
 
 ### Identity
 
 - Aitor does not fight: he points, and Bip does it. What Bip leaves on a foe counts down.
-- Wearing it feels like running a machine against the clock: load, stretch, let it go.
+- Wearing it feels like running a machine against the clock: plant, stretch, let it go.
 - Motto (proposal): *«Él no pega. Para eso está Bip.»*
 
 ### Role
@@ -24,119 +27,110 @@ Bip's blows load, plus a part of *Bip as a piece*: **Bip standing by an ally to 
 | | Tecnópata | Matemágico | Papagato | Freática | Sincopante |
 | --- | --- | --- | --- | --- | --- |
 | Hurts with | Magic of no element, late | Elements | Physical, críticos | Water | Repeated magic |
-| Its resource on the foe | Temporizador (a clock with charges) | Elemental statuses | Sangrado | Water marks | Ecos (beside it) |
+| Its resource on the foe | A bomb that grows with time | Elemental statuses | Sangrado | Water marks | Ecos (beside it) |
 | Pays off as | The bomb going off, alone or all at once | Reactions | A wound spent | Golpe de ariete, Bajo cero | Tutti |
 
 - Good at: damage that arrives later and big; protecting one ally; stretching or restarting what
   others leave on the clock.
-- Bad at: damage now (a fresh Temporizador pays nothing for 12 s); a foe that dies before its bomb
-  goes off wastes it.
-- The decision it adds to every turn: **stretch the bomb to load more, or let it go before the
-  foe's big move**; and whether Bip is in front of a friend or loading a bomb.
+- Bad at: damage now; a foe that falls before its bomb goes off wastes it.
+- The decision it adds: **stretch the bomb so it grows, or set it off now** (Explosión); and
+  whether Bip is in front of a friend or tending a bomb.
 
-### Stats
+### Stats (built)
 
-Built: none (`CLASS_STATS.tecnopata = {}`). Proposal: **Magia +2, Espíritu +1, Defensa +2,
-Fuerza −1** (sum +4). Magic for the rays and the bomb; Defensa because Bip stands in front;
-Fuerza down since Aitor himself never hits (Bip's ram keeps his Atacar's numbers).
+`CLASS_STATS.tecnopata`: **Magia +2, Espíritu +1, Defensa +2, Fuerza −1** (sum +4). Magic for the
+rays and the bomb; Defensa because Bip stands in front; Fuerza down since Aitor himself never hits
+(Bip's ram keeps his Atacar's numbers).
 
-### Signature: Temporizador (a rule from the start, `ANIMA_RULES`)
+### Signature: Bomba remota (built)
 
-1. **Bip marks.** A blow of Bip's (Atacar with Tecnópata worn, Rayo de energía) leaves a
-   *Temporizador* on the foe: a clock of **12 s** with **1 charge**. Another blow of Bip's on it
-   adds a charge (up to **5**) and **does not restart its clock**.
-2. **The clock is the tool.** Rayo de energía and Telemetría give it seconds (more time to load);
-   Reinicio gives it its whole time back, on every foe; Virus spreads its charges.
-3. **It goes off.** When the clock ends it blows: **magic of no element, 8 per charge** at average
-   stats (5 charges, 40: alto). Explosión blows every Temporizador on the field now, at the charge
-   it has.
+1. **Bip plants it.** *Bomba remota* (2 maná, from the start) leaves a bomb on a foe with **12 s**
+   on its clock (`BOMBA`, the timed status *Bomba*).
+2. **Time loads it.** It grows while it is on: it goes off with magic of no element of power
+   **10 + 1.5 per second on**, **50 at most** (about 27 s). So stretching its clock is loading it:
+   Rayo de energía (+5 s), Telemetría (+3 s with each Atacar), Reinicio (its whole time again, on
+   every foe) and Bomba remota again on the same foe (its clock over, keeping what it grew).
+3. **It goes off** when its clock is empty, or now with Explosión, as grown as it is.
 
-Rule sentence (`ANIMA_RULES.tecnopata`, proposal): *Temporizador*: `Los golpes de Bip ponen un
-temporizador de 12 segundos y lo cargan, hasta 5 veces. Al acabarse estalla: más daño cuanta más
-carga.`
+The bomb on a 12 s fuse alone is 28 (media); stretched once with Rayo de energía, 35 (alta); kept
+up with Reinicio, 50 (muy alta). Its description says it plainly but not in the fixed shape, so it
+is `abstract` (its strength changes with time).
 
-How it shows: over the foe, a small cyan digital count (`12`…`0`) with a row of five pips, the
-charges lit; in the last 3 s it beeps and the count goes white; it goes off as a cyan flash
-with a ring of squares on the floor and the number over it, *Temporizador ×N*. On the plate its
-icon (a clock with a fuse) with the charges.
+**Bip in front: Escolta** (built). Bip leaves Aitor's side and stands by an ally for 2 rounds: each
+blow on that ally, the ally takes a third (as Defender) and **Bip sticks a bomb on the foe that
+dealt it** (one it has already starts over). It ends sooner if Aitor falls or takes Tecnópata off
+(Bip goes back into him). While Bip escorts, Atacar is still Bip's (decided).
 
-**Bip in front: Escolta** (the piece of Bip that protects, decided). Bip leaves Aitor's side and
-hovers by an ally for 2 rounds: each blow on that ally, the ally takes a third (as Defender) and
-**the foe that dealt it gets a Temporizador charge**. Protecting loads the bomb. While Bip escorts,
-Atacar still is Bip's: it darts from where it is.
+What happens when Aitor switches to his extra ánima (L / R): the bombs already on foes stay and go
+off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he wears it again.
 
 ### Skills (a tree at the jar: an own ánima does not level)
 
 | From | Skill | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- |
-| Rule | Temporizador | — | 8 × charge | `Los golpes de Bip ponen un temporizador de 12 segundos y lo cargan, hasta 5 veces. Al acabarse estalla: más daño cuanta más carga.` | Designed |
-| Root | Rayo de energía | 2 → **1** | 18 → **16** magic | `Daño mágico no elemental leve a un enemigo. Carga su temporizador. Sus estados con reloj duran 5 segundos más.` | Built; the charge and the cost designed |
+| Root | Rayo de energía | 1 | 16 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.` | Built (cost 2 → 1, power 18 → 16) |
+| Root | **Bomba remota** | 2 | 10 + 1.5/s, top 50 | *Abstract*: `Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.` | Built |
 | Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` | Built |
-| Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Hace estallar sus temporizadores. Pierdes tu siguiente turno.` | Built; the detonation designed |
-| Bip | Telemetría (passive) | — | +3 s | `Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.` | Built (it now stretches the bomb too) |
-| Bip · III | Reinicio | 3 | 14 magic, all | `Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.` | Built (restarts the Temporizador, keeps its charges) |
+| Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Hace estallar sus bombas. Pierdes tu siguiente turno.` | Built |
+| Bip | Telemetría (passive) | — | +3 s | `Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.` | Built (it stretches the bomb too) |
+| Bip · III | Reinicio | 3 | 14 magic, all | `Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.` | Built (the bomb keeps what it grew) |
 | Mente | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` | Built |
 | Mente | Control remoto | 2 | 34, the foe's own | *Abstract*: `Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.` | Built |
-| Mente · III | Virus atómico | 2 | 14 magic | `Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.` | Built (spreads charges) |
-| Taller | **Escolta** | 1 | ⅓ of each blow | `Protege a un aliado durante 2 rondas. Quien le golpee carga su temporizador.` | Designed; replaces Rayo encogedor |
+| Mente · III | Virus atómico | 2 | 14 magic | `Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.` | Built (a bomb it receives spreads) |
+| Taller | **Escolta** | 1 | ⅓ of each blow | `Protege a un aliado durante 2 rondas. Bip le pega una bomba remota a quien le golpee.` | Built; its own look to do |
 | Taller | Nanitos (passive) | — | — | `Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.` | Built |
 | Taller · III | Escudo de bits | 2 | dome of 40 PV | `Protege a todo el equipo durante 2 rondas. Una cúpula de bits detiene los golpes hasta que se rompe. Lo que una cura no puede dar a un aliado bajo la cúpula, la repara.` | Built |
 | Taller | Redundancia (passive) | — | ×3 | `Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.` | Built |
+| Taller | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` | Moved to Taller's end only so its dual *A escala* can be met; to settle with the duals |
 | — | Maná +1 | — | — | — | Built |
 
-- **What each is for.** Atacar and Rayo de energía load the bomb (the ray also stretches it, now
-  for 1 maná so it is worth its turn). Telemetría lets Atacar load without the clock running out.
-  Explosión cashes every bomb at once, early. Reinicio buys the whole clock back to load to 5.
-  Virus turns one loaded bomb into one on every foe. Confusión and Control remoto **buy time**:
-  they stop the foe's announced move while the bomb counts. Escolta and the dome keep Aitor's
-  friends up, and Escolta loads bombs while doing it. Rayo de sanación and Nanitos keep him able.
-- **Cut, proposed: Rayo encogedor.** A quarter of Defensa that only physical blows feel, for a
-  physical ram that is no longer Tecnópata's way of hurting: it builds nothing and spends nothing.
-  Escolta takes its place at the head of the Taller line (Taller becomes Bip as a protector: Escolta,
-  Nanitos, Escudo de bits, Redundancia). Its dual *A escala* (with Freática's Recarga) would go
-  with it or take another half, in the duals' step.
-- Largest single blow the design allows: a Temporizador of 5 charges, 40 (alto), on every foe at
-  once with Virus or Enjambre.
+- **What each is for.** Bomba remota plants; Rayo de energía, Telemetría, Reinicio and a second
+  Bomba remota stretch (that is, load); Explosión cashes every bomb at once, early. Virus turns one
+  bomb into one on every foe. Confusión and Control remoto **buy time**: they stop the foe's
+  announced move while a bomb counts. Escolta and the dome keep Aitor's friends up, and Escolta
+  plants bombs while doing it. Rayo de sanación and Nanitos keep him able.
+- Largest single blow: a bomb at its top, 50 at average stats, on every foe at once with Virus or
+  Enjambre.
 
-### Definitiva: Enjambre
+### Definitiva: Enjambre (built)
 
 | | |
 | --- | --- |
-| **Wakes in a fight when** | A Temporizador goes off with its 5 charges (seen on the field) |
+| **Wakes in a fight when** | A Bomba remota goes off at its top (50) while Aitor wears Tecnópata |
 | **Then** | Once in that fight, for the turn and no maná |
-| **In the game** | *Abstract*: `Bip se deshace en un enjambre sobre los enemigos: a cada uno le pone un temporizador con la carga al máximo. Los estados con reloj del campo vuelven a empezar.` |
-
-It changes the earlier proposal (*three different clock statuses at once*, high magic on all) so
-that its condition is this ánima's own mechanic taken to its end.
+| **In the game** | *Abstract*: `Bip se deshace en un enjambre: le pega a cada enemigo una bomba remota que ya está al máximo. Sus estados con reloj vuelven a empezar.` |
 
 ### What a round looks like (one foe A, one B; a turn about every 4 s, first guess)
 
 | Time | Does | On the foes |
 | --- | --- | --- |
-| 0 s | Aitor: Atacar (Bip rams A) | A: 18; Temporizador 12 s ×1 (+3 s with Telemetría: 15 s) |
-| 4 s | Aitor: Rayo de energía on A | A: 16; ×2, 11 + 5 = 16 s left |
+| 0 s | Aitor: Bomba remota on A | A: bomb, 12 s |
+| 4 s | Aitor: Rayo de energía on A | A: 16; its bomb 8 + 5 = 13 s left |
 | 8 s | B announces a big blow on Gerard; Aitor: Escolta on Gerard | Bip goes to Gerard |
-| 10 s | B hits Gerard | Gerard takes a third; B: Temporizador ×1 |
-| 12 s | Aitor: Atacar on A | A: ×3, 12 s left |
-| 16 s | Aitor: Atacar on A | A: ×4 |
-| 20 s | Aitor: Atacar on A | A: ×5 |
-| 22 s | B's Temporizador ends | B: 8 |
-| 24 s | A's Temporizador ends | A: 40; Enjambre wakes |
+| 10 s | B hits Gerard | Gerard takes a third; B: a bomb, 12 s |
+| 12 s | Aitor: Atacar on A (Telemetría) | A: 18; its bomb +3 s |
+| 16 s | Aitor: Rayo de energía on A | A: 16; its bomb +5 s |
+| 22 s | B's bomb goes off | B: 28 |
+| 29 s | A's bomb goes off, 29 s on | A: about 50; Enjambre wakes |
 
 ### What it offers a dual
 
-A clock to stretch or restart (Rayo de energía, Reinicio), a bomb to set off (Explosión), a foe
-turned against its own (Confusión, Control remoto), and Bip standing in front (Escolta, the dome).
-Built duals: § Combined skills below. New ones in the duals' step.
+A clock to stretch or restart (Rayo de energía, Reinicio), a bomb to set off (Explosión, Bomba
+remota), a foe turned against its own (Confusión, Control remoto), and Bip standing in front
+(Escolta, the dome). Built duals: § Combined skills below. New ones in the duals' step.
+
+### For the balance, later
+
+With its stats `just fight-sim check` has 7 of 170 off (2026-11-21), mostly parties with Aitor
+winning a little easier or longer: magos-con-magia, directo-con-tecnopata, campeon-bien,
+carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 0.7 of what it will
+take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
 
 ### Open (Aitor's)
 
-1. **Cut Rayo encogedor** for Escolta? Recommendation: yes; *A escala* is looked at with the duals.
-2. **Escudo de bits loading the bomb** (each blow the dome stops charges the Temporizador of who
-   dealt it)? Recommendation: not now; Escolta already does it on one ally, the dome on all would
-   load too fast. Check it with the balance.
-3. **Bip away while it escorts**: does Atacar still come from Bip (proposal, simplest), or does
-   Aitor lose Atacar while Bip is with someone else (a real cost)? Recommendation: keep Atacar.
+1. **Rayo encogedor and A escala**: cut both, or give A escala another Tecnópata half, in the duals'
+   step. Recommendation: cut Rayo encogedor and re-pair A escala with Bomba remota (water rises
+   while the bomb counts).
 
 ## Identity
 

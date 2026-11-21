@@ -12,7 +12,7 @@ const NODES = {
   'suceso-seguro': ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'matemagico:integral', 'matemagico:suceso-seguro'],
   metralla: ['tecnopata:explosion', 'tecnopata:telemetria', 'tecnopata:reinicio', 'tecnopata:metralla'],
   'idea-fija': ['tecnopata:confusion', 'tecnopata:control-remoto', 'tecnopata:virus', 'tecnopata:idea-fija'],
-  caleidoscopio: ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:caleidoscopio'],
+  caleidoscopio: ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:caleidoscopio'],
 };
 const LEVELS = { papagato: 7, dadaista: 7, sincopante: 7, prismatico: 7, freatica: 7 };
 /** Gerard in `g` and Aitor in `a`, every shared ánima grown, `nodes` bought, against three sturdy dogs; Gerard to act. */
@@ -135,7 +135,7 @@ test('Géiser: a blow for each mark of its water, all of it spent, and the steam
 });
 
 test('A escala: shrunk and a mark of water more; a shrunk foe is under at the second mark', () => {
-  const s = pair('freatica', 'tecnopata', ['tecnopata:rayo-encogedor']);
+  const s = pair('freatica', 'tecnopata', ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:rayo-encogedor']);
   s.foes[0].timed = water(1);
   const e = actDual(s, 'a-escala', 'dog-0');
   assert.ok(e.amount > 0); assert.equal(waterOf(s.foes[0]), 2);

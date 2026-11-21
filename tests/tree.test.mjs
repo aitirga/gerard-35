@@ -22,14 +22,14 @@ const ELEMENTS = ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico']
 test('a node is a skill only once it is bought: nothing of the tree from the start, and never by level', () => {
   const bare = fight();
   assert.deepEqual(skillsFor(bare, by(bare, 'gerard')).map(s => s.id), ['foc-binari']);
-  assert.deepEqual(skillsFor(bare, by(bare, 'aitor')).map(s => s.id), ['rayo-energia', 'rayo-sanacion']);
+  assert.deepEqual(skillsFor(bare, by(bare, 'aitor')).map(s => s.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion']);
   bare.levels = { matemagico: 3, tecnopata: 3 };
   assert.deepEqual(skillsFor(bare, by(bare, 'gerard')).map(s => s.id), ['foc-binari'], 'a level teaches it nothing');
   turn(bare, 'gerard');
   assert.equal(act(bare, 'skill', undefined, 'vasos'), undefined, 'not bought: it cannot be used');
   const some = fight(['matemagico:agua', 'matemagico:vasos', 'tecnopata:confusion', 'tecnopata:control-remoto']);
   assert.deepEqual(skillsFor(some, by(some, 'gerard')).map(s => s.id), ['foc-binari', 'vasos']);
-  assert.deepEqual(skillsFor(some, by(some, 'aitor')).map(s => s.id), ['rayo-energia', 'rayo-sanacion', 'confusion', 'control-remoto']);
+  assert.deepEqual(skillsFor(some, by(some, 'aitor')).map(s => s.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion', 'confusion', 'control-remoto']);
 });
 
 test('Vasos comunicantes: water on every foe leaves them Mojado for 20 seconds; on a fire it is Humo instead', () => {
@@ -160,7 +160,7 @@ test('Telemetría: Bip\'s Atacar gives 3 seconds more to what runs out on its ta
   // Gerard's Atacar is not Bip's.
   s.foes[2].timed = { quemado: { level: 1, left: 4, next: 1 } }; turn(s, 'gerard');
   act(s, 'attack', 'dog-2'); assert.equal(s.foes[2].timed.quemado.left, 4);
-  const n = fight(['tecnopata:rayo-encogedor', 'tecnopata:nanitos']);
+  const n = fight(['tecnopata:escolta', 'tecnopata:nanitos']);
   const gerard = by(n, 'gerard'); gerard.hp -= 30; addStatus(gerard, 'llorera', 2);
   turn(n, 'aitor');
   const cure = act(n, 'skill', 'gerard', 'rayo-sanacion');

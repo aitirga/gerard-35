@@ -134,7 +134,7 @@ test('Virus atómico: what lands on the infected foe lands on every other foe to
 });
 
 test('Escudo de bits: a dome over the party stops every blow whole until it breaks; what is left of the blow that breaks it gets through', () => {
-  const s = fight(['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'], 1);
+  const s = fight(['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits'], 1);
   turn(s, 'aitor');
   const e = act(s, 'skill', undefined, 'escudo-de-bits');
   assert.deepEqual(e.bits, { raised: 40 });
@@ -155,7 +155,7 @@ test('Escudo de bits: a dome over the party stops every blow whole until it brea
 });
 
 test('Escudo de bits: a cure on someone under the dome patches it with what they have no room for, up to its PV; Redundancia, to three times them', () => {
-  const heal = ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide'];
+  const heal = ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide'];
   for (const [nodes, cap] of [[heal, 40], [[...heal, 'tecnopata:redundancia'], 40 * BITS.redundancia]]) {
     const s = fight(nodes, 1);
     turn(s, 'aitor'); act(s, 'skill', undefined, 'escudo-de-bits');
@@ -173,7 +173,7 @@ test('Escudo de bits: a cure on someone under the dome patches it with what they
 });
 
 test('Sobrecalentamiento: Foc Binari and Escudo de bits, a plain dual; the dome of fire bursts over every foe and leaves no shield', () => {
-  const s = pair('tecnopata', ['tecnopata:rayo-encogedor', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits']);
+  const s = pair('tecnopata', ['tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits']);
   const e = actDual(s, 'sobrecalentamiento');
   assert.equal(e.dual.id, 'sobrecalentamiento'); assert.equal(e.hits.length, 3);
   assert.ok(e.hits.every(h => h.amount > 0 && h.burn.level === 2));

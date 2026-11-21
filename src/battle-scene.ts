@@ -713,7 +713,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const classOf = (id: string) => state?.allies.find(a => a.id === id)?.classId;
   /** Atacar by whoever wears Tecnópata: Bip goes and rams the target, the wearer stays put with a hand up. */
   /** Tecnópata's skills are Bip's too: it fires them, or blows itself up among the foes (Explosión), while its wearer points. */
-  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto', 'reinicio', 'virus', 'escudo-de-bits']);
+  const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto', 'reinicio', 'virus', 'escudo-de-bits', 'bomba-remota', 'escolta', 'enjambre']);
   /** How much of its size someone Encogido keeps (Rayo encogedor). */
   const SHRUNK = .62;
   /** Whether an action is Bip's, decided once for it (Explosión's Bip is gone before the action ends). */
@@ -745,6 +745,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const SOLAR = { ignite: .78, span: 1, tail: .55 } as const;
   /** Rayo solar's sweep, worked out once: from beyond the first foe to beyond the last, and when it crosses each. */
   const solarPlans = new WeakMap<BattleEffect, { start: pc.Vec3; end: pc.Vec3; crossings: { f: Fighter; id: string; blow: number; at: number }[]; contact: number }>();
+    // Bomba remota and Escolta borrow the rays' flight for now (docs/animas/tecnopata/README.md § Look: their own is to do).
+    'bomba-remota': { contact: .7, flight: .28, hold: .8 },
+    escolta: { contact: .74, flight: .4, hold: .75 },
   function solarPlan(e: BattleEffect) {
     let plan = solarPlans.get(e);
     if (plan) return plan;

@@ -10,7 +10,7 @@
       "timeout": 60000
     },
     {
-      "eval": "for (const key of ['gerard35.ecos.v1', 'gerard35.jar-stage.v1', 'gerard35.xp.v1']) localStorage.removeItem(key); window.story = window.gerard.story; story.clearImprovements(); story.debugEcos = 14; story.xp = {}; story.giveXp('prismatico', 3200); for (const id of ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'tecnopata:explosion', 'tecnopata:telemetria', 'tecnopata:rayo-encogedor', 'tecnopata:nanitos']) story.improve(id); window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`); window.hold = ms => document.getAnimations().forEach(a => { a.pause(); a.currentTime = ms; }); window.go = () => document.getAnimations().forEach(a => a.play())"
+      "eval": "for (const key of ['gerard35.ecos.v1', 'gerard35.jar-stage.v1', 'gerard35.xp.v1']) localStorage.removeItem(key); window.story = window.gerard.story; story.clearImprovements(); story.debugEcos = 14; story.xp = {}; story.giveXp('prismatico', 3200); for (const id of ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'tecnopata:explosion', 'tecnopata:telemetria', 'tecnopata:escolta', 'tecnopata:nanitos']) story.improve(id); window.jar = window.gerard.jarUI; window.node = id => document.querySelector(`[data-improve=\"${id}\"]`); window.hold = ms => document.getAnimations().forEach(a => { a.pause(); a.currentTime = ms; }); window.go = () => document.getAnimations().forEach(a => a.play())"
     },
     {
       "teleport": "meridiana",

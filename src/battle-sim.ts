@@ -13,8 +13,7 @@ import {
   ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
-} from './battle.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant } from './battle.ts';
 import { IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
@@ -107,7 +106,7 @@ export interface Setup {
  */
 export function nodesFor(levels: Partial<Record<ClassId, number>> | undefined, improved: readonly string[] = []) {
   const m = levels?.matemagico ?? 1;
-  return [...new Set([...m >= 2 ? ['matemagico:angulo', 'matemagico:analisis'] : [], ...m >= 3 ? ['matemagico:cardioide'] : [], 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:rayo-encogedor', ...improved])];
+  return [...new Set([...m >= 2 ? ['matemagico:angulo', 'matemagico:analisis'] : [], ...m >= 3 ? ['matemagico:cardioide'] : [], 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:escolta', ...improved])];
 }
 /**
  * The story's missions, for playing a fight as the party reaches it (docs/fight-sim.md § Story points).
@@ -136,14 +135,14 @@ export const missionOf = (fight: string) => MISSION_IDS.find(id => (MISSIONS[id]
 export const BUILDS: Record<string, readonly string[]> = {
   nada: [],
   // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
-  mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:rayo-encogedor', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
+  mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:escolta', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
     // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the passives, the second rungs, grade III and the definitivas.
     'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez', 'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos',
     'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1', 'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva'],
   // Everything into the elements: Atacar's three, then what lays and cashes them.
   elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
   // Skills and maná, no element.
-  tronco: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:rayo-encogedor', 'matemagico:mana-1', 'tecnopata:control-remoto', 'papagato:mana-1'],
+  tronco: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:escolta', 'matemagico:mana-1', 'tecnopata:control-remoto', 'papagato:mana-1'],
 };
 /** The ánima each friend's mission leaves to wear (src/story.ts `unlocked`). */
 export const FRIEND_ANIMA: Record<AnimaId, ClassId> = { nuria: 'papagato', universidad: 'dadaista', marta: 'sincopante', emilie: 'freatica', luca: 'prismatico' };
@@ -418,6 +417,8 @@ const EYE_WORTH = .8, EYE_BROKEN = 30;
  * to the sinking), the sinking itself (the pulses it expects a mark's 20 s to bring), a current set in the water (its
  * pulses to come), and a foe frozen in Bajo cero's ice: the blows it would have dealt, for the rounds its ice lasts.
  */
+/** A bomb is damage later, not now: the foe may fall first or the bomb be wasted on it. */
+const BOMB_WORTH = .7;
 const WATER_WORTH = 6, SUNK_PULSES = 6, CURRENT_PULSES = 4, ICE_ROUNDS_PER_MARK = 1.2;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
@@ -534,6 +535,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
       value += ((foe.error ?? 0) - (now.error ?? 0)) * (foe.converged || now.converged && !foe.converged && (foe.error ?? 0) > 1 ? 0 : ERROR_WORTH);
       if (now.converged && !foe.converged) value += CONVERGED_WORTH;
     }
+    // Bomba remota: what its bomb will take when it goes off, by the time it will have been on then (the bomber's Magia
+    // left out, as for the water), less what was already waiting on it; one set off now has taken it as PV already.
+    const bomb = (c: Combatant) => c.hp > 0 && c.timed?.bomba ? Math.min(c.hp, bombPower((c.timed.bomba.age ?? 0) + c.timed.bomba.left)) : 0;
+    value += (bomb(now) - bomb(foe)) * BOMB_WORTH;
     // Punto débil: what the next blow on it will add.
     if (now.hp > 0 && now.weakSpot !== undefined && foe.weakSpot === undefined) value += weakSpotWorth(after, now.id, ban);
     // La crecida: water raised, the third mark reached, a current set in it.

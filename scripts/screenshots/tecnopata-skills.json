@@ -1,9 +1,9 @@
 {
   "title": "Tecnópata · las habilidades de Bip",
-  "description": "Tecnópata's skills, all Bip's (docs/animas/tecnopata/): Rayo de energía (magic, and what runs out by the clock on the foe lasts 5 s more), Rayo encogedor (shrinks a foe, Defensa much lower for 15 s), Confusión (30 s hitting its own), Rayo de sanación (a cure on the clock for 15 s), Rayo solar (a dual with Foc Binari: Bip charges sun yellow, and sweeps every foe with Quemado II as the next round starts) and Explosión (fire on all, Cegado for a round; Aitor sits the next round out and Bip forms again). One player leads both in the fight tester, against three sturdy dogs. Run it with --gpu.",
+  "description": "Tecnópata's skills, all Bip's (docs/animas/tecnopata/): Rayo de energía (magic, and what runs out by the clock on the foe lasts 5 s more), Bomba remota (a bomb on a foe that goes off on its clock, harder the longer it has been on), Confusión (30 s hitting its own), Rayo de sanación (a cure on the clock for 15 s), Rayo solar (a dual with Foc Binari: Bip charges sun yellow, and sweeps every foe with Quemado II as the next round starts) and Explosión (fire on all, Cegado for a round; Aitor sits the next round out and Bip forms again). One player leads both in the fight tester, against three sturdy dogs. Run it with --gpu.",
   "steps": [
     {
-      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Arayo-encogedor%22%5D%7D"
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Aescolta%22%5D%7D"
     },
     {
       "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
@@ -32,7 +32,8 @@
     },
     {
       "until": "window.turn && window.turn('aitor')",
-      "timeout": 60000
+      "timeout": 60000,
+      "caption": "Tecnópata's skills, Bip's: Rayo de energía, Bomba remota, Rayo de sanación, Explosión, Confusión and Escolta"
     },
     {
       "press": "Digit2",
@@ -74,23 +75,23 @@
       "gap": 500
     },
     {
-      "eval": "document.querySelector('.skill-list [data-skill=\"rayo-encogedor\"]').click()"
+      "eval": "document.querySelector('.skill-list [data-skill=\"bomba-remota\"]').click()"
     },
     {
       "press": "Enter",
       "gap": 0
     },
     {
-      "record": "rayo-encogedor",
+      "record": "bomba-remota",
       "seconds": 1.6,
       "fps": 30,
       "tiles": 12,
-      "caption": "Rayo encogedor: a white line ridden by rings that shrink as they go, rings closing round the dog, and it shrinks; its Defensa much lower for 15 s"
+      "caption": "Bomba remota: Bip fires at the dog and leaves a bomb on it; its clock (12 s) on the plate"
     },
     {
-      "shot": "encogido",
+      "shot": "bomba",
       "delay": 300,
-      "caption": "Encogido: the dog stands smaller, Defensa ▼ on its plate"
+      "caption": "The bomb on the dog's plate, its clock running down: it goes off when it is empty, harder the longer it has been on"
     },
     {
       "until": "window.turn && window.turn('gerard')",

@@ -22,8 +22,8 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   matemagico: { magia: 1, espiritu: 1 },
   // Haru and Yuki at your feet: the claws hit hard and find the soft spot (Crítico), and magic gets through (docs/animas/papagato/).
   papagato: { fuerza: 2, critico: 15, espiritu: -1 },
-  // Aitor's own ánima: a placeholder, still to design (no stats, no skills).
-  tecnopata: {},
+  // Aitor's own: Bip stands in front and loads the bombs, Aitor never hits (docs/animas/tecnopata/ § Stats).
+  tecnopata: { magia: 2, espiritu: 1, defensa: 2, fuerza: -1 },
   sincopante: { magia: 2, espiritu: 2, defensa: 1, fuerza: -1 },
   prismatico: { defensa: 3, espiritu: 2, fuerza: -1 },
   // Emilie's: water held on the foes' side (docs/animas/freatica/). Its look only so far: no skills, and these are a first guess.
@@ -135,21 +135,26 @@ export const SKILLS = [
   { id: 'siete-vidas', name: 'Siete vidas', cost: 0, side: 'all-foes', power: 14, kind: 'physical', bleed: 2, lives: true, ulti: true, node: true, class: 'papagato', description: 'Daño físico leve a todos los enemigos. Añade sangrado. El próximo golpe que fuera a matar a alguien del equipo no lo mata: lo cura.' },
   // Tecnópata's skills are Bip's: Aitor points, Bip does it (docs/animas/tecnopata/). Its ánima does
   // not level: the two rays are there from the start, the rest are nodes of its tree (`node`).
-  // Rayo de energía: a beam; what is running out on the foe by the clock (TIMED: a fire, the smoke,
-  // Confusión; never a cure) lasts `extend` seconds longer.
-  { id: 'rayo-energia', name: 'Rayo de energía', cost: 2, side: 'foes', power: 18, kind: 'magic', extend: 5, description: 'Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.', class: 'tecnopata' },
+  // Rayo de energía: a beam; what is running out on the foe by the clock (TIMED: a Bomba remota, a fire, the smoke,
+  // Confusión; never a cure) lasts `extend` seconds longer. On a bomb that is more time to grow (BOMBA).
+  { id: 'rayo-energia', name: 'Rayo de energía', cost: 1, side: 'foes', power: 16, kind: 'magic', extend: 5, description: 'Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.', class: 'tecnopata' },
+  // Bomba remota (Aitor 2026-11-21): Bip sticks a bomb on a foe (`bomb`: the timed status Bomba, BOMBA). It goes off when its
+  // time is up, harder the longer it has been on: stretching its clock (Rayo de energía, Telemetría, Reinicio) loads it, and
+  // Explosión sets it off now. Its strength changes, so it skips the fixed shape (`abstract`).
+  { id: 'bomba-remota', name: 'Bomba remota', cost: 2, side: 'foes', power: 0, kind: 'magic', bomb: true, abstract: true, description: 'Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.', class: 'tecnopata' },
   // Rayo de sanación: a cure that comes bit by bit on the fight's clock (`regen`: a timed status, as
   // Quemado is a fire, its pulses healing). `power` is what it gives back in all at level I.
   { id: 'rayo-sanacion', name: 'Rayo de sanación', cost: 1, side: 'allies', power: 20, kind: 'heal', regen: 'sanacion', description: 'Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.', class: 'tecnopata' },
   // Explosión: Bip blows itself up among the foes (fire: it melts the pringue), blinds them until
-  // their turn is over (`blind`: Cegado until the round ends), and its wearer loses their next turn
-  // while it puts itself back together (`spends`, `Combatant.out`).
-  { id: 'explosion', name: 'Explosión', cost: 2, side: 'all-foes', power: 32, kind: 'magic', melts: true, blind: true, spends: true, node: true, description: 'Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.', class: 'tecnopata' },
+  // their turn is over (`blind`: Cegado until the round ends), sets off every Bomba remota on them now (`detonates`), and its
+  // wearer loses their next turn while it puts itself back together (`spends`, `Combatant.out`).
+  { id: 'explosion', name: 'Explosión', cost: 2, side: 'all-foes', power: 32, kind: 'magic', melts: true, blind: true, detonates: true, spends: true, node: true, description: 'Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Hace estallar sus bombas. Pierdes tu siguiente turno.', class: 'tecnopata' },
   // Confusión: waves of the mind off Bip; for a while the foe does not know whose side it is on
   // (`confuse`: the timed status Confusión), and its blows go to its own (`enemyAct`).
   { id: 'confusion', name: 'Confusión', cost: 2, side: 'foes', power: 0, kind: 'debuff', stats: [], confuse: true, abstract: true, node: true, description: 'Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.', class: 'tecnopata' },
   // Rayo encogedor: the foe shrinks for a while (`shrink`: the timed status Encogido), a quarter of
-  // its Defensa gone. In seconds, not rounds, so it skips the fixed shape (`abstract`).
+  // its Defensa gone. In seconds, not rounds, so it skips the fixed shape (`abstract`). Out of Tecnópata's tree since
+  // 2026-11-21 (Escolta took its place); kept for its dual, A escala, until the duals are looked at again.
   { id: 'rayo-encogedor', name: 'Rayo encogedor', cost: 1, side: 'foes', power: 0, kind: 'debuff', stats: ['defensa'], shrink: true, abstract: true, node: true, description: 'Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.', class: 'tecnopata' },
   // Control remoto: Bip takes a foe over for a moment. It turns on one of its own right now, with its
   // own strength (`control`, `power` the blow at average stats), and forgets what it had announced.
@@ -162,6 +167,12 @@ export const SKILLS = [
   { id: 'virus', name: 'Virus atómico', cost: 2, side: 'foes', power: 14, kind: 'magic', infect: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.', class: 'tecnopata' },
   // Escudo de bits (Taller): Bip's bits close as a dome over the party (`bits`: its PV, BITS); every blow
   // on the party goes into it first and it stops it whole until it breaks or wears off; cures patch it.
+  // Escolta (Taller, Aitor 2026-11-21): Bip leaves Aitor's side and hovers by an ally for `escort` rounds (`Combatant.escort`):
+  // the ally takes a third of each blow, as Defending, and Bip sticks a Bomba remota on the foe that struck them (`enemyAct`).
+  { id: 'escolta', name: 'Escolta', cost: 1, side: 'allies', power: 0, kind: 'guard', escort: 2, node: true, description: 'Protege a un aliado durante 2 rondas. Bip le pega una bomba remota a quien le golpee.', class: 'tecnopata' },
+  // Enjambre, its definitiva (`ulti`): bought at the jar, it wakes once a Bomba remota goes off at its top while Tecnópata
+  // is worn (`swarmReady`). Bip comes apart over the foes: a bomb already at its top on each, and every clock over.
+  { id: 'enjambre', name: 'Enjambre', cost: 0, side: 'all-foes', power: 0, kind: 'magic', swarm: true, ulti: true, node: true, abstract: true, class: 'tecnopata', description: 'Bip se deshace en un enjambre: le pega a cada enemigo una bomba remota que ya está al máximo. Sus estados con reloj vuelven a empezar.' },
   { id: 'escudo-de-bits', name: 'Escudo de bits', cost: 2, side: 'party', power: 40, kind: 'guard', bits: true, node: true, description: 'Protege a todo el equipo durante 2 rondas. Una cúpula de bits detiene los golpes hasta que se rompe. Lo que una cura no puede dar a un aliado bajo la cúpula, la repara.', class: 'tecnopata' },
   // Dadista's skill is a die thrown (docs/animas/dadaista/): its maná is dice, each with a face in
   // view that is a move of its own. Tirar dado (`die`) spends the die chosen and does what its face
@@ -241,6 +252,15 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   'nivel-de-base': { name: 'Nivel de base', anima: 'freatica', level: 5, description: 'Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.' },
 };
 export const RESCOLDO = 15, TELEMETRIA = 3;
+/**
+ * Bomba remota (docs/animas/tecnopata/README.md § Bomba remota): a bomb of Bip's on a foe, `seconds` on its clock. It goes off
+ * when its time is up with magic of no element of power `base` plus `perSecond` for every second it has been on, `top` at
+ * most (reached after about 27 s). Stretching its clock (Rayo de energía, Telemetría, Reinicio, Bomba remota again) is
+ * what loads it; Explosión sets it off now. First guesses (docs/fight-sim.md).
+ */
+export const BOMBA = { seconds: 12, base: 10, perSecond: 1.5, top: 50 };
+/** The power a bomb that has been on for `age` seconds goes off with. */
+export const bombPower = (age: number) => Math.min(BOMBA.top, BOMBA.base + BOMBA.perSecond * Math.max(0, age));
 /** The level at which an ánima that grows by level gains a point of maná (docs/animas/README.md § Levels). */
 export const MANA_LEVEL = 4;
 /** How much maná `id` holds: MANA_POINTS, what Ecos de luz added, and one more from level 4 on (`levels`). */
@@ -774,7 +794,7 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
   electrico: { name: 'Eléctrico', colour: '#ffe45c' },
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
-export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus' | DualTimedId | WaterId;
+export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus' | 'bomba' | DualTimedId | WaterId;
 /** What the newer duals leave on a foe: Marea's joined cells, Fulgurita's shared shards, Metralla's open wounds, and the ecos of Idea fija, Seiche and Staccato. */
 export type DualTimedId = 'marea' | 'fulgurita' | 'metralla' | 'idea-fija' | 'seiche' | 'staccato';
 /** La crecida's states (`CRECIDA`): the water under a foe, its current, the foe sunk in it, and the water frozen round it. */
@@ -824,6 +844,8 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   staccato: { name: 'Staccato', seconds: 20, every: 5, levels: [1], flat: 5, share: 0, cap: 0 },
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  // Bomba (Bomba remota, BOMBA): it never pulses; it counts how long it has been on (`Timed.age`) and goes off when its time is up (`runClock`).
+  bomba: { name: 'Bomba', seconds: 12, every: 12, levels: [], flat: 0, share: 0, cap: 0 },
   // La crecida (Freática, `CRECIDA`). Agua: its level is the marks (1–3), its clock the top mark's 20 s (`runWater` drains it).
   // Corriente: a bolt left in the water, Quemado's base pulse at ×1, ×2, ×3 with the water's mark. Hundido: while the water
   // stands at the third mark, 2 % of all the foe's PV every 2 s (the one pure share: no cap). Congelado (Bajo cero): the water
@@ -1101,8 +1123,11 @@ export const livesReady = (state: BattleState) => skillKnown('siete-vidas', stat
 /** Whether Bajo cero is awake in this fight: bought, a foe's water has reached the third mark while Freática was worn (`raiseWater`), and not used yet. */
 export const coldReady = (state: BattleState) => skillKnown('bajo-cero', state.levels, state.improved)
   && (state.unbound || (!!state.cold?.woke && !state.cold.used));
+/** Whether Enjambre is awake in this fight: bought, a Bomba remota has gone off at its top while Tecnópata was worn (`blowBomb`), and not used yet. */
+export const swarmReady = (state: BattleState) => skillKnown('enjambre', state.levels, state.improved)
+  && (state.unbound || (!!state.swarm?.woke && !state.swarm.used));
 /** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
-export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : false;
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whoever wears Colorista with Remolino learned, standing. */
@@ -1166,11 +1191,15 @@ export interface Timed {
   level: number; left: number; next: number;
   /** It also ends with this round, whatever its clock says (Explosión's blinding lasts one round). */
   until?: number;
+  /** Bomba: the seconds it has been on, what it goes off with (`bombPower`). */
+  age?: number;
 }
 /** What one pulse of a timed status did. */
 export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean; mended?: number; saved?: Saved;
   /** Idea fija: the foe whose eco made it strike `target`. */
-  by?: string }
+  by?: string;
+  /** A Bomba remota went off (its `amount`), and the definitiva it woke, if any (Enjambre). */
+  blast?: true; awoken?: SkillId }
 /** Siete vidas' ward went off on a pulse or a round's tick: what it would have taken (`blow`), and the cure it gave instead. */
 export interface Saved { blow: number; amount: number }
 /** Level in roman numerals, as the fight shows it ("Quemado II"). */
@@ -1229,6 +1258,8 @@ export interface Combatant {
   statuses?: Partial<Record<StatusId, number>>;
   /** The round Toma de tierra last gave this fighter a maná back. */
   grounded?: number;
+  /** Escolta: Bip stands by this ally until the end of round `until`, sent by `by` (who must keep wearing Tecnópata, standing). */
+  escort?: { until: number; by: string };
   /** Timed statuses on the fighter (TIMED), running on the fight's clock. */
   timed?: Partial<Record<TimedId, Timed>>;
   /** An onion's layers (ONIONS): while it has any, each hit only peels one off and lands at half. */
@@ -1453,6 +1484,8 @@ export interface BattleState {
   water?: { by: string };
   /** Bajo cero in this fight: whether a foe's water has reached the third mark while Freática was worn, whether it went off, and whose Magia its ice breaks with. */
   cold?: { woke?: true; used?: true; by?: string };
+  /** Enjambre (Tecnópata's definitiva): woken by a Bomba remota going off at its top while Tecnópata was worn; used. */
+  swarm?: { woke?: true; used?: true };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1843,6 +1876,10 @@ export interface BattleEffect {
   regen?: { id: TimedId; level: number };
   /** Explosión: Bip blew itself up; who it blinded until the round ends. */
   exploded?: boolean; blinded?: string[];
+  /** Bombas remotas set off by this action (Explosión), with what each took; foes a bomb was stuck on (Bomba remota, Escolta, Enjambre). */
+  detonated?: { target: string; amount: number }[]; planted?: string[];
+  /** Escolta: Bip went to stand by `target` for these rounds. */
+  escorted?: number;
   /** A timed status a skill left on its target and nothing else (Confusión, Encogido). */
   afflicted?: { id: TimedId; level: number };
   /** A foe's own action while confused: it hit one of its own (or itself). */
@@ -3153,6 +3190,31 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
   state.message += ` ¡Combustión! ${target.name} estalla: ${hits.map(h => `−${h.amount}`).join(', ')} PV. El fuego salta a los demás.`;
   if (actor === owner) ground(state, owner, effect);
 }
+/** Bomba remota on `foe`: a new bomb, or the one on it started over, keeping what it has grown. `age`: born already grown (Enjambre). */
+function plantBomb(foe: Combatant, age = 0) {
+  const on = foe.timed?.bomba;
+  foe.timed = { ...foe.timed, bomba: { level: 1, left: Math.max(on?.left ?? 0, BOMBA.seconds), next: BOMBA.seconds, age: Math.max(on?.age ?? 0, age) } };
+}
+/** Who sets the bombs off: whoever has Tecnópata in their kit (Aitor), worn or not. */
+const bomber = (state: BattleState) => state.allies.find(a => a.classId === 'tecnopata') ?? state.allies.find(a => a.kit?.includes('tecnopata'));
+/**
+ * A Bomba remota goes off on `foe` (its clock ran out, or Explosión): magic of no element of `bombPower` by its age, with the
+ * bomber's Magia. One at its top while its bomber wears Tecnópata, standing, wakes Enjambre (`swarmReady`). Returns what it took.
+ */
+function blowBomb(state: BattleState, foe: Combatant, effect?: BattleEffect): number {
+  const on = foe.timed?.bomba;
+  if (!on) return 0;
+  delete foe.timed!.bomba;
+  const owner = bomber(state), power = bombPower(on.age ?? 0);
+  const stats = owner ? current(state, owner) : current(state, foe);
+  const amount = foe.hp > 0 ? hurt(state, foe, fearDamage(state, foe, magical(power, stats, current(state, foe)) * affinityScale(foe, undefined), 'magic')) : 0;
+  if (power >= BOMBA.top && owner && owner.hp > 0 && owner.classId === 'tecnopata' && skillKnown('enjambre', state.levels, state.improved)) {
+    const was = swarmReady(state);
+    (state.swarm ??= {}).woke = true;
+    if (!was && swarmReady(state) && !state.unbound && effect) effect.awoken = 'enjambre';
+  }
+  return amount;
+}
 /** Reinicio: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
 function restartClocks(foe: Combatant) {
   // Bajo cero's ice is not a clock that starts over: it melts.
@@ -3551,7 +3613,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (cast === undefined) spendSecondary(actor, ability.cost);
     effect.skill = skill; effect.target = target.id; effect.guarded = true;
     target.guarding = true;
-    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. Protegido hasta el final de la ronda.`;
+    // Escolta: Bip stays by them for its rounds (`keepEscorts` guards them again as each round starts).
+    if ('escort' in ability) { target.escort = { until: state.round + ability.escort - 1, by: actor.id }; effect.escorted = ability.escort; }
+    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ${'escort' in ability ? `Bip se queda a su lado: protegido durante ${ability.escort} rondas.` : 'Protegido hasta el final de la ronda.'}`;
   } else if (ability?.kind === 'heal' && target) {
     // Cardioide: a curve of light under a friend gives back half their PV.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.healed = true;
@@ -3563,6 +3627,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.timed = { ...target.timed, encogido: { level: 1, left: TIMED.encogido.seconds, next: TIMED.encogido.every } };
     effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }];
     state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ¡Se encoge! ${statNames(['defensa'])} −${Math.round((TIMED.encogido.cut!.defensa ?? 0) * 100)} % durante ${TIMED.encogido.seconds} s.`;
+  } else if (ability && 'bomb' in ability && target) {
+    // Bomba remota: a bomb on the foe; on one that has a bomb already, its clock starts over and it keeps growing (`plantBomb`).
+    spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
+    const again = !!target.timed?.bomba;
+    plantBomb(target); effect.planted = [target.id]; effect.afflicted = { id: 'bomba', level: 1 };
+    state.message = `${actor.name} usa ${ability.name} contra ${target.name}. ${again ? 'Su bomba vuelve a contar desde el principio, sin perder lo cargado.' : `Bip le pega una bomba: ${BOMBA.seconds} s.`}`;
   } else if (ability && 'confuse' in ability && target) {
     // Confusión: for a while it does not know whose side it is on (`enemyAct`); again, its clock starts over.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.afflicted = { id: 'confusion', level: 1 };
@@ -3686,6 +3756,16 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message = `${actor.name} usa ${ability.name}. ${hammer.length === 1 ? 'Un golpe de agua' : `${hammer.length} golpes de agua`}: −${effect.amount} PV${targets.length > 1 ? ' entre todos' : ''}. El agua se gasta.`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.crit) state.message += ' ¡Golpe crítico!';
+  } else if (everyone && 'swarm' in ability!) {
+    // Enjambre: every clock on every foe starts over, and each gets a bomb already at its top (`plantBomb`).
+    effect.skill = skill; effect.target = target!.id;
+    (state.swarm ??= {}).used = true;
+    const standing = targets.filter(foe => foe.hp > 0);
+    effect.restarted = standing.map(foe => ({ target: foe.id, statuses: restartClocks(foe) })).filter(r => r.statuses.length);
+    for (const foe of standing) plantBomb(foe, (BOMBA.top - BOMBA.base) / BOMBA.perSecond);
+    effect.planted = standing.map(foe => foe.id);
+    effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
+    state.message = `${actor.name} usa ${ability!.name}. Bip se deshace sobre los enemigos: cada uno lleva una bomba al máximo.`;
   } else if (everyone && skill === 'fin-de-fiesta') {
     // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.
     effect.skill = skill; effect.target = target!.id;
@@ -3774,6 +3854,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         return foe.id;
       });
     }
+    // …it sets off every Bomba remota it finds on them, as grown as it is now…
+    if ('detonates' in ability!) {
+      const armed = targets.filter(foe => foe.hp > 0 && foe.timed?.bomba);
+      if (armed.length) effect.detonated = armed.map(foe => ({ target: foe.id, amount: blowBomb(state, foe, effect) }));
+    }
     // …and Bip has to put itself back together: its wearer sits the next round out.
     if ('spends' in ability!) actor.out = state.round + 1;
     const hitOf = (foe: Combatant) => effect.hits!.find(h => h.target === foe.id)!;
@@ -3835,6 +3920,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     state.message = `${actor.name} usa ${ability!.name}. ${effect.hits.length === 1 ? `−${effect.amount} PV.` : `Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`}`;
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.blinded?.length) state.message += ' ¡Cegados hasta que acabe la ronda!';
+    if (effect.detonated?.length) state.message += ` ¡Estallan las bombas: ${effect.detonated.map(d => `−${d.amount}`).join(', ')} PV!`;
     if ('wets' in ability!) state.message += smoked ? ' El agua apaga los fuegos y moja al resto.' : powdered.size === targets.length ? '' : ' ¡Mojados!';
     else if (smoked) state.message += ' El agua apaga los fuegos.';
     if ('raises' in ability! && effect.water?.length) state.message += ` El agua sube: ${effect.water.map(w => roman(w.to)).join(', ')}.${effect.water.some(w => w.to >= CRECIDA.marks && w.from < CRECIDA.marks) ? ' ¡Hundidos!' : ''}`;
@@ -4577,11 +4663,32 @@ export function takeNews(state: BattleState): BattleEffect[] {
   return news;
 }
 /** `targetId` is an AI suggestion; without a valid one the dogs take turns picking heroes. */
+/**
+ * Escolta: an ally Bip stands by stays guarded round after round until its last (`escort.until`); it ends sooner if whoever
+ * sent Bip falls or takes Tecnópata off (Bip goes back into them).
+ */
+function keepEscorts(state: BattleState) {
+  for (const ally of state.allies) {
+    if (!ally.escort) continue;
+    const by = state.allies.find(a => a.id === ally.escort!.by);
+    if (ally.escort.until < state.round || ally.hp <= 0 || !by || by.hp <= 0 || by.classId !== 'tecnopata') delete ally.escort;
+    else ally.guarding = true;
+  }
+}
+/** The allies Bip stands by now (Escolta), with their PV before a foe acts. */
+const escortedNow = (state: BattleState) => state.allies.filter(a => a.escort && a.hp > 0 && state.allies.some(b => b.id === a.escort!.by && b.hp > 0 && b.classId === 'tecnopata')).map(a => ({ ally: a, hp: a.hp }));
 export function enemyAct(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   if (state.phase !== 'enemy' || state.enemyActions.includes(id)) return;
   const protectedAlly = state.allies.find(a => a.suture);
   screenTook.length = 0; livesTook.length = 0;
+  const escorted = escortedNow(state);
   const effect = enemyMove(state, id, targetId);
+  // Escolta: the foe that struck someone Bip stands by gets a Bomba remota (one it carries already starts over).
+  const striker = state.foes.find(f => f.id === id);
+  if (effect && striker && striker.hp > 0 && escorted.some(e => e.ally.hp < e.hp)) {
+    plantBomb(striker); effect.planted = [...effect.planted ?? [], striker.id];
+    state.message += ` Bip le pega una bomba a ${striker.name}.`;
+  }
   if (effect) discharge(state, effect);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
   // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
@@ -6215,6 +6322,7 @@ export function nextRound(state: BattleState): StatusTick[] {
   state.round++;
   // Against La Voz's song a guard lasts until that fighter acts again (`act`), not to the round's end.
   if (!state.song) state.allies.forEach(a => { a.guarding = false; });
+  keepEscorts(state);
   // La Lealtad swears for the round that starts: on whoever struck her last in the one that ended.
   for (const f of state.foes) if (f.kind === 'lealtad' && f.struck) { f.sworn = f.struck; delete f.struck; }
   if (isCuerdasFight(state)) swear(state);
@@ -6264,6 +6372,15 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
     if (!on || waiting?.(c)) continue;
     let dt = seconds;
     const foeSide = state.foes.includes(c);
+    // A Bomba remota grows while it is on, and goes off when its time is up (`blowBomb`).
+    if (id === 'bomba') {
+      on.age = (on.age ?? 0) + seconds; on.left -= seconds;
+      if (on.left <= 1e-6 || c.hp <= 0) {
+        const was = swarmReady(state), amount = foeSide && c.hp > 0 ? blowBomb(state, c) : (delete c.timed![id], 0);
+        if (foeSide && amount >= 0 && !c.timed?.bomba) pulses.push({ target: c.id, status: id, level: 1, amount, blast: true, ...!was && swarmReady(state) && !state.unbound ? { awoken: 'enjambre' as const } : {} });
+      }
+      continue;
+    }
     while (TIMED[id].levels.length && c.hp > 0 && on.left > 1e-6 && dt >= on.next - 1e-6) {
       dt -= on.next; on.left -= on.next; on.next = TIMED[id].every;
       const amount = pulseDamage(id, on.level, c.maxHp);

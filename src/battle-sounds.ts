@@ -57,6 +57,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   'rayo-sanacion': { start: [{ id: 'cast-soft' }], impact: [{ id: 'heal' }] },
   explosion: { start: [{ id: 'charge', volume: .6 }], impact: [{ id: 'fire-hit' }, { id: 'slam' }, { id: 'crack', volume: .5, delay: .05 }] },
   confusion: { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }] },
+  'bomba-remota': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'clink', volume: .7 }, { id: 'glitch', volume: .4, delay: .15 }] },
+  escolta: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'guard' }, { id: 'clink', volume: .5, delay: .1 }] },
+  enjambre: { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'glitch' }, { id: 'clink', volume: .6, delay: .3 }, { id: 'zap', delay: .6 }] },
   'rayo-encogedor': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap', volume: .6 }, { id: 'sink' }] },
   // Matemágico's elements: fire forking to everyone, water rising to one level, a bolt out of the sky.
   'factor-comun': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }, { id: 'burn', delay: .08 }] },
