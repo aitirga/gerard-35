@@ -4163,6 +4163,12 @@ export function dualTargets(state: BattleState, d: DualSpec): Combatant[] {
   // A fuse, or an eco in its head: on a whole foe, never on a part of one.
   return d.id === 'reserva-de-color' || d.kind === 'eco' ? foes.filter(f => !f.part) : foes;
 }
+/**
+ * Whether a dual goes to one fighter picked (a foe, or an ally as Sutura de luz and Trampantojo do), so
+ * both players have to pick the same one; one on every foe or on the whole party (Vulcano, Suceso
+ * seguro) has nobody to agree on.
+ */
+export const dualSingle = (d: DualSpec) => d.side === 'foes' || (d.side === 'allies' && d.parts.some(aimed));
 
 export function dualBlock(state: BattleState, d: DualSpec, a: Combatant, b?: Combatant): DualBlock | undefined {
   if (!d.parts.every(id => learned(state, id))) return 'level';

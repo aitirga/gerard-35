@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, enemyAct, improve, IDEA_FIJA, POWDER_RULES, runClock, stacks, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
+import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, dualSingle, enemyAct, improve, IDEA_FIJA, POWDER_RULES, runClock, stacks, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
 import { improvedBy, IMPROVEMENTS, stageOf } from '../src/ecos.ts';
 
 // The dúos mayores of every line but fire (docs/animas/README.md § Dúos mayores) and the duals of the pairs that had
@@ -189,4 +189,12 @@ test('Trampantojo: a cortina on any ally; the foe that breaks it is powdered and
   const blow = enemyAct(s, 'dog-0', 'gerard');
   assert.equal(blow.fooled, 'dog-0'); assert.equal(s.foes[0].timed.confusion.left, 20); assert.ok(s.foes[0].timed.empolvado);
   assert.equal(gerard.decoy, undefined);
+});
+
+test('two players agree on one fighter only when a dual goes to one (dualSingle)', () => {
+  const single = DUALS.filter(dualSingle).map(d => d.id);
+  // On one foe, or one ally (Sutura de luz cures one, Trampantojo's cortina stands before one).
+  for (const id of ['zarpazos-de-fuego', 'punto-debil', 'reserva-de-color', 'idea-fija', 'sutura-de-luz', 'trampantojo']) assert.ok(single.includes(id), id);
+  // On every foe, or on the whole party: nobody to agree on.
+  for (const id of ['rayo-solar', 'bombardeo-orbital', 'sobrecalentamiento', 'vulcano', 'marea', 'metralla', 'seiche', 'suceso-seguro', 'caleidoscopio']) assert.ok(!single.includes(id), id);
 });

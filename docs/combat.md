@@ -649,7 +649,7 @@ ciegas). Un dual que aún no se ha encontrado (`Story.duals`, `known`) no se arm
 apunta: cada uno apunta su habilidad como siempre, sin cartel. Si uno **confirma** su habilidad mientras
 el otro tiene elegida la que la completa (apuntándola, o confirmada y esperando turno), y el dual se
 puede ahora (`dualBlock`), sale el dual (`chanceDual`): apunta adonde apuntaba el que confirma, si su
-habilidad apunta; si no, adonde iba la del otro; si no, al primer enemigo en pie. Y antes de salir **se
+habilidad apunta; si no, adonde iba la del otro (confirmada, o adonde la estaba apuntando); si no, al primer enemigo en pie. Y antes de salir **se
 para el tiempo** (`revealDual`, `DUAL_REVEAL`, 3,2 s): la escena y el reloj del combate quietos bajo un
 velo oscuro y las bandas de cine, y el cartel con *DÚO DESBLOQUEADO*, el nombre, quién pone qué mitad,
 el maná y la descripción; suena `dual-armed`. Después sale como cualquier dual (el cartel estalla, el
@@ -658,8 +658,18 @@ recargar la página) y va como sigue.
 
 **Ya encontrado.** Mientras uno apunta una habilidad, el otro elige la que la completa (`joinDual`): los
 dos pasan a apuntar el dual, con su cartel ya arriba (*armado*, ver abajo). Cualquiera puede volver atrás
-(cada uno vuelve a lo que tenía); sale cuando los dos eligen el mismo enemigo (*Los dos, al mismo
-objetivo.*). Al pasar el turno a los enemigos, o al acabar el combate, no queda nada a medias.
+(cada uno vuelve a lo que tenía). Si va a uno solo (un enemigo, o un aliado como *Sutura de luz* y
+*Trampantojo*; `dualSingle`), sale cuando los dos eligen el mismo (*Los dos, al mismo objetivo.*); si va
+a todos los enemigos o a todo el equipo, basta con que los dos confirmen, cada uno donde tenga el cursor
+(*Confirmad los dos.*, y el selector dice *Todos los enemigos* o *Todo el equipo*). Si uno de los dos ya no
+puede elegir (cae, o se desconecta su mando), el dual se deshace y el otro vuelve a apuntar su habilidad.
+Al pasar el turno a los enemigos, o al acabar el combate, no queda nada a medias.
+
+**Habilidades sin objetivo, a dos.** Una habilidad que llega a todo un lado (*Explosión*, *Escudo de
+bits*, *Análisis Parálisis*…) sale al momento cuando el compañero ya no puede elegir. Mientras aún puede,
+se confirma como las demás, con todo ese lado iluminado (*Llega a todos los enemigos.*): así el otro
+tiene el mismo momento para completar un dual con ella, la elija primero quien la elija. Vale para todas
+esas habilidades, formen dual o no, y no delata ninguno.
 
 **Qué hace.** Gasta los dos turnos y la mitad de maná de cada uno; las dos ánimas cuentan como que
 han luchado. Su golpe usa los atributos de quien trae la mitad de su tipo (los dos de hoy son

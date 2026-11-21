@@ -1,7 +1,7 @@
 import { clickControllerButton } from './controller-ui';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -1078,6 +1078,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state || !split() || reaiming) return;
     reaiming = true;
     try {
+      // A dual whose other half can no longer choose (fallen to a burn, a pad gone): it is off, and the
+      // one left goes back to aiming their own skill instead of waiting for good.
+      const out = duo && state.phase === 'player' ? ([1, 2] as PlayerId[]).find(p => !canAct(allyOf(p))) : undefined;
+      if (duo && out) {
+        const theirs = duo.skills[other(out)];
+        duo = undefined;
+        withPlayer(out, () => collapse(), true);
+        withPlayer(other(out), () => { selected = 'skill'; selectedSkill = theirs; selectedDual = undefined; targeting = true; }, true);
+        render();
+      }
       for (const p of [1, 2] as PlayerId[]) withPlayer(p, () => {
         if (!targeting || locked() || !aimedBy[p]) return;
         // By the rules, not by the plates: one out of the camera's sight for a moment is still theirs.
@@ -1103,7 +1113,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const aiming = targeting && !locked() && s.phase === 'player';
     const dual = aimedDual();
     const eligible = aiming ? (dual ? dualTargets(s, dual) : validTargets(s, selected === 'dual' ? 'attack' : selected!, aimSkill())).map(c => c.id) : [];
-    const cure = dual?.side === 'allies' || aiming && selected === 'skill' && !!aimSkill() && SKILLS.find(x => x.id === aimSkill())!.side === 'allies';
+    const cure = dual?.side === 'allies' || aiming && selected === 'skill' && !!aimSkill() && toParty(aimSkill()!);
     get('.command-deck').hidden = targeting;
     get('.target-picker').hidden = !targeting;
     if (targeting) pickerText();
@@ -1385,7 +1395,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Who the target picker is on, by name under its line: three of a kind stand close (Dirección), and a plate alone does not say who is who. */
   function aimName(id?: string) {
     const box = get<HTMLElement>('.target-picker .target-name'), who = id && state && [...state.foes, ...state.allies].find(c => c.id === id);
-    box.hidden = !who; box.textContent = who ? who.name : '';
+    // A dual on every foe or the whole party says so (a skill with no target too): the plate under the cursor is only where the confirm is pressed.
+    const whole = targeting ? wholeSide() : undefined;
+    box.hidden = !who; box.textContent = who ? whole ?? who.name : '';
     // The picker wears the colour of whoever is aiming, the same as their ring and the plate they are on.
     get<HTMLElement>('.target-picker').dataset.aim = String(aimSlot());
   }
@@ -2052,21 +2064,40 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const aiming = canAct(partner) && them.targeting && them.selected === 'skill' ? them.selectedSkill : undefined;
     const theirs = waiting?.skill ?? aiming, d = theirs && dualOf(skill, theirs);
     if (!d || knownDual(d.id) || !dualReady(s, d, me, partner)) return;
+    // Where the partner was going: confirmed and waiting, or still aiming (read before their menu closes).
+    const partnerAim = waiting ? waiting.target : aimedBy[other(ctx)];
     if (waiting) pending.splice(pending.indexOf(waiting), 1);
     else withPlayer(other(ctx), () => collapse());
-    const foes = dualTargets(s, d).map(f => f.id), aim = [aimed(skill) ? target : undefined, waiting?.target].find(t => t && foes.includes(t));
-    return { player: ctx, ally: me.id, command: 'dual', dual: d.id, die: selectedDie ?? waiting?.die ?? them.selectedDie, target: aim, text: `${d.name} → ${[...s.foes, ...s.allies].find(f => f.id === aim)?.name ?? ''}` };
+    // Trampantojo found by Confusión's confirm goes where the Cortina was aimed, not to the first ally.
+    const foes = dualTargets(s, d).map(f => f.id), aim = [aimed(skill) ? target : undefined, partnerAim].find(t => t && foes.includes(t));
+    return { player: ctx, ally: me.id, command: 'dual', dual: d.id, die: selectedDie ?? waiting?.die ?? them.selectedDie, target: aim, text: dualText(d, aim) };
+  }
+  /** «Zarpazos de fuego → Canela»; one with nobody to pick, at whom it goes: «Vulcano → Todos los enemigos». */
+  function dualText(d: DualSpec, aim?: string) {
+    const whom = dualSingle(d) ? [...state!.foes, ...state!.allies].find(f => f.id === aim)?.name ?? '' : d.side === 'allies' ? 'Todo el equipo' : 'Todos los enemigos';
+    return `${d.name} → ${whom}`;
+  }
+  /** Whether `skill` goes to the party's side (a cure, a guard, a boost for everyone): their cards are what is picked. */
+  const toParty = (skill: SkillId) => ['allies', 'party'].includes(SKILLS.find(x => x.id === skill)!.side);
+  /**
+   * What is being aimed reaches a whole side (a dual on every foe or the party, or split, a skill with
+   * no target being confirmed): «Todo el equipo» or «Todos los enemigos»; nothing when one is picked.
+   */
+  function wholeSide() {
+    const dual = aimedDual(), skill = selected === 'skill' && selectedSkill && !aimed(selectedSkill) ? SKILLS.find(x => x.id === selectedSkill) : undefined;
+    const side = dual ? (dualSingle(dual) ? undefined : dual.side) : skill?.side;
+    return !side ? undefined : side === 'allies' || side === 'party' ? 'Todo el equipo' : 'Todos los enemigos';
   }
   /** The target picker's title and line for what the menu being worked on is aiming. */
   function pickerText() {
     const s = state!, skill = aimSkill();
-    const cure = aimedDual()?.side === 'allies' || selected === 'skill' && !!skill && SKILLS.find(x => x.id === skill)!.side === 'allies';
-    const guard = cure && SKILLS.find(x => x.id === skill)?.kind === 'guard';
+    const cure = aimedDual()?.side === 'allies' || selected === 'skill' && !!skill && toParty(skill);
+    const guard = cure && SKILLS.find(x => x.id === skill)?.kind === 'guard', whole = wholeSide();
     get('.target-picker h2').textContent = selected === 'skill' && skill ? SKILLS.find(x => x.id === skill)!.name : selected === 'dual' ? DUALS.find(d => d.id === selectedDual)?.name ?? 'Dual' : attackName(s.allies[s.active]);
     const standing = s.foes.filter(f => f.hp > 0);
-    const mine = duo?.aims[ctx], theirs = duo?.aims[other(ctx)];
-    get('.target-picker p').textContent = duo ? mine && theirs && mine !== theirs ? 'Elegid el mismo objetivo.' : mine ? 'Esperando al otro…' : 'Los dos, al mismo objetivo.'
-      : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'night-guard' && s.foes.some(f => isCastle(f.kind)) ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
+    const mine = duo?.aims[ctx], theirs = duo?.aims[other(ctx)], single = !duo || dualSingle(DUALS.find(d => d.id === duo!.id)!);
+    get('.target-picker p').textContent = duo ? single && mine && theirs && mine !== theirs ? 'Elegid el mismo objetivo.' : mine ? 'Esperando al otro…' : single ? 'Los dos, al mismo objetivo.' : 'Confirmad los dos.'
+      : whole ? `Llega a ${whole === 'Todo el equipo' ? 'todo el equipo' : 'todos los enemigos'}.` : guard ? 'Elige a quién proteger.' : cure ? 'Elige a quién curar.' : FEAR_KICKERS[s.encounter as keyof typeof FEAR_KICKERS] ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-minion' ? 'Elige al esbirro.' : s.encounter === 'night-guard' && s.foes.some(f => isCastle(f.kind)) ? standing.length === 1 ? `Elige a ${standing[0].name}.` : 'Elige un enemigo.' : s.encounter === 'palace-guards' || s.encounter === 'night-guard' ? 'Elige un guardián.' : 'Elige un perro en la calle.';
   }
   /**
    * Agitar: the hand is thrown again there and then, and the turn goes on with the list still open
@@ -2095,8 +2126,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     if (skill && joinDual(skill)) return;
     pickingDie = undefined;
-    // A skill that reaches the whole party has nobody to pick: it happens at once.
-    if (skill && !aimed(skill)) { selectedSkill = skill; void execute(); return; }
+    // A skill that reaches the whole party has nobody to pick: it happens at once. Split, while the
+    // partner can still choose, it is confirmed like any other (the whole side lit), so they have the
+    // same moment to complete a dual with it whichever of the two is chosen first.
+    if (skill && !aimed(skill) && !(split() && canAct(allyOf(other(ctx))))) { selectedSkill = skill; void execute(); return; }
     selectedSkill = skill; targeting = true;
     render();
     focusOn(targetButtons()[0]);
@@ -2470,16 +2503,18 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if ((selected === 'attack' || selected === 'dual' || (selected === 'skill' && (!selectedSkill || aimed(selectedSkill)))) && !targeting) return;
     // Split, a plate or a card can be lit for the other player's move: picked for this one, it is not theirs to take.
     if (targeting && target && !ownTargets().includes(target)) { callbacks.sound('denied'); return; }
+    // A skill with no target confirmed on a plate (split, `beginTargeting`) still goes to everyone.
+    if (selected === 'skill' && selectedSkill && !aimed(selectedSkill)) target = undefined;
     const me = split() ? allyOf(ctx)! : state.allies[state.active];
     const named = (id?: string) => [...state!.allies, ...state!.foes].find(c => c.id === id)?.name;
     let job: Job;
     if (duo && selected === 'dual') {
       duo.aims[ctx] = target;
-      const mine = duo.aims[ctx], theirs = duo.aims[other(ctx)];
+      const mine = duo.aims[ctx], theirs = duo.aims[other(ctx)], spec = DUALS.find(d => d.id === duo!.id)!;
       callbacks.sound('ui-confirm');
-      if (!mine || mine !== theirs) { render(); return; }
-      const spec = DUALS.find(d => d.id === duo!.id)!;
-      job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, die: duo.die, target, text: `${spec.name} → ${named(target) ?? ''}` };
+      // On one fighter both pick the same one; on every foe or the whole party it is enough that both confirm.
+      if (!mine || !theirs || (dualSingle(spec) && mine !== theirs)) { render(); return; }
+      job = { player: ctx, ally: me.id, command: 'dual', dual: spec.id, die: duo.die, target, text: dualText(spec, target) };
       duo = undefined;
       withPlayer(other(ctx), () => collapse());
     } else if (selected === 'dual') {

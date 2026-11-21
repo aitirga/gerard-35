@@ -1,0 +1,220 @@
+{
+  "title": "Duals with two pads",
+  "description": "Duals in a split fight on two faked gamepads: found by chance with the no-target half (Escudo de bits) chosen first; a known dual on every foe going off with each player confirming on a different foe; Sutura de luz, on one ally, waiting until both pick the same; and a dual called off when the partner falls mid-aim. Each check is an `until` that fails the run if it breaks.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22trial%22%3A%22sobrecalentamiento%22%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.pick = (p, re) => { const ui = window.gerard.battleUI; ui.control('down', p); ui.control('confirm', p); for (let i = 0; i < 16 && !re.test(document.querySelector(`.battle-dock[data-dock=\"${p}\"] .is-cursor-${p}`)?.textContent ?? ''); i++) ui.control('down', p); ui.control('confirm', p); }; window.dock = p => document.querySelector(`.battle-dock[data-dock=\"${p}\"]`); window.used = id => (window.gerard.battleUI.live?.usedDuals ?? []).includes(id);"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "pick(2, /escudo de bits/i)"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "!dock(2).querySelector('.target-picker').hidden && /todo el equipo/i.test(dock(2).querySelector('.target-name').textContent) && !window.gerard.battleUI.live.spent?.length",
+      "timeout": 2000
+    },
+    {
+      "shot": "bits-waits",
+      "delay": 200,
+      "caption": "Two players: Aitor picks Escudo de bits, a skill with no target. While Gerard can still choose it asks for a confirm (Todo el equipo) instead of going off at once"
+    },
+    {
+      "eval": "pick(1, /foc binari/i)"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 1)"
+    },
+    {
+      "until": "used('sobrecalentamiento')",
+      "timeout": 5000
+    },
+    {
+      "shot": "found-by-chance",
+      "delay": 900,
+      "caption": "Gerard confirms Foc Binari: the two halves meet and Sobrecalentamiento is found (DÚO DESBLOQUEADO), whichever was chosen first"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22trial%22%3A%22sobrecalentamiento%22%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.pick = (p, re) => { const ui = window.gerard.battleUI; ui.control('down', p); ui.control('confirm', p); for (let i = 0; i < 16 && !re.test(document.querySelector(`.battle-dock[data-dock=\"${p}\"] .is-cursor-${p}`)?.textContent ?? ''); i++) ui.control('down', p); ui.control('confirm', p); }; window.dock = p => document.querySelector(`.battle-dock[data-dock=\"${p}\"]`); window.used = id => (window.gerard.battleUI.live?.usedDuals ?? []).includes(id);"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.story.duals = [...window.gerard.story.duals, 'sobrecalentamiento']"
+    },
+    {
+      "eval": "pick(1, /foc binari/i)"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "pick(2, /escudo de bits/i)"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "!document.querySelector('.dual-banner').hidden && /todos los enemigos/i.test(dock(1).querySelector('.target-name').textContent) && /confirmad los dos/i.test(dock(1).querySelector('.target-picker p').textContent)",
+      "timeout": 2000
+    },
+    {
+      "eval": "window.gerard.battleUI.control('right', 1)"
+    },
+    {
+      "shot": "known-armed",
+      "delay": 300,
+      "caption": "Known now: Aitor's Escudo de bits completes Gerard's Foc Binari, the banner is armed and both pickers say Todos los enemigos · Confirmad los dos"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 2)"
+    },
+    {
+      "wait": 200
+    },
+    {
+      "until": "!used('sobrecalentamiento') && /esperando al otro/i.test(dock(2).querySelector('.target-picker p').textContent)",
+      "timeout": 1500
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 1)"
+    },
+    {
+      "until": "used('sobrecalentamiento')",
+      "timeout": 4000
+    },
+    {
+      "shot": "known-fires",
+      "delay": 600,
+      "caption": "Each confirmed on a different dog: a dual on every foe goes off all the same"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22trial%22%3A%22sutura-de-luz%22%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.pick = (p, re) => { const ui = window.gerard.battleUI; ui.control('down', p); ui.control('confirm', p); for (let i = 0; i < 16 && !re.test(document.querySelector(`.battle-dock[data-dock=\"${p}\"] .is-cursor-${p}`)?.textContent ?? ''); i++) ui.control('down', p); ui.control('confirm', p); }; window.dock = p => document.querySelector(`.battle-dock[data-dock=\"${p}\"]`); window.used = id => (window.gerard.battleUI.live?.usedDuals ?? []).includes(id);"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.story.duals = [...window.gerard.story.duals, 'sutura-de-luz']; window.gerard.battleUI.tweak(s => { s.allies.forEach(a => { a.hp = Math.min(a.hp, Math.round(a.maxHp * .4)); }); })"
+    },
+    {
+      "eval": "pick(1, /cardioide/i)"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "pick(2, /sanaci/i)"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "/los dos, al mismo objetivo/i.test(dock(1).querySelector('.target-picker p').textContent)",
+      "timeout": 2000
+    },
+    {
+      "eval": "(() => { const ui = window.gerard.battleUI; const aim = p => document.querySelector(`.${p === 1 ? 'is-targeted' : 'is-targeted-2'}[data-target]`)?.dataset.target; if (aim(1) === aim(2)) ui.control('down', 2); ui.control('confirm', 1); ui.control('confirm', 2); })()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "until": "!used('sutura-de-luz') && /elegid el mismo objetivo/i.test(dock(1).querySelector('.target-picker p').textContent)",
+      "timeout": 1500
+    },
+    {
+      "shot": "sutura-apart",
+      "delay": 200,
+      "caption": "Sutura de luz goes to one ally: each confirmed on a different card, so it waits (Elegid el mismo objetivo)"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('down', 2); window.gerard.battleUI.control('confirm', 2);"
+    },
+    {
+      "until": "used('sutura-de-luz')",
+      "timeout": 4000
+    },
+    {
+      "shot": "sutura-together",
+      "delay": 600,
+      "caption": "Aitor moves to Gerard's pick and confirms: Sutura de luz goes off on that ally"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22trial%22%3A%22sutura-de-luz%22%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.pick = (p, re) => { const ui = window.gerard.battleUI; ui.control('down', p); ui.control('confirm', p); for (let i = 0; i < 16 && !re.test(document.querySelector(`.battle-dock[data-dock=\"${p}\"] .is-cursor-${p}`)?.textContent ?? ''); i++) ui.control('down', p); ui.control('confirm', p); }; window.dock = p => document.querySelector(`.battle-dock[data-dock=\"${p}\"]`); window.used = id => (window.gerard.battleUI.live?.usedDuals ?? []).includes(id);"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.story.duals = [...window.gerard.story.duals, 'sutura-de-luz']; window.gerard.battleUI.tweak(s => { s.allies.forEach(a => { a.hp = Math.min(a.hp, Math.round(a.maxHp * .4)); }); })"
+    },
+    {
+      "eval": "pick(1, /cardioide/i)"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "pick(2, /sanaci/i)"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "!document.querySelector('.dual-banner').hidden",
+      "timeout": 2000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.allies.find(a => a.id === 'aitor').hp = 0; })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "until": "/cardioide/i.test(dock(1).querySelector('.target-picker h2').textContent) && !dock(1).querySelector('.target-picker').hidden",
+      "timeout": 2000
+    },
+    {
+      "shot": "partner-falls",
+      "delay": 300,
+      "caption": "Aitor falls while the two aim Sutura de luz: the dual is off and Gerard is back to aiming his own Cardioide instead of waiting for good"
+    }
+  ]
+}
