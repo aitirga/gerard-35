@@ -1204,7 +1204,7 @@ export const TARGETS: readonly Target[] = [
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
   ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.65, 1], [0, .3]),
   ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [5.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
-  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.75, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
+  ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.66, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
   ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
   ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [5.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),

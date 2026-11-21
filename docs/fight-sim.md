@@ -683,6 +683,35 @@ three fights in eight and takes twice as long, and a thinking one that insists o
 - The Queen does not strike while she wraps herself or blows; her return is five rounds.
 - Skills were measured, not retuned (§ Skills): the same list as before.
 
+#### After the pass: cures by share, growth by share, shorter and harder (2026-11-21, late)
+
+Asked by Aitor after reading the pass («la cura porcentual, un 50 %», «cada ánima da un X % más de los
+atributos», «que los enemigos peguen algo más pero que sean más cortos los combates, unas 8 rondas»,
+«que si farmeo y desbloqueo cosas, pues es más fácil», «dificultad que pensando se gana»):
+
+| Rule | Was | Is |
+| --- | --- | --- |
+| A cure (`HEAL`, src/stats.ts; book `heal.rules`) | Power plus Magia, in points: Cardioide about 40 PV of 180 | A share of the PV of whoever gets it: power 30 is half (Cardioide), 16 about a quarter, 40 two thirds. Sanación gives back a fifth over its 15 seconds |
+| Each friend's ánima (`ANIMA_GROWTH`, book `growth.rules.pct`) | Its own bonus, a point of each attribute and 10 PV | 12 % more of PV, Fuerza, Magia, Defensa and Espíritu |
+| Each level of the ánima worn (`LEVEL_GROWTH`, book `growth.level.pct`) | Skills and maná only | 3 % more of every attribute as well (level 7: 18 %) |
+| The foes' blows (`FOE_BLOW`, book `foes.blow.share`) | Their own numbers | 0.4 of what the ánimas have grown the party harder (five ánimas: 24 %). Levels are not counted: what is earned fighting makes it easier |
+| Castle years | 1.6, 1.4, 1.8 | 1.7, 1.5, 1.9 |
+| Vertitrón, Aurelià, La Voz, La Sobremesa, La Reina | 484 PV; 560 PV, 16 Fuerza; 500 PV, 14 Magia; 72 to 95 PV each; 14 Fuerza and Magia | 440 PV, 18 Fuerza and Magia; 500 PV, 21 Fuerza; 460 PV, 15 Magia; 62 to 81 PV each; 17 Fuerza and Magia. Lo Directo 16 Fuerza |
+
+Rounds a win takes, playing the answer: Aurelià 12.5 → 7.5, La Voz 11 → 9, Fran 10 → 7, La Sobremesa
+13 → 10, the Queen's first fight 17 → 14. `smart` now cures whoever is under half their PV, or within
+two of the foes' turns of falling, and values a cure less as a fight drags past its tenth round.
+Fixed on the way: switching ánima mid-fight dropped what the friends' ánimas gave.
+
+**What it cost, and is open:**
+
+- Careless play wins more of some castle rooms than it should (2a, El Montón, La Delegada and Los
+  Gemelos of third year: 45 to 70 %): the party kills faster and those rooms turn on lasting three
+  rounds. `pairsOf` now takes «without the answer» as winning four in five at most (it was half).
+  The bosses still say no to the careless (Aurelià 4 %, Dirección 2 %, Fran 5 %, La Voz 14 %).
+- El Cebollón can be outlasted without Zarpazos at level 2, curing with Ronroneo: twice the rounds.
+- Not re-run: `just game-sim` whole games.
+
 ### The final pass
 
 What is left once the last skills and bosses are in, in order. Each step has its command.

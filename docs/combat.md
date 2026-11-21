@@ -821,6 +821,12 @@ redondeado sobre la suma, y en algunos combates algo más de PV (`src/battle.ts`
 regla de cada combate; `FOE_GROWTH`, la de los que no tienen una propia; `growthOf`, `gatheredFor`,
 `growFoes`).
 
+- **El equipo crece en porcentaje** (2026-11-21): cada ánima de un amigo da a todos un 12 % más de PV,
+  Fuerza, Magia, Defensa y Espíritu, y cada nivel del ánima que se lleva puesta, un 3 % más. Los golpes
+  de los enemigos acompañan lo que dan las ánimas (con las cinco entran un 24 % más fuertes), no lo que
+  dan los niveles: subir de nivel hace el juego más fácil. **Una cura devuelve una parte de los PV** de
+  quien la recibe (una cura media, la mitad): con poca vida, curarse es el margen
+  ([fight-sim.md](fight-sim.md) § After the pass).
 - **Cada combate crece a su manera** (desde la pasada final, 2026-11-21). Un solo número para todos
   dejaba unos combates más duros hechos los últimos y otros más fáciles: La Sobremesa pega muchas
   veces poco y un punto de Magia le sube mucho más que al Campeón, que pega una vez y avisada. El
