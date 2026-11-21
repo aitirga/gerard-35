@@ -1,0 +1,27 @@
+{
+  "title": "El guion: todo lo que dice el juego, quién y cuándo",
+  "description": "docs/dev-tools.md § El guion, guion.html, src/guion-page.ts. Every line by section, in the order the simulated game says it, with who says it, where it is written and the moment's photo (just guion-fotos); a line edited in place, a suggestion and a comment (here in the scratch notes file).",
+  "steps": [
+    { "open": "/guion.html?notas=scratch", "ready": "!!document.querySelector('.entry')" },
+    { "eval": "fetch('/__guion/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: [] }) })" },
+    { "open": "/guion.html?notas=scratch", "ready": "!!document.querySelector('.entry')" },
+    { "shot": "capitulo-1", "delay": 800, "caption": "Chapter 1 in the order the game says it: each moment's number, stretch, place and what sets it off, who says each line (portrait, name, file:line where it is written) and its photo" },
+    { "eval": "document.querySelector('#s-nuria').scrollIntoView()" },
+    { "shot": "nuria", "delay": 600, "caption": "Nuria and Uri's mission: dialogues, Uri's shouts from the tower and Aitor's bubbles along La calle que no acaba" },
+    { "eval": "document.querySelector('#s-capitulo-1 .entry .text[data-editable]').click()" },
+    { "shot": "editar", "delay": 400, "caption": "Clicking a line opens it to edit: Guardar en el juego writes it into the code now; Dejar como sugerencia keeps it as a note" },
+    { "eval": "document.querySelector('.editor textarea').value = '¡Hoy cumplo años!'; document.querySelector('.editor input').value = 'Más de niño, menos de anuncio.'; document.querySelector('[data-act=propose]').click()" },
+    { "wait": 600 },
+    { "eval": "document.querySelectorAll('#s-capitulo-1 .entry')[1].querySelector('[data-act=comment-entry]').click()" },
+    { "wait": 300 },
+    { "eval": "document.querySelector('.editor textarea').value = 'Jan suena demasiado mayor aquí; que sea más hermano y menos adulto.'; document.querySelector('[data-act=note]').click()" },
+    { "wait": 600 },
+    { "eval": "document.querySelector('#s-capitulo-1').scrollIntoView()" },
+    { "shot": "notas", "delay": 600, "caption": "A suggestion on a line (old struck through, new in green, Aplicar writes it) and a comment on a whole moment, both open in docs/guion-notes.json" },
+    { "eval": "const s = document.querySelector('#who'); s.value = 'reina'; s.dispatchEvent(new Event('input'))" },
+    { "shot": "la-reina", "delay": 500, "caption": "Filtered by who speaks: everything La Reina Bubbaloo says" },
+    { "eval": "const s = document.querySelector('#who'); s.value = ''; s.dispatchEvent(new Event('input')); const k = document.querySelector('#kind'); k.value = 'mirar'; k.dispatchEvent(new Event('input'))" },
+    { "shot": "lugares", "delay": 500, "caption": "What Gerard says looking at things, place by place, with its photo where the game goes" },
+    { "eval": "fetch('/__guion/notas?archivo=scratch', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: [] }) })" }
+  ]
+}

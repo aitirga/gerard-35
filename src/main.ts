@@ -1104,8 +1104,8 @@ try {
     // ?weather=rain|snow&intensity=.6 sets the sky over outdoor scenes (the story will choose it later).
     const weather = params.get('weather'), intensity = Number(params.get('intensity') ?? 1);
     if (weather === 'rain' || weather === 'snow') game.effects.setWeather(weather, Number.isFinite(intensity) ? intensity : 1, true);
-    // Handle for scripted browser checks, e.g. teleporting to a story beat.
-    Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title } });
+    // Handle for scripted browser checks, e.g. teleporting to a story beat; `dialogue` lets the script's photos (just guion-fotos) put a line on screen.
+    Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title, dialogue } });
   }
   if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); clearInterval(songTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {

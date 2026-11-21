@@ -89,7 +89,7 @@ note = "Leer los créditos de arriba abajo y corregirlos. Se marca a mano."
 [[block.item]]
 title = "Revisar todo el texto escrito y lo que dicen los personajes"
 priority = "pruebas"
-note = "Leer de una vez todos los diálogos (LINES de src/story.ts y de cada misión en src/friends/), los carteles, el HUD, los menús, el diario y las descripciones de habilidades: tono adulto, cada personaje con su voz, sin erratas y sin nada que diga al jugador qué hacer. Se marca a mano."
+note = "Leer de una vez todos los diálogos (LINES de src/story.ts y de cada misión en src/friends/), los carteles, el HUD, los menús, el diario y las descripciones de habilidades: tono adulto, cada personaje con su voz, sin erratas y sin nada que diga al jugador qué hacer. Lo que dicen los personajes, los lugares, la tele, el diario y los objetos está en just guion, en orden de partida, para editarlo allí mismo o dejar notas a la skill guion; el HUD, los menús y las habilidades aún no. Se marca a mano."
 
 [[block.item]]
 title = "Decidir qué muestra cada uno de los dos finales"

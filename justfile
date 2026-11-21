@@ -209,6 +209,18 @@ combat-check:
 combat-browser-check *args:
     node scripts/combat-lab-smoke.mjs "$@"
 
+# Open the script: every line the game says by section and in the order a simulated game says it, who says it, where it is written and a photo of the moment; edit a line straight into the code, or leave a suggestion or a comment in docs/guion-notes.json for the guion skill (development; every reload reads the code again)
+[group('Story')]
+guion:
+    node --experimental-strip-types --no-warnings scripts/guion.mjs partida
+    npm run dev -- --open /guion.html
+
+# Take the script's missing photos: the game at each moment with its line on screen, in output/guion/fotos/ (a few seconds each, on this machine's GPU): --todas redoes them, --solo <section or entry id> only those, --ver shows the browser
+[group('Story')]
+[positional-arguments]
+guion-fotos *args:
+    @node --experimental-strip-types --no-warnings scripts/guion.mjs fotos "$@"
+
 # Type-check the TypeScript source without emitting files
 [group('Quality')]
 typecheck:

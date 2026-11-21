@@ -409,6 +409,66 @@ any of the five (none: just a comment), `status` `abierta`, `hecha` or `descarta
 skill reads the open ones, does what they ask and writes its `reply` under each, which the page shows.
 The screenshots use `?notas=scratch` (output/bestiary/notes-scratch.json), so they never leave a real note.
 
+## El guion
+
+`just guion` (`guion.html`, [src/guion-page.ts](../src/guion-page.ts)) is the game's script, to read
+it whole and fix it: every line the game says, by section (each chapter, the castle, each friend's
+mission, what is looked at in each place, the diary, the objects), who says it (portrait and name;
+*Narración*, *Tele*, *En pantalla* and *Diario* for what has no face), the file and line where it is
+written, and a photo of the moment.
+
+**What is in it** comes from the game, not a list ([scripts/guion.mjs](../scripts/guion.mjs), the
+shapes in [src/guion.ts](../src/guion.ts)): every exported dialogue, lone line (said in a fight) and
+thing to look at (an interaction with `lines`) in the story's modules (`MODULES`: the chapters,
+castle-story, each `src/friends/*.ts`, environments and the palace's zones, so the places' looks
+from `src/geo/*.json` too); the bubbles, shouts, news, cards, captions and objects listed in
+`extras`; and every literal that reads like a sentence in the files read whole (`SCANNED`: the diary
+in journal.ts, the castle's fight narration). A new dialogue in one of those modules shows up by
+itself; a text in a new module or shape needs its module in `MODULES` or a line in `extras`. Each line
+is found in the code by its text (a literal scanner over `src/`), so it knows its `file:line`; a
+template built from pieces (`${…}`) shows as such and is read only.
+
+**When it is said**: `just guion` first plays one game with the simulator (`partida`, the
+`pensando` player of [game-sim.md](game-sim.md)) listening to the story, and keeps each dialogue,
+shout, scream, caption and epilogue it says: its number in the game (#1 is the birthday morning),
+the stretch, the day, the place and what set it off, and the point to reload the game there (`/?story=`
+or, inside a mission, `/?mission=…&part=…` from `missionNow`). Each section lists what the game says in
+that order, then what the simulated game never says (talking twice, optional looks, other branches).
+*Abrir en el juego* reloads the game at that point. The result is `output/guion/partida.json`.
+
+**Photos**: `just guion-fotos` loads the game at each moment's point, stands Gerard where it was said
+(`setEnvironment`), puts its first line on screen with the game's own banner (`window.gerard.dialogue`)
+and saves `output/guion/fotos/<entry>.jpg`; a thing looked at gets its photo from the first visit to
+its place. Only what is missing is taken (`--todas` redoes them all, `--solo <section or id>` some,
+`--ver` shows the browser); a moment whose point starts a fight is tried again from the first visit
+to its place. About 200 photos in 15 minutes on this machine's GPU. A photo is the place and the line,
+not the exact scene: people the mission moves may stand elsewhere.
+
+**Editing.** Hovering a line offers *Editar*, *Sugerir* and *Comentar*; clicking its text edits it.
+*Guardar en el juego* (⌘ + Enter) writes the new text straight into the code: the dev server
+(`guionPage` in vite.config.ts, `POST /__guion/editar`) replaces the literal at its `file:line` if
+it still says what the page showed (else the only literal in the file that does), keeping its
+quotes, and refuses a template with pieces. A place's look written in `src/geo/<zone>.json` is
+also changed in its source, `assets/geo/<zone>/zone.json`, so the next `just geo` keeps it. It shows
+in `git diff`, and the game says it so at its next reload. *Dejar como sugerencia* keeps the new text
+as a note instead (old struck through, new in green, *Aplicar* writes it later); *Comentar* leaves a
+comment on a line, and *Comentar el momento* on the whole entry.
+
+**Notes** live in `docs/guion-notes.json`, tracked so they travel between machines, written by the
+dev server as the bestiary's (`GET`/`PUT /__guion/notas`, checked by `guionNotesProblem` in
+src/guion.ts). Each has `id` (`g-` and the time in base 36), `entry` (the entry's id:
+`chapter-1:LINES.mama`, `lugar:<interaction id>`, `journal:textos`…) and `title`, `line` (0-based) and
+`quote` (what the line said then) when it is about one line, `proposal` for a suggestion, `text`,
+`status` (`abierta`, `hecha`, `descartada`), `created`, and `closed` and `reply` once answered. The
+`guion` skill reads the open ones, applies or answers them and writes its `reply`, which the page
+shows. A note whose entry the code no longer has is listed at the end, *Notas sin sitio*.
+
+The page is gathered again each time it is opened (half a second), so it always shows the code as
+it is; the simulated game is only played by `just guion` (`node scripts/guion.mjs partida`, six
+seconds). Filters: search (text, who, key, place), *Quien sea*, the kind of text and *Solo con notas
+abiertas*. `?ver=<entry id>` opens at an entry. `just screenshots guion` shows it; the screenshots
+use `?notas=scratch` (output/guion/notes-scratch.json), so they never leave a real note.
+
 ## The ánimas' sheet
 
 `just animas` opens the ánimas' sheet on the dev server, where it can be commented;
