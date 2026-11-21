@@ -28,7 +28,7 @@ const { ENVIRONMENTS } = await game('environments.ts');
 const { FIGHTS, TARGETS, MISSIONS } = await game('battle-sim.ts');
 const { SKILLS, ANIMA_NAMES } = await game('battle.ts');
 const { ANIMAS } = await game('animas.ts');
-const { LEVELLED, EMPTY_LEVELS, MANA_LEVEL, topOf, skillsAt } = await game('levels.ts');
+const { LEVELLED, EMPTY_LEVELS, MANA_LEVEL, topOf, skillsAt, passivesAt } = await game('levels.ts');
 const { TREE_ANIMAS } = await game('ecos.ts');
 const { foesOfTheGame, modelStatusOf } = await game('bestiary-data.ts');
 
@@ -77,7 +77,7 @@ const wonWith = id => new Story(flagsAt(`anima-${id}`)).classes.filter(classId =
 const growth = id => {
   if (TREE_ANIMAS.includes(id)) return [];
   if (!LEVELLED.includes(id)) return [`${ANIMA_NAMES[id]}: ni niveles ni árbol en el bote`];
-  const empty = Array.from({ length: topOf(id) - 1 }, (_, i) => i + 2).filter(level => !skillsAt(id, level).length && level !== MANA_LEVEL && !EMPTY_LEVELS[id]?.includes(level));
+  const empty = Array.from({ length: topOf(id) - 1 }, (_, i) => i + 2).filter(level => !skillsAt(id, level).length && !passivesAt(id, level).length && level !== MANA_LEVEL && !EMPTY_LEVELS[id]?.includes(level));
   return empty.length ? [`${ANIMA_NAMES[id]}: sube a nivel ${empty.join(' y ')} sin aprender nada (sus ${SKILLS.filter(skill => skill.class === id).length} habilidades son de nivel 1)`] : [];
 };
 section('animas', 'Ánimas', 'pending', 'la ánima de cada misión se puede vestir, y toda ánima vestible crece', [
@@ -91,8 +91,10 @@ const speakers = [...read('src/dialogue.ts').matchAll(/^  '?([\w-]+)'?: \{ name:
 // until a castle foe has its figure's file (src/castle-models.ts draws it from src/monsters/ or src/creatures/; the management team has three).
 const figured = kind => (kind === 'directiva' ? ['mar', 'montse', 'pilar'] : [kind]).every(id => ['monsters', 'creatures'].some(dir => existsSync(join(root, 'src', dir, `${id}.json`))));
 const provisional = [...new Map(foesOfTheGame().filter(foe => /esbirro/.test(modelStatusOf(foe.kind, false).label) && !figured(foe.kind)).map(foe => [foe.kind, foe])).values()];
+// Talk with their drawn faces on purpose (Aitor, 2026-11-21): the castle's bosses get no portrait.
+const DRAWN = ['aurelia', 'mar', 'montse', 'pilar'];
 section('gente', 'Retratos y modelos', 'pending', 'quien habla tiene retrato; quien pelea, modelo propio (just bestiario)', [
-  ...speakers.filter(speaker => !speaker.portrait).map(speaker => `${speaker.name} (${speaker.id}): habla sin retrato`),
+  ...speakers.filter(speaker => !speaker.portrait && !DRAWN.includes(speaker.id)).map(speaker => `${speaker.name} (${speaker.id}): habla sin retrato`),
   ...speakers.filter(speaker => speaker.portrait && !existsSync(join(root, 'public/portraits', `${speaker.portrait}.png`))).map(speaker => `${speaker.name}: falta public/portraits/${speaker.portrait}.png`),
   ...provisional.map(foe => `${foe.name} (${foe.kind}): pelea con el modelo del esbirro`),
 ]);

@@ -14,6 +14,7 @@
 #   grep = "regex", in = "glob"   the text is in one of those files (`in` can be a list)
 #   absent = "regex", in = "glob" the files exist and the text is in none of them
 #   done = true                   by hand, for what code cannot tell; it wins over any check
+# `note` (optional) says in a line or two what the task is: the panel shows it on a click.
 # An item with no check is pending until it gets `done = true`.
 # Name what you build as a check expects, or change the check when you build it.
 #
@@ -22,30 +23,23 @@
 # in the picker, each fight's pair of targets, each place's song, each ánima's growth, portraits,
 # models and what is exported and never used. Run it before calling something done.
 
-# In the order they should be done. `priority` on an item says which one it counts towards.
+# The plan to the end, in the order it is done. The panel lists the pending tasks in this order
+# (a task's `priority` says its phase; one without comes last), and a click on one shows its note.
 [[priority]]
-id = "guion"
-title = "Fijar el guion"
+id = "animas"
+title = "Ánimas completas"
 
 [[priority]]
-id = "alcance"
-title = "Decidir qué misiones entran"
+id = "crecimiento"
+title = "Crecimiento por el castillo"
 
 [[priority]]
-id = "aitor"
-title = "La ánima propia de Aitor"
+id = "historia"
+title = "Misiones, castillo y final"
 
 [[priority]]
-id = "bernat"
-title = "La misión de Bernat"
-
-[[priority]]
-id = "palacio"
-title = "Completar el palacio"
-
-[[priority]]
-id = "final"
-title = "Construir el final"
+id = "pruebas"
+title = "Pruebas y optimización"
 
 # ——— Guion y decisiones ———
 [[block]]
@@ -54,18 +48,18 @@ weight = 4
 
 [[block.item]]
 title = "Plan de la historia en main"
-priority = "guion"
+priority = "historia"
 file = "docs/story-outline.md"
 
 [[block.item]]
 title = "lore.md al día sobre quién es la Reina"
-priority = "guion"
+priority = "historia"
 absent = "Who she really is: Nuria Mendoza"
 in = "docs/lore.md"
 
 [[block.item]]
 title = "chapter-2.md al día sobre el combate final"
-priority = "guion"
+priority = "historia"
 absent = 'does not\s+fight'
 in = "docs/chapter-2.md"
 
@@ -73,7 +67,7 @@ in = "docs/chapter-2.md"
 # (AGENTS.md § Game philosophy).
 [[block.item]]
 title = "Decidir el tono: serio o como la misión de Nuria"
-priority = "guion"
+priority = "historia"
 grep = "this is not a children's game"
 in = "AGENTS.md"
 
@@ -81,18 +75,19 @@ in = "AGENTS.md"
 # he says so looking at the camera, and what beats her comes from the real flat.
 [[block.item]]
 title = "Decidir qué descubre Bernat"
-priority = "guion"
+priority = "historia"
 grep = "the game knows it is a game"
 in = "docs/quests/bernat.md"
 
 # src/credits.ts is a first draft (2026-11-19).
 [[block.item]]
 title = "Repasar el texto de los créditos"
-priority = "final"
+priority = "pruebas"
+note = "Leer los créditos de arriba abajo y corregirlos. Se marca a mano."
 
 [[block.item]]
 title = "Decidir qué muestra cada uno de los dos finales"
-priority = "guion"
+priority = "historia"
 # Designed 2026-11-19: docs/castle-bosses.md § The last scene.
 grep = "Bajar la mano"
 in = "docs/castle-bosses.md"
@@ -101,14 +96,14 @@ in = "docs/castle-bosses.md"
 # Pedro and Jan are left out for now (docs/story-outline.md § People).
 [[block.item]]
 title = "Lista final de misiones"
-priority = "alcance"
+priority = "historia"
 done = true
 
 # Decided 2026-11-19: the five friends' ánimas of the base (docs/story-outline.md § The base); each
 # ánima and each castle boss wins three days back (docs/chapter-2.md § The Queen's advance).
 [[block.item]]
 title = "Número de ánimas y reajuste del avance de la Reina"
-priority = "alcance"
+priority = "historia"
 grep = 'each boss of her\s+castle beaten'
 in = "docs/chapter-2.md"
 
@@ -116,8 +111,9 @@ in = "docs/chapter-2.md"
 # Not yet: the constellations' outer ring after Aurelià, levelCap applied (defined in castle.ts,
 # used nowhere: the check waits for that) and the definitivas after Dirección (their own item).
 [[block.item]]
-title = "El crecimiento de las ánimas se abre con el castillo (tres etapas)"
-priority = "palacio"
+title = "Crecimiento, etapa 2 (tras Aurelià): el grado III sale en el bote y las ánimas compartidas suben al nivel 6"
+priority = "crecimiento"
+note = "Al vencer a Aurelià: el bote enseña los nodos del grado III (Combustión, Vulcano, Integral, Reinicio, Virus atómico, Escudo de bits), que hoy salen desde el principio, y las ánimas compartidas pasan del tope 4 al 6 (levelCap en src/castle.ts, hoy sin usar). El hueco extra ya se abre. La EXP de más se guarda y cuenta al subir el tope. Cuando se haga, una sola función con la etapa (1-3) para el bote y los niveles."
 used = "levelCap"
 
 # ——— Motor ———
@@ -169,6 +165,8 @@ in = "src/game-sim.ts"
 # in the README; done once it has been played there.
 [[block.item]]
 title = "El juego en el Windows de casa, con el servidor en la red local"
+priority = "pruebas"
+note = "Jugarlo en el PC de casa contra el servidor de la red local. Se marca a mano."
 
 [[block.item]]
 title = "Bestiario: cada personaje, monstruo y jefe con su modelo, retrato y movimientos (just bestiario)"
@@ -176,6 +174,8 @@ file = "src/bestiary.ts"
 
 [[block.item]]
 title = "Versión final publicada y a 120 Hz"
+priority = "pruebas"
+note = "Publicar la versión final y medir con just perf que cabe en 8,3 ms por fotograma. Se marca a mano."
 weight = 2
 
 # ——— Lo que ya se juega ———
@@ -306,7 +306,7 @@ file = "src/geo/sagrada-familia.json"
 
 [[block.item]]
 title = "Bernat en El Nucli"
-priority = "bernat"
+priority = "historia"
 grep = "'bernat-nucli'"
 in = "src/story-points.ts"
 
@@ -353,20 +353,20 @@ in = ["src/animals/haru.json"]
 
 [[block.item]]
 title = "Bernat: diseño"
-priority = "bernat"
+priority = "historia"
 file = "docs/quests/bernat.md"
 
 [[block.item]]
 title = "Bernat: jugable"
 weight = 3
-priority = "bernat"
+priority = "historia"
 file = "src/friends/bernat.ts"
 
 # Being built on feat/bernat-maqueta: the light puzzle as icons, played from above on the real
 # flat's 3D model that Bernat has on his table.
 [[block.item]]
 title = "Bernat: el acertijo de las luces en la maqueta de la casa, sin palabras"
-priority = "bernat"
+priority = "historia"
 grep = "MAQUETA_SCALE"
 in = "src/friends/bernat.ts"
 
@@ -375,11 +375,13 @@ in = "src/friends/bernat.ts"
 # only: the Queen and music, never the melody or the device (docs/story-outline.md § The device).
 [[block.item]]
 title = "Que se note antes de Bernat que la Reina es sensible a la música"
-priority = "bernat"
+priority = "historia"
+note = "Antes de Bernat el jugador ha tenido que ver que la música la afecta: un detalle en un combate o en el mundo, nunca una pista en pantalla. Se marca a mano."
 
 [[block.item]]
 title = "Bernat a los 35: su figura y su retrato (hoy usa la de Joan)"
-priority = "bernat"
+priority = "historia"
+note = "Aitor pasa las fotos; después just character para la figura y el retrato."
 absent = "BERNAT_STANDIN"
 in = "src/friends/bernat.ts"
 file = "public/portraits/bernat-adult.png"
@@ -503,6 +505,8 @@ in = ["src/battle.ts"]
 # 2026-11-21: they speak in SPEAKERS (src/dialogue.ts) with drawn faces only; the audit lists them.
 [[block.item]]
 title = "Amigos de la universidad: retratos del mago de camping y el agente (just character)"
+priority = "historia"
+note = "Hablan con la cara dibujada; hacerles el retrato con just character."
 grep = "(?s)(?=.*portrait: 'mago')(?=.*portrait: 'agente')"
 in = "src/dialogue.ts"
 
@@ -567,6 +571,8 @@ in = "src/battle.ts"
 # Designed (docs/animas/dadaista/README.md § Definitiva: Un golpe de dados): the hand filled to six.
 [[block.item]]
 title = "Dadista: la definitiva Un golpe de dados"
+priority = "historia"
+note = "La definitiva de Dadista (dadaista/README): por construir."
 grep = "un-golpe-de-dados"
 in = "src/battle.ts"
 
@@ -599,17 +605,21 @@ in = "src/battle.ts"
 # Designed, not built: seven levels put the passive Olor a sangre (level 5, written) in reach.
 [[block.item]]
 title = "Papagato: niveles 4 a 7 (Maná +1, Olor a sangre, Acecho, Cacería)"
+priority = "animas"
+note = "Diseñado en docs/animas/papagato. Falta Acecho (nivel 6: se carga un turno y sale al empezar la ronda siguiente, crítico seguro), Cacería (nivel 7: un zarpazo por cada sangrado del campo), el Maná +1 del nivel 4, y que llegue al nivel 5 para Olor a sangre, que ya está escrito."
 grep = "id: 'acecho'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Papagato: la definitiva Siete vidas"
+priority = "animas"
+note = "La definitiva de Papagato (papagato/README § Definitiva), con su condición para despertar en el bote."
 grep = "siete-vidas"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Tecnópata, la de Aitor"
-priority = "aitor"
+priority = "animas"
 grep = "tecnopata"
 in = "src/classes.ts"
 
@@ -617,6 +627,8 @@ in = "src/classes.ts"
 # (CLASS_STATS.tecnopata is empty) and no definitiva. Done when it is designed whole with /anima.
 [[block.item]]
 title = "Tecnópata: diseñada entera con /anima (estadísticas, mecánica y definitiva)"
+priority = "animas"
+note = "Pasar /anima con Aitor: estadísticas, una mecánica propia y la definitiva. Tiene árbol y grado III, pero su diseño sigue a medias. Junto con los dúos, lo que más hay que mejorar."
 absent = "^Status: designing"
 in = "docs/animas/tecnopata/README.md"
 
@@ -639,16 +651,22 @@ in = "src/eco-lab.ts"
 # party's side that sound on their own beat (the compás), raised by Crescendo.
 [[block.item]]
 title = "Sincopante: los ecos y el compás (Ostinato, Bordón, Crescendo, A contratiempo)"
+priority = "animas"
+note = "Hoy solo existe Ostinato. Faltan Bordón, Crescendo y A contratiempo, y la regla del compás. Su aspecto ya está en el laboratorio de efectos."
 grep = "id: 'crescendo'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Sincopante: niveles 4 a 7 (Maná +1, Acompañamiento, Pedal, Tutti)"
+priority = "animas"
+note = "Maná +1, Acompañamiento, Pedal y Tutti, y que crezca por niveles (LEVELLED en src/levels.ts)."
 grep = "id: 'tutti'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Sincopante: la definitiva Da capo (los dúos otra vez)"
+priority = "animas"
+note = "La definitiva: repite los dúos del combate. Va después de los dúos de Sincopante."
 grep = "da-capo"
 in = "src/battle.ts"
 
@@ -704,16 +722,22 @@ in = "src/freatica-lab.ts"
 
 [[block.item]]
 title = "Freática: La crecida (el agua de cada enemigo y sus tres marcas, Corriente, Vapor, Hundido; Recarga, Sondeo eléctrico, Bombeo)"
+priority = "animas"
+note = "Su mecánica: el agua de cada enemigo y sus tres marcas, y las habilidades de los niveles 1 a 3. Ya se viste al ganar la misión de Emilie, pero sin habilidades propias hasta esto."
 grep = "id: 'recarga'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Freática: niveles 4 a 7 (Maná +1, Nivel de base, Riada, Golpe de ariete)"
+priority = "animas"
+note = "Maná +1, Nivel de base, Riada y Golpe de ariete, y que crezca por niveles (LEVELLED)."
 grep = "id: 'golpe-de-ariete'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se derrite en vivo y se rompe a golpes)"
+priority = "animas"
+note = "La definitiva y la regla Congelado: no actúan, reciben poco, el hielo baja una marca cada 20 s y se rompe a golpes. Su aspecto ya está hecho."
 grep = "id: 'bajo-cero'"
 in = "src/battle.ts"
 
@@ -726,6 +750,8 @@ in = "src/classes.ts"
 # are chosen from what each one's folder offers a dual. Done by hand when they are chosen and built.
 [[block.item]]
 title = "Los dúos de todas las ánimas, elegidos de lo que ofrece cada una"
+priority = "animas"
+note = "Elegir y construir los pares que faltan entre todas las ánimas con lo que ofrece cada una (animas/README § Order of work). A mejorar junto con Tecnópata."
 
 # ——— El palacio por dentro ———
 [[block]]
@@ -743,33 +769,33 @@ in = "src/environments.ts"
 # built the same day (src/castle*.ts, src/endings.ts): the dynamics end to end, placeholder models and dressing.
 [[block.item]]
 title = "Diseño del bloque del castillo"
-priority = "palacio"
+priority = "historia"
 file = "docs/castle.md"
 
 [[block.item]]
 title = "Planta procedural: salas y pasillos por semilla"
 weight = 3
-priority = "palacio"
+priority = "historia"
 file = "src/castle-floor.ts"
 
 [[block.item]]
 title = "Las tres fases, con el arte que deriva hacia el jefe"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "castillo-3"
 in = "src/environments.ts"
 
 # Decided with Aitor 2026-11-20 (docs/castle.md § Structure): no night after a castle boss.
 [[block.item]]
 title = "Tras cada jefe, la Reina grita (cada vez con más miedo), un flash y a la cama"
-priority = "palacio"
+priority = "historia"
 grep = "private screamed"
 in = "src/story.ts"
 
 [[block.item]]
 title = "El castillo se vuelve más amenazante tras cada grito (sus texturas)"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "export function moodTheme"
 in = "src/castle-mood.ts"
 
@@ -777,14 +803,14 @@ in = "src/castle-mood.ts"
 [[block.item]]
 title = "Dentro del castillo cada alumno caza a su manera, como de noche en la Meridiana"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "export function createFloorStreet"
 in = "src/castle-pupils.ts"
 
 [[block.item]]
 title = "Los alumnos de la Reina: los cinco primeros y sus tres cursos"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "'empollon'"
 in = "src/castle.ts"
 
@@ -792,7 +818,7 @@ in = "src/castle.ts"
 # shape. Being built on feat/castle-pupils.
 [[block.item]]
 title = "El Ausente, el Castigado y el Montón"
-priority = "palacio"
+priority = "historia"
 grep = "(?s)(?=.*'ausente')(?=.*'castigado')(?=.*'monton')"
 in = "src/castle.ts"
 
@@ -801,77 +827,73 @@ in = "src/castle.ts"
 # Done when the fights draw them with their own models instead of the minion's.
 title = "Modelos propios de los alumnos de la Reina, en sus combates"
 weight = 2
-priority = "palacio"
-grep = "models/monsters/"
-in = "src/battle-scene.ts"
+priority = "historia"
+grep = "\\./monsters/\\*\\.json"
+in = "src/castle-models.ts"
 
 # docs/castle-bosses.md § How they look: aurelia, mar, montse and pilar in src/monsters/ (the check
 # looks at the last of the four to land).
 [[block.item]]
 title = "Modelos propios de Aurelià y Dirección"
-priority = "palacio"
+priority = "historia"
 file = "src/monsters/pilar.json"
 
 [[block.item]]
 title = "Modelo propio de El Atril"
-priority = "palacio"
+priority = "historia"
 file = "src/creatures/atril.json"
-
-# All four in SPEAKERS (src/dialogue.ts), which today talk without one.
-[[block.item]]
-title = "Retratos de Aurelià, Mar, Montse y Pilar (just character)"
-priority = "palacio"
-grep = "(?s)(?=.*portrait: 'aurelia')(?=.*portrait: 'mar')(?=.*portrait: 'montse')(?=.*portrait: 'pilar')"
-in = "src/dialogue.ts"
 
 [[block.item]]
 title = "Aurelià: combate y sala"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "'aurelia'"
 in = ["src/battle.ts", "src/story.ts"]
 
 [[block.item]]
 title = "Mar, Montse y Pilar: el Equipo de dirección"
 weight = 2
-priority = "palacio"
+priority = "historia"
 grep = "'direccion'"
 in = ["src/battle.ts", "src/story.ts"]
 
 [[block.item]]
 title = "Tercer hueco de ánima tras Aurelià"
-priority = "palacio"
+priority = "historia"
 used = "extraSlots"
 
 # The gate is there (castle.ts definitivasOpen, unused) and each ánima's definitiva sleeps in the jar
 # ("Todavía duerme"); done when the jar opens them after Dirección. Each one's move is ánima work.
 [[block.item]]
 title = "Definitivas en el bote tras Dirección"
-priority = "palacio"
+priority = "crecimiento"
+note = "Etapa 3. Al vencer al Equipo de dirección despiertan las definitivas en el bote (hoy duermen siempre): cada una cuesta 2 ecos y luego pide su condición en combate. El tope de nivel de las compartidas pasa a 7."
 used = "definitivasOpen"
 
 [[block.item]]
 title = "La secretaría usa los días de Gerard (docs/day-log.md)"
-priority = "palacio"
+priority = "historia"
+note = "La secretaría del palacio lee el resumen de los días de Gerard (day_summaries en server.py)."
 grep = "day_summaries"
 in = "server.py"
 
 [[block.item]]
 title = "Subida al trono tras Dirección"
-priority = "palacio"
+priority = "historia"
 grep = "palacio-trono"
 in = "src/castle.ts"
 
 # docs/castle.md § The castle after each boss: behind a beaten boss, a school again.
 [[block.item]]
 title = "Zonas ganadas que cambian de aspecto"
-priority = "palacio"
+priority = "historia"
 grep = "export function castleZone"
 in = "src/castle-mood.ts"
 
 [[block.item]]
 title = "Modelo propio de los guardianes"
-priority = "palacio"
+priority = "historia"
+note = "Los guardias del palacio pelean con el modelo del esbirro: hacerles figura propia."
 file = "src/guardian*.ts"
 
 # ——— El final ———
@@ -887,53 +909,54 @@ file = "src/queen-hands.ts"
 [[block.item]]
 title = "Combate de la Reina"
 weight = 3
-priority = "final"
+priority = "historia"
 grep = "'reina'"
 in = "src/battle.ts"
 
 [[block.item]]
 title = "Modelo de la Reina"
-priority = "final"
+priority = "historia"
 file = "public/models/monsters/reina.glb"
 
 [[block.item]]
 title = "Retrato de la Reina, con la cara de Nuria Mendoza"
-priority = "final"
+priority = "historia"
 file = "public/portraits/reina.png"
 
 [[block.item]]
 title = "El escenario de la Reina: su arena en la sala de actos"
 weight = 2
-priority = "final"
+priority = "historia"
 file = "src/throne-arena.ts"
 
 [[block.item]]
 title = "La entrada de la Reina: la película corta antes de su combate"
-priority = "final"
+priority = "historia"
 grep = "export const THRONE_INTRO"
 in = "src/throne-arena.ts"
 
 # Aitor's own rewrite (2026-11-20): the fight's rules stay preliminary until every ánima's mechanics exist.
 [[block.item]]
 title = "Combate de la Reina: diseño definitivo, con todas las ánimas hechas"
+priority = "historia"
+note = "Cerrar sus reglas cuando todas las ánimas tengan su mecánica; hasta entonces son provisionales. Se marca a mano."
 weight = 3
-priority = "final"
 
 [[block.item]]
 title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"
 weight = 2
-priority = "final"
+priority = "historia"
 grep = "aitor-poseido"
 in = ["src/battle.ts", "src/story.ts"]
 
 [[block.item]]
 title = "El jugador 2 maneja a Aitor poseído, contra Gerard"
-priority = "final"
+priority = "historia"
 used = "heldAct"
 
 [[block.item]]
 title = "Aitor poseído cruza al lado de la Reina y ataca desde allí, con su ficha"
-priority = "final"
+priority = "historia"
 grep = "function crossOver"
 in = "src/battle-scene.ts"
 
@@ -942,43 +965,44 @@ in = "src/battle-scene.ts"
 [[block.item]]
 title = "Artilugio físico: ESP32 y firmware"
 weight = 4
-priority = "final"
+priority = "historia"
 file = "firmware/**/*.ino"
 
 # On the board since 2026-11-20, but without the Wi-Fi fix of 8d700bd (flash it by USB) and with the
 # jumper still on SOUND instead of the PIR, so nothing is found by presence yet (README § the artilugio).
 [[block.item]]
 title = "Artilugio: flasheado y probado con la placa (PIR en el IO34, secrets.h)"
-priority = "final"
+priority = "historia"
+note = "Pasar el jumper SOUND al PIR (IO34), flashear por USB con el arreglo del Wi-Fi y volver a probar la búsqueda. Se marca a mano."
 
 [[block.item]]
 title = "Artilugio: el servidor y su canal hacia el juego"
 weight = 2
-priority = "final"
+priority = "historia"
 file = "artilugio.py"
 
 [[block.item]]
 title = "Artilugio: ocho notas, cuatro botones y cuatro parejas"
-priority = "final"
+priority = "historia"
 grep = "ARTILUGIO_PAIRS"
 in = "src/castle.ts"
 
 [[block.item]]
 title = "Artilugio: Gerard lo saca al moverlo y suena en todo el juego"
 weight = 2
-priority = "final"
+priority = "historia"
 file = "src/artilugio.ts"
 
 [[block.item]]
 title = "Artilugio: llama desde su escondite hasta que lo encuentran, y Gerard lo saca mientras lo tienen delante"
-priority = "final"
+priority = "historia"
 grep = "FOUND_AFTER_MS"
 in = "firmware/artilugio/artilugio.ino"
 
 [[block.item]]
 title = "Bernat: el portal de El Nucli manda el artilugio al piso real"
 weight = 2
-priority = "bernat"
+priority = "historia"
 grep = "'portal-nucli'"
 in = "src/story-points.ts"
 
@@ -987,7 +1011,7 @@ in = "src/story-points.ts"
 [[block.item]]
 title = "Encontrarlo en casa con las luces"
 weight = 2
-priority = "final"
+priority = "historia"
 used = "HIDING_LAMP"
 
 # Aitor, 2026-11-19: it already repeats in every song, and that is the only clue: Gerard has to
@@ -995,42 +1019,42 @@ used = "HIDING_LAMP"
 [[block.item]]
 title = "Melodía de 6 notas en todas las canciones"
 weight = 2
-priority = "final"
+priority = "historia"
 done = true
 
 [[block.item]]
 title = "Escena final y los dos finales"
 weight = 2
-priority = "final"
+priority = "historia"
 file = "src/endings.ts"
 
 # The last fight's music (docs/audio.md § The last fight).
 [[block.item]]
 title = "Música del último combate: el artilugio aparta la canción"
-priority = "final"
+priority = "historia"
 grep = "function scoreNote"
 in = "src/main.ts"
 
 [[block.item]]
 title = "Canción de La Reina: intro y tres versiones de su A (la compone Aitor)"
 weight = 2
-priority = "final"
+priority = "historia"
 file = "public/music/battle-final.m4a"
 
 [[block.item]]
 title = "La decisión: el viento, y el piano del inicio más triste"
-priority = "final"
+priority = "historia"
 grep = "'intro-triste'"
 in = "src/main.ts"
 
 [[block.item]]
 title = "Créditos"
-priority = "final"
+priority = "historia"
 file = "src/credits.ts"
 
 [[block.item]]
 title = "Créditos: el álbum de las vacaciones de Nuria Mendoza"
-priority = "final"
+priority = "historia"
 grep = "export const ALBUM"
 in = "src/credits.ts"
 
@@ -1073,6 +1097,8 @@ file = "src/home-lights.ts"
 [[block.item]]
 title = "Banda sonora completa"
 weight = 2
+note = "Cerrada el 21-11: no habrá más canciones; un sitio sin la suya toma una de las que hay."
+done = true
 
 # Each place's card says what it sounds like, or that it is not built (docs/places/*.md).
 [[block.item]]
@@ -1117,6 +1143,8 @@ used = "onVeil"
 # Aurelià, Dirección and La Delegada. The palace guards on the first try are a wall on purpose.
 [[block.item]]
 title = "Equilibrio del juego entero con el simulador: sin muros"
+priority = "pruebas"
+note = "just fight-sim check en verde (el 21-11 hay 25 objetivos fuera de rango) y ninguna partida del simulador del juego que se atasque. Se marca a mano."
 weight = 2
 
 # AGENTS.md § Game philosophy: each fight keeps a pair of TARGETS (src/battle-sim.ts), one playing its
@@ -1125,7 +1153,18 @@ weight = 2
 # `just fight-sim check` the targets a fight misses (25 of 112 on 2026-11-20, after the crits).
 [[block.item]]
 title = "Cada combate con su pareja de objetivos en el simulador"
+priority = "pruebas"
+note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: faltan 22 (los perros, los alumnos y las delegadas del castillo, los guardias, la Reina…; just progress --audit los lista). Se marca a mano."
 
 [[block.item]]
 title = "Pasada final de pulido"
+priority = "pruebas"
+note = "Jugarlo entero de principio a fin y pulir lo que salga. Se marca a mano."
 weight = 2
+
+# `just progress --audit` § Definido y sin conectar.
+[[block.item]]
+title = "Lo exportado que nadie usa, conectado o quitado"
+priority = "pruebas"
+note = "13 nombres exportados que nada usa el 21-11 (rollFace, POSES, roomFights, CASTLE_FIGHT_HOURS, YEARS, QUEEN_RETURN_HP…): conectar lo que falta (levelCap y definitivasOpen van con el crecimiento) y quitar el resto."
+

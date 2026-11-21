@@ -2,13 +2,17 @@
 """How far the game is, from docs/progress.toml, measured against the checkout.
 
 Usage:
-  scripts/herdr-progress [--dir PATH]            the panel at the top of herdr's column; q quits, r rereads
+  scripts/herdr-progress [--dir PATH]            the panel at the top of herdr's column; q quits, r rereads,
+                                                 a click (or 1-9) on a task shows what it is
+  scripts/herdr-progress --detail KEY [--dir PATH]   one task (t:<title>), phase (p:<id>) or block (b:<title>)
   scripts/herdr-progress --once [--all] [--dir PATH]   print it once (just progress)
   scripts/herdr-progress --audit [--dir PATH]    what the bar rests on, checks that cannot tick, and
                                                  whether the game is wired together (just progress --audit)
 
 herdr-layout runs this in any project that has it. The checks read a few named files, so it
-looks again every few seconds and draws only when something changed. See docs/dev-tools.md.
+looks again every few seconds and draws only when something changed. A click opens what it hit in a
+herdr popup over the tab (the `progress` pane of herdr-project's plugin, which runs this script with
+--detail); without herdr it shows inside the panel until q. See docs/dev-tools.md.
 """
 import argparse
 import glob
@@ -20,6 +24,7 @@ import signal
 import subprocess
 import sys
 import termios
+import textwrap
 import time
 import tomllib
 import tty
@@ -29,11 +34,15 @@ REFRESH = 5
 CHECK_KEYS = {"done", "file", "grep", "absent", "in", "used"}
 # Where the game's code lives: a `used` name is looked for here, and a `file` in here must be imported.
 SOURCES = "src/**/*.ts"
-ITEM_KEYS = CHECK_KEYS | {"title", "weight", "priority"}
+ITEM_KEYS = CHECK_KEYS | {"title", "weight", "priority", "note"}
 EIGHTHS = " ▏▎▍▌▋▊▉"
 # Her pink at the start, then Papagato's orange, Matemágico's gold and a calm sage at the end.
 GRADIENT = ((255, 111, 174), (240, 149, 74), (243, 207, 120), (140, 198, 168))
 TRACK = (52, 50, 64)
+DONE = (140, 198, 168)
+# The popup that shows what a click opened (herdr-project's plugin, `progress` pane).
+POPUP = ("herdr-project.services", "progress")
+MOUSE = re.compile(rb"\033\[<(\d+);(\d+);(\d+)([Mm])")
 
 
 def load(path):
@@ -175,8 +184,13 @@ def measure(manifest, root):
     for priority in manifest.get("priority", []):
         items = [i for i in every if i.get("priority") == priority["id"]]
         pending = [i for i in items if not i["ok"]]
-        priorities.append({"title": priority["title"], "items": items, "pending": pending, "share": share(items)})
-    return {"blocks": blocks, "total": weighted(blocks, "weight"), "story": weighted(blocks, "story"), "priorities": priorities}
+        priorities.append({"id": priority["id"], "title": priority["title"], "items": items, "pending": pending, "share": share(items)})
+    # What is left, in the plan's order: by phase, then as the list has them; without a phase, last.
+    order = {p["id"]: n for n, p in enumerate(priorities)}
+    tasks = sorted((dict(i, block=b["title"]) for b in blocks for i in b["item"] if not i["ok"]),
+                   key=lambda i: order.get(i.get("priority"), len(order)))
+    return {"blocks": blocks, "total": weighted(blocks, "weight"), "story": weighted(blocks, "story"),
+            "priorities": priorities, "tasks": tasks}
 
 
 def percent(value):
@@ -218,44 +232,119 @@ def row(label, value, right, width, colour):
     return f"{fit(label, room):<{room}} {bar(value, bar_width, colour)} {right}"
 
 
-def render(data, heading, rows, cols, colour, error=None):
-    """The panel's lines for this size: the bar always, then what fits, most useful first."""
+def render(data, heading, rows, cols, colour, error=None, clickable=False):
+    """The panel's lines for this size, and what a click on each opens: the bar always, then the tasks left, then the blocks."""
     bold, dim, reset = ("\033[1m", "\033[2m", "\033[0m") if colour else ("", "", "")
     width = max(cols - 2, 10)
     if data is None:
-        return [f" {fit(error or 'Leyendo…', width)}"]
+        return [f" {fit(error or 'Leyendo…', width)}"], [None]
     total = f"{percent(data['total'])} %"
     room = max(width - len(total) - 1, 1)
-    lines = [f" {bold}{fit(heading, room):<{room}} {total}{reset}"]
-    lines += [f" {bar(data['total'], width, colour)}"] * (2 if rows >= 9 else 1)
-    lines.append(f" {dim}Historia jugable {percent(data['story'])} %{reset}")
+    out = [(f" {bold}{fit(heading, room):<{room}} {total}{reset}", None)]
+    out += [(f" {bar(data['total'], width, colour)}", None)] * (2 if rows >= 9 else 1)
+    left = len(data["tasks"])
+    summary = f"Historia jugable {percent(data['story'])} % · {left} {'tarea' if left == 1 else 'tareas'}"
+    out.append((f" {dim}{fit(summary, width)}{reset}", None))
     if error:
-        lines.append(f" {fit(error, width)}")
+        out.append((f" {fit(error, width)}", None))
 
-    priorities = []
-    current = True
-    for index, priority in enumerate(data["priorities"], 1):
-        done, count = len(priority["items"]) - len(priority["pending"]), len(priority["items"])
-        if priority["pending"]:
-            mark, style = ("▸" if current else " "), (bold if current else "")
-            tally = f"{done}/{count}"
-            room = max(width - len(tally) - 5, 1)
-            priorities.append(f" {style}{mark} {index} {fit(priority['title'], room):<{room}}{reset} {dim}{tally}{reset}")
-            if current and rows >= 13:
-                priorities.append(f" {dim}    {fit('sigue: ' + priority['pending'][0]['title'], width - 4)}{reset}")
-            current = False
-        else:
-            priorities.append(f" {dim}✓ {index} {fit(priority['title'], width - 4)}{reset}")
-    if priorities and rows - len(lines) >= 3:
-        lines += ["", f" {bold}PRIORIDADES{reset}"] + priorities
+    # The tasks in the plan's order, numbered, each under its phase's name; what does not fit is summed up.
+    tasks, phase, number = [], None, 0
+    names = {p["id"]: p["title"] for p in data["priorities"]}
+    for task in data["tasks"]:
+        if task.get("priority") != phase:
+            phase = task.get("priority")
+            tasks.append((f" {dim}{fit((names.get(phase) or 'Sin fase').upper(), width)}{reset}", f"p:{phase or ''}"))
+        number += 1
+        tag = f"{number:>2}"
+        style = bold if number == 1 else ""
+        tasks.append((f" {style}{tag} {fit(task['title'], width - 4)}{reset}", f"t:{task['title']}"))
+    spare = rows - len(out) - 2 - (2 if clickable else 0)
+    if tasks and spare >= 2:
+        out += [("", None), (f" {bold}TAREAS{reset}", None)]
+        if len(tasks) > spare - 1:
+            hidden = sum(key.startswith("t:") for _, key in tasks[spare - 2:])
+            tasks = tasks[: spare - 2] + [(f" {dim}{fit(f'… y {hidden} más', width)}{reset}", None)]
+        out += tasks[: max(spare - 1, 0)]
 
-    left = rows - len(lines) - 2
+    spare = rows - len(out) - 2 - (2 if clickable else 0)
     # Without room for them all, the finished ones go first.
-    shown = data["blocks"] if left >= len(data["blocks"]) else [b for b in data["blocks"] if b["share"] < 1]
-    if shown and left >= 1:
-        lines += ["", f" {bold}BLOQUES{reset}"]
-        lines += [f" {row(b['title'], b['share'], f'{percent(b["share"]):>3} %', width, colour)}" for b in shown[:left]]
-    return lines[: max(rows, 1)]
+    shown = data["blocks"] if spare >= len(data["blocks"]) else [b for b in data["blocks"] if b["share"] < 1]
+    if shown and spare >= 2:
+        out += [("", None), (f" {bold}BLOQUES{reset}", None)]
+        out += [(f" {row(b['title'], b['share'], f'{percent(b["share"]):>3} %', width, colour)}", f"b:{b['title']}") for b in shown[: spare - 1]]
+    if clickable and rows - len(out) >= 2:
+        out += [("", None), (f" {dim}{fit('Clic (o 1-9) en una tarea: qué es', width)}{reset}", None)]
+    out = out[: max(rows, 1)]
+    return [text for text, _ in out], [key for _, key in out]
+
+
+def opened(data, key):
+    """What `t:<title>`, `p:<id>` or `b:<title>` holds: a heading and its tasks (`one` for a single task), or None if it is gone."""
+    kind, _, ref = key.partition(":")
+    every = [dict(i, block=b["title"]) for b in data["blocks"] for i in b["item"]]
+    names = {p["id"]: p["title"] for p in data["priorities"]}
+    if kind == "t":
+        task = next((i for i in every if i["title"] == ref), None)
+        return task and {"title": task["title"], "items": [task], "one": True, "names": names}
+    if kind == "p":
+        items = [i for i in data["tasks"] if (i.get("priority") or "") == ref]
+        return {"title": names.get(ref, "Sin fase"), "items": items, "one": False, "names": names} if items else None
+    block = next((b for b in data["blocks"] if b["title"] == ref), None) if kind == "b" else None
+    return block and {"title": block["title"], "items": [dict(i, block=block["title"]) for i in block["item"]], "one": False, "names": names}
+
+
+CHECK_WORDS = {"file": "existe el archivo", "grep": "el texto está", "absent": "el texto ya no está", "used": "conectado en el código"}
+
+
+def detail(data, key, rows, cols, colour, scroll, closing="cerrar"):
+    """A task, a phase's tasks or a block's for this size, scrolled by `scroll` lines; and how far it can scroll."""
+    bold, dim, reset = ("\033[1m", "\033[2m", "\033[0m") if colour else ("", "", "")
+    tick = f"\033[38;2;{DONE[0]};{DONE[1]};{DONE[2]}m✓{reset}" if colour else "✓"
+    width = max(cols - 2, 10)
+    view = opened(data, key) if data else None
+    if view is None:
+        gone = "Ya está hecho, o ya no está en docs/progress.toml" if data else "Leyendo…"
+        return [f" {fit(gone, width)}", "", f" {dim}q {closing}{reset}"][: max(rows, 1)], 0
+    wrap = lambda text, indent: textwrap.wrap(text, max(width - indent, 10), break_on_hyphens=False) or [""]
+    body = []
+    if view["one"]:
+        task = view["items"][0]
+        head = [f" {bold}{line}{reset}" for line in wrap(task["title"], 1)]
+        where = f"{task['block']} · {view['names'].get(task.get('priority'), 'sin fase')}"
+        head.append(f" {dim}{fit(where, width)}{reset}")
+        body.append("")
+        body += [f" {line}" for line in wrap(task.get("note") or "Sin nota todavía.", 1)]
+        body.append("")
+        if task["ok"]:
+            body.append(f" {tick} Hecho")
+        elif task["checks"]:
+            body += [f" {tick if holds else '·'} {CHECK_WORDS[kind]}" for kind, holds in task["checks"]]
+        else:
+            body.append(f" {dim}Se marca a mano (done = true).{reset}")
+    else:
+        items = view["items"]
+        value, done = share(items), sum(i["ok"] for i in items)
+        total = f"{percent(value)} %"
+        room = max(width - len(total) - 1, 1)
+        head = [f" {bold}{fit(view['title'], room):<{room}} {total}{reset}", f" {bar(value, width, colour)}",
+                f" {dim}{done} de {len(items)} hechas{reset}"]
+        for item in items:
+            lines = wrap(item["title"], 3)
+            body.append("")
+            if item["ok"]:
+                body += [f" {tick} {dim}{lines[0]}{reset}"] + [f"   {dim}{line}{reset}" for line in lines[1:]]
+                continue
+            body += [f" · {lines[0]}"] + [f"   {line}" for line in lines[1:]]
+            if item.get("note"):
+                body += [f"   {dim}{line}{reset}" for line in wrap(item["note"], 3)]
+    viewport = max(rows - len(head) - 1, 1)
+    most = max(len(body) - viewport, 0)
+    top = min(max(scroll, 0), most)
+    shown = body[top: top + viewport]
+    where = f"{top + 1}–{top + len(shown)} de {len(body)} · ↑↓ " if most else ""
+    lines = head + shown + [""] * (viewport - len(shown)) + [f" {dim}{fit(where + 'q ' + closing, width)}{reset}"]
+    return lines[: max(rows, 1)], most
 
 
 EVIDENCE = (("used", "conectado: definido en un módulo y usado en otro"), ("text", "un texto en un archivo"),
@@ -355,16 +444,60 @@ def head_path(root):
 def once(root, every, colour):
     data = measure(load(manifest_path(root)), root)
     size = shutil.get_terminal_size((72, 40))
-    for line in render(data, heading_of(root, head_path(root)), 200, min(size.columns, 100), colour):
+    for line in render(data, heading_of(root, head_path(root)), 200, min(size.columns, 100), colour)[0]:
         print(line)
     if every:
         for block in data["blocks"]:
             print(f"\n {block['title']} ({percent(block['share'])} %)")
             for item in block["item"]:
                 print(f"   {'✓' if item['ok'] else '·'} {item['title']}")
+                if item.get("note") and not item["ok"]:
+                    print(f"       {item['note']}")
 
 
-def watch(root, colour):
+def open_popup(root, key):
+    """`key` in a small herdr popup over the tab; False when there is none to open."""
+    if os.environ.get("HERDR_ENV") != "1":
+        return False
+    herdr = os.environ.get("HERDR_BIN_PATH") or shutil.which("herdr") or "herdr"
+    env = {"HERDR_PROGRESS_SCRIPT": Path(__file__).resolve(), "HERDR_PROGRESS_DIR": root, "HERDR_PROGRESS_DETAIL": key}
+    try:
+        out = subprocess.run([herdr, "plugin", "pane", "open", "--plugin", POPUP[0], "--entrypoint", POPUP[1],
+                              "--placement", "popup", "--focus", "--cwd", root,
+                              *[arg for name, value in env.items() for arg in ("--env", f"{name}={value}")]],
+                             capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return out.returncode == 0 and '"error"' not in out.stdout
+
+
+def keys(data):
+    """What came in: ('click', row), ('scroll', ±lines) and the key presses, in order."""
+    events, rest = [], MOUSE.sub(b"", data)
+    for match in MOUSE.finditer(data):
+        button, y, press = int(match[1]), int(match[3]), match[4] == b"M"
+        if press and button == 0:
+            events.append(("click", y - 1))
+        elif press and button in (64, 65):
+            events.append(("scroll", -3 if button == 64 else 3))
+    moves = {b"\033[A": -1, b"\033[B": 1, b"k": -1, b"j": 1, b"\033[5~": -10, b"\033[6~": 10, b" ": 10,
+             b"\033[H": -10**6, b"\033[F": 10**6, b"g": -10**6, b"G": 10**6}
+    while rest:
+        found = next((seq for seq in moves if rest.startswith(seq)), None)
+        if found:
+            events.append(("scroll", moves[found]))
+            rest = rest[len(found):]
+        elif rest.startswith(b"\033["):  # Another sequence: skip it whole.
+            end = re.search(rb"[@-~]", rest[2:])
+            rest = rest[2 + (end.end() if end else len(rest)):]
+        else:
+            events.append(("key", rest[:1]))
+            rest = rest[1:]
+    return events
+
+
+def watch(root, colour, key=None):
+    """The panel, or with `key` (the popup) one task, phase or block; draws itself until q."""
     def stop(*_):
         raise SystemExit
     signal.signal(signal.SIGTERM, stop)
@@ -372,9 +505,10 @@ def watch(root, colour):
     stdin = sys.stdin.fileno()
     saved = termios.tcgetattr(stdin)
     head = head_path(root)
-    data, error, shown, due = None, None, None, 0.0
+    popup = key is not None
+    data, error, shown, due, scroll, targets = None, None, None, 0.0, 0, []
     tty.setcbreak(stdin)
-    sys.stdout.write("\033[?1049h\033[?25l")
+    sys.stdout.write("\033[?1049h\033[?25l\033[?1000h\033[?1006h")
     try:
         while True:
             if time.monotonic() >= due:
@@ -384,19 +518,42 @@ def watch(root, colour):
                 except (OSError, ValueError, re.error) as problem:  # Half-saved: keep the last good numbers.
                     error = f"docs/progress.toml: {problem}"
             size = shutil.get_terminal_size((72, 24))
-            frame = render(data, heading_of(root, head), size.lines, size.columns, colour, error)
+            if key:
+                frame, most = detail(data, key, size.lines, size.columns, colour, scroll, "cerrar" if popup else "volver")
+                scroll = min(scroll, most)
+            else:
+                frame, targets = render(data, heading_of(root, head), size.lines, size.columns, colour, error, clickable=True)
             if frame != shown:
                 sys.stdout.write("\033[H" + "\033[K\n".join(frame) + "\033[K\033[J")
                 sys.stdout.flush()
                 shown = frame
-            if select.select([stdin], [], [], 1)[0]:
-                key = os.read(stdin, 16)
-                if not key or key in (b"q", b"Q", b"\x03"):
-                    return
-                if key in (b"r", b"R"):
+            # Short waits: a popup starts at 80x24 and is resized a moment later.
+            if not select.select([stdin], [], [], 0.25)[0]:
+                continue
+            data_in = os.read(stdin, 256)
+            if not data_in:
+                return
+            for kind, value in keys(data_in):
+                if kind == "key" and value in (b"q", b"Q", b"\x03", b"\033"):
+                    if popup or (not key and value != b"\033"):
+                        return
+                    key = None  # Back from what was shown in the panel.
+                elif kind == "key" and value in (b"r", b"R"):
                     due = 0.0
+                elif key and kind == "scroll":
+                    scroll = max(scroll + value, 0)
+                elif not key and data and (kind == "click" or (kind == "key" and value.isdigit() and value != b"0")):
+                    if kind == "click":
+                        chosen = targets[value] if 0 <= value < len(targets) else None
+                    else:
+                        number = int(value)
+                        chosen = f"t:{data['tasks'][number - 1]['title']}" if number <= len(data["tasks"]) else None
+                    if chosen and not open_popup(root, chosen):
+                        key, scroll = chosen, 0
+                elif key and not popup and kind == "click":
+                    key = None
     finally:
-        sys.stdout.write("\033[?25h\033[?1049l")
+        sys.stdout.write("\033[?1006l\033[?1000l\033[?25h\033[?1049l")
         sys.stdout.flush()
         termios.tcsetattr(stdin, termios.TCSADRAIN, saved)
 
@@ -406,6 +563,7 @@ def main():
     parser.add_argument("--dir", default=".", help="the checkout to measure")
     parser.add_argument("--once", action="store_true", help="print it once and leave")
     parser.add_argument("--all", action="store_true", help="with --once, every item")
+    parser.add_argument("--detail", metavar="KEY", help="one task (t:<title>), phase (p:<id>) or block (b:<title>)")
     parser.add_argument("--audit", action="store_true", help="the list's health and the game's integration; fails if something is broken")
     args = parser.parse_args()
     root = os.path.abspath(args.dir)
@@ -414,10 +572,14 @@ def main():
         healthy = print_audit(measure(load(manifest_path(root)), root), colour)
         wired = integration(root)
         raise SystemExit(0 if healthy and wired else 1)
-    if args.once or not sys.stdin.isatty():
+    if args.detail and not sys.stdin.isatty():
+        data = measure(load(manifest_path(root)), root)
+        lines = detail(data, args.detail, 10_000, min(shutil.get_terminal_size((72, 40)).columns, 100), colour, 0)[0]
+        print("\n".join(lines[:-1]).rstrip())  # Without the padding and the closing hint.
+    elif args.once or not sys.stdin.isatty():
         once(root, args.all, colour)
     else:
-        watch(root, colour)
+        watch(root, colour, args.detail)
 
 
 if __name__ == "__main__":

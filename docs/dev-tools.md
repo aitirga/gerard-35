@@ -309,10 +309,20 @@ of work done. It prints two things and fails if either finds something broken:
 
 A gap the audit lists is either an item of the list already or should become one.
 
-`scripts/herdr-progress` draws the total, the story a player can walk through, the priorities and
-the blocks. herdr opens it at the top of every tab's column in this project, because having the script is what
+`scripts/herdr-progress` draws the total, the story a player can walk through, the **tasks left**
+and the blocks. herdr opens it at the top of every tab's column in this project, because having the script is what
 turns it on (the `herdr-project` skill), and it looks again every 5 seconds. It measures its own checkout, so a feature's workspace shows that branch.
-`just progress` prints it once and `just progress --all` lists every item.
+`just progress` prints it once and `just progress --all` lists every item, with the note of each
+one pending.
+
+The tasks are every item not done, numbered in the plan's order: the list's `[[priority]]` entries
+are its phases (today *Ánimas completas*, *Crecimiento por el castillo*, *Misiones, castillo y
+final*, *Pruebas y optimización*), each item's `priority` says which one it belongs to, and the
+panel shows each phase's name over its tasks. **A click on a task** (or its number, 1–9) opens a
+small herdr popup with what it is: its block and phase, its `note` (a line or two on what is left to
+do) and which of its checks hold or that it is ticked by hand; a click on a phase or a block lists
+its tasks with their notes. `q` closes it. Outside herdr it shows inside the panel, and
+`scripts/herdr-progress --detail 't:<title>'` (or `p:<phase>`, `b:<block>`) prints it.
 
 ## Partida
 
