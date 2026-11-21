@@ -155,9 +155,10 @@ export interface JumpMenuDev {
   /**
    * Starts the way home at night (src/night.ts) on the Meridiana from Fabra i Puig, with her castle
    * at that stage (0–4): the day follows from it and the ánima missions done. `year`: whose pupils
-   * are out (1–3: the castle's floor the party is on, i.e. its bosses beaten up to that year).
+   * are out (1–3: the castle's floor the party is on, i.e. its bosses beaten up to that year);
+   * `crowd`: how many times as full of them the avenue is as the night's tier says.
    */
-  night: (castle: number, missions?: AnimaId[], year?: number) => void;
+  night: (castle: number, missions?: AnimaId[], year?: number, crowd?: number) => void;
   /** Her castle's stage now, if it is night in chapter 2. */
   nightNow: () => number | undefined;
   /** Starts over at a part of an ánima mission (`missionParts`), on a day and with those other missions done. */
@@ -207,6 +208,8 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
   let castle: number | undefined;
   /** Whose pupils walk the night (1–3: the castle's year the party is on, src/night-pupils.ts). */
   let year = 1;
+  /** How many times as full of pupils the avenue is as the night's tier says (to try densities). */
+  let crowd = 1;
   /** Ánima missions a chapter 2 jump starts with done; until chosen, the ones the story has. */
   let missions: AnimaId[] | undefined;
   /** The mission whose parts Misiones shows; until chosen, the first one. */
@@ -291,9 +294,10 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     return `<div class="jump-arc" role="group" aria-label="De noche">
       <h4><span>De noche</span><small>La vuelta a casa desde Fabra i Puig</small></h4>
       <div class="jump-row jump-castle" role="group" aria-label="Estado del castillo"><span>El castillo</span>${CASTLE_STAGES.map((label, i) => `<button type="button" data-castle="${i}" aria-pressed="${i === stage}">${i} · ${escape(label)}</button>`).join('')}</div>
+      <div class="jump-row" role="group" aria-label="Cuántos alumnos hay en la avenida"><span>Cuántos</span>${([[.5, 'La mitad'], [1, 'Lo normal'], [2, 'El doble'], [3, 'El triple']] as const).map(([times, label]) => `<button type="button" data-crowd="${times}" aria-pressed="${times === crowd}">${label}</button>`).join('')}</div>
       <div class="jump-row" role="group" aria-label="Curso de los alumnos que salen"><span>Alumnos</span>${[1, 2, 3].map(y => `<button type="button" data-year="${y}" aria-pressed="${y === year}">${y}.º curso</button>`).join('')}</div>
       <button type="button" class="jump-item jump-beat" data-night="${stage}" ${on === stage ? 'aria-current="true"' : ''}><span class="jump-step">☾</span><strong>La vuelta a casa</strong><code>día ${dayForStage(stage, done.length + (year - 1))} · ${TIER_NAMES[tier.id] ?? tier.id}</code></button>
-      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: ${tier.hunters} grupos al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Salen los alumnos de ${year}.º, cada uno suelto y cazando a su manera (${escape(out.join(', '))}); si uno os toca, el combate es con su grupo, ×${might.toFixed(2)} de PV y de golpe por las ánimas reunidas.</p>
+      <p class="jump-note">Noche ${TIER_NAMES[tier.id] ?? tier.id}: la avenida llena, un grupo cada ${+((tier.every ?? 0) / crowd).toFixed(1)} casillas a lo largo (aceras y mediana, unos ${Math.round(350 / ((tier.every ?? 350) / crowd) * 2.2)} alumnos), ${tier.hunters} más por las rejillas al salir${tier.perTrain ? `, ${tier.perTrain} más con cada tren (cada ${tier.trainEvery} s)` : ''}${tier.lampsOut ? `, una farola de cada ${tier.lampsOut} apagada` : ''}. Salen los alumnos de ${year}.º, cada uno suelto y cazando a su manera (${escape(out.join(', '))}); si uno os toca, el combate es con su grupo, ×${might.toFixed(2)} de PV y de golpe por las ánimas reunidas.</p>
     </div>`;
   }
   /** The chapter 2 jump's day and the other missions it starts with done, shared by Historia and Misiones. */
@@ -496,9 +500,10 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       return;
     }
     if (data.part) { close(); dev!.mission(mission, data.part, day, missions); return; }
-    if (data.night) { close(); dev!.night(Number(data.night), missions, year); return; }
+    if (data.night) { close(); dev!.night(Number(data.night), missions, year, crowd); return; }
     if (data.castle) { castle = Number(data.castle); render(`[data-castle="${castle}"]`); return; }
     if (data.year) { year = Number(data.year); render(`[data-year="${year}"]`); return; }
+    if (data.crowd) { crowd = Number(data.crowd); render(`[data-crowd="${crowd}"]`); return; }
     if (data.openMission) { mission = data.openMission as AnimaId; render(`[data-open-mission="${mission}"]`); return; }
     if (data.setAnima) {
       const id = data.setAnima as ClassId, level = Number(data.level), next = { ...dev!.animas().now };

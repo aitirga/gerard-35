@@ -1,0 +1,118 @@
+{
+  "title": "La avenida llena · de noche",
+  "description": "How full the Meridiana is at night (docs/chapter-2.md § Night and the way home, `postGroups` in src/night-pupils.ts): when night falls a group of pupils is out already every so many cells of the avenue, on both pavements and the median, each pupil on its own wide round; more climb out of the grates by the party and with each train. Gerard is stood along the way home, on the nearest cell with nobody within six, and each shot taken a second later, to see who is about at each stretch.",
+  "steps": [
+    {
+      "open": "/?story=metro&night=2&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.stand = (x, z) => { const g = window.gerard.game, s = g.nightStreet, open = (cx, cz) => { const row = s.grid[cz]; return !!row && cx >= 0 && cx < row.length && row[cx] !== '#'; }; let best = null; for (let r = 0; r <= 8 && !best; r++) for (let dz = -r; dz <= r && !best; dz++) for (let dx = -r; dx <= r && !best; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; const cx = x + dx, cz = z + dz; if (open(cx, cz) && s.pupils.every(p => Math.hypot(p.position.x - cx, p.position.z - cz) >= 6)) best = { x: cx, z: cz }; } g.standAt(best || { x, z }); }"
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 60",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.stand(205, 72)"
+    },
+    {
+      "shot": "plaza-estacion",
+      "delay": 1100,
+      "caption": "A tense night (her castle at stage 2), a few seconds after coming out of the metro: the avenue is theirs already. Round the station's plaza, on the even side"
+    },
+    {
+      "eval": "window.stand(172, 72)"
+    },
+    {
+      "shot": "acera-par",
+      "delay": 1100,
+      "caption": "Further along the even pavement, towards the crossing"
+    },
+    {
+      "eval": "window.stand(150, 58)"
+    },
+    {
+      "shot": "mediana",
+      "delay": 1100,
+      "caption": "On the median, between the two carriageways"
+    },
+    {
+      "eval": "window.stand(120, 45)"
+    },
+    {
+      "shot": "acera-casa",
+      "delay": 1100,
+      "caption": "Home's side of the avenue, half way"
+    },
+    {
+      "eval": "window.stand(84, 45)"
+    },
+    {
+      "shot": "acera-casa-2",
+      "delay": 1100,
+      "caption": "Home's side, nearer the portal"
+    },
+    {
+      "eval": "window.stand(40, 44)"
+    },
+    {
+      "shot": "llegando",
+      "delay": 1100,
+      "caption": "The last stretch before home's portal"
+    },
+    {
+      "open": "/?story=metro&night=4&solo=1&year=2"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.stand = (x, z) => { const g = window.gerard.game, s = g.nightStreet, open = (cx, cz) => { const row = s.grid[cz]; return !!row && cx >= 0 && cx < row.length && row[cx] !== '#'; }; let best = null; for (let r = 0; r <= 8 && !best; r++) for (let dz = -r; dz <= r && !best; dz++) for (let dx = -r; dx <= r && !best; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; const cx = x + dx, cz = z + dz; if (open(cx, cz) && s.pupils.every(p => Math.hypot(p.position.x - cx, p.position.z - cz) >= 6)) best = { x: cx, z: cz }; } g.standAt(best || { x, z }); }"
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 120",
+      "timeout": 30000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.stand(172, 72)"
+    },
+    {
+      "shot": "ultima-acera-par",
+      "delay": 1100,
+      "caption": "The last night (stage 4), second year's pupils: a group every four or five cells, one lamp in three out"
+    },
+    {
+      "eval": "window.stand(120, 45)"
+    },
+    {
+      "shot": "ultima-acera-casa",
+      "delay": 1100,
+      "caption": "The last night, home's side"
+    },
+    {
+      "eval": "window.stand(60, 45)"
+    },
+    {
+      "shot": "ultima-llegando",
+      "delay": 1100,
+      "caption": "The last night, the last stretch"
+    }
+  ]
+}

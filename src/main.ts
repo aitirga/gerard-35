@@ -20,7 +20,7 @@ import { createTitle } from './title';
 import { LINES_CASTLE } from './castle-story';
 import { onThroneStage } from './throne-arena';
 import { CASTLE_ENCOUNTERS, castlePhase, castlePhaseAt, castlePhaseOf, nightGroup } from './castle';
-import { nightMight } from './night';
+import { NIGHT_DEV, nightMight } from './night';
 import { battleDriver, partnerDriven, waitingForPlayer2, type Control, type ControlMode } from './party';
 import { watchGlyphs } from './input-glyphs';
 import type { MemberId } from './story';
@@ -233,14 +233,16 @@ const story = new Story(devStory ?? []);
 // ?hour=<h> at that hour: 21 is night, and on the Meridiana the way home starts at the station.
 // ?night=<0–4>: the way home at night with her castle at that stage (`stage` in days.ts), the day
 // following from it and the ánimas gathered (just dev-night, the picker's «La vuelta a casa»);
-// &year=<2|3>: with the castle's bosses beaten up to that year, so its pupils are the ones out.
+// &year=<2|3>: with the castle's bosses beaten up to that year, so its pupils are the ones out;
+// &crowd=<0.25–4>: that many times as full of them as the night's tier says (to try densities).
 let nightJump: Spot | undefined;
 if (import.meta.env.DEV) {
   const query = new URLSearchParams(location.search), day = Number(query.get('day')), hour = Number(query.get('hour'));
   const castle = query.get('night') === null ? NaN : Number(query.get('night'));
   if (Number.isInteger(day) && day > 1) story.days.clock.day = day;
   if (Number.isInteger(hour) && hour >= DAY_START && hour <= DAY_END) story.days.clock.hour = hour;
-  const year = Number(query.get('year'));
+  const year = Number(query.get('year')), crowd = Number(query.get('crowd'));
+  if (crowd >= .25 && crowd <= 4) NIGHT_DEV.crowd = crowd;
   if (story.adult && Number.isInteger(castle) && year >= 2) for (const flag of ['aurelia', 'luz-aurelia', ...year >= 3 ? ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'] as const : []] as const) story.flags.add(flag);
   if (story.adult && Number.isInteger(castle) && castle >= 0 && castle <= 4) story.days.clock = { day: dayForStage(castle, story.heldBack), hour: NIGHT };
   const station = ENVIRONMENTS['meridiana-calle'].interactions.find(i => i.id === 'station-fabra-i-puig')!.cell;
@@ -679,7 +681,7 @@ try {
       flags: () => story.saved,
       day: () => story.days.clock.day,
       story: (at, day, missions, hour, home) => { location.search = `?${new URLSearchParams({ story: at, ...(home ? { at: 'home' } : {}), ...(missions?.length ? { with: missions.join(',') } : {}), ...(day && day > 1 ? { day: String(day) } : {}), ...(hour && hour !== DAY_START ? { hour: String(hour) } : {}) })}`; },
-      night: (castle, missions, year) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}), ...(year && year > 1 ? { year: String(year) } : {}) })}`; },
+      night: (castle, missions, year, crowd) => { location.search = `?${new URLSearchParams({ story: 'metro', night: String(castle), ...(missions?.length ? { with: missions.join(',') } : {}), ...(year && year > 1 ? { year: String(year) } : {}), ...(crowd && crowd !== 1 ? { crowd: String(crowd) } : {}) })}`; },
       nightNow: () => story.night ? stage(story.spread) : undefined,
       mission: (anima, part, day, missions) => {
         const others = missions?.filter(id => id !== anima) ?? [];

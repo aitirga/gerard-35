@@ -226,16 +226,25 @@ balances the night later, and El Empollón and La Chivata's group is still won f
 
 How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 
-| Tier | Stage | Groups at first | Per train | Walk / run (cells/s) | Sight lit / dark / chasing | Trains every | Lamps out |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| calma | 0–1 | 2 | 0 | 1.4 / 4.4 | 8 / 3 / 5 | 40 s | none |
-| tensa | 2 | 3 | 1 | 1.6 / 5.2 | 9 / 3 / 6 | 28 s | none |
-| dura | 3 | 4 | 1 | 1.8 / 6.2 | 10 / 4 / 7 | 22 s | none |
-| última | 4 | 5 | 2 | 2.0 / 7.2 | 12 / 4 / 8 | 18 s | one in three |
+| Tier | Stage | A group posted every | Pupils posted | Groups by the party | Per train | Walk / run (cells/s) | Sight lit / dark / chasing | Trains every | Lamps out |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| calma | 0–1 | 12 cells | some 65 | 2 | 0 | 1.4 / 4.4 | 8 / 3 / 5 | 40 s | none |
+| tensa | 2 | 8 cells | some 100 | 3 | 1 | 1.6 / 5.2 | 9 / 3 / 6 | 28 s | none |
+| dura | 3 | 6 cells | some 130 | 4 | 1 | 1.8 / 6.2 | 10 / 4 / 7 | 22 s | none |
+| última | 4 | 4.5 cells | some 175 | 5 | 2 | 2.0 / 7.2 | 12 / 4 / 8 | 18 s | one in three |
+
+**The avenue is theirs.** When night falls a group is out already every so many cells of the
+avenue's length (`every`, `postGroups` in src/night-pupils.ts over `postsAlong` in src/night.ts): on
+both pavements and the median, never on the carriageway nor in the far side streets (`avenueRows`),
+none within a few cells of where the party comes out, each pupil on a wide round of its own. On top
+of those, groups climb out of the grates by the party as it comes out and with each train, up to
+twice the tier's count. Only the pupils near the party have a body, and only those on screen are
+drawn and moved (`syncStalkers`, `placeStalkers` in src/game.ts): the last night costs some 6.4 ms a
+frame of the 8.3 there are. How full it is has not been played yet and is Aitor's to set: the
+picker's **Cuántos** (`&crowd=`) halves, doubles or triples it without touching the tiers.
 
 Gerard walks at 5.2 cells/s and runs at 7.8: at first they are slower than a walk; on the last night
-only running keeps ahead, and running is heard. No more than twice the first count of groups are
-ever out. The fight sim holds the street fight to that (`noche-sin-amigos`, `noche-con-nuria`,
+only running keeps ahead, and running is heard. The fight sim holds the street fight to that (`noche-sin-amigos`, `noche-con-nuria`,
 `noche-con-tres` in `TARGETS`); the game simulator walks home by the same rules
 (`src/game-sim.ts`). Development: `just dev-night <castle stage 0–4> [<ánimas>] [<year 1–3>]`, the
 picker's *De noche · La vuelta a casa* (its level is the castle's stage, *Alumnos* the year whose

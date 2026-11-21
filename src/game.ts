@@ -59,8 +59,8 @@ import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
 import { createChaser, rest, updateChaser, type Chaser } from './chasers';
-import { CLIMB, FIRST_CLEAR, HIDING_KINDS, RISE_CLEAR, huntersGrid, litLamps, nightTier, risingAt, sizeUp } from './night';
-import { STREET, carriageway, coverOf, createStreet, removeGroup, restGroup, riseGroup, shows, stepStreet, type HidingKind, type Pupil, type Street, type StreetEvent } from './night-pupils';
+import { CLIMB, FIRST_CLEAR, HIDING_KINDS, NIGHT_DEV, RISE_CLEAR, avenueRows, huntersGrid, litLamps, nightTier, risingAt, sizeUp } from './night';
+import { STREET, carriageway, coverOf, createStreet, postGroups, removeGroup, restGroup, riseGroup, shows, stepStreet, type HidingKind, type Pupil, type Street, type StreetEvent } from './night-pupils';
 import { BODIES, createCrowd } from './crowd';
 import { dueMark, streetProgress, streetTone } from './street-unease';
 import { buildPortal, type Portal, type PortalLook } from './fear-portal';
@@ -73,7 +73,9 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
-import { CASTLE_FIGHTS, CASTLE_SIZES, castlePhaseAt, isCastle, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECTIVAS, castlePhaseAt, isCastle, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { isCastleZone } from './castle-mood';
+import { createFloorStreet, roomGroups, roomTag, syncFloor } from './castle-pupils';
 import { castleFigure, castleModel, castleModelSettled, figureClips, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
@@ -644,6 +646,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let nightHunt: {
     scene: string; street: Street; grates: Cell[]; seen: boolean; hinted: boolean; still: number;
     from: Cell; heading: Cell; pulse: number;
+    /**
+     * A floor of the castle instead of the street (src/castle-pupils.ts): the rooms whose pupils have
+     * been put on it, and the light the party carries, kept on Gerard (El Ausente shows inside it).
+     */
+    indoors?: { placed: Set<number>; light: Cell };
   } | undefined;
   /**
    * A pupil out on the street: its body (a holder that is placed, turned and squashed, with its
@@ -687,9 +694,10 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     nightHunt = undefined;
   }
   function huntAtNight(dt: number) {
+    if (isCastlePlace(environment.id)) { huntIndoors(dt); return; }
     if (environment.id !== 'meridiana-calle' || !story.night) { if (nightHunt) endNightHunt(); return; }
     if (!nightHunt) {
-      const tier = nightTier(stage(story.spread));
+      const base = nightTier(stage(story.spread)), tier = { ...base, ...base.every ? { every: base.every / NIGHT_DEV.crowd } : {} };
       const cellOf = (p: { x: number; z: number }) => ({ x: p.x, z: p.z });
       const portal = environment.interactions.find(i => i.id === 'meridiana-portal')?.cell ?? environment.spawn;
       const grates = environment.props.filter(p => p.kind === 'grate').map(cellOf);
@@ -702,9 +710,36 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
           road: carriageway(environment.geo?.roads ?? []),
         }),
       };
+      // The avenue is theirs already, all along it; and by the party some more climb out of the grates as it comes out.
+      postGroups(nightHunt.street, movement.cell, avenueRows(grates, portal));
       riseAt(risingAt(grates, movement.cell, tier.hunters, FIRST_CLEAR));
     }
-    const night = nightHunt, at = movement.position;
+    stepHunt(dt, scenery.cars());
+  }
+  /**
+   * A floor of the castle (src/castle-pupils.ts, docs/castle.md § The generated floor): each room's
+   * pupils are bodies of their own, and hunt the party as they do out on the Meridiana at night. The
+   * story says which rooms are still about (`story.fears`); one won today is gone from the floor.
+   */
+  function huntIndoors(dt: number) {
+    const floor = environment.palace?.floor;
+    if (!floor) { if (nightHunt) endNightHunt(); return; }
+    if (!nightHunt || nightHunt.scene !== environment.id) {
+      if (nightHunt) endNightHunt();
+      const light = { ...movement.position };
+      nightHunt = {
+        scene: environment.id, grates: [], seen: true, hinted: true, still: 0, from: { ...movement.position }, heading: { x: 0, z: 0 }, pulse: 0,
+        street: createFloorStreet(floor, light), indoors: { placed: new Set(), light },
+      };
+    }
+    const indoors = nightHunt.indoors!, about = new Set(story.fears(environment.id).map(f => f.id));
+    indoors.light.x = movement.position.x; indoors.light.z = movement.position.z;
+    syncFloor(nightHunt.street, roomGroups(floor).filter(g => about.has(roomTag(floor.phase, g.room))), indoors.placed);
+    stepHunt(dt);
+  }
+  /** One frame of the hunt, on the street or on a floor: where Gerard is and how he moves, everyone's step, and what it shows. */
+  function stepHunt(dt: number, cars: ReturnType<typeof scenery.cars> = []) {
+    const night = nightHunt!, at = movement.position;
     night.still = movement.walking ? 0 : night.still + dt;
     const dx = at.x - night.from.x, dz = at.z - night.from.z, gone = Math.hypot(dx, dz);
     if (gone > 1e-4) night.heading = { x: dx / gone, z: dz / gone };
@@ -712,7 +747,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     syncStalkers();
     if (!battle && !cutscene && !paused) {
       const pace = !movement.walking ? 'still' : running() ? 'run' : 'walk';
-      const events = stepStreet(night.street, dt, { position: at, pace, heading: pace === 'still' ? { x: 0, z: 0 } : night.heading, still: night.still }, scenery.cars());
+      const events = stepStreet(night.street, dt, { position: at, pace, heading: pace === 'still' ? { x: 0, z: 0 } : night.heading, still: night.still }, cars);
       for (const event of events) showNight(event);
       nightLines();
       // While La Chivata has him it is drawn in the air: a line of glints from her finger to Gerard, again and again, and a flare over him.
@@ -738,16 +773,33 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       effects.emit('poof', new pc.Vec3(at.x, scenery.groundHeight(at.x, at.z) + .5, at.z), 14, .4);
     }
   }
-  /** A body for every pupil out, once its figure is at hand; those gone (their group beaten) come apart where they stood. */
+  /** How near Gerard a pupil gets its body and how far it keeps it, in cells (the screen shows some thirty). */
+  const BODY_NEAR = 42, BODY_FAR = 52;
+  /** Whether a point of the world falls on the screen, a little over: what is drawn and moved on its clips. (The camera looks down from outside the world: nothing is behind it, and its depth says nothing here.) */
+  const shown = new pc.Vec3();
+  function onScreen(at: pc.Vec3) {
+    camera.camera!.worldToScreen(at, shown);
+    const over = canvas.clientWidth * .12;
+    return shown.x >= -over && shown.x <= canvas.clientWidth + over && shown.y >= -over * 1.6 && shown.y <= canvas.clientHeight + over;
+  }
+  /** A body for every pupil out near enough, once its figure is at hand; those gone (their group beaten) come apart where they stood. */
   function syncStalkers() {
-    const street = nightHunt!.street;
-    stalkers = stalkers.filter(st => { const keep = street.pupils.includes(st.pupil); if (!keep) { partFrom(st.model); st.model.destroy(); } return keep; });
-    for (const pupil of street.pupils) if (!stalkers.some(st => st.pupil === pupil)) {
+    const street = nightHunt!.street, here = movement.position;
+    // The avenue is full of them at night: only those near enough to be seen have a body (it comes as the party nears, and goes behind it).
+    const far = (pupil: Pupil) => Math.hypot(pupil.position.x - here.x, pupil.position.z - here.z);
+    stalkers = stalkers.filter(st => {
+      const gone = !street.pupils.includes(st.pupil), keep = !gone && far(st.pupil) <= BODY_FAR;
+      if (gone) partFrom(st.model);
+      if (!keep) st.model.destroy();
+      return keep;
+    });
+    for (const pupil of street.pupils) if (far(pupil) <= BODY_NEAR && !stalkers.some(st => st.pupil === pupil)) {
       const figure = castleFigure(pupil.kind, street.phase);
       if (!castleModelSettled(figure)) { void loadCastleModels(app, [figure]); continue; }
       const clips: FigureClips[] = [], model = new pc.Entity(`Alumno ${pupil.id}`);
       model.addChild(castleBody(pupil.kind, figure, clips));
-      glowAtNight(model);
+      // Out in the street they glow from within; inside, only where the floor is dark (the second year on).
+      if (!nightHunt!.indoors) glowAtNight(model); else if (street.phase > 1) glowAtNight(model, .25);
       castRoot.addChild(model);
       stalkers.push({ pupil, model, flat: 0, puff: 0, ...clips[0] ? { clips: clips[0] } : {} });
     }
@@ -759,7 +811,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     for (const st of stalkers) {
       const p = st.pupil, at = scenery.toWorld(p.position.x, p.position.z), ground = scenery.groundHeight(at.x, at.z);
       chased ||= p.mode === 'chase' || p.mode === 'charge' || p.mode === 'windup';
-      st.model.enabled = !battle && shows(p, street);
+      // Past what the screen shows it is not drawn nor moved on its clips: with the avenue full, that is most of them.
+      st.model.enabled = !battle && shows(p, street) && onScreen(at);
       // Climbing out of the grate it comes up through the floor; under a car it is a puddle that peels itself up.
       const sunk = p.mode === 'rising' ? Math.min(1, Math.max(0, p.timer / CLIMB)) * 1.7 : 0;
       st.flat += ((p.mode === 'flat' ? 1 : 0) - st.flat) * Math.min(1, dt * (p.mode === 'flat' ? 18 : 5));
@@ -786,7 +839,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         else st.puff = 0;
       }
     }
-    document.getElementById('hud')?.toggleAttribute('data-hunted', chased && !battle);
+    // The dark closes in while they are after the party: out at night, and on the castle's dark floors.
+    document.getElementById('hud')?.toggleAttribute('data-hunted', chased && !battle && (!nightHunt!.indoors || street.phase > 1));
   }
   /** Where a pupil is heard from, for its sounds: quieter and off to its side the further it is. */
   function nightSound(id: SoundId, pupil: Pupil, volume = 1) {
@@ -821,8 +875,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       case 'lost': break;
       case 'caught':
         fightingGroup = pupil.group; clearInput(); movement.walking = false;
-        // Where it caught them, the fight is with its room's group (src/castle.ts `nightGroup`).
-        callbacks.onStory({ type: 'near', id: `night-${pupil.group}` });
+        // Where it caught them, the fight is with its room's group (src/castle.ts `nightGroup`); inside, with its own room's.
+        callbacks.onStory({ type: 'near', id: nightHunt?.indoors ? roomTag(nightHunt.street.phase, pupil.group) : `night-${pupil.group}` });
         break;
     }
   }
@@ -834,7 +888,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const out = street.pupils.filter(p => p.mode !== 'rising' && shows(p, street));
     if (!nightHunt.seen && out.some(p => p.mode === 'chase' || near(p) < 14)) { nightHunt.seen = true; tetherLine = { text: sizeUp(story.animas.length, street.phase), until: clock + 4 }; return; }
     if (!nightHunt.seen) return;
-    if (out.some(p => p.kind === 'ausente' && p.mode !== 'chase' && near(p) < 13)) nightSay('ausente', 'Ahí, bajo la farola. A oscuras no se le ve.', 4);
+    if (out.some(p => p.kind === 'ausente' && p.mode !== 'chase' && near(p) < 13)) nightSay('ausente', nightHunt.indoors ? 'Ese no estaba. Solo se le ve con la luz encima.' : 'Ahí, bajo la farola. A oscuras no se le ve.', 4);
     if (!nightHunt.hinted && out.some(p => p.mode === 'chase') && (!tetherLine || tetherLine.until < clock) && !coverOf(street, { position: here, pace: 'still', heading: { x: 0, z: 0 }, still: STREET.still })
       && street.covers.some(c => Math.hypot(c.x - here.x, c.z - here.z) < 7)) {
       nightHunt.hinted = true; tetherLine = { text: '¡Ahí detrás! Y ni te muevas.', until: clock + 3 };
@@ -1382,7 +1436,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /** Who walks as a castle fight's group, in the order they stand. */
   const castleKinds = (encounter: CastleEncounter): readonly CastleKind[] => encounter === 'aurelia' ? ['aurelia'] : encounter === 'direccion' ? ['directiva', 'directiva', 'directiva'] : encounter === 'reina' || encounter === 'reina-vuelta' ? ['reina'] : CASTLE_FIGHTS[encounter as RoomEncounter];
   /** The figures a castle fight's group is drawn with (src/castle-models.ts). */
-  const castleFigures = (encounter: CastleEncounter) => castleKinds(encounter).map(kind => castleFigure(kind, yearOf(encounter)));
+  const castleFigures = (encounter: CastleEncounter) => castleKinds(encounter).map((kind, i) => castleFigure(kind, yearOf(encounter), DIRECTIVAS[i]?.id));
   /** One of the castle's as it walks about (a room's pupils, a boss, a pupil out on the street at night): its own figure once it has one, gum until then. */
   function castleBody(kind: CastleKind, figure: string, clips?: FigureClips[]) {
     const own = castleModel(figure);
@@ -1560,7 +1614,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   function huntFears(dt: number) {
     huntAtNight(dt);
-    const wanted = story.fears(environment.id);
+    // A castle floor's rooms are not hunters: each of their pupils walks on its own (`huntIndoors`).
+    const wanted = isCastlePlace(environment.id) ? [] : story.fears(environment.id);
     hunters = hunters.filter(h => { const keep = wanted.some(f => f.id === h.id); if (!keep) { partFrom(h.model); h.model.destroy(); } return keep; });
     for (const spec of wanted) if (!hunters.some(h => h.id === spec.id)) {
       // A castle room's pupils come out once their figures are at hand (or known to have none yet).
@@ -2629,7 +2684,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       return loadGlb(app, SOBREMESA_URL).then(model => battleScene.setSobremesa(model), error => console.warn('La Sobremesa:', error)).then(() => setBattle(next, effect, onImpact));
     }
     // The castle's pupils with a figure of their own (src/castle-models.ts): the fight waits for the files the first time.
-    const figures = next && !battle ? next.foes.flatMap(f => isCastle(f.kind) ? [castleFigure(f.kind, f.castle?.year)] : []) : [];
+    const figures = next && !battle ? next.foes.flatMap(f => isCastle(f.kind) ? [castleFigure(f.kind, f.castle?.year, f.id)] : []) : [];
     if (figures.some(id => !castleModelSettled(id))) return loadCastleModels(app, figures).then(() => setBattle(next, effect, onImpact));
     if (next && !battle) {
       // What was measured on the way down has calibrated the model before its fight (src/modelo.ts).
@@ -2896,7 +2951,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     endNightHunt(); fightingGroup = undefined;
     scenery.destroy();
     // A floor of the castle is another every day: the story says what today's is (src/castle-floor.ts).
-    if (isCastlePlace(id)) ENVIRONMENTS[id] = story.place(id);
+    if (isCastlePlace(id) || isCastleZone(id)) ENVIRONMENTS[id] = story.place(id);
     environment = ENVIRONMENTS[id];
     scenery = buildScenery(app, environment);
     dressScene();
@@ -3177,6 +3232,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       clearInput(); movement.walking = false; leadCat(0);
       // Sent somewhere else while someone talks (the end of a fight, waking up at home): the cats don't stay behind in mid-air.
       if (catWalk && catWalk.environment !== environment.id) dropCats();
+      // The hunt stands still while someone talks, but its pupils are still there: those the camera comes to show are drawn.
+      if (nightHunt && nightHunt.scene === environment.id) { syncStalkers(); placeStalkers(0); }
     }
     const walking = movement.walking && !paused && !battle && !document.querySelector('#hud[data-dialogue]');
     const animate = !reducedMotion.matches;

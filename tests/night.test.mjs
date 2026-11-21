@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CLIMB, NIGHT_TIERS, PORTAL_SAFE, RISE_CLEAR, hiddenAt, huntersGrid, isLit, litLamps, nightTier, risingAt, roundAbout, sightOf, sizeUp } from '../src/night.ts';
-import { STREET, carriageway, coverOf, createStreet, removeGroup, restGroup, riseGroup, shows, stepStreet } from '../src/night-pupils.ts';
+import { CLIMB, FIRST_CLEAR, NIGHT_TIERS, PORTAL_SAFE, RISE_CLEAR, avenueRows, hiddenAt, huntersGrid, isLit, litLamps, nightTier, risingAt, roundAbout, sightOf, sizeUp } from '../src/night.ts';
+import { STREET, carriageway, coverOf, createStreet, groupsOut, postGroups, removeGroup, restGroup, riseGroup, shows, stepStreet } from '../src/night-pupils.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 
@@ -332,4 +332,34 @@ test('walking into one is its fight; one that catches the party names its group'
   const events = stepStreet(night, .05, prey({ x: one.position.x + .3, z: one.position.z }, 'walk', { x: -1, z: 0 }));
   assert.deepEqual(events.map(e => e.type), ['caught']);
   assert.equal(events[0].pupil.group, 2);
+});
+
+test('the avenue is theirs at night: groups posted all along it, on both sides, more the further her power spreads, none where the party comes out', () => {
+  const road = carriageway(street.geo?.roads ?? []), grid = huntersGrid(street.grid, portal);
+  const grates = street.props.filter(p => p.kind === 'grate'), rows = avenueRows(grates, portal);
+  const station = street.interactions.find(i => i.id === 'station-fabra-i-puig').cell;
+  let before = 0;
+  for (const tier of NIGHT_TIERS) {
+    const night = createStreet({ tier, phase: 1, grid, lamps: [], covers: [], portal, road });
+    const posted = postGroups(night, station, rows);
+    const groups = groupsOut(night);
+    assert.ok(groups >= Math.floor(grid[0].length / tier.every) - 2, `${tier.id}: a group every ${tier.every} cells or so (${groups})`);
+    assert.ok(groups > before, `${tier.id}: more than the tier before`);
+    before = groups;
+    assert.ok(posted.length >= groups * 2, 'a body each');
+    for (const p of posted) {
+      assert.ok(canWalk({ x: Math.round(p.position.x), z: Math.round(p.position.z) }, grid) && !road(p.position), `${p.id} stands off the carriageway`);
+      assert.ok(Math.hypot(p.position.x - station.x, p.position.z - station.z) >= FIRST_CLEAR - 7, `${p.id} is not in the party's face`);
+      assert.ok(p.position.z >= rows[0] - 7 && p.position.z <= rows[1] + 7, `${p.id} is on the avenue, not up a side street`);
+    }
+    // All along it: every fifth of the avenue has someone, and both pavements do.
+    const fifth = grid[0].length / 5;
+    for (let i = 0; i < 5; i++) assert.ok(posted.some(p => p.position.x >= i * fifth && p.position.x < (i + 1) * fifth), `${tier.id}: someone in fifth ${i + 1}`);
+    assert.ok(posted.some(p => p.position.z < 50) && posted.some(p => p.position.z > 66), `${tier.id}: on both pavements`);
+    // They are out already, walking, on the rules' first step; and the grates can still bring some more.
+    stepStreet(night, .05, { position: station, pace: 'still', heading: { x: 0, z: 0 }, still: 0 });
+    assert.ok(posted.every(p => p.mode !== 'rising'));
+    assert.equal(night.most, groups + tier.hunters * 2);
+    assert.ok(riseGroup(night, grates[0]).length > 0);
+  }
 });

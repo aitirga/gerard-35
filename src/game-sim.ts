@@ -31,8 +31,8 @@ import { GALLERY, SECTION, WELLS, beat, calibration, charged, descend, measure, 
 import { isTicketStation, ticketFlag, type TicketStation } from './tickets.ts';
 import { LEVELLED, fightXp, participants, topOf } from './levels.ts';
 import { canWalk, WALK_SPEED, type Cell } from './movement.ts';
-import { FIRST_CLEAR, HIDING_KINDS, huntersGrid, litLamps, nightTier, risingAt } from './night.ts';
-import { carriageway, createStreet, removeGroup, riseGroup, stepStreet, type HidingKind, type Street } from './night-pupils.ts';
+import { FIRST_CLEAR, HIDING_KINDS, avenueRows, huntersGrid, litLamps, nightTier, risingAt } from './night.ts';
+import { carriageway, createStreet, postGroups, removeGroup, riseGroup, stepStreet, type HidingKind, type Street } from './night-pupils.ts';
 import { createBoard } from './parcelas.ts';
 import { CASTLE_FIGHTS, CASTLE_PHASES, castlePhaseAt, type NightFight } from './castle.ts';
 import { aitorTaken } from './castle-fight.ts';
@@ -570,6 +570,7 @@ export class Playing {
           road: carriageway(environment.geo?.roads ?? []),
         }),
       };
+      postGroups(this.hunt.street, this.at.cell, avenueRows(this.hunt.grates, portal));
       this.rise(this.hunt, tier.hunters, this.at.cell, FIRST_CLEAR);
     }
     if (!this.story.night) this.hunt = undefined;

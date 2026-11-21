@@ -63,8 +63,11 @@ quick way home with part of the story done, e.g. to open the jar with Nuria's li
   groups come out and, if they catch the party, how strong the fight is (by the ánimas alone).
   **Alumnos** picks whose pupils are out, 1.º to 3.º (the castle's bosses beaten up to that year):
   each hunts its own way (src/night-pupils.ts), El Ausente and El Castigado from the second, El
-  Montón in the third. Same as `just dev-night <castle> [<ánimas>] [<year>]`, i.e.
-  `/?story=metro&night=<0–4>&with=nuria&year=2`. In the console, `gerard.game.nightStreet` is the
+  Montón in the third. **Cuántos** sets how full the avenue is, for trying densities: half, the
+  tier's own, double or triple the groups posted along it (`NIGHT_DEV.crowd` in src/night.ts; the
+  note says how many pupils that is). Same as `just dev-night <castle> [<ánimas>] [<year>]`, i.e.
+  `/?story=metro&night=<0–4>&with=nuria&year=2&crowd=2`; `just screenshots avenida-llena` stands
+  Gerard along the way home to show who is about at each stretch. In the console, `gerard.game.nightStreet` is the
   night itself (its pupils can be moved and set to a mode, as `just screenshots alumnos-de-noche`
   does to stage each one's moment), `gerard.game.nightHunters` who is out and what each is doing,
   and `gerard.game.traffic` the vehicles on the move.
