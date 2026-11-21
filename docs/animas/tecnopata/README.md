@@ -120,8 +120,11 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
   camera sees, drawn bigger the more it has grown. Its lamp flashes red on a beat that quickens as its clock runs out
   (about once a second with 9 s or more left, down to 13 a second at the end), each flash a red flare round it that
   lights the foe, with a beep once it is close; its band turns from cyan to red, and in its last stretch it trembles
-  and swells. It goes off as a white flash, a fireball, red shock along the floor and Bip's sparks, *¡Estalla!* over the
-  number. Explosión sets them off one after another as its blast lands.
+  and swells. Going off it **implodes** first (0.8 s, `BOMB.implode`): a small black hole opens where it is and bends the
+  picture round it (`lens` in `src/post.ts`: a point lens drawing everything in and twisting it, a black horizon and a hot
+  photon ring), light and sparks spiral into it and the bomb crushes down to nothing; then the hole snaps shut in a white
+  flash and it bursts, a fireball, red shock along the floor and Bip's sparks, *¡Estalla!* over the number as it does.
+  Explosión sets them off one after another as its blast lands, each with a shorter implosion.
 - **Escolta** (`updateEscorts`): Bip flies in an arc to stand in front of the ally, between them and the foes; a shield
   of cyan rings flares up round them, and two thin rings of light keep turning under them, Bip's tether crackling to
   them now and then. A blow on them meets a cyan shield where it lands, and Bip throws a bomb onto whoever struck.

@@ -360,7 +360,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * Bombas remotas on the foes (src/bomb.ts): each foe's bomb, the seconds to its next flash, how far it has grown in (below 0:
    * still on its way, Bip's throw from an Escolta or Enjambre's swarm), and `fuse`: set off by Explosión, it waits for the blast.
    */
-  const bombs = new Map<string, { bomb: Bomb; next: number; shown: number; fuse?: boolean }>();
+  const bombs = new Map<string, { bomb: Bomb; next: number; shown: number; fuse?: boolean; implode?: { t: number; dur: number; at: pc.Vec3; big: number } }>();
+  /** The bombs' black holes after they burst: each fades as its shock runs out (`updateBombs` sends them to `setLens`). */
+  const holes: { at: pc.Vec3; t: number; radius: number }[] = [];
   /** Escolta: the ring Bip keeps under whoever it stands by, its tether's beat, and how far it has faded in. */
   const escorts = new Map<string, { ring: pc.Entity; inner: pc.Entity; mat: pc.StandardMaterial; beat: number; shown: number }>();
   /** Where Bip set off from when it went to stand by someone (Escolta), to fly there in an arc. */
@@ -429,6 +431,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let lensHold = 0;
   /** A dual's spotlight (post.ts `spotlight`): where it is sent, and how far it is on now (eased). */
   let spot: ((amount: number, points: readonly { x: number; y: number; z: number; radius: number }[]) => void) | undefined;
+  /** Where the bombs' black holes go (post.ts `lens`): world points, metres of reach, strength 0–1. */
+  let setLens: ((points: readonly { x: number; y: number; z: number; radius: number; strength: number }[]) => void) | undefined;
   let spotAmount = 0, spotWant = 0;
   /** The dual whose start (freeze, stinger, drawings) has played, and what it was planned round. */
   let dualStarted: BattleEffect | undefined;
@@ -3025,10 +3029,26 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * A bomb gone from the foe without a blast (the foe fell) just goes; one Explosión set off waits for its blast.
    */
   function updateBombs(dt: number, animate: boolean) {
+    const lensed: { x: number; y: number; z: number; radius: number; strength: number }[] = [];
+    for (const [id, b] of [...bombs]) if (b.implode) {
+      // The hole opens slowly and then all at once, as it swallows the space round it.
+      const u = clamp01(b.implode.t / b.implode.dur);
+      lensed.push({ x: b.implode.at.x, y: b.implode.at.y, z: b.implode.at.z, radius: BOMB.hole * b.implode.big, strength: .15 + .85 * u ** 1.6 });
+      implodeFrame(id, b, dt);
+    }
+    // Burst, it snaps shut and its shock runs out in a breath.
+    for (let i = holes.length - 1; i >= 0; i--) {
+      const h = holes[i]; h.t += dt;
+      const k = 1 - smooth(h.t / .22);
+      if (k <= 0) { holes.splice(i, 1); continue; }
+      lensed.push({ x: h.at.x, y: h.at.y, z: h.at.z, radius: h.radius * (1 + 1.5 * (1 - k)), strength: k * .7 });
+    }
+    setLens?.(lensed);
     for (const [id, f] of fighters) {
       if (f.party) continue;
       const unit = state?.foes.find(u => u.id === id), on = unit?.timed?.bomba;
       let b = bombs.get(id);
+      if (b?.implode) continue;
       if (!on) {
         if (b && !b.fuse && !(animate && effect && !impacted && effect.detonated?.some(d => d.target === id))) { b.bomb.destroy(); bombs.delete(id); }
         if (!bombs.has(id)) continue;
@@ -3059,22 +3079,56 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     for (const [id, b] of bombs) if (!fighters.has(id)) { b.bomb.destroy(); bombs.delete(id); }
   }
-  /** A Bomba remota goes off on `id` (its clock, or Explosión): a white flash, a fireball, red shock along the floor, Bip's sparks. */
-  function bombBlast(id: string) {
-    const b = bombs.get(id), f = fighters.get(id);
-    if (!b) return;
+  /**
+   * A Bomba remota goes off on `id` (its clock, or Explosión). First it implodes (`BOMB.implode` seconds, shorter when Explosión
+   * sets it off): a small black hole opens where it is, bending the picture round it (post.ts `lens`) while light and sparks
+   * spiral into it and the bomb crushes down to nothing; then it bursts: a white flash, the hole snapping shut, a fireball, red
+   * shock along the floor and Bip's sparks (`bombBang`).
+   */
+  function bombBlast(id: string, quick = false) {
+    const b = bombs.get(id);
+    if (!b || b.implode) return;
     const at = b.bomb.entity.getPosition().clone(), big = b.bomb.entity.getLocalScale().x / BOMB.size;
-    b.bomb.destroy(); bombs.delete(id);
-    if (!animating) return;
-    const floor = groundHeight(at.x, at.z);
-    dualFx.ring(v3(at), viewDir(), .2, '#ffffff', { count: 90, outward: 7, life: .22, size: 1.6, light: 5 });
-    fluidFx.fireball({ x: at.x, y: Math.max(floor + .45, at.y), z: at.z }, .55 + .35 * big, 1.1);
-    effects.element('fire', v3(at), { strength: 1.1 + .5 * big });
-    dualFx.shock({ x: at.x, y: floor, z: at.z }, 1.6 + .8 * big, BOMB.red, { chips: 80, light: true, heavy: big > 1.3 });
-    dualFx.burst('bipzap', { at: v3(at), count: 70, speed: 4.5, up: .8, life: [.25, .6] });
-    dualFx.after(.05, () => dualFx.ring(v3(at), { x: 0, y: 1, z: 0 }, .35, BOMB.red, { count: 70, outward: 5, life: .3, size: 1.4 }));
-    if (f) hit(f, flame, 1.6);
-    shake = Math.max(shake, .45 + .2 * big); pulse?.(.4, .45);
+    if (!animating) { b.bomb.destroy(); bombs.delete(id); return; }
+    b.fuse = true; b.implode = { t: 0, dur: quick ? BOMB.implode * .55 : BOMB.implode, at, big };
+    cue('charge'); cue('sink', { delay: .1 });
+    const f = fighters.get(id);
+    if (f) hit(f, cyanFlash, .4);
+  }
+  /** One frame of a bomb imploding (`bombBlast`): the light and sparks it swallows, the bomb crushing; at its end, the burst. */
+  function implodeFrame(id: string, b: NonNullable<ReturnType<typeof bombs.get>>, dt: number) {
+    const im = b.implode!, u = clamp01(im.t / im.dur), at = im.at, up = { x: 0, y: 1, z: 0 };
+    im.t += dt;
+    // Drawn in: rings of sparks and Bip's nanites closing on it, faster as it goes, and streaks of light pulled off the space round it.
+    if (Math.floor((im.t - dt) / .07) !== Math.floor(im.t / .07)) {
+      const r = (.9 - .4 * u) * im.big;
+      dualFx.ring(v3(at), viewDir(), r, u < .5 ? BIP.cyan : '#ffd2c4', { kind: 'nanite', count: Math.round(22 + 34 * u), outward: -(2.5 + 6 * u), around: 5 + 6 * u, life: .22, size: 1.05 });
+      dualFx.ring(v3(at), up, r * 1.2, BOMB.red, { count: 20, outward: -(3 + 5 * u), around: -4, life: .2, size: 1 });
+      for (let k = 0; k < 2; k++) {
+        const a = Math.random() * Math.PI * 2, e = Math.random() * .8 - .4, R = (1 + Math.random() * .5) * im.big;
+        effects.trails.comet({ x: at.x + Math.cos(a) * R, y: at.y + e * R, z: at.z + Math.sin(a) * R }, v3(at), ['#ffffff', u < .5 ? BIP.cyan : '#ff8a6a'], .16, { arc: .5, width: .03, life: .2, intensity: 2.6, core: .5, additive: 1, twist: { turns: 1, radius: .1, phase: a } });
+      }
+    }
+    // The bomb crushes down and spins, its lamp burning steady.
+    b.bomb.flash(1);
+    const entity = b.bomb.entity, size = BOMB.size * im.big * Math.max(.001, 1 - u * u);
+    entity.setPosition(at); entity.setLocalScale(size, size, size); entity.rotateLocal(0, 0, dt * 900 * u);
+    b.bomb.animate(dt, { heat: 1, charge: 1, shown: 1, animate: true });
+    if (im.t >= im.dur) { bombBang(id, at, im.big); b.bomb.destroy(); bombs.delete(id); }
+  }
+  /** The bomb's burst, once its black hole has drawn everything in: the hole snaps shut in a flash and it all comes back out. */
+  function bombBang(id: string, at: pc.Vec3, big: number) {
+    const f = fighters.get(id), floor = groundHeight(at.x, at.z);
+    holes.push({ at: at.clone(), t: 0, radius: BOMB.hole * big });
+    dualFx.ring(v3(at), viewDir(), .15, '#ffffff', { count: 120, outward: 9, life: .25, size: 1.7, light: 6 });
+    fluidFx.fireball({ x: at.x, y: Math.max(floor + .45, at.y), z: at.z }, .6 + .4 * big, 1.15);
+    effects.element('fire', v3(at), { strength: 1.2 + .6 * big });
+    dualFx.shock({ x: at.x, y: floor, z: at.z }, 1.8 + .9 * big, BOMB.red, { chips: 90, light: true, heavy: big > 1.3 });
+    dualFx.burst('bipzap', { at: v3(at), count: 90, speed: 5, up: .8, life: [.25, .65] });
+    dualFx.after(.04, () => dualFx.ring(v3(at), { x: 0, y: 1, z: 0 }, .35, BOMB.red, { count: 80, outward: 6, life: .3, size: 1.4 }));
+    dualFx.after(.02, () => dualFx.ring(v3(at), viewDir(), .3, BIP.cyan, { kind: 'nanite', count: 120, outward: 7, around: -3, life: .35, size: 1.2 }));
+    if (f) hit(f, flame, 1.7);
+    shake = Math.max(shake, .5 + .25 * big); pulse?.(.6, .55, .25);
     cue('slam'); cue('fire-hit', { delay: .02 });
   }
   /** Whom the Bip of `wearer` stands by now (Escolta), if anyone. */
@@ -3137,7 +3191,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * struck someone Bip stands by meets a cyan shield where the blow lands, and Bip throws a bomb on it.
    */
   function tecnoLanded(e: BattleEffect) {
-    e.detonated?.forEach((d, i) => { const b = bombs.get(d.target); if (b) b.fuse = true; dualFx.after(.08 + i * .09, () => bombBlast(d.target)); });
+    e.detonated?.forEach((d, i) => { const b = bombs.get(d.target); if (b) b.fuse = true; dualFx.after(.05 + i * .12, () => bombBlast(d.target, true)); });
     const striker = e.planted && state?.foes.some(f => f.id === e.actor) ? fighters.get(e.actor) : undefined;
     const ally = striker && e.target ? fighters.get(e.target) : undefined, guard = e.target ? state?.allies.find(a => a.id === e.target)?.escort : undefined;
     if (!striker || !ally) return;
@@ -3548,6 +3602,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     get speed() { return clock.scale; },
     /** Where a dual's spotlight goes (post.ts `spotlight`). */
     setSpot(next: typeof spot) { spot = next; },
+    /** Where a Bomba remota's black hole bends the picture (post.ts `lens`). */
+    setLens(next: typeof setLens) { setLens = next; },
     /** The picture's post effects, for Sincopante's ecos (their pulses of bloom, the dimming round them). */
     setEcoPost(next: typeof ecoPost) { ecoPost = next; },
     /**
@@ -3793,7 +3849,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } selectedTarget = aimedBy[1] = aimedBy[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).

@@ -277,6 +277,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   battleScene.setPulse(post.pulse);
   battleScene.setNight(post.night);
   battleScene.setSpot(post.spotlight);
+  battleScene.setLens(post.lens);
   battleScene.setEcoPost(post);
   battleScene.setCue((id, options) => callbacks.onSound(id, options));
   const pack = new WanderingPack(ENVIRONMENTS.maresme.grid, Math.random, STREET_END_AREA);

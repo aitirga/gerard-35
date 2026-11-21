@@ -155,6 +155,62 @@ const DIFFUSION = `
  * (a figure, not a disc of floor). `uSpotOn` is how far it is on (0–1); each spot is its centre in
  * screen uv (x, y), its radius (half its height) in screen heights and 1 if it is used.
  */
+/**
+ * A small black hole bending the picture (Bip's Bomba remota imploding, src/battle-scene.ts `bombBlast`): up to `LENSES`
+ * points, each `uLensN` = (x, y on the screen as uv, radius as a share of the screen's height, strength 0–1). Round it the
+ * light is bent as by a mass (each pixel shows what lies nearer the middle, so the picture is drawn in and stretched into a
+ * ring) and twisted a little; at its heart a horizon of black with a thin, hot photon ring round it. The bent picture is
+ * sampled again from the scene and taken through the same grade, tone map and vignette as the rest.
+ */
+const LENSES = 3;
+const LENS_DECLARATIONS = `
+uniform uLensOn: f32;
+uniform uLensAspect: f32;
+${Array.from({ length: LENSES }, (_, i) => `uniform uLens${i}: vec4f;`).join('\n')}
+fn lensSample(at: vec2f) -> vec3f { return textureSampleLevel(sceneTexture, sceneTextureSampler, clamp(at, vec2f(0.0), vec2f(1.0)), 0.0).rgb; }
+// What one lens does at uv: where to look instead (an offset in aspect space), how black it is there, and its photon ring.
+fn lensBend(uv: vec2f, lens: vec4f) -> vec4f {
+  if (lens.w <= 0.001) { return vec4f(0.0); }
+  let d = (uv - lens.xy) * vec2f(uniform.uLensAspect, 1.0);
+  let r = max(length(d), 0.0001);
+  let reach = lens.z;
+  let fall = 1.0 - smoothstep(reach * 0.45, reach, r);
+  let einstein = reach * 0.3 * lens.w;
+  let horizon = einstein * 0.55;
+  // A point lens: the light seen at r left the source at r - einstein² / r, so everything is drawn in towards the middle.
+  let pull = min(einstein * einstein / r, r * 1.6) * fall;
+  // And dragged round it, harder close in.
+  let twist = lens.w * 2.2 * fall * fall * clamp(einstein / r, 0.0, 1.5);
+  let c = cos(twist);
+  let sn = sin(twist);
+  let dir = d / r;
+  let turned = vec2f(dir.x * c - dir.y * sn, dir.x * sn + dir.y * c);
+  let offset = turned * (r - pull) - d;
+  let dark = 1.0 - smoothstep(horizon * 0.85, horizon * 1.08, r);
+  let ring = exp(-pow((r - horizon * 1.18) / max(horizon * 0.16, 0.0005), 2.0)) * lens.w;
+  return vec4f(offset, dark, ring);
+}`;
+const LENS = `
+    if (uniform.uLensOn > 0.5) {
+      var lensOffset = vec2f(0.0);
+      var lensDark = 0.0;
+      var lensRing = 0.0;
+${Array.from({ length: LENSES }, (_, i) => `      { let b = lensBend(uv, uniform.uLens${i}); lensOffset = lensOffset + b.xy; lensDark = max(lensDark, b.z); lensRing = max(lensRing, b.w); }`).join('\n')}
+      if (dot(lensOffset, lensOffset) > 0.0000001 || lensDark > 0.0 || lensRing > 0.0) {
+        var bent = lensSample(uv + lensOffset / vec2f(uniform.uLensAspect, 1.0));
+        #ifdef GRADING
+          bent = applyGrading(bent);
+        #endif
+        bent = toneMap(max(vec3f(0.0), bent));
+        #ifdef COLOR_LUT
+          bent = applyColorLUT(bent);
+        #endif
+        #ifdef VIGNETTE
+          bent = applyVignette(bent, uv);
+        #endif
+        result = bent * (1.0 - lensDark) + vec3f(1.0, 0.52, 0.42) * lensRing * 1.6;
+      }
+    }`;
 const SPOTS = 4;
 const SPOT_DECLARATIONS = `
 uniform uSpotOn: f32;
@@ -190,8 +246,8 @@ const SPOT = `
 
 export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   const chunks = pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL);
-  chunks.set('composeDeclarationsPS', DIFFUSION_DECLARATIONS + SPOT_DECLARATIONS);
-  chunks.set('composeMainEndPS', DIFFUSION + SPOT + DITHER);
+  chunks.set('composeDeclarationsPS', DIFFUSION_DECLARATIONS + SPOT_DECLARATIONS + LENS_DECLARATIONS);
+  chunks.set('composeMainEndPS', LENS + DIFFUSION + SPOT + DITHER);
   const scope = app.graphicsDevice.scope;
   const diffusionId = scope.resolve('uDiffusion'), diffusionSeedId = scope.resolve('uDiffusionSeed'), snapshotOnId = scope.resolve('uSnapshotOn'), snapshotId = scope.resolve('uSnapshot');
   diffusionId.setValue(0); diffusionSeedId.setValue(0); snapshotOnId.setValue(0);
@@ -219,6 +275,28 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     });
   }
   app.on('prerender', placeSpots);
+  // --- Black holes bending the picture (`lens`): world points put on the screen, like the spots ---
+  const lensOnId = scope.resolve('uLensOn'), lensAspectId = scope.resolve('uLensAspect'), lensIds = Array.from({ length: LENSES }, (_, i) => scope.resolve(`uLens${i}`));
+  const lensValues = Array.from({ length: LENSES }, () => new Float32Array(4));
+  lensOnId.setValue(0); lensAspectId.setValue(1); lensIds.forEach((id, i) => id.setValue(lensValues[i]));
+  let lenses: readonly { x: number; y: number; z: number; radius: number; strength: number }[] = [];
+  function placeLenses() {
+    const on = frame.enabled && lenses.some(l => l.strength > .001);
+    lensOnId.setValue(on ? 1 : 0);
+    if (!on) return;
+    const { width, height } = app.graphicsDevice.clientRect, cw = Math.max(1, width), ch = Math.max(1, height);
+    lensAspectId.setValue(cw / ch);
+    const metre = 1 / Math.max(.01, camera.orthoHeight * 2);
+    lensValues.forEach((value, i) => {
+      const l = lenses[i];
+      if (l) {
+        camera.worldToScreen(spotWorld.set(l.x, l.y, l.z), spotScreen);
+        value[0] = spotScreen.x / cw; value[1] = spotScreen.y / ch; value[2] = l.radius * metre; value[3] = Math.max(0, Math.min(1, l.strength));
+      } else value[3] = 0;
+      lensIds[i].setValue(value);
+    });
+  }
+  app.on('prerender', placeLenses);
   // The picture kept for the glass (`snapshot`): a copy of the scene's colour before the compose pass, sized to it.
   const blank = new pc.Texture(app.graphicsDevice, { name: 'Sin instantánea', width: 1, height: 1, format: pc.PIXELFORMAT_RGBA8, mipmaps: false });
   snapshotId.setValue(blank);
@@ -294,6 +372,11 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     spotlight(amount: number, points: readonly { x: number; y: number; z: number; radius: number }[] = []) {
       spot = { amount: Math.max(0, Math.min(1, amount)), points: points.slice(0, SPOTS) };
     },
+    /**
+     * Small black holes bending the picture: `points` (world positions, `radius` metres of reach, `strength` 0–1; up to
+     * three). An empty list turns them off.
+     */
+    lens(points: readonly { x: number; y: number; z: number; radius: number; strength: number }[]) { lenses = points.slice(0, LENSES); },
     /**
      * Keeps the picture as it is now for the glass (`diffuse`): call it before the scene changes
      * under it. False if there is nothing to keep (the pass is off).

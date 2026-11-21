@@ -1,6 +1,6 @@
 {
   "title": "Tecnópata · Bomba remota y Escolta",
-  "description": "Bip's bomb and guard (docs/animas/tecnopata/README.md § The design): Bip flies to a dog and sticks a Bomba remota on its chest; the bomb's red lamp flashes faster and faster as its clock runs out, and it goes off. Then Escolta: Bip flies in an arc to stand in front of Gerard, a ring of cyan under him, and a dog that strikes him meets a shield and gets a bomb thrown on it. One player leads both in the fight tester. Run it with --gpu.",
+  "description": "Bip's bomb and guard (docs/animas/tecnopata/README.md § The design): Bip flies to a dog and sticks a Bomba remota on its chest; the bomb's red lamp flashes faster and faster as its clock runs out, and it implodes into a small black hole that warps the picture round it before it bursts. Then Escolta: Bip flies in an arc to stand in front of Gerard, a ring of cyan under him, and a dog that strikes him meets a shield and gets a bomb thrown on it. One player leads both in the fight tester. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aescolta%22%2C%22tecnopata%3Aconfusion%22%5D%7D"
@@ -55,10 +55,10 @@
     },
     {
       "record": "cuenta-atras",
-      "seconds": 6.5,
+      "seconds": 7.5,
       "fps": 20,
       "tiles": 15,
-      "caption": "The countdown: the flashes come faster and redder, the band turns red, it trembles and swells, and it goes off: a white flash, a fireball, red shock along the floor, ¡Bomba!"
+      "caption": "The countdown: the flashes come faster and redder, the band turns red, it trembles and swells; then it implodes into a small black hole that bends everything round it, and bursts: ¡Estalla!"
     },
     {
       "until": "window.turn && window.turn('gerard')",
@@ -112,6 +112,42 @@
       "shot": "bomba-de-vuelta",
       "delay": 300,
       "caption": "Whoever struck Gerard carries a bomb now"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"bomba-remota\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "wait": 1700
+    },
+    {
+      "eval": "ui.tweak(s => s.foes.forEach(f => { if (f.timed?.bomba) f.timed.bomba.left = .3; }));"
+    },
+    {
+      "record": "implosion",
+      "seconds": 2.2,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Up close: the bomb crushes down as a small black hole opens where it was, the picture bending and twisting into it round a black horizon and a hot ring; light and sparks spiral in; then it snaps shut in a flash and bursts"
     }
   ]
 }

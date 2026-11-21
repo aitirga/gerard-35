@@ -18,6 +18,8 @@ export const BOMB = {
   /** The flash's beat: seconds between flashes with `slow` seconds left or more, down to `fast` at the end. */
   slow: 9, longest: .95, fast: .075,
   red: '#ff2a2a',
+  /** Going off, it implodes first for this long (a small black hole, src/battle-scene.ts `bombBlast`), with this reach (m) at its size. */
+  implode: .8, hole: 1.5,
 } as const;
 const SHELL = '#1c232b', TRIM = '#3a4652';
 

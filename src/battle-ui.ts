@@ -726,6 +726,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
       // A Bomba remota went off: its number with its own word, and the scene blows it up.
+      // It implodes first (src/bomb.ts `BOMB.implode`, 0.8 s): the number comes with the burst.
+      else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); }, 800); callbacks.pulse(p.target, p.status, p.by); }
+      // A Bomba remota went off: its number with its own word, and the scene blows it up.
       else if (p.blast) { pop(p.target, `−${p.amount}`, 'damage', '¡Estalla!'); callbacks.pulse(p.target, p.status, p.by); }
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
