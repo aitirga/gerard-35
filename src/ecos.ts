@@ -7,7 +7,12 @@
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, PASSIVES, SKILLS, type ClassId, type DualId, type Element, type Improved, type PassiveId, type SkillId } from './battle.ts';
 import { definitivasOpen, type GrowthStage } from './castle.ts';
 
-export type ImprovementKind = 'mana' | 'element' | 'skill' | 'passive' | 'ulti' | 'dual';
+/**
+ * What a friend's light is worth in ecos (Aitor, 2026-11-22: ten more ecos, from the friends): each of
+ * the friends freed lets go of two, the castle's lights and the levels' one each. Two lights fly per friend.
+ */
+export const FRIEND_ECOS = 2;
+export type ImprovementKind ='mana' | 'element' | 'skill' | 'passive' | 'ulti' | 'dual';
 /** The lines of a tree (docs/animas/README.md § The jar): Matemágico's three elements and its trunk, Tecnópata's three. */
 export type LineId = 'fuego' | 'agua' | 'electrico' | 'calculo' | 'bip' | 'mente' | 'taller';
 export const LINES: Record<LineId, { name: string; note: string; colour: string }> = {

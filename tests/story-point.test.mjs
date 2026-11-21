@@ -17,8 +17,8 @@ test('the introduction has nothing behind it; an open mission has the introducti
   const intro = storyPoint('nuria');
   assert.deepEqual([intro.done, intro.ecos, intro.setup.friends, intro.setup.improved], [[], 0, [], []]);
   const first = storyPoint('marta:first'), last = storyPoint('marta:last'), named = storyPoint('marta:universidad/emilie/luca');
-  assert.deepEqual(first.setup.friends, ['nuria']); assert.equal(first.ecos, 2); assert.equal(first.setup.levels.papagato, 2);
-  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie', 'luca']); assert.equal(last.ecos, 9);
+  assert.deepEqual(first.setup.friends, ['nuria']); assert.equal(first.ecos, 4); assert.equal(first.setup.levels.papagato, 2);
+  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie', 'luca']); assert.equal(last.ecos, 18, 'two ecos from each friend');
   // Levels come from the EXP behind the point (STRETCH_XP against LEVEL_XP), under the castle's cap: three more missions take Papagato to 4.
   assert.equal(last.setup.levels.papagato, 4); assert.ok(last.setup.levels.dadaista >= 2 && first.setup.levels.dadaista === undefined);
   assert.deepEqual(named.setup, last.setup);

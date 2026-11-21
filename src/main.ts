@@ -719,7 +719,7 @@ try {
   }
   /** The Ecos de luz the party has free to put into an ánima at home, from the first one that goes in. */
   function showAnimas(gained = false) {
-    storyUI.animas(story.adult && story.jar.length > lightsFlying ? Math.max(0, story.ecosFree - lightsFlying) : undefined, gained);
+    storyUI.animas(story.adult && story.jar.length && story.ecos > lightsFlying ? Math.max(0, story.ecosFree - lightsFlying) : undefined, gained);
   }
   function storyChanged() {
     game.refreshStory();

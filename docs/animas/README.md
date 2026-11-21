@@ -145,18 +145,18 @@ Sketch: `output/mockups/bote/index.html`.
   does not go into Matemágico; with two players that is a conversation at home.
 - **Not here**: who wears which shared ánima stays where it is (the status screen).
 
-**What it all costs** against what there is. The game gives a light per person helped: with the
-friends listed in `docs/story-outline.md`, some 12 to 16 by the end, 3 to 5 around the middle.
+**What it all costs** against what there is (§ Ecos de luz: 55 at most, some 42 to 46 in a whole
+game; 20 from the friends once all five missions are done).
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 17, and 2 for the definitiva |
-| Tecnópata's tree | 11, and 2 for the definitiva |
-| Each shared ánima | 2 for maná, 2 for the definitiva |
-| All of it, with three shared ánimas | 49 |
+| Matemágico's tree | 21, and 2 for the definitiva |
+| Tecnópata's tree | 15, and 2 for the definitiva |
+| Dadaísta | 1 for maná, 1 for Otra vez, 2 for the definitiva |
+| Each other shared ánima | 1 for maná, 2 for the definitiva |
+| All of it | 56 (52 while two definitivas sleep) |
 
-So at the end the party holds about a third of it, and re-does the split before a hard fight.
-If that feels too tight in play, lower the passives from 2 to 1 before adding lights.
+So at the end the party holds most of it, but not all, and re-does the split before a hard fight.
 
 **Matemágico's tree: the elements** (decided 2026-11-14: not fire alone). Root: Foc Binari.
 
@@ -356,11 +356,16 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   lost. Out of the flat nothing can change (a portal home is an idea for later, `docs/ideas.md`).
 - **Optional, and never enough for everything**: nothing in the story needs them.
 - **Where they come from, and what they cost** (Aitor, 2026-11-21: some three quarters of the jar by
-  the end). The friends freed and the castle's bosses (14); each room of the castle the first time it
-  is beaten (15, docs/castle.md § Ecos of the rooms); the Encarnados (up to 6); and each shared ánima
-  on reaching levels 5 and 7 (`LIGHT_LEVELS` in `src/levels.ts`, read from the level's flag: up to 10).
-  Every node of the jar costs **one eco**, the definitivas two: 49 for the whole jar with the dúos
-  mayores. Measured in nine whole games (`just game-sim`): 30 to 35 at the end.
+  the end; 2026-11-22: ten more, from the friends). Each friend freed lets go of **two** (`FRIEND_ECOS`
+  in `src/ecos.ts`; ten lights, 20 ecos, two lights flying from each); the castle's bosses one each (4);
+  each room of the castle the first time it is beaten (15, docs/castle.md § Ecos of the rooms); the
+  Encarnados (up to 6); and each shared ánima on reaching levels 5 and 7 (`LIGHT_LEVELS` in
+  `src/levels.ts`, read from the level's flag: up to 10). 55 at most. Every node of the jar costs
+  **one eco**, the definitivas two: 56 for the whole jar with the dúos mayores, 52 while Matemágico's
+  and Dadaísta's definitivas sleep. Measured in ten whole games before the friends' second eco
+  (2026-11-22): `pensando` 32 to 36 at the end, `corredor` 29 to 34; with it, ten more each. La
+  Delegada of the first floor is never beaten on the way (the bots go past her), and only one or two
+  Encarnados a game.
 - **Saved in the browser**, like the loadout (`gerard35.ecos.v1`, `story.improvements`). What stands
   is worked out from what the party has now (`withinEcos`): a rewound day can take a light back, and
   what it paid for comes back with it.
@@ -370,9 +375,10 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
 
 | Improvement | Ánima | Ecos | What it does |
 | --- | --- | --- | --- |
-| **A tree's node** | Matemágico, Tecnópata | 1 or 2 | An element for Atacar, a skill, a passive or Maná +1 (§ The jar) |
-| **Maná +1** | Each | 2 | Its pool goes from 3 to 4 (`manaMax`, for whoever wears it) |
-| **Definitiva** | Each | 3 | A place kept, asleep (`veiled`): shows, cannot be bought. § Definitivas |
+| **A tree's node** | Matemágico, Tecnópata | 1 | An element for Atacar, a skill, a passive, Maná +1 or a dúo mayor (§ The jar) |
+| **Maná +1** | Each | 1 | Its pool goes up by one (`manaMax`, for whoever wears it) |
+| **Otra vez** | Dadaísta | 1 | Agitar twice a fight |
+| **Definitiva** | Each | 2 | Wakes after Dirección where its move is built; otherwise asleep (`veiled`). § Definitivas |
 
 Maná +2 and the sleeping Pasiva went on 2026-11-15 (§ Two ways to grow).
 

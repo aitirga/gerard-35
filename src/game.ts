@@ -587,7 +587,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     };
     await Promise.all(people.map(one));
     glow.destroy();
-    settling = 'pending';
+    toSettle += people.length; settling = 'pending';
     cutscene = false; lastPrompt = ''; updatePrompt();
   }
   /**
@@ -2267,11 +2267,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   /**
    * The jar of lights on the round dining table (docs/quests/nuria.md § The lights): a glass jar with a cork,
    * one marble of light per person helped, lit while it is free, dark once it is in an ánima. It
-   * shows how many there are, never whose they are. The first time home after a win, the lights go
-   * from Gerard and Aitor into it (`settling`).
+   * shows how many there are, never whose they are. The first time home after a win, the lights won
+   * since the last time (`toSettle`, one per eco) go from Gerard and Aitor into it (`settling`).
    */
   let jar: { root: pc.Entity; key: string; materials: pc.Material[]; litMaterial: pc.StandardMaterial; glow?: pc.LightComponent; lit: pc.Entity[] } | undefined;
-  let settling: false | 'pending' | 'flying' = false;
+  let settling: false | 'pending' | 'flying' = false, toSettle = 0;
   function jarSpot() {
     const table = scenery.root.findByName('Mesa redonda') as pc.Entity | null;
     const box = table?.render?.meshInstances[0]?.aabb;
@@ -2345,7 +2345,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const glow = new pc.StandardMaterial(); glow.diffuse.set(1, 1, 1); glow.emissive.fromString('#fff3c4'); glow.emissiveIntensity = 2.4; glow.update();
     const target = spot.clone().add(new pc.Vec3(0, .08, 0));
     const givers = [player, ...(mateHere()?.entity.enabled ? [mateHere()!.entity] : [])];
-    const orbs = story.jar.map((_, i) => {
+    // Only the ones won since the last time home: those already in the jar stay there.
+    const count = toSettle; toSettle = 0;
+    const orbs = Array.from({ length: count }, (_, i) => {
       const orb = new pc.Entity('Luz'); orb.addComponent('render', { type: 'sphere', material: glow, castShadows: false });
       orb.setLocalScale(.14, .14, .14); castRoot.addChild(orb);
       return { orb, from: givers[i % givers.length].getPosition().clone().add(new pc.Vec3(0, 1.25, 0)), delay: i * .35 };

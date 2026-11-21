@@ -520,12 +520,14 @@ test('the jar at home opens its screen; the ecos go into the ánimas and come ba
   assert.deepEqual(story.jar, ['nuria', 'uri']);
   assert.deepEqual(beats(story.handle({ type: 'interact', id: 'meridiana-luces' })), ['jar']);
 
-  assert.equal(story.ecos, 2); assert.equal(story.ecosFree, 2);
+  assert.equal(story.ecos, 4, 'two from each friend'); assert.equal(story.ecosFree, 4);
   assert.equal(story.improve('matemagico:agua'), true);
   assert.equal(story.improve('matemagico:agua'), false, 'once');
-  assert.equal(story.ecosFree, 1);
+  assert.equal(story.ecosFree, 3);
   assert.deepEqual(story.improved.elements.matemagico, ['agua']);
   assert.equal(story.improve('tecnopata:explosion'), true, 'every node is one eco now, but the definitivas');
+  assert.equal(story.improve('matemagico:fuego'), true);
+  assert.equal(story.improve('matemagico:electrico'), true);
   assert.equal(story.improve('papagato:mana-1'), false, 'not enough ecos');
   assert.equal(story.unimprove('tecnopata:explosion'), true);
   assert.equal(story.improve('matemagico:pasiva'), false, 'asleep');
@@ -535,11 +537,11 @@ test('the jar at home opens its screen; the ecos go into the ánimas and come ba
   assert.equal(story.manaOf('papagato'), 4);
   assert.equal(story.manaOf('matemagico'), 3);
   story.clearImprovements();
-  assert.equal(story.ecosFree, 2);
+  assert.equal(story.ecosFree, 4);
 
   // Saved, and only what stands: unknown, asleep or out of budget does not count.
-  story.improvements = ['nada', 'matemagico:pasiva', 'matemagico:fuego', 'matemagico:agua', 'matemagico:electrico'];
-  assert.deepEqual(story.improvements, ['matemagico:fuego', 'matemagico:agua']);
+  story.improvements = ['nada', 'matemagico:pasiva', 'matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'tecnopata:explosion', 'tecnopata:confusion'];
+  assert.deepEqual(story.improvements, ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'tecnopata:explosion']);
 
   // A save with a light let out has it back: lights are never spent now.
   assert.deepEqual(new Story([...upTo('castle'), 'luz-nuria', 'luz-nuria-usada']).jar, ['nuria']);

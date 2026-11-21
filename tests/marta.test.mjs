@@ -74,7 +74,7 @@ test('La Voz beaten: her ánima and her light, back in Alegia, the day spent, an
   const won = story.handle({ type: 'battle', won: true, encounter: 'voz' });
   assert.deepEqual(beats(won).slice(0, 5), ['dialogue', 'travel', 'dialogue', 'dialogue', 'lights']);
   assert.equal(won[3].dialogue, LINES_MARTA.coro, 'they send her to the choir before her light goes');
-  assert.deepEqual(won[4].people, ['marta']);
+  assert.deepEqual(won[4].people, ['marta', 'marta'], 'two lights: two ecos');
   assert.equal(won[1].environment, ALEGIA);
   for (const flag of ['voz', 'anima-marta', 'luz-marta']) assert.ok(story.has(flag), flag);
   assert.ok(story.animas.includes('marta') && story.jar.includes('marta'));

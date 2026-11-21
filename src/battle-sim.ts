@@ -14,7 +14,7 @@ import {
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant } from './battle.ts';
-import { IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
+import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
 import { ARTILUGIO_NOTES, CASTLE, STRONG, CASTLE_LIGHTS, CASTLE_UNLOCKS, isCastle, levelCap, type GrowthStage, type MontonForm, type RoomEncounter } from './castle.ts';
@@ -111,7 +111,7 @@ export function nodesFor(levels: Partial<Record<ClassId, number>> | undefined, i
 /**
  * The story's missions, for playing a fight as the party reaches it (docs/fight-sim.md § Story points).
  * Nuria and Uri's is the introduction; the rest can be done in any order, so each is met with anything
- * from none to all of the others behind it. `lights`: the Ecos de luz it gives (LIGHTS in src/story.ts);
+ * from none to all of the others behind it. `lights`: the lights it gives (LIGHTS in src/story.ts), each `FRIEND_ECOS` ecos;
  * `friend`: the ánima whose bonus the whole party gets from then on; `teaching`: its fights left easy
  * on purpose, the ones that teach, which the pair is not asked of. A new mission is one more entry.
  */
@@ -195,7 +195,7 @@ export function storyPoint(at: string, build = 'mixto', levels?: Partial<Record<
   const missions: MissionId[] = mission?.intro ? [] : [...intro, ...named];
   const done: StretchId[] = [...missions, ...castle ? CASTLE_STAGE_IDS.slice(0, CASTLE_STAGE_IDS.indexOf(id as CastleStageId)) : []];
   const stage: GrowthStage = castle?.stage ?? 1, cap = levelCap(stage);
-  const ecos = missions.reduce((sum, other) => sum + MISSIONS[other].lights, 0) + (castle?.lights ?? 0), improved = withinEcos(BUILDS[build], ecos, stage);
+  const ecos = missions.reduce((sum, other) => sum + MISSIONS[other].lights * FRIEND_ECOS, 0) + (castle?.lights ?? 0), improved = withinEcos(BUILDS[build], ecos, stage);
   // A shared ánima has fought everything since its friend's mission was won; Papagato comes out of the
   // introduction at 2 at least (its tower asks for it), and into it at 2 as the route grinds it there.
   const grown: Partial<Record<ClassId, number>> = {};

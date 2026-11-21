@@ -137,8 +137,8 @@ test('the castle is three stretches after every mission, each with what its stag
   for (const id of STRETCH_IDS) for (const fight of STRETCHES[id].fights) assert.equal(stretchOf(fight), id, fight);
   const [one, two, three] = CASTLE_STAGE_IDS.map(id => storyPoint(id, 'mixto'));
   for (const point of [one, two, three]) assert.deepEqual(point.setup.friends, ['nuria', 'universidad', 'marta', 'emilie', 'luca']);
-  // The friends' ten, then Aurelià's and the first floor's four rooms, then Dirección's three and the second floor's six.
-  assert.deepEqual([one.ecos, two.ecos, three.ecos], [10, 15, 24]);
+  // The friends' ten lights, two ecos each, then Aurelià's and the first floor's four rooms, then Dirección's three and the second floor's six.
+  assert.deepEqual([one.ecos, two.ecos, three.ecos], [20, 25, 34]);
   assert.deepEqual(two.done.slice(-1), ['castillo-1']); assert.deepEqual(three.done.slice(-2), ['castillo-1', 'castillo-2']);
   for (const [n, point] of [one, two, three].entries()) {
     const stage = CASTLE_STAGES[point.at].stage;

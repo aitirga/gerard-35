@@ -12,7 +12,7 @@ import { canWalk, facingToward, type Cell } from './movement.ts';
 import { trophiesFor, type ItemId } from './items.ts';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
-import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
+import { FRIEND_ECOS, costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
 import { award, levelFlag, levelOf, type Growth, type Level, LEVELLED, LIGHT_LEVELS } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
@@ -95,6 +95,10 @@ const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENA
 /** Whose lights can be won. */
 export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar', ...STRONG_LIGHTS, ...ROOM_LIGHTS] as const;
 export type LightId = typeof LIGHTS[number];
+/** The friends' lights, each worth `FRIEND_ECOS` ecos (src/ecos.ts); the castle's are worth one. */
+export const FRIEND_LIGHTS: readonly LightId[] = LIGHTS.slice(0, LIGHTS.indexOf('aurelia'));
+/** Who lets go of the lights as a friend is freed: each one once per eco, so two lights fly from each. */
+const friendLights = (people: string[]) => people.flatMap(person => Array<string>(FRIEND_ECOS).fill(person));
 
 export type StoryEvent =
   | { type: 'start' }
@@ -516,10 +520,10 @@ export class Story {
   get spread() { return this.adult && !this.has('reina') ? spread(this.days.clock.day, this.heldBack) : 0; }
   /** The lights in the jar at home, in the order they were won. No names on screen. */
   get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
-  /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */
   /** The ecos the shared ánimas let go of on reaching `LIGHT_LEVELS` (`papagato-5`…), each from its own level's flag. */
   get levelLights(): string[] { return LEVELLED.flatMap(id => LIGHT_LEVELS.filter(level => this.flags.has(levelFlag(id, level as Level) as StoryFlag)).map(level => `${id}-${level}`)); }
-  get ecos() { return this.jar.length + this.levelLights.length + this.debugEcos; }
+  /** The party's Ecos de luz (docs/animas/README.md § Ecos de luz): every light won, a friend's worth `FRIEND_ECOS`, and the levels'. */
+  get ecos() { return this.jar.reduce((sum, id) => sum + (FRIEND_LIGHTS.includes(id) ? FRIEND_ECOS : 1), 0) + this.levelLights.length + this.debugEcos; }
   /** What stands of what the ecos are in: a rewound day can take a light back, and what the castle has not opened yet is not there. */
   get improvements() { return withinEcos(this.bought, this.ecos, this.stage); }
   /** A saved list; `improvements` drops whatever does not stand. */
@@ -748,7 +752,7 @@ export class Story {
     const beach: StoryEffect = { kind: 'travel', environment: BEACH, cell: { ...PLACES_UNI.home } };
     return [
       { kind: 'unmask' }, say(LINES_UNI.won), { kind: 'look', anchor: 'merendero-mesa', height: 8.5 }, { kind: 'photo', caption: LINES_UNI.photo },
-      { kind: 'lights', people: ['anna', 'sarah', 'soraya', 'nico', 'joan'] },
+      { kind: 'lights', people: friendLights(['anna', 'sarah', 'soraya', 'nico', 'joan']) },
       { kind: 'portal', who: 'everyone', open: { ...PLACES_CAMP.vuelta } },
       beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), say(LINES_UNI.coro), ...this.spend('fight'),
     ];
@@ -794,7 +798,7 @@ export class Story {
     for (const flag of ['anima-marta', 'luz-marta'] as const) this.set(flag);
     this.marta = freshMarta(); delete this.globe.marta;
     const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
-    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), say(LINES_MARTA.coro), { kind: 'lights', people: ['marta'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), say(LINES_MARTA.coro), { kind: 'lights', people: friendLights(['marta']) }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * El que no converge beaten: the why comes back to Emilie all at once; they come back out through her
@@ -807,7 +811,7 @@ export class Story {
     for (const flag of ['anima-emilie', 'luz-emilie'] as const) this.set(flag);
     this.emilie = freshEmilie(); delete this.globe.emilie;
     const home: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } };
-    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), say(LINES_EMILIE.coro), { kind: 'lights', people: ['emilie'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), say(LINES_EMILIE.coro), { kind: 'lights', people: friendLights(['emilie']) }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * The laptop on her desk: once she has been spoken to, the Queen's whirlpool swells out of the screen
@@ -911,7 +915,7 @@ export class Story {
     for (const flag of ['papagato', 'anima-nuria', 'luz-nuria', 'luz-uri'] as const) this.set(flag);
     this.nuria = freshRun(); delete this.globe.nuria;
     const door: StoryEffect = { kind: 'travel', environment: STREET, cell: { x: PLACES_NURIA.nuria.cell.x - 1, z: PLACES_NURIA.nuria.cell.z + 2 } };
-    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), say(LINES_NURIA.coro), { kind: 'lights', people: ['nuria', 'uri'] }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_NURIA.won), door, say(LINES_NURIA.home), say(LINES_NURIA.coro), { kind: 'lights', people: friendLights(['nuria', 'uri']) }, { kind: 'anima', classId: 'papagato', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What src/castle-story.ts reads and does of the story: its flags, its days, and how it spends them. */
   private get castleHost(): CastleHost {
@@ -1057,7 +1061,7 @@ export class Story {
     for (const flag of ['anima-luca', 'luz-luca', 'peluqueria'] as const) this.set(flag);
     this.luca = freshLuca(); delete this.globe.luca;
     const out: StoryEffect = { kind: 'travel', environment: SAGRADA, cell: { ...PLACES_LUCA.won } };
-    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), say(LINES_LUCA.coro), { kind: 'lights', people: ['luca'] }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), say(LINES_LUCA.coro), { kind: 'lights', people: friendLights(['luca']) }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
