@@ -1,0 +1,112 @@
+{
+  "title": "Two pads in a fight",
+  "description": "A split fight played on two faked standard gamepads, checking what each player can do while the other chooses: Aitor (player 2) cures Gerard's card in player 1's dock; the mouse over Aitor's card does not move Gerard's attack onto him; Gerard's menu changes do not reset player 2's controller context; and when Gerard's blow takes down the foe Aitor is aiming at, Aitor's aim moves on. Each check is an `until` that fails the run if it breaks.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=0&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%5D%7D"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads;"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 90000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => s.allies.forEach(a => { a.hp = Math.round(a.maxHp * .45); }))"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 1)"
+    },
+    {
+      "eval": "(() => { const ui = window.gerard.battleUI; ui.control('down', 2); ui.control('confirm', 2); for (let i = 0; i < 12 && !/sanaci/i.test(document.querySelector('.battle-dock[data-dock=\"2\"] .is-cursor-2')?.textContent ?? ''); i++) ui.control('down', 2); ui.control('confirm', 2); })()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "document.querySelector('.battle-target[data-side=\"foes\"].is-targeted') && document.querySelector('.party-card.is-targeted-2')",
+      "timeout": 3000
+    },
+    {
+      "eval": "window.c2 = window.gerard.battleUI.controllerContextOf(2); window.gerard.battleUI.control('cancel', 1); window.gerard.battleUI.control('confirm', 1);"
+    },
+    {
+      "until": "window.gerard.battleUI.controllerContextOf(2) === window.c2",
+      "timeout": 1000
+    },
+    {
+      "eval": "document.querySelector('.roster-target[data-target=\"aitor\"]').dispatchEvent(new PointerEvent('pointerover', { bubbles: true })); document.querySelector('.roster-target[data-target=\"aitor\"]').click();"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "until": "document.querySelector('.battle-target[data-side=\"foes\"].is-targeted') && !document.querySelector('.party-card.is-targeted') && document.querySelector('.battle-dock[data-dock=\"1\"] .dock-wait').hidden",
+      "timeout": 1000
+    },
+    {
+      "shot": "both-aiming",
+      "delay": 300,
+      "caption": "Gerard aims Atacar at a foe (gold) while Aitor aims Rayo de sanación at Gerard's card (cyan); the mouse passing over Aitor's card, or clicking it, leaves Gerard's attack where it was"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 2)"
+    },
+    {
+      "until": "window.gerard.battleUI.live.allies.find(a => a.id === 'gerard').hp > Math.round(window.gerard.battleUI.live.allies.find(a => a.id === 'gerard').maxHp * .45)",
+      "timeout": 8000
+    },
+    {
+      "shot": "aitor-heals-gerard",
+      "delay": 200,
+      "caption": "Player 2's pad confirms the cure on Gerard's card, in player 1's dock: it goes off"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 1)"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('#battle .battle-dock[data-dock=\"2\"] .turn-meta')?.textContent === 'MANDO 2'",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => s.foes.forEach(f => { f.hp = 1; }))"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 2)"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.first = document.querySelector('.battle-target[data-side=\"foes\"].is-targeted-2')?.dataset.target; window.gerard.battleUI.control('confirm', 1); window.gerard.battleUI.control('confirm', 1);"
+    },
+    {
+      "until": "window.first && window.gerard.battleUI.live.foes.find(f => f.id === window.first).hp === 0 && document.querySelector('.battle-target[data-side=\"foes\"].is-targeted-2') && document.querySelector('.battle-target[data-side=\"foes\"].is-targeted-2').dataset.target !== window.first",
+      "timeout": 6000
+    },
+    {
+      "shot": "aim-moves-on",
+      "delay": 600,
+      "caption": "Gerard's blow takes down the foe Aitor was aiming at: Aitor's cyan aim moves on to a foe still standing instead of sitting on the fallen one"
+    },
+    {
+      "eval": "window.gerard.battleUI.control('confirm', 2)"
+    },
+    {
+      "until": "window.gerard.battleUI.live.foes.filter(f => f.hp > 0).length < 2",
+      "timeout": 8000
+    },
+    {
+      "shot": "aitor-finishes",
+      "delay": 400,
+      "caption": "Aitor's confirm on his new aim lands"
+    }
+  ]
+}
