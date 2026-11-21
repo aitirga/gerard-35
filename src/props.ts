@@ -824,11 +824,11 @@ export function createPropKit(device: pc.GraphicsDevice) {
       return holder;
     },
     /** Sways the trees in sight and fades crowns that stand between `focus` and the camera direction. */
-    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
+    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, partner?: pc.Vec3) {
       time += dt;
       for (const t of trees) {
         if (animate && drawn(t)) t.pivot.setLocalEulerAngles(Math.sin(time * 1.1 + t.phase) * 1.1 * t.sway, t.yaw, Math.sin(time * .83 + t.phase * 1.3) * 1.4 * t.sway);
-        const target = focus && toCamera && hides(t, focus, toCamera) ? GHOST_OPACITY : 1;
+        const target = toCamera && (focus && hides(t, focus, toCamera) || partner && hides(t, partner, toCamera)) ? GHOST_OPACITY : 1;
         if (t.opacity === target) continue;
         const next = animate ? t.opacity + (target - t.opacity) * (1 - Math.exp(-dt * FADE_RATE)) : target;
         setOpacity(t, Math.abs(next - target) < 0.01 ? target : next);

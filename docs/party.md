@@ -18,9 +18,21 @@ character stats, and how ánimas (classes in the code) are shared. Numbers are p
 - **Without a second controller Aitor follows Gerard** like Bernat did, walking Gerard's own
   steps. When a second controller connects (any button), Aitor walks on his own; when it
   disconnects he goes back to following.
-- **Both stay on screen.** The camera looks between them and pulls back as they part. Past
-  `TETHER` (7 cells) the one ahead is held back by an invisible ring, and Aitor says so in a
-  bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
+- **Both stay on screen.** The camera looks between them and pulls back only as far as it takes
+  to keep both inside the frame with room round each (`twoInFrame` in src/game.ts): their
+  distance is measured across the picture and up it, so side by side on a wide screen costs
+  little, one behind the other more, and it comes in again as they come together. Past `TETHER`
+  (14 cells, 7 until 2026-11-21) the one ahead is held back by an invisible ring, and Aitor says
+  so in a bubble ("¡Eh, espérame!"), so it reads as a person, not a wall.
+- **Through a door, both go.** Whoever uses a door or walks onto a stair or threshold takes the
+  whole party to the other side: Gerard arrives where it leads and Aitor beside him, however far
+  apart they were (`crossThreshold` in src/game.ts keeps one per player, so arriving never bounces
+  either back).
+- **Each sees what is in their own reach.** While player 2 walks Aitor, he has a prompt of his own
+  on what he can use (`#interact-2`, ringed in his map colour, with player 2's pad button); on the
+  same thing as Gerard's it stands beside it.
+- **Buildings open for both.** A building, a wall inside a flat or a tree crown that hides Aitor
+  opens round him too, each with a window of their own (docs/graphics.md § The building opens).
 - **Decided 2026-10-31, not built yet** (`docs/combat.md` § Turnos con tiempo real): the party's
   turn becomes **parallel**: Gerard and Aitor both have their commands open at once and each
   acts the moment they choose, so the players set the order (and combined attacks can come
@@ -213,7 +225,8 @@ Impulso and Abrazo are out for now.
   and the light when an ánima changes.
 - `src/exploration-ui.ts`: the status screen, split in two halves when player 2 is there.
 - Tests: `tests/party.test.mjs`, `tests/battle.test.mjs`. Screenshots: `just screenshots duo` (fakes
-  two controllers), `just screenshots battle-solo` (the debug mode), `just screenshots combat` (the
+  two controllers), `just screenshots duo-juntos` (apart and together: the camera, the prompts, a
+  door for both), `just screenshots battle-solo` (the debug mode), `just screenshots combat` (the
   menu, the ánima bar and the Ánima circles) and `just screenshots matemagico`.
 
 ## Open questions

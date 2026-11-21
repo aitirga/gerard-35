@@ -18,14 +18,15 @@ export function createInteractionPrompt(button: HTMLButtonElement) {
       caption.hidden = !interaction?.hint;
       if (!interaction) button.hidden = true;
     },
-    position(at: { x: number; y: number } | undefined) {
+    /** `beside`: another prompt is on the same thing, so this one stands just to its side. */
+    position(at: { x: number; y: number; beside?: boolean } | undefined) {
       const hidden = !current || !at;
       if (button.hidden !== hidden) button.hidden = hidden;
       if (!at || !current) return;
       // Companions also speak above their heads; keep their key beside the face, below the bubble.
       const companion = current.id === 'talk-bernat';
       // To a tenth of a pixel: the camera's easing never quite stops, and nobody sees less.
-      const x = Math.round((at.x + (companion ? 24 : 0)) * 10) / 10, y = Math.round((at.y + (companion ? 24 : 0)) * 10) / 10;
+      const x = Math.round((at.x + (companion ? 24 : 0) + (at.beside ? 34 : 0)) * 10) / 10, y = Math.round((at.y + (companion ? 24 : 0)) * 10) / 10;
       if (x !== left) { left = x; button.style.left = `${x}px`; }
       if (y !== top) { top = y; button.style.top = `${y}px`; }
       // Keep the key on its world anchor; let the caption open towards the viewport's centre.

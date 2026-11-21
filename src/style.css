@@ -39,11 +39,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #overview { justify-self: start; padding: 5px 0 0; border: none; background: none; color: #e8cc92; font-size: 10px; }
 #overview kbd { margin-left: 8px; min-width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
 /* The key stays on the world anchor; an optional caption sits beside it. */
-#interact { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border: 1px solid #253c3280; border-radius: 50%; background: var(--ui-paper); color: var(--ui-ink); box-shadow: 0 2px 7px #071e2238, 0 0 0 2px #f3efdc66; }
-#interact kbd { display: grid; place-items: center; width: 100%; height: 100%; border: 0; border-radius: inherit; background: none; color: inherit; font-size: 12px; font-weight: 600; line-height: 1; }
-#interact span { position: absolute; left: 35px; top: 50%; transform: translateY(-50%); padding: 4px 7px; border-radius: 4px; background: #f3efdcee; color: var(--ui-ink); box-shadow: 0 2px 6px #071e2226; font-size: 11px; font-weight: 500; line-height: 1.3; white-space: nowrap; }
-#interact[data-side="left"] span { left: auto; right: 35px; }
-#interact:hover { background: #fff9e7; border-color: #253c32; }
+#interact, #interact-2 { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border: 1px solid #253c3280; border-radius: 50%; background: var(--ui-paper); color: var(--ui-ink); box-shadow: 0 2px 7px #071e2238, 0 0 0 2px #f3efdc66; }
+#interact kbd, #interact-2 kbd { display: grid; place-items: center; width: 100%; height: 100%; border: 0; border-radius: inherit; background: none; color: inherit; font-size: 12px; font-weight: 600; line-height: 1; }
+#interact span, #interact-2 span { position: absolute; left: 35px; top: 50%; transform: translateY(-50%); padding: 4px 7px; border-radius: 4px; background: #f3efdcee; color: var(--ui-ink); box-shadow: 0 2px 6px #071e2226; font-size: 11px; font-weight: 500; line-height: 1.3; white-space: nowrap; }
+#interact[data-side="left"] span, #interact-2[data-side="left"] span { left: auto; right: 35px; }
+#interact:hover, #interact-2:hover { background: #fff9e7; border-color: #253c32; }
+/* Player 2's prompt is ringed in Aitor's colour, the one his face wears on the map (src/world-map.ts). */
+#interact-2 { box-shadow: 0 2px 7px #071e2238, 0 0 0 2px #4fd6eaaa; }
 @media (max-width: 760px) {
   .place-panel { left: 12px; top: 12px; padding: 10px 12px; max-width: calc(100vw - 24px); }
 }
@@ -91,7 +93,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 #dialogue .dots i.on { background: var(--dlg-text); }
 #dialogue .next { grid-column: 1 / -1; justify-self: end; margin-top: 10px; padding: 0; border: none; background: none; color: #e8cc92; font-size: 10px; display: flex; gap: 8px; align-items: center; }
 #dialogue .next kbd { min-width: 17px; height: 17px; font-size: 9px; line-height: 15px; }
-#hud[data-dialogue] #interact, #hud[data-dialogue] .touch-controls { visibility: hidden; }
+#hud[data-dialogue] #interact, #hud[data-dialogue] #interact-2, #hud[data-dialogue] .touch-controls { visibility: hidden; }
 @media (max-width: 760px) {
   #dialogue { --dlg-bottom: 92px; --dlg-avatar: 42px; padding: 12px 14px 10px; column-gap: 12px; }
   #dialogue .text { font-size: 13px; }
@@ -659,9 +661,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .battle-result:not([hidden]) h2 { animation: result-stamp .5s .18s cubic-bezier(.2,1.6,.4,1) both; }
 @keyframes result-in { from { opacity: 0; translate: 0 26px; rotate: -5deg; } }
 @keyframes result-stamp { from { opacity: 0; scale: 1.6; } }
-#interact:not([hidden]) { animation: prompt-in .18s ease-out both; }
+#interact:not([hidden]), #interact-2:not([hidden]) { animation: prompt-in .18s ease-out both; }
 @keyframes prompt-in { from { opacity: 0; scale: .85; } }
-@media (prefers-reduced-motion: reduce) { #interact { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { #interact, #interact-2 { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { .damage-pop > * { animation: none !important; } }
 
 /* Pause and configuration belong to the same world as the user menu. */
@@ -732,7 +734,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
   color: var(--ui-paper); background: var(--ui-surface); border: 1px solid var(--ui-line); border-top: 3px solid var(--lamp, var(--ui-gold)); border-radius: 2px;
   box-shadow: var(--ui-shadow), 0 -18px 60px -20px var(--lamp, transparent); backdrop-filter: blur(12px); animation: encounter-right .25s ease both; outline: none; }
 #lamp-dial[data-on="false"] { --lamp: #50605a; }
-#hud[data-lamp] #interact, #hud[data-jar] #interact { visibility: hidden; }
+#hud[data-lamp] #interact, #hud[data-jar] #interact, #hud[data-lamp] #interact-2, #hud[data-jar] #interact-2 { visibility: hidden; }
 #hud[data-jar] > :not(#jar-panel) { visibility: hidden; }
 #lamp-dial header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 #lamp-dial header strong { display: block; margin-top: 3px; font-size: 22px; letter-spacing: -.01em; }

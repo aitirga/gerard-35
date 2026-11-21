@@ -513,13 +513,17 @@ export function buildScenery(app: pc.Application, environment: Environment) {
     },
     /** The vehicles driving the street right now, in cells (none where no traffic runs). */
     cars() { return traffic?.vehicles() ?? []; },
-    /** `focus` is what must stay visible (the player); crowns in front of it turn see-through. `walkers` (cells) are who traffic stops for; without them it holds still. */
-    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, walkers?: Cell[]) {
-      props.update(dt, animate, focus, toCamera);
+    /**
+     * `focus` is what must stay visible (the player), and `partner` player 2's Aitor while he walks on
+     * his own: crowns, walls and buildings in front of either turn see-through. `walkers` (cells) are
+     * who traffic stops for; without them it holds still.
+     */
+    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, walkers?: Cell[], partner?: pc.Vec3) {
+      props.update(dt, animate, focus, toCamera, partner);
       if (walkers) traffic?.update(dt, walkers);
-      home?.update(dt, animate, focus, toCamera);
+      home?.update(dt, animate, focus, toCamera, partner);
       palace?.update(dt, animate, focus);
-      geo?.update(dt, animate, focus, toCamera);
+      geo?.update(dt, animate, focus, toCamera, partner);
       for (const o of overlays) o.update(dt, animate, focus, toCamera);
       basilica?.update(dt, animate, focus, toCamera);
       if (!animate) return;

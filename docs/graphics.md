@@ -210,16 +210,22 @@ keep him in sight, all set in `occlusion` (`?cut=`, `?silueta=0` and `?camara=fi
     turn under way. Interiors, the palace and Uri's maze have no buildings to ask, so it never moves there.
   While it waits or turns, and where no angle shows him, the window below opens.
 - **The building opens** (`occlusion.style`, shader chunks in src/geo-scenery.ts). Only a building
-  that hides him opens (`buildingHidesPlayer`, a few rays from his body against its real
-  triangles), only what stands in front of him, and the foot of each wall stays. Styles:
-  - `dither` (default): a round window of 3.3 m radius on screen, centred on him. The camera is
+  that hides him opens (`buildingHidesPlayer`, a few rays from his body, knees to the top of the
+  head, against its real triangles), only what stands in front of him, and the foot of each wall
+  stays. It stays open 0.6 s after it no longer hides him (`CUT_HOLD`), so rounding a corner never
+  shuts it mid-step. With two players Aitor has a window of his own (`geoCutFocus2`, the shader
+  loops over both): a building opens while it hides either, each window round its own player, and
+  walls inside a flat fold and tree crowns turn see-through for him too (src/home-scenery.ts,
+  src/props.ts). Styles:
+  - `dither` (default): a round window of 4.6 m radius on screen, centred on him (3.3 m until
+    2026-11-21: it cut too short round him). The camera is
     orthographic, so a cylinder along the line of sight is the same circle at every depth (the roof
-    and the facade open alike). The last 1.1 m dissolves into a screen-space stipple (interleaved
+    and the facade open alike). The last 1.4 m dissolves into a screen-space stipple (interleaved
     gradient noise, the same pattern in the depth prepass) and the wall just outside darkens a touch,
     as in Baldur's Gate 3 and Divinity: Original Sin 2.
   - `ghost`: the whole building turns to a screen door (a third of it stays), as Diablo fades walls.
     Shows the most, but at 1× the stipple shimmers into moiré over a large wall: it wants TAA.
-  - `ring`: the earlier cut of 5 m radius, wider towards the camera, traced by a glowing cream edge. Each
+  - `ring`: the earlier cut of 6.2 m radius, wider towards the camera, traced by a glowing cream edge. Each
     surface opens at its own size, so roofs and walls show stacked arcs.
   - `none`: buildings stay whole; only the silhouette shows him. A place whose look sets
     `cut: false` always draws this way, whatever the style (the Sagrada Família).

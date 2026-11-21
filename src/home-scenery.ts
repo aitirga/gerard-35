@@ -1776,9 +1776,9 @@ export function buildHome(kit: HomeKit, environment: Environment) {
       for (const [id, look] of looks) setLamp(id, look);
     },
     /** Folds walls and tall furniture that stand between `focus` and the camera. */
-    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
+    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, partner?: pc.Vec3) {
       for (const fold of folds) {
-        const target = folding && focus && toCamera && hides(fold, focus, toCamera) ? 0 : 1;
+        const target = folding && toCamera && (focus && hides(fold, focus, toCamera) || partner && hides(fold, partner, toCamera)) ? 0 : 1;
         if (fold.t === target) continue;
         fold.t = animate ? fold.t + (target - fold.t) * (1 - Math.exp(-dt * FOLD_RATE)) : target;
         if (Math.abs(fold.t - target) < 0.02) fold.t = target;

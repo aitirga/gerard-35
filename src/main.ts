@@ -67,6 +67,9 @@ let dirty = false;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 const interactButton = document.querySelector<HTMLButtonElement>('#interact')!;
 const interactionPrompt = createInteractionPrompt(interactButton);
+/** Player 2's own prompt, on what Aitor has in reach while he walks on his own, with their pad's button. */
+const partnerButton = document.querySelector<HTMLButtonElement>('#interact-2')!;
+const partnerPrompt = createInteractionPrompt(partnerButton);
 const dialogue = createDialogueBanner(document.querySelector<HTMLElement>('#hud')!);
 const storyUI = createStoryUI(document.querySelector<HTMLElement>('#hud')!);
 // Chapter 2: the station map (metro and Rodalies) and the TV news.
@@ -444,9 +447,11 @@ try {
     lastScene: async say => {
       silenceForChoice();
       await game.lastScene('hold');
+      homeLights.moment('last');
       // Her last words, each held as long as it takes to read.
       for (const line of LINES_CASTLE.lastWords.lines) await say(line.speaker, line.text, Math.max(2000, 1000 + line.text.length * 60));
       const choice = chosen = await endings.choose(LINES_CASTLE.lastScene);
+      homeLights.moment(choice);
       pianoAfterChoice();
       void say('aitor', LINES_CASTLE[choice].aitor.text, 2200);
       await game.lastScene(choice);
@@ -477,6 +482,7 @@ try {
     if (source !== 'board') sfx.play(`artilugio-${note}` as SoundId);
     heldNow().play(note);
     battleUI.note(note);
+    homeLights.note(battleUI.live);
     scoreNote(battleUI.live, battleUI.artilugioLive);
     syncArtilugio();
   });
@@ -582,7 +588,9 @@ try {
       // Only when the fight could not play it (`lastScene`): the two commands over the place.
       exploration.close(); storyPaused = true; game.setPaused(true);
       silenceForChoice();
+      homeLights.moment('last');
       const choice = await endings.choose(LINES_CASTLE.lastScene);
+      homeLights.moment(choice);
       pianoAfterChoice();
       storyPaused = false; game.setPaused(!!exploration.active || menuOpen());
       storyEvent({ type: 'ending', choice });
@@ -674,6 +682,8 @@ try {
     else await storyUI.blackout(true, 0);
     // No morning comes here to lift the black (the story's wakes them at home): the Monday's words are said where they stand.
     storyUI.unflash();
+    // The room is given back as a morning would give it (the story's `wake`).
+    homeLights.moment('wake');
     await storyUI.blackout(false, 1600);
     await play({ kind: 'dialogue', dialogue: lines.epilogue });
     await play({ kind: 'credits' });
@@ -969,6 +979,8 @@ try {
     },
     onInteraction: interactionPrompt.show,
     onInteractionScreen: interactionPrompt.position,
+    onPartnerInteraction: partnerPrompt.show,
+    onPartnerInteractionScreen: partnerPrompt.position,
     onDialogue: dialogue.show,
     onVeil: on => storyUI.veil(on),
     // A lamp in the Meridiana flat opens its dial: colour and brightness, in the game and at home.
@@ -1096,6 +1108,7 @@ try {
 
   });
   interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else game.interact(); canvas.focus({ preventScroll: true }); });
+  partnerButton.addEventListener('click', () => { if (!dialogue.open) game.interact(true); canvas.focus({ preventScroll: true }); });
   document.querySelector('#overview')!.addEventListener('click', () => game.toggleOverview());
   document.querySelectorAll<HTMLButtonElement>('[data-direction]').forEach(button => {
     button.addEventListener('pointerdown', event => {

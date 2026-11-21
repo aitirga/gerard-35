@@ -104,8 +104,16 @@ const ADULT_SCALE = MERIDIANA_BED.sleepers.gerard.scale;
 const AITOR_SCALE = MERIDIANA_BED.sleepers.aitor.scale;
 /** How far Aitor's hand sits above Gerard's when it rests on the back of it. */
 const HAND_STACK = .17;
-/** How far apart two players may walk before the one ahead is held back, so both stay on screen. */
-export const TETHER = 7;
+/**
+ * How far apart two players may walk (cells) before the one ahead is held back: room to go their
+ * own way round a place, while the camera pulls back just enough to keep both in the frame.
+ */
+export const TETHER = 14;
+/**
+ * Room the camera keeps round two players (world units, in the frame's own half-height and
+ * half-width): a head, the bubble over it and the prompt beside it stay inside the picture.
+ */
+const TWO_IN_FRAME = { up: 3.2, side: 2.6 };
 
 export interface GameCallbacks {
   /** A fight starts; `withPartner` says whether the companion is there to fight too. */
@@ -139,6 +147,9 @@ export interface GameCallbacks {
   onInteraction: (interaction: Interaction | undefined) => void;
   /** The nearby action's world anchor projected into CSS pixels; absent while unavailable. */
   onInteractionScreen: (at: { x: number; y: number } | undefined) => void;
+  /** What player 2's Aitor has within reach while he walks on his own, and where its prompt goes on screen (`beside`: Gerard's prompt is on the same thing). */
+  onPartnerInteraction?: (interaction: Interaction | undefined) => void;
+  onPartnerInteractionScreen?: (at: { x: number; y: number; beside: boolean } | undefined) => void;
   onDialogue: (dialogue: Dialogue) => void;
   /** Going from one place to another: the screen darkens (`on`) or clears; resolves once it has. */
   onVeil: (on: boolean) => Promise<void>;
@@ -2041,7 +2052,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       mate.follower.reset(PLACES.aitor.cell);
       mate.follower.seed(pathTo(environment.grid, PLACES.aitor.cell, movement.cell, npcs.map(n => n.cell)));
     } else mate.follower.reset(beside(movement.cell));
-    if (mate.id === 'aitor' && free) free.teleport(environment.grid, nearestWalkable(mate.follower.position));
+    if (mate.id === 'aitor' && free) { free.teleport(environment.grid, nearestWalkable(mate.follower.position)); arrive(partnerSteps, free.cell); }
   }
   function nearestWalkable(at: Cell): Cell {
     const cell = { x: Math.round(at.x), z: Math.round(at.z) };
@@ -2054,6 +2065,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       free = new FreeMovement(environment.grid, nearestWalkable(mate.follower.position));
       partnerFacing = mate.follower.facing;
       free.resolveOverlap([...sceneCells(), ...movement.footprint], false);
+      arrive(partnerSteps, free.cell);
     } else if (!on && free) {
       mates.aitor.follower.reset(free.position); free = undefined;
       const start = nearestWalkable(mates.aitor.follower.position);
@@ -2870,10 +2882,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const tilt = Math.min(1, Math.max(0.35, (length - 0.2) / 0.7));
       input = { x: partnerStick.x / length * tilt, y: partnerStick.y / length * tilt };
     } else if (partnerDirection) input = SCREEN_VECTORS[partnerDirection];
-    if (!input) { free.walking = false; tetherTug = 0; partnerYaw = steerYaw(); return; }
+    if (!input) { free.walking = false; tetherTug = 0; partnerYaw = steerYaw(); crossThreshold(free.cell, false, partnerSteps, () => {}); return; }
     const grid = screenToGrid(input.x, input.y, partnerYaw);
     partnerFacing = facingToward(grid.x, grid.z);
     free.drive(grid.x, grid.z, dt, partnerCells(), partnerRunning && story.canRun);
+    // A stair or a threshold Aitor walks into takes Gerard (and everyone) through too.
+    crossThreshold(free.cell, true, partnerSteps, () => { free!.walking = false; });
+    if (!free || crossing) return;
     // Aitor pulling against the tether: he calls out to Gerard.
     const apart = Math.hypot(movement.position.x - free.position.x, movement.position.z - free.position.z) > TETHER - .6;
     tetherTug = apart ? tetherTug + Math.min(delta, .25) : 0;
@@ -2902,11 +2917,29 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   let overview = false;
   let lastPrompt = '';
   let activeInteraction: Interaction | undefined;
-  // Walk-on stairs wait until Gerard lets go or walks away, so arriving never bounces him back.
-  let stairsArmed = false;
-  /** The stair Gerard is standing in, so a station's stair goes down once per walk into it. */
-  let inStep = '';
-  let arrival: Cell = { ...movement.cell };
+  /** What player 2's Aitor has in reach, and the last one told (`updatePrompt`). */
+  let partnerInteraction: Interaction | undefined, partnerPrompt = '';
+  /**
+   * A walk-on stair or threshold under someone: it waits until they let go or walk away from where
+   * they arrived (`armed`), so arriving never bounces them back, and `inStep` is the one they stand
+   * in, so a station's stair goes down once per walk into it. Gerard's, and player 2's Aitor's:
+   * whoever walks into one takes the whole party through.
+   */
+  interface Threshold { armed: boolean; arrival: Cell; inStep: string }
+  const steps: Threshold = { armed: false, arrival: { ...movement.cell }, inStep: '' };
+  const partnerSteps: Threshold = { armed: false, arrival: { ...movement.cell }, inStep: '' };
+  const arrive = (threshold: Threshold, at: Cell) => { threshold.armed = false; threshold.arrival = { ...at }; threshold.inStep = ''; };
+  /** `who` walks (`moving`) on `here`: a stair there takes the party through, a step without a destination is used. */
+  function crossThreshold(here: Cell, moving: boolean, threshold: Threshold, halt: () => void) {
+    if (!moving || Math.hypot(here.x - threshold.arrival.x, here.z - threshold.arrival.z) > 2.5) threshold.armed = true;
+    const stairs = environment.interactions.find(({ step: r }) => r && here.x >= r.x && here.x < r.x + r.w && here.z >= r.z && here.z < r.z + r.d);
+    if (stairs?.to && threshold.armed && moving) {
+      const gate = story.gate(stairs.id);
+      // A stair the story holds shut says why once, not again every frame they keep pushing into it.
+      if (gate) { clearInput(); arrive(threshold, here); callbacks.onDialogue(gate); } else void travel(stairs.to.environment, stairs.to.cell);
+    } else if (stairs && !stairs.to && moving && stairs.id !== threshold.inStep) { halt(); use(stairs); }
+    threshold.inStep = stairs?.id ?? '';
+  }
   const cameraTarget = scenery.toWorld(movement.cell.x, movement.cell.z);
   const screen = new pc.Vec3();
   function clearInput() { held.clear(); shiftHeld = false; }
@@ -2917,6 +2950,11 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const changed = id !== lastPrompt || activeInteraction?.id !== interaction?.id;
     activeInteraction = interaction;
     if (changed) { lastPrompt = id; callbacks.onInteraction(interaction); }
+    // Player 2 sees what Aitor can use where he stands, in their own prompt (only what changed is written).
+    const theirs = free && !free.bouncing ? nearby(free.position) : undefined;
+    const key = theirs ? `${theirs.id}|${theirs.label}|${theirs.hint ?? ''}` : '';
+    partnerInteraction = theirs;
+    if (key !== partnerPrompt) { partnerPrompt = key; callbacks.onPartnerInteraction?.(theirs); }
   }
   /** Use the actual model for people and pickups, whose reach cell can be beside the object. */
   function interactionAnchor(interaction: Interaction) {
@@ -2937,14 +2975,33 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     point.y = interaction.anchor?.y ?? scenery.groundHeight(point.x, point.z) + .65;
     return point;
   }
+  const frameForward = new pc.Vec3(), frameRight = new pc.Vec3(), frameUp = new pc.Vec3(), frameApart = new pc.Vec3();
+  /**
+   * The half-height the camera needs, looking along `-offset`, to keep Gerard and `partner` (world)
+   * inside the frame with room round each (`TWO_IN_FRAME`): their distance measured across the
+   * picture and up it, so side by side on a wide screen costs little and one behind the other more.
+   * The camera pulls back only as far as that, and comes in again as they come together.
+   */
+  function twoInFrame(partner: pc.Vec3, offset: pc.Vec3, aspect: number) {
+    frameForward.copy(offset).mulScalar(-1).normalize();
+    frameRight.cross(frameForward, pc.Vec3.UP).normalize();
+    frameUp.cross(frameRight, frameForward);
+    frameApart.sub2(partner, player.getPosition());
+    const across = Math.abs(frameApart.dot(frameRight)) / 2, up = Math.abs(frameApart.dot(frameUp)) / 2;
+    return Math.max(up + TWO_IN_FRAME.up, (across + TWO_IN_FRAME.side) / Math.max(.1, aspect));
+  }
   function positionPrompt() {
     const point = watchingTV && tv ? tv.screen.add(new pc.Vec3(0, -.7, .1))
       : !stopped() && !battle && activeInteraction ? interactionAnchor(activeInteraction) : undefined;
+    const theirs = !stopped() && !battle && !paused && free && partnerInteraction ? interactionAnchor(partnerInteraction) : undefined;
+    callbacks.onPartnerInteractionScreen?.(theirs && promptOnScreen(theirs) ? { x: screen.x, y: screen.y, beside: partnerInteraction!.id === activeInteraction?.id } : undefined);
     if (!point || paused) { callbacks.onInteractionScreen(undefined); return; }
+    callbacks.onInteractionScreen(promptOnScreen(point) ? { x: screen.x, y: screen.y } : undefined);
+  }
+  /** Projects `point` into `screen`; off-screen anchors hide instead of turning a prompt into a waypoint at the edge. */
+  function promptOnScreen(point: pc.Vec3) {
     camera.camera!.worldToScreen(point, screen);
-    // Hide off-screen anchors instead of turning the prompt into a waypoint at the edge.
-    const visible = screen.x >= 18 && screen.x <= canvas.clientWidth - 18 && screen.y >= 18 && screen.y <= canvas.clientHeight - 18;
-    callbacks.onInteractionScreen(visible ? { x: screen.x, y: screen.y } : undefined);
+    return screen.x >= 18 && screen.x <= canvas.clientWidth - 18 && screen.y >= 18 && screen.y <= canvas.clientHeight - 18;
   }
   function positionPlayer() {
     const p = scenery.toWorld(movement.position.x, movement.position.z);
@@ -2985,7 +3042,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     effects.setScene(environment, scenery);
     for (const [id, lamp] of Object.entries(lamps) as [LightId, Lamp][]) scenery.setLamp(id, lamp);
     movement.teleport(environment.grid, destination ?? environment.spawn);
-    stairsArmed = false; arrival = movement.cell; inStep = '';
+    arrive(steps, movement.cell);
     approach?.destroy(); approach = undefined;
     palace.root.enabled = false;
     if (id !== 'palacio') drainRisen = false;
@@ -3223,14 +3280,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
         if (movement.drive(grid.x, grid.z, dt, occupiedCells(), running())) callbacks.onStep(movement.steps, movement.cell);
         if (movement.walking) overview = false;
       } else movement.walking = false;
-      const here = movement.cell;
-      if (!input || Math.hypot(here.x - arrival.x, here.z - arrival.z) > 2.5) stairsArmed = true;
-      const stairs = environment.interactions.find(({ step: r }) => r && here.x >= r.x && here.x < r.x + r.w && here.z >= r.z && here.z < r.z + r.d);
-      if (stairs?.to && stairsArmed && input) {
-        const gate = story.gate(stairs.id);
-        if (gate) { clearInput(); callbacks.onDialogue(gate); } else void travel(stairs.to.environment, stairs.to.cell);
-      } else if (stairs && !stairs.to && input && stairs.id !== inStep) { movement.walking = false; use(stairs); }
-      inStep = stairs?.id ?? '';
+      crossThreshold(movement.cell, !!input, steps, () => { movement.walking = false; });
       // Nobody walks through anybody (src/crowd.ts): last frame's overlaps eased apart before anyone moves on.
       shoved = crowd.separate(delta, environment.grid);
       const mate = mateHere();
@@ -3456,7 +3506,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     // Inside the Sagrada Família the vault opens where the story's camera looks, not only round Gerard.
     scenery.update(delta, animate, environment.basilica && cinematic && !battle ? cinematic.target.clone() : new pc.Vec3(0, .7, 0).add(player.getPosition()), camera.forward.clone().mulScalar(-1),
-      battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position]);
+      battle || paused ? undefined : partner?.shown ? [movement.position, matePosition(partner)] : [movement.position],
+      // Player 2's Aitor walks on his own: what hides him opens round him too.
+      free && partner?.entity.enabled && !battle && !cinematic ? new pc.Vec3(0, .7, 0).add(partner.entity.getPosition()) : undefined);
     // In bed nothing needs finding: under the duvet is where their legs belong.
     silhouettes.update(bedroom ? [] : partner ? [player, partner.entity] : [player]);
     // Particles part around everyone standing in the scene, and the air fills what the camera sees.
@@ -3472,10 +3524,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     effects.update(shown * battleScene.pace, { focus: cameraTarget, reach: Math.min(40, view * 1.1), animate: !reducedMotion.matches, paused, fight: !!battle });
     const aspect = canvas.clientWidth / canvas.clientHeight;
     const follow = environment.zoom;
-    // Two players share the frame: the camera looks between them and pulls back as they part.
+    // Two players share the frame: the camera looks between them and pulls back as they part (`twoInFrame`).
     const shared = free && mate?.entity.enabled ? mate.entity.getPosition() : undefined;
     const between = shared ? player.getPosition().clone().lerp(player.getPosition(), shared, .5) : player.getPosition().clone();
-    const apart = shared ? player.getPosition().distance(shared) : 0;
     let target = battle && framed && cinematic ? cinematic.target.clone() : battle && faceZoom ? faceZoom.clone() : battle ? battleScene.frame.clone().add(new pc.Vec3(0, 1 + tallLift(), 0)).add(battleScene.focus) : cinematic ? cinematic.target.clone() : follow && !overview ? between : new pc.Vec3();
     // Her entrance holds the camera (`throneShot`); it ends on the fight's own view.
     const fightHeight = battle ? Math.max(4.9, 4.8 / aspect, battle.foes.length * 1.1 + 2, battleScene.foeTop * .97) * (throne ? THRONE_VIEW.wider : bossStage ? STAGE_VIEW.wider : 1) : 0;
@@ -3563,7 +3614,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     } else if (throneLit) { throneLit = false; post.spotlight(0, []); }
     const halfWidth = (environment.grid[0].length + environment.grid.length) * Math.SQRT1_2 / 2 + 2;
     const fullHeight = (environment.grid[0].length + environment.grid.length) / Math.sqrt(6) / 2 + 4;
-    const height = shot ? shot.height : battle && framed && cinematic ? cinematic.height : battle && faceZoom ? Math.max(FACE_ZOOM, FACE_ZOOM / aspect) : battle ? fightHeight : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow + apart * .45, (follow + apart * .45) * 6 / 7 / aspect) : Math.max(fullHeight, halfWidth / aspect);
+    const height = shot ? shot.height : battle && framed && cinematic ? cinematic.height : battle && faceZoom ? Math.max(FACE_ZOOM, FACE_ZOOM / aspect) : battle ? fightHeight : cinematic ? Math.max(cinematic.height, cinematic.height * 1.3 / aspect) : follow && !overview ? Math.max(follow, follow * 6 / 7 / aspect, shared ? twoInFrame(shared, offset, aspect) : 0) : Math.max(fullHeight, halfWidth / aspect);
     viewHeight = pc.math.lerp(viewHeight, height, reducedMotion.matches || cut ? 1 : ease);
     // Heavy blows punch the frame in for a moment (battle-scene `punch`).
     camera.camera!.orthoHeight = viewHeight * (1 - (battle ? battleScene.punch : 0));
@@ -3630,7 +3681,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     /** Puts Gerard (and whoever is with him) back on `cell` of this scene, e.g. up a station's stair. */
     standAt(cell: Cell) {
       movement.teleport(environment.grid, cell);
-      stairsArmed = false; arrival = movement.cell; inStep = '';
+      arrive(steps, movement.cell);
       const mate = mateHere();
       if (mate) placeMate(mate);
       cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
@@ -3733,7 +3784,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     setLampLabels(label: (id: string) => string | undefined) { lampLabel = label; lastPrompt = ''; updatePrompt(); },
     /** How much of La Reina Bubbaloo's light the scene is heading for (0–1), for the lights at home. */
     get lightTone() { return toneTarget; },
-    setPaused(value: boolean) { paused = value; if (value) callbacks.onInteractionScreen(undefined); clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; partnerDirection = null; partnerStick = null; partnerRunning = false; },
+    setPaused(value: boolean) { paused = value; if (value) { callbacks.onInteractionScreen(undefined); callbacks.onPartnerInteractionScreen?.(undefined); } clearInput(); controllerDirection = null; controllerStick = null; controllerRunning = false; partnerDirection = null; partnerStick = null; partnerRunning = false; },
     get position() { return movement.position; },
     /** The scene Gerard is in. */
     get environmentId() { return environment.id; },

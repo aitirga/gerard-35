@@ -1,0 +1,115 @@
+{
+  "title": "Chapter 2 · Two players apart and together",
+  "description": "Two players in the Meridiana: each with a prompt of their own (Aitor's ringed in his colour, with player 2's button), a door either of them goes through takes both, and out in the avenue they can walk up to 14 cells apart while the camera pulls back just enough to keep both in the frame. Two standard gamepads are faked in the page.",
+  "steps": [
+    {
+      "open": "/?story=aurelia&solo=0&combates=no"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 180000
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0), fakePad(1)]; navigator.getGamepads = () => window.fakePads; window.frames = n => new Promise(done => { const tick = () => n-- > 0 ? requestAnimationFrame(tick) : done(); tick(); }); window.tap = async (pad, button) => { window.fakePads[pad].buttons[button].pressed = true; await frames(4); window.fakePads[pad].buttons[button].pressed = false; await frames(4); };"
+    },
+    {
+      "until": "window.gerard.game.partnerFree",
+      "timeout": 20000
+    },
+    {
+      "teleport": "meridiana",
+      "cell": [
+        6,
+        2
+      ]
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "both-prompts",
+      "caption": "Both next to the front door: Gerard's prompt and, beside it, Aitor's in his colour with player 2's button"
+    },
+    {
+      "eval": "window.fakePads[0].axes[1] = 1"
+    },
+    {
+      "wait": 700
+    },
+    {
+      "eval": "window.fakePads[0].axes[1] = 0"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "shot": "aitor-prompt",
+      "caption": "Gerard walks off: only Aitor has the door in reach, and his prompt says so"
+    },
+    {
+      "eval": "tap(1, 0)"
+    },
+    {
+      "until": "!document.title.includes('Casa de Gerard')",
+      "timeout": 20000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "through-together",
+      "caption": "Aitor (player 2) opens the door: both come out onto the avenue, side by side"
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = 0.85; window.fakePads[1].axes[1] = 0.5"
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = 0; window.fakePads[1].axes[1] = 0"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "apart-across",
+      "caption": "Aitor walks off along the avenue to the tether's 14 cells: the camera pulls back just enough to keep both in the frame"
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = -0.85; window.fakePads[1].axes[1] = -0.5"
+    },
+    {
+      "wait": 5500
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = 0; window.fakePads[1].axes[1] = 0"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "apart-other-way",
+      "caption": "Back past Gerard and on to the other side: the frame follows the pair, never cutting either off"
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = 0.85; window.fakePads[1].axes[1] = 0.5"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.fakePads[1].axes[0] = 0; window.fakePads[1].axes[1] = 0"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "together-again",
+      "caption": "Walking back together, the camera comes in again"
+    }
+  ]
+}

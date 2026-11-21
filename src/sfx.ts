@@ -574,7 +574,7 @@ export function createSfx(audio: GameAudio) {
 export function watchMenuSounds(sfx: Sfx, menuOpen: () => boolean) {
   const back = '[data-back], .journal-close, .target-back, [data-map-back]';
   // The street's own buttons (talk, walk, centre the view) make no menu sound.
-  const quiet = '#interact, #overview, [data-direction], #environment';
+  const quiet = '#interact, #interact-2, #overview, [data-direction], #environment';
   let pointer = 0, clicked = 0;
   const onPointer = () => { pointer = performance.now(); };
   const onFocus = (event: FocusEvent) => {

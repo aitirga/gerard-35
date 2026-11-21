@@ -50,11 +50,17 @@ const SLOPE = 1 / Math.cos(30 * Math.PI / 180);
  * opens: a surface he isn't clearly behind (the facade at his back) stays, whatever else of its
  * building hides him. Shadows are left whole. Each building opens at `CUT_RATE` while it hides him.
  */
-const CUT_DITHER = { radius: 3.3, band: 1.1, shade: 0.6, dark: 0.25, foot: 0.3 };
+const CUT_DITHER = { radius: 4.6, band: 1.4, shade: 0.7, dark: 0.25, foot: 0.3 };
 const CUT_GHOST = 0.32;
-const CUT_RING = { radius: 5, edge: 0.14, halo: 0.5, flare: 0.25, glow: '1.0, 0.86, 0.6' };
+const CUT_RING = { radius: 6.2, edge: 0.14, halo: 0.5, flare: 0.25, glow: '1.0, 0.86, 0.6' };
 const CUT_STUB = -0.25;
 const CUT_RATE = 8;
+/**
+ * Seconds a building stays open once it no longer hides anyone, so walking along its edge or
+ * round a corner never shuts the window on them mid-step. With two players each has a window of
+ * their own (`geoCutFocus2`): a building opens while it hides either.
+ */
+const CUT_HOLD = 0.6;
 /**
  * A building marked `cut: "foundations"` in its zone (docs/environment-styling.md § Buildings) opens
  * no window: while it hides Gerard or the ground a few steps round him (`buildingHidesGround`: a roof
@@ -81,7 +87,8 @@ export const CUT_STYLE_INDEX: Record<Exclude<OcclusionStyle, 'none'>, number> = 
 /** What wet asphalt and panot reflect, at full wetness. */
 const WET_SHEEN = new pc.Color(0.14, 0.14, 0.14);
 type V3 = [number, number, number];
-interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open: number; foundations?: Foundations }
+/** `clear`: seconds since it last hid anyone (`CUT_HOLD`). */
+interface BuildingCut { triangles: number[]; instances: pc.MeshInstance[]; open: number; clear?: number; foundations?: Foundations }
 /** A building that comes down to its foundations: how far down (0–1), seconds he has been clear of it, its stone cap, and what stands loose on top (a landmark's bell, its weather vane) that goes with the top. */
 interface Foundations { sink: number; clear: number; cap?: pc.Entity; loose: pc.Entity[] }
 
@@ -94,6 +101,8 @@ const CUT = {
 };
 const CUTAWAY_DECLARATION = `
 uniform geoCutFocus: vec3f;
+uniform geoCutFocus2: vec3f;
+uniform geoCutTwo: f32;
 uniform geoCutToCamera: vec3f;
 uniform geoCutStyle: f32;
 uniform geoCutOpen: f32;
@@ -109,31 +118,37 @@ const CUTAWAY_MAIN = `
 if (vPositionW.y > uniform.geoCutPlane) { discard; }
 #if defined(FORWARD_PASS) || defined(PREPASS_PASS)
 if (uniform.geoCutOpen > 0.0) {
-  let cutOffset = vPositionW - uniform.geoCutFocus;
-  let cutAlong = dot(cutOffset, uniform.geoCutToCamera);
-  // This surface's own plane, turned to the camera: Gerard must be behind it for it to hide him.
+  // This surface's own plane, turned to the camera: someone must be behind it for it to hide them.
   let cutFace = normalize(cross(dpdx(vPositionW), dpdy(vPositionW)));
-  let cutBehind = dot(cutOffset, cutFace) * sign(dot(cutFace, uniform.geoCutToCamera));
-  // A wall opens only the faces Gerard is behind (geoCutLean); foliage overhead opens right through, its underside too.
-  if (cutAlong > ${CUT.near} && cutBehind > uniform.geoCutLean) {
-    let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
-    let cutStub = vPositionW.y - (uniform.geoCutFocus.y + ${CUT.stub});
-    let cutNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
-    if (uniform.geoCutStyle < 0.5) {
-      let cutReach = ${CUT.dither.radius} * uniform.geoCutOpen;
-      let cutFoot = smoothstep(-${CUT.dither.foot}, 0.0, cutStub);
-      let cutHole = (1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach, cutAcross)) * cutFoot;
-      if (cutHole > cutNoise) { discard; }
-      geoCutShade = 1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach + ${CUT.dither.shade}, cutAcross);
-    } else if (uniform.geoCutStyle < 1.5) {
-      if (uniform.geoCutOpen * ${CUT.ghost} > cutNoise && cutStub > 0.0) { discard; }
-    } else {
-      let cutReach = ${CUT.ring.radius} * uniform.geoCutOpen * (1.0 + ${CUT.ring.flare} * (cutAlong - ${CUT.near}) / ${CUT.ring.radius});
-      let cutInside = step(cutAcross, cutReach - ${CUT.ring.edge});
-      if (cutInside * step(0.0, cutStub) > 0.5) { discard; }
-      let cutRing = 1.0 - smoothstep(cutReach - ${CUT.ring.halfEdge}, cutReach + ${CUT.ring.halo}, cutAcross);
-      let cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.ring.halo}, -${CUT.ring.halfEdge}, cutStub);
-      geoCutGlow = max(cutRing, cutFoot);
+  let cutFacing = sign(dot(cutFace, uniform.geoCutToCamera));
+  let cutNoise = fract(52.9829189 * fract(dot(pcPosition.xy, vec2f(0.06711056, 0.00583715))));
+  // Gerard's window, and with two players Aitor's too (geoCutTwo): each opens what stands in front of its own.
+  for (var cutWho = 0; cutWho < 2; cutWho++) {
+    if (cutWho == 1 && uniform.geoCutTwo < 0.5) { break; }
+    let cutAt = select(uniform.geoCutFocus, uniform.geoCutFocus2, cutWho == 1);
+    let cutOffset = vPositionW - cutAt;
+    let cutAlong = dot(cutOffset, uniform.geoCutToCamera);
+    let cutBehind = dot(cutOffset, cutFace) * cutFacing;
+    // A wall opens only the faces they are behind (geoCutLean); foliage overhead opens right through, its underside too.
+    if (cutAlong > ${CUT.near} && cutBehind > uniform.geoCutLean) {
+      let cutAcross = length(cutOffset - uniform.geoCutToCamera * cutAlong);
+      let cutStub = vPositionW.y - (cutAt.y + ${CUT.stub});
+      if (uniform.geoCutStyle < 0.5) {
+        let cutReach = ${CUT.dither.radius} * uniform.geoCutOpen;
+        let cutFoot = smoothstep(-${CUT.dither.foot}, 0.0, cutStub);
+        let cutHole = (1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach, cutAcross)) * cutFoot;
+        if (cutHole > cutNoise) { discard; }
+        geoCutShade = max(geoCutShade, 1.0 - smoothstep(cutReach - ${CUT.dither.band}, cutReach + ${CUT.dither.shade}, cutAcross));
+      } else if (uniform.geoCutStyle < 1.5) {
+        if (uniform.geoCutOpen * ${CUT.ghost} > cutNoise && cutStub > 0.0) { discard; }
+      } else {
+        let cutReach = ${CUT.ring.radius} * uniform.geoCutOpen * (1.0 + ${CUT.ring.flare} * (cutAlong - ${CUT.near}) / ${CUT.ring.radius});
+        let cutInside = step(cutAcross, cutReach - ${CUT.ring.edge});
+        if (cutInside * step(0.0, cutStub) > 0.5) { discard; }
+        let cutRing = 1.0 - smoothstep(cutReach - ${CUT.ring.halfEdge}, cutReach + ${CUT.ring.halo}, cutAcross);
+        let cutFoot = step(cutAcross, cutReach) * smoothstep(-${CUT.ring.halo}, -${CUT.ring.halfEdge}, cutStub);
+        geoCutGlow = max(geoCutGlow, max(cutRing, cutFoot));
+      }
     }
   }
 }
@@ -2345,11 +2360,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
   // A building that has sunk or not yet risen (`pivot.enabled` false, src/street-shift.ts) hides nobody.
   const occluders = [...buildingCuts.entries()].map(([pivot, cut]) => ({ pivot, cut, shape: createBuildingOccluder(cut.triangles) }));
   const uniform = (name: string) => device.scope.resolve(name);
-  const cutFocus = uniform('geoCutFocus'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
+  const cutFocus = uniform('geoCutFocus'), cutFocus2 = uniform('geoCutFocus2'), cutTwo = uniform('geoCutTwo'), cutToCamera = uniform('geoCutToCamera'), cutStyle = uniform('geoCutStyle'), cutOpen = uniform('geoCutOpen');
   // Every pass binds the declared uniforms (WebGPU fills a buffer for the shadow pass too), so give them a value up front.
   const cutPlane = uniform('geoCutPlane');
   uniform('geoCutLean').setValue(BUILDING_CUT_LEAN);
-  cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue(NO_PLANE);
+  cutOpen.setValue(0); cutStyle.setValue(0); cutFocus.setValue([0, 0, 0]); cutFocus2.setValue([0, 0, 0]); cutTwo.setValue(0); cutToCamera.setValue([0, 1, 0]); cutPlane.setValue(NO_PLANE);
   /** A building coming down to its foundations or rising again: the plane its cut stands at, its cap there, its loose pieces gone while it is down. */
   function sinkTo(cut: BuildingCut, down: Foundations, top: number, sink: number) {
     down.sink = sink;
@@ -2383,8 +2398,8 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       }));
       return (toCamera: Point3) => people.filter(p => near.some(({ shape }) => buildingHidesPlayer(shape, p, toCamera))).length;
     },
-    /** Opens the cut round `focus`, in the chosen style, while a building stands between it and the camera. */
-    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3) {
+    /** Opens the cut round `focus` (and `partner`'s, player 2's Aitor), in the chosen style, while a building stands between either and the camera. */
+    update(dt: number, animate: boolean, focus?: pc.Vec3, toCamera?: pc.Vec3, partner?: pc.Vec3) {
       weather(dt);
       if (animate) { time += dt; river.diffuseMapOffset.set(time * 0.05, time * 0.02); river.emissiveMapOffset.set(-time * 0.03, time * 0.04); river.update(); }
       sea?.update(dt, animate);
@@ -2392,11 +2407,11 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
       const style = look.cut === false ? 'none' : occlusion.style;
       if (style !== 'none') cutStyle.setValue(CUT_STYLE_INDEX[style]);
       for (const { pivot, cut, shape } of occluders) {
-        const hides = pivot.enabled && !!focus && !!toCamera && buildingHidesPlayer(shape, focus, toCamera);
+        const hides = pivot.enabled && !!toCamera && (!!focus && buildingHidesPlayer(shape, focus, toCamera) || !!partner && buildingHidesPlayer(shape, partner, toCamera));
         const down = cut.foundations;
         if (down) {
           // Down while it hides him or the ground round him, and a moment after; it comes back up once he has been clear of it a while.
-          const inTheWay = hides || (pivot.enabled && !!focus && !!toCamera && buildingHidesGround(shape, focus, toCamera));
+          const inTheWay = hides || (pivot.enabled && !!toCamera && (!!focus && buildingHidesGround(shape, focus, toCamera) || !!partner && buildingHidesGround(shape, partner, toCamera)));
           down.clear = inTheWay ? 0 : down.clear + dt;
           const want = inTheWay || (down.sink > 0 && down.clear < SINK.hold) ? 1 : 0;
           const eased = animate ? down.sink + (want - down.sink) * (1 - Math.exp(-dt * SINK.rate)) : want;
@@ -2404,13 +2419,16 @@ export function buildGeo(kit: GeoKit, scene: GeoScene) {
           if (sink !== down.sink) sinkTo(cut, down, shape.max.y + 0.1, sink);
           continue;
         }
-        const target = style !== 'none' && hides ? 1 : 0;
+        cut.clear = hides ? 0 : (cut.clear ?? CUT_HOLD) + dt;
+        const target = style !== 'none' && (hides || cut.clear < CUT_HOLD) ? 1 : 0;
         const open = animate ? cut.open + (target - cut.open) * (1 - Math.exp(-dt * CUT_RATE)) : target;
         const next = Math.abs(open - target) < 0.004 ? target : open;
         if (cut.open === next) continue;
         cut.open = next;
         for (const instance of cut.instances) instance.setParameter('geoCutOpen', cut.open);
       }
+      cutTwo.setValue(partner ? 1 : 0);
+      if (partner) cutFocus2.setValue([partner.x, partner.y, partner.z]);
       if (focus && toCamera) {
         cutFocus.setValue([focus.x, focus.y, focus.z]);
         const d = toCamera.clone().normalize();

@@ -95,7 +95,8 @@ export function buildingHidesPlayer(shape: BuildingOccluder, focus: Point3, toCa
   if (!direction) return false;
   const horizontal = Math.hypot(direction.x, direction.z);
   const right = horizontal > EPSILON ? { x: -direction.z / horizontal, z: direction.x / horizontal } : { x: 1, z: 0 };
-  for (const lift of [-0.35, 0.1, 0.6]) {
+  // From the knees to the top of the head (Aitor stands taller than Gerard): a building over a head opens too.
+  for (const lift of [-0.35, 0.1, 0.6, 1.1]) {
     for (const side of [0, -0.18, 0.18]) {
       const origin = { x: focus.x + right.x * side, y: focus.y + lift, z: focus.z + right.z * side };
       if (hitsBounds(shape, origin, direction) && shape.triangles.some(triangle => !leansOn(triangle, focus) && hitsTriangle(triangle, origin, direction))) return true;
