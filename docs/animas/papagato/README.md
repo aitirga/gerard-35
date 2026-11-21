@@ -165,9 +165,12 @@ here (4 to 7 on 2026-11-21). Cost is in maná (3 from the start, 4 from level 4)
   Charges as Rayo solar does, on its own (`stalk` on the wearer, `pounce` as the round starts, kept
   as news). If the wearer falls or takes Papagato off first, it is lost; if the prey falls first,
   she takes whoever standing bleeds most. Built: the wound it spends is the one left after the
-  round's end (a wound nobody cut loses a stack then). On screen Haru creeps low two fifths of the
-  way to the prey and stays crouched there, the wearer's plate shows a slit cat's eye (*Acecho*),
-  and as the round starts she springs from there.
+  round's end (a wound nobody cut loses a stack then). On screen (Aitor 2026-11-21) the dark pools under Haru
+  and she sinks into it, her eyes flaring red, and is gone; only the slit cat's eye on the wearer's
+  plate says she is out there. As the round starts the dark wells up behind the prey (on the
+  camera's side), two red eyes light in it, she rises out of it and holds a beat, springs onto its
+  back and lands hard; then she melts into the dark and comes out of it at her place (`ACECHO` in
+  `src/battle-scene.ts`, `glare` in `src/cats.ts`, the `umbra` and `glare` particles).
 - **Cacería** (new): the whole field's blood at once. One claw for each stack on any foe, shared
   among those bleeding, none with the wound's bonus (the count already is the bonus). The claws on
   a foe whose wound was five or more are críticos (it comes after Olor a sangre); the rest roll. Ten stacks on the field are ten claws. Costs the whole base pool, so it is

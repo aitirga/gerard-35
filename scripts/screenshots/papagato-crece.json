@@ -34,35 +34,47 @@
       "caption": "Papagato a nivel 7: Acecho (Nv 6) y Cacería (Nv 7) al final de la lista, y cuatro círculos de maná desde el nivel 4"
     },
     {
-      "eval": "window.skill('acecho')"
+      "eval": "ui.tweak(s => { window.st = s; s.foes[0].statuses = { sangrado: 3 }; s.foes[0].cutRound = s.round; }); window.skill('acecho')"
     },
     {
       "wait": 400
     },
     {
-      "record": "acecho-se-agazapa",
-      "seconds": 2,
+      "record": "acecho-se-hunde",
+      "seconds": 2.2,
       "fps": 30,
       "tiles": 12,
       "each": "window.frame === 0 && window.aim()",
-      "caption": "Nv 6 · Acecho: todavía no golpea; Haru se agazapa y avanza hacia la presa"
+      "caption": "Nv 6 · Acecho: todavía no golpea. La sombra brota bajo Haru, se hunde en ella con los ojos encendidos un instante y desaparece"
     },
     {
       "until": "window.turn && window.turn('aitor')",
       "timeout": 60000
     },
     {
-      "shot": "agazapada",
+      "shot": "en-la-sombra",
       "delay": 900,
-      "caption": "Haru sigue agazapada mirando a su presa, y el ojo de gato en la placa de Gerard: saltará al empezar la ronda"
+      "caption": "Haru ya no está: solo el ojo de gato en la placa de Gerard dice que acecha. Saldrá al empezar la ronda"
     },
     {
-      "record": "acecho-salta",
-      "seconds": 9,
-      "fps": 20,
-      "tiles": 18,
-      "each": "window.frame === 0 && window.defend()",
-      "caption": "Aitor se defiende, los perros pasan y, al empezar la ronda y antes de que nadie elija, Haru salta: golpe crítico seguro"
+      "eval": "window.defend()"
+    },
+    {
+      "until": "window.st?.round >= 2",
+      "timeout": 30000
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt(window.st.foes[0].id); window.gerard.game.frame({ x: at.x, y: at.y + .45, z: at.z }, 3.4); }"
+    },
+    {
+      "record": "acecho-sale-de-la-sombra",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Al empezar la ronda, antes de que nadie elija: la sombra brota detrás del perro, dos ojos rojos se encienden en ella, Haru sale, salta sobre su espalda y golpea fuerte (crítico seguro, la herida revienta); luego se funde en la sombra y vuelve a su sitio"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
     },
     {
       "until": "window.turn && window.turn('gerard')",

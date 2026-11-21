@@ -47,6 +47,11 @@ const KINDS = {
   fleck: { shape: 'spark', orient: 'velocity', stretch: .06, colour: ['#fff2b8', '#ff9a2e', '#ff4a12'], additive: 1, glow: 1, intensity: 4, life: [1, 2.2], size: [.008, .014], fadeOut: .35, speed: [.2, .6], rise: [1.4, 2.6], gravity: -.5, drag: 1.1, wander: .6, wanderRate: 3, flow: .6, wind: 1, flicker: .55, flickerRate: 7 },
   cinder: { shape: 'glow', colour: ['#ffd27a', '#ff5a1f'], additive: 1, glow: 1, intensity: 3, life: [.7, 1.3], size: [.035, .06], fadeOut: .5, speed: [.3, .9], rise: [1.5, 3], gravity: -.6, drag: 1.2, wander: .35, wanderRate: 5, flow: .4, flicker: .5, flickerRate: 8, bodies: .6, front: .6 },
   soot: { shape: 'smoke', colour: ['#4a3d38', '#2a2422'], opacity: .55, life: [1, 1.6], size: [.15, .25], sizeEnd: 2.6, fadeIn: .2, fadeOut: .6, speed: [.1, .3], rise: [.8, 1.4], gravity: -.8, drag: 1.5, flow: .4, spin: [20, 60] },
+  // Acecho: the dark a cat sinks into and comes out of. Near black and low, it pools and swirls rather than
+  // rises (never violet: that is fear's and possession's, docs/visual-style.md).
+  umbra: { shape: 'smoke', colour: ['#1c1819', '#0b0a0b'], opacity: .88, life: [.7, 1.2], size: [.16, .26], sizeEnd: 2.2, fadeIn: .06, fadeOut: .55, speed: [.35, .9], rise: [.05, .3], gravity: -.08, drag: 2.6, wander: .25, wanderRate: 2, flow: .3, spin: [20, 70], front: .3 },
+  // Two red eyes lighting up in that dark, a flare at each.
+  glare: { shape: 'glow', colour: ['#ff6a4a', '#ff2414'], additive: 1, glow: 1, intensity: 3.4, life: [.45, .7], size: [.06, .09], sizeEnd: .6, fadeIn: .05, fadeOut: .55, front: 1 },
   // …ice…
   shard: { shape: 'spark', orient: 'velocity', colour: ['#f4fdff', '#9fdcff'], additive: .6, glow: .8, life: [.6, 1.1], size: [.035, .06], fadeOut: .3, speed: [3, 5.5], rise: [1.5, 3], gravity: 9, drag: .8, collide: true, bounce: .3, friction: .6, stretch: .08, bodies: 1, front: .7 },
   flake: { shape: 'flake', colour: '#eaf8ff', additive: .5, glow: .7, life: [2, 3.5], size: [.05, .1], fadeOut: .25, speed: [.3, .8], rise: [.5, 1.5], gravity: .45, drag: 1.5, wander: .25, wanderRate: 1.5, flow: .25, spin: [20, 90], collide: true, stick: true, bodies: .5 },

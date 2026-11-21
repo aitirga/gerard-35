@@ -32,6 +32,8 @@ interface CatBody {
   legs: Record<CatLeg, { hip: pc.Entity; knee: pc.Entity }>;
   /** Shows the eyes `open` (1) to shut (0). */
   blink(open: number): void;
+  /** Each eye, and the size of a sphere that covers it there (red when the cat glares, `glare`). */
+  eyes: { node: pc.Entity; size: readonly [number, number, number] }[];
   materials: pc.StandardMaterial[];
   rig: CatRig;
 }
@@ -66,6 +68,8 @@ function fromModel(spec: AnimalSpec): CatBody {
     cat, legs, body: find('Cuerpo de gato'), head: find('Cabeza de gato'), ears: [find('Oreja izquierda'), find('Oreja derecha')],
     tail: Array.from({ length: spec.rig.tailSegments }, (_, i) => find(`Cola ${i + 1}`)),
     blink(open) { for (const node of lids) node.enabled = open < .5; },
+    // The glare covers each painted eye as its lid does, a little larger.
+    eyes: ['Ojo izquierdo', 'Ojo derecho'].map(name => ({ node: find(name), size: spec.lids.size.map(v => v * 1.15) as [number, number, number] })),
     materials: [lid], rig: spec.rig,
   };
 }
@@ -139,13 +143,25 @@ function fromPrimitives(id: CatId): CatBody {
   }
   return {
     cat, body, head, ears, tail, legs, rig: CAT_RIG, materials: [...mats.values()],
+    eyes: eyes.map(({ eye }) => ({ node: eye, size: [1.2, 1.2, 1.6] as const })),
     blink(open) { eyes.forEach(({ eye, open: wide }) => { const s = eye.getLocalScale(); eye.setLocalScale(s.x, wide * open, s.z); }); },
   };
 }
 
 /** A cat that moves: its gait poses its skeleton from where it is each frame. */
-function animated({ cat, body, head, ears, tail, legs, blink, materials, rig }: CatBody, id: CatId) {
+function animated({ cat, body, head, ears, tail, legs, blink, eyes, materials, rig }: CatBody, id: CatId) {
   const gait = new CatGait(id === 'haru' ? 0 : 2.3, rig);
+  // Red eyes that light up out of the dark (Acecho): a glowing sphere over each eye, off until the cat glares.
+  const glowing = new pc.StandardMaterial(); glowing.name = 'Ojos rojos';
+  glowing.diffuse.set(0, 0, 0); glowing.emissive.fromString('#ff2a16'); glowing.emissiveIntensity = 0; glowing.useLighting = false; glowing.update();
+  const glows = eyes.map(({ node, size }) => {
+    const glow = new pc.Entity('Ojo rojo');
+    glow.addComponent('render', { type: 'sphere', material: glowing, castShadows: false, receiveShadows: false });
+    glow.setLocalScale(size[0], size[1], size[2]); glow.enabled = false;
+    node.addChild(glow);
+    return glow;
+  });
+  let glare = 0;
   const at = new pc.Vec3(), ahead = new pc.Vec3();
   /** Puts a pose on the rig (src/cat-gait.ts angles: legs forward positive, body and head nose up). */
   function apply(pose: CatPose) {
@@ -172,10 +188,20 @@ function animated({ cat, body, head, ears, tail, legs, blink, materials, rig }: 
       world.getTranslation(at); world.getZ(ahead);
       const pose = gait.update(dt, { ...action, x: at.x, z: at.z, facing: Math.atan2(ahead.x, ahead.z) * 180 / Math.PI, scale: world.getScale().x });
       apply(pose);
+      // Glaring, the eyes stay wide open.
+      if (glare > .01) blink(1);
       return pose;
     },
+    /** Red eyes, from 0 (her own) to 1 (burning): Haru out of the dark (Acecho). */
+    glare(amount: number) {
+      const next = Math.max(0, Math.min(1, amount));
+      if (Math.abs(next - glare) < .005) return;
+      glare = next;
+      for (const glow of glows) glow.enabled = glare > .01;
+      glowing.emissiveIntensity = 1.5 + 6.5 * glare; glowing.update();
+    },
     // The model's own materials stay with its file: only what this cat made goes.
-    destroy() { cat.destroy(); materials.forEach(m => m.destroy()); },
+    destroy() { cat.destroy(); materials.forEach(m => m.destroy()); glowing.destroy(); },
   };
 }
 export type Cat = ReturnType<typeof createCat>;

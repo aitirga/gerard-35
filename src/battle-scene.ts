@@ -52,6 +52,14 @@ const huntGap = (claws: number) => Math.min(.2, 2.6 / Math.max(1, claws));
 /** Siete vidas: how long Yuki takes from one of the party to the next as she walks among them. */
 const WARD_STEP = .42;
 /**
+ * Acecho, in fight seconds (docs/animas/papagato/README.md § Acecho). Charging: Haru crouches, the dark
+ * pools under her at `pool` and she sinks into it from `sink` till `gone`; she stays gone until the round
+ * starts. Her pounce: the dark wells up behind the prey at 0, two red eyes light in it at `eyes`, she rises
+ * out of it from `rise` to `risen` and holds, springs at `spring`, lands on its back at `contact`, melts into
+ * the dark at `melt` (gone by `away`), comes back out of it at her place by `home`, and it is over at `end`.
+ */
+const ACECHO = { pool: .2, sink: .3, gone: .66, eyes: .22, rise: .32, risen: .62, spring: .9, contact: 1.04, melt: 1.34, away: 1.56, home: 1.92, end: 2.15 } as const;
+/**
  * Dadista's throw, in fight seconds (docs/animas/dadaista/): the die leaves the hand at `launch`,
  * lands on whom its face reaches at `contact`, and bounces off to the floor over `tail`.
  */
@@ -1551,13 +1559,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return;
     }
     if (action.charging) { chargeUp(action); return; }
-    // Acecho: nothing lands yet. Haru has crept low towards the prey; a little dust where she settles.
-    if (action.stalking) {
-      const haru = catsOf(action.actor)?.haru.entity.getPosition();
-      if (haru) effects.emit('dust', new pc.Vec3(haru.x, groundHeight(haru.x, haru.z) + .05, haru.z), 5, .25);
-      if (target) hit(target, clawFlash, .25);
-      return;
-    }
+    // Acecho: nothing lands yet. Haru is sinking into the dark (`updateCats`).
+    if (action.stalking) return;
     // Cacería and Siete vidas: the first claw here, the others as they come (`huntClaw`).
     if (action.hunt?.length) return huntClaw(action, 0);
     // A golpe crítico, on whoever it struck (a flurry's first claw here; the others as they land).
@@ -1591,8 +1594,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const guarded = state?.allies.find(a => a.id === action.target)?.guarding ?? false;
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
     const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat', crit };
-    // Bip's ram comes from where Bip is, not from its wearer.
-    const from = botAt(action) ?? actor.base;
+    // Bip's ram comes from where Bip is, not from its wearer; Acecho's pounce from behind the prey.
+    const from = botAt(action) ?? (action.pounce ? pounceFrom(action, target) : actor.base);
+    // Acecho lands hard: a heavier blow, the picture shakes and leans in.
+    if (action.pounce) { shake = Math.max(shake, .75); zoom.x = Math.max(zoom.x, CRIT.punch * 1.6); cue('claw-deep'); cue('slam', { delay: .02 }); }
     const dx = target.base.x - from.x, dz = target.base.z - from.z, d = Math.hypot(dx, dz) || 1;
     // Tecnópata's skills: Bip's rays, its blast, Rayo solar's sweep.
     if (botStrikes(action) && action.kind === 'skill') return bipBurst(action, target, from, felt, dx / d, dz / d);
@@ -1641,6 +1646,41 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     else if (action.target && action.status?.id === 'sangrado') statusFx.cut(action.target, v3(blow), { x: dx / d, z: dz / d }, 2);
     hit(target, action.element ? ELEMENT_FLASH[action.element] : action.spell ? gold : claw ? clawFlash : white, action.bled ? 1.4 : guarded ? .4 : claw ? .7 : 1);
     return land(felt, dx / d, 0, dz / d);
+  }
+  /**
+   * Where Haru comes out of the dark for Acecho's pounce: on the floor beyond the prey from whoever wears
+   * her, turned towards the camera's side so her face (and her red eyes) is seen past the prey. Worked out
+   * once for each pounce.
+   */
+  const pounceSpots = new WeakMap<BattleEffect, pc.Vec3>();
+  function pounceFrom(action: BattleEffect, prey: Fighter) {
+    let spot = pounceSpots.get(action);
+    if (spot) return spot;
+    const wearer = fighters.get(action.actor)?.base ?? prey.base, view = viewDir();
+    let ax = prey.base.x - wearer.x, az = prey.base.z - wearer.z;
+    const d = Math.hypot(ax, az) || 1; ax /= d; az /= d;
+    // The camera's side, across the line from the wearer to the prey.
+    const vl = Math.hypot(view.x, view.z) || 1, vx = view.x / vl, vz = view.z / vl, along = vx * ax + vz * az;
+    let dx = ax + (vx - ax * along) * 1.1, dz = az + (vz - az * along) * 1.1;
+    const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+    const r = Math.max(.6, extent(prey).radius + .5);
+    spot = new pc.Vec3(prey.base.x + dx * r, 0, prey.base.z + dz * r);
+    pounceSpots.set(action, spot);
+    return spot;
+  }
+  /** Things a choreography sets off once at a moment of its own (the dark welling up, the eyes lighting): `key` once per action. */
+  const fired = new WeakMap<BattleEffect, Set<string>>();
+  function once(action: BattleEffect, key: string, then: () => void) {
+    let done = fired.get(action);
+    if (!done) fired.set(action, done = new Set());
+    if (done.has(key)) return;
+    done.add(key); then();
+  }
+  /** The dark Haru sinks into or comes out of, pooled on the floor at `at`. */
+  function umbra(at: pc.Vec3, count: number, spread = .4) {
+    const floor = groundHeight(at.x, at.z);
+    effects.emit('umbra', new pc.Vec3(at.x, floor + .12, at.z), count, spread);
+    effects.emit('umbra', new pc.Vec3(at.x, floor + .3, at.z), Math.round(count / 2), spread * .7);
   }
   /**
    * One of Papagato's claws one after another (Cacería, Siete vidas), `k` in `hunt`: three lines across
@@ -2316,7 +2356,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const spots = catSpots(layout, f.base), { ahead, side } = axes(layout);
       const visible = !!borrowed || (wearing && entryTime >= ENTRY_SECONDS * .6);
       // Changing ánima mid-fight, they leave in a puff of smoke where they are, and come back in one at their places.
-      if (!borrowed && animate && entryTime >= ENTRY_SECONDS && visible !== pair.haru.entity.enabled) {
+      // (Yuki says whether they are shown: Haru can be gone into the dark, Acecho.)
+      if (!borrowed && animate && entryTime >= ENTRY_SECONDS && visible !== pair.yuki.entity.enabled) {
         for (const [cat, spot] of [[pair.haru, spots.haru], [pair.yuki, spots.yuki]] as const) {
           const p = visible ? spot : cat.entity.getPosition();
           effects.emit('poof', new pc.Vec3(p.x, groundHeight(p.x, p.z) + .2, p.z), 10, .3);
@@ -2340,8 +2381,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // Haru: on guard, or the pounce out, the swat and the hop back.
       const rest = aside ? behind(-1.2, 1.1) : new pc.Vec3(spots.haru.x, 0, spots.haru.z);
       let at = rest.clone(), lift = 0, look = center, leap: number | undefined, crouch = 0;
-      // Acecho: low, two fifths of the way to the prey, until the round starts and she springs from there.
-      const crouchAt = (foe: Fighter) => { const s = spots.strike(foe.base); return new pc.Vec3().lerp(rest, new pc.Vec3(s.x, 0, s.z), .4); };
+      // Acecho: how much of her shows (0 sunk in the dark, 1 whole), how red her eyes burn, and whether she is gone.
+      let size = 1, glare = 0, gone = false;
       const stalked = state?.allies.find(a => a.id === id)?.stalk, prey = stalked ? fighters.get(stalked.target) : undefined;
       // Cacería and Siete vidas: from claw to claw, each on the foe it found (Cacería's odd claws are Yuki's).
       const hunt = mine && !!effect?.hunt?.length && animate ? effect.hunt : undefined;
@@ -2408,19 +2449,54 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         }
         at.y = 0;
       } else if (mine && effect?.stalking && target) {
-        // Acecho: she creeps low towards the prey, and stays there.
-        at = new pc.Vec3().lerp(rest, crouchAt(target), animate ? smooth(t / .75) : 1); crouch = 1; look = target.base;
+        // Acecho: she crouches, eyes on the prey; the dark pools under her and she sinks into it, her eyes flaring red as she goes.
+        crouch = 1; look = target.base;
+        if (!animate) gone = true;
+        else {
+          if (t >= ACECHO.pool) once(effect, `pool:${id}`, () => { umbra(rest, 18, .35); cue('sink'); });
+          const u = smooth((t - ACECHO.sink) / (ACECHO.gone - ACECHO.sink));
+          size = 1 - u; lift = -.28 * u; glare = Math.sin(u * Math.PI);
+          gone = t >= ACECHO.gone;
+        }
+      } else if (mine && effect?.pounce && target) {
+        // Acecho's pounce: out of the dark behind the prey, red eyes first, a still beat, the spring onto its back,
+        // and back into the dark, to come out again at her place.
+        const from = pounceFrom(effect, target), d = Math.hypot(target.base.x - from.x, target.base.z - from.z) || 1;
+        const reach = Math.max(.25, d - Math.max(.35, extent(target).radius * .6));
+        const onBack = new pc.Vec3(from.x + (target.base.x - from.x) / d * reach, 0, from.z + (target.base.z - from.z) / d * reach);
+        look = target.base; crouch = 1; glare = 1;
+        if (!animate || t >= ACECHO.home) { at = rest; glare = 0; crouch = 0; look = center; }
+        else if (t < ACECHO.rise) {
+          gone = true;
+          once(effect, `well:${id}`, () => { umbra(from, 24, .5); cue('sink'); });
+          if (t >= ACECHO.eyes) once(effect, `eyes:${id}`, () => {
+            // Two red points in the dark, a cat's eyes apart, facing the prey.
+            const fx = (target.base.x - from.x) / d, fz = (target.base.z - from.z) / d, y = groundHeight(from.x, from.z) + .3;
+            for (const s of [-1, 1]) effects.emit('glare', new pc.Vec3(from.x + fx * .2 - fz * .055 * s, y, from.z + fz * .2 + fx * .055 * s), 1, 0);
+            cue('creak');
+          });
+        } else if (t < ACECHO.risen) { const u = smooth((t - ACECHO.rise) / (ACECHO.risen - ACECHO.rise)); at = from; size = u; lift = -.3 * (1 - u); }
+        else if (t < ACECHO.spring) at = from;
+        else if (t < ACECHO.contact) { const u = smooth((t - ACECHO.spring) / (ACECHO.contact - ACECHO.spring)); at = new pc.Vec3().lerp(from, onBack, u); lift = Math.sin(u * Math.PI) * .75; leap = u; crouch = 0; }
+        else if (t < ACECHO.melt) at = onBack;
+        else if (t < ACECHO.away) {
+          once(effect, `melt:${id}`, () => umbra(onBack, 16, .35));
+          const u = smooth((t - ACECHO.melt) / (ACECHO.away - ACECHO.melt));
+          at = onBack; size = 1 - u; lift = -.28 * u; glare = 1 - u;
+        } else {
+          once(effect, `home:${id}`, () => umbra(rest, 12, .3));
+          const u = smooth((t - ACECHO.away) / (ACECHO.home - ACECHO.away));
+          at = rest; size = u; lift = -.28 * (1 - u); glare = 0; crouch = 1 - u; look = center;
+        }
       } else if (hunt) {
         ({ at, lift, look, leap, crouch } = along(clawsOf(false), rest));
-      } else if (mine && (relay || effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos' || (effect?.skill === 'acecho' && !!effect.pounce)) && target) {
+      } else if (mine && (relay || effect?.skill === 'zarpazo' || effect?.skill === 'zarpazos') && target) {
         // Zarpazos: she stays on the target until the last little claw has landed, and hops back quicker.
         const flurry = effect?.skill === 'zarpazos' ? (effect.strikes?.length ?? 1) - 1 : 0, stay = flurry * CLAW_SECONDS;
         const out = smooth((t - .05) / (CONTACT_SECONDS - .05)), back = smooth((t - CONTACT_SECONDS - .15 - stay) / (.45 - stay * .4));
         // A big onion stands wider: she lands at its skin, not inside it.
         const landing = spots.strike(target.base), wide = Math.max(0, target.scale.x - 1) * .6, strike = new pc.Vec3(landing.x - ahead.x * wide, 0, landing.z - ahead.z * wide);
-        // Acecho springs from where she crouched; everything else from her place.
-        const from = effect?.pounce ? crouchAt(target) : rest;
-        at = back > 0 ? new pc.Vec3().lerp(rest, strike, 1 - back) : new pc.Vec3().lerp(from, strike, out);
+        at = new pc.Vec3().lerp(rest, strike, out * (1 - back));
         lift = animate ? Math.sin(out * Math.PI) * .55 * (1 - back) + Math.sin(back * Math.PI) * .3 : 0;
         if (animate && flurry && t >= CONTACT_SECONDS && t < CONTACT_SECONDS + stay + .1) lift += Math.abs(Math.sin((t - CONTACT_SECONDS) / CLAW_SECONDS * Math.PI)) * .2;
         const home = spots.back(rest);
@@ -2428,11 +2504,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Low before the spring and low on landing, flying in between.
         leap = out > 0 && out < 1 ? out : back > 0 && back < 1 ? back : undefined;
         crouch = out <= 0 || (out >= 1 && back <= 0) ? 1 : 0;
-      } else if (prey && prey.hp > 0 && wearing) {
-        // Still crouched on the prey until the round starts (Acecho).
-        at = crouchAt(prey); crouch = 1; look = prey.base;
+      } else if (wearing && ((prey && prey.hp > 0) || state?.news?.some(news => news.pounce && news.actor === id))) {
+        // Gone into the dark until the round starts and her pounce plays (Acecho): nothing of her shows.
+        gone = true;
       }
-      placeCat(pair.haru, dt, at, lift, look, animate, wearing ? { alert: 1, crouch, leap } : { sit: 1 }, walks);
+      pair.haru.entity.enabled = visible && !gone;
+      pair.haru.glare(glare);
+      placeCat(pair.haru, dt, at, lift, look, animate, wearing ? { alert: 1, crouch, leap } : { sit: 1 }, walks, size);
       // Yuki: sitting behind, or over to whoever she purrs on (Ronroneo): she trots to their feet, settles against them and comes back.
       const shelter = aside ? behind(-1.6, .5) : new pc.Vec3(spots.yuki.x, 0, spots.yuki.z);
       const purr = mine && effect?.skill === 'ronroneo' && target ? (animate ? clamp01(Math.sin(clamp01(t / 1.1) * Math.PI) * 1.7) : 0) : 0;
@@ -2704,7 +2782,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
   }
   /** `walks`: the cat comes from wherever it is, running, unless that is too far (a jump): then it lands there. */
-  function placeCat(cat: Cat, dt: number, at: pc.Vec3, lift: number, look: pc.Vec3, animate: boolean, action: CatAction, walks = false) {
+  function placeCat(cat: Cat, dt: number, at: pc.Vec3, lift: number, look: pc.Vec3, animate: boolean, action: CatAction, walks = false, size = 1) {
     if (walks && animate) {
       const from = cat.entity.getPosition(), gap = Math.hypot(at.x - from.x, at.z - from.z), step = CAT_RUN * dt;
       if (gap > step && gap < CAT_LANDS) { look = at; at = new pc.Vec3().lerp(from, at, step / gap); action = {}; }
@@ -2712,7 +2790,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     cat.entity.setPosition(at.x, groundHeight(at.x, at.z) + lift, at.z);
     cat.entity.setEulerAngles(0, face(at, look), 0);
     // A touch bigger than life, so they read from the fight's camera.
-    cat.entity.setLocalScale(1.35, 1.35, 1.35);
+    // `size` below 1: sinking into the dark or coming out of it (Acecho).
+    const scale = 1.35 * Math.max(.001, size);
+    cat.entity.setLocalScale(scale, scale, scale);
     cat.animate(dt, { ...action, animate });
   }
   /**
@@ -3197,7 +3277,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
       if (effect?.skill && POWDER_SKILLS[effect.skill] && animate && !powderPlayed.has(effect)) {
         powderPlayed.add(effect);
@@ -3721,7 +3801,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
