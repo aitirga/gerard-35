@@ -26,9 +26,12 @@ export function focusControllerButton(root: HTMLElement, direction: Direction) {
   const step = direction === 'up' || direction === 'left' ? -1 : 1;
   buttons[index < 0 ? 0 : (index + step + buttons.length) % buttons.length]?.focus();
 }
+/** Presses the focused button; false when none of `root` has the focus (the mouse took it elsewhere). */
 export function clickControllerButton(root: HTMLElement) {
   const button = document.activeElement;
-  if (button instanceof HTMLButtonElement && root.contains(button) && !button.disabled && !button.closest('[hidden], [inert]')) button.click();
+  if (!(button instanceof HTMLButtonElement) || !root.contains(button) || button.closest('[hidden], [inert]')) return false;
+  if (!button.disabled) button.click();
+  return true;
 }
 export function createControllerUI(callbacks: {
   context: () => string;
@@ -184,6 +187,20 @@ export function createControllerUI(callbacks: {
   }
   window.addEventListener('keydown', keydown, { capture: true });
   root.addEventListener('cancel', event => { event.preventDefault(); back(); });
+  /**
+   * A pad's press in the pause menu, from either player. The pad is in charge: while it drives, the
+   * pointer hides and stops lighting what it rests on (`data-pad`), until the mouse really moves.
+   */
+  function inMenu(action: ControllerEvent) {
+    root.dataset.pad = '';
+    if (action === 'menu') { if (page !== 'exited') close(); }
+    else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next' || isDpad(action)) return;
+    else if (action === 'cancel') back();
+    // A click on the menu's background takes the focus away; the pad's confirm brings it back first.
+    else if (action === 'confirm') { if (!clickControllerButton(root)) focusControllerButton(root, 'down'); }
+    else focusControllerButton(root, action);
+  }
+  root.addEventListener('pointermove', event => { if (Math.abs(event.movementX) + Math.abs(event.movementY) > 2) delete root.dataset.pad; });
   select.onchange = () => { selected = Number(select.value); chosen = true; identity = ''; abort(); };
   get('[data-remap]').onclick = () => {
     if (!latest) return;
@@ -249,12 +266,20 @@ export function createControllerUI(callbacks: {
     const apart = !mapping && !root.open && !!callbacks.dpadApart?.();
     const state2 = second ? readController(second, profiles[second.id], previousDirection2, apart) : idleController();
     previousDirection2 = focused ? state2.direction : null;
-    const input2 = edges2.update(state2, `${secondIdentity}:${root.open ? 'menu' : callbacks.context()}`, now, focused && !mapping && !root.open);
+    const where = () => mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context();
+    const context2 = `${secondIdentity}:${where()}`;
+    const input2 = edges2.update(state2, context2, now, focused && !mapping);
     // Player 2's half of the screen (their status sheet, their fight dock) shows their own pad.
     if (second) setPlayer2Device(padFamily(second.id, !!profiles[second.id]));
-    callbacks.partnerDirection(input2.direction, input2.stick, input2.running);
-    // Player 2 plays, talks and has their own half of the status screen; the menu and camera stay with player 1.
-    for (const action of input2.events) if (action !== 'menu' && action !== 'overview') callbacks.action(action, 2);
+    callbacks.partnerDirection(root.open ? null : input2.direction, root.open ? null : input2.stick, !root.open && input2.running);
+    // Player 2 plays, talks and has their own half of the status screen; the camera stays with player 1.
+    // The pause menu is either player's: whoever holds a pad opens it and moves through it.
+    for (const action of input2.events) {
+      if (root.open) { if (second) setInputDevice(padFamily(second.id, !!profiles[second.id])); inMenu(action); }
+      else if (action === 'menu') open();
+      else if (action !== 'overview') callbacks.action(action, 2);
+      if (`${secondIdentity}:${where()}` !== context2) break;
+    }
     // Holding the trigger to play the artilugio, the face buttons are its four and nothing else.
     const playing = !mapping && !root.open && !!callbacks.notes?.(latest);
     const own = latest && playing ? { ...latest, buttons: latest.buttons.map((b, i) => i <= 3 ? { pressed: false, value: 0 } : b) } : latest;
@@ -265,13 +290,8 @@ export function createControllerUI(callbacks: {
     if (latest && profile && (input.events.length || input.direction)) setInputDevice(padFamily(latest.id, !!custom));
     callbacks.direction(root.open ? null : input.direction, root.open ? null : input.stick, !root.open && input.running);
     for (const action of input.events) {
-      if (root.open) {
-        if (action === 'menu') { if (page !== 'exited') close(); }
-        else if (action === 'character' || action === 'overview' || action === 'prev' || action === 'next' || isDpad(action)) continue;
-        else if (action === 'cancel') back();
-        else if (action === 'confirm') clickControllerButton(root);
-        else focusControllerButton(root, action);
-      } else if (action === 'menu') open();
+      if (root.open) inMenu(action);
+      else if (action === 'menu') open();
       else callbacks.action(action, 1);
       // A screen transition must not receive another event from the same frame.
       if (`${identity}:${mapping ? 'mapping' : root.open ? `menu:${page}` : callbacks.context()}` !== context) break;

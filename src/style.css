@@ -668,6 +668,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 
 /* Pause and configuration belong to the same world as the user menu. */
 #controller-menu { width: min(620px, calc(100vw - 80px)); max-height: calc(100dvh - 64px); overflow: auto; padding: 32px; color: var(--ui-paper); background: radial-gradient(ellipse at 0 0, #52634333, transparent 65%), linear-gradient(145deg, #1b3028fc, #101e19fc); border: 1px solid #c6d6ad3a; border-radius: 20px; box-shadow: 0 30px 120px #0008, inset 0 1px #ffffff0d; font: inherit; scrollbar-width: thin; scrollbar-color: #f3cf7844 transparent; }
+/* A pad drives the menu (src/controller-ui.ts `inMenu`): the pointer hides and lights nothing it rests on, until it moves. */
+#controller-menu[data-pad] { cursor: none; }
+#controller-menu[data-pad] * { pointer-events: none; }
 #controller-menu::backdrop { background: radial-gradient(ellipse at center, #07171155, #071711bb); backdrop-filter: blur(7px); }
 #controller-menu[open] { animation: pause-in .22s ease-out both; }
 #controller-menu .journal-heading { margin-bottom: 18px; }
