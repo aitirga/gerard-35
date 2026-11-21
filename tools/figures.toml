@@ -231,15 +231,15 @@ back = "The white cape hangs down his back to the knees, the chalk curves on it 
 
 # Emilie (docs/quests/emilie.md), from photos of her alone. Left out: one with a celebrity poster behind her
 # (and a hat she doesn't usually wear), one with someone leaning in behind her; a group selfie was cropped to
-# her face only.
+# her face only, and the bar photo gives a face crop of its own.
 [emilie]
 name = "Emilie"
 kind = "person"
-photos = ["emilie/emilie-bufanda-roja.jpg", "emilie/emilie-terraza.jpg", "emilie/emilie-bar.jpg", "emilie/emilie-cara-cerveceria.jpg"]
-face_photos = ["emilie/emilie-cara-cerveceria.jpg", "emilie/emilie-bufanda-roja.jpg"]
-about = "About her: 35, a hydrogeologist, very clever, warm and quick to laugh. Average height and build. A soft oval face, a little wide at the cheekbones, a straight nose, a wide open smile. Long straight light-brown hair past her shoulders, a little darker at the roots and lighter, almost dark blonde, towards the ends, parted slightly off centre and tucked behind one ear. Hazel eyes, light brown brows, fair skin. Small gold leaf-shaped earrings. No glasses.\nClothes: a black hooded rain jacket with a zip, the hood down, worn open over a black top; a long deep crimson scarf wrapped loosely round her neck with one end hanging down the front, its edges trimmed with small round pompoms; dark grey jeans, dark trainers with white soles, no logos."
-cues = "a soft oval head a little wide at the cheekbones with a wide open smile, long straight light-brown hair past her shoulders in big smooth chunks, lighter towards the ends, a deep crimson scarf with a pompom trim round her neck as her strongest feature against a black jacket"
-height = 1.68
+photos = ["emilie/emilie-bar.jpg", "emilie/emilie-bufanda-roja.jpg", "emilie/emilie-terraza.jpg", "emilie/emilie-cara-cerveceria.jpg"]
+face_photos = ["emilie/emilie-cara-bar.jpg", "emilie/emilie-cara-cerveceria.jpg", "emilie/emilie-bufanda-roja.jpg"]
+about = "About her: 35, a hydrogeologist, very clever, warm, with a dry, mischievous humour. Tall for a woman and slim, long-limbed. A long oval face with a high, broad forehead, a narrow, slightly pointed chin and a long straight nose. A knowing, mischievous closed-mouth half smile, one corner pulled up, her eyes narrowed with amusement. Long straight chestnut-brown hair reaching well past her chest, with a deep side parting far over on one side: the hair is swept across the top of her head and falls down the other side in one long smooth curtain, the near side tucked behind her ear. Hazel eyes, light brown brows, fair skin. Long gold leaf-shaped drop earrings. No glasses.\nClothes: a black hooded rain jacket with a zip, the hood down, worn open over a black top; a long deep crimson scarf wrapped loosely round her neck with one end hanging down the front, its edges trimmed with small round pompoms; dark grey jeans, dark trainers with white soles, no logos."
+cues = "a clearly long oval head with a high broad forehead and a narrow chin, not round, a long straight nose, a mischievous closed-mouth half smile, long straight chestnut-brown hair with a deep side parting swept over the top and falling down one side in one long smooth curtain, long gold leaf earrings, tall and slim, a deep crimson scarf with a pompom trim against a black jacket"
+height = 1.74
 scale = 1.3
 
 [capellan]

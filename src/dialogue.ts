@@ -38,8 +38,8 @@ export const SPEAKERS = {
   joan: { name: 'Joan', portrait: 'joan', skin: '#e4b48d', hair: '#22181a', top: '#4a4350', accent: '#b07aff' },
   /** Marta (docs/quests/marta.md), portrait from `just character`; the accent is the note Do of her song. */
   marta: { name: 'Marta', portrait: 'marta', skin: '#ecbf98', hair: '#d9b46a', top: '#3d3c40', accent: '#49d3c2' },
-  /** Emilie (docs/quests/emilie.md); no portrait yet: her figure and photos are still to come. */
-  emilie: { name: 'Emilie', skin: '#ecc4a2', hair: '#7a5536', top: '#2c3d57', accent: '#3fe07a' },
+  /** Emilie (docs/quests/emilie.md), portrait from `just character`: her black jacket and crimson scarf. */
+  emilie: { name: 'Emilie', portrait: 'emilie', skin: '#ecc4a2', hair: '#5a3620', top: '#212023', accent: '#3fe07a' },
   /** Luca (docs/quests/luca.md), portrait from `just character`: his loud colours, which the Queen's hold takes out of him. */
   luca: { name: 'Luca', portrait: 'luca', skin: '#e4b18c', hair: '#3a2c24', top: '#f08a2c', accent: '#2f8f7a' },
   /** Fran, Luca's partner, under the Queen's hold: black and white, cold. */

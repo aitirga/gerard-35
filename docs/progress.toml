@@ -421,7 +421,8 @@ used = "furnishEmilie"
 
 [[block.item]]
 title = "Emilie: su figura y su retrato (fotos, just character)"
-file = "public/portraits/emilie*"
+priority = "historia"
+file = "public/models/characters/emilie.glb"
 
 [[block.item]]
 title = "Emilie: una pista en el mundo que lleve a Poble Sec"

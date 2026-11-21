@@ -18,8 +18,8 @@ import { GALLERY, SECTION, type ZoneId } from '../modelo.ts';
 export const POBLE_SEC: EnvironmentId = 'poble-sec';
 export const PISO: EnvironmentId = 'piso-emilie';
 export const MODELO_PLACE: EnvironmentId = 'modelo';
-/** Her figure's scale in the world: the cast's adults are all close to it. */
-export const EMILIE_SCALE = 1.1;
+/** Her figure's scale in the world (`scale` of `[emilie]` in tools/figures.toml, as the other friends made with Meshy). */
+export const EMILIE_SCALE = 1.3;
 
 /** Where things are in Poble Sec: her door on Margarit, where Gerard already looks at it (`poble-sec-emilie`). */
 export const PLACES_EMILIE = {
