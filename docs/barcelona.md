@@ -183,6 +183,7 @@ Other changes, where the real lines meet: Catalunya (L1, L3), Urquinaona (L1, L4
 Gràcia (L3, L4), Diagonal (L3, L5) and Verdaguer (L4, L5). From home the beach is a change at
 Urquinaona, Poble Sec one at Catalunya, Plaça d'Espanya the L1 all the way.
 | Cardedeu | R4 | Nuria and Uri (`docs/quests/nuria.md`) | At the map's edge (`edge` in `city.json`: a town beyond the map waits at its border, named with an arrow) |
+| Alegia | Larga distancia (from Sants Estació) | Marta (`docs/quests/marta.md`) | Far beyond the map: `edge` puts it where the line from Sants, heading for the real town, crosses the map's top edge past Collserola; the line runs on out of the city (`exit`) and `region` names it «Alegia · Gipuzkoa», so it never reads as a part of Barcelona |
 
 ### Making a new place reachable
 

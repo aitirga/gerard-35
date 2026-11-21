@@ -8,8 +8,12 @@ import type { EnvironmentId } from './environments';
 
 export type LineKind = 'metro' | 'rodalies';
 export interface Line { id: string; name: string; kind: LineKind; colour: string; stations: string[] }
-/** `edge`: a town beyond the map (Cardedeu), waiting at its border on the way there. */
-export interface Station { id: string; name: string; x: number; y: number; edge?: boolean }
+/**
+ * `edge`: a town beyond the map (Cardedeu, Alegia), waiting at its border on the way there, in the
+ * real town's direction; `exit`, where its line runs on out of the ground drawn round the city;
+ * `region`, named after it so a far town never reads as a part of Barcelona (Alegia · Gipuzkoa).
+ */
+export interface Station { id: string; name: string; x: number; y: number; edge?: boolean; exit?: [number, number]; region?: string }
 type Points = number[][];
 /** The cartoon city (tools/city.py): hand-drawn layers in metres, on a map with the sea at the bottom. */
 export interface CityMap {
@@ -56,6 +60,13 @@ export const entranceId = (station: string) => `station-${station}`;
 export const stationOf = (interactionId: string) => interactionId.startsWith('station-') && STATIONS[interactionId.slice(8)] ? interactionId.slice(8) : undefined;
 
 export function linesAt(station: string): Line[] { return LINES.filter(l => l.stations.includes(station)); }
+
+/** A line drawn on the map: its stations, and on past a town beyond the map out of the city (`exit`). */
+export function linePoints(line: Line): number[][] {
+  const pts = line.stations.map(id => [STATIONS[id].x, STATIONS[id].y]);
+  const first = STATIONS[line.stations[0]].exit, last = STATIONS[line.stations.at(-1)!].exit;
+  return [...(first ? [first] : []), ...pts, ...(last ? [last] : [])];
+}
 
 /** What the story can close: whole lines (a gum-blocked tunnel) and single stations. */
 export interface Closures { lines?: readonly string[]; stations?: readonly string[] }

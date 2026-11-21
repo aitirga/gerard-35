@@ -13,7 +13,7 @@
  * Falls back to the flat SVG (`city-map.ts`) when WebGPU or the data are missing.
  */
 import * as pc from 'playcanvas';
-import { CITY_MAP, LINES, STATIONS, type Leg } from './transit';
+import { CITY_MAP, LINES, STATIONS, linePoints, type Leg } from './transit';
 import type { MapMarker } from './map-markers';
 import { LANDMARK_MODELS, LANDMARK_SCALE, type Sink } from './city-landmarks';
 import type { CityMapOptions } from './city-map';
@@ -173,7 +173,8 @@ function band(g: Geometry, pts: number[][], y: number, r: number, colour: number
 function lineGeometry(w: number) {
   const core = new Geometry(), glow = new Geometry();
   LINES.forEach((line, i) => {
-    const pts = line.stations.map(id => [STATIONS[id].x, STATIONS[id].y]), y = LINE_Y + i * LINE_STEP, colour = rgb(line.colour);
+    // A town beyond the map: the line runs on past its station and out of the city.
+    const pts = linePoints(line), y = LINE_Y + i * LINE_STEP, colour = rgb(line.colour);
     band(core, pts, y, w / 2, colour);
     band(glow, pts, y - 4, w / 2 * GLOW, colour.map(c => c + (255 - c) * .2), 130, 0);
   });
@@ -420,6 +421,8 @@ export async function createCity3D(host: HTMLElement): Promise<City3D | undefine
   }
   const lineHeight = (id: string) => LINE_Y + Math.max(0, LINES.findIndex(l => l.id === id)) * LINE_STEP;
   const legPoints = (leg: Leg) => leg.stations.map(id => [STATIONS[id].x, STATIONS[id].y, lineHeight(leg.line) + 2]);
+  /** A far town's region after its name, a size down: «Alegia · Gipuzkoa». */
+  const region = (name: string | undefined, size: number) => name ? `<tspan font-size="${(size * .8).toFixed(1)}" font-weight="600"> · ${escape(name)}</tspan>` : '';
   /** A label on a small rounded card, its bottom centre at (0, `y`): sized to its text once in the page. */
   const card = (cls: string, text: string, y: number) => `<g class="${cls}" transform="translate(0 ${y})"><rect x="-20" y="-21" width="40" height="21" rx="10.5"/><text y="-6.5">${escape(text)}</text></g>`;
   /** Sizes every card to its text, and notes how wide each name is (`data-w`) for placeOverlay to keep them apart. */
@@ -480,7 +483,7 @@ export async function createCity3D(host: HTMLElement): Promise<City3D | undefine
       const line = LINES.find(l => l.stations.includes(s.id))!;
       parts.push(`<g class="city-station${pickable ? ' is-pickable' : ''}${here ? ' is-here' : ''}${chosen ? ' is-selected' : ''}${minor ? ' is-minor' : ''}${interchange ? ' is-interchange' : ''}" data-station="${s.id}" data-at="${s.x},${s.y},${lineHeight(line.id) + 2}" style="--line:${line.colour}">`
         + `${pickable ? `<circle class="city-station-glow" r="${r * 2.4}"/>` : ''}<circle class="city-station-dot" r="${r}"/>`
-        + `<text x="${r + 5}" y="${size * .35}" font-size="${size}">${escape(s.name)}</text><title>${escape(s.name)}</title></g>`);
+        + `<text x="${r + 5}" y="${size * .35}" font-size="${size}">${escape(s.name)}${region(s.region, size)}</text><title>${escape(s.region ? `${s.name} (${s.region})` : s.name)}</title></g>`);
     }
     // After the stations, so they keep their room and the cards lie over them.
     parts.push(...cards);

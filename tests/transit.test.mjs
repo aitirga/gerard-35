@@ -98,10 +98,16 @@ test('the R4 leaves from La Sagrera for Cardedeu, a town waiting at the map\'s e
   assert.match(renderCityMap(), /Cardedeu →/);
 });
 
-test('the long-distance train leaves Sants Estació for Alegia, a town at the other edge of the map', () => {
+test('the long-distance train leaves Sants Estació for Alegia, out of the map past Collserola', () => {
   assert.deepEqual(route('fabra-i-puig', 'alegia').map(l => l.line).at(-1), 'ld');
   assert.deepEqual(route('fabra-i-puig', 'alegia').at(-1).stations, ['sants-estacio', 'alegia']);
-  assert.ok(STATIONS.alegia.edge);
-  assert.ok(STATIONS.alegia.x < (CITY_MAP.extent.x0 + CITY_MAP.extent.x1) / 2, 'Alegia lies west, the other way from Cardedeu');
-  assert.match(renderCityMap(), /← Alegia/);
+  const { alegia, 'sants-estacio': sants } = STATIONS;
+  assert.ok(alegia.edge);
+  // The Basque Country is inland: up the map (Collserola's side), almost straight on from Sants.
+  const { x0, x1, y0, y1 } = CITY_MAP.extent;
+  assert.ok(alegia.y - y0 < (y1 - y0) * .1, 'at the top edge, past Collserola');
+  assert.ok(Math.abs(alegia.x - sants.x) < (x1 - x0) * .05, 'straight on from Sants, not in a corner of the city');
+  // Its line runs on out of the city, and it is named with its region.
+  assert.ok(alegia.exit && alegia.exit[1] < y0, 'the line leaves the map');
+  assert.match(renderCityMap(), /Alegia<tspan[^>]*> · Gipuzkoa/);
 });

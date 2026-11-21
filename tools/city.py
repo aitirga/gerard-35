@@ -435,13 +435,32 @@ def build() -> None:
     far = 50_000
     sea = coast + [[coast[-1][0] + far, coast[-1][1]], [coast[-1][0] + far, far], [coast[0][0] - far, far], [coast[0][0] - far, coast[0][1]]]
     stations = [{"id": s["id"], "name": s["name"], **at(s)} for s in city["stations"]]
-    # Stations beyond the map (Rodalies towns like Cardedeu) wait at its edge, on the way to them.
+    # Stations beyond the map (Cardedeu, Alegia) wait at its edge, on the way to them: where the line
+    # from the station before, heading for the real town, crosses the map's border (a little inside).
+    # `exit` is where that line leaves the ground drawn round the map, so it runs on out of the city;
+    # `region` is named after the town, so a far one never reads as a part of Barcelona.
     inset = min(extent["x1"] - extent["x0"], extent["y1"] - extent["y0"]) * .05
+    ground = wide_extent(extent)
+    by_id = {s["id"]: s for s in stations}
     for s, spec in zip(stations, city["stations"]):
         if spec.get("edge"):
-            x = min(max(s["x"], extent["x0"] + inset), extent["x1"] - inset)
-            y = min(max(s["y"], extent["y0"] + inset), extent["y1"] - inset)
-            s.update(x=round(x), y=round(y), edge=True)
+            before = next(l["stations"][i + (-1 if i else 1)] for l in city["lines"] for i, sid in enumerate(l["stations"]) if sid == s["id"])
+            ox, oy = by_id[before]["x"], by_id[before]["y"]
+            dx, dy = s["x"] - ox, s["y"] - oy
+
+            def reach(box: dict, margin: float = 0) -> float:
+                """How far along (dx, dy) from the station before the box's border lies."""
+                ts = [(box[k] + (margin if k.endswith("0") else -margin) - o) / d
+                      for k, o, d in (("x0", ox, dx), ("x1", ox, dx), ("y0", oy, dy), ("y1", oy, dy)) if d]
+                return min(t for t in ts if t > 0)
+
+            t = min(1, reach(extent, inset))
+            s.update(x=round(ox + dx * t), y=round(oy + dy * t), edge=True)
+            out = reach(ground)
+            if out > t:
+                s["exit"] = [round(ox + dx * out), round(oy + dy * out)]
+            if spec.get("region"):
+                s["region"] = spec["region"]
     known = {s["id"] for s in stations}
     missing = [sid for l in city["lines"] for sid in l["stations"] if sid not in known]
     if missing:

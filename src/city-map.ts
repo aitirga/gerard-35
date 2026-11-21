@@ -5,7 +5,7 @@
  * (`src/map-markers.ts`). Without the image it falls back to the cartoon sea, hills and avenues.
  * Used by the station map (`travel-ui.ts`). Looks live in style.css (.city-*).
  */
-import { CITY_MAP, LINES, STATIONS, type Leg } from './transit.ts';
+import { CITY_MAP, LINES, STATIONS, linePoints, type Leg } from './transit.ts';
 import { renderMarker, type MapMarker } from './map-markers.ts';
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -22,6 +22,8 @@ function smooth(points: number[][], closed: boolean) {
   }
   return closed ? `${d}Z` : d;
 }
+/** A far town's region after its name, a size down: «Alegia · Gipuzkoa». */
+const region = (name: string | undefined, size: number) => name ? `<tspan font-size="${(size * .8).toFixed(0)}" font-weight="600"> · ${escape(name)}</tspan>` : '';
 /** Where public/ is served (Vite's base); plain './' when rendered outside Vite (tests). */
 const BASE = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
 
@@ -78,7 +80,8 @@ export function renderCityMap(options: CityMapOptions = {}): string {
   }
   // Lines: a dark outline under the colour, cartoon style.
   for (const line of LINES) {
-    const d = straight(line.stations.map(id => [at(id).x, at(id).y]));
+    // A town beyond the map: the line runs on past its station and out of the city.
+    const d = straight(linePoints(line));
     // Rodalies trains run on a railway, drawn as a sleeper-striped band, not a metro tube.
     const rail = line.kind === 'rodalies' ? ` stroke-dasharray="${unit * 1.6} ${unit * .5}"` : '';
     parts.push(`<path class="city-line-edge" d="${d}" stroke-width="${unit * 2.5}"/><path class="city-line" d="${d}" stroke="${line.colour}" stroke-width="${unit * 1.7}"${rail}><title>${line.name}</title></path>`);
@@ -102,11 +105,12 @@ export function renderCityMap(options: CityMapOptions = {}): string {
       + `${pickable ? `<circle class="city-station-glow" cx="${s.x}" cy="${s.y}" r="${r * 2.2}"/>` : ''}`
       + `<circle cx="${s.x}" cy="${s.y}" r="${r}" stroke-width="${unit * .45}"/>`
       // A town beyond the map is named inwards, with an arrow pointing on to it (Cardedeu at the
-      // right edge, Alegia at the left).
-      + (s.edge && s.x > (CITY_MAP.extent.x0 + CITY_MAP.extent.x1) / 2 ? `<text x="${s.x - r * 1.5}" y="${s.y + unit * .55}" font-size="${size}" text-anchor="end">${escape(s.name)} →</text>`
+      // right edge); a far one, whose line runs out past Collserola, with its region (Alegia · Gipuzkoa).
+      + (s.edge && s.region ? `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}${region(s.region, size)}</text>`
+        : s.edge && s.x > (CITY_MAP.extent.x0 + CITY_MAP.extent.x1) / 2 ? `<text x="${s.x - r * 1.5}" y="${s.y + unit * .55}" font-size="${size}" text-anchor="end">${escape(s.name)} →</text>`
         : s.edge ? `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">← ${escape(s.name)}</text>`
         : `<text x="${s.x + r * 1.5}" y="${s.y + unit * .55}" font-size="${size}">${escape(s.name)}</text>`)
-      + `<title>${escape(s.name)}</title></g>`);
+      + `<title>${escape(s.region ? `${s.name} (${s.region})` : s.name)}</title></g>`);
   }
   if (options.current) {
     const s = at(options.current);
