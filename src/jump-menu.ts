@@ -96,6 +96,8 @@ export interface FightSetup {
   crit: boolean;
   /** Contratiempo seguro: every action of Sincopante's wearer counts as pressed in the off-beat (A contratiempo, its level 3). */
   offbeat?: boolean;
+  /** Encarnados (src/castle.ts `STRONG`): the castle's pupils of a room, or the night's, red inside and stronger. */
+  strong?: boolean;
   /** What the Ecos de luz are in for this fight (src/ecos.ts): awake improvements, whatever they would cost. */
   improved: string[];
   trial?: keyof typeof DUAL_TRIALS;
@@ -153,6 +155,7 @@ export function validFight(value: unknown): FightSetup {
     encounter: (adult && encounter === 'palace-minion') || (!adult && (tower || encounter === 'night-guard')) ? 'dogs' : encounter,
     foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes,
     free: v.free !== false, immune: v.immune === true, unbound: v.unbound === true, crit: v.crit === true, offbeat: v.offbeat === true,
+    strong: v.strong === true && adult && (encounter === 'night-guard' || encounter.startsWith('alumnos-')),
     improved: Array.isArray(v.improved) ? v.improved.filter(id => { const item = improvementOf(id); return !!item && !item.veiled && (!item.after || v.improved!.includes(item.after)); }) : [],
   };
 }
@@ -445,6 +448,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Castillo</span><div class="fight-chips">${CASTLE_FIGHTS.map(id => chip('encounter', id, CASTLE_FIGHT_NAMES[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
+      ${f.adult && (f.encounter === 'night-guard' || f.encounter.startsWith('alumnos-')) ? `<div class="fight-row"><span>Alumnos</span><div class="fight-chips">${chip('strong', '0', 'Como siempre', !f.strong)}${chip('strong', '1', 'Encarnados', !!f.strong)}</div></div>` : ''}
       ${dogs ? `<div class="fight-row"><span>Cuántos</span><div class="fight-chips">${[1, 2, 3, 4].map(n => chip('foes', String(n), String(n), f.foes === n)).join('')}</div></div>` : ''}
       ${guards ? `<p class="jump-note">${f.encounter === 'night-guard' ? 'El primer grupo de alumnos de la planta del castillo en la que estáis, más fuerte fuera cuantos menos amigos y niveles.' : 'Los guardianes son tantos y tan fuertes como dejan las ánimas de los amigos.'}</p>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Ecos de luz</span><div class="fight-chips">${IMPROVEMENTS.filter(item => !item.veiled && f.animas.includes(item.anima)).map(item => chip('improve', item.id, `${CLASSES[item.anima].name} · ${item.name}`, f.improved.includes(item.id), !!item.after && !f.improved.includes(item.after))).join('')}</div></div>` : ''}
@@ -565,6 +569,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
     else if (key === 'unbound') setFight({ unbound: !fight.unbound });
     else if (key === 'crit') setFight({ crit: !fight.crit });
     else if (key === 'offbeat') setFight({ offbeat: !fight.offbeat });
+    else if (key === 'strong') setFight({ strong: value === '1' });
     else return;
     // Keep focus on the same chip after the page redraws.
     render(`[data-${key.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}="${value}"]`);

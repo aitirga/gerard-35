@@ -103,9 +103,13 @@ export const PROFILES = {
   ausente: base(100, 13, 9, 9, 9),
   castigado: base(120, 12, 9, 11, 10),
   monton: base(130, 12, 12, 10, 10),
-  aurelia: base(420, 14, 11, 12, 12),
+  // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
+  // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
+  aurelia: base(480, 16, 11, 12, 12),
   atril: base(90, 1, 1, 10, 8),
-  directiva: base(160, 10, 13, 10, 12),
+  // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
+  // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.
+  directiva: base(185, 10, 19, 12, 14),
   reina: base(620, 14, 14, 12, 13),
   mano: base(110, 12, 10, 11, 10),
   /**

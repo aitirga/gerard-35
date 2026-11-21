@@ -174,6 +174,12 @@ title = "El simulador juega todas las misiones: Emilie y Luca, billetes y el via
 grep = "'luca'"
 in = "src/game-sim.ts"
 
+# docs/fight-sim.md § The balance bench (2026-11-21): what the final pass is done with.
+[[block.item]]
+title = "Banco de balance: palancas, optimizador, habilidades, progresión y cobertura"
+grep = "skillReport"
+in = "scripts/fight-sim.mjs"
+
 # Gerard plays on the Windows PC at home with the local server (decided 2026-11-19). The steps are
 # in the README; done once it has been played there.
 [[block.item]]
@@ -950,6 +956,20 @@ priority = "historia"
 grep = "export function createFloorStreet"
 in = "src/castle-pupils.ts"
 
+# docs/castle.md § Encarnados (Aitor, 2026-11-21): one harder group a day, red from inside, worth an Eco de luz.
+[[block.item]]
+title = "Encarnados: un grupo de alumnos un día de cada dos, con un tinte rojo y más duro, que vencido suelta un Eco de luz (en el castillo y de noche)"
+weight = 2
+priority = "historia"
+grep = "export function strongWon"
+in = "src/castle-story.ts"
+
+# docs/animas/README.md § Ecos de luz (Aitor, 2026-11-21): more ecos, three quarters of the jar by the end.
+[[block.item]]
+title = "Más Ecos de luz: cada sala del castillo la primera vez, los niveles 5 y 7 de cada ánima compartida, y el bote a un eco por nodo"
+priority = "historia"
+used = ["ROOM_LIGHTS", "LIGHT_LEVELS"]
+
 [[block.item]]
 title = "Los alumnos de la Reina: los cinco primeros y sus tres cursos"
 weight = 2
@@ -1305,6 +1325,15 @@ weight = 2
 title = "Cada combate con su pareja de objetivos en el simulador"
 priority = "pruebas"
 note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: faltan 22 (los perros, los alumnos y las delegadas del castillo, los guardias, la Reina…; just progress --audit los lista). Se marca a mano."
+
+# Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the
+# party's attributes, so an open mission's foes grow with the other missions' ánimas (FOE_GROWTH), and
+# levels 4 to 7 cost what the castle's fights, worth three times their foes, can pay (docs/fight-sim.md § Progression).
+[[block.item]]
+title = "El crecimiento del equipo acompaña a la historia: cada ánima sube al equipo, los enemigos de las misiones abiertas crecen con ellas, los niveles 5 a 7 se alcanzan y el castillo pide ánimas"
+priority = "pruebas"
+used = ["FOE_GROWTH", "gatheredFor", "XP_RULES", "ANIMA_GROWTH"]
+note = "Cada ánima da +1 a Fuerza, Magia, Defensa y Espíritu (ANIMA_GROWTH); por cada ánima de otra misión abierta, un punto y cuarto a los cuatro atributos de sus enemigos (FOE_GROWTH: +1, +3, +4); LEVEL_XP de 4 a 7 en 950, 1.150, 1.400 y 1.700, los combates del castillo valen el triple de EXP y los de noche vez y media (XP_RULES); Aurelià pide las ánimas de Nuria y dos misiones, y Dirección las de casi todas (objetivos aurelia-con-una, aurelia-con-dos, direccion-con-dos). Medido en docs/fight-sim.md § Progression y § Power and the castle."
 
 [[block.item]]
 title = "Pasada final de pulido"

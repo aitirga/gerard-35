@@ -9,7 +9,7 @@
 import type { Dialogue, DialogueLine } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { StoryEffect, Trigger } from './story.ts';
-import { CASTLE_LIGHTS, CASTLE_PHASES, castlePhase, floorFor, isCastleEncounter, isCastlePlace, roomRound,
+import { CASTLE_LIGHTS, CASTLE_PHASES, ROOM_LIGHTS, STRONG_LIGHTS, castlePhase, floorFor, isCastleEncounter, isCastlePlace, roomRound,
   type CastleEncounter, type CastleFlag, type CastleFloor, type CastlePhaseId, type Cell, type RoomEncounter } from './castle.ts';
 
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
@@ -138,6 +138,8 @@ export interface CastleRun {
   stamp: string; beaten: Partial<Record<CastlePhaseId, number[]>>; fighting?: { phase: CastlePhaseId; room: number };
   /** The floor has been stepped onto today, and whether it is another than the one last walked (`changed`). */
   seen?: boolean; changed?: boolean;
+  /** Today's Eco de luz from Encarnados is taken (`strong`), and the fight starting now is against them (`strongFight`). */
+  strong?: boolean; strongFight?: boolean;
 }
 export const freshCastle = (stamp = ''): CastleRun => ({ stamp, beaten: {} });
 
@@ -165,6 +167,24 @@ function run(host: CastleHost): CastleRun {
   const stamp = `${host.seed}:${host.day}`;
   if (host.castle.stamp !== stamp) host.castle = { ...freshCastle(stamp), changed: host.castle.stamp !== '' };
   return host.castle;
+}
+/** The Eco de luz the next Encarnados beaten will let go of, while any is left in the game. */
+const strongNext = (host: CastleHost) => STRONG_LIGHTS.find(id => !host.has(`luz-${id}`));
+/** Encarnados are out today: one day in two (even days), nobody has beaten the day's yet, and the game still has an Eco de luz for them. */
+export const strongOpen = (host: CastleHost) => host.adult && !host.has('reina') && host.day % 2 === 0 && !run(host).strong && !!strongNext(host);
+/** The room of today's floor of `phase` whose pupils are Encarnados: one of its plain rooms, another each day. */
+export function strongRoom(host: CastleHost, phase: CastlePhaseId): number | undefined {
+  if (!strongOpen(host)) return undefined;
+  const rooms = castleFloor(host, phase).rooms.filter(room => room.encounter?.startsWith('alumnos-'));
+  return rooms.length ? rooms[host.day % rooms.length].id : undefined;
+}
+/** Encarnados beaten: the day's Eco de luz, out of them and into the jar. */
+export function strongWon(host: CastleHost): StoryEffect[] {
+  const light = strongNext(host), today = run(host);
+  if (!light || today.strong) return [];
+  today.strong = true;
+  host.raise(`luz-${light}`);
+  return [{ kind: 'lights', people: [light] }];
 }
 /** Today's floor of `phase` (docs/castle.md § The generated floor): the same all day, another tomorrow. */
 export const castleFloor = (host: Pick<CastleHost, 'seed' | 'day'>, phase: CastlePhaseId): CastleFloor => floorFor(host.seed, host.day, phase);
@@ -214,7 +234,8 @@ export function castleNear(host: CastleHost, id: string): StoryEffect[] {
     const phase = Number(room[1]) as CastlePhaseId, n = Number(room[2]), today = run(host);
     const there = castleFloor(host, phase).rooms.find(r => r.id === n);
     if (!there?.encounter || today.beaten[phase]?.includes(n)) return [];
-    today.fighting = { phase, room: n };
+    const strong = strongRoom(host, phase) === n;
+    today.fighting = { phase, room: n }; today.strongFight = strong;
     return [{ kind: 'battle', encounter: there.encounter }];
   }
   const boss = id.slice('castillo-'.length);
@@ -257,7 +278,10 @@ export function castleBattle(host: CastleHost, event: { won: boolean; encounter?
   }
   // A room cleared stays cleared today; an hour of the day went into it.
   if (fighting && !today.beaten[fighting.phase]?.includes(fighting.room)) (today.beaten[fighting.phase] ??= []).push(fighting.room);
-  return host.hour();
+  // The first time each room is beaten, its Eco de luz (`ROOM_LIGHTS`).
+  const room = ROOM_LIGHTS.find(id => id === encounter);
+  const eco: StoryEffect[] = room && host.raise(`luz-${room}`) ? [{ kind: 'lights', people: [room] }] : [];
+  return [...eco, ...host.hour()];
 }
 /**
  * Gerard chose (docs/castle-bosses.md § The last scene): the end, and the Monday after. `seen`: it

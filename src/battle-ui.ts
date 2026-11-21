@@ -48,9 +48,11 @@ const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas';
+type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'acecho' | 'siete-vidas' | 'encarnado';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 const STATUS_ICONS: Record<IconId, string> = {
+  // An Encarnado (src/castle.ts `STRONG`): an ember inside a ring, its halo.
+  encarnado: '<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2.9" fill="currentColor"/>',
   // Dadista's Racha: a four-point star, the astral's own, with the dice spent in its corner.
   racha: '<path d="M8 .8 9.6 6.4 15.2 8 9.6 9.6 8 15.2 6.4 9.6 .8 8 6.4 6.4z"/>',
   // A rock coming down with its trail.
@@ -418,6 +420,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Fran's salon: the light on now, on each of the party's plates (it only touches them).
     const light = state?.light && state.allies.includes(c) ? lightNow(state) : undefined;
     return shownHp(c) > 0 ? [
+      // An Encarnado, as long as it stands: what it is and what beating it leaves.
+      ...c.castle?.strong ? [{ id: 'encarnado' as const, name: 'Encarnado: más entero y pega más. Vencido, suelta un Eco de luz.', mark: '', timed: false, lasts: 'todo el combate' }] : [],
       ...light ? [{ id: 'luz' as const, name: lightText(state!, light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
       ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
@@ -2912,7 +2916,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** `party` is who fights on Gerard's side (story.battleParty), or a size for chapter 1's boys. */
     /** `animas` are the party's unlocked ánimas (story.classes); L and R walk through them. `guards` sizes the palace guards. */
-    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; cap?: number; improved?: Improved } = {}) {
+    open(party: PartySlot[] | 1 | 2, foeCount = 1, options: { possessed?: boolean; encounter?: Encounter; lastWord?: string; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; friends?: readonly string[]; strong?: boolean; levels?: Partial<Record<ClassId, number>>; xp?: Partial<Record<ClassId, number>>; cap?: number; improved?: Improved } = {}) {
       if (state) return;
       const count = foeCount;
       reopen = (): void => { ui.open(party, count, options); };
@@ -2920,7 +2924,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;
       const slots = typeof party === 'number' ? childParty(party, options.animas?.at(-1)) : party;
-      state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night }); busy = true;
+      state = createEncounter(slots, encounter, { foeCount, possessed, animas: options.animas, guards: options.guards, night: options.night, friends: options.friends, strong: options.strong }); busy = true;
       state.levels = options.levels;
       improve(state, options.improved);
       xpBefore = { ...options.xp }; levelCap = options.cap; rewarded = false; finale = false; delete root.dataset.finale; resetRewards();

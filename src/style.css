@@ -487,6 +487,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Dadista's Racha: the astral's bluish white (docs/animas/dadaista/ § The astral look), never an element's colour. */
 .unit-statuses i[data-status="racha"], .summary-tags [data-status="racha"], .damage-pop[data-status="racha"] { --status: #bfe0ff; }
 .unit-statuses i[data-status="meteoro"], .summary-tags [data-status="meteoro"], .damage-pop[data-status="meteoro"] { --status: #f4f9ff; }
+.unit-statuses i[data-status="encarnado"], .summary-tags [data-status="encarnado"], .damage-pop[data-kind="status"][data-status="encarnado"] { --status: #ff5a36; }
 .unit-statuses i[data-status="shock"], .summary-tags [data-status="shock"], .damage-pop[data-kind="status"][data-status="shock"] { --status: #ffe45c; }
 .unit-statuses i[data-status="cargado"], .summary-tags [data-status="cargado"], .damage-pop[data-kind="status"][data-status="cargado"] { --status: #fff2a8; }
 .unit-statuses .status-icon[data-status="punto-debil"] { animation: status-pulse 1.2s ease-out infinite; }

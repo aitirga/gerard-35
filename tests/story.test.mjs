@@ -264,7 +264,7 @@ test('ánimas strengthen the party and thin out the palace guards', () => {
   assert.deepEqual(none.animas, []);
   assert.deepEqual(one.animas, ['nuria']);
   assert.equal(none.battleParty(true)[0].bonus, undefined);
-  assert.deepEqual(one.battleParty(true).map(m => m.bonus), [{ magia: 1, espiritu: 1, pv: 10 }, { magia: 1, espiritu: 1, pv: 10 }]);
+  assert.deepEqual(one.battleParty(true).map(m => m.bonus), [{ fuerza: 1, magia: 2, defensa: 1, espiritu: 2, pv: 10 }, { fuerza: 1, magia: 2, defensa: 1, espiritu: 2, pv: 10 }]);
   assert.equal(none.guarded.length, 3);
   assert.equal(one.guarded.length, 3, 'one ánima weakens them; it takes two to send one away');
   assert.ok(one.castleThreat < none.castleThreat, 'but the castle already feels it');
@@ -504,7 +504,9 @@ test('the jar at home opens its screen; the ecos go into the ánimas and come ba
   assert.equal(story.improve('matemagico:agua'), false, 'once');
   assert.equal(story.ecosFree, 1);
   assert.deepEqual(story.improved.elements.matemagico, ['agua']);
+  assert.equal(story.improve('tecnopata:explosion'), true, 'every node is one eco now, but the definitivas');
   assert.equal(story.improve('papagato:mana-1'), false, 'not enough ecos');
+  assert.equal(story.unimprove('tecnopata:explosion'), true);
   assert.equal(story.improve('matemagico:pasiva'), false, 'asleep');
   assert.equal(story.unimprove('matemagico:agua'), true);
   assert.equal(story.ecosFree, 2, 'it comes back');

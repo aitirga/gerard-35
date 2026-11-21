@@ -126,6 +126,18 @@ export const STORY_ARCS = [
     { flags: ['portal-nucli', 'artilugio'], label: 'El acertijo de la maqueta resuelto: el artilugio, en casa', spot: { environment: 'meridiana' } },
     { flags: ['reina'], label: 'La Reina, vencida' },
   ] },
+  // Encarnados (docs/castle.md § Encarnados): the pupils red inside, one group a day, in a room of the castle or out at night. Each one beaten is an Eco de luz.
+  { id: 'encarnados', chapter: 2, title: 'Encarnados', detail: 'Un día de cada dos: en el castillo o de noche', after: 'castle', steps: [
+    { flags: ['luz-encarnado-1'], label: 'Los primeros encarnados vencidos: un Eco de luz' },
+    { flags: ['luz-encarnado-2', 'luz-encarnado-3', 'luz-encarnado-4'], label: 'Cuatro días de encarnados: cuatro Ecos de luz' },
+    { flags: ['luz-encarnado-5', 'luz-encarnado-6'], label: 'Los seis: no vuelven a salir' },
+  ] },
+  // Each room of the castle beaten for the first time (docs/castle.md § Ecos of the rooms): an Eco de luz each.
+  { id: 'aulas', chapter: 2, title: 'Las aulas', detail: 'Cada sala del castillo, la primera vez', after: 'castle', steps: [
+    { flags: ['luz-alumnos-1a', 'luz-alumnos-1b', 'luz-alumnos-1c', 'luz-delegada-1'], label: 'Primer curso: cada sala vencida una vez' },
+    { flags: ['luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-delegada-2'], label: 'Segundo curso: cada sala vencida una vez' },
+    { flags: ['luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-delegada-3'], label: 'Tercer curso: cada sala vencida una vez' },
+  ] },
   // Only one of the two is ever set: each ending hangs from her fall on its own.
   { id: 'final-acabar', chapter: 2, title: 'Final · Acabar', detail: 'El lunes después', after: 'reina', steps: [
     { flags: ['final-acabar'], label: 'Gerard acaba: todo en orden, un poco más gris' },

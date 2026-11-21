@@ -299,6 +299,21 @@ export const CASTLE_FIGHT_NAMES: Record<CastleEncounter, string> = {
  * `might`: how much stronger than inside they are tonight, PV and blows (src/night.ts `nightMight`).
  */
 export interface NightFight { room: RoomEncounter; might: number }
+/**
+ * Encarnados (docs/castle.md § Encarnados): a group of her pupils that comes harder than the rest, lit
+ * red from inside. One group of the night's hunt and one room of the day's floor are; every one of
+ * its pupils has `pv` times its PV and hits `power` times as hard, and beaten it lets go of an Eco de
+ * luz (`STRONG_LIGHTS`: one every other day, night or floor, and no more than these in a game). `group`: which
+ * of the night's groups it is. Tunable (`just fight-sim`, `castle.strong.*`).
+ */
+export const STRONG = { pv: 1.6, power: 1.3, group: 2 };
+export const STRONG_LIGHTS = ['encarnado-1', 'encarnado-2', 'encarnado-3', 'encarnado-4', 'encarnado-5', 'encarnado-6'] as const;
+/**
+ * Each of the castle's rooms (each combination of pupils, and each year's La Delegada) lets go of an
+ * Eco de luz the first time it is beaten (Aitor, 2026-11-21: more ecos, so some three quarters of the jar
+ * can be had by the end): flags `luz-alumnos-1a`… (docs/castle.md § Ecos of the rooms).
+ */
+export const ROOM_LIGHTS = ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1', 'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2', 'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3'] as const;
 /** The group the `n`th of the night's hunters (`night-n`) brings, on `phase`'s floor. */
 export function nightGroup(n: number, phase: CastlePhaseId): RoomEncounter {
   const spec = castlePhase(phase), groups = [...spec.fights, spec.elite];
@@ -328,7 +343,9 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
  * The castle's rules, every number in one book (`castle.rules`, `just fight-sim --tune`); each
  * foe's PV are its PROFILES entry. First guesses, all of them.
  *
- * Pupils. `year`: how much harder a year hits and holds than the first. El Repetidor announces its
+ * Pupils. `year1` to `year3`: how much harder each year hits and holds than a pupil's own numbers (2026-11-21:
+ * they were 1, 1.25 and 1.25; the party comes with its friends' ánimas now, the first floor's rooms were over in a
+ * round and the other two were won without thinking). El Repetidor announces its
  * Empujón (`empujon`) a turn ahead; in its third year its crust takes `crust` blows to break and lets
  * `crusted` of anything else in. El Empollón resists the kind of blow it took last (`learned` of
  * it) and hits `repaso`. La Chivata's mark makes the next blow on whoever carries it land `chivatazo`
@@ -363,10 +380,10 @@ export const GUM_ORDER: readonly Gum[] = ['fresco', 'rancio', 'mojado'];
  * her way back she has `reinaVuelta` of her PV.
  */
 export const CASTLE = {
-  year2: 1.25, year3: 1.25,
+  year1: 1.25, year2: 1.4, year3: 1.5,
   empujon: 46, crust: 2, crusted: .3, repaso: 24, learned: .3, chivatazo: 3, senalar: 12, gemelo: 20, levantar: .5, orden: 22,
   presente: 55, rabia: 3, revienta: 75, arrimarse: 14, copia: 1, sangre: 2,
-  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 52, expuesto: 1.5, castigo: 40, castigoLeve: 16,
+  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 85, expuesto: 1.5, castigo: 40, castigoLeve: 16,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 70, recordRounds: 2,
   expediente: 18, horario: 6, circular: 12, conducida: 1.8, actaEvery: 3, resolucion: 90, cargoEvery: 4, voto: 1.3,
   manos: .7, pompa: .4, toma: .1, gum: .25, envolver: 3, pegote: 34, mano: .25, aplastar: 26,
@@ -433,6 +450,8 @@ export interface CastleMark {
   away?: boolean; back?: number; rage?: number; form?: MontonForm; copied?: number; all?: boolean;
   /** Out on the Meridiana at night: how much harder it hits and holds than inside (`NightFight.might`). */
   might?: number;
+  /** An Encarnado (`STRONG`): harder than its kind, and worth an Eco de luz with its group. */
+  strong?: true;
   /** A Gemelo brought down alone: held up by its twin at 1 PV until the round ends. `found`: a blow has found what this one is weak to. `told`: its fall has been dealt with. */
   down?: boolean; found?: boolean; told?: boolean;
   /** It loses its next turn (the Queen, her Pompa burst or startled by a note). */

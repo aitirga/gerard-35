@@ -16,6 +16,16 @@ just fight-sim check                # are the fights still what they are meant t
 just fight-sim run --json           # the numbers and their conclusions, as JSON and nothing else
 ```
 
+Then the bench, for deciding what to change (§ The balance bench):
+
+```sh
+just fight-sim coverage             # what no target holds yet: fights without their pair, skills nobody plays
+just fight-sim levers --fight plato # the numbers that fight turns on, and which way each one pushes it
+just fight-sim optimize --fight plato --auto 3   # the numbers that put its targets where they should be
+just fight-sim skills               # what each skill is worth, and what each fight becomes without it
+just fight-sim progress             # whether the party's growth keeps step with the story
+```
+
 Every list is a set of combinations: this one plays 3 fights × 2 parties × 2 levels × 2 bots × 2 bans.
 
 ```sh
@@ -51,6 +61,15 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `castle` | `CASTLE` (`src/castle.ts`), the castle's pupils, Aurelià, Dirección and the Queen, as `castle.rules` | `castle.rules.resolucion`, `castle.rules.year3`, `castle.rules.reinaVuelta` |
 | `modelo` | `MODELO`, the foes of Emilie's model and El que no converge, as `modelo.rules` | `modelo.rules.seca`, `modelo.rules.descargaStep`, `modelo.rules.convergeTurns` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
+| `luca`, `sobremesa`, `night` | `LUCA`, `SOBREMESA`, `NIGHT_PUPILS`, as `luca.rules`, `sobremesa.boss`, `night.rules` | `luca.rules.brillo`, `night.rules.perFriend` |
+| `crit` | `CRIT_RULES`: how much harder a golpe crítico lands, and how much of each one's Crítico counts | `crit.rules.bonus`, `crit.rules.chance` |
+| `class` | `CLASS_STATS`, what wearing an ánima adds | `class.papagato.fuerza`, `class.dadaista.critico` |
+| `anima` | `ANIMAS`' `bonus`, what each friend's ánima adds to everyone | `anima.nuria.pv`, `anima.marta.velocidad` |
+| `growth` | `ANIMA_GROWTH` (`src/animas.ts`) as `growth.rules`: every ánima's bonus times `scale`, and `pv` and `stat` more for each one gathered | `growth.rules.scale`, `growth.rules.stat` |
+| `level`, `xp`, `stage` | `LEVEL_XP` (`level.xp.0` is level 2's EXP, `level.xp.5` level 7's), `FOE_XP`, `XP_RULES` (what a fight inside the castle is worth, times its foes) and `CASTLE_UNLOCKS` | `level.xp.2`, `xp.foe.cebollita`, `xp.rules.castle`, `stage.2.cap` |
+| `foes` | `FOE_GROWTH` (`src/battle.ts`): how an open mission's foes grow with the other missions' ánimas behind it (§ Progression) | `foes.growth.pv`, `foes.growth.stat` |
+
+`just fight-sim levers --fight <fight>` lists the ones a fight reads, so nobody has to guess a path.
 
 What the Ecos de luz are in is one more list, `--improved`, of `src/ecos.ts` ids joined with `/`
 (`none` for nothing). The bots may give an Atacar any element it has:
@@ -177,14 +196,17 @@ the third ring's packs (57 % `casual`) and Lo Cristalino.
 ## Story points
 
 `just fight-sim story` plays each fight with the party that reaches it in the story, instead of a
-party and levels chosen by hand. The story is Nuria and Uri's mission as the introduction and then the
+party and levels chosen by hand. The story is Nuria and Uri's mission as the introduction, then the
 rest in whatever order the player likes (`MISSIONS` in `src/battle-sim.ts`), so an open mission is
-measured from being the first one done to being the last.
+measured from being the first one done to being the last, and then the castle, a stretch per boss
+(`CASTLE_STAGES`: `castillo-1` up to Aurelià, `castillo-2` to Dirección, `castillo-3` to the Queen),
+each with every mission behind it and what its stage has opened (`CASTLE_UNLOCKS`).
 
 ```sh
-just fight-sim story                                   # every open mission, first and last, builds nada and mixto
+just fight-sim story                                   # every open mission, first and last, and the castle's three; builds nada and mixto
 just fight-sim story --at marta:first,marta:last --build elementos --fight cuerdas-directo,voz
 just fight-sim story --at marta:universidad --policy smart
+just fight-sim story --at castillo-3 --level papagato=7/dadaista=7 --party gerard:matemagico/papagato+aitor:tecnopata/dadaista
 ```
 
 | A point has | From |
@@ -192,12 +214,21 @@ just fight-sim story --at marta:universidad --policy smart
 | The friends' ánimas of what is behind it (their bonus) | `MISSIONS[id].friend` |
 | The ecos of what is behind it | `MISSIONS[id].lights` (Nuria and Uri 2, the uni friends 5, Marta 1) |
 | What those ecos bought | `--build`, a shopping list in order (`BUILDS`): `nada`, `mixto`, `elementos`, `tronco`; only what the ecos pay for is bought (`withinEcos`), and nothing is given for free on top (`Setup.exact`) |
-| Papagato's level | 2 after the introduction, one more per open mission behind (up to 3) |
-| Ánimas to switch between | Matemágico, Papagato and Tecnópata (the introduction: the first two) |
+| Each shared ánima's level | From the EXP of the stretches fought since its friend's mission (`STRETCH_XP`, what `just game-sim` measures as «EXP por tramo») against `LEVEL_XP`, under the castle's cap; Papagato never under 2. `--level` puts them by hand |
+| What the jar offers | Only what the castle's stage has opened: grade III from `castillo-2`, the definitivas from `castillo-3` |
+| Ánimas unlocked | Each one's own and the one each mission behind left (`FRIEND_ANIMA`) |
+
+The levels are those of an ánima that is always worn. Whoever takes turns between several shared ánimas
+has each of them lower: `just game-sim` prints the levels each player really brings to each fight
+(«llega con»).
+
+A party can name what each one can switch to in the fight, after a `/`:
+`gerard:matemagico/papagato+aitor:tecnopata/dadaista` (Gerard wears Matemágico and can change to
+Papagato). Without it each has their own ánima and the one worn, as the fights were tuned.
 
 The party itself is `--party` (the dual party by default). The `TARGETS` still play their hand-picked
-setups; the final balance is to be done against these points once every mission is in. A new mission
-is one more entry in `MISSIONS`; a new way of spending, one more list in `BUILDS`.
+setups; the final balance is to be done against these points once every mission is in (§ The final
+pass). A new mission is one more entry in `MISSIONS`; a new way of spending, one more list in `BUILDS`.
 
 ## The balance report
 
@@ -219,6 +250,426 @@ the ones that teach, its lights and its friend's ánima), keep a reference, try 
 until the pairs hold at the first and the last point, write the numbers into the code, move the
 `TARGETS` to those points, and keep a new reference. Fights that teach are shown but not asked the pair.
 
+## The balance bench
+
+What turns the simulator's rows into decisions (`src/balance.ts`). Nothing here writes a number into
+the game: every command ends by saying what it found and how to see it whole.
+
+### Speed
+
+Every command shares its rows among threads (`scripts/fight-sim-pool.mjs`, the cores less one;
+`--workers N`). A row's fights are cut in pieces of 20, each fight with its own seed, so the same
+setup and seed give the same row in one thread or ten. `just fight-sim check` takes about a third of
+what it did; the tests (`tests/battle-sim.test.mjs`) still play it in one.
+
+### Levers: the numbers a fight turns on
+
+```sh
+just fight-sim levers --fight plato                  # its own numbers: its foes and its rules
+just fight-sim levers --fight voz --scope party      # what the party brings: skills, duals, what each ánima adds
+just fight-sim levers --pairs --at marta:first,marta:last --fight voz   # against the story's pairs, not the targets
+```
+
+A fight is played a few times with every number watched (`watchReads`), so the list is what it really
+reads, with nobody keeping it. Each number is then moved a fifth down and up (`--delta`; a whole
+number by 1 at least) and every goal that reads it is played again with the same seeds.
+
+| Column | Means |
+| --- | --- |
+| `mueve` | The most any goal's wins change from the low value to the high one, in points |
+| `separa` | Above 0, raising it pulls apart the goals that should win from those that should not: the number that makes the fight's question matter more. Below 0, it pushes them together |
+| `pérdida` | How far those goals are from what they ask at the low value, as it is and at the high one (0: all held) |
+
+`--scope fight` (default) is the fight's own; `party` is skills, duals, `class`, `anima`, `growth` and
+Gerard's and Aitor's stats, which move every fight; `all` adds the shared rules (elements, crits, EXP).
+
+### Optimize: the numbers that hold the targets
+
+```sh
+just fight-sim optimize --fight plato --auto 3                       # its three strongest levers, found for you
+just fight-sim optimize --vary foe.voz.pv=600..900/10 --vary marta.rules.directo   # these, the second 40 % either side
+just fight-sim optimize --pairs --at luca:first,luca:last --fight fran --auto 4    # hold the pair at both ends of the story
+just fight-sim optimize --vary skill.zarpazos.strikes=3..6 --tune growth.rules.scale=0   # with another number held where it is tried
+```
+
+It looks for the values of a few numbers that bring a set of goals to what they ask.
+
+- **The goals**: the targets of `--fight`, those named with `--target`, or with `--pairs` both halves
+  of every story point's pair (`smart` ≥ 90 %, `casual` ≤ 20 %). With none named, every target whose
+  fight reads one of the numbers, so a skill's number is held against every fight it is used in.
+- **The loss** (`miss`): for each goal, how far its row is from its ranges, in steps: ten points of
+  wins is one, ten of PV left or a round is half, a fight that does not end is ten. A range held by a
+  hair still costs a little, so the answer ends inside it and not on its line.
+- **The same luck for every try**: every set of numbers plays the same seeds, so the loss is a plain
+  function of the numbers and two tries differ by what they are.
+- **The search**: a spread of tries over the whole range first (a Latin hypercube), so a start where
+  nothing moves (a fight never won) is not the end; then from the best one each number a step up and
+  down, to the best neighbour, steps halved when none is better.
+- **The least change**: being far from today's numbers costs a little (`--keep`, 0.1 for a number's
+  whole range), so between two answers as good it takes the nearer, and a number that changes nothing
+  stays where it is.
+- **The last word**: today's numbers and the proposed ones are played again with another seed and
+  `--check-runs` fights (200). Believe that table, not the search's: a search this greedy can fit one
+  seed's luck.
+
+It prints the command that shows the proposal whole (`just fight-sim check --tune …`). Writing the
+numbers into the code, and deciding whether to, is still someone's job.
+
+As measured on 2026-11-21: El Plato's three targets (one held of three) are all held by `foe.plato.pv`
+260 → 280 and nothing else, found in 60 tries and 8 seconds.
+
+### Skills: what each one is worth
+
+```sh
+just fight-sim skills                         # the bosses, seven parties that wear every ánima between them, everything open
+just fight-sim skills --story --fight all     # every fight that asks a question, with what the story has given by then
+just fight-sim skills --anima papagato,dadaista --party gerard:papagato+aitor:dadaista
+```
+
+Every setup is played by `smart`, and then again once for each action it used, with that action
+banned (`ban`): what a skill is worth is what the fight becomes without it.
+
+| Column | Means |
+| --- | --- |
+| `usada en` | Setups where the bot used it, of those whose party knows it and can wear its ánima |
+| `usos`, `daño` | Uses per fight, and its share of the party's damage |
+| `PV/uso`, `PV/maná` | PV off the foes per use and per point of maná (a dual's maná is both halves) |
+| `sin ella` | Banned: wins lost on average and in the worst setup, rounds a win takes more, PV left less |
+
+| Flag | Means |
+| --- | --- |
+| `no se usa` | The party knows it everywhere and `smart` never picks it. It may be useless, or `worth` may not know its value yet: read the skill before cutting it |
+| `decide` | Some fight loses 30 points of wins or more without it: the list below the table says which |
+| `domina` | It does half the party's damage wherever it is known |
+| `quitarla no cambia nada` | Banned, nothing moves anywhere: wins, rounds or PV |
+| `barata`, `cara` | A point of maná buys far more, or far less, with it than with the middle skill of its ánima |
+
+By default everything is open (`fullKit`: every shared ánima at its top level, the whole jar, every
+friend's ánima), the one state where every skill is on the table at once; most fights are won with it,
+so read rounds and PV more than wins. `--story` gives each fight what the story has given by the end
+of its stretch, where a skill's absence shows in the wins. A die's face and Agitar are left out unless
+used: they are played through Tirar dado and take no turn.
+
+### Coverage: what nothing holds yet
+
+`just fight-sim coverage` plays every target a little and watches what it reads, and lists what is
+left over: fights with no target that plays their answer or none that plays without it, each ánima as
+it stands (skills, how far it grows, whether its definitiva is built, whether any target wears it),
+skills and duals no target's bot uses, and the numbers no target's fight reads. Whatever is on that
+list can break without `just fight-sim check` noticing.
+
+As measured on 2026-11-21: 19 fights without their pair; no target wears Dadista, Colorista,
+Sincopante or Freática; 30 skills and 6 of the 9 duals are used by no target; 219 of 823 numbers are
+read by none (every number of those four ánimas among them).
+
+### Progression: whether the party's growth keeps step
+
+```sh
+just fight-sim progress                                   # each ánima's bonus at 0, as it is, and doubled
+just fight-sim progress --tune growth.rules.scale=0 --tune growth.rules.pv=0:10:20   # only PV for each ánima gathered
+just fight-sim progress --tune foes.growth.pv=0:0.1 --tune foes.growth.stat=0:0.5:1    # how much the foes keep up
+just fight-sim progress --tune level.xp.2=950:1290 --at castillo-1,castillo-2,castillo-3   # level 4 later
+```
+
+The party grows three ways: each friend's ánima adds to everyone's attributes (`ANIMAS`' `bonus`:
++1 to two stats and +10 PV each, and since 2026-11-21 a point of Fuerza, Magia, Defensa and Espíritu,
+`ANIMA_GROWTH`: § Power and the castle), the shared ánimas level up, and the ecos buy the jar. The open
+missions' foes grow with it (`FOE_GROWTH`, since 2026-11-21); the rest do not. `progress` plays every story point's pairs under each set of numbers and says, point by
+point, how many pairs hold, what `smart` and `casual` win, and which fights fall out and to which
+side (`duro`: `smart` under 90 %; `fácil`: `casual` over 20 %). Its conclusions say what doing a
+mission first or last changes: the city is open, so the same fight is met with one friend's ánima or
+with four.
+
+Three rules are numbers to try:
+
+| Number | Tries |
+| --- | --- |
+| `growth.rules.scale` | Every ánima's bonus times this: 0 is no attribute growth at all |
+| `growth.rules.pv`, `growth.rules.stat` | For each ánima gathered, this many PV, and this much Fuerza, Magia, Defensa and Espíritu, on top |
+| `foes.growth.pv`, `foes.growth.stat` | For each other open mission's ánima the party has, every foe of an open mission's fight starts with this share more PV and this much more of those four stats (`gatheredFor`: Nuria's ánima and the mission's own do not count, and Nuria's fights and the castle's never grow) |
+
+A level's EXP (`level.xp.N`) moves the level each point is reached with, since the points count their
+EXP (`STRETCH_XP`). `just game-sim run --tune …` plays the same numbers through the whole game:
+[game-sim.md](game-sim.md) § Trying numbers.
+
+**Before the two decisions below**, as measured on 2026-11-21 with a first sketch of the foes' rule
+that counted every ánima and reached the castle too (the dual party, build `mixto`, 43 pairs over the open missions first and
+last and the castle's three stretches; 60 to 100 fights a row):
+
+| Rule tried | Pairs held | A mission done last instead of first: `casual` wins |
+| --- | --- | --- |
+| The game as it is (`growth.rules.scale=1`) | 6–7 of 43 | +33 points |
+| No attribute growth at all (`scale=0`) | 13 | +1 |
+| Only PV, +10 for each ánima (`scale=0`, `growth.rules.pv=10`) | 8 | +23 |
+| Bonus doubled (`scale=2`) | 5 | +30 |
+| As it is, and the foes with 8 % more PV for each ánima | 10 | +8 |
+| As it is, and the foes with +1 to their four stats for each ánima | 15 | −3 |
+| No growth, and the foes with 8 % more PV for each ánima | 18 | −8 |
+
+- **The party already grows with the ánimas it gathers, and that is what tips the open missions.** The
+  fights do not grow, so each mission is easier the later it is done: `casual` wins 33 points more of
+  a mission done last than of the same mission done first, and most of that is the PV (+23 with the
+  PV alone). The levels do little on their own: with no bonus, Papagato from 2 to 4 moves `casual` one point.
+- **More of it is not the answer** (doubled, fewer pairs hold); **nor is none** if the party is to be
+  felt growing. What keeps the order from mattering is the foes keeping up: with their four stats up
+  one for each ánima gathered, the order stops counting (−3) and twice as many pairs hold, though the
+  castle, tuned with five ánimas' bonus and nothing on its side, becomes too hard and has to be tuned
+  again. The palace's guards and the night's pupils already grow or shrink with the party
+  (`palaceGuards`, `nightMight`); the missions' fights do not.
+- **The few pairs held are not all the growth's doing**: many fights are still tuned against their
+  hand-picked `TARGETS` (Papagato 2, nothing from the jar), which is what the final pass moves to these
+  points. Read the columns against each other, not against 43.
+- **The EXP does not reach the levels the castle opens.** An ánima worn in every fight has about
+  1,750 EXP on reaching the castle (level 4, which costs 1,290) and 2,250 on reaching the Queen (level
+  5, 2,070), with levels 6 and 7 at 3,000 and 4,080: the caps of 6 and 7 open levels nobody has the
+  EXP for. Whoever takes turns between shared ánimas has less: `pensando` reaches Aurelià with
+  Papagato at 3.1 and Dadista at 2, and the Queen with Dadista at 4 and Colorista at 2.4
+  (`just game-sim`). Either `LEVEL_XP` shortens from level 4 up or the castle's pupils are worth more.
+
+- **Through the whole game the bonus is what carries the player who does not think.** Six games each
+  with `just game-sim run --player pensando,casual --runs 6 --tune growth.rules.scale=0:1`:
+
+  | Bonus | Player | Finish | Median | Fights | Lost | Walls |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | none (`scale=0`) | `pensando` | 100 % | 275 min | 110 | 18.5 | the palace's guards, the night's guard, Aurelià |
+  | as it is | `pensando` | 100 % | 202 min | 68 | 5.7 | the palace's guards, the night's guard |
+  | none | `casual` | 0 % | — | 430 | 233 | most of the missions |
+  | as it is | `casual` | 67 % | 1,301 min | 369 | 133 | the same ones, later |
+
+  So taking the bonus away is not on the table: the game's length for whoever plays well, and its
+  being finishable at all for whoever does not, lean on it. And `casual`, who repeats fights by the
+  hundred, does reach Dadista 7: the levels past 5 are today a prize for losing often, not for
+  getting far.
+
+#### Decided on 2026-11-21 (Aitor)
+
+**The open missions' foes grow with the ánimas gathered** (`FOE_GROWTH` in `src/battle.ts`: `stat: .5`,
+`pv: 0` when this was decided, and 1.25 since the party itself grows a point an ánima later the same
+day: § Power and the castle; docs/combat.md § Los enemigos crecen con el equipo). For each *other* open mission's ánima
+the party already has, every foe of a fight of Los amigos de la uni, Marta, Emilie or Luca has half a
+point more Fuerza, Magia, Defensa and Espíritu, rounded on the sum: nothing on the first of the four,
++1 on the second and third, +2 on the last. Nuria's ánima does not count (it is there before any of
+them, so the first mission is the fight as tuned), nor the mission's own; Nuria's fights and the
+castle's are always met with the same ánimas and keep their own numbers, so nothing there had to be
+tuned again. Whoever joins a fight later (La Voz's second voice, Fran's moths) comes grown the same.
+The fight screen, the fight tester (its «Amigos») and both simulators start their fights through
+`createEncounter`'s `friends`.
+
+How much was measured three ways. First, nine strengths over the four missions done first and last
+(28 pairs, 60 fights a row), with the levels a story point gives an ánima worn in every fight:
+
+| `foes.growth.pv` | `foes.growth.stat` | Pairs held | Done last instead of first: `smart` wins | ends with PV | `casual` wins |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0 (as it was) | 3 | +4 | +14 | +34 |
+| 0 | 0.5 | 5 | +2 | +4 | +5 |
+| 0 | 1 | 7 | +2 | −1 | −6 |
+| 0.05 | 0 | 3 | +2 | +9 | +18 |
+| 0.05 | 0.5 | 6 | 0 | −3 | −9 |
+| 0.05 | 1 | 8 | −4 | −9 | −18 |
+| 0.1 | 0 | 6 | +2 | +3 | +1 |
+| 0.1 | 0.5 | 8 | −4 | −8 | −15 |
+| 0.1 | 1 | 6 | −11 | −14 | −23 |
+
+Then the missions done last with the levels `pensando` really brings to them
+(`--level papagato=3/dadaista=2/prismatico=1/sincopante=1/freatica=2`), against the same missions
+done first (`smart` 94 %, 54 % of PV left, `casual` 47 %):
+
+| `pv` | `stat` | `smart` | PV left | `casual` | Against done first |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0 | 97 % | 67 % | 78 % | +3, +13, +31 |
+| **0** | **0.5** | **95 %** | **56 %** | **46 %** | **+1, +2, −1** |
+| 0 | 1 | 94 % | 52 % | 37 % | 0, −2, −10 |
+| 0.1 | 0 | 97 % | 53 % | 42 % | +3, −1, −5 |
+| 0.1 | 0.5 | 89 % | 42 % | 26 % | −5, −12, −21 |
+
+And whole games (`just game-sim run --player pensando,casual --runs 6 --tune foes.growth.stat=0:0.5:1`):
+
+| `stat` | Player | Finish | Median | Fights | Lost | New walls |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | `pensando` | 100 % | 163 min | 56 | 3.5 | |
+| **0.5** | `pensando` | 100 % | 168 min | 59 | 3.7 | none |
+| 1 | `pensando` | 100 % | 212 min | 68 | 5.2 | La Voz done last (33 % at the first try) |
+| 0 | `casual` | 100 % | 723 min | 241 | 80 | |
+| **0.5** | `casual` | 100 % | 702 min | 243 | 81 | the same ones, give or take a seed |
+| 1 | `casual` | 100 % | 856 min | 275 | 101 | La Voz too |
+
+Half a point is where the order stops counting for both players without walling anyone in. A whole
+point looks neutral when every ánima is at the level of one worn in every fight, but a player takes
+turns between them and brings less, and it made a wall of La Voz for whoever thinks. A tenth of PV
+did as well on paper and left every blow as tuned, but it is what docs/combat.md warns against: it
+only makes the fights longer (La Voz from 11 rounds to 15). `pv` stays in the rule at 0, a number for
+the final pass. The 112 `TARGETS` play the same with it (none names another open mission's ánima),
+so `just fight-sim check` did not move.
+
+**Levels 5 to 7 within reach, in some four ánimas** (Aitor, 2026-11-21; `LEVEL_XP` and `XP_RULES` in
+`src/levels.ts`). Two numbers, found together:
+
+- **Levels 4 to 7 cost 950, 1,150, 1,400 and 1,700 EXP** (they were 1,290, 2,070, 3,000 and 4,080).
+  Levels 2 and 3 stay at 180 and 660: the missions are tuned on them.
+- **Inside the castle a fight is worth three times its foes** (`XP_RULES.castle`, `fightXp`). The
+  party comes in with all five shared ánimas and the castle opens their levels a boss at a time
+  (4, 6 after Aurelià, 7 after Dirección), so its few fights have to carry them from 4 to 7. The
+  same pupils out on the Meridiana at night are worth what `FOE_XP` says, so the night is not a
+  place to farm.
+
+Why both: whoever thinks takes turns between five shared ánimas, so each has little. `pensando`
+used to reach the Queen with some 1,200 EXP in Papagato and in Dadista, 950 in Freática, 670 in
+Sincopante and 250 in Colorista, and a floor of the castle left some 200. What was tried, six games
+of `pensando` each, counting the shared ánimas at level 5 or more when the game ends (`just game-sim`,
+«Al acabar»):
+
+| Castle's EXP | Levels 4 to 7 | Ánimas at 5 or more | At 7 | Median |
+| --- | --- | --- | --- | --- |
+| ×1 | 1,290 · 1,500 · 1,750 · 2,050 (the first shortening, of 5 to 7 only) | 0.2 | 0 | 168 min |
+| ×2 | the same | 1.3 | 0.5 | 167 min |
+| ×3 | the same | 2.7 | 1.5 | 181 min |
+| ×4 | the same | 3.0 | 1.7 | 176 min |
+| ×1 | 1,000 · 1,200 · 1,450 · 1,750 | 1.2 | 0 | 192 min |
+| ×3 | 1,000 · 1,200 · 1,450 · 1,750 | 3.5 | 2.0 | 171 min |
+| ×4 | 1,000 · 1,200 · 1,450 · 1,750 | 3.5 | 2.3 | 169 min |
+| **×3** | **950 · 1,150 · 1,400 · 1,700** | **3.7** | **2.3** | **170 min** |
+| ×3 | 1,000 · 1,150 · 1,350 · 1,600 | 3.7 | 2.7 | 171 min |
+
+Neither number does it alone: the curve alone leaves the ánimas gathered late with nothing to grow
+on, and the castle's EXP alone leaves Papagato, worn through the missions and little inside, short
+of 5. With both, as the game is now (`just game-sim run --player pensando,casual,corredor --runs 6`):
+
+| Player | Finish | Median | Fights (lost) | Ánimas at 5 or more | At 7 | Each one's level at the end |
+| --- | --- | --- | --- | --- | --- | --- |
+| `pensando` | 100 % | 170 min | 59 (4) | 3.7 of 5 | 2.3 | Papagato 4.7, Dadista 7, Colorista 2.7, Sincopante 5.8, Freática 6.8 |
+| `casual` | 100 % | 881 min | 263 (91) | 4.2 | 3.5 | Papagato 4.2, Dadista 7, Colorista 6.2, Sincopante 7, Freática 7 |
+| `corredor` | 100 % | 150 min | 61 (7) | 4.0 | 3.5 | Papagato 2.2, Dadista 6.7, Colorista 7, Sincopante 6.5, Freática 7 |
+
+Which ánima is left behind is whichever the player wears least (Colorista for `pensando`, Papagato
+for `corredor`): the fifth is a choice, not a wall. The levels come where the castle opens them:
+`pensando` meets Aurelià with Papagato at 4 and the rest at 1 or 2, Dirección with Freática near 4,
+and the Queen's return with three or four of them between 5 and 7.
+
+**What to watch in the final pass**: the castle's fights were tuned with the party at levels 2 to
+4, and now the third floor is met at 5 to 7 (`pensando` still loses 4 fights a game and ends La
+Reina's return with 88 % of its PV, as before). A story point's levels (`STRETCH_XP`) are those of an
+ánima worn in every fight, more than a player brings: for what one really brings, `--level` with
+what `just game-sim` says («llega con»).
+
+#### Power and the castle (Aitor, 2026-11-21, later the same day)
+
+What was asked: to feel the party grow, the easy foes of the start falling in no time by the end;
+fights neither short nor very long; each block of the castle asking for two side missions and a
+little farming; the night a place to farm a little; and a harder kind of pupil worth an Eco de luz.
+Seven numbers, found with `just fight-sim` at the story's points and held with `just game-sim`:
+
+| Number | Was | Is | Why |
+| --- | --- | --- | --- |
+| `ANIMA_GROWTH.stat` (`src/animas.ts`) | 0 | **1** | Each friend freed is a point of Fuerza, Magia, Defensa and Espíritu for both. Blows add and subtract attributes, so five friends are five more on every blow and five less on every one taken |
+| `FOE_GROWTH.stat` (`src/battle.ts`) | .5 | **1.25** | The open missions' foes keep up with it: +1, +3 and +4 with one, two and three of the other missions behind |
+| Aurelià (`src/stats.ts`, `CASTLE.pregunta`) | 420 PV, 14 Fuerza, Pregunta 52 | **480 PV, 16 Fuerza, Pregunta 85** | He was beaten with no side mission done. The Pregunta is the blow that is defended: at 85 it costs whoever does not (`casual` with two side missions wins 20 %), and little to whoever does |
+| Each of Dirección (`directiva`) | 160 PV, 13 Magia, 10 Defensa, 12 Espíritu | **185 PV, 19 Magia, 12 Defensa, 14 Espíritu** | They were beaten with one |
+| `CASTLE.year1`, `year2`, `year3` | 1, 1.25, 1.25 | **1.25, 1.4, 1.5** | With the party's new attributes the first floor's rooms were over in a round and the other two were won without thinking |
+| `XP_RULES.night` (`src/levels.ts`) | 1 | **1.5** | The night as a place to grow a little |
+| `STRONG` (`src/castle.ts`) | – | **PV ×1.6, blows ×1.3** | Encarnados (docs/castle.md § Encarnados) |
+
+**The feeling of power.** The same fights, `smart`, as the party stands at each point (rounds to win):
+
+| Fight | With Nuria's ánima only | Nuria and two side missions | All five | All five at the castle's end |
+| --- | --- | --- | --- | --- |
+| Three dogs | 3.3 | 1.1 | 1.1 | 1.1 |
+| El Cebollón | 3.2 | 2.1 | 2.1 | 2.1 |
+| Magos of the campsite | 3.9 | 3.0 | 2.7 | 2.6 |
+| El Campeón | 7.2 | 3.4 | 3.6 | 3.7 |
+| Lealtad (Marta) | 6.1 | 3.3 | 3.4 | 3.0 |
+| First floor's room (1a) | 2.1 | 2.1 | 2.1 | 2.2 |
+| Second floor's room (2d) | 5.0 (51 % of PV left) | 4.1 | 3.7 | 3.4 (80 %) |
+| Third floor's room (3a) | 10.9 | 9.3 | 9.6 | 6.7 |
+| La Delegada, third year | lost | 67 %, 10.7 | 73 %, 8.4 | 93 %, 4.2 |
+| The night's group | lost | 3.5 | 2.1 | 2.1 |
+
+A room is two to five rounds, an elite three to five, a boss seven to twelve. What does not get
+shorter is a room of two or three pupils against two fighters: it cannot end before each has had a
+blow, so two rounds is its floor (the first floor's rooms are there from the start).
+
+**The castle asks for ánimas.** Six parties, `smart`, thirty fights each (the dual party, Matemágico
+with Tecnópata, and four that wear a shared ánima each):
+
+| Boss | Nuria and one side mission | And two | And three | All five |
+| --- | --- | --- | --- | --- |
+| Aurelià | 13 to 70 % | 47 to 97 % | – | 87 to 100 %, in 9 to 12 rounds |
+| Dirección | – | 10 to 43 % | 30 to 87 % | 63 to 100 %, in 6 to 8 rounds |
+
+So Aurelià is the first block's two side missions and Dirección the second's: with fewer, only the
+best party and a good day get through. `TARGETS` hold it: `aurelia-con-una` (2 %),
+`aurelia-con-dos` (97 %), `aurelia-bien` (100 % in 8.5 rounds), `aurelia-sin-pensar` (22 % with two
+side missions), `direccion-con-dos` (29 %), `direccion-bien` (92 % in 6.6), `direccion-sin-pensar`
+(9 % with three). The castle's other targets now meet their fight with the party the
+story brings there (`storyPoint`: ONE, TWO, THREE, FLOOR_1 to FLOOR_3 in `src/battle-sim.ts`), not
+with a party without friends.
+
+**Encarnados.** Since the same day's second round they come out every other day, six at most, and
+the ecos come mostly from elsewhere (the rooms' first wins, levels 5 and 7, and a jar at one eco a
+node: docs/animas/README.md § Ecos de luz): 30 to 35 ecos at the end of 41, against 15 to 20 of 61.
+The story points count the rooms' (`FLOOR_ROOMS`) and the mixed build now runs through the whole jar;
+`just fight-sim check` did not move. In the first measure nobody looked for them and they gave one to six a game. They are a real fight where the floor is (second floor's 2d: `smart` 99 % in
+5.2 rounds with 58 % of PV left, `casual` 12 %; `encarnados-bien`, `encarnados-sin-pensar`), soft on
+the first floor (two to four rounds) and hard in the hardest room (2a: 50 %). At night they are the
+long fight of the game while the party is small (ten rounds with two side missions) and two rounds
+with all five. They help in the way they were meant to: something to go and get when a boss says
+no. They do not close the jar's gap by themselves.
+
+**Whole games** (`just game-sim run --player pensando,casual,corredor --runs 6`), before these
+numbers and with them:
+
+| Player | Finish | Median | Fights (lost) | Aurelià | Dirección | Ánimas at 5 or more |
+| --- | --- | --- | --- | --- | --- | --- |
+| `pensando`, before | 100 % | 170 min | 59 (4) | first try, always | first try, always | 3.7 of 5 |
+| `pensando` | 100 % | 220 min | 81 (10.5) | 1.8 tries | 2 tries | 4.0 |
+| `casual`, before | 100 % | 881 min | 263 (91) | 4 tries | 3.7 tries | 4.2 |
+| `casual` | 100 % | 713 min | 262 (80) | 4 tries | 4.2 tries | 4.7 |
+| `corredor`, before | 100 % | 150 min | 61 (7) | 1.2 tries | first try, always | 4.0 |
+| `corredor` | 100 % | 150 min | 63 (7) | 1.3 tries | 1.2 tries | 4.0 |
+
+All three reach the castle with the five ánimas (they do every mission first), so what they pay is
+the second half of the request, the little farming: `pensando` loses to Aurelià and to Dirección
+once each on average, refights rooms of the floor and comes back. La Voz done last is won at the
+first try two times in three (`FOE_GROWTH.stat` 1.25; at 1.5 it was one in three, a wall, and at 1
+the last mission was the easy one: `--tune foes.growth.stat=1:1.25:1.5`).
+
+**What is still open**, for the final pass:
+
+- `just fight-sim check`: 26 of 117 out of range (25 of 112 before this round). Every castle boss,
+  ánima and Encarnados target holds; `delegada-bien` came back in; the third year's room 3b went out
+  (`smart` leaves 3 fights in 200 unfinished, `casual` wins 75 %).
+- **A careless player with all five ánimas wins most plain rooms** of the second and third floors
+  (El Ausente, El Castigado, El Montón: `casual` 96 to 100 %). The elites, the Encarnados and the
+  bosses still punish; those rooms' «sin pensar» targets fail, as they did before.
+- **Sincopante is slow against Aurelià**: parties that wear it take 19 to 29 rounds where the rest
+  take 9 to 12. `pensando` goes in wearing it at level 1, and that is its long fight.
+- **Skills were measured, not changed** (`just fight-sim skills`, § Skills): what the bot never
+  uses (Cacería, Asteroide, the duals Bombardeo orbital, Reserva de color and Vulcano), what is cheap
+  for what it does (Sondeo eléctrico, Tutti) and what changes nothing when taken away (Telón, Bombeo,
+  Golpe de ariete, Ronroneo, Acecho) are a list to decide on, not numbers to move blind.
+- `just game-sim`'s players wear their newest ánimas, at level 1 or 2, into the bosses, so they read
+  them harder than someone who chooses; the story points' dual party reads them easier. The bosses
+  sit between both on purpose.
+
+### The final pass
+
+What is left once the last skills and bosses are in, in order. Each step has its command.
+
+1. **See what nothing holds**: `just fight-sim coverage`. Give every fight on its list its pair of
+   `TARGETS`, and every new ánima a target that wears it.
+2. **Measure the story as it is played**: `just game-sim` for «EXP por tramo» and the levels each
+   player brings to each fight («llega con»); put the EXP in `STRETCH_XP` if a mission changed.
+3. **Check the growth first**, since it moves every fight after it: `just fight-sim progress` (the
+   order of the missions should not count: § Progression), then `just game-sim` for the levels each
+   player really brings.
+4. **Weigh the skills**: `just fight-sim skills --story --fight all`. Read every `no se usa`,
+   `domina` and `quitarla no cambia nada`; change the skill, or teach `worth` its value.
+5. **Fight by fight, in the story's order**: `just fight-sim levers --pairs --fight <fight>`, then
+   `just fight-sim optimize --pairs --at <first>,<last> --fight <fight> --auto 4`. Check the proposal
+   whole (`just fight-sim check --tune …`), write the numbers into the code, move the fight's
+   `TARGETS` to those story points.
+6. **Keep a reference and look at the whole**: `just fight-sim report --baseline`, and `just game-sim`
+   again for walls and trivial stretches.
+
 ## Jev on both sides
 
 A curiosity, not a measure: `node --experimental-strip-types scripts/fight-sim-duel.mjs <fight> [party] [seed]`
@@ -230,6 +681,9 @@ what just happened) and nobody's real name. About two calls a round and one per 
 ## From code
 
 `src/battle-sim.ts` is pure: `simulate`, `sweep`, `conclude`, `checkTargets`, `playFight`, `withTuning`.
+`src/balance.ts` is the bench, pure too: `miss`, `optimize`, `levers`, `skillReport`, `coverage`,
+`progressLines`. Each takes a `Play` (how rows get played): `inline` here and now, or
+`createPool().play` (`scripts/fight-sim-pool.mjs`) among threads.
 
 ```js
 import { simulate } from '../src/battle-sim.ts';

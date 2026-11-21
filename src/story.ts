@@ -13,7 +13,7 @@ import type { ItemId } from './items';
 import type { CampingEncounter, CuerdasEncounter, ModeloEncounter, LucaEncounter } from './battle.ts';
 import { ANIMA_NAMES, ANIMA_OWNERS, DUALS, SKILLS, canWear, manaMax, palaceGuards, type ClassId, type DualId, type DualSpec, type Improved, type PartySlot, type SkillId } from './battle.ts';
 import { costOf, improvedBy, improvementOf, withinEcos, without } from './ecos.ts';
-import { award, levelFlag, levelOf, type Growth, type Level } from './levels.ts';
+import { award, levelFlag, levelOf, type Growth, type Level, LEVELLED, LIGHT_LEVELS } from './levels.ts';
 import type { ProfileId } from './stats';
 import { BUBBLES, CARDS, HINTS, LEASH, LINES, PLACES, type CardId, type HintId } from './chapter-1.ts';
 import { LINES_2, PLACES_2 } from './chapter-2.ts';
@@ -25,11 +25,11 @@ import { APSE, BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE,
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
-import { CASTLE_BOSSES, castleEntry, castlePhaseAt, extraSlots, growthStage, isCastlePlace, levelCap, nightGroup, type CastleEncounter, type GrowthStage, type NightFight } from './castle.ts';
+import { CASTLE_BOSSES, ROOM_LIGHTS, STRONG, STRONG_LIGHTS, castleEntry, castlePhaseAt, extraSlots, growthStage, isCastlePlace, levelCap, nightGroup, type CastleEncounter, type CastlePhaseId, type GrowthStage, type NightFight } from './castle.ts';
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleZone, isCastleZone } from './castle-mood.ts';
-import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
+import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, strongOpen, strongRoom, strongWon, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, EVENINGS, LATE, NIGHT, WOKE_LATE, boostOf, dusk, freshDays, isBoost, isNight, readDays, spread, stage, type Activity, type BoostId, type Days, type EveningId } from './days.ts';
@@ -78,6 +78,10 @@ export const STORY_FLAGS = [
   // theirs, Gerard fallen to Aitor's hand, Bernat's call, his game told and the box opened, the portal
   // solved (docs/quests/bernat.md), the artilugio, the Queen beaten, and which of the two endings.
   'cortina', 'aurelia', 'luz-aurelia', 'direccion', 'luz-mar', 'luz-montse', 'luz-pilar', 'aitor-poseido', 'bernat-llama', 'bernat-juego', 'portal-nucli', 'artilugio', 'reina', 'final-acabar', 'final-bajar',
+  // The Encarnados beaten, one Eco de luz each (src/castle.ts `STRONG_LIGHTS`).
+  'luz-encarnado-1', 'luz-encarnado-2', 'luz-encarnado-3', 'luz-encarnado-4', 'luz-encarnado-5', 'luz-encarnado-6',
+  // Each castle room's first win, one Eco de luz each (src/castle.ts `ROOM_LIGHTS`).
+  'luz-alumnos-1a', 'luz-alumnos-1b', 'luz-alumnos-1c', 'luz-delegada-1', 'luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-delegada-2', 'luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-delegada-3',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -88,7 +92,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar'] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar', ...STRONG_LIGHTS, ...ROOM_LIGHTS] as const;
 export type LightId = typeof LIGHTS[number];
 
 export type StoryEvent =
@@ -468,6 +472,12 @@ export class Story {
    * The night's `n`th hunter caught them (src/night.ts): the group of the castle's floor they are on
    * that it brings, as strong as the friends' ánimas and the levels gathered leave it out here.
    */
+  /** The fight about to start, or going on, is against Encarnados: what starts it asks (src/main.ts, src/game-sim.ts). */
+  get strongFight() { return !!this.castle.strongFight; }
+  /** Which of tonight's groups on the Meridiana comes as Encarnados, while the day's Eco de luz is still out there. */
+  get strongGroup() { return strongOpen(this.castleHost) ? STRONG.group : undefined; }
+  /** Which room of a castle floor holds today's Encarnados, if any. */
+  strongRoomOf(phase: CastlePhaseId) { return strongRoom(this.castleHost, phase); }
   nightFight(n: number): NightFight {
     return { room: nightGroup(n, castlePhaseAt(this.flags)), might: nightMight(this.animas.length, this.levels) };
   }
@@ -482,7 +492,9 @@ export class Story {
   /** The lights in the jar at home, in the order they were won. No names on screen. */
   get jar(): LightId[] { return LIGHTS.filter(id => this.has(`luz-${id}`)); }
   /** The party's Ecos de luz: every light won (docs/animas/README.md § Ecos de luz). */
-  get ecos() { return this.jar.length + this.debugEcos; }
+  /** The ecos the shared ánimas let go of on reaching `LIGHT_LEVELS` (`papagato-5`…), each from its own level's flag. */
+  get levelLights(): string[] { return LEVELLED.flatMap(id => LIGHT_LEVELS.filter(level => this.flags.has(levelFlag(id, level as Level) as StoryFlag)).map(level => `${id}-${level}`)); }
+  get ecos() { return this.jar.length + this.levelLights.length + this.debugEcos; }
   /** What stands of what the ecos are in: a rewound day can take a light back, and what the castle has not opened yet is not there. */
   get improvements() { return withinEcos(this.bought, this.ecos, this.stage); }
   /** A saved list; `improvements` drops whatever does not stand. */
@@ -572,6 +584,8 @@ export class Story {
     for (let level = growth.levelBefore + 1; level <= growth.levelAfter; level++) {
       this.set(levelFlag(growth.id, level as Level) as StoryFlag);
       effects.push({ kind: 'learn', classId: growth.id, level, skills: SKILLS.filter(skill => skill.class === growth.id && 'level' in skill && skill.level === level).map(skill => skill.id), ...quiet ? { quiet } : {} });
+      // A shared ánima grown far lets go of an Eco de luz (`LIGHT_LEVELS`).
+      if (LEVELLED.includes(growth.id) && LIGHT_LEVELS.includes(level)) effects.push({ kind: 'lights', people: [`${growth.id}-${level}`] });
     }
     return effects;
   }
@@ -1674,10 +1688,13 @@ export class Story {
         if (!this.has('dejavu') || !this.set('minion')) return [];
         return [say(LINES.minion), { kind: 'battle', encounter: 'dogs' }];
       case 'battle': {
+        // Encarnados beaten let go of an Eco de luz, the day's only one (src/castle-story.ts).
+        const eco = event.won && this.castle.strongFight ? strongWon(this.castleHost) : [];
+        this.castle.strongFight = false;
         const learned = event.won ? this.grow(event.worn, event.xp, true) : [];
         const after = this.afterBattle(event);
         // A castle boss beaten raises the cap: what each ánima kept over the old one comes now, back home.
-        return [...after, ...learned, ...this.ripen()];
+        return [...eco, ...after, ...learned, ...this.ripen()];
       }
       case 'palace':
         if (!this.has('first-fight') || !this.set('palace')) return [];
@@ -1716,7 +1733,13 @@ export class Story {
         if (event.id.startsWith('modelo-')) return this.nearModelo(event.id);
         if (event.id.startsWith('luca-')) return this.nearLuca(event.id);
         // The palace's monsters on the Meridiana at night (src/night.ts): one has caught them.
-        if (event.id.startsWith('night-')) return this.night ? [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard', night: this.nightFight(Number(event.id.slice('night-'.length))) }] : [];
+        if (event.id.startsWith('night-')) {
+          if (!this.night) return [];
+          const group = Number(event.id.slice('night-'.length));
+          const strong = this.strongGroup === group;
+          this.castle.strongFight = strong;
+          return [say(LINES_2.nightCaught), { kind: 'battle', encounter: 'night-guard', night: this.nightFight(group) }];
+        }
         if (event.id !== 'tv') return this.nearNuria(event.id);
         if (!this.adult || !this.set('tv-news')) return [];
         // The ticker carries the R4 clue, and the Sagrada Família's: seen on the TV, they are known.

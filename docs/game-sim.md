@@ -17,6 +17,8 @@ just game-sim                          # = report: plays 24 games per player, wr
 just game-sim run --player pensando    # the numbers in the terminal only
 just game-sim play --player casual --seed 36 --trace   # one game, fight by fight, every step and every hunted walk
 just game-sim list                     # the simulated players, as JSON
+just game-sim run --player pensando --tune growth.rules.scale=0:1:2   # the same games with each number, side by side
+just game-sim run --player corredor --set order=nuria/marta/luca/emilie/universidad --set build=tronco
 ```
 
 The page is `output/reports/game/index.html` (untracked), its data `output/reports/game/data.json`,
@@ -99,7 +101,9 @@ Walking in Las cuerdas is as the crow flies (its strings change as the song play
 | Trivial | The share of fights won with more than 85 % of the PV in three rounds or fewer (`TRIVIAL`). The game **saturates** from the tenth on which every fight left is trivial and none is lost |
 | Time | Minutes of each kind |
 | Levels | When each shared ánima reaches each level (minute, share of the game, fight number, share of games), and the EXP earned already at the top level, lost |
-| Fights | Per fight: times met per game, won the first time, won overall, tries until the first win, PV left when won, rounds, trivial. A **wall** is won the first time in under 35 % of the games (`WALL`); «aprendido», played understood after losing to it |
+| Fights | Per fight: times met per game, won the first time, won overall, tries until the first win, PV left when won, rounds, trivial. A **wall** is won the first time in under 35 % of the games (`WALL`); «aprendido», played understood after losing to it. In the terminal, «llega con»: each shared ánima's mean level and the friends' ánimas gathered the first time the fight is met (`EncounterSummary.levels`, `friends`) |
+| Al acabar | In the terminal: how many of the shared ánimas end the game at level 5 or more, and at 7, per game, and each one's mean level (`PlayerSummary.grown`). What `LEVEL_XP` and `XP_RULES` are held to: 5 to 7 in some four of the five ([fight-sim.md](fight-sim.md) § Progression). With several `--tune` values it is the column «≥5 · 7» |
+| EXP por tramo | In the terminal: the fights of each stretch of the story and the EXP they leave per game (`PlayerSummary.stretches`). `pensando`'s are what the fight simulator's story points count levels from (`STRETCH_XP` in `src/battle-sim.ts`) |
 | A typical game | The game nearest the median: each fight (higher, more PV it cost; a cross, lost) and each level |
 | What is missing | What the route had to bridge (a stuck walk; the trip to Alegia until 2026-11-19), and in how many games |
 
@@ -185,6 +189,30 @@ La pluma's row is from before 2026-11-20, when El Átomo took its place (`modelo
 - Emilie's and Luca's fights are no wall for `pensando`; La recepción is trivial for it (it teaches).
 - `casual` finishes less (33 %): it cycles through five missions it cannot win yet, and more of its
   games reach the 450-fight cut.
+
+## Trying numbers
+
+`--tune` takes the fight simulator's numbers ([fight-sim.md](fight-sim.md) § For an AI picking this
+up: `book.id.field`), applied to every fight, level and bonus of the game. With one value each the
+report is written apart, in `output/reports/game-prueba/`, so the picker's page stays the game as it
+is. With several, each combination plays the same seeds and they are compared in one table (finish,
+median length, fights and losses, rewinds, trivial share, the level each shared ánima reaches in half
+the games or more, walls), and no page is written.
+
+```sh
+just game-sim run --tune growth.rules.scale=0:1:2      # what each friend's ánima adds: nothing, as it is, doubled
+just game-sim run --tune level.xp.2=950:1290 --tune xp.rules.castle=1:3   # level 4's EXP and what the castle's fights are worth
+just game-sim run --tune foes.growth.stat=0:0.5:1        # the open missions' foes: as tuned, keeping up, ahead
+just game-sim run --tune stage.1.cap=4:5 --player pensando
+```
+
+`--set field=value` changes how the chosen players play (any field of `Player`: `order` with `/`,
+`build`, `policy`, `carrier`, `engage`, `grind`, `seekLevel`, `castleFirst`…): the same person in
+another order, or buying something else at the jar.
+
+The whole game starts its fights with `createEncounter`, as the game does, with the story's ánimas:
+an open mission's foes grow with the others' behind it (`foes.growth.stat`, `foes.growth.pv`:
+[fight-sim.md](fight-sim.md) § Progression), in whatever order the player does them.
 
 ## Trying a rule: without her countdown
 

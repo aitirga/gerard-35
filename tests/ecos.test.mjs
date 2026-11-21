@@ -52,19 +52,17 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
     if (item.after) { const before = IMPROVEMENTS.find(i => i.id === item.after); assert.ok(before && before.anima === item.anima && before.line === item.line, `${item.id} needs one of its own line`); }
     if (item.line) assert.ok(LINES[item.line], item.id);
   }
-  // Nobody can have everything: both trees cost far more than a few lights (grade III: Combustión, the
-  // dúo mayor Vulcano and Integral, 6 more for Matemágico; Reinicio, Virus atómico, Escudo de bits and Redundancia, 8 more for Tecnópata;
-  // Cortocircuito and ∂Q/∂t Condensador, 4 more for Matemágico's electric line; the dúos mayores Marea, Fulgurita and Suceso seguro,
-  // 6 more for Matemágico; Metralla, Idea fija and Caleidoscopio, 6 more for Tecnópata).
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 33);
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 25);
+  // Every node is one eco but the definitivas (2): Aitor, 2026-11-21, so some three quarters of the jar
+  // (49 ecos with the dúos mayores) can be had by the game's end.
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 21);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 14);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {
   assert.deepEqual(withinEcos(['matemagico:vasos', 'matemagico:agua', 'matemagico:vasos'], 5), ['matemagico:agua', 'matemagico:vasos']);
-  assert.deepEqual(withinEcos(['papagato:mana-1', 'matemagico:agua'], 2), ['papagato:mana-1']);
+  assert.deepEqual(withinEcos(['papagato:mana-1', 'matemagico:agua', 'tecnopata:explosion'], 2), ['papagato:mana-1', 'matemagico:agua']);
   assert.deepEqual(withinEcos(['papagato:mana-2', 'papagato:pasiva', 'tecnopata:definitiva'], 9), [], 'what the jar no longer has, or keeps asleep, is not there');
   assert.deepEqual(without(['matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'matemagico:fuego'], 'matemagico:agua'), ['matemagico:fuego'], 'a node goes with everything after it on its line');
-  assert.equal(costOf(['papagato:mana-1', 'matemagico:agua']), 3);
+  assert.equal(costOf(['papagato:mana-1', 'matemagico:agua']), 2);
   assert.deepEqual(improvedBy(['papagato:mana-1', 'matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'tecnopata:explosion']),
     { mana: { papagato: 1 }, elements: { matemagico: ['agua'] }, skills: ['vasos', 'explosion'], passives: ['capilaridad'], duals: [] });
 });

@@ -162,6 +162,46 @@ year older, and the gum changes what the player knew.
 - Each combination keeps its pair of `TARGETS` (`src/battle-sim.ts`), and each pupil and La
   Delegada can be met from the fight tester.
 
+### Encarnados (Aitor, 2026-11-21)
+
+Some of her pupils come harder than the rest: **a warm red cast over their gum and a faint red halo
+at their feet** (toned down on 2026-11-21: they read at a glance without turning the room red).
+They are the same pupils and the same room, with the same question, and less room for mistakes.
+
+- **One group every other day** (even days; Aitor, 2026-11-21: fewer of them). By day it is one of the plain rooms of the castle's floor, another each day
+  (`strongRoom` in `src/castle-story.ts`); at night, on the Meridiana, one of the groups out
+  (`STRONG.group` in `src/castle.ts`). Whichever is beaten first is the day's: after it nobody is red
+  until the next morning.
+- **What they are**: every pupil of the group has `STRONG.pv` times its PV (1.6) and hits
+  `STRONG.power` times as hard (1.3), on top of its year and, at night, of the night's strength
+  (`castleStrong` in `src/castle-fight.ts`). Bosses and their parts are never Encarnados.
+- **What they leave**: beaten, an **Eco de luz**, which flies into the party as a friend's does
+  (`strongWon`; flags `luz-encarnado-1` to `-6`, `STRONG_LIGHTS`). One every other day and **six in a
+  game**: when the sixth is taken they do not come out again. Lost against, nothing is taken and they are
+  still there.
+- **How they are told apart**: by looking. The gum takes a warm red cast and the halo is on
+  the floor, walking the floor or the avenue and in the fight (`encarnar`, `redden` and
+  `encarnadoHalo` in `src/castle-models.ts`); the plate carries a mark that lasts the fight
+  («Encarnado: más entero y pega más. Vencido, suelta un Eco de luz.»). The red is an ember's,
+  leaning to orange: the saturated pink stays the Queen's and violet stays possession's
+  (visual-style.md). Nobody announces them and nothing points at them.
+- **What they are for**: something to go and get when a boss says no. Measured (`just game-sim`,
+  nine games): zero to two a game for players who do not look for them; whoever goes out for them
+  can have the six.
+- **Where to try them**: the fight tester's *Alumnos › Encarnados* (rooms and the night), the
+  picker's arc *Encarnados*, `just fight-sim run --fight alumnos-2d:encarnados` (any room, or
+  `night-guard:encarnados`), `just screenshots encarnados`, and each pupil's row in the bestiary.
+  Their pair of `TARGETS`: `encarnados-bien` and `encarnados-sin-pensar`.
+
+### Ecos of the rooms (Aitor, 2026-11-21)
+
+Each of the castle's rooms, each combination of pupils and each year's La Delegada, lets go of an
+**Eco de luz the first time it is beaten** (`ROOM_LIGHTS` in `src/castle.ts`, flags `luz-alumnos-1a`…
+`luz-delegada-3`, granted in `castleBattle`): fifteen in all. The floor is generated each day, so
+they are found by coming back and going through rooms not seen yet: the little farming each block
+asks for, paid. Not at night (only inside), and a room already beaten gives nothing more. The
+picker's arc *Las aulas* marks them a floor at a time.
+
 ### How they look (proposal, 2026-11-19)
 
 Drawn with `just character-3d` (`tools/figures.toml`, from `[chivata]` on; the sheet is

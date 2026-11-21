@@ -1,4 +1,4 @@
-import { CASTLE_LIGHTS } from '../src/castle.ts';
+import { CASTLE_LIGHTS, ROOM_LIGHTS, STRONG_LIGHTS } from '../src/castle.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BUILDS, MISSIONS, MISSION_IDS, missionOf, storyPoint, storyRows } from '../src/battle-sim.ts';
@@ -9,7 +9,8 @@ import { LIGHTS } from '../src/story.ts';
 test('every mission fight is a real fight, and the missions give every light there is', () => {
   for (const id of MISSION_IDS) for (const fight of MISSIONS[id].fights) { assert.ok(FEAR_ENCOUNTERS.includes(fight), fight); assert.equal(missionOf(fight), id); }
   // The rest are the castle's: those its bosses give back (src/castle.ts).
-  assert.equal(MISSION_IDS.reduce((sum, id) => sum + MISSIONS[id].lights, 0) + Object.values(CASTLE_LIGHTS).flat().length, LIGHTS.length);
+  // And the Encarnados', which nobody gives: they are taken, one a day (src/castle.ts `STRONG_LIGHTS`).
+  assert.equal(MISSION_IDS.reduce((sum, id) => sum + MISSIONS[id].lights, 0) + Object.values(CASTLE_LIGHTS).flat().length + STRONG_LIGHTS.length + ROOM_LIGHTS.length, LIGHTS.length);
 });
 
 test('the introduction has nothing behind it; an open mission has the introduction and whatever was done before', () => {
@@ -17,7 +18,9 @@ test('the introduction has nothing behind it; an open mission has the introducti
   assert.deepEqual([intro.done, intro.ecos, intro.setup.friends, intro.setup.improved], [[], 0, [], []]);
   const first = storyPoint('marta:first'), last = storyPoint('marta:last'), named = storyPoint('marta:universidad/emilie/luca');
   assert.deepEqual(first.setup.friends, ['nuria']); assert.equal(first.ecos, 2); assert.equal(first.setup.levels.papagato, 2);
-  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie', 'luca']); assert.equal(last.ecos, 9); assert.equal(last.setup.levels.papagato, 3);
+  assert.deepEqual(last.setup.friends, ['nuria', 'universidad', 'emilie', 'luca']); assert.equal(last.ecos, 9);
+  // Levels come from the EXP behind the point (STRETCH_XP against LEVEL_XP), under the castle's cap: three more missions take Papagato to 4.
+  assert.equal(last.setup.levels.papagato, 4); assert.ok(last.setup.levels.dadaista >= 2 && first.setup.levels.dadaista === undefined);
   assert.deepEqual(named.setup, last.setup);
   assert.throws(() => storyPoint('marta:marta'), /cannot be behind/);
   assert.throws(() => storyPoint('nadie'), /Unknown mission/);
@@ -41,7 +44,7 @@ test('a story point plays its mission\'s fights with its own party', () => {
 
 test('the balance report carries every mission fight at every point, and its page embeds the data', async () => {
   const { balanceData, balancePage } = await import('../scripts/fight-sim-report.mjs');
-  const data = balanceData({ runs: 2, builds: ['nada'] });
+  const data = await balanceData({ runs: 2, builds: ['nada'] });
   for (const id of MISSION_IDS) for (const fight of MISSIONS[id].fights) assert.ok(data.cells.some(c => c.fight === fight && c.smart && c.casual), fight);
   assert.equal(data.cells.filter(c => c.fight === 'voz').length, 2);
   assert.ok(data.numbers['marta.rules.clavado'] > 0 && data.targets.length > 0 && data.affinities.length > 0);

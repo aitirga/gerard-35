@@ -68,7 +68,7 @@ const skillNode = (anima: ClassId, line: LineId, skill: SkillId, cost: number, a
 const passiveNode = (anima: ClassId, line: LineId, passive: PassiveId, cost: number, after: string, description: string): Improvement =>
   ({ id: `${anima}:${passive}`, anima, kind: 'passive', line, passive, name: PASSIVES[passive].name, cost, description, after: `${anima}:${after}` });
 const manaNode = (anima: ClassId, line?: LineId, after?: string): Improvement =>
-  ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 2, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
+  ({ id: `${anima}:mana-1`, anima, kind: 'mana', name: 'Maná +1', cost: 1, mana: 1, description: `Sube en 1 el maná de ${ANIMA_NAMES[anima]}.`, ...line ? { line } : {}, ...after ? { after: `${anima}:${after}` } : {} });
 /** Grade III of a tree: in the sky once Aurelià has fallen, with whatever hangs from it (docs/castle.md § What each boss opens). */
 const gradeIII = (item: Improvement): Improvement => ({ ...item, stage: 2 });
 /** The first stage that wakes the definitivas (src/castle.ts `CASTLE_UNLOCKS`): Dirección's. */
@@ -92,45 +92,45 @@ const ulti = (anima: ClassId): Improvement => {
 const MATEMAGICO: Improvement[] = [
   { id: 'matemagico:fuego', anima: 'matemagico', kind: 'element', line: 'fuego', element: 'fuego', name: 'Fuego', cost: 1, description: 'Atacar puede llevar fuego. No quema. Sobre un enemigo con sangrado, cauteriza: gasta el sangrado de golpe y le hace más daño. Sobre uno mojado, lo ciega con el vapor.' },
   skillNode('matemagico', 'fuego', 'factor-comun', 1, 'fuego'),
-  passiveNode('matemagico', 'fuego', 'rescoldo', 2, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
+  passiveNode('matemagico', 'fuego', 'rescoldo', 1, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
   // Grade III (docs/animas/matemagico/README.md § Grade III): the fire line's top, and the dúo mayor past it, both after Aurelià.
-  gradeIII(passiveNode('matemagico', 'fuego', 'combustion', 2, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.')),
-  dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 2, 'combustion'),
+  gradeIII(passiveNode('matemagico', 'fuego', 'combustion', 1, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.')),
+  dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 1, 'combustion'),
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
-  passiveNode('matemagico', 'agua', 'capilaridad', 2, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
+  passiveNode('matemagico', 'agua', 'capilaridad', 1, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
   // The dúo mayor past each of the other lines (docs/animas/README.md § Dúos mayores), after Aurelià as Vulcano.
-  dualNode('matemagico', 'agua', 'marea', 'freatica', 2, 'capilaridad'),
+  dualNode('matemagico', 'agua', 'marea', 'freatica', 1, 'capilaridad'),
   { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados.' },
   skillNode('matemagico', 'electrico', 'descarga', 1, 'electrico'),
-  passiveNode('matemagico', 'electrico', 'toma-de-tierra', 2, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
+  passiveNode('matemagico', 'electrico', 'toma-de-tierra', 1, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
   // Aitor 2026-11-21: past Toma de tierra, the current that stays in one foe and the charge he stores.
-  skillNode('matemagico', 'electrico', 'cortocircuito', 2, 'toma-de-tierra'),
-  skillNode('matemagico', 'electrico', 'condensador', 2, 'cortocircuito'),
-  dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 2, 'condensador'),
+  skillNode('matemagico', 'electrico', 'cortocircuito', 1, 'toma-de-tierra'),
+  skillNode('matemagico', 'electrico', 'condensador', 1, 'cortocircuito'),
+  dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 1, 'condensador'),
   skillNode('matemagico', 'calculo', 'angulo', 1),
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
-  gradeIII(skillNode('matemagico', 'calculo', 'integral', 2, 'mana-1')),
-  dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 2, 'integral'),
+  gradeIII(skillNode('matemagico', 'calculo', 'integral', 1, 'mana-1')),
+  dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 1, 'integral'),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'bip', 'explosion', 1),
-  passiveNode('tecnopata', 'bip', 'telemetria', 2, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
+  passiveNode('tecnopata', 'bip', 'telemetria', 1, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
   // Grade III (docs/animas/tecnopata/README.md § Grade III): each line's top, after Aurelià.
-  gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria')),
-  dualNode('tecnopata', 'bip', 'metralla', 'papagato', 2, 'reinicio'),
+  gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 1, 'telemetria')),
+  dualNode('tecnopata', 'bip', 'metralla', 'papagato', 1, 'reinicio'),
   skillNode('tecnopata', 'mente', 'confusion', 1),
-  skillNode('tecnopata', 'mente', 'control-remoto', 2, 'confusion'),
-  gradeIII(skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto')),
-  dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 2, 'virus'),
+  skillNode('tecnopata', 'mente', 'control-remoto', 1, 'confusion'),
+  gradeIII(skillNode('tecnopata', 'mente', 'virus', 1, 'control-remoto')),
+  dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 1, 'virus'),
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1),
-  passiveNode('tecnopata', 'taller', 'nanitos', 2, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
-  gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 2, 'nanitos')),
-  passiveNode('tecnopata', 'taller', 'redundancia', 2, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
-  dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 2, 'redundancia'),
+  passiveNode('tecnopata', 'taller', 'nanitos', 1, 'rayo-encogedor', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
+  gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 1, 'nanitos')),
+  passiveNode('tecnopata', 'taller', 'redundancia', 1, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
+  dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 1, 'redundancia'),
   manaNode('tecnopata'),
 ];
 /** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */

@@ -1,0 +1,148 @@
+{
+  "title": "Encarnados: los alumnos rojos por dentro",
+  "description": "docs/castle.md § Encarnados. One group every other day, a room of the castle's floor or one of the night's groups, comes red from inside with a red halo: more PV, harder blows, and beaten it lets go of an Eco de luz (one every other day, six in a game). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22strong%22%3Afalse%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "como-siempre",
+      "delay": 1500,
+      "caption": "The first floor's first room as it always is, to compare"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22strong%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "encarnados",
+      "delay": 1500,
+      "caption": "The same room as Encarnados (fight tester › Alumnos › Encarnados): a warm cast and a faint red halo at their feet, more PV, and their mark on the plate"
+    },
+    {
+      "eval": "closeUp(ui.live.foes[0].id, 3.4)"
+    },
+    {
+      "shot": "encarnado-cerca",
+      "delay": 900,
+      "caption": "Up close: the gum lit red from within and the halo on the floor"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=metro&night=2&solo=1"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "{ const c = window.gerard.story.days.clock; if (c.day % 2) c.day += 1; }"
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.night = { g: () => window.gerard.game, s: () => window.gerard.game.nightStreet, n: 50, frozen: false, clear() { const s = this.s(); s.pupils.splice(0); s.pointed = false; s.marching = false; delete s.learned; delete s.fresh; }, make(kind, dx, dz, more = {}) { const me = this.g().position, at = { x: me.x + dx, z: me.z + dz }; const p = { id: 'night-' + (++this.n) + '-1', group: 1, kind, position: at, facing: 0, mode: 'patrol', patrol: [{ x: Math.round(at.x), z: Math.round(at.z) }], next: 0, timer: 0, known: { x: me.x, z: me.z }, look: 0, seeing: false, stuck: 0, ...more }; this.s().pupils.push(p); return p; }, far(p) { const me = this.g().position; return Math.hypot(p.position.x - me.x, p.position.z - me.z); }, freezeWhen(test) { this.frozen = false; const tick = () => { let ok = false; try { ok = test(this.s()); } catch {} if (ok) { this.g().setPaused(true); this.frozen = true; } else requestAnimationFrame(tick); }; requestAnimationFrame(tick); }, stage(x, z) { this.frozen = false; this.g().setPaused(false); this.s().tier = { ...this.s().tier, perTrain: 0 }; this.clear(); this.g().standAt({ x, z }); } }"
+    },
+    {
+      "eval": "night.stage(112, 44); night.make('repetidor', 6, 1, { group: 2 }); night.make('chivata', 7.6, 2.2, { group: 2 }); night.make('empollon', 3.4, -3.2); night.make('gemelo', 4.8, -3.6); window.t0 = performance.now(); night.freezeWhen(() => performance.now() - window.t0 > 2500)"
+    },
+    {
+      "until": "night.frozen",
+      "timeout": 30000
+    },
+    {
+      "shot": "noche",
+      "delay": 400,
+      "caption": "At night on the Meridiana (staged by home to see them close): the day's Encarnados, red from inside with their halo, beside a group as it always is"
+    },
+    {
+      "eval": "{ const g = window.gerard.game, p = g.nightStreet.pupils[0].position, at = g.world(p.x, p.z); g.frame({ x: at.x, y: 1, z: at.z }, 3.2); }"
+    },
+    {
+      "shot": "noche-cerca",
+      "delay": 600,
+      "caption": "Closer: the Encarnados in the dark"
+    },
+    {
+      "eval": "window.gerard.game.frame(); window.gerard.game.setPaused(false)"
+    },
+    {
+      "eval": "setTimeout(() => window.gerard.storyEvent({ type: 'near', id: 'night-2' }), 300)"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.battleUI.fight && window.gerard.battleUI.fight.phase === 'player' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "noche-combate",
+      "caption": "Caught by them: the fight is against Encarnados («Vienen encarnados…»)"
+    },
+    {
+      "eval": "window.gerard.battleUI.jumpTo('won')"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "shot": "vencidos",
+      "caption": "Beaten"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "shot": "eco",
+      "caption": "Out of the fight: the day's Eco de luz goes into the party (one every other day; the counter goes up)"
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "shot": "eco-dentro",
+      "caption": "The Eco de luz in: the ánimas' counter shows one more to spend in the jar"
+    }
+  ]
+}

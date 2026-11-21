@@ -1,3 +1,4 @@
+import { isCastleEncounter } from './castle.ts';
 import { MANA_LEVEL, PASSIVES, SKILLS, type BattleState, type ClassId, type FoeKind, type PassiveId, type SkillId } from './battle.ts';
 
 /**
@@ -15,16 +16,26 @@ import { MANA_LEVEL, PASSIVES, SKILLS, type BattleState, type ClassId, type FoeK
 export const MAX_LEVEL = 7;
 /**
  * EXP to reach levels 2 to 7, counted from zero. The first two are three times the first tuning
- * (2026-11-05), so an ánima grows slowly; 4 to 7 are a first guess (2026-11-20), each step some 150
- * EXP longer than the one before, left to the balance.
+ * (2026-11-05), so an ánima grows slowly through the missions. 4 to 7 are short steps on purpose
+ * (2026-11-21; they were 1,290, 2,070, 3,000 and 4,080, and only whoever lost fights by the hundred
+ * got past 4): whoever thinks takes turns between five shared ánimas, so each has some 1,200 EXP at
+ * most on reaching the castle, and the castle opens the levels a boss at a time (`levelCap`). With
+ * its fights worth three times their foes (`XP_RULES`), some four of the five end at 5 to 7, two of
+ * them at 7 (`just game-sim`, «Al acabar»; docs/fight-sim.md § Progression).
  */
-export const LEVEL_XP = [180, 660, 1290, 2070, 3000, 4080] as const;
+export const LEVEL_XP = [180, 660, 950, 1150, 1400, 1700] as const;
 /**
  * Ánimas that grow by level: the shared ones. Matemágico and Tecnópata are someone's own and grow by
  * their tree at the jar instead (src/ecos.ts; docs/animas/README.md § Two ways to grow). Each grows
  * as far as it has been designed: Papagato, Dadista, Colorista, Sincopante and Freática to 7 (`topOf`).
  */
 export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista', 'prismatico', 'sincopante', 'freatica'];
+/**
+ * The levels at which a shared ánima lets go of an Eco de luz as it reaches them (Aitor, 2026-11-21: more
+ * ecos, some three quarters of the jar by the game's end; docs/animas/README.md § Ecos de luz). Read from
+ * the level's own flag, so nothing else is saved.
+ */
+export const LIGHT_LEVELS: readonly number[] = [5, 7];
 /**
  * Levels that teach nothing yet, on purpose: Dadista's 6 is empty since Estrella fugaz moved to 3,
  * and is not filled out of habit (docs/animas/dadaista/README.md § Skills per level).
@@ -90,9 +101,18 @@ export const skillsAt = (id: ClassId, level: number): SkillId[] => SKILLS.filter
 /** The passives that come with `level` of `id` (Colorista's Remolino), as far as the ánima grows. */
 export const passivesAt = (id: ClassId, level: number): PassiveId[] => level > topOf(id) ? [] : (Object.keys(PASSIVES) as PassiveId[]).filter(passive => PASSIVES[passive].anima === id && PASSIVES[passive].level === level);
 
-/** What a won fight is worth: every foe's EXP, plus whatever development adds (`extraXp`). */
-export function fightXp(state: Pick<BattleState, 'foes' | 'extraXp'>) {
-  return state.foes.reduce((sum, foe) => sum + (foe.kind ? FOE_XP[foe.kind] : 0), 0) + (state.extraXp ?? 0);
+/**
+ * Inside the castle a fight is worth `castle` times its foes. It is where the shared ánimas grow: the
+ * party comes in with all five and the castle opens their levels a boss at a time (`levelCap`), so
+ * what its few fights leave has to carry them from 4 to 7. Out on the Meridiana at night the same
+ * pupils are worth `night` times theirs (2026-11-21, it was what they are worth): a place to grow a
+ * little, at the price of a fight that can end the day, and never what the castle is. Tunable (`just fight-sim`, `xp.rules.castle`, `xp.rules.night`).
+ */
+export const XP_RULES = { castle: 3, night: 1.5 };
+/** What a won fight is worth: every foe's EXP (`XP_RULES.castle` times, inside the castle), plus whatever development adds (`extraXp`). */
+export function fightXp(state: Pick<BattleState, 'foes' | 'extraXp'> & Partial<Pick<BattleState, 'encounter'>>) {
+  const foes = state.foes.reduce((sum, foe) => sum + (foe.kind ? FOE_XP[foe.kind] : 0), 0);
+  return Math.round(foes * (isCastleEncounter(state.encounter) ? XP_RULES.castle : state.encounter === 'night-guard' ? XP_RULES.night : 1)) + (state.extraXp ?? 0);
 }
 /**
  * The ánimas that took part in the fight, in the order they are unlocked, with who wore them:

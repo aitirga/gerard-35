@@ -1,10 +1,11 @@
 /** Campaign turn/story adapter. Numeric resolution is shared with the generic combat core. */
 import { adjustResource } from './combat/engine.ts';
+import type { AnimaId } from './animas.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
-import { castleAfter, castleAtNight, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
@@ -1412,6 +1413,10 @@ export interface BattleState {
   /** Dogs under La Reina Bubbaloo's spell: they surround the party, so nobody can escape. */
   possessed: boolean;
   encounter: Encounter;
+  /** The ánimas this fight's foes have grown with (`growFoes`), for whoever joins it later. */
+  grown?: number;
+  /** Its pupils are Encarnados (src/castle.ts `STRONG`): beaten, the group lets go of an Eco de luz. */
+  strong?: boolean;
   /** Party boosts running, by skill (Análisis Parálisis: Fuerza and Magia), each up by `amount` until the end of round `until`. */
   boosts?: Partial<Record<SkillId, { amount: number; until: number }>>;
   /**
@@ -2363,18 +2368,67 @@ export function palaceGuards(animas: number) {
 }
 export type GuardStrength = ReturnType<typeof palaceGuards>;
 /**
+ * The open missions and their fights: after Nuria and Uri's they can be done in any order, so each is
+ * met with none of the others' ánimas or with all three (docs/combat.md § Los enemigos crecen con el equipo).
+ */
+export const OPEN_MISSIONS = {
+  universidad: [...CAMPING_ENCOUNTERS, 'sobremesa'], marta: CUERDAS_ENCOUNTERS, emilie: MODELO_ENCOUNTERS, luca: LUCA_ENCOUNTERS,
+} as const satisfies Partial<Record<AnimaId, readonly Encounter[]>>;
+/**
+ * How the foes of an open mission keep up with the party: for each other open mission's ánima the
+ * party already has, every foe of the fight has `stat` more Fuerza, Magia, Defensa and Espíritu
+ * (rounded once, on the sum) and `pv` more of its PV (.1: a tenth each). The party grows with every
+ * ánima (`ANIMAS`' bonus), so without this a mission done last was far easier than the same one done
+ * first. Nuria's ánima is not counted (everyone has it before the first open mission, which is the
+ * fight as tuned), nor the mission's own. The castle never grows: its numbers are its own, and they
+ * are what asks for ánimas (docs/fight-sim.md § Power and the castle). A point and a quarter each
+ * (+1, +3 and +4 with one, two and all three of the others behind) is what keeps the order from
+ * counting now that every ánima gives the party a point of all four (`ANIMA_GROWTH`): in whole
+ * games a point and a half made a wall of La Voz done last, and a point left the last mission the
+ * easy one. More PV instead only made the fights longer (2026-11-21, docs/fight-sim.md §
+ * Progression). Tunable (`just fight-sim`, book `foes`).
+ */
+export const FOE_GROWTH = { pv: 0, stat: 1.25 };
+/** How many ánimas count against the foes of `encounter`: the other open missions' the party has. */
+export function gatheredFor(encounter: string, animas: readonly string[] = []) {
+  const missions = Object.keys(OPEN_MISSIONS) as (keyof typeof OPEN_MISSIONS)[];
+  const own = missions.find(id => (OPEN_MISSIONS[id] as readonly string[]).includes(encounter));
+  return own ? missions.filter(id => id !== own && animas.includes(id)).length : 0;
+}
+/** One foe grown by `gathered` ánimas (`FOE_GROWTH`). */
+function grow<T extends Combatant>(c: T, gathered = 0): T {
+  if (!gathered || !(FOE_GROWTH.pv || FOE_GROWTH.stat)) return c;
+  const pv = Math.round(c.maxHp * (1 + FOE_GROWTH.pv * gathered)), more = Math.round(FOE_GROWTH.stat * gathered);
+  c.stats = { ...c.stats, pv, fuerza: c.stats.fuerza + more, magia: c.stats.magia + more, defensa: c.stats.defensa + more, espiritu: c.stats.espiritu + more };
+  c.hp = c.maxHp = pv;
+  return c;
+}
+/**
+ * The fight's foes as strong as `gathered` ánimas make them, as it starts; whoever joins later comes
+ * grown the same (`state.grown`). The fight screen, both simulators and the fight tester go through here.
+ */
+export function growFoes(state: BattleState, gathered: number): BattleState {
+  if (gathered > 0) { state.grown = gathered; state.foes.forEach(c => grow(c, gathered)); }
+  return state;
+}
+/**
  * Any story encounter as a fight starts: what the fight screen opens (src/battle-ui.ts) and what the
  * whole-game simulator plays (src/game-sim.ts), one dispatch for both, so an encounter added here is
- * met the same on screen and headless.
+ * met the same on screen and headless. `friends`: the friends' ánimas the party has gathered, which an
+ * open mission's foes grow with (`FOE_GROWTH`); `strong`: the castle's pupils come as Encarnados (`castleStrong`).
  */
-export function createEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; random?: () => number } = {}): BattleState {
+export function createEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; friends?: readonly string[]; strong?: boolean; random?: () => number } = {}): BattleState {
+  const state = startEncounter(slots, encounter, options);
+  return options.strong ? castleStrong(state) : state;
+}
+function startEncounter(slots: PartySlot[], encounter: Encounter, options: { foeCount?: number; possessed?: boolean; animas?: ClassId[]; guards?: GuardStrength; night?: NightFight; friends?: readonly string[]; random?: () => number }): BattleState {
   const { foeCount = 1, possessed = false, animas, guards = palaceGuards(0), night, random } = options;
   // At night on the Meridiana: the castle's pupils of the floor the party is on, a room's group, stronger out here (src/night.ts).
   if (encounter === 'night-guard' && night) return castleAtNight(createCastleBattle(castleKit, slots, night.room, animas, random ?? Math.random), night.might);
-  return (FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], animas, random)
+  return growFoes((FEAR_ENCOUNTERS as readonly string[]).includes(encounter) ? createFearBattle(slots, encounter as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : encounter === 'palace-minion' ? createMinionBattle(slots[0]?.classId, animas)
     : encounter === 'palace-guards' || encounter === 'night-guard' ? createGuardBattle(slots, guards, animas, encounter)
-    : createBattle(slots, foeCount, possessed, undefined, animas);
+    : createBattle(slots, foeCount, possessed, undefined, animas), gatheredFor(encounter, options.friends));
 }
 /**
  * Chapter 2: the party against the palace guards, as strong as the party's ánimas leave them.
@@ -5071,7 +5125,7 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
     if (move === 'coro') {
       // Coro: a second voice beside her, an Eco in all but name. It can be struck at any moment, and waits for the next round.
       delete effect.target; delete actor.intent;
-      const second = foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro);
+      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown);
       state.foes.push(second); state.enemyActions.push(second.id);
       effect.summoned = second.id;
       state.message = `${actor.name} canta, y otra voz le contesta desde las cuerdas. Ya son dos.`;
@@ -5506,7 +5560,7 @@ function lucaRoundEnd(state: BattleState) {
   if (!isLucaFight(state)) return;
   const moths = state.foes.filter(f => f.kind === 'polilla');
   if (moths.filter(f => f.hp > 0).length >= 2 && moths.length < LUCA.polillasMost + 2 && moths.filter(f => f.hp > 0).length < LUCA.polillasMost) {
-    const n = moths.length + 1, one = foe(`polilla-${state.foes.length}`, `${LUCA_NAMES.polilla} ${n}`, 'polilla');
+    const n = moths.length + 1, one = grow(foe(`polilla-${state.foes.length}`, `${LUCA_NAMES.polilla} ${n}`, 'polilla'), state.grown);
     state.foes.push(one);
     (state.news ??= []).push({ kind: 'enemy', actor: one.id, summoned: one.id });
     state.message = `${state.message} Entra otra polilla, atraída por la luz.`.trim();
@@ -6281,7 +6335,7 @@ export function stageMoment(state: BattleState, moment: StagedMoment): boolean {
       state.song.t = Math.max(0, turnStarts(VOZ_SONG)[5] - .5);
     } else if (moment === 'voz-coro') {
       // Her second voice already there, a turn old.
-      const second = foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro); second.turns = 1;
+      const second = grow(foe(SECOND_VOICE, 'Segunda voz', 'eco', MARTA.coro), state.grown); second.turns = 1;
       state.foes.push(second); voz.turns = 1;
     } else if (moment === 'voz-calderon') {
       voz.turns = VOZ_TURNS['a-capela'].indexOf('calderon'); voz.intent = { ability: 'calderon', at: 'todos' };

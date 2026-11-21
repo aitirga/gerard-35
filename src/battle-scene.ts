@@ -3,7 +3,7 @@ import { HeldArtilugio, PROP } from './artilugio-held';
 import { ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
-import { MINION_HEIGHT, castleModel, figureClips, foeFigure, type FigureClips } from './castle-models';
+import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, foeFigure, redden, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
 import { createStamps } from './dice-stamp';
@@ -244,6 +244,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** When they fell, and (the party) when they started getting back up; `landed` once they hit the floor. */
     downAt?: number; upAt?: number; landed?: boolean; dissolve?: Disintegration;
     /** Called in mid-fight and not there yet (La Voz's second voice), and its coming together out of specks, or back (an Eco tied again). */
+    /** An Encarnado's halo on the floor (src/castle-models.ts `encarnar`): it breathes, and goes out as they fall. */
+    halo?: { floor: pc.Entity; material: pc.StandardMaterial };
     unborn?: boolean; arriving?: Disintegration; freed?: { node: pc.Entity; from: pc.Vec3; to: pc.Vec3; at: number }; hitAt?: number; flashColor: pc.Color; flash: number; materials: pc.StandardMaterial[]; glow: pc.Color[];
     body: pc.Entity | null; head: pc.Entity | null; tail: pc.Entity | null; ears: pc.Entity[]; eyes: pc.Entity[]; eyeScale: number; seed: number;
     /** A winged figure's wings (`just character-3d` with `wings`: `Ala izquierda`, `Ala derecha`), hinged at the body: they beat. */
@@ -523,6 +525,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   function hit(f: Fighter, color: pc.Color, strength = 1) { f.hitAt = time; f.flash = strength; f.flashColor = color; }
   /** A fighter glows: a flash fading, the fire on them, a status's tint, on top of what they glow with at rest (not on `steady` materials). */
   function shine(id: string, f: Fighter, dt: number) {
+    if (f.halo) {
+      f.halo.floor.enabled = f.downAt === undefined && !f.unborn;
+      f.halo.material.emissiveIntensity = .55 + .12 * Math.sin(time * 2.1 + f.seed * 1.7); f.halo.material.update();
+    }
     const heat = f.fire?.handle.glow ?? 0, tinted = statusFx.tint(id, time), statusLit = tinted[0] + tinted[1] + tinted[2] > 0;
     if (!(f.flash > 0 || heat > 0 || statusLit || f.heated)) return;
     f.flash = Math.max(0, f.flash - dt * 4.5);
@@ -3170,6 +3176,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       fighters.get(unit.id)!.onion = { kind: unit.kind, shown: unit.layers ?? 0, size: model.getLocalScale().x, skin };
     }
     const built = fighters.get(unit.id)!;
+    // An Encarnado (src/castle.ts `STRONG`): red from inside at rest, so every flash fades back to it, and its halo.
+    if (unit.castle?.strong) {
+      redden(built.materials);
+      built.glow = built.materials.map(m => m.emissive.clone().mulScalar(m.emissiveIntensity));
+      built.halo = encarnadoHalo(model, app.graphicsDevice);
+    }
     if (own) { built.figure = figureClips(model, own); built.figure?.play('rest'); built.plateAt = own.size * MINION_HEIGHT + .1; }
     if (party && unit.id === 'gerard' && body?.findByName(PROP)) built.held = new HeldArtilugio(body);
     // A dish shows what it is on its plate; a fantasmita can go see-through, row by row.

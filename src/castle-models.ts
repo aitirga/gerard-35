@@ -157,6 +157,58 @@ function crawl(holder: pc.Entity): FigureClips {
   };
 }
 /**
+ * Encarnados' red (docs/castle.md § Encarnados): an ember's, deep and leaning to orange, kept off
+ * the Queen's pink and off possession's violet (docs/visual-style.md).
+ */
+export const ENCARNADO = '#ff3408';
+let haloMap: pc.Texture | undefined;
+/** The halo's shape: a soft ring on the floor, brightest a little out from the feet and gone at its edge. */
+function haloTexture(device: pc.GraphicsDevice) {
+  if (haloMap) return haloMap;
+  const size = 128, canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const x = canvas.getContext('2d')!, ring = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  for (const [at, k] of [[0, .3], [.34, .62], [.52, 1], [.7, .4], [1, 0]]) ring.addColorStop(at, `rgb(${Math.round(255 * k)},${Math.round(255 * k)},${Math.round(255 * k)})`);
+  x.fillStyle = ring; x.fillRect(0, 0, size, size);
+  haloMap = new pc.Texture(device, { name: 'Halo encarnado', mipmaps: true, addressU: pc.ADDRESS_CLAMP_TO_EDGE, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
+  haloMap.setSource(canvas);
+  return haloMap;
+}
+/** Lights `materials` red from inside (an Encarnado's gum): their own texture, through `ENCARNADO`. */
+export function redden(materials: readonly pc.StandardMaterial[], strength = .16) {
+  for (const m of materials) {
+    // A warm cast over the gum's own colour (Aitor, 2026-11-21: less red), and a faint glow through its texture.
+    m.emissiveMap = m.diffuseMap; m.emissive = new pc.Color().fromString(ENCARNADO); m.emissiveIntensity = strength;
+    m.update();
+  }
+}
+/** An Encarnado's halo: a low red ring on the floor round `owner`'s feet, `radius` wide. Its material's `emissiveIntensity` is its strength. */
+export function encarnadoHalo(owner: pc.Entity, device: pc.GraphicsDevice, radius = 1.15) {
+  const material = new pc.StandardMaterial();
+  material.name = 'Halo encarnado'; material.diffuse = new pc.Color(0, 0, 0); material.useLighting = false;
+  material.emissive = new pc.Color().fromString(ENCARNADO); material.emissiveMap = haloTexture(device); material.emissiveIntensity = .55;
+  material.blendType = pc.BLEND_ADDITIVE; material.depthWrite = false; material.update();
+  const floor = new pc.Entity('Halo encarnado');
+  floor.addComponent('render', { type: 'plane', material, castShadows: false, receiveShadows: false });
+  floor.setLocalPosition(0, .05, 0); floor.setLocalScale(radius * 2, 1, radius * 2);
+  owner.addChild(floor);
+  return { floor, material };
+}
+/**
+ * An Encarnado walking about (src/castle.ts `STRONG`; the fight dresses its own, src/battle-scene.ts):
+ * `copy`'s own gum lit red from inside, on materials of its own, and the halo at its feet.
+ */
+export function encarnar(copy: pc.Entity, device: pc.GraphicsDevice) {
+  const own = new Map<pc.Material, pc.StandardMaterial>();
+  for (const render of copy.findComponents('render') as pc.RenderComponent[]) for (const mesh of render.meshInstances) {
+    const source = mesh.material as pc.StandardMaterial;
+    if (!own.has(source)) own.set(source, source.clone());
+    mesh.material = own.get(source)!;
+  }
+  redden([...own.values()]);
+  encarnadoHalo(copy, device);
+}
+/**
  * Out on the Meridiana at night (src/night.ts) the pupils glow a little from within, their own gum
  * lighting itself, as the palace guards' pink eyes did: the dark between lamps still hides the party
  * from them, but the party can see what is coming and measure it. Each copy gets its own materials.

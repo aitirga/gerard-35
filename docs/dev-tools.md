@@ -169,7 +169,11 @@ The fight tester. Choose:
 - **Equipo**: Gerard alone, or with Bernat (chapter 1) or Aitor (chapter 2).
 - **Ánimas**: the ones unlocked, which L and R walk through in the fight; and which one Gerard
   and Aitor start wearing (Bernat wears none).
-- **Amigos** (chapter 2): the friends' ánimas, which add their bonus and weaken the guards.
+- **Amigos** (chapter 2): the friends' ánimas, which add their bonus, weaken the guards and make an
+  open mission's foes grow with the other missions' (docs/combat.md § Los enemigos crecen con el
+  equipo): Fran with Marta's and Emilie's chosen is Fran met third, a point up in its four attributes.
+- **Alumnos** (with a room of the castle or *De noche en la Meridiana* chosen): *Como siempre* or
+  *Encarnados*, the day's harder group, red from inside (docs/castle.md § Encarnados; `FightSetup.strong`).
 - **Contra**: dogs, possessed dogs (pink eyes), the palace minion (chapter 1, with Bernat) or
   the gum guards. In chapter 2, **Torre de Uri** adds Uri's fears (El Cebollón, La Cebolla, El Plato
   Misterioso, ring 3's **La Cebolla y los suyos**), Vertitrón and a pack of each ring's young (a
@@ -202,7 +206,9 @@ The fight tester. Choose:
   *A contratiempo* goes off whenever ecos are up (`FightSetup.offbeat`, `BattleState.sureOffbeat`).
 
 To balance fights rather than play them, `just fight-sim` plays thousands without a screen
-([fight-sim.md](fight-sim.md)).
+([fight-sim.md](fight-sim.md)), and its bench says what to change: the numbers a fight turns on
+(`levers`), the values that hold its targets (`optimize`), what each skill is worth (`skills`), how
+the party's growth carries through the story (`progress`) and what no target holds yet (`coverage`).
 
 Each fight is staged where the story stages it (game.ts): the dogs in Passatge Maresme, the
 minion and the guards in the palace, so the tester takes Gerard there first. A test fight

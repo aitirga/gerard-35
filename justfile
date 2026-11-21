@@ -85,7 +85,7 @@ dev-fx:
 # Jump in after a story beat: just dev-chapter got-backpack, or metro for chapter 2's open city (new = from the start)
 [group('Development')]
 dev-chapter beat="new":
-    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|papagato-4|papagato-5|papagato-6|papagato-7|matemagico-2|matemagico-3|dadaista-2|dadaista-3|dadaista-4|dadaista-5|dadaista-6|dadaista-7|prismatico-2|prismatico-3|prismatico-4|prismatico-5|prismatico-6|prismatico-7|sincopante-2|sincopante-3|sincopante-4|sincopante-5|sincopante-6|sincopante-7|freatica-2|freatica-3|freatica-4|freatica-5|freatica-6|freatica-7|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|clue-emilie|poble-sec-emilie|modelo|converge|anima-emilie|luz-emilie|clue-luca-foto|clue-sagrada|clue-sagrada-cartel|sagrada-luca|peluqueria|fran|anima-luca|luz-luca|ticket-cardedeu|ticket-barceloneta|ticket-sagrada-familia|ticket-placa-de-sants|ticket-poble-sec|ticket-el-carmel|ticket-alegia|ticket-espanya|bernat-nucli|cortina|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|bernat-llama|bernat-juego|portal-nucli|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
+    @[[ "{{ beat }}" =~ ^(new|intro|met-jan|got-shoes|got-potion|got-backpack|bernat-joined|bernat-stalled|dejavu|minion|first-fight|palace|in-palace|got-chicle|matemagico|wrapper-room|caught|got-wrapper|got-bola|tv-news|metro|rec-comtal|castle|palace-tried|clue-r4|anima-nuria|papagato|papagato-2|papagato-3|papagato-4|papagato-5|papagato-6|papagato-7|matemagico-2|matemagico-3|dadaista-2|dadaista-3|dadaista-4|dadaista-5|dadaista-6|dadaista-7|prismatico-2|prismatico-3|prismatico-4|prismatico-5|prismatico-6|prismatico-7|sincopante-2|sincopante-3|sincopante-4|sincopante-5|sincopante-6|sincopante-7|freatica-2|freatica-3|freatica-4|freatica-5|freatica-6|freatica-7|cardedeu|nuria-uri|luz-nuria|luz-uri|clue-uni|barceloneta-uni|camping|candado|parcelas|sobremesa|anima-universidad|luz-anna-alvaro|luz-miquel-sarah|luz-soraya|luz-nico|luz-joan|alegia-marta|cuerdas|voz|anima-marta|luz-marta|clue-emilie|poble-sec-emilie|modelo|converge|anima-emilie|luz-emilie|clue-luca-foto|clue-sagrada|clue-sagrada-cartel|sagrada-luca|peluqueria|fran|anima-luca|luz-luca|ticket-cardedeu|ticket-barceloneta|ticket-sagrada-familia|ticket-placa-de-sants|ticket-poble-sec|ticket-el-carmel|ticket-alegia|ticket-espanya|bernat-nucli|cortina|luz-encarnado-1|luz-encarnado-2|luz-encarnado-3|luz-encarnado-4|luz-encarnado-5|luz-encarnado-6|luz-alumnos-1a|luz-alumnos-1b|luz-alumnos-1c|luz-delegada-1|luz-alumnos-2a|luz-alumnos-2b|luz-alumnos-2c|luz-alumnos-2d|luz-alumnos-2e|luz-delegada-2|luz-alumnos-3a|luz-alumnos-3b|luz-alumnos-3c|luz-alumnos-3d|luz-delegada-3|aurelia|luz-aurelia|direccion|luz-mar|luz-montse|luz-pilar|aitor-poseido|bernat-llama|bernat-juego|portal-nucli|artilugio|reina|final-acabar|final-bajar)$ ]] || { printf 'Use new or a story flag from src/story.ts (e.g. got-backpack, metro).\n'; exit 1; }
     npm run dev -- --open '/?story={{ beat }}'
 
 # Start an ánima mission partway: just dev-mission nuria ring-2 (parts in missionParts, src/story-points.ts; start = its beginning)
@@ -186,13 +186,13 @@ animas-report:
 combat-sim *args:
     node --experimental-strip-types scripts/combat-sim.mjs "$@"
 
-# Simulate the campaign's real fights: combinations, balance targets, Jev's opinion if asked (see docs/fight-sim.md)
+# Simulate the campaign's real fights and balance them: check (targets), run, story, report, and the bench: levers (what moves a fight), optimize (the numbers that hold its targets), skills, progress (the party's growth), coverage (see docs/fight-sim.md)
 [group('Combat')]
 [positional-arguments]
 fight-sim *args:
     @node --experimental-strip-types --no-warnings scripts/fight-sim.mjs "$@"
 
-# Play the whole game headless, many times: duration, difficulty curve, levels, walls (see docs/game-sim.md; the picker shows the last report)
+# Play the whole game headless, many times: duration, difficulty curve, levels, EXP per stretch, walls; --tune and --set try numbers and players side by side (see docs/game-sim.md; the picker shows the last report)
 [group('Combat')]
 [positional-arguments]
 game-sim *args:

@@ -234,8 +234,10 @@ one stronger.
   get the next one, per the HUD rule in `AGENTS.md`); a note when a skill is learned.
 - Every ánima has its level table in its own folder.
 
-Built today (2026-11-20): levels go to seven (`MAX_LEVEL`, `LEVEL_XP` in `src/levels.ts`; the EXP of 4 to 7
-a first guess), and each shared ánima grows as far as it has been designed (`topOf`): Papagato,
+Built today (2026-11-20): levels go to seven (`MAX_LEVEL`, `LEVEL_XP` in `src/levels.ts`: 180, 660,
+and since 2026-11-21 950, 1,150, 1,400 and 1,700 for 4 to 7, with a fight inside the castle worth
+three times its foes, `XP_RULES`, so that some four of the five shared ánimas end at 5 to 7:
+docs/fight-sim.md § Progression), and each shared ánima grows as far as it has been designed (`topOf`): Papagato,
 Dadista and Colorista to 7 (Papagato since 2026-11-21). Level 4 is Maná +1 (`MANA_LEVEL`, in `manaMax`). A level left empty on purpose is
 named in `EMPTY_LEVELS`. The castle caps them (built 2026-11-21, § Growth opens with the castle):
 4, 6 after Aurelià, 7 after Dirección (`levelCap` in `src/castle.ts`, `reachOf`). Matemágico and
@@ -353,6 +355,12 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   put somewhere else as often as they like, one at a time or *Recoger todos los ecos*; nothing is
   lost. Out of the flat nothing can change (a portal home is an idea for later, `docs/ideas.md`).
 - **Optional, and never enough for everything**: nothing in the story needs them.
+- **Where they come from, and what they cost** (Aitor, 2026-11-21: some three quarters of the jar by
+  the end). The friends freed and the castle's bosses (14); each room of the castle the first time it
+  is beaten (15, docs/castle.md § Ecos of the rooms); the Encarnados (up to 6); and each shared ánima
+  on reaching levels 5 and 7 (`LIGHT_LEVELS` in `src/levels.ts`, read from the level's flag: up to 10).
+  Every node of the jar costs **one eco**, the definitivas two: 49 for the whole jar with the dúos
+  mayores. Measured in nine whole games (`just game-sim`): 30 to 35 at the end.
 - **Saved in the browser**, like the loadout (`gerard35.ecos.v1`, `story.improvements`). What stands
   is worked out from what the party has now (`withinEcos`): a rewound day can take a light back, and
   what it paid for comes back with it.

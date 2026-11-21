@@ -5,29 +5,36 @@
  * decides anything, it only shows what the simulator measured.
  */
 import { AFFINITIES, ELEMENTS, FOE_ABILITIES, SKILLS, DUALS } from '../src/battle.ts';
-import { BUILDS, DUO, MISSIONS, MISSION_IDS, PAIR, SIM_VERSION, checkTargets, storyPoint, storyRows, tunables, withTuning } from '../src/battle-sim.ts';
+import { BUILDS, CASTLE_STAGES, CASTLE_STAGE_IDS, DUO, MISSIONS, MISSION_IDS, PAIR, SIM_VERSION, STRETCHES, STRETCH_IDS, TARGETS, judge, storyJobs, storyPoint, stretchOf, targetSetup, tunables, withTuning } from '../src/battle-sim.ts';
+import { inline } from '../src/balance.ts';
 
 const brief = row => ({ win: row.win, winCI: row.winCI, draws: row.draws, rounds: row.rounds, roundsWon: row.roundsWon, roundsLost: row.roundsLost, hpLeftWon: row.hpLeftWon, kos: row.kos, koRate: row.koRate, firstKo: row.firstKo, duals: row.duals, used: row.used, damageShare: row.damageShare, events: row.events, biggest: row.biggest, biggestMax: row.biggestMax });
-/** Everything the page shows, as data: pure but for the clock. */
-export function balanceData({ runs = 120, seed = 35, tuning = {}, builds = ['nada', 'mixto'], party = DUO, label = '' } = {}) {
-  const points = MISSION_IDS.flatMap(id => MISSIONS[id].intro ? [storyPoint(id, 'nada')] : ['first', 'last'].flatMap(order => builds.map(build => storyPoint(`${id}:${order}`, build))));
-  const rows = storyRows(points, ['smart', 'casual'], { runs, seed, tuning, party });
+/** Everything the page shows, as data: pure but for the clock. `play`: how the rows are played (here, or shared among threads). */
+export async function balanceData({ runs = 120, seed = 35, tuning = {}, builds = ['nada', 'mixto'], party = DUO, label = '', play = inline } = {}) {
+  // The points under the numbers tried: a level's EXP moves the levels the party reaches each one with.
+  const points = withTuning(tuning, () => [
+    ...MISSION_IDS.flatMap(id => MISSIONS[id].intro ? [storyPoint(id, 'nada')] : ['first', 'last'].flatMap(order => builds.map(build => storyPoint(`${id}:${order}`, build)))),
+    ...CASTLE_STAGE_IDS.flatMap(id => builds.map(build => storyPoint(id, build))),
+  ]);
+  const jobs = storyJobs(points, ['smart', 'casual'], { party });
+  const played = await play([...jobs.map(job => ({ setup: job.setup, runs, seed, tuning })), ...TARGETS.map(target => ({ setup: targetSetup(target), runs, seed, tuning }))]);
+  const rows = jobs.map((job, i) => ({ ...job, row: played[i] }));
   const cells = [];
   for (const r of rows) {
     let cell = cells.find(c => c.fight === r.row.fight && c.at === r.at && c.build === r.build);
     if (!cell) {
-      const mission = MISSION_IDS.find(id => MISSIONS[id].fights.includes(r.row.fight));
-      cells.push(cell = { fight: r.row.fight, mission, teaching: MISSIONS[mission].teaching.includes(r.row.fight), at: r.at, build: r.build, ecos: r.ecos, spent: r.spent });
+      const mission = stretchOf(r.row.fight);
+      cells.push(cell = { fight: r.row.fight, mission, teaching: STRETCHES[mission].teaching.includes(r.row.fight), at: r.at, build: r.build, ecos: r.ecos, spent: r.spent });
     }
     cell[r.row.policy] = brief(r.row);
   }
   for (const cell of cells) cell.holds = cell.smart.win >= PAIR.with && cell.casual.win <= PAIR.without;
-  const targets = checkTargets(undefined, runs, seed, tuning).map(t => ({ id: t.id, fight: t.row.fight, party: t.row.party, policy: t.row.policy, ban: t.row.ban, pass: t.pass, failures: t.failures, why: t.why, wanted: t.wanted, win: t.row.win, hpLeftWon: t.row.hpLeftWon, roundsWon: t.row.roundsWon, roundsLost: t.row.roundsLost }));
+  const targets = TARGETS.map((target, i) => judge(target, played[jobs.length + i])).map(t => ({ id: t.id, fight: t.row.fight, party: t.row.party, policy: t.row.policy, ban: t.row.ban, pass: t.pass, failures: t.failures, why: t.why, wanted: t.wanted, win: t.row.win, hpLeftWon: t.row.hpLeftWon, roundsWon: t.row.roundsWon, roundsLost: t.row.roundsLost }));
   const names = { ...Object.fromEntries(SKILLS.map(s => [s.id, s.name])), ...Object.fromEntries(DUALS.map(d => [d.id, `${d.name} (dual)`])), ...Object.fromEntries(Object.entries(FOE_ABILITIES).map(([id, a]) => [id, a.name])), attack: 'Atacar', defend: 'Defender' };
   return {
     version: SIM_VERSION, made: new Date().toISOString(), label, runs, seed, tuning, party, pair: PAIR,
-    missions: Object.fromEntries(MISSION_IDS.map(id => [id, { name: MISSIONS[id].name, intro: MISSIONS[id].intro, lights: MISSIONS[id].lights, fights: MISSIONS[id].fights }])),
-    points: points.map(p => ({ at: p.at, mission: p.mission, build: p.build, ecos: p.ecos, friends: p.setup.friends, papagato: p.setup.levels.papagato, improved: p.setup.improved })),
+    missions: Object.fromEntries(STRETCH_IDS.map(id => [id, { name: STRETCHES[id].name, intro: !!MISSIONS[id]?.intro, castle: id in CASTLE_STAGES, lights: (MISSIONS[id] ?? CASTLE_STAGES[id]).lights, fights: STRETCHES[id].fights }])),
+    points: points.map(p => ({ at: p.at, mission: p.mission, build: p.build, ecos: p.ecos, friends: p.setup.friends, papagato: p.setup.levels.papagato, levels: p.setup.levels, improved: p.setup.improved })),
     builds: BUILDS, cells, targets, names,
     affinities: Object.entries(AFFINITIES).map(([kind, table]) => ({ kind, weak: Object.entries(table).filter(([, a]) => a === 'weak').map(([e]) => ELEMENTS[e].name), resist: Object.entries(table).filter(([, a]) => a === 'resist').map(([e]) => ELEMENTS[e].name) })),
     numbers: withTuning(tuning, () => tunables()),
@@ -63,7 +70,7 @@ const APP = `
 const $=(s,r=document)=>r.querySelector(s),pc=x=>x==null?'–':Math.round(x*100)+' %',n1=x=>x==null?'–':(Math.round(x*10)/10).toString().replace('.',',');
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const ORDER={first:'la primera',last:'la última'},POL={smart:'Pensando',casual:'Sin pensar'};
-const pointName=at=>{const[m,o]=at.split(':');return o?(ORDER[o]??('tras '+o.replaceAll('/',', '))):'introducción'};
+const pointName=at=>{const[m,o]=at.split(':');return o?(ORDER[o]??('tras '+o.replaceAll('/',', '))):DATA.missions[m]?.castle?'al llegar':'introducción'};
 const baseCell=c=>BASE?.cells.find(b=>b.fight===c.fight&&b.at===c.at&&b.build===c.build);
 const delta=(now,was)=>{if(was==null||now==null)return'';const d=Math.round((now-was)*100);return d?'<span class="delta">'+(d>0?'▲':'▼')+Math.abs(d)+'</span>':''};
 let picked=null;
@@ -91,7 +98,7 @@ function matrix(){
         return '<td><button class="cell" data-key="'+key+'" aria-pressed="'+(picked===key)+'">'+meter('Pensando',c.smart,b?.smart)+meter('Sin pensar',c.casual,b?.casual)+'<span class="verdict"><span class="dot '+v[0]+'">'+v[1]+'</span>'+v[2]+'</span></button></td>';
       }).join('')+'</tr>';
     }).join('');
-    return '<h3>'+esc(m.name)+(m.intro?' · introducción':' · en cualquier orden')+'</h3><div class="scroll"><table><thead><tr><th>Combate</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+    return '<h3>'+esc(m.name)+(m.intro?' · introducción':m.castle?' · con todas las misiones hechas':' · en cualquier orden')+'</h3><div class="scroll"><table><thead><tr><th>Combate</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>';
   }).join('');
 }
 function stats(row,was){
@@ -106,7 +113,7 @@ function detail(){
   const c=DATA.cells.find(x=>[x.fight,x.at,x.build].join('|')===picked);
   if(!c){$('#detail').innerHTML='<p>Elige una casilla de la matriz para ver cómo se juega ese combate.</p>';return}
   const p=DATA.points.find(x=>x.at===c.at&&x.build===c.build),b=baseCell(c);
-  $('#detail').innerHTML='<p><b>'+esc(c.fight)+'</b> · '+esc(DATA.missions[c.mission].name)+' · '+esc(pointName(c.at))+'. Ánimas de amigos: '+(p.friends.join(', ')||'ninguna')+'. Papagato '+p.papagato+'. '+p.ecos+' ecos'+(p.improved.length?': '+p.improved.map(i=>'<span class="pill">'+esc(i)+'</span>').join(''):', sin gastar.')+'</p><div class="detail">'+['smart','casual'].map(k=>'<div class="card"><h4>'+POL[k]+'</h4>'+stats(c[k],b?.[k])+'<h3>Daño por acción</h3>'+bars(c[k].damageShare,pc)+'<h3>Lo que más usa</h3>'+bars(c[k].used,n1,6)+'<h3>Lo que hace el enemigo, por combate</h3>'+bars(c[k].events,n1,8)+'</div>').join('')+'</div>';
+  $('#detail').innerHTML='<p><b>'+esc(c.fight)+'</b> · '+esc(DATA.missions[c.mission].name)+' · '+esc(pointName(c.at))+'. Ánimas de amigos: '+(p.friends.join(', ')||'ninguna')+'. Niveles: '+(Object.entries(p.levels).map(([id,n])=>id+' '+n).join(', ')||'–')+'. '+p.ecos+' ecos'+(p.improved.length?': '+p.improved.map(i=>'<span class="pill">'+esc(i)+'</span>').join(''):', sin gastar.')+'</p><div class="detail">'+['smart','casual'].map(k=>'<div class="card"><h4>'+POL[k]+'</h4>'+stats(c[k],b?.[k])+'<h3>Daño por acción</h3>'+bars(c[k].damageShare,pc)+'<h3>Lo que más usa</h3>'+bars(c[k].used,n1,6)+'<h3>Lo que hace el enemigo, por combate</h3>'+bars(c[k].events,n1,8)+'</div>').join('')+'</div>';
 }
 function targets(){
   const q=$('#q').value.toLowerCase(),bad=$('#bad').checked,range=r=>r?pc(r[0])+'–'+pc(r[1]):'';

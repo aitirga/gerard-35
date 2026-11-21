@@ -76,7 +76,7 @@ import type { FearEncounter } from './friends/nuria';
 import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
 import { isCastleZone } from './castle-mood';
 import { createFloorStreet, roomGroups, roomTag, syncFloor } from './castle-pupils';
-import { castleFigure, castleModel, castleModelSettled, figureClips, foeFigure, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
+import { castleFigure, castleModel, castleModelSettled, encarnar, figureClips, foeFigure, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -800,7 +800,9 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const clips: FigureClips[] = [], model = new pc.Entity(`Alumno ${pupil.id}`);
       model.addChild(castleBody(pupil.kind, figure, clips));
       // Out in the street they glow from within; inside, only where the floor is dark (the second year on).
-      if (!nightHunt!.indoors) glowAtNight(model); else if (street.phase > 1) glowAtNight(model, .25);
+      // The day's Encarnados (docs/castle.md § Encarnados): red from inside and a red halo at their feet, wherever they are.
+      if (pupil.group === (nightHunt!.indoors ? story.strongRoomOf(street.phase) : story.strongGroup)) encarnar(model, app.graphicsDevice);
+      else if (!nightHunt!.indoors) glowAtNight(model); else if (street.phase > 1) glowAtNight(model, .25);
       castRoot.addChild(model);
       stalkers.push({ pupil, model, flat: 0, puff: 0, ...clips[0] ? { clips: clips[0] } : {} });
     }

@@ -589,7 +589,7 @@ export class Playing {
   private fight(encounter: string, night?: NightFight) {
     const story = this.story, before = { ...story.storyLevels };
     const state = createEncounter(story.battleParty(true), encounter as Encounter, {
-      foeCount: DOGS, possessed: story.possessed, animas: story.classes, guards: palaceGuards(story.animas.length), night, random: this.random,
+      foeCount: DOGS, possessed: story.possessed, animas: story.classes, guards: palaceGuards(story.animas.length), night, friends: story.animas, strong: story.strongFight, random: this.random,
     });
     state.levels = story.levels;
     improve(state, story.improved);
@@ -1181,6 +1181,8 @@ export interface EncounterSummary {
   learnt: number; trivial: number;
   /** Share of meetings that ended with the Queen holding Aitor: lost as the story asks, not a wall. */
   taken: number;
+  /** Each shared ánima's mean level the first time the fight is met, and the friends' ánimas gathered by then: the party the story really brings to it. */
+  levels: Partial<Record<ClassId, number>>; friends: number | null;
 }
 export interface PlayerSummary {
   id: string; name: string; policy: Policy; runs: number;
@@ -1195,8 +1197,16 @@ export interface PlayerSummary {
   curve: { at: number; fights: number; difficulty: number | null; lossRate: number | null; trivial: number | null }[];
   /** Each level each shared ánima reaches: in how many games, at what minute and what share of the game. */
   levels: { anima: ClassId; level: number; reached: number; minute: number | null; at: number | null; fight: number | null }[];
+  /**
+   * How far the shared ánimas have grown when the game ends: how many of them are at level 5 or more
+   * (`five`) and at 7 (`seven`), per game, and each one's mean level. What `LEVEL_XP` is held to
+   * (docs/fight-sim.md § Progression): 5 to 7 in some four of them.
+   */
+  grown: { five: number; seven: number; level: Partial<Record<ClassId, number>> };
   /** EXP earned after the top level, lost, per game. */
   wasted: number | null;
+  /** Each stretch of the story: its fights and the EXP it leaves per game (won fights), for `STRETCH_XP` (src/battle-sim.ts). */
+  stretches: { stage: string; fights: number; xp: number }[];
   /** From what share of the game (and minute) every fight left is trivial and none is lost, if it ever comes. */
   saturation: { at: number; minute: number | null } | null;
   encounters: EncounterSummary[];
@@ -1240,6 +1250,8 @@ export function summarise(plays: readonly Playthrough[], seed = 35): GameSummary
         firstWin: r2(avg(per.map(list => list[0].won ? 1 : 0))), win: r2(won.length / all.length)!,
         tries: r2(avg(tries), 1), hpLeft: r2(avg(won.map(f => f.hpLeft))), rounds: r2(avg(won.map(f => f.rounds)), 1), seconds: r2(avg(all.map(f => f.seconds)), 0),
         learnt: r2(avg(all.map(f => f.learnt ? 1 : 0)))!, trivial: r2(avg(all.map(f => trivialOf(f) ? 1 : 0)))!, taken: r2(avg(all.map(f => f.taken ? 1 : 0)))!,
+        levels: Object.fromEntries(LEVELLED.flatMap(anima => { const level = r2(avg(per.flatMap(list => list[0].levels[anima] === undefined ? [] : [list[0].levels[anima]!])), 1); return level === null ? [] : [[anima, level]]; })),
+        friends: r2(avg(per.map(list => list[0].friends)), 1),
       };
     }).sort((a, b) => (avg(games.map(g => g.fights.find(f => f.encounter === a.encounter)?.t ?? Infinity).filter(Number.isFinite)) ?? 0) - (avg(games.map(g => g.fights.find(f => f.encounter === b.encounter)?.t ?? Infinity).filter(Number.isFinite)) ?? 0));
     const median = pct(minutes, .5) ?? 0, sample = [...games].sort((a, b) => Math.abs(a.seconds / 60 - median) - Math.abs(b.seconds / 60 - median))[0];
@@ -1252,7 +1264,15 @@ export function summarise(plays: readonly Playthrough[], seed = 35): GameSummary
       fights: r2(avg(games.map(g => g.fights.length)), 1), losses: r2(avg(games.map(g => g.fights.filter(f => !f.won).length)), 1),
       time: Object.fromEntries((Object.keys(TIME_KINDS) as TimeKind[]).map(k => [k, r2(avg(games.map(g => g.time[k] / 60)), 1)])) as Record<TimeKind, number | null>,
       curve, levels,
+      grown: {
+        five: r2(avg(games.map(g => LEVELLED.filter(id => (g.levels[id] ?? 1) >= 5).length)), 1)!, seven: r2(avg(games.map(g => LEVELLED.filter(id => (g.levels[id] ?? 1) >= 7).length)), 1)!,
+        level: Object.fromEntries(LEVELLED.map(id => [id, r2(avg(games.map(g => g.levels[id] ?? 1)), 1)!])),
+      },
       wasted: r2(avg(games.map(g => g.fights.reduce((s, f) => s + f.wasted, 0))), 0),
+      stretches: [...new Set(games.flatMap(g => g.fights.map(f => f.stage)))].map(stage => {
+        const of = games.map(g => g.fights.filter(f => f.stage === stage));
+        return { stage, fights: r2(avg(of.map(list => list.length)), 1)!, xp: r2(avg(of.map(list => list.reduce((sum, f) => sum + (f.won ? f.xp : 0), 0))), 0)! };
+      }),
       saturation: saturated >= 0 ? { at: saturated / CURVE_STEPS, minute: r2(median * saturated / CURVE_STEPS, 0) } : null,
       // A fight lost as the story asks (the first Queen, who takes Aitor) is not a wall.
       encounters, walls: encounters.filter(e => e.firstWin !== null && e.firstWin < WALL && e.games >= .5 && !e.taken).map(e => e.encounter),

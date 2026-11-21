@@ -10,7 +10,7 @@
 import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, TIMED, addStatus, elementOf, inflict, roman, stacks, woundScale,
   type Affinity, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type TimedId } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
-import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, MONTON_FORMS, REINA_PHASES, UNDOES, isCastle, yearOf,
+import { type HeldMove, AURELIA_PHASES, CASTLE, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, isCastle, yearOf,
   type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type MontonForm, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
 
 /** What src/battle.ts lends: its own stats, PV and line-up, so a castle fight is measured as any other. */
@@ -39,7 +39,8 @@ function standing(state: BattleState) {
   return free.length ? free : up;
 }
 /** How much harder a pupil hits than in its first year, and out on the Meridiana at night, by its `might` too. */
-const yearScale = (c: Combatant) => (c.castle?.year === 3 ? CASTLE.year3 : c.castle?.year === 2 ? CASTLE.year2 : 1) * (c.castle?.might ?? 1);
+const byYear = (year?: Year) => year === 3 ? CASTLE.year3 : year === 2 ? CASTLE.year2 : year === 1 ? CASTLE.year1 : 1;
+const yearScale = (c: Combatant) => byYear(c.castle?.year) * (c.castle?.might ?? 1) * (c.castle?.strong ? STRONG.power : 1);
 const ability = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ...FOE_ABILITIES[id].card ? { card: true as const } : {} });
 const weakTo = (elements: readonly Element[]): Partial<Record<Element, Affinity>> => Object.fromEntries(elements.map(e => [UNDOES[e], 'weak' as const]));
 /** Things with PV that never take a turn and never hold up the win: Aurelià's lectern, the Queen's hands. */
@@ -71,7 +72,7 @@ export const castleWinMessage = (state: BattleState) => WON[state.encounter as C
 
 // ——— A fight made ——————————————————————————————————————————————————————————————————————
 function pupil(kit: CastleKit, kind: PupilKind, id: string, name: string, year: Year, random: () => number): Combatant {
-  const c = kit.foe(id, name, kind), pv = Math.round(c.maxHp * (year === 3 ? CASTLE.year3 : year === 2 ? CASTLE.year2 : 1));
+  const c = kit.foe(id, name, kind), pv = Math.round(c.maxHp * byYear(year));
   c.stats = { ...c.stats, pv }; c.hp = c.maxHp = pv;
   c.castle = { year, seen: pv };
   // Fresh gum melts; a filling decides what it is weak to; rancid gum no longer minds the fire.
@@ -141,6 +142,23 @@ export function castleAtNight(state: BattleState, might: number): BattleState {
   }
   state.encounter = 'night-guard';
   state.message = `${state.foes.length > 1 ? 'Suben por la rejilla y os rodean' : 'Sube por la rejilla y os corta el paso'}, chorreando chicle: los alumnos de la Reina, aquí fuera.`;
+  return state;
+}
+/**
+ * A group of pupils come as Encarnados (src/castle.ts `STRONG`): each with more PV and a harder blow,
+ * on top of its year and of the night. The fight says so (`state.strong`), which is what the story
+ * pays an Eco de luz for.
+ */
+export function castleStrong(state: BattleState): BattleState {
+  // Pupils only (they carry a year): a boss, its parts and whoever else is in a castle fight stay as they are.
+  const pupils = state.foes.filter(c => c.castle?.year && !c.part);
+  if (!pupils.length) return state;
+  for (const c of pupils) {
+    c.castle!.strong = true;
+    c.hp = c.maxHp = Math.round(c.maxHp * STRONG.pv); c.stats = { ...c.stats, pv: c.maxHp }; c.castle!.seen = c.hp;
+  }
+  state.strong = true;
+  state.message = `${state.message} Vienen encarnados: rojos por dentro, y más enteros que los demás.`;
   return state;
 }
 /** The Queen wraps herself in a layer of gum: what takes it off is what it is weak to (a blow, for the rancid one). */

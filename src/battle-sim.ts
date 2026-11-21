@@ -8,21 +8,23 @@
  * feels. `src/combat/simulator.ts` is a different thing: the generic engine's lab, on a synthetic fight.
  */
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
-import { animaBonus, type AnimaId } from './animas.ts';
+import { ANIMAS, ANIMA_GROWTH, ANIMA_IDS, animaBonus, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  FOE_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown,
 } from './battle.ts';
-import { costOf, improvedBy, withinEcos } from './ecos.ts';
+import { IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
-import { ARTILUGIO_NOTES, CASTLE, type MontonForm, type RoomEncounter } from './castle.ts';
+import { ARTILUGIO_NOTES, CASTLE, STRONG, CASTLE_LIGHTS, CASTLE_UNLOCKS, levelCap, type GrowthStage, type MontonForm, type RoomEncounter } from './castle.ts';
+import { castleStrong } from './castle-fight.ts';
+import { FOE_XP, LEVELLED, LEVEL_XP, XP_RULES, levelForXp, topOf } from './levels.ts';
 import { NIGHT_PUPILS, nightMight } from './night.ts';
 import { artilugioLive, castleNote, castleProp, montonCopy, nextNote } from './castle-fight.ts';
 
-export const SIM_VERSION = 2;
+export const SIM_VERSION = 3;
 export const POLICIES = {
   attack: 'Solo Atacar, al primer enemigo en pie: el suelo de comparación.',
   random: 'Cualquier acción legal al azar.',
@@ -57,7 +59,13 @@ export interface Setup {
   fight: string;
   /** Fran's salon: the chaplains start dazzled, the nave's mirrors solved (`dazzle`). */
   dazzled?: boolean;
-  /** `gerard:papagato+aitor:matemagico`; `-` wears nothing, and `gerard:papagato` goes alone. */
+  /** The castle's pupils come as Encarnados (src/castle.ts `STRONG`): a room's, or the night's (`night-guard:<room>`). A fight named `<room>:encarnados` says the same. */
+  strong?: boolean;
+  /**
+   * `gerard:papagato+aitor:matemagico`; `-` wears nothing, and `gerard:papagato` goes alone. More
+   * ánimas after a `/` are the rest of what that one can switch to in the fight (their extras):
+   * `gerard:matemagico/papagato+aitor:tecnopata/dadaista`. With none, each has their own and the one worn.
+   */
   party: string;
   /** Each ánima's level (1 if missing). */
   levels?: Partial<Record<ClassId, number>>;
@@ -119,44 +127,95 @@ export const missionOf = (fight: string) => MISSION_IDS.find(id => (MISSIONS[id]
 export const BUILDS: Record<string, readonly string[]> = {
   nada: [],
   // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
-  mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:rayo-encogedor', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga'],
+  mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:rayo-encogedor', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
+    // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the passives, the second rungs, grade III and the definitivas.
+    'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez', 'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos',
+    'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1', 'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva'],
   // Everything into the elements: Atacar's three, then what lays and cashes them.
   elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
   // Skills and maná, no element.
   tronco: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:rayo-encogedor', 'matemagico:mana-1', 'tecnopata:control-remoto', 'papagato:mana-1'],
 };
-export interface StoryPoint { at: string; mission: MissionId; done: MissionId[]; ecos: number; build: string; setup: Pick<Setup, 'animas' | 'friends' | 'levels' | 'improved' | 'exact'> }
+/** The ánima each friend's mission leaves to wear (src/story.ts `unlocked`). */
+export const FRIEND_ANIMA: Record<AnimaId, ClassId> = { nuria: 'papagato', universidad: 'dadaista', marta: 'sincopante', emilie: 'freatica', luca: 'prismatico' };
+/**
+ * The castle after every mission, a stretch per boss (docs/castle.md): what the party meets on the way
+ * to Aurelià, to Dirección and to the Queen, with the growth each stage has opened (`CASTLE_UNLOCKS`:
+ * the level cap, grade III, the definitivas) and the lights of the bosses behind it (`CASTLE_LIGHTS`).
+ */
+/** The rooms of the first and second floors, each an Eco de luz the first time it is beaten (`ROOM_LIGHTS`): what a stage has behind it. The levels' ecos (`LIGHT_LEVELS`) are left out, to stay on the safe side. */
+const FLOOR_ROOMS = [4, 6] as const;
+export const CASTLE_STAGES = {
+  'castillo-1': { name: 'Castillo · primer curso', stage: 1, lights: 0, fights: ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1', 'aurelia'], teaching: ['alumnos-1a', 'alumnos-1b', 'alumnos-1c'] },
+  'castillo-2': { name: 'Castillo · segundo curso', stage: 2, lights: CASTLE_LIGHTS.aurelia.length + FLOOR_ROOMS[0], fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2', 'direccion'], teaching: [] },
+  'castillo-3': { name: 'Castillo · tercer curso', stage: 3, lights: CASTLE_LIGHTS.aurelia.length + CASTLE_LIGHTS.direccion.length + FLOOR_ROOMS[0] + FLOOR_ROOMS[1], fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3', 'reina-vuelta'], teaching: [] },
+} as const satisfies Record<string, { name: string; stage: GrowthStage; lights: number; fights: readonly string[]; teaching: readonly string[] }>;
+export type CastleStageId = keyof typeof CASTLE_STAGES;
+export const CASTLE_STAGE_IDS = Object.keys(CASTLE_STAGES) as CastleStageId[];
+export type StretchId = MissionId | CastleStageId;
+/** Every stretch of the story a fight can be met in: the missions, then the castle's three. */
+export const STRETCHES: Record<StretchId, { name: string; fights: readonly string[]; teaching: readonly string[] }> = { ...MISSIONS, ...CASTLE_STAGES };
+export const STRETCH_IDS = Object.keys(STRETCHES) as StretchId[];
+/** The stretch a fight belongs to, if any. */
+export const stretchOf = (fight: string) => STRETCH_IDS.find(id => STRETCHES[id].fights.includes(fight));
+/**
+ * The EXP a stretch leaves a shared ánima that fights all of it, for someone who goes for what is in the
+ * way and grinds nothing: what `just game-sim` measured for `pensando` («EXP por tramo», 2026-11-21).
+ * A story point's levels come from it and `LEVEL_XP`, so `--tune level.xp.2=900` moves them; measure
+ * again when a mission gains or loses fights.
+ */
+export const STRETCH_XP: Record<StretchId, number> = { nuria: 550, universidad: 325, marta: 269, emilie: 284, luca: 290, 'castillo-1': 528, 'castillo-2': 735, 'castillo-3': 1100 };
+export interface StoryPoint { at: string; mission: StretchId; done: StretchId[]; ecos: number; build: string; setup: Pick<Setup, 'animas' | 'friends' | 'levels' | 'improved' | 'exact'> }
 /**
  * The party as it stands when it reaches `mission`: `nuria` (the introduction: nothing behind it),
- * `marta:first` (only the introduction behind), `marta:last` (every other mission too) or the ones
- * done by name, `marta:universidad`. It has the friends' ánimas and the ecos of what is behind it,
- * spent as `build` says, and Papagato a level up for each mission done after the introduction.
+ * `marta:first` (only the introduction behind), `marta:last` (every other mission too), the ones
+ * done by name, `marta:universidad`, or a stretch of the castle, `castillo-2` (every mission behind,
+ * and the castle's bosses before it). It has the friends' ánimas and the ecos of what is behind it,
+ * spent as `build` says on what the castle's stage has opened, and each shared ánima at the level
+ * the EXP behind it gives (`STRETCH_XP`), under the stage's cap. `levels` puts them by hand instead.
  */
-export function storyPoint(at: string, build = 'mixto'): StoryPoint {
-  const [id, order = 'first'] = at.split(':'), mission = MISSIONS[id as MissionId];
-  if (!mission) throw new Error(`Unknown mission "${id}": use ${MISSION_IDS.join(', ')}.`);
+export function storyPoint(at: string, build = 'mixto', levels?: Partial<Record<ClassId, number>>): StoryPoint {
+  const [id, order = 'first'] = at.split(':');
+  if (!(id in STRETCHES)) throw new Error(`Unknown mission "${id}": use ${STRETCH_IDS.join(', ')}.`);
   if (!(build in BUILDS)) throw new Error(`Unknown build "${build}": use ${Object.keys(BUILDS).join(', ')}.`);
-  const open = MISSION_IDS.filter(other => !MISSIONS[other].intro && other !== id);
-  const named = order === 'first' ? [] : order === 'last' ? open : order.split('/') as MissionId[];
+  const castle = id in CASTLE_STAGES ? CASTLE_STAGES[id as CastleStageId] : undefined, mission = castle ? undefined : MISSIONS[id as MissionId];
+  const intro = MISSION_IDS.filter(other => MISSIONS[other].intro), open = MISSION_IDS.filter(other => !MISSIONS[other].intro && other !== id);
+  const named = castle || order === 'last' ? open : order === 'first' ? [] : order.split('/') as MissionId[];
   for (const other of named) if (!open.includes(other)) throw new Error(`"${other}" cannot be behind "${id}": use first, last or ${open.join('/')}.`);
-  const done = mission.intro ? [] : [...MISSION_IDS.filter(other => MISSIONS[other].intro), ...named];
-  const ecos = done.reduce((sum, other) => sum + MISSIONS[other].lights, 0), improved = withinEcos(BUILDS[build], ecos);
+  const missions: MissionId[] = mission?.intro ? [] : [...intro, ...named];
+  const done: StretchId[] = [...missions, ...castle ? CASTLE_STAGE_IDS.slice(0, CASTLE_STAGE_IDS.indexOf(id as CastleStageId)) : []];
+  const stage: GrowthStage = castle?.stage ?? 1, cap = levelCap(stage);
+  const ecos = missions.reduce((sum, other) => sum + MISSIONS[other].lights, 0) + (castle?.lights ?? 0), improved = withinEcos(BUILDS[build], ecos, stage);
+  // A shared ánima has fought everything since its friend's mission was won; Papagato comes out of the
+  // introduction at 2 at least (its tower asks for it), and into it at 2 as the route grinds it there.
+  const grown: Partial<Record<ClassId, number>> = {};
+  for (const anima of LEVELLED) {
+    const since = done.findIndex(other => other in MISSIONS && FRIEND_ANIMA[MISSIONS[other as MissionId].friend] === anima);
+    if (anima === 'papagato' && mission?.intro) grown[anima] = 2;
+    else if (since >= 0) grown[anima] = Math.max(anima === 'papagato' ? 2 : 1, levelForXp(done.slice(since).reduce((sum, other) => sum + STRETCH_XP[other], 0), cap));
+  }
   return {
-    at: mission.intro ? id : `${id}:${order}`, mission: id as MissionId, done, ecos, build,
+    at: mission?.intro || castle ? id : `${id}:${order}`, mission: id as StretchId, done, ecos, build,
     setup: {
-      animas: mission.intro ? MISSION_ANIMAS : ['matemagico', 'papagato', 'tecnopata'],
-      friends: done.map(other => MISSIONS[other].friend),
-      levels: { papagato: mission.intro ? 2 : Math.min(3, 2 + named.length) },
+      // Each one's own, and the ánima each mission behind it left to wear.
+      animas: mission?.intro ? MISSION_ANIMAS : [...new Set<ClassId>(['matemagico', 'papagato', 'tecnopata', ...missions.map(other => FRIEND_ANIMA[MISSIONS[other].friend])])],
+      friends: missions.map(other => MISSIONS[other].friend),
+      levels: { ...grown, ...levels },
       improved, exact: true,
     },
   };
 }
-/** Every fight of `points`' missions (or `fights`), as each point's party meets it, with each bot. */
-export function storyRows(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string; runs?: number; seed?: number; tuning?: Tuning } = {}) {
-  return points.flatMap(point => (options.fights?.filter(f => missionOf(f) === point.mission) ?? MISSIONS[point.mission].fights).flatMap(fight => policies.map(policy => ({
+export interface StoryJob { at: string; build: string; ecos: number; spent: number; setup: Setup }
+/** Every fight of `points`' stretches (or `fights`), as each point's party meets it, with each bot: what to play. */
+export function storyJobs(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string } = {}): StoryJob[] {
+  return points.flatMap(point => (options.fights?.filter(f => stretchOf(f) === point.mission) ?? STRETCHES[point.mission].fights).flatMap(fight => policies.map(policy => ({
     at: point.at, build: point.build, ecos: point.ecos, spent: costOf(point.setup.improved ?? []),
-    row: simulate({ fight, party: options.party ?? DUO, policy, ...point.setup }, options.runs ?? 200, options.seed ?? 35, options.tuning ?? {}),
+    setup: { fight, party: options.party ?? DUO, policy, ...point.setup },
   }))));
+}
+/** `storyJobs`, played here and now. */
+export function storyRows(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string; runs?: number; seed?: number; tuning?: Tuning } = {}) {
+  return storyJobs(points, policies, options).map(({ setup, ...job }) => ({ ...job, row: simulate(setup, options.runs ?? 200, options.seed ?? 35, options.tuning ?? {}) }));
 }
 export type Ban = SkillId | DualId | 'duals' | 'defend';
 /** A turn: `dual` is the active fighter and the next one together (both turns, both halves of maná). */
@@ -179,16 +238,27 @@ const BOOKS = {
   sobremesa: { boss: SOBREMESA },
   camping: { rules: CAMPING },
   marta: { rules: MARTA },
-  castle: { rules: CASTLE },
+  castle: { rules: CASTLE, strong: STRONG },
   night: { rules: NIGHT_PUPILS },
   modelo: { rules: MODELO },
   luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
   element: { rules: ELEMENT_RULES },
+  // The golpe crítico: how much harder it lands (`bonus`) and how much of each one's Crítico counts (`chance`: 0 turns chance crits off).
+  crit: { rules: CRIT_RULES },
   powder: { rules: POWDER_RULES },
   crecida: { rules: CRECIDA },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
+  // Progression (docs/fight-sim.md § Progression): what wearing an ánima adds, what each friend's ánima adds to
+  // everyone and how that grows, the EXP of each level (`level.xp.0` is level 2's) and of each foe, and the castle's caps.
+  class: CLASS_STATS,
+  anima: Object.fromEntries(Object.values(ANIMAS).map(anima => [anima.id, anima.bonus])),
+  growth: { rules: ANIMA_GROWTH },
+  level: { xp: LEVEL_XP },
+  xp: { foe: FOE_XP, rules: XP_RULES },
+  stage: CASTLE_UNLOCKS,
+  foes: { growth: FOE_GROWTH },
 } as unknown as Record<string, Record<string, Record<string, unknown>>>;
 /** Every number that can be tuned, as `book.id.field` and what it is now: what a balance report shows and `--tune` takes. */
 export function tunables(): Record<string, number> {
@@ -209,6 +279,23 @@ export function withTuning<T>(tuning: Tuning, work: () => T): T {
     return work();
   } finally { undo.reverse().forEach(put => put()); }
 }
+/**
+ * The numbers `work` read, as `book.id.field`: what a fight is made of, without anyone listing it
+ * (`just fight-sim levers`). Each number is watched while `work` runs and left as it was after.
+ */
+export function watchReads<T>(work: () => T): { result: T; read: Set<string> } {
+  const read = new Set<string>(), undo: (() => void)[] = [];
+  try {
+    for (const [book, entries] of Object.entries(BOOKS)) for (const [id, entry] of Object.entries(entries)) for (const [field, now] of Object.entries(entry)) {
+      if (typeof now !== 'number' || !Object.getOwnPropertyDescriptor(entry, field)?.configurable) continue;
+      let value = now;
+      const path = `${book}.${id}.${field}`;
+      Object.defineProperty(entry, field, { configurable: true, enumerable: true, get() { read.add(path); return value; }, set(next: number) { value = next; } });
+      undo.push(() => Object.defineProperty(entry, field, { configurable: true, enumerable: true, writable: true, value }));
+    }
+    return { result: work(), read };
+  } finally { undo.forEach(put => put()); }
+}
 /** A small seeded generator (mulberry32). */
 export function seeded(seed: number) {
   let a = seed >>> 0;
@@ -224,27 +311,34 @@ export function seeded(seed: number) {
 function partySlots(party: string, friends: AnimaId[] = []): PartySlot[] {
   const bonus = friends.length ? { bonus: animaBonus(friends) } : {};
   const slots = party.split('+').map(entry => {
-    const [id, anima] = entry.split(':'), member = MEMBERS[id];
+    const [id, worn] = entry.split(':'), member = MEMBERS[id], [anima, ...extras] = (worn ?? '').split('/');
     if (!member) throw new Error(`Unknown party member "${id}": use ${Object.keys(MEMBERS).join(', ')}.`);
-    if (anima && anima !== '-' && !(anima in ANIMA_NAMES)) throw new Error(`Unknown ánima "${anima}": use ${Object.keys(ANIMA_NAMES).join(', ')} or -.`);
-    return { id, name: member.name, profile: member.profile, classId: !anima || anima === '-' ? undefined : anima as ClassId, ...bonus };
+    for (const name of [anima, ...extras]) if (name && name !== '-' && !(name in ANIMA_NAMES)) throw new Error(`Unknown ánima "${name}": use ${Object.keys(ANIMA_NAMES).join(', ')} or -.`);
+    const classId = !anima || anima === '-' ? undefined : anima as ClassId;
+    return { id, name: member.name, profile: member.profile, classId, ...extras.length ? { kit: [...classId ? [classId] : [], ...extras as ClassId[]] } : {}, ...bonus };
   });
   if (new Set(slots.map(s => s.id)).size !== slots.length) throw new Error(`Someone is twice in "${party}".`);
   return slots;
 }
 /** The fight as the game starts it. */
 export function createFight(setup: Setup, random: () => number = Math.random): BattleState {
-  const party = partySlots(setup.party, setup.friends), animas = setup.animas ?? MISSION_ANIMAS;
+  const party = partySlots(setup.party, setup.friends);
+  // Extras named in the party are unlocked with it; otherwise the mission's two, as the fights were tuned.
+  const animas = setup.animas ?? [...new Set([...MISSION_ANIMAS, ...party.flatMap(slot => slot.kit ?? [])])];
   const [kind, count] = setup.fight.split(':');
   const state = kind === 'dogs' || kind === 'possessed' ? createBattle(party, Number(count ?? 1), kind === 'possessed', undefined, animas)
     : kind === 'palace-guards' ? createGuardBattle(party, palaceGuards(animas.length), animas)
     // At night on the Meridiana: a group of the castle's pupils (`night-guard:<room>`, the first floor's first by default), as strong as friends and levels leave it.
-    : kind === 'night-guard' ? createEncounter(party, 'night-guard', { animas, night: { room: (count ?? 'alumnos-1a') as RoomEncounter, might: nightMight(setup.friends?.length ?? 0, setup.levels) }, random })
+    : kind === 'night-guard' ? createEncounter(party, 'night-guard', { animas, night: { room: (count && count !== 'encarnados' ? count : 'alumnos-1a') as RoomEncounter, might: nightMight(setup.friends?.length ?? 0, setup.levels) }, random })
     : (BROOD_ENCOUNTERS as readonly string[]).includes(kind) ? createBroodBattle(party, kind as BroodEncounter, animas, random)
     : (FEAR_ENCOUNTERS as readonly string[]).includes(kind) ? createFearBattle(party, kind as (typeof FEAR_ENCOUNTERS)[number], animas, random)
     : undefined;
   if (!state) throw new Error(`Unknown fight "${setup.fight}": use ${FIGHTS.join(', ')}.`);
   if (setup.dazzled) dazzle(state);
+  // Encarnados: a room's pupils (`alumnos-1a:encarnados`) or the night's, by the fight's name or the setup's `strong`.
+  if (setup.strong || setup.fight.endsWith(':encarnados')) castleStrong(state);
+  // An open mission's foes keep up with the other missions' ánimas behind it, as in the game (`FOE_GROWTH`).
+  growFoes(state, gatheredFor(kind, setup.friends));
   state.levels = { ...setup.levels };
   improve(state, improvedBy(setup.exact ? setup.improved ?? [] : nodesFor(setup.levels, setup.improved)));
   // The fight's own dice (Zarpazos de fuego's coins) come from the same seed.
@@ -761,6 +855,8 @@ export interface Row {
   peeledBy: number | null; peeledRate: number | null;
   /** Mean uses of each action per fight, most used first, and the share of the damage each one did. */
   used: Record<string, number>; damageShare: Record<string, number>;
+  /** Mean PV per fight each action took off the foes: with `used`, what one use is worth. */
+  dealt: Record<string, number>;
   /** Mean times per fight each thing in `Run.events` happened (foe abilities, the hand broken or reaching Nil, the fire put out, a Punto débil spent). */
   events: Record<string, number>;
   /** The biggest single action of the party: its mean over fights, and the most in any. */
@@ -768,10 +864,18 @@ export interface Row {
 }
 /** `runs` fights of a setup; a same seed gives every setup the same luck to compare fairly. */
 export function simulate(setup: Setup, runs = 200, seed = 35, tuning: Tuning = {}): Row {
-  return withTuning(tuning, () => tally(setup, runs, seed, tuning));
+  return tallyRuns(setup, playRuns(setup, seed, 0, runs, tuning), seed, tuning);
 }
-function tally(setup: Setup, runs: number, seed: number, tuning: Tuning): Row {
-  const list = Array.from({ length: runs }, (_, i) => playFight(setup, (seed + i * 7919) >>> 0));
+/** Fights `from` to `to` of a row's `runs`, each with its own seed: a row can be played in pieces, by whoever is free (scripts/fight-sim-pool.mjs). */
+export function playRuns(setup: Setup, seed: number, from: number, to: number, tuning: Tuning = {}): Run[] {
+  return withTuning(tuning, () => Array.from({ length: to - from }, (_, i) => playFight(setup, (seed + (from + i) * 7919) >>> 0)));
+}
+/** A row from its fights, in order (`playRuns` from 0 to how many it has). */
+export function tallyRuns(setup: Setup, list: Run[], seed: number, tuning: Tuning = {}): Row {
+  return withTuning(tuning, () => tally(setup, list, seed, tuning));
+}
+function tally(setup: Setup, list: Run[], seed: number, tuning: Tuning): Row {
+  const runs = list.length;
   const won = list.filter(r => r.outcome === 'won'), lost = list.filter(r => r.outcome === 'lost');
   const used: Record<string, number> = {}, damage: Record<string, number> = {}, events: Record<string, number> = {};
   for (const run of list) {
@@ -793,18 +897,35 @@ function tally(setup: Setup, runs: number, seed: number, tuning: Tuning): Row {
     peeledBy: hasOnions ? round(mean(peeled)) : null, peeledRate: hasOnions ? round(peeled.length / runs, 3) : null,
     used: Object.fromEntries(Object.entries(used).sort((a, b) => b[1] - a[1]).map(([key, n]) => [key, round(n / runs)!])),
     damageShare: Object.fromEntries(Object.entries(damage).sort((a, b) => b[1] - a[1]).map(([key, n]) => [key, round(n / total, 3)!])),
+    dealt: Object.fromEntries(Object.entries(damage).sort((a, b) => b[1] - a[1]).map(([key, n]) => [key, round(n / runs, 1)!])),
     events: Object.fromEntries(Object.entries(events).sort((a, b) => b[1] - a[1]).map(([key, n]) => [key, round(n / runs)!])),
     biggest: round(mean(list.map(r => r.biggest)))!, biggestMax: Math.max(0, ...list.map(r => r.biggest)),
   };
 }
 /** Every combination of the lists given. */
 export function sweep(grid: { fights: string[]; parties: string[]; levels: Partial<Record<ClassId, number>>[]; policies: Policy[]; bans?: Ban[][]; friends?: AnimaId[][]; improved?: string[][]; tunings?: Tuning[] }, options: Pick<Setup, 'error' | 'think' | 'maxRounds' | 'animas'> & { runs?: number; seed?: number } = {}): Row[] {
-  const { runs, seed, ...rest } = options, rows: Row[] = [];
-  for (const fight of grid.fights) for (const party of grid.parties) for (const levels of grid.levels) for (const policy of grid.policies) for (const ban of grid.bans ?? [[]]) for (const friends of grid.friends ?? [[]]) for (const improved of grid.improved ?? [[]]) for (const tuning of grid.tunings ?? [{}]) {
-    rows.push(simulate({ fight, party, levels, policy, ban, friends, improved, ...rest }, runs, seed, tuning));
-  }
-  return rows;
+  const { runs, seed, ...rest } = options;
+  return sweepSetups(grid, rest).map(({ setup, tuning }) => simulate(setup, runs, seed, tuning));
 }
+export type Grid = Parameters<typeof sweep>[0];
+/** Every combination of the lists given, as what to play: `sweep` plays them here; the command line shares them among threads. */
+export function sweepSetups(grid: Grid, rest: Partial<Setup> = {}): { setup: Setup; tuning: Tuning }[] {
+  const out: { setup: Setup; tuning: Tuning }[] = [];
+  for (const fight of grid.fights) for (const party of grid.parties) for (const levels of grid.levels) for (const policy of grid.policies) for (const ban of grid.bans ?? [[]]) for (const friends of grid.friends ?? [[]]) for (const improved of grid.improved ?? [[]]) for (const tuning of grid.tunings ?? [{}]) {
+    out.push({ setup: { fight, party, levels, policy, ban, friends, improved, ...rest }, tuning });
+  }
+  return out;
+}
+/**
+ * Everything open: every shared ánima at its top level, the whole jar bought (grade III, the dúos
+ * mayores and the definitivas that are built) and every friend's ánima gathered. No story point has
+ * all of it at once; it is where every skill is on the table together, to weigh them against each
+ * other (`just fight-sim skills`) and to try the last bosses with every mechanic.
+ */
+export const fullKit = (): Required<Pick<Setup, 'levels' | 'improved' | 'exact' | 'friends' | 'animas'>> => ({
+  levels: Object.fromEntries(LEVELLED.map(id => [id, topOf(id)])), improved: IMPROVEMENTS.filter(item => !item.veiled).map(item => item.id), exact: true,
+  friends: ANIMA_IDS, animas: Object.keys(ANIMA_NAMES) as ClassId[],
+});
 
 const percent = (share: number) => `${Math.round(share * 100)} %`;
 const levelText = (levels: Row['levels']) => Object.entries(levels).map(([id, n]) => `${id} ${n}`).join(', ') || 'nivel 1';
@@ -876,6 +997,9 @@ const L1 = { papagato: 1 }, L2 = { papagato: 2 }, L3 = { papagato: 3 };
 const ELEMENTAL = ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga'];
 /** Uri's tower with both ánimas grown: Papagato at 2 (ring 1 needs it), Matemágico at 1 or 2 (2 if Gerard wears it up the tower), 3 for whoever grinds. */
 const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 }, P3M3 = { papagato: 3, matemagico: 3 };
+/** The party on reaching the castle with Nuria's ánima and one side mission's, with two and with three; and with them all at each of its three stages. */
+const ONE = storyPoint('marta:universidad').setup, TWO = storyPoint('emilie:universidad/marta').setup, THREE = storyPoint('luca:universidad/marta/emilie').setup;
+const FLOOR_1 = storyPoint('castillo-1').setup, FLOOR_2 = storyPoint('castillo-2').setup, FLOOR_3 = storyPoint('castillo-3').setup;
 export const TARGETS: readonly Target[] = [
   { id: 'cebollitas-faciles', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'casual', win: [.98, 1], hpLeftWon: [.5, 1], why: 'Las cebollas pequeñas son fáciles: con ellas sube de nivel Papagato, sin darle vueltas.' },
   { id: 'cebollitas-a-puñetazos', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'attack', win: [.95, 1], why: 'Incluso solo Atacar basta contra las pequeñas.' },
@@ -969,22 +1093,30 @@ export const TARGETS: readonly Target[] = [
   { id: 'voz-sin-pensar', fight: 'voz', party: DUO, levels: P3M3, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, levels: P3M3, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, levels: P3M3, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
-  // The castle (docs/castle.md, docs/castle-bosses.md), preliminary: measured 2026-11-19 with the dual party at Papagato 3 and Atacar's three elements bought.
-  { id: 'alumnos-primero', fight: 'alumnos-1a', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [.9, 1], why: 'Primer curso: chicle fresco, la primera lección del juego. Se gana sin pensar mucho.' },
-  { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.8, 1], why: 'Tercer curso: el Empollón se aprende el golpe y el Repetidor lleva costra; alternar físico y mágico, y tumbar a la Chivata antes.' },
-  { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
-  { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado.' },
-  { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .2], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
-  { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
-  { id: 'castigado-sin-pensar', fight: 'alumnos-2e', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .2], why: 'Pegándole por el camino se le llena la Rabia y revienta sobre todos mientras el Empollón sigue: se pierde.' },
-  { id: 'monton-bien', fight: 'alumnos-3d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'El Montón copia el primer golpe que recibe: abrir con uno flojo y sin nada (ni fuego, ni agua, ni corriente, ni sangrado, ni a todos), y la Chivata antes.' },
-  { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .35], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
-  { id: 'delegada-bien', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.7, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par.' },
-  { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
-  { id: 'aurelia-bien', fight: 'aurelia', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.6, 1], why: 'Aurelià: romper el atril, defender la Pregunta, cambiar de estado de reloj en la carrera y gastar lo guardado antes del Récord.' },
-  { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Pegándole tras el atril, a mitad de daño, y sin tropiezos: las vueltas se acumulan.' },
-  { id: 'direccion-bien', fight: 'direccion', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.7, 1], why: 'Dirección: primero la del agua, a cada una su debilidad, y Defender cuando el acta está cerrada.' },
-  { id: 'direccion-sin-pensar', fight: 'direccion', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .05], why: 'Mojados y sin orden, la Circular y la Resolución acaban con el grupo.' },
+  // The castle (docs/castle.md, docs/castle-bosses.md), measured 2026-11-21 with the party as the story leaves it
+  // (`storyPoint`): on arriving with Nuria's ánima and one side mission's (ONE), with two (TWO), and with them all
+  // at each of the castle's stages. Its bosses ask for ánimas (docs/fight-sim.md § Power and the castle).
+  { id: 'alumnos-primero', fight: 'alumnos-1a', party: DUO, ...TWO, policy: 'casual', win: [.9, 1], why: 'Primer curso: chicle fresco, la primera lección del juego. Se gana sin pensar mucho.' },
+  { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, ...FLOOR_3, policy: 'smart', win: [.8, 1], why: 'Tercer curso: el Empollón se aprende el golpe y el Repetidor lleva costra; alternar físico y mágico, y tumbar a la Chivata antes.' },
+  { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
+  { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado.' },
+  { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .2], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
+  { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
+  { id: 'castigado-sin-pensar', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .2], why: 'Pegándole por el camino se le llena la Rabia y revienta sobre todos mientras el Empollón sigue: se pierde.' },
+  { id: 'monton-bien', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'smart', win: [.9, 1], why: 'El Montón copia el primer golpe que recibe: abrir con uno flojo y sin nada (ni fuego, ni agua, ni corriente, ni sangrado, ni a todos), y la Chivata antes.' },
+  { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .35], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
+  { id: 'delegada-bien', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'smart', win: [.7, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par.' },
+  { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
+  { id: 'aurelia-bien', fight: 'aurelia', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [7, 13], why: 'Aurelià con las ánimas de todos: romper el atril, defender la Pregunta, cambiar de estado de reloj en la carrera y gastar lo guardado antes del Récord.' },
+  { id: 'aurelia-con-dos', fight: 'aurelia', party: DUO, ...TWO, policy: 'smart', win: [.75, 1], why: 'Con Nuria y dos misiones hechas ya se le puede: más justo y más largo, pero se gana.' },
+  { id: 'aurelia-con-una', fight: 'aurelia', party: TECH, ...ONE, policy: 'smart', win: [0, .35], why: 'Con Nuria y una sola misión detrás falta fondo: el Dictado y la Pregunta se llevan al equipo antes de que caiga.' },
+  { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, ...TWO, policy: 'casual', win: [0, .3], why: 'Con lo justo para entrar (Nuria y dos misiones), sin defender la Pregunta, pegándole tras el atril, a mitad de daño, y sin tropiezos: las vueltas se acumulan y se pierde.' },
+  { id: 'direccion-bien', fight: 'direccion', party: DUO, ...FLOOR_2, policy: 'smart', win: [.75, 1], roundsWon: [5, 9], why: 'Dirección con las ánimas de todos: primero la del agua, a cada una su debilidad, y Defender cuando el acta está cerrada.' },
+  { id: 'direccion-con-dos', fight: 'direccion', party: TECH, ...TWO, policy: 'smart', win: [0, .35], why: 'Con solo dos misiones detrás las tres juntas son demasiado: la Circular y la Resolución acaban con el grupo antes.' },
+  { id: 'direccion-sin-pensar', fight: 'direccion', party: DUO, ...THREE, policy: 'casual', win: [0, .15], why: 'Con tres de las cuatro misiones detrás, mojados y sin orden, la Circular y la Resolución acaban con el grupo.' },
+  // Encarnados (docs/castle.md § Encarnados): the room's own question, with less room for mistakes.
+  { id: 'encarnados-bien', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'smart', win: [.85, 1], roundsWon: [4, 8], why: 'Encarnados: la misma sala y la misma respuesta, con más PV y golpes más duros. Jugando lo que la sala pide se les gana, y sueltan un Eco de luz.' },
+  { id: 'encarnados-sin-pensar', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .25], why: 'Sin leer la sala, lo que antes se aguantaba ya no: se pierde.' },
   { id: 'reina-toma-a-aitor', fight: 'reina', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [0, 0], why: 'La primera vez no se gana: al décimo de sus PV toma a Aitor, y sin el artilugio Gerard cae.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'smart', win: [.9, 1], why: 'Con el artilugio: romper la pompa o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, levels: L3, improved: ELEMENTAL, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
@@ -1021,8 +1153,14 @@ export const TARGETS: readonly Target[] = [
 export interface TargetResult { id: string; why: string; pass: boolean; failures: string[]; row: Row; wanted: Pick<Target, 'win' | 'roundsLost' | 'hpLeftWon' | 'roundsWon' | 'duals'> }
 /** Plays every target and says which hold. */
 export function checkTargets(targets: readonly Target[] = TARGETS, runs = 200, seed = 35, tuning: Tuning = {}): TargetResult[] {
-  return targets.map(({ id, why, win, roundsLost, hpLeftWon, roundsWon, duals, ...setup }) => {
-    const row = simulate(setup, runs, seed, tuning), failures: string[] = [];
+  return targets.map(target => judge(target, simulate(targetSetup(target), runs, seed, tuning)));
+}
+/** What a target plays, without what it asks of it. */
+export function targetSetup({ id: _id, why: _why, win: _win, roundsLost: _lost, hpLeftWon: _hp, roundsWon: _won, duals: _duals, ...setup }: Target): Setup { return setup; }
+/** Whether `row` (the target's setup, played) is what the target asks. */
+export function judge({ id, why, win, roundsLost, hpLeftWon, roundsWon, duals }: Target, row: Row): TargetResult {
+  {
+    const failures: string[] = [];
     const within = (name: string, value: number | null, range?: readonly [number, number]) => {
       if (range && value !== null && (value < range[0] || value > range[1])) failures.push(`${name} ${value} fuera de ${range[0]}–${range[1]}`);
     };
@@ -1031,7 +1169,7 @@ export function checkTargets(targets: readonly Target[] = TARGETS, runs = 200, s
     // A fight that does not end is never what it is meant to be.
     if (row.draws) failures.push(`${row.draws} combates sin acabar`);
     return { id, why, pass: !failures.length, failures, row, wanted: { win, roundsLost, hpLeftWon, roundsWon, duals } };
-  });
+  }
 }
 /** What the tool can do, for whoever (or whatever) picks it up. */
 export function catalogue() {

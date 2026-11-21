@@ -76,6 +76,11 @@ export function foesOfTheGame(seeds = 6): FoeKindSeen[] {
         const name = plainName(foe);
         if (name !== seen.name && !seen.aka.includes(name)) seen.aka.push(name);
         if (!seen.meetings.some(m => m.fight === fight)) seen.meetings.push({ fight, foe: structuredClone(foe) });
+        // A pupil of the castle can come as an Encarnado (src/castle.ts `STRONG`): how it comes out then, once, in the first room it is met in.
+        if (/^alumnos-/.test(fight) && foe.castle && !foe.part && !seen.meetings.some(m => m.foe.castle?.strong)) {
+          const strong = createFight({ ...setupFor(fight), strong: true }, seeded(seed)).foes.find(f => f.kind === foe.kind);
+          if (strong) seen.meetings.push({ fight: `${fight}:encarnados`, foe: structuredClone(strong) });
+        }
       }
       // A fight whose foes never change needs no second look.
       if (fight !== 'palace-minion' && seed === 1 && !/^(crias|alumnos|delegada|camping-tienda)/.test(fight)) break;
@@ -97,6 +102,7 @@ export function traitsOf(foe: Combatant) {
   if (foe.castle?.year) flags.push(`Curso ${foe.castle.year}.º`);
   if (foe.castle?.filling) flags.push(`Relleno: ${ELEMENTS[foe.castle.filling].name}`);
   if (foe.castle?.gum) flags.push(`Chicle: ${foe.castle.gum}`);
+  if (foe.castle?.strong) flags.push('Encarnado: rojo por dentro, más PV y pega más; vencido, un Eco de luz (uno al día)');
   const stats = (Object.keys(STAT_LABELS) as (keyof Stats)[]).filter(key => key !== 'pv').map(key => ({ label: STAT_LABELS[key], value: foe.stats[key] }));
   return { pv: foe.maxHp, stats, affinities, flags };
 }

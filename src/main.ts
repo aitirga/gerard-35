@@ -818,7 +818,7 @@ try {
       game.possess(possessed);
       // The maze's patrols shout their word as they fall here too (the first group of each kind's).
       const lastWord = CAMP_HUNTERS.find(h => h.encounter === setup.encounter)?.word;
-      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: setup.trial === 'relevo-de-sangre' ? { ...story.levels, papagato: 3, dadaista: 3 } : setup.trial && !OLD_TRIALS.includes(setup.trial) ? { ...story.levels, ...TRIAL_LEVELS } : story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0),
+      battleUI.open(party, setup.foes, { possessed, encounter: possessed ? 'dogs' : setup.encounter as Exclude<FightSetup['encounter'], 'possessed'>, lastWord, animas: setup.animas, levels: setup.trial === 'relevo-de-sangre' ? { ...story.levels, papagato: 3, dadaista: 3 } : setup.trial && !OLD_TRIALS.includes(setup.trial) ? { ...story.levels, ...TRIAL_LEVELS } : story.levels, xp: story.xp, improved: improvedBy(setup.improved), guards: palaceGuards(setup.adult ? setup.friends.length : 0), friends: setup.adult ? setup.friends : [], strong: setup.strong,
         // At night on the Meridiana: the first of the night's groups of the castle's floor the save is on, as strong as the friends chosen and the levels leave it.
         ...setup.encounter === 'night-guard' ? { night: { room: nightGroup(1, castlePhaseAt(story)), might: nightMight(setup.adult ? setup.friends.length : 0, story.levels) } } : {} });
       if (setup.trial) battleUI.tweak(s => {
@@ -877,7 +877,7 @@ try {
       exploration.close(); dialogue.close();
       // A patrol of the campsite's maze: its foes shout their word as they fall (docs/quests/universidad.md § Las palabras).
       const patrol = currentLocation === 'camping' ? CAMP_HUNTERS.find(h => h.id === story.uni.fighting && h.encounter === options.encounter) : undefined;
-      battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, cap: story.levelCap, improved: story.improved, guards: palaceGuards(story.animas.length) });
+      battleUI.open(story.battleParty(withPartner), foes, { ...options, lastWord: patrol?.word, animas: story.classes, levels: story.levels, xp: story.xp, cap: story.levelCap, improved: story.improved, guards: palaceGuards(story.animas.length), friends: story.animas, strong: story.strongFight });
       // Fran's salon: the light the nave's mirrors brought to the chaplains' chairs (docs/quests/luca.md).
       if (story.dazzled(options.encounter)) battleUI.tweak(dazzle);
       if (import.meta.env.DEV && help.unbound) { unboundAnimas(); battleUI.tweak(applyHelp); }

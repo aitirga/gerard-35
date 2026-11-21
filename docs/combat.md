@@ -796,6 +796,36 @@ Un procedimiento útil para un encuentro nuevo:
 5. Probar con personas en el juego. Las políticas automáticas son heurísticas; sus resultados
    no son una medición directa de la dificultad humana.
 
+### El equipo crece con cada ánima, y los enemigos de las misiones con él (reglas, 2026-11-21)
+
+**Cada amigo liberado sube al equipo entero.** Además de lo suyo (`ANIMAS`: +1 a dos atributos y
++10 PV), cada ánima conseguida da **un punto de Fuerza, Magia, Defensa y Espíritu** a los dos
+(`ANIMA_GROWTH` en `src/animas.ts`). Los golpes suman y restan atributos, así que con los cinco
+amigos cada golpe del equipo hace cinco puntos más y cada golpe recibido cinco menos: es lo que hace
+que al final los enemigos del principio caigan en una ronda o dos (los perros de 3 rondas a 1, El
+Cebollón de 3 a 2, El Campeón de 7 a 4), y lo que el castillo pide para entrar.
+
+Después de la misión de Nuria y Uri la ciudad está abierta: Los amigos de la uni, Marta, Emilie y
+Luca se hacen en el orden que se quiera. Para que la misma misión no sea un paseo hecha la última y
+un muro hecha la primera, **sus enemigos crecen con las ánimas de las otras tres**: por cada una que
+el equipo ya tiene, todos los enemigos del combate llevan un punto y cuarto más de Fuerza, Magia,
+Defensa y Espíritu, redondeado sobre la suma (`FOE_GROWTH` en `src/battle.ts`, `gatheredFor`, `growFoes`).
+
+- La primera misión abierta es el combate tal como está afinado; la segunda, +1 a los cuatro
+  atributos; la tercera, +3; la cuarta, +4.
+- No cuentan el ánima de Nuria (está antes de todas) ni la de la propia misión. Los combates de
+  Nuria y los del castillo no crecen: sus números son los suyos, y los del castillo son los que piden
+  ánimas (Aurelià, las de Nuria y dos misiones; Dirección, las de casi todas: [fight-sim.md](fight-sim.md) § Power and the castle).
+- Crece todo lo que hay en el combate, también lo que entra más tarde (la Segunda voz, las polillas).
+- No suben los PV: más PV solo alargaba los combates.
+- Nadie lo anuncia ni hay panel: se nota en los golpes.
+
+**Encarnados**: un grupo de alumnos al día, en una sala del castillo o de noche en la Meridiana,
+viene rojo por dentro, con más PV y golpes más duros; vencido suelta un Eco de luz
+([castle.md](castle.md) § Encarnados).
+
+Cómo se midió y con qué otras fuerzas se comparó: [fight-sim.md](fight-sim.md) § Progression.
+
 ### La respuesta de cada combate (regla, 2026-11-15)
 
 Cada combate hace **una pregunta** y tiene **una respuesta** con nombre. Vale para todos los que
