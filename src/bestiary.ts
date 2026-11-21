@@ -419,7 +419,7 @@ async function start() {
     entries.push({
       key: `enemigo:${seen.kind}`, filter: 'enemigos', name: seen.name, sub: seen.aka.length ? `También: ${seen.aka.join(', ')}` : '', group: seen.place.name,
       status: monster && !fightsWithIt && !dressed ? { tone: 'placeholder', label: 'Modelo nuevo hecho, el combate aún usa el provisional' } : status,
-      portrait: speaker?.portrait, art: [...portraitArt(speaker), ...designs.flatMap(f => figureArt(f).map(a => ({ ...a, label: `${f.id} · ${a.label}` })))],
+      portrait: speaker?.portrait, art: [...(seen.kind === 'directiva' ? DIRECTIVAS.flatMap(d => portraitArt(speakers[d.id]).map(a => ({ ...a, label: `${d.name} · ${a.label}` }))) : portraitArt(speaker)), ...designs.flatMap(f => figureArt(f).map(a => ({ ...a, label: `${f.id} · ${a.label}` })))],
       views,
       search: `${seen.name} ${seen.aka.join(' ')} ${seen.kind} ${seen.place.name} ${fights.join(' ')} enemigo`,
       detail: () => {

@@ -241,7 +241,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
             <footer><button class="command-back" type="button">Volver <span data-glyph="cancel"></span></button><p class="flyout-hint"><kbd data-glyph="details"></kbd> Detalles</p></footer>
           </div></section>
         </div>
-        <div class="target-picker" hidden><span class="battle-kicker">ELIGE UN OBJETIVO</span><h2></h2><p></p><button class="target-back" type="button">Volver <span data-glyph="cancel"></span></button></div>
+        <div class="target-picker" hidden><span class="battle-kicker">ELIGE UN OBJETIVO</span><h2></h2><p></p><strong class="target-name" aria-live="polite" hidden></strong><button class="target-back" type="button">Volver <span data-glyph="cancel"></span></button></div>
         <p class="command-help"></p>
       </section>`;
   const root = document.createElement('section');
@@ -997,6 +997,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     cursors[p]?.classList.remove(`is-cursor-${p}`);
     cursors[p] = button; button.classList.add(`is-cursor-${p}`);
     if (p === 1) button.focus({ preventScroll: true });
+    if (targeting && button.dataset.target) aimName(button.dataset.target);
     if (button.parentElement?.classList.contains('skill-list')) keepInView(button);
   }
   function cursor(): HTMLButtonElement | undefined {
@@ -1337,8 +1338,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     showDetails(false);
     if (restoreFocus && old) focusOn(get<HTMLButtonElement>(`[data-command="${old}"] .command-trigger`));
   }
+  /** Who the target picker is on, by name under its line: three of a kind stand close (Dirección), and a plate alone does not say who is who. */
+  function aimName(id?: string) {
+    const box = get<HTMLElement>('.target-picker .target-name'), who = id && state && [...state.foes, ...state.allies].find(c => c.id === id);
+    box.hidden = !who; box.textContent = who ? `→ ${who.name}` : '';
+  }
   function highlight(id?: string) {
-    callbacks.target(id);
+    callbacks.target(id); aimName(id);
     root.querySelectorAll<HTMLElement>('[data-unit], [data-target]').forEach(el => {
       el.classList.toggle('is-targeted', !!id && (el.dataset.unit === id || el.dataset.target === id));
     });

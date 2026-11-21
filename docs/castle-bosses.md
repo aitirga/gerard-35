@@ -52,22 +52,27 @@ of the Queen's own figure: an adult, held by her, never a joke.
 | --- | --- | --- | --- |
 | **Aurelià** (2.05 m) | `aurelia` | The real man: tall and lean like a runner, his dark curls, the full short beard, a silver hoop, his own shirt with a bold brown and black geometric print on sand, navy running shorts, trainers | A general's mantle of her wrapper paper (pink and black stripes) held by two black gum balls, a laurel of pink gum, her gum bound round his wrists like a gymnast's tape and criss-cross round his shins, violet eyes |
 | **El Atril** (1.45 m) | `atril`, a creature in one piece | A lectern of dark oak with brass corners, his laurel on its front, the book open on top | Her gum pulled taut over it in strands, the first black blisters |
-| **Mar** (2.0 m) | `mar` | The head: tall, a high dark bun, a long steel-grey coat buttoned to the neck | A pink gum bubble over the whole face, with a face pressed into it from inside and none of its own; pink gum gloves; a collar of her striped paper; black blisters on the skirt |
-| **Montse** (1.75 m) | `montse` | A grey bob, a manila cardigan over a dark dress, flat shoes | The same bubble and gloves; her striped paper as a scarf |
-| **Pilar** (1.88 m) | `pilar` | Long pale hair, a steel-blue dress | The same bubble and gloves; her striped paper as a short cape |
+| **Mar** (2.0 m) | `mar` | The head of the school, the directora: the tallest, her own round face, straight auburn hair past the shoulders, her mustard yellow scarf over a long steel-grey coat | Violet eyes; pink gum gloves; a collar of her striped paper; black blisters on the hem |
+| **Montse** (1.75 m) | `montse` | Her own long face and high cheekbones, an ash-blonde bob to the jaw, a manila cardigan over a black T-shirt, black trousers | The same eyes and gloves; her striped paper as a scarf |
+| **Pilar** (1.88 m) | `pilar` | Her own long narrow face, long straight dark brown hair, long silver drop earrings, a steel-blue dress | The same eyes and gloves; her striped paper as a short cape |
 
 - **Aurelià is drawn from his own face** (redone 2026-11-21): Aitor's photos are all group shots,
   so only crops of him alone went to the image model (`assets/references/characters/aurelia/`, the
   originals in `raw/`). The first figure, from words alone, came out a generic comic-book strongman;
   what makes him himself is his head and his patterned shirt, and the Queen's marks sit on top.
-- **The three have no face on purpose.** There is no photo of them, and Aitor asked for "a face as
-  if it were Bubbaloo's": the Queen has put her own over theirs. It is also what tells the player
-  they are held, where Aurelià has his violet eyes. Montse and Pilar were drawn from Mar's image so
-  the three read as one team.
+- **The three are drawn from their own faces** (redone 2026-11-21, Aitor: «que las caras ahora se
+  reconozcan»). The first figures had no face on purpose, the Queen's gum bubble over it; now, like
+  Aurelià, each is the real woman with the Queen's marks on top, and her violet eyes tell the player
+  she is held. Aitor's photos are group shots, so only crops of each woman alone went to the image
+  model (`assets/references/characters/<id>/`, the originals in `raw/`, the people behind painted
+  out). Montse and Pilar were drawn beside Mar's image so the three read as one team; the faceless
+  figures are kept in `output/characters/3d/<id>/v1`.
+- **Choosing whom to hit**, the one under the cursor shows her name over her head and in the target
+  picker («→ Mar»): three of a kind stand close, and the element chip alone did not say who is who.
 - In *Direcció* each stands with her own figure (`castleFigure` in `src/castle-models.ts` picks it
   by the fighter's id); the bestiary lists the team once, with a view for each.
-- Their drawn faces in dialogue take the figures' colours (`SPEAKERS` in `src/dialogue.ts`). None
-  has a portrait yet.
+- Each has her low-poly portrait (`public/portraits/<id>.png`, `just character <id> --only portrait`
+  from the same crops and her figure's image), with her violet eyes, in `SPEAKERS` (`src/dialogue.ts`).
 
 ## Mar, Montse and Pilar
 

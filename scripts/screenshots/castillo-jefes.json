@@ -49,7 +49,38 @@
     {
       "shot": "direccion",
       "delay": 1500,
-      "caption": "Mar, Montse and Pilar, each her own figure: no face of their own, the Queen's gum grown over it"
+      "caption": "Mar, Montse and Pilar, each her own figure, drawn from her own face: the Queen's marks (violet eyes, pink gum gloves, her striped paper) on top"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "direccion-objetivo-mar",
+      "delay": 800,
+      "caption": "Choosing whom to hit: her name over her head and in the picker («→ Mar»)"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "direccion-objetivo-montse",
+      "delay": 800,
+      "caption": "The cursor on Montse: her name follows it"
+    },
+    {
+      "press": "ArrowDown"
+    },
+    {
+      "shot": "direccion-objetivo-pilar",
+      "delay": 800,
+      "caption": "And on Pilar"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
     },
     {
       "eval": "closeUp('mar', 2.5)"
@@ -57,7 +88,7 @@
     {
       "shot": "mar-cerca",
       "delay": 1200,
-      "caption": "Mar, the head: the tallest, the high bun, the wrapper-paper collar"
+      "caption": "Mar, the head: the tallest, her round face and auburn hair, her mustard scarf, the wrapper-paper collar"
     },
     {
       "eval": "closeUp('montse', 2.3)"
@@ -65,7 +96,7 @@
     {
       "shot": "montse-cerca",
       "delay": 1200,
-      "caption": "Montse: short and broad, the grey bob, the manila cardigan"
+      "caption": "Montse: the shortest, her ash-blonde bob, the manila cardigan over a black T-shirt, the striped paper scarf"
     },
     {
       "eval": "closeUp('pilar', 2.4)"
@@ -73,7 +104,7 @@
     {
       "shot": "pilar-cerca",
       "delay": 1200,
-      "caption": "Pilar: thin, long pale hair, the short cape"
+      "caption": "Pilar: slim, her long dark hair and silver drop earrings, the steel-blue dress, the short cape"
     },
     {
       "eval": "window.gerard.game.frame()"

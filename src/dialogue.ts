@@ -57,9 +57,9 @@ export const SPEAKERS = {
    * bun and grey coat, Montse's grey bob and manila cardigan, Pilar's pale hair and steel-blue dress).
    */
   aurelia: { name: 'Aurelià', skin: '#c48f62', hair: '#4a2f22', top: '#d8c39b', accent: '#b07aff' },
-  mar: { name: 'Mar', skin: '#e6bb98', hair: '#2e2420', top: '#4a4d55', accent: '#b07aff' },
-  montse: { name: 'Montse', skin: '#e2b48e', hair: '#9a9a98', top: '#c9b48a', accent: '#b07aff' },
-  pilar: { name: 'Pilar', skin: '#e9bf9c', hair: '#d8c9a8', top: '#5a6a82', accent: '#b07aff' },
+  mar: { name: 'Mar', portrait: 'mar', skin: '#e6bb98', hair: '#7a3a22', top: '#4a4d55', accent: '#b07aff' },
+  montse: { name: 'Montse', portrait: 'montse', skin: '#e2b48e', hair: '#b59f7e', top: '#c9b48a', accent: '#b07aff' },
+  pilar: { name: 'Pilar', portrait: 'pilar', skin: '#d6a57c', hair: '#3b2a20', top: '#5a6a82', accent: '#b07aff' },
   reina: { name: 'La Reina Bubbaloo', portrait: 'reina', skin: '#f2a8c8', hair: '#e86aa6', top: '#c8306e', accent: '#ff6fae' },
   bernat35: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#4a5560', accent: '#9fc3d9' },
 } satisfies Record<string, Speaker>;
