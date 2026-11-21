@@ -725,13 +725,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Siete vidas took the pulse that would have killed them: it turns into a cure.
       else if (p.saved) livesPop(p.target, p.saved);
       // La crecida's pulses come off in their own colour: the current's yellow, the sinking's blue-green.
+      // A Bomba remota went off: its number with its own word, and the scene blows it up.
+      // It implodes first (src/bomb.ts `BOMB.implode`, 0.8 s): the number comes with the burst.
+      else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); }, 800); callbacks.pulse(p.target, p.status, p.by); }
       else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target, p.status, p.by); }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
-      // A Bomba remota went off: its number with its own word, and the scene blows it up.
-      // It implodes first (src/bomb.ts `BOMB.implode`, 0.8 s): the number comes with the burst.
-      else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); }, 800); callbacks.pulse(p.target, p.status, p.by); }
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
     render();
