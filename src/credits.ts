@@ -61,13 +61,13 @@ export const FINAL_CARD: Record<EndingChoice, readonly string[]> = {
   acabar: [
     'Tot va tornar al seu lloc: l\'horari, la feina, els amics,...',
     'La ciutat és més neta i més callada. Ningú canta pel carrer, i ningú ho troba a faltar.',
-    'En Gerard i l\'Aitor son feliços i queden amb els seus amics de tant en tant, l\'Aitor ja no toca gaire el piano, no ho trova a faltar - la vida d\'adult es el que te- pensa',
-    'Tots son feliços, però no hi ha màgia al mon',
+    'En Gerard i l\'Aitor són feliços i queden amb els seus amics de tant en tant, l\'Aitor ja no toca gaire el piano, no ho troba a faltar —la vida d\'adult és el que té—, pensa.',
+    'Tots són feliços, però no hi ha màgia al món.',
   ],
   bajar: [
-    'No ho hem arreglat tot, el temps s\'ha recuperat però la ciutat te una mica de rosa',
-    'Els nostres amics ens esperan a la coral, tenim noves incorporacions',
-    'Els dilluns continuen sent dilluns. Però alguns vespres, miran el pot de llum, que encara brilla',
+    'No ho hem arreglat tot, el temps s\'ha recuperat però la ciutat té una mica de rosa',
+    'Els nostres amics ens esperen a la coral, tenim noves incorporacions',
+    'Els dilluns continuen sent dilluns. Però alguns vespres, miren el pot de llum, que encara brilla',
     'I en Gerard xiula les sis notes cada matí, de camí a la feina.',
   ],
 };
