@@ -8,8 +8,9 @@
 
   Once the story sends it, it calls out from its hiding place until it is found: a burst of random
   notes now and then, closer together while its PIR sees someone. It calls out only while the server
-  has just said "alive" and a game is open: without the server, or with nobody playing, it is silent
-  whatever mode it kept. Someone in front of it for a few
+  has just said "alive" and a game is open, and never at once (the first call comes a whole gap after
+  the game opens). Without the server, or with nobody playing, it makes no sound at all, pressed or
+  not, whatever mode it kept; switched on, it starts without a sound. Someone in front of it for a few
   seconds, or a button pressed, and it is found. From then on, while it is pressed or the PIR keeps
   seeing someone, Gerard holds it out in the game, wherever he is.
 
@@ -105,6 +106,11 @@ bool online = false;
 bool found = false;  // someone has found it since the story sent it
 // When the server last said "alive" with a game open: the only time it calls out to be found.
 unsigned long calledForAt = 0;
+// When the server last said a game is open. Without one (nobody playing, no server, no Wi-Fi) it
+// makes no sound at all, pressed or not: GAME_MS rides out a hiccup of the network in the middle of a fight.
+unsigned long gameAt = 0;
+static const unsigned long GAME_MS = 10000;
+bool gameOpen() { return gameAt && millis() - gameAt < GAME_MS; }
 
 // ——— The 4-digit tube (TM1650 on Wire1): kept dark ————————————————————————————————————————
 static const uint8_t TUBE_DATA_BASE = 0x34, TUBE_CTRL_BASE = 0x24;
@@ -253,11 +259,14 @@ void ask() {
   const int times = space > 0 ? answer.substring(space + 1).toInt() : 0;
   const bool playing = second > 0 && answer.substring(second + 1).toInt() == 1;
   if (name == "alive" && playing) calledForAt = millis();
+  if (playing) gameAt = millis();
   if (times > 0) beepFor(SEARCH_MS * (times < 3 ? times : 3));
 }
 
 // ——— Modes ————————————————————————————————————————————————————————————————————————————
 unsigned long beepUntil = 0, nextBeepAt = 0, calledAt = 0;
+
+bool starting = true;  // switched on: it takes its kept mode back without a sound
 
 void setMode(Mode next) {
   if (next == mode) return;
@@ -265,8 +274,7 @@ void setMode(Mode next) {
   mode = next;
   flash.putUChar("mode", mode);
   for (uint8_t b = 0; b < BUTTONS; b++) digitalWrite(PIN_LED[b], LOW);
-  // Sent by the story, it calls out at once; put to sleep, it is lost again.
-  calledAt = millis() - 2 * SEARCH_EVERY_MS;
+  // Put to sleep, it is lost again. (Sent by the story it sounds because the game asks it to, `ask`.)
   if (mode == ASLEEP) {
     beepUntil = millis();
     if (found) flash.putBool("found", found = false);
@@ -284,7 +292,7 @@ void setMode(Mode next) {
     for (uint8_t i = 0; i < 16; i++) lcd.write(i % 8);
     lcd.setCursor(0, 1);
     for (uint8_t i = 0; i < 16; i++) lcd.write(7 - i % 8);
-    sound(NOTE_HZ[7], 600);
+    if (!starting) sound(NOTE_HZ[7], 600);
   } else if (mode == FREE) {
     for (uint8_t b = 0; b < BUTTONS; b++) light(b, 2500);
     drawBars();
@@ -297,7 +305,7 @@ void setMode(Mode next) {
 // So it can be found by ear (docs/quests/bernat.md, round 5): random notes of its scale, each with
 // its LEDs, never the melody in order, and never holding up the buttons. Sent by the story and not
 // found yet, it calls out in bursts, closer together while someone is in front of it.
-bool someoneThere = false;
+bool someoneThere = false, wasCalledFor = false;
 float callJitter = 0;
 
 void beepFor(unsigned long ms) {
@@ -317,11 +325,16 @@ void serviceSearch() {
   const unsigned long now = millis();
   const unsigned long gap = someoneThere ? SEARCH_NEAR_MS : SEARCH_EVERY_MS;
   const bool calledFor = calledForAt && now - calledForAt < HEARD_MS;
+  // A game just opened, or the board just reached it: never a call at once, which would give its
+  // hiding place away each time. The first one comes a whole gap later.
+  if (calledFor && !wasCalledFor) calledAt = now;
+  wasCalledFor = calledFor;
   if (mode == ALIVE && !found && calledFor && now - calledAt >= gap * (1 + callJitter)) {
     calledAt = now;
     callJitter = random(500) / 1000.0f;
     beepFor(700 + random(900));
   }
+  if (!gameOpen()) beepUntil = now;  // the game closed in the middle of a call: it stops
   if ((long)(beepUntil - now) > 0 && (long)(now - nextBeepAt) >= 0) {
     const uint8_t note = random(NOTES);
     const unsigned long ms = 160 + random(220);
@@ -340,6 +353,7 @@ unsigned long pendingAt = 0;
 void play(uint8_t note) {
   Serial.printf("note %u\n", note);
   if (mode == ASLEEP) return;  // until the story sends it, it is just a dead board
+  if (!gameOpen()) return;     // and so it is while nobody is playing
   setFound("pressed");  // and its note has Gerard take it out
   sound(NOTE_HZ[note], NOTE_MS);
   lightNote(note);
@@ -351,7 +365,9 @@ void pollButtons() {
   const unsigned long now = millis();
   for (uint8_t b = 0; b < BUTTONS; b++) {
     const bool down = digitalRead(PIN_BUTTON[b]) == LOW;
-    if (down == pressed[b] || now - changedAt[b] < DEBOUNCE_MS) continue;
+    // A change counts once it has held for DEBOUNCE_MS: a spike on a wire is not a press.
+    if (down == pressed[b]) { changedAt[b] = now; continue; }
+    if (now - changedAt[b] < DEBOUNCE_MS) continue;
     pressed[b] = down;
     changedAt[b] = now;
     if (!down) continue;
@@ -390,11 +406,17 @@ void pollPir() {
 }
 
 // ——— The network ——————————————————————————————————————————————————————————————————————
-unsigned long askedAt = 0;
+unsigned long askedAt = 0, wifiTriedAt = 0;
+static const unsigned long WIFI_RETRY_MS = 20000;
 
 void serviceNetwork() {
   if (pending >= 0) return;  // a chord still open: its second button must not wait on the network
-  if (WiFi.status() != WL_CONNECTED) return;  // what was played waits for the network to come back
+  if (WiFi.status() != WL_CONNECTED) {  // what was played waits for the network to come back
+    // The reconnect that goes on by itself sometimes gives up: ask again now and then.
+    if (millis() - wifiTriedAt >= WIFI_RETRY_MS) { wifiTriedAt = millis(); WiFi.reconnect(); }
+    return;
+  }
+  wifiTriedAt = millis();
   if (queueLength) {
     const int8_t item = queued[queueHead];
     queueHead = (queueHead + 1) % QUEUE;
@@ -413,6 +435,7 @@ void serviceNetwork() {
 // How often it lost the Wi-Fi since it started and the Wi-Fi's reason the last time; the longest the
 // loop took since /health last asked (a frozen board misses its buttons); what the PIR sees now.
 uint16_t drops = 0;
+uint32_t boots = 0;  // times it has started, ever: climbing by itself, it is restarting (and each start can click the buzzer)
 uint8_t lastDrop = 0;
 unsigned long loopAt = 0, slowest = 0;
 
@@ -436,7 +459,7 @@ void handleHealth() {
   String body = String("{\"status\":\"ok\",\"node\":\"") + HOSTNAME + "\",\"ip\":\"" + WiFi.localIP().toString() +
                 "\",\"mode\":\"" + MODE_NAMES[mode] + "\",\"found\":" + (found ? "true" : "false") +
                 ",\"server\":" + (online ? "true" : "false") + ",\"up\":" + String(millis() / 1000) +
-                ",\"started\":\"" + startedBy() + "\",\"rssi\":" + String(WiFi.RSSI()) + ",\"drops\":" + String(drops) +
+                ",\"started\":\"" + startedBy() + "\",\"boots\":" + String(boots) + ",\"rssi\":" + String(WiFi.RSSI()) + ",\"drops\":" + String(drops) +
                 ",\"lastDrop\":" + String(lastDrop) + ",\"slowest\":" + String(slowest) +
                 ",\"pir\":" + String(digitalRead(PIN_PIR)) + "}";
   slowest = 0;
@@ -445,8 +468,8 @@ void handleHealth() {
 }
 
 void connectWiFi() {
+  WiFi.setHostname(HOSTNAME);  // before the mode, or the router keeps calling it esp32-xxxxxx
   WiFi.mode(WIFI_STA);
-  WiFi.setHostname(HOSTNAME);
   WiFi.setAutoReconnect(true);
   // Never dozing between the router's beacons: the usual cause of an ESP32 dropping off for seconds.
   WiFi.setSleep(false);
@@ -470,12 +493,13 @@ void setup() {
   Serial.begin(115200);
   randomSeed(esp_random());
   for (uint8_t b = 0; b < BUTTONS; b++) {
-    pinMode(PIN_BUTTON[b], INPUT);
+    pinMode(PIN_BUTTON[b], INPUT_PULLUP);  // a loose wire reads as not pressed, never as random notes
     pinMode(PIN_LED[b], OUTPUT);
     digitalWrite(PIN_LED[b], LOW);
   }
   pinMode(PIN_PIR, INPUT);
   pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, LOW);
 
   Wire.begin(PIN_SDA, PIN_SCL);
   Wire1.begin(PIN_TUBE_SDA, PIN_TUBE_SCL);
@@ -489,6 +513,8 @@ void setup() {
   const Mode kept = (Mode)flash.getUChar("mode", ASLEEP);
   mode = kept == ASLEEP ? ALIVE : ASLEEP;  // so setMode does its work
   setMode(kept <= FREE ? kept : ASLEEP);
+  starting = false;
+  flash.putUInt("boots", boots = flash.getUInt("boots", 0) + 1);
 
   connectWiFi();
   // New firmware over the Wi-Fi, with its key as the password; it goes quiet and dark while it
