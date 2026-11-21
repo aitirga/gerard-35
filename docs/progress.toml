@@ -85,6 +85,12 @@ title = "Repasar el texto de los créditos"
 priority = "pruebas"
 note = "Leer los créditos de arriba abajo y corregirlos. Se marca a mano."
 
+# Aitor 2026-11-21: every line the player reads, before calling the game done.
+[[block.item]]
+title = "Revisar todo el texto escrito y lo que dicen los personajes"
+priority = "pruebas"
+note = "Leer de una vez todos los diálogos (LINES de src/story.ts y de cada misión en src/friends/), los carteles, el HUD, los menús, el diario y las descripciones de habilidades: tono adulto, cada personaje con su voz, sin erratas y sin nada que diga al jugador qué hacer. Se marca a mano."
+
 [[block.item]]
 title = "Decidir qué muestra cada uno de los dos finales"
 priority = "historia"
