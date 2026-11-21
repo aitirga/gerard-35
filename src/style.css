@@ -2171,6 +2171,9 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="cristalizado"], .summary-tags [data-status="cristalizado"], .damage-pop[data-kind="status"][data-status="cristalizado"] { --status: #bfd0ea; }
 .unit-statuses i[data-status="cortina"], .summary-tags [data-status="cortina"], .damage-pop[data-kind="status"][data-status="cortina"] { --status: #dcc388; }
 .unit-statuses i[data-status="definitiva"], .summary-tags [data-status="definitiva"] { --status: #f0e4c8; }
+/* The same definitiva asleep (bought, still to wake): its colour faded, its corner how near it is. */
+.unit-statuses i[data-status="dormida"], .summary-tags [data-status="dormida"] { --status: #8f887a; }
+.skill-list button[data-asleep] .skill-cost { font-variant-numeric: tabular-nums; }
 /* Papagato (docs/animas/papagato/): Acecho's slit eye in the ánima's orange over whoever's cat crouches; Siete vidas'
    cat head in Yuki's white over each of the party while the ward holds, breathing slowly. */
 .unit-statuses i[data-status="acecho"], .summary-tags [data-status="acecho"], .damage-pop[data-kind="status"][data-status="acecho"] { --status: #f0954a; }

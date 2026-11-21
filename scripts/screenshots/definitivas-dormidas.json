@@ -1,0 +1,84 @@
+{
+  "title": "Definitivas dormidas",
+  "description": "Una definitiva comprada en el bote y todavía dormida se ve en el combate: un icono apagado sobre quien lleva su ánima, con lo cerca que está de despertar, y una fila en gris al pie de su lista de habilidades.",
+  "steps": [
+    {
+      "open": "/?story=papagato-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22papagato%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "siete-vidas-placa",
+      "delay": 600,
+      "caption": "Siete vidas comprada y dormida: el icono de la definitiva, apagado, sobre la placa de quien lleva el ánima, con lo que lleva (0)"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[0].statuses = { sangrado: 3 }; s.foes[0].cutRound = s.round; })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "press": "ArrowDown",
+      "times": 8,
+      "gap": 150
+    },
+    {
+      "shot": "siete-vidas-lista",
+      "delay": 500,
+      "caption": "Con una herida de 3 en un perro: el icono pasa a 3/5 y la lista de habilidades acaba con Siete vidas en gris, «Dormida · 3/5»"
+    },
+    {
+      "open": "/?story=papagato-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22freatica%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22freatica%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22freatica%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "bajo-cero-placa",
+      "delay": 600,
+      "caption": "Bajo cero comprada y dormida: el icono de la definitiva, apagado, sobre la placa de quien lleva el ánima, con lo que lleva (0)"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[1].timed = { ...s.foes[1].timed, agua: { level: 2, left: 20, next: 20 } }; })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "press": "ArrowDown",
+      "times": 8,
+      "gap": 150
+    },
+    {
+      "shot": "bajo-cero-lista",
+      "delay": 500,
+      "caption": "Con dos marcas de agua en un perro: Bajo cero «Dormida · 2/3»"
+    }
+  ]
+}

@@ -1133,6 +1133,31 @@ export const swarmReady = (state: BattleState) => skillKnown('enjambre', state.l
 export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
+/** Whether the definitiva `skill` has gone off in this fight already. */
+const ultiUsed = (state: BattleState, skill: SkillId) => !!(skill === 'fin-de-fiesta' ? state.finale?.used : skill === 'siete-vidas' ? state.lives?.used
+  : skill === 'da-capo' ? state.dacapo?.used : skill === 'bajo-cero' ? state.cold?.used : skill === 'enjambre' ? state.swarm?.used : false);
+/**
+ * The definitiva of the ánima `c` wears, bought but still asleep in this fight, and how near it is to
+ * waking (`have` of `need`), measured as its own condition measures it: the powder's turns seen
+ * (Fin de fiesta), the deepest wound on a foe (Siete vidas), the most water on a foe (Bajo cero),
+ * the ecos up at once (Da capo), the ripest bomb's power (Enjambre). `used`: it went off already.
+ */
+export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId; name: string; have: number; need: number; used?: true } | undefined {
+  const spec = SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId);
+  if (!spec || !skillKnown(spec.id, state.levels, state.improved) || ultiReady(state, spec.id)) return undefined;
+  const base = { skill: spec.id, name: spec.name };
+  if (ultiUsed(state, spec.id)) return { ...base, have: 0, need: 0, used: true };
+  const foes = state.foes.filter(f => f.hp > 0);
+  const most = (values: number[]) => Math.max(0, ...values);
+  switch (spec.id) {
+    case 'fin-de-fiesta': return { ...base, have: state.finale?.seen.length ?? 0, need: POWDER_TURNS.length };
+    case 'siete-vidas': return { ...base, have: Math.min(SCENT.sure, most(foes.map(f => stacks(f, 'sangrado')))), need: SCENT.sure };
+    case 'bajo-cero': return { ...base, have: most(foes.map(waterOf)), need: CRECIDA.marks };
+    case 'da-capo': return { ...base, have: Math.min(ECOS.most, state.ecos?.length ?? 0), need: ECOS.most };
+    case 'enjambre': return { ...base, have: Math.round(most(foes.map(f => f.timed?.bomba ? bombPower(f.timed.bomba.age ?? 0) : 0))), need: BOMBA.top };
+    default: return undefined;
+  }
+}
 /** Whoever wears Colorista with Remolino learned, standing. */
 export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
 /** The blows of the action being resolved that found a foe weak to their kind, or resisting it (`blowAffinity`); `amplify` hands them to its effect. */

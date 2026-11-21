@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, addStatus, createBattle, enemyAct, improve, inflict, nextRound, runClock, skillsFor, stacks, takeNews, validTargets, awakeUlti, livesReady, warded, woundScale, CRIT_RULES, SCENT, SKILLS, STATUSES, TIMED } from '../src/battle.ts';
+import { act, addStatus, createBattle, enemyAct, improve, inflict, nextRound, runClock, skillsFor, stacks, takeNews, validTargets, awakeUlti, ultiProgress, livesReady, warded, woundScale, CRIT_RULES, SCENT, SKILLS, STATUSES, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
 import { manaMax } from '../src/battle.ts';
 
@@ -119,6 +119,21 @@ test('Siete vidas sleeps until a wound of five or more is spent with Papagato wo
   // Without Papagato worn by someone standing, a wound spent wakes nothing.
   const off = fight(7, ['papagato:definitiva']); by(off, 'aitor').hp = 0; addStatus(off.foes[0], 'sangrado', 5); turn(off, 'gerard');
   assert.equal(act(off, 'attack', 'dog-0').awoken, undefined); assert.equal(livesReady(off), false);
+});
+
+test('A definitiva bought and asleep says how near it is to waking, on whoever wears its ánima, until it wakes; then that it was used', () => {
+  // Not bought: nothing to show.
+  const none = fight(7);
+  assert.equal(ultiProgress(none, by(none, 'aitor')), undefined);
+  const s = fight(7, ['papagato:definitiva']);
+  assert.equal(ultiProgress(s, by(s, 'gerard')), undefined, 'only on the ánima that has it');
+  assert.deepEqual(ultiProgress(s, by(s, 'aitor')), { skill: 'siete-vidas', name: 'Siete vidas', have: 0, need: SCENT.sure });
+  addStatus(s.foes[1], 'sangrado', 3);
+  assert.equal(ultiProgress(s, by(s, 'aitor')).have, 3, 'the deepest wound on a foe');
+  addStatus(s.foes[0], 'sangrado', 5); turn(s, 'gerard'); act(s, 'attack', 'dog-0');
+  assert.equal(ultiProgress(s, by(s, 'aitor')), undefined, 'awake: the command itself shows it');
+  turn(s, 'aitor'); act(s, 'skill', undefined, 'siete-vidas');
+  assert.equal(ultiProgress(s, by(s, 'aitor')).used, true);
 });
 
 /** A fight with Siete vidas just played by Aitor. */
