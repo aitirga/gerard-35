@@ -70,6 +70,12 @@ it on the game's rig for foes is work still to propose.
   For people toy is the material, not the tone; monsters are not toys at all.
 - Saturated pink stays La Reina Bubbaloo's; violet stays possession's and fear's
   (`docs/visual-style.md`). Use them only when that is what the figure is.
+- Her gum on an object or a person is the easiest way to draw food by accident: brown wood under
+  glossy pink came out as chocolate with icing (El Atril's first image). Say the material plainly
+  (dark oak planks, brass corners), make the gum matte and pulled taut in strands, and write that it
+  must never look like food.
+- A photo with other people in it never goes to the image model, and is never listed in `photos`:
+  describe the one person in words in `about` instead (Aurelià, from a group photo).
 - It reads from a high camera at 40–75 pixels a metre: a strong silhouette and nothing small.
 - Its silhouette and main colour differ from those of whoever it shares a screen with.
 

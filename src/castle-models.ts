@@ -10,7 +10,7 @@
  */
 import * as pc from 'playcanvas';
 import { CREATURES, buildCreature } from './character-model';
-import type { CastleKind, Year } from './castle';
+import { DIRECTIVAS, type CastleKind, type Year } from './castle';
 
 /** A monster of `just character-3d`: Meshy's rigged model, its clips and its height in metres. */
 interface MonsterSpec { id: string; name: string; glb: string; clips: Record<string, string>; height: number }
@@ -26,10 +26,14 @@ export const MINION_HEIGHT = 1.34;
 /** The node a figure's file hangs from inside its holder, scaled to the minion's height; the file's own root (its armature) is its one child, where the clips play. */
 const FIGURE = 'Figura';
 
-/** The figure a castle foe is drawn with: its kind's, and El Repetidor's by his year (he ages). */
-export function castleFigure(kind: CastleKind, year?: Year) {
+/**
+ * The figure a castle foe is drawn with: its kind's, El Repetidor's by his year (he ages), and each
+ * of the management team her own (`who`: Mar, Montse or Pilar, the fighter's id; Mar's without one).
+ */
+export function castleFigure(kind: CastleKind, year?: Year, who?: string) {
   if (kind === 'repetidor' && year === 2) return 'repetidor-segundo';
   if (kind === 'repetidor' && year === 3) return 'repetidor-tercero';
+  if (kind === 'directiva') return DIRECTIVAS.find(d => d.id === who)?.id ?? DIRECTIVAS[0].id;
   return kind;
 }
 

@@ -2,7 +2,7 @@
 
 Aurelià, the management team and La Reina Bubbaloo, designed with Aitor on 2026-11-19, and built
 the same day as a **preliminary version** (the rules, not the look): see [castle.md](castle.md) §
-Built so far. The numbers are `CASTLE` in `src/castle.ts` (book `castle.rules` in
+Built so far. Each has its own figure since 2026-11-20 (§ How they look). The numbers are `CASTLE` in `src/castle.ts` (book `castle.rules` in
 [fight-sim.md](fight-sim.md)). Where they stand in the castle, what roams between them and what each
 one opens is in [castle.md](castle.md).
 
@@ -41,6 +41,32 @@ being right. He is not mocked and he is not a monster; beaten, he comes back to 
   `aurelia-sin-relojes` (≤ 0.2). `FightMoment`s for the picker: `aurelia-leccion`,
   `aurelia-carrera`, `aurelia-recta`.
 - **After**: [castle.md](castle.md) § What each boss opens.
+
+## How they look
+
+Figures of `just character-3d` (OpenAI's image, then Meshy's model, rig and clips; the recipes are
+in `tools/figures.toml`), drawn in their fights and in the bestiary. All four people keep the rule
+of the Queen's own figure: an adult, held by her, never a joke.
+
+| Who | Figure | What is theirs | What is hers |
+| --- | --- | --- | --- |
+| **Aurelià** (2.05 m) | `aurelia` | The athlete he was and still is: broad, tanned, tousled dark hair, stubble, a white sleeveless top and navy shorts, trainers | An emperor's cloak of her wrapper paper (pink and black stripes) held by two black gum balls, a laurel of pink gum, hands gone chalk white, her gum climbing his calves, violet eyes |
+| **El Atril** (1.45 m) | `atril`, a creature in one piece | A lectern of dark oak with brass corners, his laurel on its front, the book open on top | Her gum pulled taut over it in strands, the first black blisters |
+| **Mar** (2.0 m) | `mar` | The head: tall, a high dark bun, a long steel-grey coat buttoned to the neck | A pink gum bubble over the whole face, with a face pressed into it from inside and none of its own; pink gum gloves; a collar of her striped paper; black blisters on the skirt |
+| **Montse** (1.75 m) | `montse` | A grey bob, a manila cardigan over a dark dress, flat shoes | The same bubble and gloves; her striped paper as a scarf |
+| **Pilar** (1.88 m) | `pilar` | Long pale hair, a steel-blue dress | The same bubble and gloves; her striped paper as a short cape |
+
+- **Aurelià's build and colouring are the real Aurelià's**, taken in words from a photo Aitor
+  showed (2026-11-20). The photo has other people in it, so it never went to the image model: only
+  the description did.
+- **The three have no face on purpose.** There is no photo of them, and Aitor asked for "a face as
+  if it were Bubbaloo's": the Queen has put her own over theirs. It is also what tells the player
+  they are held, where Aurelià has his violet eyes. Montse and Pilar were drawn from Mar's image so
+  the three read as one team.
+- In *Direcció* each stands with her own figure (`castleFigure` in `src/castle-models.ts` picks it
+  by the fighter's id); the bestiary lists the team once, with a view for each.
+- Their drawn faces in dialogue take the figures' colours (`SPEAKERS` in `src/dialogue.ts`). None
+  has a portrait yet.
 
 ## Mar, Montse and Pilar
 

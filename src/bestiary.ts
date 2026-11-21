@@ -22,7 +22,7 @@ import { NOTES_ENDPOINT, REDO, isoNow, newNote, type Note, type NotesFile, type 
 import PORTRAIT_EXPRESSIONS from './portraits.json';
 import { MODEL_URL as SOBREMESA_URL } from './sobremesa';
 import { PROFILES, STAT_LABELS, type ProfileId, type Stats } from './stats';
-import { isCastle } from './castle';
+import { DIRECTIVAS, isCastle } from './castle';
 
 /**
  * The bestiary (development, `just bestiario`): everyone in the game, allies, foes, people and the
@@ -371,7 +371,7 @@ async function start() {
         ${section('Suma a quien la lleva', `<p>${Object.entries(CLASS_STATS[id]).map(([k, v]) => `${STAT_LABELS[k as keyof Stats] ?? k} ${v! > 0 ? '+' : ''}${v}`).join(' · ') || 'Nada todavía.'}</p><p>Maná: ${MANA_POINTS}${jar.some(i => i.mana) ? `, y ${jar.filter(i => i.mana).map(i => `+${i.mana}`).join(', ')} en el tarro` : ''}.</p>`)}
         ${section('Cómo crece', `<p>${LEVELLED.includes(id) ? `Por niveles, hasta el ${topOf(id)} (EXP ${LEVEL_XP.slice(0, topOf(id) - 1).join(' · ')}).` : 'Por su árbol en el tarro, con Ecos de luz.'}</p>`)}
         ${section('Habilidades', byLevel.length ? byLevel.map(([n, list]) => `<p><b>Nivel ${n}</b></p>${list.map(skillLine).join('')}`).join('') : skills.filter(s => !('node' in s && s.node)).map(skillLine).join('') || '<p>Ninguna de base.</p>')}
-        ${section('El tarro (Ecos de luz)', lines.map(line => `<div class="tree"><b>${line ? html(LINES[line].name) : 'Suelto'}</b>${jar.filter(i => i.line === line).map(i => `<div class="skill"><b>${html(i.name)}</b><small>${i.cost} eco${i.cost > 1 ? 's' : ''} · ${{ mana: 'maná', element: 'elemento', skill: 'habilidad', passive: 'pasiva', ulti: 'definitiva' }[i.kind]}${i.veiled ? ' · dormida' : ''}</small><p>${html(i.description)}</p></div>`).join('')}</div>`).join(''))}
+        ${section('El tarro (Ecos de luz)', lines.map(line => `<div class="tree"><b>${line ? html(LINES[line].name) : 'Suelto'}</b>${jar.filter(i => i.line === line).map(i => `<div class="skill"><b>${html(i.name)}</b><small>${i.cost} eco${i.cost > 1 ? 's' : ''} · ${{ mana: 'maná', element: 'elemento', skill: 'habilidad', passive: 'pasiva', ulti: 'definitiva', dual: 'dúo mayor' }[i.kind]}${i.veiled ? ' · dormida' : ''}</small><p>${html(i.description)}</p></div>`).join('')}</div>`).join(''))}
         ${section('Pasivas', (Object.keys(PASSIVES) as (keyof typeof PASSIVES)[]).filter(k => PASSIVES[k].anima === id).map(k => `<p><b>${html(PASSIVES[k].name)}</b> · ${html(jar.find(i => i.passive === k)?.description ?? '')}</p>`).join(''))}
         ${section('Duales', duals.map(d => `<div class="skill"><b>${html(d.name)}</b><small>${d.parts.map(p => SKILLS.find(s => s.id === p)?.name).join(' + ')}</small><p>${html(d.description)}</p></div>`).join(''))}`,
     });
@@ -393,19 +393,24 @@ async function start() {
   const speakerOfFoe = (seen: FoeKindSeen) => speakers[seen.kind] ?? speakers[seen.meetings[0].foe.id] ?? speakers[seen.kind.replace(/^sobremesa-/, '')];
   for (const seen of foes) {
     const template = fears.templates.has(seen.kind);
-    const speaker = speakerOfFoe(seen), designs = figureLinks(seen.kind), monster = MONSTERS.find(m => m.id === seen.kind);
+    // The management team is one kind with three figures, Mar's, Montse's and Pilar's (src/castle-models.ts `castleFigure`).
+    const own = seen.kind === 'directiva' ? DIRECTIVAS.map(d => d.id as string) : [seen.kind as string];
+    const speaker = speakerOfFoe(seen), designs = own.flatMap(figureLinks), monsters = own.flatMap(id => MONSTERS.filter(m => m.id === id)), monster = monsters[0];
+    // A castle foe in one piece (El Montón, El Atril) is a creature's file.
+    const piece = isCastle(seen.kind) && !monster ? CREATURE_SPECS.find(c => c.id === seen.kind) : undefined;
     // A castle foe with a figure of its own fights with it (src/castle-models.ts): that is what the fight draws.
-    const fightsWithIt = !!monster && isCastle(seen.kind);
-    const status: ModelStatus = fightsWithIt ? { tone: 'own', label: `Modelo propio: su figura de Meshy (src/monsters/${monster!.id}.json)` } : modelStatusOf(seen.kind, template);
+    const fightsWithIt = (!!monster || !!piece) && isCastle(seen.kind);
+    const status: ModelStatus = fightsWithIt ? { tone: 'own', label: `Modelo propio: su figura de Meshy (${monster ? monsters.map(m => `src/monsters/${m.id}.json`).join(', ') : `src/creatures/${piece!.id}.json`})` } : modelStatusOf(seen.kind, template);
     const family = familyOf(seen.kind, template);
-    const inGame: View = fightsWithIt ? { type: 'monster', spec: monster! } : seen.kind.startsWith('sobremesa-') ? { type: 'glb', url: SOBREMESA_URL }
+    const inGame: View = fightsWithIt ? monster ? { type: 'monster', spec: monster } : { type: 'creature', spec: piece! } : seen.kind.startsWith('sobremesa-') ? { type: 'glb', url: SOBREMESA_URL }
       : template ? { type: 'template', kind: seen.kind, layers: seen.meetings[0].foe.layers ?? 0 }
       : status.tone === 'placeholder' || seen.kind === 'minion' ? { type: 'minion', kind: seen.kind }
       : seen.kind === 'dog' ? { type: 'dogs' }
       // Vertitrón's eye is the one in its chest: it is shown on him.
       : seen.kind === 'vertigo-ojo' && fears.templates.has('vertigo') ? { type: 'template', kind: 'vertigo', layers: 0 }
       : { type: 'none', why: status.label };
-    const views = [{ label: `En el combate: ${status.label}`, button: 'En el juego', view: inGame },
+    const views = [{ label: `En el combate: ${status.label}`, button: monsters.length > 1 ? monster.name : 'En el juego', view: inGame },
+      ...fightsWithIt ? monsters.slice(1).map(m => ({ label: `En el combate: ${m.name}`, button: m.name, view: { type: 'monster', spec: m } as View })) : [],
       ...monster && !fightsWithIt ? [{ label: 'Modelo nuevo (sin conectar al combate)', button: 'Nuevo', view: { type: 'monster', spec: monster } as View }] : []];
     const fights = seen.meetings.map(m => m.fight);
     entries.push({
@@ -425,7 +430,7 @@ async function start() {
           ${section('Rasgos', `${statsGrid(seen.meetings[0].foe.stats, first.pv)}${table}`)}
           ${section('Ataques (los que usa, simulados con el bot del simulador)', moves + (cached?.failed.length ? `<p><small>${cached.failed.map(html).join('<br>')}</small></p>` : ''))}
           ${section('Truco del combate', answer(seen.kind) + targets.map(t => `<p class="why">${html(t.why)} <small>${t.id} · ${t.policy}${t.win ? ` · gana ${Math.round(t.win[0] * 100)}–${Math.round(t.win[1] * 100)} %` : ''}</small></p>`).join(''))}
-          ${section('Animaciones', motion(MOTION[family]) + (monster ? `<p>Modelo nuevo: ${motion(MOTION.monster)}</p>` : ''))}
+          ${section('Animaciones', fightsWithIt ? motion(MOTION[piece ? 'castlePiece' : 'castle']) : motion(MOTION[family]) + (monster ? `<p>Modelo nuevo: ${motion(MOTION.monster)}</p>` : ''))}
           ${section('Dónde aparece', `<p>${fights.map(f => html(fightName(f))).join(' · ')}</p>`)}
           ${designs.map(figureDetail).join('')}`;
       },

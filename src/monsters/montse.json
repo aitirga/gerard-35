@@ -1,0 +1,10 @@
+{
+  "id": "montse",
+  "name": "Montse",
+  "glb": "models/monsters/montse.glb",
+  "clips": {
+    "walking": "models/monsters/montse-walking.glb",
+    "running": "models/monsters/montse-running.glb"
+  },
+  "height": 1.75
+}

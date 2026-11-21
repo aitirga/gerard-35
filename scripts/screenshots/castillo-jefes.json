@@ -1,0 +1,249 @@
+{
+  "title": "El castillo: sus jefes y lo que cambia al caer cada uno",
+  "description": "docs/castle-bosses.md, docs/castle.md § The castle after each boss. Aurelià and the management team in their own figures (just character-3d: OpenAI + Meshy) in their fights and waiting in their rooms; then the castle as each falls: the gym and the patio the school's again with her gum clotted round the door on, the second floor harder, the secretaría an office again. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22aurelia%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "aurelia",
+      "delay": 1500,
+      "caption": "Aurelià behind El Atril, in his own figure (OpenAI + Meshy): athletic, the Queen's wrapper paper as an emperor's cloak, her laurel in gum, chalk on his hands"
+    },
+    {
+      "eval": "closeUp('aurelia', 2.6)"
+    },
+    {
+      "shot": "aurelia-cerca",
+      "delay": 1200,
+      "caption": "Aurelià up close"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22direccion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y + (d || 4.2) * .28, z: p.z }, d || 4.2); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "direccion",
+      "delay": 1500,
+      "caption": "Mar, Montse and Pilar, each her own figure: no face of their own, the Queen's gum grown over it"
+    },
+    {
+      "eval": "closeUp('mar', 2.5)"
+    },
+    {
+      "shot": "mar-cerca",
+      "delay": 1200,
+      "caption": "Mar, the head: the tallest, the high bun, the wrapper-paper collar"
+    },
+    {
+      "eval": "closeUp('montse', 2.3)"
+    },
+    {
+      "shot": "montse-cerca",
+      "delay": 1200,
+      "caption": "Montse: short and broad, the grey bob, the manila cardigan"
+    },
+    {
+      "eval": "closeUp('pilar', 2.4)"
+    },
+    {
+      "shot": "pilar-cerca",
+      "delay": 1200,
+      "caption": "Pilar: thin, long pale hair, the short cape"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "window.go = (id, x, z, flags = []) => { window.gerard.story.merge(flags); window.gerard.game.refreshStory(); window.gerard.game.setEnvironment(id, { x, z }); }"
+    },
+    {
+      "eval": "go('palacio-gimnasio', 13, 14)"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El gimnasio')",
+      "timeout": 60000
+    },
+    {
+      "shot": "gimnasio-suyo",
+      "delay": 4000,
+      "caption": "The gym while it is his: Aurelià waits where the fight starts, her gum on the floor"
+    },
+    {
+      "eval": "go('palacio-patio', 17, 2, ['aurelia', 'luz-aurelia'])"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El patio')",
+      "timeout": 60000
+    },
+    {
+      "eval": "go('palacio-gimnasio', 13, 12)"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El gimnasio')",
+      "timeout": 60000
+    },
+    {
+      "shot": "gimnasio-escuela",
+      "delay": 4000,
+      "caption": "Aurelià beaten: the gym is a school gym again, quieter, none of her gum on it"
+    },
+    {
+      "eval": "go('palacio-gimnasio', 19, 4)"
+    },
+    {
+      "shot": "gimnasio-puerta",
+      "delay": 3000,
+      "caption": "What is left of her clots round the changing rooms' door: the way on"
+    },
+    {
+      "eval": "go('palacio-patio', 17, 3)"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El patio')",
+      "timeout": 60000
+    },
+    {
+      "shot": "patio-escuela",
+      "delay": 4000,
+      "caption": "The patio behind him: the school's again"
+    },
+    {
+      "eval": "go('palacio-secretaria', 6, 11)"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · La secretar')",
+      "timeout": 60000
+    },
+    {
+      "shot": "secretaria-suya",
+      "delay": 4000,
+      "caption": "The secretaría while it is theirs: Mar, Montse and Pilar wait in Direcció"
+    },
+    {
+      "eval": "go('palacio-patio', 17, 2, ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'])"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · El patio')",
+      "timeout": 60000
+    },
+    {
+      "eval": "go('palacio-secretaria', 4, 4)"
+    },
+    {
+      "until": "document.title.startsWith('Palacio · La secretar')",
+      "timeout": 60000
+    },
+    {
+      "shot": "secretaria-escuela",
+      "delay": 4000,
+      "caption": "Dirección beaten: the secretaría is an office again, and she clots round Direcció's inner door"
+    },
+    {
+      "eval": "(() => { const floor = window.gerard.story.place('castillo-2').palace.floor, spawn = floor.spawn; window.gerard.game.setEnvironment('castillo-2', { x: spawn.x, z: spawn.z }); })()"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Segundo curso')",
+      "timeout": 60000
+    },
+    {
+      "shot": "segundo-curso",
+      "delay": 2500,
+      "caption": "The second floor, one scream on: darker, her gum creeping down the walls, and each pupil a body of its own that hunts its own way (El Repetidor winds up and charges, La Chivata points, La Delegada waits)"
+    },
+    {
+      "eval": "(() => { const g = window.gerard.game, floor = window.gerard.story.place('castillo-2').palace.floor, room = floor.rooms.find(r => r.encounter === 'alumnos-2a') ?? floor.rooms.find(r => r.kind === 'fight'); g.setEnvironment('castillo-2', { x: room.cell.x, z: room.cell.z }); })()"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "segundo-sala",
+      "caption": "In a room of the second floor: each pupil is a body of its own and hunts its own way (El Repetidor winds up to charge, La Chivata points, El Empollón comes)"
+    },
+    {
+      "record": "segundo-caza",
+      "seconds": 4,
+      "caption": "They come for the party, each its own way, until one reaches it and it is the room's fight"
+    },
+    {
+      "open": "/bestiario.html?ver=enemigo:aurelia",
+      "ready": "document.querySelector('#status')?.textContent.startsWith('Listo') && window.bestiary?.ready()"
+    },
+    {
+      "until": "window.bestiary.ready()",
+      "timeout": 30000
+    },
+    {
+      "shot": "bestiario-aurelia",
+      "delay": 1800,
+      "caption": "The bestiary: Aurelià with his own figure, its designs in the strip"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:atril')"
+    },
+    {
+      "shot": "bestiario-atril",
+      "delay": 1800,
+      "caption": "The bestiary: El Atril, a creature in one piece"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:directiva')"
+    },
+    {
+      "shot": "bestiario-mar",
+      "delay": 1800,
+      "caption": "The bestiary: the management team is one entry with three figures; Mar first"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:directiva', 1)"
+    },
+    {
+      "shot": "bestiario-montse",
+      "delay": 1800,
+      "caption": "Montse"
+    },
+    {
+      "eval": "window.bestiary.select('enemigo:directiva', 2)"
+    },
+    {
+      "shot": "bestiario-pilar",
+      "delay": 1800,
+      "caption": "Pilar"
+    }
+  ]
+}

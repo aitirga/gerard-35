@@ -87,8 +87,10 @@ section('animas', 'Ánimas', 'pending', 'la ánima de cada misión se puede vest
 
 // ——— People and foes: a portrait to talk with, a model of their own to fight ———
 const speakers = [...read('src/dialogue.ts').matchAll(/^  '?([\w-]+)'?: \{ name: '([^']+)'([^\n]*)$/gm)].map(m => ({ id: m[1], name: m[2], portrait: /portrait: '([^']+)'/.exec(m[3])?.[1] }));
-// Provisional whatever the fight draws: the castle's and the guards, on the palace minion (`modelStatusOf`; a fear's own model is built in the browser).
-const provisional = [...new Map(foesOfTheGame().filter(foe => /esbirro/.test(modelStatusOf(foe.kind, false).label)).map(foe => [foe.kind, foe])).values()];
+// Provisional: the guards and the castle's, on the palace minion (`modelStatusOf`; a fear's own model is built in the browser),
+// until a castle foe has its figure's file (src/castle-models.ts draws it from src/monsters/ or src/creatures/; the management team has three).
+const figured = kind => (kind === 'directiva' ? ['mar', 'montse', 'pilar'] : [kind]).every(id => ['monsters', 'creatures'].some(dir => existsSync(join(root, 'src', dir, `${id}.json`))));
+const provisional = [...new Map(foesOfTheGame().filter(foe => /esbirro/.test(modelStatusOf(foe.kind, false).label) && !figured(foe.kind)).map(foe => [foe.kind, foe])).values()];
 section('gente', 'Retratos y modelos', 'pending', 'quien habla tiene retrato; quien pelea, modelo propio (just bestiario)', [
   ...speakers.filter(speaker => !speaker.portrait).map(speaker => `${speaker.name} (${speaker.id}): habla sin retrato`),
   ...speakers.filter(speaker => speaker.portrait && !existsSync(join(root, 'public/portraits', `${speaker.portrait}.png`))).map(speaker => `${speaker.name}: falta public/portraits/${speaker.portrait}.png`),

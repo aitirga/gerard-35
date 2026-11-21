@@ -153,10 +153,12 @@ export const CASTLE_ANSWERS: Record<string, { character: string; answer: string 
 };
 
 /** The families of models, by how a fight moves them (src/battle-scene.ts). */
-export type Family = 'party' | 'monster' | 'minion' | 'onion' | 'dish' | 'ghost' | 'vertigo' | 'camping' | 'cuerdas' | 'modelo' | 'luca' | 'sobremesa' | 'dog' | 'creature';
+export type Family = 'party' | 'monster' | 'castle' | 'castlePiece' | 'minion' | 'onion' | 'dish' | 'ghost' | 'vertigo' | 'camping' | 'cuerdas' | 'modelo' | 'luca' | 'sobremesa' | 'dog' | 'creature';
 export const MOTION: Record<Family, string[]> = {
   party: ['Andar y correr con el rig del juego (rodillas, codos, tobillos; WalkAnimation)', 'Atacar: va hasta el enemigo y golpea; lanzar: el hechizo sale de la mano', 'Defender, recibir (destello) y caer', 'Parpadea y habla (párpados y boca, src/face.ts)', 'Se tiñe con el ánima que lleva'],
   monster: ['Clips de Meshy en su archivo: andar y correr (y los que traiga)', 'Aún sin conectar al combate: allí sigue usando su modelo provisional'],
+  castle: ['Su figura de Meshy en el combate (src/castle-models.ts): corre con su clip al arremeter y aguanta su pose de pie', 'En las plantas del castillo y de noche en la Meridiana anda su ronda y corre al perseguir', 'Destello al recibir; se deshace en motas al caer'],
+  castlePiece: ['Una pieza, sin esqueleto (src/castle-models.ts): quieta en el combate; si se mueve, repta encogiéndose y estirándose', 'Destello al recibir; se deshace en motas al caer'],
   creature: ['Una pieza: bambolea y arremete como los miedos de Uri', 'Destello al recibir, se deshace en motas al caer'],
   minion: ['Bambolea en vez de olfatear; respira (se hincha y deshincha)', 'La cabeza de chicle cabecea y mira; arremete al atacar', 'Destello al recibir; el fuego derrite su pringue (motas de chicle)', 'Se deshace en motas al caer'],
   onion: ['Encoge capa a capa: su piel se aclara con las que le quedan y las capas salen volando', 'Carrerilla: rueda hacia atrás antes del Aplastón', 'Bambolea; se deshace al caer'],

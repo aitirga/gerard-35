@@ -1,0 +1,10 @@
+{
+  "id": "aurelia",
+  "name": "Aurelià",
+  "glb": "models/monsters/aurelia.glb",
+  "clips": {
+    "walking": "models/monsters/aurelia-walking.glb",
+    "running": "models/monsters/aurelia-running.glb"
+  },
+  "height": 2.05
+}

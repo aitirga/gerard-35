@@ -1,0 +1,10 @@
+{
+  "id": "pilar",
+  "name": "Pilar",
+  "glb": "models/monsters/pilar.glb",
+  "clips": {
+    "walking": "models/monsters/pilar-walking.glb",
+    "running": "models/monsters/pilar-running.glb"
+  },
+  "height": 1.88
+}

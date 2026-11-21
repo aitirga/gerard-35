@@ -1,0 +1,10 @@
+{
+  "id": "mar",
+  "name": "Mar",
+  "glb": "models/monsters/mar.glb",
+  "clips": {
+    "walking": "models/monsters/mar-walking.glb",
+    "running": "models/monsters/mar-running.glb"
+  },
+  "height": 2.0
+}
