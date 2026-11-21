@@ -1332,6 +1332,14 @@ title = "Luces de casa"
 weight = 2
 file = "src/home-lights.ts"
 
+# The castle and the end in the room (docs/home-lights.md § The end): its bosses' turns, Direcció's
+# lamps, Aitor's light and the artilugio's notes, her fall, the last scene and the two choices.
+[[block.item]]
+title = "Luces de casa: el castillo, Aitor y el final"
+priority = "historia"
+grep = "homeLights.note"
+in = "src/main.ts"
+
 # `just progress --audit` § Lugares y su canción lists the places with no song yet (15 on 2026-11-19).
 [[block.item]]
 title = "Banda sonora completa"

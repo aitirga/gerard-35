@@ -10,8 +10,9 @@
  * Everything above `createHomeLights` is pure, for the tests.
  */
 import type { EnvironmentId } from './environments.ts';
-import { FOE_ABILITIES, type BattleEffect, type BattleState, type Encounter } from './battle.ts';
-import { CASTLE_ENCOUNTERS, castlePhaseOf, type CastleEncounter } from './castle.ts';
+import { FOE_ABILITIES, markSpent, type BattleEffect, type BattleState, type Encounter } from './battle.ts';
+import { AURELIA_PHASES, CASTLE_ENCOUNTERS, MELODY, REINA_PHASES, castlePhaseOf, type CastleEncounter } from './castle.ts';
+import type { EndingChoice } from './castle-story.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, DUAL_BANNER_SEEN, DUAL_FREEZE, FIGURES, SPELL_CONTACT, isFigure } from './battle-motion.ts';
 
 export type LightId = 'cocina' | 'sofa' | 'luna' | 'mesa' | 'dormitorio' | 'terraza' | 'estudio' | 'galeria';
@@ -280,6 +281,18 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   fran: [white(6200, .6), hex('#4f9fe8', .55, .75), hex('#e8503a', .55, .75), hex('#ffd84f', .55, .7)],
 };
 const ALARM = hex('#ff2a1a', .75, 1);
+/** Possession's violet (whoever she holds) and Aitor's own cyan: the six marks of the artilugio go from one to the other. */
+const POSSESSION = hex('#7d3fd8', .55, .8);
+const AITOR = hex('#4fd8e8', .7, .7);
+/** Aitor's light in the Queen's last fight: her violet while she holds him, walking to his cyan with each right note. */
+export function heldLamp(state: BattleState): Lamp | undefined {
+  const fight = state.castle;
+  if (!fight?.taken || fight.freed) return undefined;
+  return mix(POSSESSION, AITOR, Math.min(1, (fight.notes ?? 0) / MELODY.length));
+}
+/** Direcció's meeting room: three lamps on the table, one going out with each of the three who falls (docs/castle-bosses.md). */
+const TABLE_LAMPS: LightId[] = ['cocina', 'sofa', 'luna'];
+const fallenDirectivas = (state: BattleState) => state.encounter === 'direccion' ? state.foes.filter(f => f.kind === 'directiva' && f.hp <= 0).length : 0;
 /** The fights that close a chapter or a mission, or a floor of the castle: their palette may carry more colour, and their turns break into raw light. */
 const BOSSES: ReadonlySet<Encounter> = new Set<Encounter>(['palace-minion', 'cebollon', 'uri-vertigo', 'sobremesa', 'campeon', 'voz', 'no-converge', 'fran', 'delegada-1', 'delegada-2', 'delegada-3', 'aurelia', 'direccion', 'reina', 'reina-vuelta']);
 export const isBoss = (state: BattleState) => BOSSES.has(state.encounter);
@@ -305,8 +318,47 @@ export function battleLook(state: BattleState, scope: Scope, intensity: Intensit
   const look: Look = {};
   SALON.forEach((id, i) => { look[id] = scale(mix(palette[i], ALARM, danger * (i === 3 ? .9 : .6)), (1 - danger * (i === 3 ? 0 : .35)) * held * INTENSITY[intensity]); });
   if (scope === 'casa') ELSEWHERE.forEach((id, i) => { look[id] = scale(mix(palette[i % 4], ALARM, danger * .5), .3 * held * INTENSITY[intensity]); });
+  // The meeting room's lamps go out one by one, as the three fall.
+  TABLE_LAMPS.slice(0, fallenDirectivas(state)).forEach(id => { look[id] = OFF; });
+  // Aitor hers: the moon by the desk is his light, in her violet until the melody brings it back to his cyan.
+  const aitor = heldLamp(state);
+  if (aitor) look.luna = scale(aitor, INTENSITY[intensity]);
   return look;
 }
+/** A turn of a boss the castle names over it (Aurelià's lesson, race and straight; the Queen's hands and La Pompa; his lap closing). */
+const TURNS: ReadonlySet<string> = new Set([...Object.values(AURELIA_PHASES), REINA_PHASES.manos, REINA_PHASES.pompa, 'Vuelta']);
+/**
+ * What a boss's own rules called over this action that the room answers raw: a `turn` (it grows
+ * stronger), a part of it `broken` (La Pompa burst early), or Aitor `taken`. `key` tells the same
+ * call twice apart (the Queen names Las manos as her PV cross it and again as she raises them).
+ */
+export function turnOf(effect: BattleEffect): { kind: 'turn' | 'broken' | 'taken'; key: string } | undefined {
+  for (const call of effect.called ?? []) {
+    if (call.text === 'Suyo') return { kind: 'taken', key: call.text };
+    if (call.text === '¡Pompa rota!') return { kind: 'broken', key: call.text };
+    // The lap comes back every lap: it is a turn each time.
+    if (call.text === 'Vuelta') return { kind: 'turn', key: `${call.text}-${call.detail ?? ''}` };
+    if (TURNS.has(call.text)) return { kind: 'turn', key: call.text };
+  }
+  return undefined;
+}
+/**
+ * The fight's answer found (docs/combat.md § La respuesta de cada combate): a golpe crítico, a
+ * weakness of element or of kind of blow, a Punto débil spent, and each fight's own: El que no
+ * converge converging, ice or a shield of bits broken, a short circuit, an electron knocked off El
+ * Átomo, the castle's «Respuesta correcta».
+ */
+export function answerFound(effect: BattleEffect) {
+  const struck = [effect, ...(effect.hits ?? [])];
+  return struck.some(hit => hit.crit || hit.affinity === 'weak') || !!effect.crits?.some(Boolean)
+    || [...effect.hunt ?? [], ...effect.volley ?? [], ...effect.hammer ?? []].some(hit => hit.crit)
+    || !!effect.kinds?.some(k => k.affinity === 'weak') || markSpent(effect)
+    || !!effect.converged || !!effect.ice?.some(i => i.broke !== undefined) || !!effect.bits?.broke
+    || (!!effect.shorted && effect.shorted.why !== 'again') || effect.electron?.mark === 'off'
+    || !!effect.called?.some(call => call.text === 'Respuesta correcta');
+}
+/** A cure from the party: what it gave back, to whom. */
+const cured = (effect: BattleEffect) => !!(effect.healed || effect.cures?.length || effect.healedAll?.length || effect.regen);
 /** A one-shot effect on some bulbs: LIFX's breathe (a smooth swell) or pulse (a hard strobe). */
 export interface Flash { lights: LightId[]; kind: 'breathe' | 'pulse'; color: Lamp; period: number; cycles: number; peak?: number }
 /** The heartbeat that starts once someone is low: on the table lamp, so hits never cut it off. */
@@ -347,22 +399,30 @@ export function hitFlash(effect: BattleEffect, state: BattleState, intensity: In
       : { lights: front, kind: 'pulse', color: hex('#ff7a1a', 1, .9), period: .18, cycles: effect.burn ? 2 + 2 * effect.burn.level : 2 };
   }
   if (!byParty) return { lights: front, kind: 'breathe', color: hex('#ff2a1a', strong, 1), period: knockedOut ? .9 : .5, cycles: knockedOut ? 2 : 1, peak: .08 };
+  // A cure is not a blow: a slow, soft green on the lamps in front (the table lamp may be beating).
+  if (cured(effect)) return { lights: front, kind: 'breathe', color: hex('#8fe0a6', .8 * strong, .4), period: 1.2, cycles: 1, peak: .35 };
   if (knockedOut) return { lights: [...front, 'mesa'], kind: 'breathe', color: hex('#ffd24a', 1, .7), period: .9, cycles: 1, peak: .1 };
-  // The answer found (a golpe crítico, a weakness, a Punto débil spent) lands warmer and longer than a plain blow.
-  const struck = [effect, ...(effect.hits ?? [])];
-  if (struck.some(hit => hit.crit || hit.affinity === 'weak') || effect.weakSpot === 'spent') return { lights: front, kind: 'breathe', color: hex('#ffe2a0', strong, .45), period: .7, cycles: 1, peak: .1 };
+  // The answer found lands warmer and longer than a plain blow.
+  if (answerFound(effect)) return { lights: front, kind: 'breathe', color: hex('#ffe2a0', strong, .45), period: .7, cycles: 1, peak: .1 };
   return { lights: front, kind: 'breathe', color: white(5500, .8 * strong), period: .45, cycles: 1, peak: .1 };
 }
 /**
  * The few blows that break the pastel rule, in raw colour: a boss turning (a new phase, a part of
  * it broken), a charged dual let go, a blow at everyone landing, the last blow on a boss.
  */
-export function peakOf(effect: BattleEffect, state: BattleState): Lamp | undefined {
+export function peakOf(effect: BattleEffect, state: BattleState, seen?: Set<string>): Lamp | undefined {
   const byParty = state.allies.some(a => a.id === effect.actor);
   if (state.phase === 'won' && isBoss(state)) return white(6500, 1);
-  // A boss getting stronger: red; one losing a part of itself: a hard white-gold.
+  // A turn the castle names: each one once (`seen`, the fight's own), Aitor taken in possession's violet.
+  const turn = turnOf(effect);
+  if (turn && !seen?.has(turn.key)) {
+    seen?.add(turn.key);
+    return turn.kind === 'taken' ? hex('#7d3fd8', 1, .9) : turn.kind === 'broken' ? hex('#fff0c0', 1, .5) : hex('#ff3a1a', 1, 1);
+  }
+  // A boss getting stronger: red; one losing a part of itself (or one of Direcció falling): a hard white-gold.
   if (effect.stage2 || effect.stage) return hex('#ff3a1a', 1, 1);
-  if (effect.eye === 'broken' || effect.cracked || effect.lampBroken || effect.release) return hex('#fff0c0', 1, .5);
+  const directiva = state.encounter === 'direccion' && state.foes.some(f => f.id === effect.target && f.kind === 'directiva' && f.hp <= 0);
+  if (effect.eye === 'broken' || effect.cracked || effect.lampBroken || effect.release || directiva) return hex('#fff0c0', 1, .5);
   const many = (effect.hits?.length ?? 0) > 1 || (effect.splash?.length ?? 0) > 0;
   if (!byParty && effect.ability?.card && many) return hex('#ff2a1a', 1, 1);
   return undefined;
@@ -383,6 +443,41 @@ export interface Cue { steps: { at: number; look: Look; duration: number }[] }
 export const VICTORY: Look = { cocina: hex('#ffd24a', 1, .6), sofa: hex('#48d07a', .9, .55), luna: hex('#4ac8ff', .9, .55), mesa: hex('#ffb070', .9, .55) };
 /** The party has fallen: the room sinks to a dark red before the pink-and-black of waking up. */
 export const DEFEAT: Look = { cocina: hex('#ff2a1a', .12, 1), sofa: hex('#ff2a1a', .08, 1), luna: OFF, mesa: hex('#c0306e', .1, .9) };
+
+// ——— The end (docs/castle-bosses.md § The last scene) ———
+/** The fights that end the game: her fall is no victory, and the last scene follows it. */
+export const isQueen = (state: BattleState) => state.encounter === 'reina' || state.encounter === 'reina-vuelta';
+/**
+ * She sags at 0 PV, the music gone, only the wind from the balcony: the room almost dark, a cold
+ * dim white by the windows, and her pink, low, on the table lamp, where Gerard's hand is.
+ */
+export const LAST: Look = { cocina: white(5200, .08), sofa: white(5600, .12), luna: OFF, mesa: hex('#e0569b', .18, .55) };
+/** Her breathing, slow, on the table lamp while Gerard chooses. */
+export const LAST_BREATH: Flash = { lights: ['mesa'], kind: 'breathe', color: hex('#e0569b', .06, .55), period: 6, cycles: 60, peak: .5 };
+/**
+ * What each choice does to the room, `at` ms from the moment it is taken. **Acabar**: the Foc Binari
+ * forms in his hand (orange on the lamps in front), goes into her, and her pink on the table lamp
+ * goes grey and out; black; then, where the throne was, an empty classroom in a cold, low white.
+ * **Bajar la mano**: his hand comes down, her pink stays where it is, and the dream ends in white,
+ * filling the room. Neither is the right one: neither is a victory's colours.
+ */
+export function endingCue(choice: EndingChoice, intensity: Intensity = 'normal'): Cue {
+  const k = INTENSITY[intensity];
+  const all = (lamp: Lamp) => Object.fromEntries(SALON.map(id => [id, lamp])) as Look;
+  if (choice === 'acabar') return { steps: [
+    { at: 0, look: { cocina: hex('#ff7a1a', .35 * k, .8), sofa: hex('#ff8a2a', .45 * k, .8), luna: hex('#ff7a1a', .3 * k, .8) }, duration: .8 },
+    { at: 1400, look: { mesa: hex('#ff9a4a', .5 * k, .6) }, duration: .2 },
+    { at: 2000, look: { mesa: white(4500, .12) }, duration: 2.2 },
+    { at: 4200, look: all(OFF), duration: 2.4 },
+    { at: 8000, look: { cocina: white(5600, .12 * k), sofa: white(6000, .16 * k) }, duration: 4 },
+  ] };
+  return { steps: [
+    { at: 0, look: { cocina: white(5200, .05), sofa: white(5600, .08) }, duration: 1.5 },
+    { at: 1600, look: all(white(5200, .95 * k)), duration: 3.5 },
+  ] };
+}
+/** The morning after Bajar la mano: some pink is still in the city, a moment on the moon. */
+export const LEFT_PINK: Flash = { lights: ['luna'], kind: 'breathe', color: hex('#ff9fc8', .4, .3), period: 9, cycles: 1, peak: .5 };
 
 // ——— Timing ———
 /** A swell reads as a flash this soon, whatever its peak (lights.py `SEEN_SECONDS`). */
@@ -456,7 +551,9 @@ const POLL_MS: Record<Transport, number> = { lan: 250, cloud: 3000 };
 /** How often the bridge's clock is read again, and how often the bulbs' latencies (outside the flat, which reads them anyway). */
 const CLOCK_MS = 60000, MEASURE_MS = 5000;
 export const DEFAULT_SETTINGS: LightsSettings = { enabled: false, scope: 'salon', intensity: 'normal', late: 0 };
-export type Moment = 'fall' | 'tv' | 'tv-off' | 'doom' | 'right' | 'wrong' | 'ambush' | 'wake' | 'portal' | 'emerge' | 'unmask' | 'anima' | 'light-in' | 'palace';
+export type Moment = 'fall' | 'tv' | 'tv-off' | 'doom' | 'right' | 'wrong' | 'ambush' | 'wake' | 'portal' | 'emerge' | 'unmask' | 'anima' | 'light-in' | 'palace' | 'last' | EndingChoice;
+/** The longest the end holds the room before giving it back anyway (the morning after gives it back first). */
+const FINALE_MS = 10 * 60000;
 
 export function createHomeLights() {
   let settings: LightsSettings = { ...DEFAULT_SETTINGS };
@@ -492,6 +589,13 @@ export function createHomeLights() {
   let caught: (() => void) | undefined;
   /** The fight whose ending is already playing: the battle screen reports it more than once. */
   let finished: BattleState | undefined;
+  /** The turns a boss has already called this fight, so each slams once. */
+  let turns = new Set<string>();
+  /** The artilugio in her fight: how many marks were lit, whether she has turned and Aitor is free. */
+  let melody = { notes: 0, startled: false, freed: false };
+  /** The end holding the room (her fall, the last scene, the choice) until the morning after; and which. */
+  let finale: (() => void) | undefined;
+  let ending: EndingChoice | undefined;
   let poll: ReturnType<typeof setInterval> | undefined;
   /** The bridge's clock less this page's (ms): known once read, and flashes then carry the moment they must be seen. */
   let offset: number | undefined;
@@ -683,7 +787,7 @@ export function createHomeLights() {
   function release() {
     stopRetry();
     if (!active()) return;
-    timers.forEach(clearTimeout); timers.clear(); holding = 0; fallen = false; finished = undefined;
+    timers.forEach(clearTimeout); timers.clear(); holding = 0; fallen = false; finished = undefined; finale = undefined; ending = undefined;
     const states = HOUSE_LIGHTS.filter(light => present.has(light.id)).flatMap(light => bulbStates(light.id, flat[light.id]));
     if (states.length) void call('PUT', '', { states, duration: 1.5 }, true);
     try { localStorage.setItem(RETURNED_KEY, JSON.stringify({ at: Date.now(), flat })); } catch { /* Storage is optional. */ }
@@ -752,6 +856,7 @@ export function createHomeLights() {
       const starting = !!state && !fight;
       const over = state?.phase === 'won' || state?.phase === 'lost' || state?.phase === 'escaped';
       fight = state && !over ? state : undefined;
+      if (starting) { turns = new Set(); melody = { notes: 0, startled: false, freed: !!state.castle?.freed }; }
       if (!active()) return 0;
       if (!state) {
         finished = undefined;
@@ -762,7 +867,7 @@ export function createHomeLights() {
       const impact = effect ? impactSeconds(effect) * 1000 : 0;
       const hit = effect && hitFlash(effect, state, settings.intensity);
       // A peak breaks the pastel: raw, unless the lights are set soft, where it only swells.
-      const peak = effect && peakOf(effect, state);
+      const peak = effect && peakOf(effect, state, turns);
       const raw = !!peak && settings.intensity !== 'suave';
       const swell: Flash | undefined = peak && !raw ? { lights: [...SALON], kind: 'breathe', color: pastel(peak, CAPS.boss), period: 1.4, cycles: 1, peak: .3 } : undefined;
       const accent = swell ?? hit;
@@ -780,6 +885,12 @@ export function createHomeLights() {
         if (finished === state) return 0;
         finished = state;
         const won = state.phase === 'won';
+        // Her fall is no victory: the room goes still for the last scene, and stays the end's until the morning after.
+        if (won && isQueen(state)) {
+          beat = undefined; finale ??= hold(FINALE_MS, 3);
+          later(after, () => { show(LAST, 2.5, true); flash(LAST_BREATH); });
+          return holdMs;
+        }
         holding++; beat = undefined; fallen = !won;
         later(after, () => show(won ? VICTORY : DEFEAT, won ? .25 : 2, true));
         if (won) later(after + 2600, () => { holding--; settle(2, true); });
@@ -806,6 +917,35 @@ export function createHomeLights() {
     /** Bernat's box opened or closed: while open, the real flat is the game's (the portal's puzzle is played on its lamps). */
     portal(open: boolean) { if (open === portal) return; portal = open; settle(.6, true); },
     /**
+     * A note of the artilugio in her fight (src/castle-fight.ts `castleNote`). The first one makes her
+     * turn: the room flinches. Each right one walks the moon from her violet towards Aitor's cyan, a
+     * wrong one puts it back; the sixth frees him, a slam in his own colour, and her violet leaves the room.
+     */
+    note(state: BattleState | undefined) {
+      const held = state?.castle;
+      if (!state || !held?.taken || state.phase === 'won' || state.phase === 'lost') return;
+      if (fight) fight = state;
+      const was = melody;
+      melody = { notes: held.notes ?? 0, startled: !!held.startled, freed: !!held.freed };
+      if (!active() || holding) return;
+      const now = performance.now() + SCREEN_MS - settings.late;
+      if (melody.freed && !was.freed) {
+        if (settings.intensity === 'suave') flash({ lights: [...SALON], kind: 'breathe', color: AITOR, period: 1.6, cycles: 1, peak: .3 });
+        else play(slam(hex('#4fd8e8', 1, .85)), now);
+        later(1400, () => settle(1.8, true));
+        return;
+      }
+      // She turns at the first note, as if called by name: the room drops for a breath and comes back.
+      if (melody.startled && !was.startled) {
+        const look = battleLook(state, settings.scope, settings.intensity);
+        play({ steps: [{ at: 0, look: Object.fromEntries(SALON.map(id => [id, scale(look[id] ?? OFF, .2)])), duration: .05 }, { at: 260, look, duration: .5 }] }, now);
+      }
+      const lamp = heldLamp(state);
+      if (!lamp) return;
+      show({ luna: scale(lamp, INTENSITY[settings.intensity]) }, .3, true);
+      if (melody.notes !== was.notes) flash({ lights: ['luna'], kind: 'breathe', color: melody.notes > was.notes ? hex('#4fd8e8', 1, .6) : hex('#3a1a6a', .05, .9), period: .8, cycles: 1, peak: .25 });
+    },
+    /**
      * Story moments the room takes part in. Most stay pastel; the raw ones are hers and the falls:
      * being caught, the people she holds unmasked, her palace rising, the end. `colour` is an ánima's.
      */
@@ -815,6 +955,19 @@ export function createHomeLights() {
       const all = (lamp: Lamp) => Object.fromEntries(SALON.map(id => [id, lamp]));
       if (kind === 'right' || kind === 'wrong') {
         flash({ lights: [...SALON, ...ELSEWHERE], kind: 'pulse', color: kind === 'right' ? hex('#2bff6a', 1) : hex('#ff2a1f', 1), period: .45, cycles: 3 });
+      } else if (kind === 'last') {
+        // The last scene, if the fight did not already still the room: her breathing on the table lamp while Gerard chooses.
+        finale ??= hold(FINALE_MS, 3);
+        show(LAST, 2, true); flash(LAST_BREATH);
+      } else if (kind === 'acabar' || kind === 'bajar') {
+        finale ??= hold(FINALE_MS, 3); ending = kind;
+        const cue = endingCue(kind, settings.intensity);
+        // Acabar's Foc Binari flickers as it forms, unless the lights are set soft.
+        if (kind === 'acabar' && settings.intensity !== 'suave') later(200, () => flash({ lights: ['cocina', 'sofa', 'luna'], kind: 'pulse', color: hex('#ff7a1a', 1, .9), period: .2, cycles: 5 }));
+        play(cue, now);
+      } else if (kind === 'fall' && finale) {
+        // The end's way into the morning after: no pink here, whatever was chosen. The dark, and the morning gives the room back.
+        show(all(OFF), 2, true);
       } else if (kind === 'fall') {
         holding++;
         show(all(hex('#ff3f9a', .35, .8)), .4, true);
@@ -827,6 +980,13 @@ export function createHomeLights() {
       else if (kind === 'ambush') { caught?.(); caught = hold(8000); show(all(hex('#6a3ab0', .03, .9)), 1.4, true); }
       // Waking: a pale morning first, then wherever they are.
       else if (kind === 'wake') {
+        // The Monday after the end: the morning comes slower, and after Bajar la mano some pink is still there.
+        if (finale) {
+          const release = finale, chose = ending; finale = ending = undefined;
+          show(all(white(4200, .3)), 1.5, true);
+          later(2500, () => { release(); if (chose === 'bajar') later(3000, () => flash(LEFT_PINK)); });
+          return;
+        }
         const release = caught ?? hold(400); caught = undefined;
         show(all(white(4200, .3)), .2, true); later(400, release);
       }

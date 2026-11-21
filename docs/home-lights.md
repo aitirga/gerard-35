@@ -95,6 +95,10 @@ tints the living room instead of flooding it. Each place has a register (`regist
 | Caught by her minions (`ambush`) | The room goes out with the screen, in a violet-black, until they wake |
 | La Sobremesa unmasked (`unmask`) | Slam in violet (the people she holds), then a clean white |
 | Her palace rises (`palace`) | Her pink climbs through the room over 4 s, more saturated than anywhere else |
+| A turn the castle names over a boss (Aurelià's *La lección*, *La carrera*, *La última recta* and each *Vuelta* of his lap; the Queen's *Las manos* and *La pompa*) | Slam in red, once per turn per fight (`turnOf`: she names *Las manos* twice) |
+| La Pompa burst early (*¡Pompa rota!*), one of Direcció's three falling | Slam in hard white-gold |
+| She takes Aitor (*Suyo*) | Slam in possession's violet (never her pink) |
+| The sixth note frees him | Slam in Aitor's cyan, and her violet leaves the room |
 
 Bosses are the fights in `BOSSES`: the palace minion, El Cebollón, Vertitrón, La Sobremesa, El
 Campeón, La Voz, El que no converge, Fran, the three delegadas, Aurelià, el Equipo de dirección and
@@ -135,7 +139,35 @@ a handful of requests.
   faster below 15 %. Palette changes leave that lamp alone so they never cut the heartbeat.
 - **Winning** turns the four bulbs gold, green, cyan and peach for a moment (pastel; pink is hers); **falling** sinks them
   to a dark red until *Despertar*, then pink and black as Gerard wakes up at home.
+- **The answer found** (`answerFound`) is each fight's own as well: a weakness of element or of kind
+  of blow, a golpe crítico in any strike, a Punto débil spent, El que no converge converging, ice or
+  an Escudo de bits broken, a Cortocircuito that shorts, an electron knocked off El Átomo, the
+  castle's *Respuesta correcta*. A **cure** is not a blow: a slow, soft green on the lamps in front.
+- **Direcció's three lamps.** In the meeting room one lamp on the table goes out with each of the
+  three who falls; at home the kitchen, the sofa and the moon go out the same way.
+- **Aitor held.** While the Queen holds him the moon is his light, in possession's violet. The
+  artilugio's first note makes her turn: the whole room drops for a breath. Each right note walks
+  the moon towards his cyan (a cyan swell on it), a wrong one puts it back (a dark dip); the sixth
+  frees him (`note`, called from `src/main.ts` after every note).
 - **Watching the TV news** the sofa bulb flickers blue like the screen.
+
+## The end
+
+Her fall is no victory (`isQueen`): after the last blow's cold white the room does not take the
+victory colours. It goes still for the last scene (`LAST`): almost dark, a cold dim white by the
+windows and her pink, low, on the table lamp, breathing slowly (`LAST_BREATH`) while Gerard
+chooses. The end holds the room (`finale`) until the morning after gives it back.
+
+| Choice | The room (`endingCue`) |
+| --- | --- |
+| **Acabar** | The Foc Binari forms: orange on the lamps in front, flickering (a swell with *Suave*); it goes into her and her pink on the table lamp turns grey and goes out; black, the room with the screen; then, where the throne was, an empty classroom: a cold, low white on the kitchen and the sofa |
+| **Bajar la mano** | His hand comes down: the room dims, her pink stays where it is; then the dream ends in white, the four bulbs filling to a soft daylight |
+
+The way to the Monday after (the story's `fall`) goes dark with no pink, whatever was chosen; the
+morning comes slower than other mornings, and gives the house back. After *Bajar la mano* some
+pink is still in the city: a few seconds later the moon swells faintly pink once and lets it go
+(`LEFT_PINK`). Neither ending uses the victory's colours: neither is the right one. The fight
+tester's ending preview gives the room back the same way.
 
 ## Timing
 
@@ -183,7 +215,7 @@ about ±50 ms, under what the eye notices between a screen and a lamp across the
 A flash is never sent twice on the LAN (a copy arriving late would start it over); a state that no
 bulb acknowledged goes once more.
 
-## Requests## Requests
+## Requests
 
 On the LAN every state goes straight out as SetColor/SetLightPower and flashes as SetWaveform,
 without waiting (§ Timing). Only a bulb heard from in the last 10 s

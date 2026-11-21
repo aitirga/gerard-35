@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAPS, HOUSE_LIGHTS, OFF, SCREEN_MS, SWATCHES, VICTORY, ambience, autoLead, battleLook, bracing, clockOffset, heartbeat, hex, hitFlash, holdFor, impactSeconds, isBoss, lampInteraction, lampRgb, lateness, mix, peakOf, placeLook, registerOf, riseOf, sameLamp, slam, stepSwatch, sweep, switchedOn, tapOffsets, tension, white } from '../src/home-lights.ts';
+import { CAPS, HOUSE_LIGHTS, LAST, answerFound, endingCue, heldLamp, isQueen, turnOf, OFF, SCREEN_MS, SWATCHES, VICTORY, ambience, autoLead, battleLook, bracing, clockOffset, heartbeat, hex, hitFlash, holdFor, impactSeconds, isBoss, lampInteraction, lampRgb, lateness, mix, peakOf, placeLook, registerOf, riseOf, sameLamp, slam, stepSwatch, sweep, switchedOn, tapOffsets, tension, white } from '../src/home-lights.ts';
 import { CONTACT_SECONDS } from '../src/battle-motion.ts';
 import { createBattle, createGuardBattle, palaceGuards } from '../src/battle.ts';
 import { ENVIRONMENTS } from '../src/environments.ts';
@@ -199,4 +199,73 @@ test('a dual flickers the whole room gold and orange as its banner settles', () 
   assert.ok(hue >= 25 && hue <= 50, `gold to orange, never violet or pink: ${hue}`);
   assert.equal(hitFlash(dual, state, 'suave').kind, 'breathe', 'no strobe when the lights are soft');
   assert.ok(impactSeconds(dual) > CONTACT_SECONDS, 'it waits for the banner');
+});
+
+test('the castle\'s bosses turn the room raw once per turn they name; Aitor taken is possession\'s violet', async () => {
+  const { createFearBattle } = await import('../src/battle.ts');
+  const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
+  const state = createFearBattle(party, 'reina-vuelta'), queen = state.foes.find(f => f.kind === 'reina').id;
+  const seen = new Set();
+  const manos = { kind: 'attack', actor: 'gerard', target: queen, called: [{ target: queen, text: 'Las manos' }] };
+  assert.ok(peakOf(manos, state, seen).saturation > .85, 'her hands: full red');
+  assert.equal(peakOf({ ...manos, kind: 'enemy', actor: queen }, state, seen), undefined, 'named again as she raises them: once is enough');
+  const taken = peakOf({ kind: 'attack', actor: 'gerard', target: queen, called: [{ target: 'aitor', text: 'Suyo' }] }, state, seen);
+  assert.ok(taken.hue > 255 && taken.hue < 290, `violet, not her pink (${taken.hue})`);
+  assert.ok(peakOf({ kind: 'attack', actor: 'gerard', target: queen, called: [{ target: queen, text: '¡Pompa rota!' }] }, state, seen).saturation <= .5, 'a part of her broken: white-gold');
+  assert.equal(turnOf({ kind: 'attack', actor: 'gerard', called: [{ target: queen, text: 'Respuesta correcta' }] }), undefined, 'the answer is a warm flash, not a slam');
+});
+
+test('while she holds Aitor the moon is his light: her violet, walking to his cyan with each right note', async () => {
+  const { createFearBattle } = await import('../src/battle.ts');
+  const { MELODY } = await import('../src/castle.ts');
+  const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
+  const state = createFearBattle(party, 'reina-vuelta');
+  assert.equal(heldLamp(state), undefined, 'not before she takes him');
+  state.castle = { ...state.castle, taken: true, notes: 0 };
+  const violet = heldLamp(state);
+  assert.ok(violet.hue > 255 && violet.hue < 290);
+  assert.equal(battleLook(state, 'salon').luna.hue, violet.hue, 'on the moon');
+  state.castle.notes = MELODY.length - 1;
+  assert.ok(heldLamp(state).hue < 230, 'almost his cyan');
+  state.castle.freed = true;
+  assert.equal(heldLamp(state), undefined, 'free: her violet leaves the room');
+});
+
+test('Direcció\'s table lamps go out one by one as the three fall, each fall a hard white', async () => {
+  const { createFearBattle } = await import('../src/battle.ts');
+  const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'papagato' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'matemagico' }];
+  const state = createFearBattle(party, 'direccion');
+  const three = state.foes.filter(f => f.kind === 'directiva');
+  assert.equal(three.length, 3);
+  assert.ok(battleLook(state, 'salon').cocina.on);
+  three[0].hp = 0;
+  const look = battleLook(state, 'salon');
+  assert.equal(look.cocina.on, false); assert.ok(look.sofa.on && look.luna.on);
+  assert.ok(peakOf({ kind: 'attack', actor: 'gerard', target: three[0].id, amount: 30 }, state), 'her fall slams');
+  three[1].hp = 0; three[2].hp = 0;
+  assert.ok(['cocina', 'sofa', 'luna'].every(id => !battleLook(state, 'salon')[id].on));
+});
+
+test('a cure is not a blow, and each fight\'s own answer lands as the answer', () => {
+  const state = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard-adult' }], palaceGuards(0));
+  const foe = state.foes[0].id;
+  const plain = hitFlash({ kind: 'attack', actor: 'gerard', target: foe, amount: 10 }, state);
+  const cure = hitFlash({ kind: 'skill', actor: 'gerard', target: 'gerard', amount: 10, healed: true }, state);
+  assert.ok(cure.color.hue > 100 && cure.color.hue < 160 && cure.period > plain.period, 'a slow green');
+  for (const answer of [{ converged: true }, { weakSpot: 'renewed' }, { kinds: [{ target: foe, blow: 'magic', affinity: 'weak' }] }, { crits: [false, true] }, { shorted: { target: foe, why: 'mojado' } }, { called: [{ target: foe, text: 'Respuesta correcta' }] }]) {
+    assert.ok(answerFound({ kind: 'attack', actor: 'gerard', target: foe, amount: 10, ...answer }), JSON.stringify(answer));
+  }
+  assert.ok(!answerFound({ kind: 'attack', actor: 'gerard', target: foe, amount: 10, shorted: { target: foe, why: 'again' } }));
+});
+
+test('the end: her fall is no victory, and the two choices leave the room differently, neither in victory\'s colours', () => {
+  assert.ok(isQueen({ encounter: 'reina-vuelta' }) && isQueen({ encounter: 'reina' }) && !isQueen({ encounter: 'aurelia' }));
+  assert.ok(Object.values(LAST).every(lamp => !lamp.on || lamp.brightness <= .2), 'the last scene is almost dark');
+  const acabar = endingCue('acabar'), bajar = endingCue('bajar');
+  const last = cue => cue.steps.at(-1).look;
+  assert.ok(acabar.steps.some(step => Object.values(step.look).every(lamp => !lamp.on) && Object.keys(step.look).length === 4), 'Acabar goes to black');
+  assert.ok(Object.values(last(acabar)).every(lamp => lamp.saturation === 0 && lamp.brightness < .2), 'and comes back as an empty classroom, cold and low');
+  assert.ok(Object.values(last(bajar)).every(lamp => lamp.saturation === 0 && lamp.brightness > .8), 'Bajar la mano ends in white');
+  for (const cue of [acabar, bajar]) for (const step of cue.steps) for (const lamp of Object.values(step.look)) assert.ok(!Object.values(VICTORY).some(v => sameLamp(v, lamp)));
+  assert.ok(endingCue('bajar', 'suave').steps.at(-1).look.mesa.brightness < last(bajar).mesa.brightness, 'soft lights stay softer');
 });
