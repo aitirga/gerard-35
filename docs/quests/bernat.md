@@ -42,9 +42,9 @@ of Jessica, his ánima or a boss, round 4 replaces them.
   2. a subtraction (white − red = cyan);
   3. a harder sum with a subtraction (yellow + cyan − green = magenta);
   4. the three primaries at once (red + green + blue = white).
-- **Then the performance**: every lamp goes off, one after another, while a pink, Bubbaloo light
-  comes on in the room where the artilugio is hidden (Gerard and Aitor's bedroom; **round 8 changes
-  it: the comedor, the Mesa lamp in green**), and the
+- **Then the performance**: every lamp goes off, one after another, while a light comes on in the
+  room where the artilugio is hidden (**since round 8 the estudio, its lamp in green**; before, the
+  bedroom in Bubbaloo pink), and the
   artilugio, awake for the first time, beeps random notes of its scale until it is found
   (docs/story-outline.md § The device: someone in front of it for a few seconds, or a press). Flag
   `portal-nucli`, which brings `artilugio`.
@@ -122,18 +122,18 @@ blink and the performance stay).
   watched from the flat), the lines in `src/friends/bernat.ts`. Screenshots: `just screenshots
   bernat-nucli --gpu`.
 
-## Round 8 (Aitor, 2026-11-21): the artilugio is in the comedor
+## Round 8 (Aitor, 2026-11-21): the artilugio is in the estudio
 
 **Decided** (replaces the bedroom and its pink light in the performance; the sums and the rest stay).
+First noted as the comedor and its Mesa lamp; the same evening Aitor moved it to the estudio.
 
-- **Where it is hidden**: Aitor has put the real artilugio away in the **comedor** (the dining
-  room), not the bedroom.
+- **Where it is hidden**: Aitor has put the real artilugio away in the **estudio**, plugged into the
+  mains (it restarted on low power from USB), not the bedroom.
 - **The end of the performance**: once the four sums are solved, every lamp goes off, and the
-  **Mesa** lamp (the dining table's, `mesa`) comes on **green**, alone: the only light left in the
-  flat points at where the artilugio is.
-- **To change in code** (not done yet): `HIDING_LAMP` to `'mesa'` and `HIDING_LIGHT` to a green in
-  `src/friends/bernat.ts`; the comments that say «the bedroom pink» in `src/portal-ui.ts`; and the
-  performance bullet above.
+  **Estudio** lamp (`estudio`) comes on **green**, alone: the only light left in the flat points at
+  where the artilugio is. Bernat says so: *«A l'estudi. El de debò. Sona: seguiu-lo.»*
+- **Built (2026-11-21)**: `HIDING_LAMP` and `HIDING_LIGHT` in `src/friends/bernat.ts` (its `solved`
+  line too), the comments in `src/portal-ui.ts`.
 
 ## Protagonist
 

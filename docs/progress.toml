@@ -344,11 +344,11 @@ grep = "'bernat-nucli'"
 in = "src/story-points.ts"
 
 [[block.item]]
-title = "Final de Bernat: la Mesa en verde"
+title = "Final de Bernat: el Estudio en verde"
 priority = "historia"
-grep = "HIDING_LAMP: LightId = 'mesa'"
+grep = "HIDING_LAMP: LightId = 'estudio'"
 in = "src/friends/bernat.ts"
-note = "El artilugio está en el comedor (docs/quests/bernat.md, ronda 8): al acabar las sumas se apagan todas y solo la Mesa se enciende en verde."
+note = "El artilugio está en el estudio (docs/quests/bernat.md, ronda 8): al acabar las sumas se apagan todas y solo la luz del Estudio se enciende en verde."
 
 [[block.item]]
 title = "Gente e historia en Poble Sec"

@@ -11,7 +11,7 @@
  * model only stirs its drawing on the sheet. Once the moon (`luna`) has held a colour for five
  * seconds every lamp of the model blinks green or red, and so does the house. A lamp of the sum
  * changed at home goes back to its colour. Four sums, then the performance: every lamp goes off,
- * one after another, the bedroom turns pink, and the artilugio, awake, beeps.
+ * one after another, the estudio turns green, and the artilugio, awake, beeps.
  *
  * The rule (what mixes into what) is `src/friends/bernat.ts`; the model and its camera, `src/game.ts`.
  */
@@ -233,7 +233,7 @@ export function createPortalUI(hud: HTMLElement, lights: HomeLights, maqueta: ()
             sheet.querySelectorAll('.portal-steps i').forEach((dot, i) => { dot.toggleAttribute('data-done', i < level); dot.removeAttribute('data-now'); });
             later(NEXT_MS, () => {
               if (level < PORTAL_LEVELS.length) { settling = false; start(true); return; }
-              // The performance: every lamp off, one after another; the bedroom pink; the artilugio awake.
+              // The performance: every lamp off, one after another; the estudio green, where it is hidden; the artilugio awake.
               sheet.dataset.gone = '';
               const order = HOUSE_LIGHTS.map(l => l.id).filter(lamp => lamp !== HIDING_LAMP);
               order.forEach((lamp, i) => later((i + 1) * OFF_STEP_MS, () => lights.setLamp(lamp, OFF)));

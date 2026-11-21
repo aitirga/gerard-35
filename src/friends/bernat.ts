@@ -79,8 +79,8 @@ export const SHEET_ICONS: Partial<Record<LightId, string>> = {
 /** Seconds the moon must hold a colour before the house answers. */
 export const HOLD_SECONDS = 5;
 /** The room where the artilugio is hidden in the real flat, and the light that marks it at the end. */
-export const HIDING_LAMP: LightId = 'dormitorio';
-export const HIDING_LIGHT: Lamp = hex('#ff6fae', .7, .85);
+export const HIDING_LAMP: LightId = 'estudio';
+export const HIDING_LIGHT: Lamp = hex('#3ddc68', .8);
 
 /** What a sum of lights makes: each channel added or taken away, kept between nothing and full. */
 export function mix(terms: readonly PortalTerm[]): [number, number, number] {
@@ -150,7 +150,7 @@ export const LINES_BERNAT = {
   /** The portal solved: the performance has run, the artilugio is there. */
   solved: group('bernat35',
     bernat('Ja està. Ha creuat.'),
-    bernat('A la vostra habitació. La de debò. Sona: seguiu-lo.'),
+    bernat('A l\'estudi. El de debò. Sona: seguiu-lo.'),
     aitor('Vamos a casa.'),
   ),
   /** At his table once it has crossed. */
