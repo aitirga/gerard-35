@@ -149,11 +149,14 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   lands on its shell, where the way from the foe to whoever it aimed at meets it: the foe comes up to
   the dome, not through it, and the dome dents and sparks there, with nothing on the ally. On the
   party's plates, its icon (a dome of squares) with the PV it has left; each blow says *Cúpula −N*,
-  the last *¡Cúpula rota!* (`BITS`, `bitsOf`). It answers the old question of Bip as a shield.
+  the last *¡Cúpula rota!* (`BITS`, `bitsOf`). As it loses PV it cracks (Aitor 2026-11-21): white
+  fractures with gaps run across it, more and wider the less it has left (`cracks` on its lattice).
+  It answers the old question of Bip as a shield.
 - **Patching it** (Aitor 2026-11-21, *idea 1*): a cure on someone under the dome gives them what they
   have room for and the rest goes into the dome, up to its PV (`changeHealth`): a whole ally under a
   dome with room is a target of any cure, so curing someone whole patches it (Rayo de sanación's
-  pulses too). *Cúpula +N* over them, and light runs up the dome as its dents close. It asks a choice
+  pulses too). *Cúpula +N* over them; every bit of the dome turns green and it breathes, swelling and
+  settling, while its dents and cracks close (Aitor 2026-11-21). It asks a choice
   under a big blow on its way: heal the one who is hurt or keep the dome standing.
 - **Redundancia** (Aitor 2026-11-21: *con una pasiva en el árbol permite sobrecurarlo por x3*): the
   Taller line's last node, after Escudo de bits (2 ecos). With it bought, a dome raised by the party

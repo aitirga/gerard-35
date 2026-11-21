@@ -570,6 +570,12 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
   lattice's middle, or for a shield from a point well behind it), keeping the outline bright: a body
   of glass with what is inside showing. Any kind can be glass too (`glass` in `GpuKind`, 0–1): its
   middle see-through, its edge kept and a glint up on its left, like a glass bead or a soap bubble.
+- **Its look.** `tint` (sRGB hex) and `tintAmount` (0–1) turn its bonded members to a colour, as
+  bright as they were (the bit dome going green while a cure patches it). `cracks` (0–1) splits it
+  with a web of cracks laid out by `crackSeed`: a Voronoi web over where each member stands on it
+  (round and up a sphere or a dome), each crack opening at its own share, wider the higher; in a crack
+  a member is a gap, along its lips it is bigger and white, and the rest dims. Both live in the
+  lattice texture's last column (`LOOK_COL`, src/lattice.ts) and act in the draw only.
   `strands: 'y'` joins a lattice's strands along y instead of x: a sphere's meridians.
 - **State.** Members use band E's spare channel (lattice slot + 1, negative when loose) and, while
   bonded, band D's first channel for their strain. Each lattice is a row of 22 texels in a data

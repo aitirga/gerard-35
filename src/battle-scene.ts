@@ -1928,9 +1928,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const shield = state ? bitsOf(state) : undefined;
     const raising = !!effect?.bits?.raised && !impacted;
     if (shield && shield !== wallFor && !raising) { wallFx?.fade(); wallFx = raiseWall(); wallFor = shield; wallSeen = shield.hp; }
-    // A cure patched it (a cure's own action shows it as it lands, a pulse at once).
-    if (shield && shield === wallFor && shield.hp > wallSeen && !(effect?.bits?.mended && !impacted)) wallFx?.mend();
-    if (shield && shield === wallFor && !(effect?.bits?.mended && !impacted)) wallSeen = shield.hp;
+    // A cure patched it (a cure's own action shows it as it lands, a pulse at once); a blow's dent too, as it lands.
+    const settled = !((effect?.bits?.mended || effect?.bits?.took) && !impacted);
+    if (shield && shield === wallFor && shield.hp > wallSeen && settled) wallFx?.mend();
+    if (shield && shield === wallFor && settled) wallSeen = shield.hp;
+    // Its cracks: what it has lost of its PV, as last seen (a dome filled past them by Redundancia is whole).
+    if (wallFor && shield === wallFor) wallFx?.wear(1 - wallSeen / Math.max(1, wallFor.max));
     // Broken by a blow still on its way: it gives way when that blow lands.
     if (!shield && wallFor && !(effect?.bits?.broke && !impacted)) { if (wallFor.broken) wallFx?.shatter(); else wallFx?.fade(); wallFx = undefined; wallFor = undefined; }
   }

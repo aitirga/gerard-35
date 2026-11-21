@@ -42,9 +42,14 @@ export const MAX_LATTICES = 4, MAX_MEMBERS = 8192, HIT_SAMPLES = 24;
  *  16–17 up to three batches thrown at it (first slot, count), how much of their motion it takes,
  *  their bounce (below 0: caught) · 18 where the dissolve spreads from, its extent ·
  *  19 shortest cell step, its members' life, longest cell step, rim glow ·
- *  20 the point its surface faces away from (for `fresnel`), opacity · 21 fresnel, the axis its strands run along (0 x, 1 y).
+ *  20 the point its surface faces away from (for `fresnel`), opacity · 21 fresnel, the axis its strands run along (0 x, 1 y) ·
+ *  LOOK_COL (the last) its look: a colour its members turn to (linear RGB packed in 8 bits each), how
+ *  far (0–1), how cracked it is (0–1) and the seed of its cracks.
  */
-export const LATTICE_COLS = 22;
+export const LOOK_COL = 22;
+export const LATTICE_COLS = LOOK_COL + 1;
+/** A linear RGB colour (0–1 each) packed into one number a shader unpacks exactly (8 bits each). */
+export const packColour = (rgb: readonly number[]) => rgb.slice(0, 3).reduce((sum, c) => sum * 256 + Math.round(Math.min(1, Math.max(0, c)) * 255), 0);
 
 export interface Vec3Like { x: number; y: number; z: number }
 

@@ -1298,6 +1298,8 @@ export function createEffects(app: pc.Application) {
      * melts back to nanites (`fade`). A lattice on the GPU: nothing where the engine cannot run.
      */
     bitDome(base: Vec, o: { radius?: number; height?: number; colour?: string } = {}) {
+      /** The green every bit turns while a cure patches it. */
+      const MENDED = '#5dff8f';
       if (!gpu || !gpuOn) return undefined;
       const colour = o.colour ?? '#4fe0ff', radius = o.radius ?? 1.8, height = o.height ?? radius * .8;
       const at = { x: base.x, y: base.y, z: base.z };
@@ -1308,14 +1310,22 @@ export function createEffects(app: pc.Application) {
         rigidity: 260, bonds: 480, damping: 9, viscosity: 2, toughness: 0, glow: 2.4, rim: 3.2, hitRadius: .1, transfer: .5, bounce: .35, reform: 0,
         opacity: .85, fresnel: .55, wave: { height: .01, length: .5, speed: .7 }, light: { intensity: 1.4, range: radius * 1.8, colour },
       });
-      let end = Infinity, how: 'shatter' | 'fade' = 'fade', mending = 0;
+      let end = Infinity, how: 'shatter' | 'fade' = 'fade', mended = -Infinity, worn = 0;
+      /** How long a cure's green breath lasts, and how long each breath takes. */
+      const MEND = 2.4, BREATH = .8;
       lattices.push({ lattice: dome, age: 0, seconds: 1e9, step: (t, dt) => {
         // It rises from the floor, its rim first.
         const k = 1 - (1 - span(t, 0, .5)) ** 2;
-        if (t < 1) dome.size.set(radius * (.35 + .65 * k), height * k + .02, .005);
+        // A cure: every bit turns green and the dome breathes, swelling and settling, then goes back to its colour.
+        const since = t - mended, green = since >= 0 && since < MEND ? Math.min(1, since / .2) * (1 - span(since, MEND - .6, MEND)) : 0;
+        const breath = green > 0 ? green * (.5 - .5 * Math.cos(since / BREATH * Math.PI * 2)) : 0;
+        dome.tint = MENDED; dome.tintAmount = green; dome.glow = 2.4 + breath * 2.4; dome.opacity = .85 + breath * .15;
+        const swell = 1 + breath * .07;
+        dome.size.set(radius * (.35 + .65 * k) * swell, (height * k + .02) * swell, .005);
+        // Its cracks follow what it has lost (`wear`), opening at once and closing as it is mended.
+        dome.cracks += (worn - dome.cracks) * Math.min(1, dt * (worn > dome.cracks ? 12 : green > 0 ? 2.5 : 4));
         // Whole, it mends what a blow dents (and faster while a cure patches it); it only gives way once it has risen.
-        mending = Math.max(0, mending - dt);
-        dome.toughness = t > .7 ? .55 : 0; dome.reform = t > .7 && end === Infinity ? (mending > 0 ? 160 : 40) : 0;
+        dome.toughness = t > .7 ? .55 : 0; dome.reform = t > .7 && end === Infinity ? (green > 0 ? 160 : 40) : 0;
         if (end !== Infinity) {
           dome.dissolve = span(t, end, end + (how === 'shatter' ? .35 : .8));
           if (t > end + 1.2) dome.remove();
@@ -1346,12 +1356,14 @@ export function createEffects(app: pc.Application) {
           dome.push(point, .35 + .15 * strength, -1.5 * strength);
           glint(point, colour, 2 + strength, 2.6, .3);
         },
-        /** A cure patches it: its dents close fast and light runs up it from the rim. */
+        /** How much of it is lost (0–1): its cracks open with it, and close as it is mended. */
+        wear(share: number) { worn = Math.min(1, Math.max(0, share)); },
+        /** A cure patches it: every bit turns green and it breathes, its dents and cracks close, light runs up it from the rim. */
         mend() {
           if (!dome.alive || end !== Infinity) return;
-          mending = .8;
-          gpu.burst('spark', { at: { x: at.x, y: at.y + .05, z: at.z }, count: 140, shape: 'ring', spread: radius * .95, up: height * 1.6, speed: .4, around: 1.2, life: [.5, .8], colour: '#dffbff' });
-          glint({ x: at.x, y: at.y + height * .7, z: at.z }, colour, 2.5, radius * 1.5, .4);
+          mended = ageOf();
+          gpu.burst('spark', { at: { x: at.x, y: at.y + .05, z: at.z }, count: 140, shape: 'ring', spread: radius * .95, up: height * 1.6, speed: .4, around: 1.2, life: [.5, .8], colour: '#d6ffe2' });
+          glint({ x: at.x, y: at.y + height * .7, z: at.z }, MENDED, 2.5, radius * 1.5, .4);
         },
         /** It gives way from inside, in chips. */
         shatter() {

@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { SURFACE_SAMPLES, writeSurface } from './surface-samples.ts';
-import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
+import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, packColour, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
 
 /**
  * A general particle engine on the GPU, for fights (docs/graphics.md, "Fight particles on the GPU").
@@ -188,6 +188,12 @@ export interface GpuLattice {
   hitRadius: number; transfer: number; bounce: number;
   /** 0–1 of it broken loose, starting from `dissolveFrom`: raise it over time to crumble it. */
   dissolve: number; dissolveFrom: LatticeDissolve;
+  /**
+   * Its look over its kind's: `tint` (sRGB hex) its bonded members turn to, `tintAmount` (0–1) how far;
+   * `cracks` (0–1) how much of it is split by cracks (dark gaps with bright edges across its cells,
+   * more and wider the higher), laid out by `crackSeed`.
+   */
+  tint: string; tintAmount: number; cracks: number; crackSeed: number;
   /** Its members' slots. */
   readonly members: GpuBatch;
   readonly alive: boolean;
@@ -770,6 +776,40 @@ varying vFloor: vec4f;
 varying vAge: vec3f;
 fn st(band: i32, index: i32) -> vec4f { return textureLoad(uState, vec2i(index % ${W}, index / ${W} + band * ${H}), 0); }
 fn kin(k: i32, c: i32) -> vec4f { return textureLoad(uKinds, vec2i(c, k), 0); }
+fn fmodf(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
+fn crackMix(x: u32) -> u32 { let v = x * 747796405u + 2891336453u; let w = ((v >> ((v >> 28u) + 4u)) ^ v) * 277803737u; return (w >> 22u) ^ w; }
+// A hash of two whole numbers and a salt, 0…1 (integer, so the GPU gives the same as anywhere).
+fn crackHash(a: f32, b: f32, salt: u32) -> f32 {
+  return f32(crackMix((u32(i32(a) + 4096) * 73856093u) ^ (u32(i32(b) + 4096) * 19349663u) ^ crackMix(salt)) >> 8u) / 16777215.0;
+}
+// A web of cracks over a lattice's cells (0…1 round it, 0…1 up it), as its amount (0–1) opens them:
+// how deep in a crack a cell is (x) and how much on its lip (y). Cells of a Voronoi web, wrapped round,
+// a little jagged; each crack (the edge between two of them) opens at its own share of the damage.
+fn crackAt(cell: vec2f, amount: f32, seed: f32) -> vec2f {
+  let K = vec2f(6.0, 2.0);
+  let salt = u32(max(seed, 0.0));
+  let turn = f32(salt % 97u) * 0.37;
+  let wob = vec2f(sin(cell.y * 37.0 + turn) * 0.12 + sin(cell.y * 91.0 + turn * 1.7) * 0.05, sin(cell.x * 6.2831853 * 3.0 + turn * 0.6) * 0.1);
+  let p = cell * K + wob;
+  let base = floor(p);
+  var d1 = 9.0; var d2 = 9.0; var id1 = vec2f(0.0); var id2 = vec2f(0.0);
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let c = base + vec2f(f32(x), f32(y));
+      let id = vec2f(c.x - K.x * floor(c.x / K.x), c.y);
+      let site = c + 0.15 + 0.7 * vec2f(crackHash(id.x, id.y, salt), crackHash(id.x, id.y, salt + 7919u));
+      let d = length(p - site);
+      if (d < d1) { d2 = d1; id2 = id1; d1 = d; id1 = id; } else if (d < d2) { d2 = d; id2 = id; }
+    }
+  }
+  let edge = d2 - d1;
+  let h = crackHash(id1.x + id2.x + 64.0 * abs(id1.x - id2.x), id1.y + id2.y + 64.0 * abs(id1.y - id2.y), salt + 104729u) * 0.85;
+  let open = smoothstep(h, h + 0.12, amount);
+  let width = max((0.1 + 0.18 * amount) * open, 1e-4);
+  let inside = (1.0 - smoothstep(width * 0.5, width, edge)) * open;
+  let lip = (1.0 - smoothstep(width, width * 1.8 + 0.05, edge)) * open;
+  return vec2f(inside, max(lip - inside, 0.0));
+}
 @vertex
 fn vertexMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
@@ -794,7 +834,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
   let blur = mix(k10.z, k10.w, t); let expand = 1.0 + blur * 0.8;
   // A pool of paint spreads as it lands, in a third of a second, and then stays as it is.
   let grown = select(t, 1.0 - exp(-A.w * 9.0), s.w > 11.5);
-  let size = mix(s.x, s.y, grown) * C.w * expand;
+  var size = mix(s.x, s.y, grown) * C.w * expand;
   // Each particle a touch brighter or dimmer than its kind, so a burst never looks flat.
   colour *= 0.86 + 0.28 * fract(seed * 7.13);
   let shape = s.w;
@@ -812,6 +852,33 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
         let g20 = textureLoad(uLattices, vec2i(20, l), 0); let g21 = textureLoad(uLattices, vec2i(21, l), 0);
         let facing = abs(dot(normalize(A.xyz - g20.xyz + vec3f(0.0, 1e-5, 0.0)), back));
         alpha *= g20.w * mix(1.0, 0.08 + 0.92 * pow(1.0 - facing, 1.5), g21.x);
+        // Its look: the colour its members turn to (as bright as they were), and its cracks.
+        let look = textureLoad(uLattices, vec2i(${LOOK_COL}, l), 0);
+        if (look.y > 0.001) {
+          let packed = u32(look.x + 0.5);
+          let to = vec3f(f32((packed >> 16u) & 255u), f32((packed >> 8u) & 255u), f32(packed & 255u)) / 255.0;
+          colour = mix(colour, to * max(max(colour.r, colour.g), max(colour.b, 0.05)) / max(max(to.r, to.g), max(to.b, 0.05)), look.y);
+        }
+        if (look.z > 0.001) {
+          // Where on it the member is, from where it stands in the lattice's own space (0…1 each way):
+          // round and up a sphere or a dome, across and up anything else.
+          let w3 = textureLoad(uLattices, vec2i(3, l), 0); let w4 = textureLoad(uLattices, vec2i(4, l), 0); let w5 = textureLoad(uLattices, vec2i(5, l), 0);
+          let own = vec3f(dot(w3.xyz, A.xyz) + w3.w, dot(w4.xyz, A.xyz) + w4.w, dot(w5.xyz, A.xyz) + w5.w);
+          let half = max(textureLoad(uLattices, vec2i(8, l), 0).xyz, vec3f(1e-4));
+          let form = textureLoad(uLattices, vec2i(7, l), 0).y;
+          var cell = own.xy / half.xy * 0.5 + 0.5;
+          if (form > 5.5) {
+            let u = vec3f(own.x / half.x, own.y / half.y, own.z / half.x);
+            let up = acos(clamp(u.y / max(length(u), 1e-5), -1.0, 1.0)) / select(1.5707963, 0.78539816, form > 6.5);
+            cell = vec2f(fract(atan2(u.z, u.x) / 6.2831853 + 1.0), clamp(1.0 - up * 0.5, 0.0, 1.0));
+          }
+          let crack = crackAt(cell, look.z, look.w);
+          // In the crack it is a gap; along its lips the bits are bigger and bright, strained; the rest of it dims as it gives way.
+          alpha = mix(alpha * (1.0 - 0.45 * look.z), 0.0, crack.x);
+          alpha = mix(alpha, 1.0, crack.y);
+          colour = mix(colour * (1.0 - 0.4 * look.z), vec3f(3.2, 3.5, 3.6), crack.y);
+          size *= 1.0 + 1.3 * crack.y;
+        }
       }
     }
   }
@@ -1368,6 +1435,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       rigid.transformPoint(shape === 'shield' ? new pc.Vec3(0, 0, -1.5 * Math.max(l.size.x, l.size.y)) : pc.Vec3.ZERO, centre);
       out.set([centre.x, centre.y, centre.z, Math.min(1, Math.max(0, l.opacity))], o + 80);
       out.set([Math.min(1, Math.max(0, l.fresnel)), l.strands === 'y' ? 1 : 0, 0, 0], o + 84);
+      out.set([packColour(tint(l.tint)), Math.min(1, Math.max(0, l.tintAmount)), Math.min(1, Math.max(0, l.cracks)), l.crackSeed], o + LOOK_COL * 4);
     }));
   }
   function makeLattice(kind: string, o: GpuLatticeOptions): GpuLattice {
@@ -1385,7 +1453,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     const { light, from, life: _life, hold, scale, colour, at: _at, rotation: _rotation, size, grid: _grid, wave, ...fields } = o;
     const l: LatticeState = {
       shape: 'box', morph: 0, rigidity: 120, bonds: 300, damping: 6, viscosity: 1, toughness: 0, reform: 0, flow: 0, glow: .6, rim: 0, opacity: 1, fresnel: 0, strands: 'x',
-      hitRadius: .08, transfer: .5, bounce: .3, dissolve: 0, dissolveFrom: 'random',
+      hitRadius: .08, transfer: .5, bounce: .3, dissolve: 0, dissolveFrom: 'random', tint: '#ffffff', tintAmount: 0, cracks: 0, crackSeed: Math.floor(Math.random() * 100000),
       ...fields, morphTo: o.morphTo ?? o.shape ?? 'box', wave: { height: 0, length: 1, speed: 0, ...wave },
       at, rotation, grid, size: new pc.Vec3(size.x, size.y, size.z),
       slot, kind: k, life, hold: Math.min(.95, Math.max(.05, hold ?? .4)), flowAt: 0, phase: 0, last: at.clone(), lastTurn: rotation.clone(),

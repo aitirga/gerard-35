@@ -55,7 +55,15 @@
       "timeout": 60000
     },
     {
-      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = a.maxHp; }); })"
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.hp = a.maxHp; }); const w = s.allies.find(a => a.bits)?.bits; if (w) w.hp = 12; })"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "cupula-agrietada",
+      "delay": 200,
+      "caption": "The dome at 12 of its 40 PV: cracks run across it, dark gaps with bright lips, more and wider the more it has lost"
     },
     {
       "wait": 400
@@ -73,10 +81,10 @@
     },
     {
       "record": "parchear",
-      "seconds": 2.6,
+      "seconds": 3.2,
       "fps": 30,
       "tiles": 12,
-      "caption": "Cardioide on Gerard, who is whole: the cure goes into the dome (Cúpula +N) and light runs up it as its dents close; with Redundancia it can go past its 40 PV"
+      "caption": "Cardioide on Gerard, who is whole: the cure goes into the dome (Cúpula +N); every bit turns green and the dome breathes, swelling and settling, while its cracks close; with Redundancia it can go past its 40 PV"
     },
     {
       "shot": "cupula-reparada",
