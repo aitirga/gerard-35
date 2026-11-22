@@ -1,6 +1,6 @@
 # A cop de diapasó · (working title)
 
-Status: designing (round 7) · Last updated: 2026-11-19
+Status: the room built (2026-11-22); the AI clue, voices and the regulars still open · Last updated: 2026-11-22
 
 **Decided** means the user said so. **Proposal** means it came from the design side and is waiting
 for a yes. This doc is the choir as a place; Emilie's mission gets its own, `docs/quests/emilie.md`.
@@ -60,7 +60,8 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
   and a blade sign with the tuning fork in cyan neon out over the pavement. By day the shutter is
   rolled up and the room shows under it (warm work lamps, chairs that never match, stands, a
   keyboard, the neon on the back wall); at night it is down, and the door only offers *Mirar la
-  persiana*. The room itself, with Marta, Ferran and Darío in it, is not built.
+  persiana*. **The room inside is built** (2026-11-22, § The room inside); Marta, Ferran and Darío
+  are not in it yet (no figures).
 
 - **Who runs it** (decided round 3, real): **Aitor directs the choir**; **Gerard sings in it**. In
   the game Aitor stands at the front with the tuning fork, and Gerard takes his chair in a row.
@@ -137,6 +138,36 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
   `just fight-sim`).
 - **Doom morning** (idea, not proposed yet): when the Queen covers the flat, the choir room might be
   the last place she has not reached.
+
+## The room inside (built 2026-11-22)
+
+Aitor (2026-11-22): «El coro no es accesible, diseñalo y coloca a toda la gente salvada de la
+influencia de la reina allá.» Built as designed here; Aitor to look at it.
+
+- **The way in**: by day *Entrar al local del coro* at the shutter on the avenue (`meridiana-coro`)
+  goes in (`coro`, `CORO` in `src/environments.ts`); at night the shutter is down, as before. Out
+  through the same shutter (*Salir a la Meridiana*). *Ensayar con el coro* is played from Aitor's
+  music stand at the front (`coro-ensayar`): the afternoon goes by, the remark in the pause, and they
+  come out onto the avenue at night.
+- **The room** (`src/coro-scenery.ts`): one room on raw concrete with the workshop's oil stains,
+  old rugs laid edge over edge (oxblood, madder, a worn ochre kilim), grey moving blankets on the
+  walls for the sound, three rows of chairs that never match split by an aisle and facing the stand,
+  the upright piano in the corner by the shutter, a shelf of folders, spare chairs stacked, coats on
+  a rail, enamel work lamps hung low, and the logo's tuning fork in cyan neon on the back wall. Its
+  identity card is in `docs/visual-style.md` (*A cop de diapasó*).
+- **Who is there**: everyone Gerard and Aitor sent there at the end of a mission (`coro` lines):
+  Nuria and Uri, the seven from the university, Marta, Emilie and Luca. Fran and the chaplains, freed
+  too, were never asked and do not come. They turn up **the morning after** the mission (flags
+  `coro-nuria`, `coro-uni`, `coro-marta`, `coro-emilie`, `coro-luca`, set on waking, `gather` in
+  `src/story.ts`), and from then on they are there and **no longer at their own place**: Nuria's door,
+  the beach, Alegia's piano (Aitor alone: *«Sin Marta, esta pieza se queda a medias.»*), Emilie's flat
+  (nobody answers her door) and the pond are empty of them. They stand among the rows, each group
+  together, facing the stand (`PLACES_CORO` in `src/friends/coro.ts`); voices are not assigned (§ By
+  voices stays open).
+- **What they say**: one short exchange per group, whoever of them is spoken to (`LINES_CORO.talk`):
+  they came without quite knowing why, the way you come to a rehearsal. Never a direction.
+- **Open**: the regulars (Marta Tarrés, Ferran, Darío) need figures; the song learnt bit by bit;
+  the safe zone; the room's own sound.
 
 ## Ensayar: the clue written by an AI (decided round 4, how: proposal)
 

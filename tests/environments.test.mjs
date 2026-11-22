@@ -121,7 +121,9 @@ test('every door and stair lands on a walkable cell, and there is always a way b
       const bossRoom = environment.id.startsWith('castillo-') && id === 'castillo-salir';
       // Emilie's flat is entered by ringing her door on Margarit, which the story makes a door in chapter 2.
       const doorbell = to.environment === 'poble-sec' && environment.id === 'piso-emilie' && new Story(['caught', 'metro']).interactions('poble-sec').some(i => i.id === 'poble-sec-emilie');
-      assert.ok(storyWay || schoolWay || curtainWay || castleWay || bossRoom || doorbell || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
+      // The choir's room is entered under its shutter on the avenue, which the story opens by day in chapter 2.
+      const shutter = to.environment === 'meridiana-calle' && environment.id === 'coro' && new Story(['caught', 'tv-news']).interactions('meridiana-calle').some(i => i.id === 'meridiana-coro');
+      assert.ok(storyWay || schoolWay || curtainWay || castleWay || bossRoom || doorbell || shutter || destination.interactions.some(i => i.to?.environment === environment.id), `${to.environment} leads back to ${environment.id}`);
     }
   }
   assert.equal(nearbyInteraction(NEIGHBORHOOD, { x:21,z:23 })?.to?.environment, 'home-entrance');

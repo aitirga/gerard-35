@@ -348,7 +348,7 @@ test('days: by day the bed is lying down a while, which brings the night; at nig
 test('an afternoon on the sofa, cooking, at the gym or with the choir brings the night and leaves one state, which lasts that night and the next day', () => {
   for (const [what, id, place, stat, by] of [
     ['sofa', 'meridiana-sofa', 'meridiana', 'espiritu', 2], ['cocina', 'meridiana-kitchen', 'meridiana', 'critico', 10],
-    ['gimnasio', 'meridiana-gimnasio', 'meridiana-calle', 'fuerza', 2], ['coro', 'meridiana-coro', 'meridiana-calle', 'magia', 2],
+    ['gimnasio', 'meridiana-gimnasio', 'meridiana-calle', 'fuerza', 2], ['coro', 'coro-ensayar', 'coro', 'magia', 2],
   ]) {
     const story = new Story(upTo('tv-news'));
     const here = story.interactions(place).find(i => i.id === id);
@@ -365,7 +365,7 @@ test('an afternoon on the sofa, cooking, at the gym or with the choir brings the
     // Spent already: at night there is no afternoon left, anywhere.
     assert.deepEqual(story.handle({ type: 'interact', id }).map(e => e.kind), ['dialogue']);
     // The choir's shutter is down at night (src/landmarks/local-coro.ts): its door no longer offers a rehearsal.
-    if (what === 'coro') assert.deepEqual(['Mirar la persiana', 'Mirar'], (({ label, hint }) => [label, hint])(story.interactions(place).find(i => i.id === id)));
+    if (what === 'coro') assert.deepEqual(['Mirar la persiana', 'Mirar'], (({ label, hint }) => [label, hint])(story.interactions('meridiana-calle').find(i => i.id === 'meridiana-coro')));
     assert.equal(story.boost, what);
     // It is theirs the day after, and gone the morning after that.
     if (place === 'meridiana') toBed(story); else story.handle({ type: 'home' });

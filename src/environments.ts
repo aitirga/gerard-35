@@ -28,7 +28,8 @@ export type EnvironmentId = 'patio' | 'maresme' | 'home-entrance' | 'home-floor-
   // The castle's three generated floors (src/castle-floor.ts): another every day.
   | 'castillo-1' | 'castillo-2' | 'castillo-3'
   | 'cuerdas'
-  | 'modelo' | 'piso-emilie';
+  | 'modelo' | 'piso-emilie'
+  | 'coro';
 export interface Rect { x: number; z: number; w: number; d: number }
 export interface House extends Rect { id: string; side: 'west' | 'east'; number?: number; solar?: boolean; pool?: boolean }
 /**
@@ -561,6 +562,43 @@ export const PISO_EMILIE = house({
     { id: 'piso-emilie-terraza', cell: { x: 10, z: 3 }, label: 'Mirar la terraza', lines: ['Macetas, geranios y hojas. Muchas hojas, amontonadas contra la puerta y encima del desagüe.', 'El agua entra por debajo del cristal.'] },
   ],
 });
+/**
+ * The choir's room on the Meridiana (docs/quests/coro.md § The choir room, § The room inside): the
+ * old workshop *A cop de diapasó* finally has, behind the shutter they painted (`local-coro` on the
+ * avenue). One room on raw concrete, its oil stains still there under old rugs laid edge over edge;
+ * grey moving blankets hung on the walls for the sound; three rows of chairs that never match, split
+ * by an aisle, facing the director's stand at the front, where Aitor gives the A; the old upright
+ * piano in the corner, coats on a rail, and on the back wall over the rows the tuning fork of their
+ * logo in cyan neon. The shutter is at the bottom, as the avenue is, so the back wall stands for the
+ * camera and the rows face it. `src/coro-scenery.ts` furnishes it; whoever the party has sent here
+ * stands among the rows (`choirNpcs` in src/story.ts).
+ */
+export const CORO = house({
+  id: 'coro', name: 'A cop de diapasó', spawn: { x: 7, z: 11 }, zoom: HOME_ZOOM,
+  plan: [
+    '################',
+    '#oo..........oo#',
+    '#..............#',
+    '#..oooo..oooo..#',
+    '#..............#',
+    '#..oooo..oooo..#',
+    '#..............#',
+    '#...ooo..ooo...#',
+    '#..............#',
+    '#oo...........o#',
+    '#oo............#',
+    '#..............#',
+    '#######DD#######',
+  ],
+  rooms: [{ name: 'El local', x: 1, z: 1, w: 14, d: 11, floor: 'concrete' }],
+  // A yucca in a pot by the shutter, that somebody brought from home.
+  props: [{ kind: 'tree', x: 13, z: 11, species: 'yucca', scale: 0.65, base: 'pot' }],
+  interactions: [
+    { id: 'coro-salida', cell: { x: 7, z: 11 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 104, z: 42 } } },
+    { id: 'coro-neon', cell: { x: 7, z: 2 }, label: 'Mirar el neón', lines: ['El diapasón del logo, en neón de verdad. Lo primero que colgamos, antes que las sillas.', 'Zumba un poco. En los silencios se oye.'] },
+    { id: 'coro-piano', cell: { x: 3, z: 9 }, label: 'Mirar el piano', lines: ['Un piano de pared que nos dejó un vecino. Le falta el fa sostenido de abajo.', 'Encima, partituras con lápiz de cinco ensayos distintos.'] },
+  ],
+});
 /** Where Bernat sits in El Nucli's back room: the round table's west chair, his back to the cartons and the curtain in sight. His mission puts him here. */
 export const NUCLI_BERNAT_SEAT: Cell = { x: 4, z: 3 };
 /** What each character of the palace plan stands for (docs/bubbaloo-palace.md). */
@@ -813,6 +851,7 @@ export const ENVIRONMENTS: Record<EnvironmentId, Environment> = {
   ...CASTLE_ENVIRONMENTS,
   cuerdas: CUERDAS,
   modelo: MODELO, 'piso-emilie': PISO_EMILIE,
+  coro: CORO,
 };
 /** Reach from the player's position; wide enough for a side-on door, too short for a diagonal tile. */
 export const INTERACTION_REACH = 1.25;

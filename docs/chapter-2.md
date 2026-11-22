@@ -274,14 +274,15 @@ the note that comes with the night says what it was (*Hasta mañana por la noche
 | The sofa (home) | *Sentarse en el sofá* | Aitor scratches Gerard's back until neither notices the light go. | **Tranquilos**: Espíritu +2 |
 | The kitchen (home) | *Cocinar* | Gerard cooks what is left, Aitor lays the table and opens the wine. | **Bien cenados**: Crítico +10 |
 | VivaGym (next door, on the avenue) | *Entrenar en VivaGym* | An afternoon at the gym. Out of it, it is night ten steps from the portal. | **En forma**: Fuerza +2 |
-| The choir (on the avenue, 80 cells from home) | *Ensayar con el coro* | A rehearsal; the first one is where they learn Emilie is missing (docs/quests/coro.md). The way home from it is a real walk at night. | **Afinados**: Magia +2 |
+| The choir (its room behind the shutter on the avenue, 80 cells from home; `coro`) | *Ensayar con el coro*, at Aitor's stand inside | A rehearsal; the first one is where they learn Emilie is missing (docs/quests/coro.md). The way home from it is a real walk at night. | **Afinados**: Magia +2 |
 
 At night there is no afternoon left: each of them answers with a line instead. The state is kept
 with the days (`Days.boost`, saved by the server) and goes with the morning after next. Seen in
 `just screenshots pasar-la-tarde`.
 
-For later: the gym's and the choir's doors are interactions on the avenue's pavement, with no
-interior of their own yet; cooking is one dish.
+The choir's door goes into its room (docs/quests/coro.md § The room inside); the rehearsal over,
+they come out onto the avenue at night. For later: the gym's door is an interaction on the
+avenue's pavement, with no interior of its own yet; cooking is one dish.
 
 ## The snow globe
 

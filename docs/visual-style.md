@@ -226,6 +226,7 @@ material, light and landmark, which the last column names.
 | Las cuerdas | `#1b3844` | dark petrol blue-green | strings of silver light, dark glass edged in silver | every string meeting at one point over the centre | `cuerdas` cold, no sky | La torre de Uri (ΔE 24): a void with no walls and no ground, crossed by silver vs dark stone always higher than you |
 | El modelo de Emilie | `#07130c` | black with phosphor green `#3fe07a` lines | a mesh of thin lit lines over black; real ground only where it has been measured | the section itself: four galleries one under another, cut open and seen from the side | `modelo` no sky, a screen's own light | Las cuerdas (dark, no sky): green lines on black and a side view vs petrol glass and silver strings seen from above |
 | Casa de Emilie (built) | `#a8875f` | brown hydraulic tile under water | hydraulic tiles, oak and concrete, a hand's depth of still water | her desk with the laptop on, the model glowing green on it | `piso-emilie` cool grey daylight | Poble Sec (ΔE to measure): a white room under water vs sienna render at evening |
+| A cop de diapasó, the choir's room (built) | `#6b302b` | oxblood rugs on raw concrete | old wool rugs laid edge over edge, grey moving blankets on the walls | three rows of chairs that never match, facing a music stand | `coro` warm | Rec Comtal (ΔE 24): rugs and blankets indoors under work lamps vs exposed brick outside |
 | El Nucli (built) | `#2f4a3a` | bottle green | board-game boxes, felt | the wall of boxes | `el-nucli` warm | Palace patio (ΔE 25): indoor felt vs painted court |
 | Sants street (built) | `#cfa463` | ochre | painted roller shutters, old render scored as ashlar (`estuc`) | a lit shopfront in a row of shutters | `sants` cool | Bunkers (ΔE 5): render in shade vs concrete at sunset |
 | Sagrada Família, outside | `#8a7764` | weathered sandstone | carved sandstone | spires | `sagrada-familia` warm | Avinguda Meridiana (ΔE 18): carved stone and park vs panot and blocks |
@@ -272,6 +273,7 @@ share a landmark kind.
 | Casa de Emilie · El modelo de Emilie | Through her laptop | — (to measure) | all four: a white flat under water vs a black section in green lines, seen from the side | ✓ |
 | Avinguda Meridiana · Rec Comtal | L1, three stops | 37 | colour, material, light | ✓ |
 | El Nucli · Sants street | Door | 57 | all four | ✓ |
+| A cop de diapasó · Avinguda Meridiana | Door (its shutter) | 48 | all four: oxblood rugs and blankets under warm work lamps vs grey panot and asphalt in cool daylight | ✓ |
 | Sagrada inside · outside | Door | 32 | colour, ground, light (coloured nave) | ✓ |
 | Sants · Plaça d'Espanya | L1 and L3, two stops; one district | 24 | colour, material, light (cool and warm) | ✓ |
 | Plaça d'Espanya · Poble Sec | L3, one stop; one district | 22 | colour, material, ground | ✓ (both warm: Espanya golden afternoon, Poble Sec evening) |
@@ -485,6 +487,32 @@ Through the checklist (§ 5): an invented home on a real lot, laid out by Aitor;
 an interior under water; its neighbours differ in all four (Poble Sec's evening outside, her
 model's black inside the laptop); one glow, the screen; reachable from the picker (*Casa de Emilie*,
 group Barcelona) and from Misiones (*Emilie*).
+
+#### A cop de diapasó · the choir's room (`coro`)
+
+Built (2026-11-22, `docs/quests/coro.md` § The room inside): the old workshop behind the shutter the
+choir painted on the Meridiana (`local-coro`), furnished by `src/coro-scenery.ts`. `just screenshots coro-local --gpu`.
+
+| | |
+| --- | --- |
+| Dominant | Oxblood rugs `#6b302b`, edge over edge on the floor |
+| Secondary | Faded madder `#8a4a3a`, a worn ochre kilim `#b08a4e`, raw concrete `#9d9a93`, the blankets' grey `#7d8086` |
+| Material | Old wool rugs over a workshop's concrete, its oil stains showing at the edges; grey quilted moving blankets hung on the walls for the sound |
+| Ground | The rugs, and the concrete round them |
+| Landmark | Three rows of chairs that never match, split by an aisle, facing the director's music stand (kind: a seating ring; no other place has one) |
+| Light | `coro`: enamel work lamps hung low over the rows, warm pools on the rugs; the neon the one cold light |
+| Props | Mismatched chairs (beech, plastic, rush, upholstered), the upright piano, a steel shelf of folders, spare chairs stacked, coats on a rail, a potted yucca |
+| Air | None |
+| Sound | None yet; home's song plays (`PLACE_SONGS`) |
+| Only here | The logo's tuning fork in cyan neon on the back wall over the rows |
+| Text | None in the world; the place panel reads *Sant Andreu, Barcelona · Avinguda Meridiana · El local del coro* |
+| Reserved | No pink, no violet: the Queen leaves it alone |
+
+Through the checklist (§ 5): an invented room on the real avenue (docs/quests/coro.md § Where); its
+dominant family and material are no one else's (Rec Comtal's brick is the nearest colour, ΔE 24, and
+is brick outside); its door neighbour, the avenue, differs in all four; one glow, the neon, cyan and
+not reserved (Las cuerdas' petrol stays on the logo's ground only); reachable from the picker (*A cop
+de diapasó*, group Barcelona) and from each mission's last step (*… en el coro*).
 
 #### Cardedeu · Carrer de Jacint Verdaguer (`cardedeu`)
 

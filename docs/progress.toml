@@ -278,9 +278,19 @@ in = "src/days.ts"
 title = "La fachada del coro en la Meridiana: persiana pintada por ellos, el local a la vista de día, el diapasón de neón"
 file = "src/landmarks/local-coro.ts"
 
+# docs/quests/coro.md § The room inside: the workshop behind the shutter, and whoever the missions saved in it.
 [[block.item]]
-title = "El gimnasio y el coro por dentro (hoy son una puerta en la acera)"
-absent = "no interior of their own yet"
+title = "El coro por dentro: el local tras la persiana, con el atril de Aitor para ensayar"
+file = "src/coro-scenery.ts"
+
+[[block.item]]
+title = "Los salvados de cada misión van al coro la mañana siguiente y se quedan allí"
+grep = "'coro-luca'"
+in = "src/story.ts"
+
+[[block.item]]
+title = "El gimnasio por dentro (hoy es una puerta en la acera)"
+absent = "no interior of its own yet"
 in = "docs/chapter-2.md"
 
 [[block.item]]

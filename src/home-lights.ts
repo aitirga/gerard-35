@@ -139,6 +139,8 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   camping: { salon: [hex('#ffb35c', .7, .55), hex('#6a6b45', .55, .45), hex('#2b6f78', .55, .5), white(2300, .6)], rest: white(2400, .28) },
   // Sants at the end of the day: ochre houses in blue shade, and El Nucli's warm window.
   sants: { salon: [white(3800, .65), hex('#cfa463', .6, .5), hex('#7d93a6', .5, .45), hex('#ffb35c', .65, .6)], rest: white(3500, .28) },
+  // The choir's room: work lamps over oxblood rugs and grey blankets, the logo's cyan neon on the back wall.
+  coro: { salon: [white(2500, .8), hex('#6b302b', .5, .5), hex('#3fd8e0', .4, .7), white(2700, .65)], rest: white(2500, .3) },
   // El Nucli inside: tungsten pendants over green felt, the wine wall, boxes everywhere.
   'el-nucli': { salon: [white(2400, .8), hex('#3f7a55', .5, .5), hex('#8a2a2e', .45, .45), white(2600, .7)], rest: white(2500, .3) },
   // Carrer de Blai at evening: sienna render, the terraces' amber bulbs and Montjuïc's pines.

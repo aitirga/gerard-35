@@ -79,6 +79,8 @@ export const STORY_ARCS = [
     { flags: ['cardedeu'], label: 'La R4 hasta Cardedeu', spot: { environment: 'cardedeu' } },
     // Winning at the top of the tower sets them all at once (story.ts): Papagato, the ánima and the two lights.
     { flags: ['nuria-uri', 'papagato', 'luz-nuria', 'luz-uri', 'anima-nuria'], label: 'Uri vuelve en sí' },
+    // The morning after (docs/quests/coro.md § The room inside): they have come to the choir, as Gerard asked.
+    { flags: ['coro-nuria'], label: 'Nuria y Uri, en el coro', spot: { environment: 'coro' } },
   ] },
   { id: 'universidad', chapter: 2, title: 'Misión de los amigos de la uni', detail: 'La Barceloneta · Càmping Eurosport', after: 'metro', anima: 'universidad', steps: [
     { flags: ['clue-uni'], label: 'Aitor: los de la uni esperan en la playa' },
@@ -88,6 +90,7 @@ export const STORY_ARCS = [
     { flags: ['parcelas'], label: 'Las parcelas resueltas: la puerta del merendero' },
     // Beating La Sobremesa frees the seven and gives their ánima and five lights (a couple, one; alone, one each).
     { flags: ['sobremesa', 'anima-universidad', 'luz-anna-alvaro', 'luz-miquel-sarah', 'luz-soraya', 'luz-nico', 'luz-joan'], label: 'Libres: La Sobremesa vencida' },
+    { flags: ['coro-uni'], label: 'Los siete, en el coro', spot: { environment: 'coro' } },
   ] },
   { id: 'marta', chapter: 2, title: 'Misión de Marta', detail: 'Alegia · Las cuerdas', after: 'metro', anima: 'marta', steps: [
     // A rehearsal's pause: Marta's voice message from Alegia, half a minute of silence and a note that will not come.
@@ -96,6 +99,7 @@ export const STORY_ARCS = [
     { flags: ['cuerdas'], label: 'El piano: dentro de Las cuerdas' },
     // Beating La Voz gives her everything back at once, and her ánima and light with it.
     { flags: ['voz', 'anima-marta', 'luz-marta'], label: 'La Voz vencida: Marta vuelve a cantar' },
+    { flags: ['coro-marta'], label: 'Marta, en el coro', spot: { environment: 'coro' } },
   ] },
   { id: 'emilie', chapter: 2, title: 'Misión de Emilie', detail: 'Poble Sec · Su modelo', after: 'metro', anima: 'emilie', steps: [
     // A rehearsal she misses, or else Aitor one morning: she has not written, and her streets are flooding.
@@ -104,6 +108,7 @@ export const STORY_ARCS = [
     { flags: ['modelo'], label: 'El portátil: dentro de su modelo' },
     // Beating El que no converge gives her the why back at once, and her ánima and light with it.
     { flags: ['converge', 'anima-emilie', 'luz-emilie'], label: 'El que no converge vencido: Emilie entiende otra vez' },
+    { flags: ['coro-emilie'], label: 'Emilie, en el coro', spot: { environment: 'coro' } },
   ] },
   { id: 'luca', chapter: 2, title: 'Misión de Luca', detail: 'La Sagrada Família · La peluquería de Fran', after: 'metro', anima: 'luca', steps: [
     { flags: ['clue-luca-foto'], label: 'La foto: Luca se ha quedado gris', spot: { environment: 'meridiana' } },
@@ -112,6 +117,7 @@ export const STORY_ARCS = [
     { flags: ['peluqueria'], label: 'Dentro: la peluquería de Fran', spot: { environment: INTERIOR, cell: { ...PLACES_LUCA.inside } } },
     // Beating Fran gives Luca everything back at once, and his ánima and light with it.
     { flags: ['fran', 'anima-luca', 'luz-luca'], label: 'Fran vencido: Luca, a todo color', spot: { environment: SAGRADA, cell: { ...PLACES_LUCA.won } } },
+    { flags: ['coro-luca'], label: 'Luca, en el coro', spot: { environment: 'coro' } },
   ] },
   // Bernat the first time (docs/quests/bernat.md): the confidant at his table in El Nucli.
   { id: 'bernat', chapter: 2, title: 'Bernat', detail: 'El Nucli · Sants', after: 'metro', steps: [

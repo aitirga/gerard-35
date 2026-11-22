@@ -149,6 +149,11 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: .1, lift: [.014, .008, .002], shadows: [.006, .004, -.008], highlights: [.02, .01, -.014], contrast: .98, saturation: 1.02 },
     enhance: { shadows: .1, highlights: -.1, vibrance: .05 },
   },
+  /** The choir's room: enamel work lamps over old rugs, warm and close; the shade stays neutral grey (the blankets), the neon's cyan the one cold note. */
+  coro: {
+    grade: { temperature: .08, lift: [.01, .006, .004], shadows: [.002, .002, .004], highlights: [.018, .01, -.01], contrast: 1.02, saturation: 1 },
+    enhance: { shadows: .08, highlights: -.08, vibrance: .04 },
+  },
   /** Poble Sec: Carrer de Blai at the start of the evening, sienna render in low amber light over deeper, cooler shade. */
   'poble-sec': {
     grade: { temperature: .1, lift: [.006, .002, 0], shadows: [-.004, -.002, .016], highlights: [.022, .01, -.014], contrast: 1.06, saturation: 1.02 },

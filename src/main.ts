@@ -112,6 +112,8 @@ const PLACE_SONGS: Partial<Record<EnvironmentId, TrackId>> = {
   // in Sants, where the friends still sit down to play (2026-11-21: the soundtrack is closed, so a
   // place without a song of its own takes one of these).
   'el-nucli': 'home',
+  // The choir's room on the Meridiana: the other warm place where people meet, on home's own song.
+  coro: 'home',
   // The friends' missions start on the dark mazmorra song (Logic's song-mazmorra-4), sad and plain;
   // three of their boss rooms change it for mazmorra-3 (`inBossRoom`). Marta's has her own voice.
   'cardedeu-laberinto': 'mazmorra-oscuro', camping: 'mazmorra-oscuro', 'poble-sec': 'mazmorra-oscuro', 'piso-emilie': 'mazmorra-oscuro', modelo: 'mazmorra-oscuro',
@@ -987,8 +989,8 @@ try {
       // Chapter 2's palace stands on the Rec Comtal school, not at the end of Passatge Maresme.
       // Its zones (chapter 2 only) are the school itself.
       const zone = !!ENVIRONMENTS[id].palace?.theme, school = (id === 'palacio' && story.adult) || zone;
-      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'piso-emilie' ? 'POBLE SEC, BARCELONA' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
-      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : id === 'piso-emilie' ? 'Carrer de Margarit · Casa de Emilie' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Carrer de Mallorca, 401' : id === 'meridiana' ? 'Avinguda Meridiana'
+      document.querySelector('.place-panel .eyebrow')!.textContent = id === 'cuerdas' ? 'DENTRO DE UNA NOTA' : id === 'modelo' ? 'BAJO POBLE SEC' : id === 'piso-emilie' ? 'POBLE SEC, BARCELONA' : id === 'coro' ? 'SANT ANDREU, BARCELONA' : id === 'patio' ? 'PRUEBA DE MOVIMIENTO' : id === 'meridiana' ? 'BARCELONA' : id === 'el-nucli' ? 'SANTS, BARCELONA' : basilica ? 'EIXAMPLE, BARCELONA' : school ? 'TRINITAT VELLA, BARCELONA' : geo ? geo.region.toUpperCase() : 'SANT QUIRZE DEL VALLÈS';
+      document.querySelector('#location-detail')!.textContent = id === 'cuerdas' ? 'Ningún mapa llega hasta aquí' : id === 'modelo' ? 'Corte A–A′ · sin calibrar' : id === 'piso-emilie' ? 'Carrer de Margarit · Casa de Emilie' : id === 'coro' ? 'Avinguda Meridiana · El local del coro' : geo ? `Según el mapa · ${geo.attribution}` : basilica ? 'Carrer de Mallorca, 401' : id === 'meridiana' ? 'Avinguda Meridiana'
         : id === 'el-nucli' ? 'Carrer de Valladolid, 41 · Tienda de juegos'
         : ENVIRONMENTS[id].plan ? 'Passatge Maresme, 20'
         : id === 'maresme' ? 'Reconstrucción aproximada · Nº 20' : zone ? 'Dentro de la escuela Rec Comtal' : school ? 'Sobre la escuela Rec Comtal' : id === 'palacio' ? 'Al final de Passatge Maresme' : 'Escena de prueba de movimiento';

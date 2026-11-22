@@ -1,0 +1,26 @@
+{
+  "title": "El local del coro por dentro, con todos los salvados",
+  "description": "docs/quests/coro.md § The room inside. A cop de diapasó's room behind the shutter on the Meridiana: raw concrete under old rugs, grey moving blankets on the walls, three rows of chairs that never match facing the director's stand, the upright piano, the logo's tuning fork in cyan neon on the back wall. Everyone the missions saved stands among the rows from the morning after (here all five missions won). Run it with --gpu.",
+  "steps": [
+    { "open": "/?story=coro-luca" },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "until": "window.gerard?.started && !document.querySelector('#hud[data-dialogue]')", "timeout": 120000 },
+    { "eval": "for (const f of ['nuria-uri', 'sobremesa', 'voz', 'converge', 'coro-nuria', 'coro-uni', 'coro-marta', 'coro-emilie']) window.gerard.story.flags.add(f)" },
+    { "teleport": "meridiana-calle", "cell": [104, 43], "settle": 2500 },
+    { "shot": "persiana", "delay": 600, "caption": "By day the shutter is up: «Entrar al local del coro»" },
+    { "eval": "window.gerard.storyEvent({ type: 'interact', id: 'meridiana-coro' })" },
+    { "until": "document.querySelector('#environment .place-name')?.textContent === 'A cop de diapasó'", "timeout": 30000 },
+    { "wait": 2500 },
+    { "shot": "local", "delay": 600, "caption": "Inside: the rows facing the stand, everyone the missions saved standing among them, the neon on the back wall" },
+    { "press": "KeyR" },
+    { "shot": "vista-general", "delay": 1500, "caption": "Overview: rugs edge over edge on the concrete, blankets on the walls, piano in the corner, coats by the shutter" },
+    { "press": "KeyR" },
+    { "teleport": "coro", "cell": [9, 6], "settle": 1500 },
+    { "shot": "emilie", "delay": 500, "caption": "Up to Emilie: «Hablar con Emilie»" },
+    { "eval": "window.gerard.storyEvent({ type: 'interact', id: 'coro-hablar-emilie' })" },
+    { "shot": "emilie-habla", "delay": 900, "caption": "She does not know why she came, and for once does not need to" },
+    { "skipDialogue": true },
+    { "teleport": "coro", "cell": [7, 10], "settle": 1200 },
+    { "shot": "atril", "delay": 500, "caption": "Aitor's stand at the front: Ensayar con el coro" }
+  ]
+}

@@ -162,7 +162,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const overcast = environment.id === 'alegia';
   // The Meridiana flat is lit by its lamps, which are the bulbs at home: the window light stays low.
   // El Nucli is lit the same way, by its pendants over the tables.
-  const lamplit = environment.id === 'meridiana' || environment.id === 'el-nucli';
+  const lamplit = environment.id === 'meridiana' || environment.id === 'el-nucli' || environment.id === 'coro';
   // Outdoors by day: a near-white sun, and a blue sky that tints the shade and lights it from the other side.
   // Inside the Sagrada Família: dim stone, the light comes in colour through the glass (src/basilica-scenery.ts).
   const nave = !!environment.basilica;

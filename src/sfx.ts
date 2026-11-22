@@ -384,7 +384,7 @@ export type SoundId = keyof typeof SOUNDS;
 
 /** Each place's footstep (`step` where it says nothing); `null` walks in silence. */
 export const STEPS: Partial<Record<EnvironmentId, SoundId | null>> = {
-  'home-entrance': 'step-floor', 'home-floor-1': 'step-floor', 'home-floor-2': 'step-floor', meridiana: 'step-floor', 'el-nucli': 'step-floor',
+  'home-entrance': 'step-floor', 'home-floor-1': 'step-floor', 'home-floor-2': 'step-floor', meridiana: 'step-floor', 'el-nucli': 'step-floor', coro: 'step-floor',
   barceloneta: 'step-sand', camping: 'step-sand',
   'piso-emilie': 'step-water',
   // Inside a note there is only her voice (docs/visual-style.md, Las cuerdas' card).

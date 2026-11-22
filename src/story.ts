@@ -7,6 +7,7 @@ import type { Dialogue, DialogueLine } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import { PATROLS, createModelo, type ModeloState, type ZoneId } from './modelo.ts';
 import { BERNAT_SCALE, BERNAT_STANDIN, LINES_BERNAT, NUCLI, PLACES_BERNAT } from './friends/bernat.ts';
+import { CHOIR_GROUPS, CHOIR_NAMES, CHOIR_PEOPLE, CORO_PLACE, LINES_CORO, PLACES_CORO, type ChoirGroup, type ChoirPerson } from './friends/coro.ts';
 import { EMILIE_SCALE, LINES_EMILIE, MODELO_PLACE, PISO, PLACES_EMILIE, PLACES_MODELO, PLACES_PISO, POBLE_SEC } from './friends/emilie.ts';
 import { canWalk, facingToward, type Cell } from './movement.ts';
 import { trophiesFor, type ItemId } from './items.ts';
@@ -74,6 +75,9 @@ export const STORY_FLAGS = [
   // Bernat (docs/quests/bernat.md): his photo from El Nucli heard of in a rehearsal, met there, the
   // confidant who recognises her castle.
   'clue-bernat', 'bernat-nucli',
+  // The choir's room (docs/quests/coro.md § The room inside): the morning after each mission, the people
+  // it saved turn up there, as Gerard asked them to, and are there from then on.
+  'coro-nuria', 'coro-uni', 'coro-marta', 'coro-emilie', 'coro-luca',
   // The castle (docs/castle.md, docs/castle-bosses.md): the guards before the curtain beaten (its stair
   // open for good onto the first floor), Aurelià beaten and his light, the management team and
   // theirs, Gerard fallen to Aitor's hand, Bernat's call, his game told and the box opened, the portal
@@ -778,6 +782,7 @@ export class Story {
   private playPiano(): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (!this.adult) return [];
+    if (this.atChoir('marta')) return [say(LINES_CORO.pianoAlone)];
     if (this.has('voz')) return [say(LINES_MARTA.after)];
     if (!this.has('alegia-marta')) return [say(LINES_MARTA.pianoBefore)];
     const first = this.set('cuerdas');
@@ -848,13 +853,14 @@ export class Story {
   }
   /** Emilie: in her flat, standing in the water. */
   private emilieNpcs(): StoryNpc[] {
+    if (this.atChoir('emilie')) return [];
     return [{ id: 'emilie', character: 'emilie', environment: PISO, cell: { ...PLACES_PISO.emilie }, scale: EMILIE_SCALE, facing: 250 }];
   }
   /** Marta: by the piano in Alegia, and inside Las cuerdas a step behind the party, further in as each quality is beaten. */
   private martaNpcs(): StoryNpc[] {
     const at = PLACES_CUERDAS.marta[Math.min(this.marta.beaten.length, PLACES_CUERDAS.marta.length - 1)];
     return [
-      { id: 'marta', character: 'marta', environment: ALEGIA, cell: { ...PLACES_MARTA.marta }, scale: MARTA_SCALE, facing: 200 },
+      ...this.atChoir('marta') ? [] : [{ id: 'marta' as const, character: 'marta', environment: ALEGIA, cell: { ...PLACES_MARTA.marta }, scale: MARTA_SCALE, facing: 200 }],
       ...this.has('voz') ? [] : [{ id: 'marta' as const, character: 'marta', environment: CUERDAS_PLACE, cell: { ...at }, scale: MARTA_SCALE, facing: 180 }],
     ];
   }
@@ -992,7 +998,7 @@ export class Story {
   }
   private lucaNpcs(): StoryNpc[] {
     const won = this.has('fran'), lost = won ? 0 : 1 - this.luca.beaten.length / (ZONES.length + 1);
-    const list: StoryNpc[] = [{ id: 'luca', character: 'luca', environment: SAGRADA, cell: { ...PLACES_LUCA.luca }, scale: LUCA_SCALE, facing: 180, faded: lost, reflection: { ...PLACES_LUCA.water } }];
+    const list: StoryNpc[] = this.atChoir('luca') ? [] : [{ id: 'luca', character: 'luca', environment: SAGRADA, cell: { ...PLACES_LUCA.luca }, scale: LUCA_SCALE, facing: 180, faded: lost, reflection: { ...PLACES_LUCA.water } }];
     if (this.salon) list.push(
       { id: 'capellan', character: 'capellan', environment: INTERIOR, cell: { ...PLACES_LUCA.capellan }, scale: LUCA_SCALE, facing: 270, possessed: true },
       { id: 'fran', character: 'fran', environment: INTERIOR, cell: { ...PLACES_LUCA.fran }, scale: LUCA_SCALE * 1.08, facing: 90, possessed: true, lift: .4 },
@@ -1201,6 +1207,22 @@ export class Story {
     if (typeof v.lentBefore === 'boolean') this.lentBefore = v.lentBefore;
   }
   /** The missions as the snow globe keeps them, or not begun. */
+  /**
+   * A new morning: whoever a mission saved the day before has come to the choir, as Gerard asked them
+   * to (docs/quests/coro.md § The room inside), and stays there from then on instead of at their own place.
+   */
+  private gather() {
+    const saved: [ChoirGroup, StoryFlag][] = [['nuria', 'nuria-uri'], ['uni', 'sobremesa'], ['marta', 'voz'], ['emilie', 'converge'], ['luca', 'fran']];
+    for (const [group, won] of saved) if (this.has(won)) this.set(`coro-${group}`);
+  }
+  /** Whether a mission's people are at the choir now rather than at their own place. */
+  private atChoir(group: ChoirGroup) { return this.adult && this.has(`coro-${group}`); }
+  /** Everyone at the choir, among its rows, facing the stand. */
+  private choirNpcs(): StoryNpc[] {
+    const scale: Record<ChoirGroup, number> = { nuria: NURIA_SCALE, uni: UNI_SCALE, marta: MARTA_SCALE, emilie: EMILIE_SCALE, luca: LUCA_SCALE };
+    return CHOIR_PEOPLE.filter(id => this.atChoir(CHOIR_GROUPS[id]))
+      .map(id => ({ id, character: id, environment: CORO_PLACE, cell: { ...PLACES_CORO.people[id] }, scale: scale[CHOIR_GROUPS[id]], facing: 0 }));
+  }
   private recall() {
     const { nuria, uni, marta, emilie, luca } = this.kept;
     this.nuria = nuria ?? freshRun(); this.uni = uni ?? freshUni(); this.marta = marta ?? freshMarta(); this.emilie = emilie ?? freshEmilie(); this.luca = luca ?? freshLuca();
@@ -1375,9 +1397,11 @@ export class Story {
     // In the pause, before they go out into the night, Aitor lets something slip (docs/quests/coro.md § Ensayar).
     if (what === 'coro') lines.splice(1, 0, ...this.choirRemark());
     const done: StoryEffect = { kind: 'dialogue', dialogue: { ...LINES_2.afternoon[what].done, lines } };
-    if (!isBoost(what)) return [{ kind: 'recover' }, done];
+    // The rehearsal over, the shutter comes down behind them: they come out onto the avenue, in the dark.
+    const out: StoryEffect[] = what === 'coro' && this.inside === CORO_PLACE ? [{ kind: 'travel', environment: PLACES_2.choir.environment, cell: { ...PLACES_2.choir.cell } }] : [];
+    if (!isBoost(what)) return [...out, { kind: 'recover' }, done];
     this.days.boost = { id: what, until: this.days.clock.day + 1 };
-    return [{ kind: 'recover' }, { kind: 'boost', id: what }, done];
+    return [...out, { kind: 'recover' }, { kind: 'boost', id: what }, done];
   }
   /**
    * A boss of her castle has fallen (docs/castle.md § Structure; decided with Aitor 2026-11-20): she
@@ -1425,6 +1449,7 @@ export class Story {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     // Whatever the missions had reached is undone (the cats went back to Nuria; the friends are on the sand again), back to what the snow globe keeps.
     this.recall();
+    this.gather();
     const firstFall = why === 'fall' && this.set('palace-tried');
     // Beaten in the street at night, they sleep the morning away.
     this.days.clock = { day: this.days.clock.day + 1, hour: why === 'night-fall' ? WOKE_LATE : DAY_START };
@@ -1599,13 +1624,14 @@ export class Story {
       { id: 'jan', character: 'jan-child', environment: PLACES.jan.environment, cell: PLACES.jan.cell, scale: 1.12 },
     ];
     // Chapter 1 is a dream: once Gerard wakes, home in Sant Quirze is empty, and Aitor walks with him (the partner, not an NPC).
-    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs(), ...this.lucaNpcs(), ...this.bernatNpcs()].filter(npc => npc.environment === environment);
+    if (this.adult) return [...this.nuriaNpcs(), ...this.uniNpcs(), ...this.martaNpcs(), ...this.emilieNpcs(), ...this.lucaNpcs(), ...this.bernatNpcs(), ...this.choirNpcs()].filter(npc => npc.environment === environment);
     return all.filter(npc => npc.environment === environment);
   }
   /** Nuria at her door, the cats with her until she lends them, and Uri ahead in his maze. */
   private nuriaNpcs(): StoryNpc[] {
     const { nuria, haru } = PLACES_NURIA, run = this.nuria, won = this.has('nuria-uri');
     const at = (c: Cell, dx: number, dz: number) => ({ x: c.x + dx, z: c.z + dz });
+    if (this.atChoir('nuria')) return [];
     const list: StoryNpc[] = [{ id: 'nuria', character: 'nuria', environment: STREET, cell: { ...nuria.cell }, scale: NURIA_SCALE }];
     if (won) list.push({ id: 'uri', character: 'uri', environment: STREET, cell: at(nuria.cell, -2, 0), scale: NURIA_SCALE });
     if (!won && !run.lent) {
@@ -1626,6 +1652,7 @@ export class Story {
     // Free: round the melon table in the campsite for the photo, then back on the beach round Gerard
     // and Aitor, themselves again; each facing the two of them.
     const toward = (from: Cell, to: Cell) => facingToward(to.x - from.x, to.z - from.z);
+    if (this.atChoir('uni')) return [];
     if (this.has('sobremesa')) return UNI_FRIENDS.flatMap(id => [
       { id, character: id, facing: toward(PLACES_UNI.freed[id], PLACES_UNI.home), environment: BEACH, cell: { ...PLACES_UNI.freed[id] }, scale: UNI_SCALE },
       ...run.entered ? [{ id, character: id, facing: toward(CAMP_FREED[id], PLACES_CAMP.foto), environment: CAMP, cell: { ...CAMP_FREED[id] }, scale: UNI_SCALE }] : [],
@@ -1668,11 +1695,11 @@ export class Story {
       if (id === 'meridiana-bed' && !this.night) { list.push({ id, ...prompt, label: EVENINGS.cama.label, hint: EVENINGS.cama.label, cell: { ...place.cell } }); continue; }
       list.push({ id, label, ...prompt, cell: { ...place.cell } });
     }
-    if (this.adult && environment === STREET) {
+    if (this.adult && environment === STREET && !this.atChoir('nuria')) {
       list.push({ id: 'talk-nuria', label: 'Hablar con Nuria', cell: { ...PLACES_NURIA.nuria.cell } });
     }
     if (this.adult && environment === ALEGIA) {
-      list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_MARTA.marta } });
+      if (!this.atChoir('marta')) list.push({ id: 'talk-marta', label: 'Hablar con Marta', cell: { ...PLACES_MARTA.marta } });
       list.push({ id: 'piano-marta', label: 'Tocar el piano', hint: 'Tocar el piano', cell: { ...PLACES_MARTA.piano.seat } });
     }
     // Emilie's door rings in chapter 2 instead of being looked at; in her flat, her and her laptop; in her model, the way back out.
@@ -1683,7 +1710,7 @@ export class Story {
       if (this.has('bernat-juego')) list.push({ id: 'nucli-mesa', label: this.has('portal-nucli') ? 'La maqueta, a oscuras' : 'La maqueta del piso', hint: this.has('portal-nucli') ? 'Mirar' : 'Asomarse', cell: { ...PLACES_BERNAT.portal } });
     }
     if (this.adult && environment === PISO) {
-      list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });
+      if (!this.atChoir('emilie')) list.push({ id: 'talk-emilie', label: 'Hablar con Emilie', cell: { ...PLACES_PISO.emilie } });
       list.push({ id: 'portatil-emilie', label: 'Su portátil', hint: this.has('modelo') && !this.has('converge') ? 'Entrar' : 'Mirar', cell: { ...PLACES_PISO.laptop }, anchor: { ...PLACES_PISO.screen } });
     }
     if (this.adult && environment === MODELO_PLACE) list.push({ id: 'salir-modelo', label: 'Volver al piso', hint: 'Volver', cell: { ...PLACES_MODELO.exit } });
@@ -1692,7 +1719,7 @@ export class Story {
       list.push({ id: 'salir-cuerdas', label: 'Volver por la pompa', hint: 'Volver', cell: { ...PLACES_CUERDAS.exit } });
     }
     if (this.adult && environment === SAGRADA) {
-      list.push({ id: 'talk-luca', label: 'Hablar con Luca', cell: { ...PLACES_LUCA.luca } });
+      if (!this.atChoir('luca')) list.push({ id: 'talk-luca', label: 'Hablar con Luca', cell: { ...PLACES_LUCA.luca } });
       list.push({ id: 'luca-reflejo', label: 'Mirar el reflejo', cell: { ...PLACES_LUCA.reflejo } });
     }
     if (environment === INTERIOR && this.salon) {
@@ -1709,8 +1736,13 @@ export class Story {
     }
     if (this.adult && environment === PLACES_2.gym.environment) {
       list.push({ id: 'meridiana-gimnasio', label: 'Entrenar en VivaGym', hint: EVENINGS.gimnasio.label, cell: { ...PLACES_2.gym.cell } });
-      // At night the shutter is down (src/landmarks/local-coro.ts): nothing to rehearse, only the shutter to look at.
-      list.push({ id: 'meridiana-coro', label: this.night ? 'Mirar la persiana' : 'Ensayar con el coro', hint: this.night ? 'Mirar' : EVENINGS.coro.label, cell: { ...PLACES_2.choir.cell } });
+      // By day the shutter is up and the room is in (src/landmarks/local-coro.ts); at night it is down, only the shutter to look at.
+      list.push({ id: 'meridiana-coro', label: this.night ? 'Mirar la persiana' : 'Entrar al local del coro', hint: this.night ? 'Mirar' : 'Entrar', cell: { ...PLACES_2.choir.cell } });
+    }
+    // Inside (docs/quests/coro.md § The room inside): the rehearsal from Aitor's stand, and whoever the missions sent here.
+    if (this.adult && environment === CORO_PLACE) {
+      list.push({ id: 'coro-ensayar', label: 'Ensayar con el coro', hint: EVENINGS.coro.label, cell: { ...PLACES_CORO.stand } });
+      for (const npc of this.choirNpcs()) list.push({ id: `coro-hablar-${npc.id}`, label: `Hablar con ${CHOIR_NAMES[npc.id as ChoirPerson]}`, cell: { ...npc.cell } });
     }
     if (this.adult && environment === JAR.environment && this.jar.length) {
       list.push({ id: 'meridiana-luces', label: 'Abrir el bote', hint: 'Abrir el bote', cell: { ...JAR.cell }, anchor: { ...JAR.anchor } });
@@ -1854,6 +1886,9 @@ export class Story {
         this.tugs++;
         return [];
     }
+    // At the choir, whoever of a group is spoken to, the group answers (src/friends/coro.ts).
+    const choir = event.id.startsWith('coro-hablar-') ? event.id.slice('coro-hablar-'.length) as ChoirPerson : undefined;
+    if (choir && choir in CHOIR_GROUPS && this.atChoir(CHOIR_GROUPS[choir])) return [say(LINES_CORO.talk[CHOIR_GROUPS[choir]])];
     switch (event.id) {
       case 'talk-nuria': {
         if (!this.adult) return [];
@@ -1878,6 +1913,7 @@ export class Story {
       case 'poble-sec-emilie': {
         if (!this.adult || !this.has('metro')) return [];
         const inside: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.spawn } };
+        if (this.atChoir('emilie')) return [say(LINES_CORO.emilieDoor)];
         if (this.has('converge')) return [say(LINES_EMILIE.doorAfter), inside];
         return [say(this.emilie.told.includes('door') ? LINES_EMILIE.doorAgain : (this.emilie.told.push('door'), LINES_EMILIE.door)), inside];
       }
@@ -2011,6 +2047,10 @@ export class Story {
       case 'meridiana-gimnasio':
         return this.adult ? this.spendAfternoon('gimnasio') : [];
       case 'meridiana-coro':
+        if (!this.adult) return [];
+        if (this.night) return [say(LINES_2.afternoon.coro.night)];
+        return [{ kind: 'travel', environment: CORO_PLACE, cell: { ...PLACES_CORO.spawn } }];
+      case 'coro-ensayar':
         return this.adult ? this.spendAfternoon('coro') : [];
       case 'meridiana-piano':
         if (!this.adult) return [];
