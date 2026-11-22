@@ -156,8 +156,10 @@ influencia de la reina allá.» Built as designed here; Aitor to look at it.
   a rail, enamel work lamps hung low, and the logo's tuning fork in cyan neon on the back wall. Its
   identity card is in `docs/visual-style.md` (*A cop de diapasó*).
 - **Who is there**: everyone Gerard and Aitor sent there at the end of a mission (`coro` lines):
-  Nuria and Uri, the seven from the university, Marta, Emilie and Luca. Fran and the chaplains, freed
-  too, were never asked and do not come. They turn up **the morning after** the mission (flags
+  Nuria and Uri, the seven from the university, Marta, Emilie and Luca. And **Fran** (Aitor,
+  2026-11-22: «Haz que Fran también vaya al coro»): freed in Luca's mission, never asked, he comes
+  the same morning as Luca all the same, and stands apart at the end of a row; he answers for
+  himself (`LINES_CORO.own`). The chaplains do not come. They turn up **the morning after** the mission (flags
   `coro-nuria`, `coro-uni`, `coro-marta`, `coro-emilie`, `coro-luca`, set on waking, `gather` in
   `src/story.ts`), and from then on they are there and **no longer at their own place**: Nuria's door,
   the beach, Alegia's piano (Aitor alone: *«Sin Marta, esta pieza se queda a medias.»*), Emilie's flat

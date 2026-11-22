@@ -20,6 +20,10 @@
     { "eval": "window.gerard.storyEvent({ type: 'interact', id: 'coro-hablar-emilie' })" },
     { "shot": "emilie-habla", "delay": 900, "caption": "She does not know why she came, and for once does not need to" },
     { "skipDialogue": true },
+    { "teleport": "coro", "cell": [13, 7], "settle": 1200 },
+    { "eval": "window.gerard.storyEvent({ type: 'interact', id: 'coro-hablar-fran' })" },
+    { "shot": "fran-habla", "delay": 900, "caption": "Fran, apart at the end of a row: nobody asked him, and he came" },
+    { "skipDialogue": true },
     { "teleport": "coro", "cell": [7, 10], "settle": 1200 },
     { "shot": "atril", "delay": 500, "caption": "Aitor's stand at the front: Ensayar con el coro" }
   ]

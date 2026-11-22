@@ -74,7 +74,7 @@ test('everyone a mission saved is at the choir from the morning after, and no lo
   // Speaking to anyone there, their group answers.
   for (const id of CHOIR_PEOPLE) {
     assert.ok(story.interactions('coro').some(i => i.id === `coro-hablar-${id}`), `${id} can be spoken to`);
-    assert.deepEqual(story.handle({ type: 'interact', id: `coro-hablar-${id}` }), [{ kind: 'dialogue', dialogue: LINES_CORO.talk[CHOIR_GROUPS[id]] }]);
+    assert.deepEqual(story.handle({ type: 'interact', id: `coro-hablar-${id}` }), [{ kind: 'dialogue', dialogue: LINES_CORO.own[id] ?? LINES_CORO.talk[CHOIR_GROUPS[id]] }]);
   }
 });
 
@@ -82,4 +82,11 @@ test('only the missions won send people: one saved, one group in the room', () =
   const story = new Story(flagsAt('converge'));
   sleep(story);
   assert.deepEqual(story.npcs('coro').map(n => n.id), ['emilie']);
+});
+
+test('Fran, freed in Luca\'s mission, comes too, the same morning as Luca, though nobody asked him', () => {
+  const story = new Story(flagsAt('fran'));
+  sleep(story);
+  assert.deepEqual(story.npcs('coro').map(n => n.id).sort(), ['fran', 'luca']);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'coro-hablar-fran' }), [{ kind: 'dialogue', dialogue: LINES_CORO.own.fran }], 'he answers for himself');
 });

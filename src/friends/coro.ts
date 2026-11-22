@@ -7,6 +7,7 @@
  * Every mission ends with Gerard asking them to come here whatever happens (`coro` in each friend's
  * lines); from the morning after, they do. Nobody knows why, and nobody here says it: they turned up,
  * the way you turn up to a rehearsal. Each group speaks in its own language, as everywhere else.
+ * Fran (Luca's mission) was never asked and comes all the same, the same morning as Luca.
  */
 import type { Dialogue, DialogueLine, SpeakerId } from '../dialogue';
 import type { EnvironmentId } from '../environments';
@@ -17,7 +18,7 @@ export const CORO_PLACE: EnvironmentId = 'coro';
 
 /** Who comes here, by the mission that sent them; each group's flag is set the morning after it is won (`gather` in src/story.ts). */
 export type ChoirGroup = 'nuria' | 'uni' | 'marta' | 'emilie' | 'luca';
-export type ChoirPerson = 'nuria' | 'uri' | 'marta' | 'emilie' | 'luca' | UniFriend;
+export type ChoirPerson = 'nuria' | 'uri' | 'marta' | 'emilie' | 'luca' | 'fran' | UniFriend;
 
 export const PLACES_CORO = {
   /** Just inside the shutter, coming in from the avenue. */
@@ -32,6 +33,8 @@ export const PLACES_CORO = {
     marta: { x: 4, z: 6 },
     emilie: { x: 10, z: 6 },
     luca: { x: 11, z: 8 },
+    // Fran, freed in Luca's mission, apart from him at the end of a row: nobody sent him, and he came.
+    fran: { x: 13, z: 6 },
   } satisfies Record<ChoirPerson, Cell>,
 } as const;
 
@@ -39,12 +42,12 @@ export const PLACES_CORO = {
 export const CHOIR_GROUPS: Record<ChoirPerson, ChoirGroup> = {
   nuria: 'nuria', uri: 'nuria',
   anna: 'uni', alvaro: 'uni', miquel: 'uni', sarah: 'uni', soraya: 'uni', nico: 'uni', joan: 'uni',
-  marta: 'marta', emilie: 'emilie', luca: 'luca',
+  marta: 'marta', emilie: 'emilie', luca: 'luca', fran: 'luca',
 };
 /** Their names, for the prompt to speak to them (as in SPEAKERS, src/dialogue.ts). */
 export const CHOIR_NAMES: Record<ChoirPerson, string> = {
   nuria: 'Nuria', uri: 'Uri', anna: 'Anna', alvaro: 'Álvaro', miquel: 'Miquel', sarah: 'Sarah', soraya: 'Soraya', nico: 'Nico', joan: 'Joan',
-  marta: 'Marta', emilie: 'Emilie', luca: 'Luca',
+  marta: 'Marta', emilie: 'Emilie', luca: 'Luca', fran: 'Fran',
 };
 /** The order they are drawn and listed in. */
 export const CHOIR_PEOPLE = Object.keys(CHOIR_GROUPS) as ChoirPerson[];
@@ -82,6 +85,14 @@ export const LINES_CORO = {
       gerard('Doncs no et moguis.'),
     ),
   } satisfies Record<ChoirGroup, Dialogue>,
+  /** Who answers for themselves rather than with their group: Fran, who came with Luca's people but was never asked. */
+  own: {
+    fran: group('fran',
+      line('fran', 'Nadie me dijo que viniera. Y aquí estoy.'),
+      line('fran', 'Lo último que recuerdo es una capa que no era mía.'),
+      aitor('Siéntate donde quieras. Aquí nadie te va a pedir nada.'),
+    ),
+  } satisfies Partial<Record<ChoirPerson, Dialogue>>,
   /** Their own places, once they come here instead: Emilie's door, and the piano in Alegia without Marta. */
   emilieDoor: both(aitor('Nadie contesta.')),
   pianoAlone: both(aitor('Sin Marta, esta pieza se queda a medias.')),

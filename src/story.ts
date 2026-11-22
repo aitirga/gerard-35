@@ -1221,7 +1221,7 @@ export class Story {
   private choirNpcs(): StoryNpc[] {
     const scale: Record<ChoirGroup, number> = { nuria: NURIA_SCALE, uni: UNI_SCALE, marta: MARTA_SCALE, emilie: EMILIE_SCALE, luca: LUCA_SCALE };
     return CHOIR_PEOPLE.filter(id => this.atChoir(CHOIR_GROUPS[id]))
-      .map(id => ({ id, character: id, environment: CORO_PLACE, cell: { ...PLACES_CORO.people[id] }, scale: scale[CHOIR_GROUPS[id]], facing: 0 }));
+      .map(id => ({ id, character: id, environment: CORO_PLACE, cell: { ...PLACES_CORO.people[id] }, scale: scale[CHOIR_GROUPS[id]] * (id === 'fran' ? 1.08 : 1), facing: 0 }));
   }
   private recall() {
     const { nuria, uni, marta, emilie, luca } = this.kept;
@@ -1888,7 +1888,7 @@ export class Story {
     }
     // At the choir, whoever of a group is spoken to, the group answers (src/friends/coro.ts).
     const choir = event.id.startsWith('coro-hablar-') ? event.id.slice('coro-hablar-'.length) as ChoirPerson : undefined;
-    if (choir && choir in CHOIR_GROUPS && this.atChoir(CHOIR_GROUPS[choir])) return [say(LINES_CORO.talk[CHOIR_GROUPS[choir]])];
+    if (choir && choir in CHOIR_GROUPS && this.atChoir(CHOIR_GROUPS[choir])) return [say(choir in LINES_CORO.own ? LINES_CORO.own[choir as keyof typeof LINES_CORO.own] : LINES_CORO.talk[CHOIR_GROUPS[choir]])];
     switch (event.id) {
       case 'talk-nuria': {
         if (!this.adult) return [];
