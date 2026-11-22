@@ -532,4 +532,4 @@ export const CASTLE_MOMENTS = {
   'reina-suyo': { label: 'Suyo: Aitor contra Gerard', encounter: 'reina' },
 } as const satisfies Record<string, { label: string; encounter: CastleEncounter }>;
 export type CastleMoment = keyof typeof CASTLE_MOMENTS;
-export const isCastleMoment = (id: string): id is CastleMoment => id in CASTLE_MOMENTS;
+export const isCastleMoment = (id: string): id is CastleMoment => Object.hasOwn(CASTLE_MOMENTS, id);

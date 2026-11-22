@@ -14,7 +14,7 @@ export const TICKET_STATIONS = Object.keys(TICKETS.memories) as readonly TicketS
 export type TicketStation = keyof typeof TICKETS.memories;
 /** The story flag a station's ticket sets (src/story.ts). */
 export const ticketFlag = <S extends TicketStation>(station: S) => `ticket-${station}` as const;
-export const isTicketStation = (station: string): station is TicketStation => station in TICKETS.memories;
+export const isTicketStation = (station: string): station is TicketStation => Object.hasOwn(TICKETS.memories, station);
 
 /** The stations still without a ticket, given what the story has. */
 export function lockedStations(has: (flag: ReturnType<typeof ticketFlag>) => boolean): TicketStation[] {

@@ -35,7 +35,7 @@ type Stat = 'fuerza' | 'magia' | 'defensa' | 'espiritu' | 'critico';
 export type EveningId = keyof typeof EVENINGS;
 /** The afternoons that leave something. */
 export type BoostId = { [K in EveningId]: (typeof EVENINGS)[K] extends { name: string } ? K : never }[EveningId];
-export const isBoost = (id: unknown): id is BoostId => typeof id === 'string' && id in EVENINGS && 'name' in EVENINGS[id as EveningId];
+export const isBoost = (id: unknown): id is BoostId => typeof id === 'string' && Object.hasOwn(EVENINGS, id) && 'name' in EVENINGS[id as EveningId];
 /** What an afternoon left, and the last day it lasts (the day after it was spent). */
 export interface Boost { id: BoostId; until: number }
 /** What an afternoon leaves as it reads in a fight: its name and its points (`En forma`, Fuerza +2). */

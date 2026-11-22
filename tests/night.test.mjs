@@ -363,3 +363,11 @@ test('the avenue is theirs at night: groups posted all along it, on both sides, 
     assert.ok(riseGroup(night, grates[0]).length > 0);
   }
 });
+
+test('a saved afternoon is read only from the afternoons that leave something', async () => {
+  const { isBoost, readDays } = await import('../src/days.ts');
+  assert.ok(isBoost('sofa'));
+  for (const id of ['cama', 'toString', 'constructor', '__proto__', 7]) assert.equal(isBoost(id), false, String(id));
+  const days = readDays({ epoch: 0, clock: { day: 2, hour: 9 }, mornings: [], boost: { id: 'toString', until: 3 } });
+  assert.equal(days?.boost, undefined);
+});

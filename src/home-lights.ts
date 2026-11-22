@@ -730,7 +730,7 @@ export function createHomeLights() {
     let returned: Partial<Record<LightId, Lamp>> = {};
     try {
       const saved = JSON.parse(localStorage.getItem(RETURNED_KEY) ?? 'null') as { at: number; flat: Record<LightId, Lamp> } | null;
-      if (initial && saved && Date.now() - saved.at < RETURN_MS) returned = saved.flat;
+      if (initial && saved && typeof saved.flat === 'object' && saved.flat && Date.now() - saved.at < RETURN_MS) returned = saved.flat;
     } catch { /* Storage is optional. */ }
     for (const light of HOUSE_LIGHTS) {
       // A light of two bulbs is on if either is, in the colour of the one that is.

@@ -21,7 +21,7 @@ const ZONES: Record<string, Environment> = { 'palacio-patio': PALACE_PATIO, 'pal
 const STRETCH: Record<string, 1 | 2 | 3> = { 'palacio-patio': 1, 'palacio-gimnasio': 1, 'palacio-secretaria': 2, 'palacio-trono': 3 };
 /** The door each won room leaves clotted: the way on to the next stretch. */
 const ONWARD: Record<string, string> = { 'palacio-gimnasio': 'gimnasio-vestuarios', 'palacio-secretaria': 'secretaria-direccio' };
-export const isCastleZone = (id: string) => id in STRETCH;
+export const isCastleZone = (id: string) => Object.hasOwn(STRETCH, id);
 /** How many bosses have fallen: each one is a scream of hers. */
 export const screams = (flags: Flags) => CASTLE_PHASES.filter(p => p.boss !== 'reina' && flags.has(p.flag)).length;
 

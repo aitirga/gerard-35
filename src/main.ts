@@ -300,7 +300,7 @@ function keepEcos() { try { localStorage.setItem(ecosKey, JSON.stringify(story.i
 const xpKey = 'gerard35.xp.v1';
 function readXp(saved: unknown) {
   // Aitor's own ánima was a placeholder called Físico (`fisico`) before it became Tecnópata.
-  if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).map(([id, xp]) => [id === 'fisico' ? 'tecnopata' : id, xp]).filter(([id, xp]) => id in ANIMA_NAMES && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
+  if (saved && typeof saved === 'object') story.xp = Object.fromEntries(Object.entries(saved).map(([id, xp]) => [id === 'fisico' ? 'tecnopata' : id, xp]).filter(([id, xp]) => Object.hasOwn(ANIMA_NAMES, id) && typeof xp === 'number' && Number.isFinite(xp) && xp >= 0)) as Partial<Record<ClassId, number>>;
 }
 try { readXp(JSON.parse(localStorage.getItem(xpKey) ?? '{}')); } catch { /* Storage is optional. */ }
 function keepXp() { try { localStorage.setItem(xpKey, JSON.stringify(story.xp)); } catch { /* Storage is optional. */ } }
@@ -1214,7 +1214,7 @@ try {
     // ?battle=3&allies=2 fights with chapter 1's boys; ?battle=3&party=adult with Gerard at 35 and Aitor.
     // &animas=matemagico,papagato unlocks those ánimas (Matemágico alone by default); Gerard wears the last.
     const adult = new Story(['caught', 'matemagico']);
-    const animas = (params.get('animas')?.split(',') ?? ['matemagico']).filter((id): id is ClassId => id in CLASS_STATS);
+    const animas = (params.get('animas')?.split(',') ?? ['matemagico']).filter((id): id is ClassId => Object.hasOwn(CLASS_STATS, id));
     if ([2, 3, 4].includes(foes)) requestAnimationFrame(() => params.get('party') === 'adult' ? battleUI.open(adult.battleParty(true), foes, { animas: adult.classes })
       : battleUI.open(params.get('allies') === '2' ? 2 : 1, foes, { animas }));
     if (animaDemo) void import('./anima-demo').then(({ mountAnimaDemo }) => { const stage = mountAnimaDemo(game, battleUI, audio); import.meta.hot?.dispose(() => stage.destroy()); });

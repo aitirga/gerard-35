@@ -134,10 +134,11 @@ async def events(request: Request, game: bool = False):
     says `?game=1` (a watcher does not): while one is open, the board may call out."""
     from_game(request)
     stream: asyncio.Queue = asyncio.Queue(maxsize=64)
-    board.streams.add(stream)
 
     async def send():
-        # Counted once the stream is running, so its `finally` always takes it off again.
+        # Added and counted once the stream is running, so its `finally` always takes it off again:
+        # a browser gone before the response starts never runs it.
+        board.streams.add(stream)
         board.games += game
         try:
             last = board.status()

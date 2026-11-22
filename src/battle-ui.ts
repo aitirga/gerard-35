@@ -2268,7 +2268,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       render(); knock();
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
       // What went up or down, a moment after the blow's own number (a boost already says it).
-      if (!effect.boosted) effect.stats?.forEach(change => setTimeout(() => pop(change.target, `${statNames(change.stats)} ${change.way === 'down' ? '▼' : '▲'}`, change.way === 'down' ? 'stat-down' : 'stat-up'), 420));
+      if (!effect.boosted) effect.stats?.forEach(change => setTimeout(() => token === generation && pop(change.target, `${statNames(change.stats)} ${change.way === 'down' ? '▼' : '▲'}`, change.way === 'down' ? 'stat-down' : 'stat-up'), 420));
       // Las cuerdas' moves that are not a blow say so over whoever they change (docs/quests/marta.md).
       if (effect.lazo) pop(effect.lazo.target, `+${effect.lazo.amount}`, 'heal', effect.lazo.back ? 'Lazo · vuelve' : 'Lazo');
       if (effect.cracked) setTimeout(() => { if (token === generation) pop(effect.actor, '¡Rajado!', 'status', 'Ya no devuelve la magia', 'rajado'); }, 420);
