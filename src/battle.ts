@@ -143,9 +143,9 @@ export const SKILLS = [
   // time is up, harder the longer it has been on: stretching or restarting its clock (Rayo de energía, Telemetría, Reinicio) loads it, and
   // Explosión sets it off now. Its strength changes, so it skips the fixed shape (`abstract`).
   { id: 'bomba-remota', name: 'Bomba remota', cost: 2, side: 'foes', power: 0, kind: 'magic', bomb: true, abstract: true, description: 'Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.', class: 'tecnopata' },
-  // Rayo de sanación: a cure that comes bit by bit on the fight's clock (`regen`: a timed status, as
-  // Quemado is a fire, its pulses healing). `power` is what it gives back in all at level I.
-  { id: 'rayo-sanacion', name: 'Rayo de sanación', cost: 1, side: 'allies', power: 20, kind: 'heal', regen: 'sanacion', description: 'Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.', class: 'tecnopata' },
+  // Rayo de sanación: a cure at once (`instant`, `power` as any cure: about a quarter of their PV) and the rest bit by bit on the fight's clock (`regen`: a
+  // timed status, as Quemado is a fire, its pulses healing; again while it lasts, a level up). Aitor 2026-11-22: more, and at once.
+  { id: 'rayo-sanacion', name: 'Rayo de sanación', cost: 1, side: 'allies', power: 14, kind: 'heal', regen: 'sanacion', instant: true, description: 'Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos.', class: 'tecnopata' },
   // Explosión: Bip blows itself up among the foes (fire: it melts the pringue), blinds them until
   // their turn is over (`blind`: Cegado until the round ends), sets off every Bomba remota on them now (`detonates`), and its
   // wearer loses their next turn while it puts itself back together (`spends`, `Combatant.out`).
@@ -717,7 +717,7 @@ export const DUALS: DualSpec[] = [
   // Rayo solar: Gerard gives Bip his fire; Bip charges with it, sun yellow, and as the next round
   // starts it sweeps every foe with it.
   { id: 'rayo-solar', name: 'Rayo solar', parts: ['rayo-energia', 'foc-binari'], side: 'all-foes', kind: 'magic', power: 40, charge: true, burn: 'quemado', burnLevel: 2, description: 'Daño mágico de fuego alto a todos los enemigos. Se carga un turno y sale al empezar el siguiente. Los quema con fuego de nivel II.' },
-  { id: 'sutura-de-luz', name: 'Sutura de luz', parts: ['cardioide', 'rayo-sanacion'], side: 'allies', kind: 'heal', power: 40, description: 'Cura alta a un aliado herido. Reduce a la mitad el siguiente daño que reciba esta ronda.' },
+  { id: 'sutura-de-luz', name: 'Sutura de luz', parts: ['cardioide', 'rayo-sanacion'], side: 'allies', kind: 'heal', power: 48, description: 'Cura alta a un aliado herido. Reduce a la mitad el siguiente daño que reciba esta ronda.' },
   { id: 'relevo-de-sangre', name: 'Relevo de sangre', parts: ['llaga', 'estrella-fugaz'], side: 'foes', kind: 'physical', power: 38, description: 'Daño físico alto a un enemigo. Gasta su sangrado. Si lo derrota, traslada la herida al enemigo con más PV.' },
   { id: 'bombardeo-orbital', name: 'Bombardeo orbital', parts: ['explosion', 'ostinato'], side: 'all-foes', kind: 'magic', power: 14, strikes: 3, charge: true, description: 'Daño mágico no elemental leve a todos los enemigos. Al empezar la ronda siguiente golpea tres veces. Los ciega durante 20 segundos.' },
   { id: 'reserva-de-color', name: 'Reserva de color', parts: ['foc-binari', 'punado'], side: 'foes', kind: 'magic', element: 'fuego', power: 38, abstract: true, description: 'Deja una mecha de polvo en un enemigo. Cuando termine su turno o caiga, estalla con daño mágico de fuego alto a todos los enemigos.' },
@@ -822,12 +822,15 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   // Cristalizado (electricity on powder): it hurts nobody by itself; its level is how deep the shards are (`POWDER_RULES.shard` more a blow for each).
   cristalizado: { name: 'Cristalizado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Its fourth level is Combustión (`COMBUSTION`): only reached while the passive is in the fight (`fireTop`).
-  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 5, 7], flat: 1, share: .01, cap: 100 },
+  // Its levels do not climb in a line (Aitor 2026-11-22): each step bigger than the last (×1, ×3, ×6, ×11), so feeding a fire
+  // pays more the higher it already is. II stays ×3 (more than twice I, `inflict`'s rule); El Plato and El Campeón got PV for III.
+  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 6, 11], flat: 1, share: .01, cap: 100 },
   // Cegado (Humo, below): it hurts nobody, the foe's blows land lighter while it lasts (`sighted`).
   cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0 },
   // Sanación (Rayo de sanación): Quemado's other side, a pulse of PV back every few seconds.
-  // A share of the carrier's PV, as every cure is (`HEAL`, src/stats.ts): a fifth of them over its 15 seconds at level I.
-  sanacion: { name: 'Sanación', heal: true, seconds: 15, every: 3, levels: [1, 2, 3], flat: 0, share: .04, cap: 1000 },
+  // A share of the carrier's PV, as every cure is (`HEAL`, src/stats.ts): a quarter of them over its 15 seconds at level I, and
+  // each level up more than the last (×1, ×2.5, ×4: Aitor 2026-11-22, the cure was too thin).
+  sanacion: { name: 'Sanación', heal: true, seconds: 15, every: 3, levels: [1, 2.5, 4], flat: 0, share: .05, cap: 1000 },
   // Confusión (Tecnópata): it hurts nobody; while it lasts the foe's blows go to its own (`enemyAct`).
   confusion: { name: 'Confusión', seconds: 30, every: 30, levels: [], flat: 0, share: 0, cap: 0 },
   // Encogido (Rayo encogedor): smaller, and a quarter of its guard gone while it lasts.
@@ -2471,6 +2474,8 @@ export type GuardStrength = ReturnType<typeof palaceGuards>;
  * The open missions and their fights: after Nuria and Uri's they can be done in any order, so each is
  * met with none of the others' ánimas or with all three (docs/combat.md § Los enemigos crecen con el equipo).
  */
+/** Nuria and Uri's tower: the introduction, met as tuned when it is done first (`gatheredFor`). */
+export const NURIA_ENCOUNTERS = [...BROOD_ENCOUNTERS, 'cebolla', 'cebollon', 'plato', 'escolta', 'uri-vertigo'] as const;
 export const OPEN_MISSIONS = {
   universidad: [...CAMPING_ENCOUNTERS, 'sobremesa'], marta: CUERDAS_ENCOUNTERS, emilie: MODELO_ENCOUNTERS, luca: LUCA_ENCOUNTERS,
 } as const satisfies Partial<Record<AnimaId, readonly Encounter[]>>;
@@ -2479,8 +2484,8 @@ export const OPEN_MISSIONS = {
  * party already has, every foe of the fight has `stat` more Fuerza, Magia, Defensa and Espíritu
  * (rounded once, on the sum) and `pv` more of its PV (.1: a tenth each). The party grows with every
  * ánima (`ANIMAS`' bonus), so without this a mission done last was far easier than the same one done
- * first. Nuria's ánima is not counted (everyone has it before the first open mission, which is the
- * fight as tuned), nor the mission's own. The castle never grows: its numbers are its own, and they
+ * first. Nuria's ánima is not counted (her tower is meant to come first, and the open missions are tuned with it), nor
+ * the mission's own; her tower's foes grow with every open mission's ánima a party brings to it. The castle never grows: its numbers are its own, and they
  * are what asks for ánimas (docs/fight-sim.md § Power and the castle). A point and a quarter each
  * (+1, +3 and +4 with one, two and all three of the others behind) is what keeps the order from
  * counting now that every ánima gives the party a point of all four (`ANIMA_GROWTH`): in whole
@@ -2507,6 +2512,17 @@ const foeBlow = (target: Combatant) => 1 + FOE_BLOW.share * (target.grown ?? 0);
  * found with the bench at both ends of the story (docs/fight-sim.md § The final pass). Book `foes.<fight>`.
  */
 export const FIGHT_GROWTH: Partial<Record<Encounter, { pv: number; stat: number }>> = {
+  // Nuria's tower, done after an open mission (`gatheredFor`): it grows by its blows, never by its length. +3 of each with
+  // one ánima behind (2026-11-22, Emilie's): Vertitrón, La Escolta and the third ring are then what they are done first
+  // (careless play loses, the answer wins); at the default +1, Freática made them a third of the fight.
+  'crias-1': { pv: 0, stat: 2.5 },
+  'crias-2': { pv: 0, stat: 2.5 },
+  'crias-3': { pv: 0, stat: 2.5 },
+  cebolla: { pv: 0, stat: 2.5 },
+  cebollon: { pv: 0, stat: 2.5 },
+  plato: { pv: 0, stat: 2.5 },
+  escolta: { pv: 0, stat: 2.5 },
+  'uri-vertigo': { pv: 0, stat: 2.5 },
   'camping-magos': { pv: .1, stat: 1 },
   'camping-dados': { pv: .1, stat: .75 },
   'camping-agentes': { pv: 0, stat: 2.25 },
@@ -2532,6 +2548,9 @@ export const growthOf = (encounter?: string) => (encounter ? FIGHT_GROWTH[encoun
 /** How many ánimas count against the foes of `encounter`: the other open missions' the party has. */
 export function gatheredFor(encounter: string, animas: readonly string[] = []) {
   const missions = Object.keys(OPEN_MISSIONS) as (keyof typeof OPEN_MISSIONS)[];
+  // Nuria's tower is meant to come first, but nothing stops a party from doing an open mission before it (Aitor and
+  // Gerard did Emilie's, 2026-11-22): then it grows with every open mission's ánima they bring, as the others do.
+  if ((NURIA_ENCOUNTERS as readonly string[]).includes(encounter)) return missions.filter(id => animas.includes(id)).length;
   const own = missions.find(id => (OPEN_MISSIONS[id] as readonly string[]).includes(encounter));
   return own ? missions.filter(id => id !== own && animas.includes(id)).length : 0;
 }
@@ -3621,11 +3640,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     raiseCortina(state, target, effect);
     state.message = `${actor.name} usa ${ability.name}. ${boostedStats(ability.id)} +${ability.power} para el equipo durante ${BOOST_ROUNDS} rondas. Una cortina de polvo delante de ${target.name}.`;
   } else if (ability?.kind === 'heal' && target && 'regen' in ability) {
-    // Rayo de sanación: the cure comes bit by bit on the fight's clock; again while it lasts, a level up.
+    // Rayo de sanación: part of the cure at once, the rest bit by bit on the fight's clock; again while it lasts, a level up.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id;
     const on = inflict(target, ability.regen);
     effect.regen = { id: ability.regen, level: on.level };
-    // Ronroneo: part of the cure comes at once, and what troubles the mind goes with it.
+    // Rayo de sanación, Ronroneo: part of the cure comes at once (Ronroneo: and what troubles the mind goes with it).
     if ('instant' in ability) { effect.healed = true; effect.amount = changeHealth(target, healing(ability.power, target.maxHp)); }
     if ('cleanse' in ability) {
       const gone = cleansable(target);

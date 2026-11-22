@@ -942,20 +942,24 @@ test('Rayo de energía hits with magic and starts what runs out by the clock on 
   assert.equal(act(s, 'skill', 'dog-1', 'rayo-energia').restarted, undefined, 'nothing to start over, only the blow');
 });
 
-test('Rayo de sanación leaves a cure on an ally that gives PV back on the clock for 15 seconds, a level up if cast again', () => {
+test('Rayo de sanación cures an ally at once and leaves a cure that gives PV back on the clock for 15 seconds, a level up if cast again', async () => {
+  const { healing } = await import('../src/stats.ts');
   const s = techFight();
   const gerard = byId(s, 'gerard');
-  gerard.hp = 40;
+  gerard.hp = 1;
   turnOf(s, 'aitor');
   const cure = act(s, 'skill', 'gerard', 'rayo-sanacion');
   assert.deepEqual(cure.regen, { id: 'sanacion', level: 1 });
-  assert.equal(gerard.hp, 40, 'nothing at once');
+  const once = healing(SKILLS.find(k => k.id === 'rayo-sanacion').power, gerard.maxHp);
+  assert.equal(cure.amount, once, 'part of it at once');
+  assert.equal(gerard.hp, 1 + once);
   assert.equal(gerard.timed.sanacion.left, 15);
   const pulses = runClock(s, 15);
   assert.equal(pulses.length, 5, 'one every 3 seconds');
   assert.ok(pulses.every(p => p.heal && p.target === 'gerard' && p.amount > 0));
-  assert.equal(pulses.reduce((sum, p) => sum + p.amount, 0), 5 * Math.round(gerard.maxHp * .04), 'a fifth of their PV over its 15 seconds, at level I');
-  assert.equal(gerard.hp, 40 + 5 * Math.round(gerard.maxHp * .04)); assert.equal(gerard.timed.sanacion, undefined, 'gone when its time is up');
+  const each = Math.round(gerard.maxHp * TIMED.sanacion.share);
+  assert.equal(pulses.reduce((sum, p) => sum + p.amount, 0), 5 * each, 'a quarter of their PV over its 15 seconds, at level I');
+  assert.equal(gerard.hp, 1 + once + 5 * each); assert.equal(gerard.timed.sanacion, undefined, 'gone when its time is up');
   turnOf(s, 'aitor'); act(s, 'skill', 'gerard', 'rayo-sanacion');
   turnOf(s, 'aitor'); assert.equal(act(s, 'skill', 'gerard', 'rayo-sanacion').regen.level, 2);
 });

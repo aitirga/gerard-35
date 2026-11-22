@@ -415,7 +415,7 @@ puede terminar el combate por sí solo.
 
 **Escalar.** El mismo elemento que llega mientras el estado sigue activo lo sube un nivel, hasta
 el último, y reinicia su reloj (`inflict`). Al apagarse desaparece entero. Cada nivel multiplica
-el pulso base (×1, ×3, ×5 para Quemado), elegido para que mantenerlo siempre rinda más que
+el pulso base (×1, ×3, ×6 para Quemado, y ×11 en Combustión: no lineal, cada salto mayor que el anterior, Aitor 2026-11-22), elegido para que mantenerlo siempre rinda más que
 dejarlo apagarse y volver a empezar: subir a II exige que un pulso de II valga más del doble que
 uno de I, y subir a III que valga más que uno de II y uno de I juntos. Una prueba lo comprueba
 para cualquier PV y cualquier momento de reaplicación.
@@ -431,7 +431,7 @@ menor. Quemado: 1 PV fijo más el 1 % hasta 100 PV, cada 2 s durante 10 s.
 | --- | --- | --- | --- | --- |
 | I | 2 | 10 (19 %) | 2 | 10 (4 %) |
 | II | 5 | 25 (46 %) | 6 | 30 (12 %) |
-| III | 8 | 40 (74 %) | 10 | 50 (19 %) |
+| III | 9 | 45 (83 %) | 12 | 60 (23 %) |
 
 Un turno de acción dura alrededor de 1,2 s de animación, así que una ronda con dos aliados y
 dos o tres enemigos ronda los 6–10 s con la elección: 10 s obligan a volver a prender en la
@@ -508,7 +508,7 @@ reacción lo dice en su color y sus PV salen al lado; la escena suelta un destel
 
 **Los de Tecnópata** (2026-11-06, `docs/animas/tecnopata/`). *Sanación* (Rayo de sanación) es la
 otra cara de Quemado: sus pulsos devuelven PV en vez de quitarlos (`TimedSpec.heal`), 15 s, uno cada
-3 s, y vuelve a subir de nivel si se repite. *Confusión* (30 s) no hace daño: mientras dura, el
+3 s, y vuelve a subir de nivel si se repite (un 5 % de los PV por pulso a nivel I, ×2,5 en II y ×4 en III). Rayo de sanación cura además una parte de golpe (`instant`, como Ronroneo). *Confusión* (30 s) no hace daño: mientras dura, el
 enemigo gasta su turno en un golpe normal a uno de los suyos (`CONFUSED_BLOW`, a sí mismo si está
 solo) y olvida lo que había anunciado (`confusedAct`). *Encogido* (Rayo encogedor, 15 s) le quita
 un 25 % de la Defensa que tenga mientras dura (`TimedSpec.cut`, en `current` y `statShifts`) y la

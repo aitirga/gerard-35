@@ -89,14 +89,17 @@ test('an open mission\'s foes grow with the other missions\' ánimas behind it, 
   assert.deepEqual(FOE_GROWTH, { pv: 0, stat: 1.25 }, 'the rule of a fight with none of its own: a point and a quarter of each attribute for each, and no more PV');
   // Every fight of the four open missions has its own, found so that done last it is what it is done first (docs/fight-sim.md § The final pass).
   for (const id of ['universidad', 'marta', 'emilie', 'luca']) for (const fight of STRETCHES[id].fights) assert.ok(FIGHT_GROWTH[fight], `${fight} has no growth of its own`);
-  for (const fight of ['cebollon', 'uri-vertigo', 'aurelia', 'reina-vuelta']) assert.equal(FIGHT_GROWTH[fight], undefined, `${fight} is met as it is`);
+  for (const fight of ['aurelia', 'reina-vuelta']) assert.equal(FIGHT_GROWTH[fight], undefined, `${fight} is met as it is`);
+  for (const fight of STRETCHES.nuria.fights) assert.ok(FIGHT_GROWTH[fight]?.stat > 0 && FIGHT_GROWTH[fight].pv === 0, `${fight}: Nuria's tower grows by its blows, never by its length`);
   assert.equal(growthOf('fran'), FIGHT_GROWTH.fran); assert.equal(growthOf('dogs'), FOE_GROWTH); assert.equal(growthOf(), FOE_GROWTH);
   const all = ['nuria', 'universidad', 'marta', 'emilie', 'luca'];
   // Nuria's is with everyone before the first open mission, and a mission's own comes at its end: neither counts.
   assert.deepEqual([[], ['nuria'], ['nuria', 'luca'], ['nuria', 'marta', 'emilie'], all].map(friends => gatheredFor('fran', friends)), [0, 0, 0, 2, 3]);
   assert.equal(gatheredFor('sobremesa', all), 3);
-  // Nuria's fights and the castle's are met as they are: before any open mission, or after them all.
-  for (const fight of ['cebollon', 'uri-vertigo', 'aurelia', 'reina-vuelta', 'dogs', 'palace-guards', 'night-guard']) assert.equal(gatheredFor(fight, all), 0, fight);
+  // The castle's fights are met as they are, after every mission; Nuria's tower as it is when done first, and grown with
+  // every open mission's ánima a party brings to it (Aitor and Gerard did Emilie's first).
+  for (const fight of ['aurelia', 'reina-vuelta', 'dogs', 'palace-guards', 'night-guard']) assert.equal(gatheredFor(fight, all), 0, fight);
+  for (const fight of ['cebollon', 'uri-vertigo', 'crias-1']) assert.deepEqual([[], ['emilie'], ['emilie', 'marta'], all].map(friends => gatheredFor(fight, friends)), [0, 1, 2, 4], fight);
   const fran = (friends, tuning = {}) => withTuning(tuning, () => createFight({ fight: 'fran', party: MISSION_PARTY, policy: 'smart', friends }, seeded(1)).foes.find(foe => foe.kind === 'fran'));
   const first = fran(['nuria']), last = fran(['nuria', 'universidad', 'marta', 'emilie']), rule = FIGHT_GROWTH.fran;
   // Its `stat` for each of the others behind, rounded on the sum; its `pv`, a share of its PV for each.

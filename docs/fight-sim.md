@@ -390,7 +390,7 @@ Three rules are numbers to try:
 | --- | --- |
 | `growth.rules.scale` | Every ánima's bonus times this: 0 is no attribute growth at all |
 | `growth.rules.pv`, `growth.rules.stat` | For each ánima gathered, this many PV, and this much Fuerza, Magia, Defensa and Espíritu, on top |
-| `foes.growth.pv`, `foes.growth.stat` | For each other open mission's ánima the party has, every foe of an open mission's fight starts with this share more PV and this much more of those four stats (`gatheredFor`: Nuria's ánima and the mission's own do not count, and Nuria's fights and the castle's never grow) |
+| `foes.growth.pv`, `foes.growth.stat` | For each other open mission's ánima the party has, every foe of an open mission's fight starts with this share more PV and this much more of those four stats (`gatheredFor`: Nuria's ánima and the mission's own do not count, and the castle's fights never grow; Nuria's tower, meant to come first, grows by `foes.<fight>.stat` with every open mission's ánima a party brings to it, +3 of each for one, since 2026-11-22) |
 
 A level's EXP (`level.xp.N`) moves the level each point is reached with, since the points count their
 EXP (`STRETCH_XP`). `just game-sim run --tune …` plays the same numbers through the whole game:

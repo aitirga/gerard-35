@@ -49,7 +49,7 @@ export const PROFILES = {
   cebollon: base(150, 12, 10, 11, 10),
   /** La Cebolla: the same onion, between the little ones and El Cebollón (battle.ts ONIONS). */
   cebolla: base(110, 12, 10, 10, 10),
-  plato: base(264, 12, 12, 11, 10),
+  plato: base(290, 12, 12, 11, 10),
   /**
    * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
    */
@@ -77,7 +77,7 @@ export const PROFILES = {
   mago: base(130, 10, 12, 9, 11),
   dado: base(48, 12, 8, 11, 9),
   agente: base(66, 12, 10, 10, 10),
-  campeon: base(500, 14, 10, 13, 11),
+  campeon: base(520, 14, 10, 13, 11),
   /**
    * Las cuerdas' foes (docs/quests/marta.md): their rules do the work (battle.ts MARTA). La Lealtad is
    * a wall, an Eco frail, Lo Cristalino has spirit to spare (magic does nothing to it anyway),

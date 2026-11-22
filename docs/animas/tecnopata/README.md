@@ -69,7 +69,7 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 | --- | --- | --- | --- | --- | --- |
 | Root | Rayo de energía | 1 | 16 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj vuelven a empezar.` | Built (cost 2 → 1, power 18 → 16; since 2026-11-22 it starts the clocks over instead of adding 5 s) |
 | Root | **Bomba remota** | 2 | 10 + 1.5/s, top 50 | *Abstract*: `Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.` | Built |
-| Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` | Built |
+| Root | Rayo de sanación | 1 | 14 at once + Sanación over 15 s | `Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos.` | Built |
 | Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Hace estallar sus bombas. Pierdes tu siguiente turno.` | Built |
 | Bip | Telemetría (passive) | — | +3 s | `Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.` | Built (it stretches the bomb too) |
 | Bip · III | Reinicio | 3 | 14 magic, all | `Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.` | Built (the bomb keeps what it grew) |
@@ -210,7 +210,7 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 | From | Skill | Cost | Base | Description |
 | --- | --- | --- | --- | --- |
 | Root | Rayo de energía | 2 | 18 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.` |
-| Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` |
+| Root | Rayo de sanación | 1 | 14 at once + Sanación over 15 s | `Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos.` |
 | Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Pierdes tu siguiente turno.` |
 | Mente | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` |
 | Taller | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` |
@@ -219,8 +219,8 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 - **Rayo de energía**: a cyan ray. Quemado, Cegado, Confusión and Encogido on its target start over
   from their whole time (`restart`, as Reinicio on everyone; until 2026-11-22 it added 5 s); a cure
   never. Its target's clock shows it (*Vuelve a empezar*, the ring refilling).
-- **Rayo de sanación**: a green ray to an ally; *Sanación*, a timed status whose pulses give PV back
-  (one every 3 s, 20 PV in all at level I), a level up if cast again while it lasts.
+- **Rayo de sanación**: a green ray to an ally; close to a quarter of their PV at once, then *Sanación*, a timed status whose pulses
+  give PV back (one every 3 s, a quarter of their PV in all at level I, ×2.5 at II, ×4 at III), a level up if cast again while it lasts.
 - **Explosión**: Bip dives into the foes and blows up (fire: it melts the pringue); every foe
   standing is *Cegado* until the round ends; Aitor sits the next round out while Bip puts itself
   back together, then it forms again out of his nanites on its own.
