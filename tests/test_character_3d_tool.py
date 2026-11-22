@@ -221,10 +221,12 @@ class CharacterThreeDTool(unittest.TestCase):
         self.assertEqual(self.images.calls, [])
         self.assertEqual(self.meshy.views, [])
 
-    def test_every_person_sends_only_listed_photos_and_their_face_ones_are_among_them(self):
+    def test_every_person_sends_only_their_own_photos(self):
+        # A face photo is one of their photos or a crop of one (Emilie's bar photo), always in their own folder.
         for person in character_3d.FIGURES.values():
             if person.photos:
-                self.assertTrue(set(person.face_photos) <= set(person.photos), person.name)
+                folders = {photo.split("/")[0] for photo in person.photos}
+                self.assertTrue(all(photo.split("/")[0] in folders for photo in person.face_photos), person.name)
             self.assertNotIn("aitor/aitor-04.jpg", person.photos, "a photo that must stay on this machine")
 
 

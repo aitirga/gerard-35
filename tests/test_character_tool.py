@@ -238,8 +238,10 @@ class CharacterFileTests(unittest.TestCase):
 
     def test_floating_feet_are_reported(self):
         spec = gerard_spec()
-        spec["rig"]["leg"][1] = 0.7
-        self.assertIn("soles end at y = 0.240", " ".join(character_model.validate(spec)))
+        feet = [p for p in spec["parts"] if p.get("attach") == "leg" and p.get("name") == "Zapatilla"]
+        sole = min(spec["rig"]["leg"][1] + f["position"][1] - f["scale"][1] / 2 for f in feet) + 0.2
+        spec["rig"]["leg"][1] += 0.2
+        self.assertIn(f"soles end at y = {sole:.3f}", " ".join(character_model.validate(spec)))
 
 
 class ProviderTests(unittest.TestCase):

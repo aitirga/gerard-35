@@ -128,7 +128,8 @@ class AuditTests(unittest.TestCase):
 class DrawingTests(unittest.TestCase):
     data = {"total": .5, "story": .25, "blocks": [{"title": "Bloque", "share": .5}],
             "priorities": [{"title": "Lo primero", "items": [{"ok": False, "title": "Paso"}],
-                            "pending": [{"ok": False, "title": "Paso"}], "share": 0}]}
+                            "pending": [{"ok": False, "title": "Paso"}], "share": 0, "id": "p1"}],
+            "tasks": [{"ok": False, "title": f"Paso {n}", "priority": "p1"} for n in range(12)]}
 
     def test_nothing_says_100_before_it_is_done(self):
         self.assertEqual(progress.percent(.999), 99)
@@ -136,14 +137,14 @@ class DrawingTests(unittest.TestCase):
 
     def test_a_plain_bar_has_no_escapes_and_keeps_its_width(self):
         self.assertEqual(progress.bar(.5, 10, False), "█████░░░░░")
-        self.assertNotIn("\033", "".join(progress.render(self.data, "t", 40, 60, False)))
+        self.assertNotIn("\033", "".join(progress.render(self.data, "t", 40, 60, False)[0]))
 
     def test_it_never_draws_more_than_the_pane_holds(self):
         for rows in (1, 3, 6, 9, 13, 40):
-            self.assertLessEqual(len(progress.render(self.data, "t", rows, 60, False)), rows)
+            self.assertLessEqual(len(progress.render(self.data, "t", rows, 60, False)[0]), rows)
 
     def test_a_short_pane_keeps_the_bar(self):
-        self.assertIn("█", "".join(progress.render(self.data, "t", 3, 60, False)))
+        self.assertIn("█", "".join(progress.render(self.data, "t", 3, 60, False)[0]))
 
 
 if __name__ == "__main__":
