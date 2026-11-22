@@ -187,6 +187,12 @@ title = "El juego en el Windows de casa, con el servidor en la red local"
 priority = "pruebas"
 note = "Jugarlo en el PC de casa contra el servidor de la red local. Se marca a mano."
 
+# docs/combat.md § La guía de estados (2026-11-22): a card the first time each status shows, and
+# «Cómo jugar» → En combate keeping every card found; a card changed since it was read shows again.
+[[block.item]]
+title = "Guía de estados: una card la primera vez que sale cada estado, y todas en Cómo jugar"
+used = ["guideVersion", "guidesFound"]
+
 [[block.item]]
 title = "Bestiario: cada personaje, monstruo y jefe con su modelo, retrato y movimientos (just bestiario)"
 file = "src/bestiary.ts"

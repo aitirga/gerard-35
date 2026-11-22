@@ -1,4 +1,6 @@
 import { clickControllerButton } from './controller-ui';
+import { statusSvg, type IconId } from './status-icons';
+import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
 import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater } from './battle';
@@ -57,85 +59,6 @@ const peelText = (peeled: number, onion?: { layers?: number }) => !onion?.layers
 const TARGETS = { foes: 'Un enemigo', 'all-foes': 'Todos los enemigos', allies: 'Un aliado herido', party: 'Todo el equipo' } as const;
 /** A fighter's ánima pills, with L and R (Q and E) on either side to walk through them. */
 const ANIMA_SWITCH = `<div class="anima-switch" role="group" aria-label="Ánima" hidden><span class="battle-kicker">ÁNIMA</span><button class="anima-key" type="button" tabindex="-1" data-step="-1" aria-label="Ánima anterior"><kbd data-glyph="prev"></kbd></button><div class="anima-chips"></div><button class="anima-key" type="button" tabindex="-1" data-step="1" aria-label="Ánima siguiente"><kbd data-glyph="next"></kbd></button></div>`;
-/** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado';
-/** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
-/** A definitiva: three puffs going up at once (awake, or asleep and dimmer). */
-const DEFINITIVA_SVG = '<circle cx="8" cy="4.2" r="2.6"/><circle cx="3.6" cy="9" r="2.2"/><circle cx="12.4" cy="9" r="2.2"/><path d="M8 8v6.6M5.4 14.6h5.200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
-const STATUS_ICONS: Record<IconId, string> = {
-  // An Encarnado (src/castle.ts `STRONG`): an ember inside a ring, its halo.
-  encarnado: '<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2.9" fill="currentColor"/>',
-  // Dadista's Racha: a four-point star, the astral's own, with the dice spent in its corner.
-  racha: '<path d="M8 .8 9.6 6.4 15.2 8 9.6 9.6 8 15.2 6.4 9.6 .8 8 6.4 6.4z"/>',
-  // A rock coming down with its trail.
-  meteoro: '<path d="M10.6 15a4.4 4.4 0 1 1 0-8.8 4.4 4.4 0 0 1 0 8.8zM1 1l5.2 4.4-1.3 1.4zM5.6 1l3 3.6-1 .7z"/>',
-  // Converge: a wave that settles into a flat line.
-  converge: '<path d="M1.2 8c1.3-5.6 2.6-5.6 3.6 0s2-2.6 2.8 0 1.2 0 1.6 0h5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
-  // El Átomo's Reacción coming: a nucleus and two crossed orbits.
-  reaccion: '<circle cx="8" cy="8" r="2.1" fill="currentColor"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(-35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/>',
-  // Shock: a bolt.
-  shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
-  // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.
-  cargado: '<path d="M.8 7.1h4.4v1.8H.8zM10.8 7.1h4.4v1.8h-4.4z" fill="currentColor"/><rect x="5" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/><rect x="9" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/>',
-  // La Voz's Enfado: her voice gone sharp, a wave with a spike in it.
-  enfado: '<path d="M.8 9.2h3.1l1.5-3.4 2.1 8.4 2.4-12.6 1.9 7.6h3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
-  // La Voz's song: a sung note, the same mark for every note (its colour says which).
-  cancion: '<path d="M6 2.2v8.1a2.3 2 0 1 1-1.4-1.8V3.6l6.8-1.5v6.6a2.3 2 0 1 1-1.4-1.8V4.1L6 5" fill="currentColor"/>',
-  // The light through the salon's windows (docs/quests/luca.md): a pointed window, its colour the light on now.
-  luz: '<path d="M8 1.6C5.5 1.6 3.6 3.8 3.6 6.6v7.8h8.8V6.6c0-2.8-1.9-5-4.4-5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.2v12.2M3.8 8.6h8.4" stroke="currentColor" stroke-width="1.1"/>',
-  'punto-debil': '<path d="M8 1.5v3.2M8 11.3v3.2M1.5 8h3.2M11.3 8h3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.5"/>',
-  // Empolvado: a puff and the grains under it. Envenenado: bubbles. Cristalizado: shards.
-  empolvado: '<circle cx="5.2" cy="7.6" r="3.2"/><circle cx="9.8" cy="5.6" r="3.8"/><circle cx="11.8" cy="9" r="2.4"/><circle cx="3.4" cy="13.6" r=".9"/><circle cx="7.6" cy="14.4" r=".9"/><circle cx="12" cy="13.6" r=".9"/>',
-  envenenado: '<circle cx="6" cy="10" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11.3" cy="5.6" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.6" cy="3.2" r="1.1"/>',
-  // A cortina of powder: a hanging screen of dust, grains falling from its foot.
-  cortina: '<path d="M3 2.2h10v7.4c-1.2 1.2-2.2 1.2-3.3 0-1.2 1.2-2.2 1.2-3.4 0-1.1 1.2-2.1 1.2-3.3 0z"/><circle cx="4.6" cy="13.2" r=".9"/><circle cx="8" cy="14.2" r=".9"/><circle cx="11.4" cy="13.2" r=".9"/>',
-  // Acecho: a cat's eye, its pupil a slit, on whoever's cat is crouched to spring.
-  acecho: '<path d="M1.2 8C3 4.6 5.4 3.4 8 3.4s5 1.2 6.8 4.6c-1.8 3.4-4.2 4.6-6.8 4.6S3 11.4 1.2 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 4.5c.9 1.1 1.35 2.3 1.35 3.5S8.9 10.4 8 11.5C7.1 10.4 6.65 9.2 6.65 8S7.1 5.6 8 4.5z"/>',
-  // Siete vidas: a cat's head over each of the party while Yuki's ward holds.
-  'siete-vidas': '<path fill-rule="evenodd" d="M2.6 2.2 5.5 5.5h5L13.4 2.2v7.3c0 3.1-2.4 5.1-5.4 5.1s-5.4-2-5.4-5.1zM5.2 9.6c0 .8.4 1.3.8 1.3s.8-.5.8-1.3-.4-1.3-.8-1.3-.8.5-.8 1.3zm4 0c0 .8.4 1.3.8 1.3s.8-.5.8-1.3-.4-1.3-.8-1.3-.8.5-.8 1.3z"/>',
-  // A definitiva awake: three puffs going up at once.
-  definitiva: DEFINITIVA_SVG,
-  // A definitiva bought but asleep: the same puffs, dimmer, its corner how near it is to waking.
-  dormida: DEFINITIVA_SVG,
-  cristalizado: '<path d="M8 1 10.4 6.4 8 15 5.6 6.4z"/><path d="M2.4 6.2 5 8.6 3.6 12.4z"/><path d="M13.6 6.2 11 8.6 12.4 12.4z"/>',
-  // Compás (Sincopante's ecos): a voice and its echo, two rings a little apart (Interferencia).
-  compas: '<circle cx="6.6" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="9.4" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/>',
-  quemado: '<path d="M8 1.2c.6 2.6 3.8 4 3.8 7.9a3.8 3.8 0 0 1-7.6 0c0-2 1-3.3 2-4.2-.1 1.6.5 2.6 1.3 2.9C7 6 7 3.4 8 1.2z"/>',
-  // Escudo de bits: a dome of little squares on the floor's line.
-  bits: '<path d="M6.5 2.2h3v2.6h-3zM3.4 4.2h2.6v2.6H3.4zM10 4.2h2.6v2.6H10zM1.8 7.6h2.6v2.6H1.8zM11.6 7.6h2.6v2.6h-2.6zM1.2 11.1h2.6v2.6H1.2zM12.2 11.1h2.6v2.6h-2.6z"/><path d="M.8 14.8h14.4" stroke="currentColor" stroke-width="1.2"/>',
-  // Volcán (the dúo mayor Vulcano): a cone with fire out of its mouth. Virus (Virus atómico): a swarm, three small Bips round a core.
-  volcan: '<path d="M1.5 14.5 6 7.2h4l4.5 7.3z"/><path d="M8 1.2c.3 1.3 1.8 1.9 1.8 3.6a1.8 1.8 0 0 1-3.6 0c0-.9.5-1.5 1-2 0 .7.2 1.1.6 1.3C7.6 3.4 7.6 2.3 8 1.2z"/>',
-  // The newer duals (docs/animas/README.md § Combined skills). Marea: two vessels joined by a pipe, level. Fulgurita: a branching
-  // tube of glass. Metralla: splinters round a wound. Idea fija: a note that turns on itself. Seiche: a basin, its water tilted. Staccato: a note cut short.
-  marea: '<path d="M2 2.5v9.2h3.4V9.4h5.2v2.3H14V2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.8 6.2h1.8v4.7H2.8zM11.4 6.2h1.8v4.7h-1.8z"/><path d="M1 14.3h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
-  fulgurita: '<path d="M8.6 1 6.4 5.6l2.4 1L5.2 11l1.9.9L5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.8 6.6 12.4 8M7.1 11.9l3.6 1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
-  metralla: '<path d="M8 5.4 9.3 8 8 10.6 6.7 8z"/><path d="M8 .8 9 3.6H7zM15.2 8l-2.8 1V7zM8 15.2 7 12.4h2zM.8 8l2.8-1v2zM13 3l-1.2 2.6-1.4-1.4zM3 3l2.6 1.2-1.4 1.4zM3 13l1.2-2.6 1.4 1.4zM13 13l-2.6-1.2 1.4-1.4z"/>',
-  'idea-fija': '<path d="M13.4 8A5.4 5.4 0 1 1 8 2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 .6 11 2.6 8 4.6z"/><circle cx="7.2" cy="9.6" r="1.7"/><path d="M8.7 9.6V5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
-  seiche: '<path d="M1.8 3v10.6h12.4V3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.6 6.2 13.4 9.4v3.4H2.6z"/>',
-  staccato: '<circle cx="5.4" cy="11.6" r="2.3"/><path d="M7.4 11.6V2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="4" r="1.4"/><path d="M10 14.6 14.4 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
-  // Bomba remota: a round bomb with its fuse and a spark.
-  bomba: '<circle cx="7" cy="9.6" r="4.6"/><path d="M10.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.3 1.6v1.5M14.4 3.6h-1.5M12 2.2l.7.7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>',
-  virus: '<circle cx="8" cy="8" r="2.2"/><circle cx="8" cy="2.6" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12.7" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="3.3" cy="10.7" r="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.1v1.7M11.4 9.9 9.9 9M4.6 9.9 6.1 9" stroke="currentColor" stroke-width="1.1"/>',
-  // Combustión (fire at IV, docs/animas/README.md § Combustión): the flame inside a burst, ready to go off.
-  combustion: '<path d="M8.0 1.0L9.5 3.6L12.3 2.4L12.0 5.4L14.9 6.0L12.9 8.3L14.9 10.6L12.0 11.2L12.3 14.2L9.5 13.0L8.0 15.6L6.5 13.0L3.7 14.2L4.0 11.2L1.1 10.6L3.1 8.3L1.1 6.0L4.0 5.4L3.7 2.4L6.5 3.6z" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/><path d="M8 4.4c.4 1.6 2.3 2.4 2.3 4.8a2.3 2.3 0 0 1-4.6 0c0-1.2.6-2 1.2-2.5 0 1 .3 1.6.8 1.8C7.4 7 7.4 5.7 8 4.4z"/>',
-  cegado: '<path d="M1.5 8S4 3.8 8 3.8 14.5 8 14.5 8 12 12.2 8 12.2 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.9"/><path d="M2.6 13.4 13.4 2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
-  sangrado: '<path d="M8 1.5C6.2 4.6 4.2 7 4.2 9.8a3.8 3.8 0 0 0 7.6 0C11.8 7 9.8 4.6 8 1.5z"/>',
-  mareo: '<path d="M8.6 8a.6.6 0 1 1-1.2 0 1.8 1.8 0 1 1 3.6 0 3 3 0 1 1-6 0 4.2 4.2 0 1 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-  llorera: '<path d="M5 3.5C4 5.6 3 6.8 3 8.3a2 2 0 0 0 4 0C7 6.8 6 5.6 5 3.5zm6 3C10 8.6 9 9.8 9 11.3a2 2 0 0 0 4 0c0-1.5-1-2.7-2-4.8z"/>',
-  // A cross of cure (Rayo de sanación), and a question mark (Confusión).
-  sanacion: '<path d="M6.5 2h3v4.5H14v3H9.5V14h-3V9.5H2v-3h4.5z"/>',
-  confusion: '<path d="M5.3 5.7a2.7 2.7 0 1 1 4 2.4c-.8.5-1.3 1-1.3 2v.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="13.2" r="1.15"/>',
-  // A drop over two ripples (Mojado).
-  mojado: '<path d="M8 1.2C6.4 3.8 4.9 5.6 4.9 7.6a3.1 3.1 0 0 0 6.2 0C11.1 5.6 9.6 3.8 8 1.2z"/><path d="M2 12.2c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 2-1.1 3-.3M3.2 14.8c1.2-.8 2.4-.8 3.6 0s2.4.8 3.6 0" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
-  // La crecida (Freática): Agua, a staff gauge in its water, its three marks; Corriente, a bolt into the water's line;
-  // Hundido, a head under a line; Congelado, a split crystal of ice.
-  agua: '<path d="M3 1.5v13" stroke="currentColor" stroke-width="1.4"/><path d="M3 4h4.5M3 7.5h3.5M3 11h4.5" stroke="currentColor" stroke-width="1.3"/><path d="M8.6 9.4c1.1-.8 2.1-.8 3.2 0s2.1.8 3.2 0v5.1H8.6z"/>',
-  corriente: '<path d="M9.4 1 4.6 7.6h3L6.6 11.2l4.8-6H8.6z"/><path d="M1.4 13.2c1.6-1.2 3.2-1.2 4.8 0s3.2 1.2 4.8 0 2.4-1 3.6-.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
-  hundido: '<circle cx="8" cy="10.2" r="2.6"/><path d="M5.2 15c.4-1.6 1.4-2.3 2.8-2.3s2.4.7 2.8 2.3" /><path d="M1.2 4.6c1.6-1.2 3.2-1.2 4.8 0s3.2 1.2 4.8 0 2.4-1 4-.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11.6" cy="7.2" r=".8"/>',
-  congelado: '<path d="M8 .8 13.6 4.4v7.2L8 15.2 2.4 11.6V4.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 .8v14.4M2.4 4.4 13.6 11.6M13.6 4.4 2.4 11.6" stroke="currentColor" stroke-width=".9" opacity=".75"/>',
-  // Four arrows pointing in (Encogido).
-  encogido: '<path d="M2 2l4 4M14 2l-4 4M2 14l4-4M14 14l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 6H6V3.5M12.5 6H10V3.5M3.5 10H6v2.5M12.5 10H10v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
-};
 /**
  * A partner's own corner of their dock while the other player chooses (split mode): they can get
  * their move ready ahead (`queue`) with their own device; it plays when their turn comes. Its own
@@ -163,7 +86,6 @@ const DUAL_LEFT: Partial<Record<TimedId, string>> = {
   marea: 'El agua sube en todos a la vez', fulgurita: 'Las esquirlas cuentan juntas', metralla: 'La herida no se gasta',
   'idea-fija': 'Golpea a los suyos cada 5 s', seiche: 'Golpea y sostiene el agua', staccato: 'Corta de nuevo cada 5 s',
 };
-const statusSvg = (id: IconId) => `<svg viewBox="0 0 16 16" aria-hidden="true">${STATUS_ICONS[id]}</svg>`;
 /** A stat up or down in words: «Defensa +4», or «Defensa ▼» for an onion's broken defence, which has no number. */
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
 /** The queue's hints go once used: preparing a choice ahead, and taking it back. */
@@ -213,6 +135,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   fallen?: (choice: 'retry' | 'rewind') => void;
   /** Whether the real artilugio is there (src/artilugio.ts): its keys only show while it is not. */
   board?: () => boolean;
+  /**
+   * The combat guide (src/status-guide.ts): which cards the players have seen, at which version, and
+   * one just read. Without it no card stops the fight (scenarios and automated runs).
+   */
+  guides?: { seen: () => GuidesSeen; mark: (id: GuideId, version: string) => void };
   /** Development build (`import.meta.env.DEV`): the Dual command takes its place in the menu. */
   dev?: () => boolean;
   /** A dual's banner: the 3D fight runs at `scale` for `seconds` of real time, then eases back (the scene's FightClock); 0 stops it. */
@@ -299,6 +226,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       </section>
       <div class="party-roster" aria-label="Tu equipo"></div>
     </div>
+    <section class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guide-title" hidden><div class="guide-card-box"><span class="guide-card-icon" aria-hidden="true"></span><span class="battle-kicker"></span><h2 id="guide-title"></h2><small class="guide-card-who"></small><p></p><button type="button" class="guide-card-ok" data-glyph-template="{confirm} Entendido"></button></div></section>
     <aside class="skill-info" role="tooltip" id="skill-info" hidden><h3></h3><p></p><strong class="skill-info-cost"></strong></aside>
     <section class="battle-result" hidden><span class="battle-kicker">FIN DEL ENCUENTRO</span><h2></h2><p></p>
       <div class="result-xp" hidden><span class="battle-kicker">EXPERIENCIA</span><strong></strong></div>
@@ -442,7 +370,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     callbacks.sound('mark-set');
   }
   /** The statuses on someone, in the order the plate and the summary show them: stacks or level, and how long they last. */
-  function statusList(c: Combatant): { id: IconId; name: string; mark: string; timed: boolean; lasts: string }[] {
+  function statusList(c: Combatant): { id: IconId; name: string; mark: string; timed: boolean; lasts: string; guide?: GuideId }[] {
     const weak = state ? weakSpotRounds(state, c) : 0;
     const song = c.kind === 'voz' && state?.song ? songNow(state) : undefined;
     // Fran's salon: the light on now, on each of the party's plates (it only touches them).
@@ -466,7 +394,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
       ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
       ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
-      ...c.suture ? [{ id: 'sanacion' as const, name: 'Sutura de luz', mark: '½', timed: false, lasts: 'el siguiente daño esta ronda' }] : [],
+      ...c.suture ? [{ id: 'sanacion' as const, guide: 'sutura' as const, name: 'Sutura de luz', mark: '½', timed: false, lasts: 'el siguiente daño esta ronda' }] : [],
       // A cortina of powder in front of them, and the definitiva awake on whoever wears its ánima (Fin de fiesta, Siete vidas).
       ...state && cortinaRounds(state, c) ? [{ id: 'cortina' as const, name: 'Cortina de polvo: el siguiente golpe, a la mitad', mark: '½', timed: false, lasts: `el siguiente golpe, o ${rounds(cortinaRounds(state, c))}` }] : [],
       ...state && awakeUlti(state, c) ? [{ id: 'definitiva' as const, name: `${awakeUlti(state, c)!.name}: despierta`, mark: '', timed: false, lasts: 'una vez en este combate' }] : [],
@@ -479,7 +407,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Siete vidas: Yuki's ward, on everyone it covers, until the blow that would have killed one of them.
       ...warded(c) ? [{ id: 'siete-vidas' as const, name: 'Siete vidas: el próximo golpe que fuera a tumbar a alguien del equipo lo cura', mark: '', timed: false, lasts: 'hasta ese golpe' }] : [],
       ...c.bits && !c.bits.broken && c.bits.hp > 0 ? [{ id: 'bits' as const, name: `Escudo de bits: ${c.bits.hp} PV, para cada golpe entero`, mark: String(c.bits.hp), timed: false, lasts: rounds(Math.max(1, c.bits.until - (state?.round ?? 0) + 1)) }] : [],
-      ...c.fuse ? [{ id: 'quemado' as const, name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' }] : [],
+      ...c.fuse ? [{ id: 'quemado' as const, guide: 'mecha' as const, name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' }] : [],
       ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
       ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
@@ -564,6 +492,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     };
     const list = part('unit-statuses'), moved = part('unit-shifts');
     const icons = statusList(c), chips = ruleChips(c), shifts = shiftChips(c);
+    noteGuides(c, icons, chips, shifts);
     const signature = [...icons.map(i => `${i.id}${i.mark}`), ...chips.map(([id, text]) => `${id}${text}`), '|', ...shifts.map(shift => shift.title)].join(',');
     if (list.dataset.for !== signature) {
       list.dataset.for = signature;
@@ -589,6 +518,59 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }));
     }
     drain(plate, c);
+  }
+  /**
+   * The combat guide (src/status-guide.ts): what each fighter's plate shows now that has a card,
+   * noted as the plates are drawn, with who carries it for the card to name.
+   */
+  const onPlates = new Map<string, { guides: GuideId[]; who: string }>();
+  function noteGuides(c: Combatant, icons: ReturnType<typeof statusList>, chips: [string, string][], shifts: { way: 'up' | 'down' }[]) {
+    const ids: string[] = [
+      ...icons.map(icon => icon.guide ?? icon.id),
+      ...chips.map(([id]) => id.startsWith('debil-') ? 'debil' : id.startsWith('resiste-') ? 'resiste' : ''),
+      ...state && c.intent && intentLabel(state, c) ? ['anuncio'] : [],
+      ...shifts.map(shift => shift.way === 'up' ? 'sube' : 'baja'),
+    ];
+    onPlates.set(c.id, { guides: [...new Set(ids.filter(isGuide))], who: c.name });
+  }
+  /** The card on screen: which, and what had the focus before it. */
+  let guideOpen: { id: GuideId; focus: HTMLElement | null } | undefined;
+  /** A card waits for a quiet moment: nothing playing, nobody being named, the fight not over. */
+  function guideReady() {
+    return !!state && !!callbacks.guides && !guideOpen && !busy && !finale && !heldChoice && !['won', 'lost', 'escaped'].includes(state.phase)
+      && !root.dataset.entering && !root.dataset.beat && !root.dataset.announcing && !root.dataset.revealing && !callbacks.paused();
+  }
+  /** The first status on a plate whose card the players have not seen, or have seen before it changed: the fight stops for it. */
+  function checkGuides() {
+    if (!guideReady()) return;
+    const seen = callbacks.guides!.seen();
+    for (const on of onPlates.values()) for (const id of on.guides) if (guideState(seen, id) !== 'seen') { showGuide(id, on.who); return; }
+  }
+  function showGuide(id: GuideId, who: string) {
+    const card = GUIDES[id], box = root.querySelector<HTMLElement>('.guide-card')!;
+    const changed = guideState(callbacks.guides!.seen(), id) === 'changed';
+    guideOpen = { id, focus: document.activeElement as HTMLElement | null };
+    root.dataset.guide = id;
+    box.style.setProperty('--status', card.colour);
+    box.querySelector('.guide-card-icon')!.innerHTML = guideIcon(id, statusSvg);
+    box.querySelector('.battle-kicker')!.textContent = changed ? 'HA CAMBIADO' : GUIDE_GROUPS[card.group].toUpperCase();
+    box.querySelector('h2')!.textContent = card.name;
+    box.querySelector('.guide-card-who')!.textContent = `Ahora en ${who}`;
+    box.querySelector('p')!.textContent = card.text;
+    box.hidden = false;
+    callbacks.sound('mark-set');
+    box.querySelector<HTMLButtonElement>('.guide-card-ok')!.focus({ preventScroll: true });
+  }
+  /** Read: it is kept at this version, the fight goes on, and the next card waiting, if any, comes. */
+  function closeGuide() {
+    if (!guideOpen) return;
+    const { id, focus } = guideOpen;
+    callbacks.guides?.mark(id, guideVersion(id));
+    guideOpen = undefined; delete root.dataset.guide;
+    root.querySelector<HTMLElement>('.guide-card')!.hidden = true;
+    callbacks.sound('ui-back');
+    if (focus?.isConnected && !focus.closest('[hidden]')) focus.focus({ preventScroll: true });
+    render();
   }
   /**
    * A timed status's clock: its ring empties and its hand turns as its time runs out, and a notch
@@ -721,7 +703,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // A hidden tab or a long frame never burns a fight away at once.
     // As fast as the 3D fight runs (a dual's banner, Punto débil's aim slowing it further), or the banner's own slow.
     const rate = callbacks.speed?.() ?? clockScale(now), seconds = Math.min(.1, Math.max(0, (now - clockLast) / 1000)) * rate; clockLast = now;
-    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || !!root.dataset.revealing || callbacks.paused();
+    const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || !!root.dataset.revealing || !!root.dataset.guide || callbacks.paused();
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
     const pulses = runClock(state, seconds, c => heldFire.has(c.id));
@@ -732,6 +714,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!busy) for (const ally of state.allies) if (ally.lives?.spent) livesPop(ally.lives.spent.target, ally.lives.spent);
     for (const c of [...state.foes, ...state.allies]) { const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`); if (plate) drain(plate, c); }
     if (summaryOpen && now - summaryAt > 250) { summaryAt = now; renderSummary(); }
+    checkGuides();
     if (!pulses.length) { if (sung) render(); return; }
     if (pulses.some(p => !p.heal)) callbacks.sound('burn');
     if (pulses.some(p => p.heal)) callbacks.sound('heal');
@@ -1083,6 +1066,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     renderSummary();
     armDualBanner();
     reaim();
+    checkGuides();
   }
   /**
    * Split, the partner's move can take an aim away from under a player (the foe falls, a cure is no
@@ -2651,6 +2635,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function close(after?: 'retry' | 'rewind') {
     const again = after === 'retry' ? reopen : undefined;
     if (after) callbacks.fallen?.(after);
+    // A card left open goes with the fight, unread: it shows again next time.
+    guideOpen = undefined; delete root.dataset.guide; root.querySelector<HTMLElement>('.guide-card')!.hidden = true; onPlates.clear();
     generation++; state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
     outside().forEach(el => { el.inert = false; }); delete hud.dataset.battle;
     const ended = callbacks.change(undefined);
@@ -2660,6 +2646,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   root.addEventListener('click', event => {
     const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!target) return;
+    // A guide card holds the fight: only its own button answers.
+    if (guideOpen) { if (target.matches('.guide-card-ok')) closeGuide(); return; }
     // A level reached holds the way out until it has all shown (`settleRewards`).
     if (target.closest('.battle-result')) { if (holdingRewards()) return; const after = target.dataset.after; close(after === 'retry' || after === 'rewind' ? after : undefined); return; }
     if (target.matches('.summary-key')) { toggleSummary(); return; }
@@ -2734,6 +2722,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let pointerPlayer: PlayerId = 1;
   function keydown(event: KeyboardEvent) {
     if (!state || finale || event.metaKey || event.ctrlKey || event.altKey) return;
+    // A guide card holds the fight: Enter, Space or Escape close it, and nothing else reaches the fight.
+    if (guideOpen) {
+      event.preventDefault(); event.stopPropagation();
+      if (!event.repeat && ['Enter', ' ', 'Escape'].includes(event.key)) closeGuide();
+      return;
+    }
     // Aitor held, played from the keyboard (alone, or with no second pad): its arrows and Enter.
     if (heldChoice && heldDriver() === 1) {
       const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm' } as Record<string, ControlAction>)[event.key];
@@ -3007,20 +3001,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
      * Where the fight's input is; its third part names an open sub-menu (a command, the summary, or
      * the keyboard player's move ready ahead), so Escape backs out of it (or takes it back) before pausing.
      */
-    get controllerContext() { return !state ? 'world' : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
+    get controllerContext() { return !state ? 'world' : guideOpen ? `battle:guia:${guideOpen.id}` : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
     /**
      * The same for one player's controller. Split, it is that player's own menu and whether their
      * fighter can choose: a press is held back while their own screen changes, never because the
      * partner opened a menu or a move started playing.
      */
     controllerContextOf(player: PlayerId) {
-      if (!state || !split()) return ui.controllerContext;
+      if (!state || !split() || guideOpen) return ui.controllerContext;
       const m = player === ctx ? { selected, selectedSkill, pickingDie, targeting } : menus[player];
       return `battle:${state.phase}:${m.selected ?? (summaryOpen ? 'summary' : '')}:${m.selectedSkill ?? m.pickingDie ?? ''}:${m.targeting}:${canAct(allyOf(player)) ? 'choosing' : 'waiting'}`;
     },
     /** △ / Y (X on a Switch pad): the details window beside the focused skill; on the commands, or aiming Atacar, its next element. */
     details(player: PlayerId = 1) {
-      if (!state) return;
+      if (!state || guideOpen) return;
       const press = () => {
         if (state!.phase === 'player' && (!selected || (selected === 'attack' && targeting))) nextElement(state!.allies[state!.active]);
         else showDetails(!details);
@@ -3032,6 +3026,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     control(action: ControlAction | 'prev' | 'next', player: PlayerId = 1) {
       if (!state) return;
       if (finale) return;
+      // A guide card holds the fight: either player's confirm or back closes it.
+      if (guideOpen) { if (action === 'confirm' || action === 'cancel') closeGuide(); return; }
       if (heldChoice) { if (player === heldDriver() && action !== 'prev' && action !== 'next') heldControl(action); return; }
       if (action === 'cancel' && summaryOpen) { toggleSummary(false); return; }
       const ended = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -3054,7 +3050,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       withPlayer(player, () => { if (!locked()) press(); });
     },
     /** The D-pad's left or right (src/controller.ts `readController`): for either player at any moment. */
-    toggleSummary() { toggleSummary(); },
+    toggleSummary() { if (!guideOpen) toggleSummary(); },
     /** Whether the summary is open (scenarios and tests). */
     get summary() { return summaryOpen; },
     positionTargets(targets: { id: string; x: number; y: number; visible: boolean }[]) {
@@ -3078,6 +3074,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (state) return;
       const count = foeCount;
       reopen = (): void => { ui.open(party, count, options); };
+      onPlates.clear();
       previousFocus = document.activeElement as HTMLElement;
       const token = ++generation;
       const { possessed = false, encounter = 'dogs' } = options;

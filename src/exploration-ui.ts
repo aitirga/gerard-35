@@ -16,6 +16,8 @@ import { currentThought, diary, storyClock } from './journal';
 import type { PlayerId } from './party';
 import { costPips, flashAnima, portrait as face, vitalsPlate } from './vitals';
 import { SPEAKERS } from './dialogue';
+import { GUIDES, GUIDE_GROUPS, guideIcon, guidesFound, isGuide, type GuideGroup, type GuideId, type GuidesSeen } from './status-guide';
+import { statusSvg } from './status-icons';
 
 /**
  * The user menu (Tab, or C / I / H straight to a section; the top face button on a controller).
@@ -45,6 +47,8 @@ const escape = (text: string) => text.replace(/[&<>"]/g, c => `&#${c.charCodeAt(
 
 export interface StatusCallbacks {
   pause: (paused: boolean) => void;
+  /** The combat guide's cards read (src/status-guide.ts), for «Cómo jugar». */
+  guides?: () => GuidesSeen;
   openMenu: () => void;
   /** Puts one of the party's ánimas (classes) on a member, or takes it off with `null`. */
   wear: (member: MemberId, classId: ClassId) => void;
@@ -60,7 +64,9 @@ export interface StatusCallbacks {
   solo: () => boolean;
 }
 /** `world`: the map page shows Barcelona (Shift + M) instead of the local map. */
-interface Sheet { player: PlayerId; el: HTMLElement; page?: PanelId; cursor?: string; viewing?: ClassId; item?: ItemId; world?: boolean; equipped?: string }
+interface Sheet { player: PlayerId; el: HTMLElement; page?: PanelId; cursor?: string; viewing?: ClassId; item?: ItemId; world?: boolean; equipped?: string;
+  /** «Cómo jugar»: the controls or the combat guide, and the guide's card under the cursor. */
+  help?: 'controles' | 'combate'; guide?: GuideId }
 type Seen = Map<MemberId, ClassId | undefined>;
 
 export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: StatusCallbacks) {
@@ -339,10 +345,32 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       <footer class="map-footer"><div class="map-keys">${keys}</div><button type="button" data-key="map-level" data-map-level="${world ? 'local' : 'world'}">${world ? 'Mapa local <kbd>M</kbd>' : 'Mapa del mundo <kbd>Mayús</kbd> + <kbd>M</kbd>'}</button></footer>
     </div>`;
   }
-  /** Cómo jugar: the controls of the device in use (input-glyphs.ts fills the templates). */
-  function helpPage() {
-    return `<div class="help-page"><div class="user-help-intro"><span class="battle-kicker">LOS CONTROLES</span><h2>La aventura se juega probando.</h2><p>Explora, habla con la gente y descubre el mundo a tu ritmo.</p></div>
-      <dl class="menu-controls">
+  /** One card of the combat guide, as the fight showed it: its icon, its group, what it does. */
+  function guideDetail(id: GuideId) {
+    const card = GUIDES[id];
+    return `<article class="guide-detail" data-guide="${id}" style="--status:${card.colour}">
+        <span class="guide-detail-icon" aria-hidden="true">${guideIcon(id, statusSvg)}</span>
+        <header><span class="battle-kicker">${GUIDE_GROUPS[card.group].toUpperCase()}</span><h2>${escape(card.name)}</h2></header>
+        <p class="guide-detail-text">${escape(card.text)}</p>
+      </article>`;
+  }
+  /** En combate: every card the fights have shown, by group, and the one under the cursor beside them. */
+  function guidePage(sheet: Sheet) {
+    const found = guidesFound(callbacks.guides?.() ?? {}).filter(isGuide);
+    if (!found.length) return '<div class="guide-page" data-empty><p class="items-none">Cada estado que aparezca en un combate, de los tuyos o de un enemigo, se quedará aquí con lo que hace.</p></div>';
+    const viewing = found.includes(sheet.guide!) ? sheet.guide! : found[0];
+    const groups = (Object.keys(GUIDE_GROUPS) as GuideGroup[]).map(group => {
+      const cards = found.filter(id => GUIDES[id].group === group);
+      return cards.length ? `<section><h3 class="anima-group-head"><span>${GUIDE_GROUPS[group].toUpperCase()} · ${cards.length}</span></h3><ul>${cards.map(id => `<li><button type="button" class="guide-row" data-key="guide:${id}" data-guide="${id}" style="--status:${GUIDES[id].colour}"><span class="guide-row-icon" aria-hidden="true">${guideIcon(id, statusSvg)}</span><strong>${escape(GUIDES[id].name)}</strong></button></li>`).join('')}</ul></section>` : '';
+    }).join('');
+    return `<div class="guide-page"><div class="guide-list">${groups}</div>${guideDetail(viewing)}</div>`;
+  }
+  /** Cómo jugar: the controls of the device in use (input-glyphs.ts fills the templates), and what the fights have shown. */
+  function helpPage(sheet: Sheet) {
+    const view = sheet.help ?? 'controles', count = guidesFound(callbacks.guides?.() ?? {}).length;
+    const tabs = `<div class="help-views" role="group" aria-label="Cómo jugar">${([['controles', 'Controles', ''], ['combate', 'En combate', count ? String(count) : '']] as const).map(([id, label, n]) => `<button type="button" data-key="help:${id}" data-help-view="${id}" aria-pressed="${view === id}">${label}${n ? `<small>${n}</small>` : ''}</button>`).join('')}</div>`;
+    return `<div class="help-page" data-view="${view}"><div class="user-help-intro"><div><span class="battle-kicker">CÓMO JUGAR</span><h2>La aventura se juega probando.</h2><p>${view === 'controles' ? 'Explora, habla con la gente y descubre el mundo a tu ritmo.' : 'Lo que habéis visto en los combates, en los vuestros y en los enemigos.'}</p></div>${tabs}</div>
+      ${view === 'controles' ? `<dl class="menu-controls">
         <div><dt>Moverte</dt><dd data-device="keyboard">W A S D o flechas</dd><dd data-device="gamepad">Stick izquierdo o cruceta</dd></div>
         <div><dt>Correr</dt><dd data-glyph-template="Con las zapatillas: {run}"></dd></div>
         <div><dt>Interactuar / avanzar</dt><dd data-device="keyboard">E · Enter · Espacio</dd><dd data-device="gamepad" data-glyph-template="{interact}"></dd></div>
@@ -352,7 +380,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
         <div><dt>Vista general</dt><dd data-glyph-template="{overview}"></dd></div>
         <div><dt>Combate</dt><dd data-glyph-template="{pick} elegir · {confirm} confirmar · {cancel} volver · {details} detalles de una habilidad · {prev} / {next} cambiar de ánima · {summary} resumen del combate"></dd></div>
         <div><dt>Pausa</dt><dd data-glyph-template="{menu} · En Configuración, el mando, el sonido y las luces de casa"></dd></div>
-      </dl></div>`;
+      </dl>` : guidePage(sheet)}</div>`;
   }
   function diaryPage(sheet: Sheet) {
     const own = ownerOf(sheet);
@@ -379,7 +407,7 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       if (page === 'map') root.dataset.mapLevel = sheet.world ? 'world' : 'local'; else delete root.dataset.mapLevel;
     }
     const dev = sheet.player === 1 && callbacks.solo() && story.partner === 'aitor' ? '<span class="sheet-dev">DEPURACIÓN · UN JUGADOR LLEVA A LOS DOS</span>' : '';
-    const content = page === 'character' ? statusPage(sheet) : page === 'animas' ? animasPage(sheet) : page === 'items' ? itemsPage(sheet) : page === 'diary' ? diaryPage(sheet) : helpPage();
+    const content = page === 'character' ? statusPage(sheet) : page === 'animas' ? animasPage(sheet) : page === 'items' ? itemsPage(sheet) : page === 'diary' ? diaryPage(sheet) : helpPage(sheet);
     sheet.el.innerHTML = page === 'map' ? mapPage(sheet) : `<header class="sheet-head">
         <div><span class="battle-kicker">MENÚ DE USUARIO · ${escape(own.name.toUpperCase())}${dev}</span><div class="journal-identity"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 10-8 10L4 12 12 2Z"/><path d="m8 12 4-5 4 5-4 5-4-5Z"/></svg><h1 id="status-title-${sheet.player}">${page === 'items' && story.partner !== 'aitor' ? 'Lo que llevas.' : TITLES[page]}</h1></div><p class="journal-context">${escape(ENVIRONMENTS[location].name)}</p></div>
         <div class="sheet-clock" role="img" aria-label="Son las ${time}"><strong>${time}</strong><span>${day}</span></div>
@@ -419,6 +447,12 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       sheet.viewing = shown;
       sheet.el.querySelector('.anima-detail')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: animaDetail(shown) }).firstElementChild!);
       sheet.el.querySelector('.anima-duos-card')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: duosOf(shown) }).firstElementChild!);
+    }
+    // On Cómo jugar's combat guide, the card under the cursor shows beside the list.
+    const guide = button.dataset.guide;
+    if (guide && isGuide(guide) && sheet.guide !== guide) {
+      sheet.guide = guide;
+      sheet.el.querySelector('.guide-detail')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: guideDetail(guide) }).firstElementChild!);
     }
     // On the Objetos page, the one under the cursor shows beside the list.
     const item = button.dataset.item as ItemId | undefined;
@@ -494,6 +528,8 @@ export function createExplorationUI(hud: HTMLElement, story: Story, callbacks: S
       sheet.equipped = undefined;
       return;
     }
+    const view = button.dataset.helpView;
+    if (view === 'controles' || view === 'combate') { if (sheet.help !== view) { sheet.help = view; renderSheet(sheet); } return; }
     if (mapLevel) showMap(sheet, mapLevel === 'world');
     else if (button.hasAttribute('data-map-back')) back(sheet);
     else if (wear && classId) callbacks.wear(wear as MemberId, classId as ClassId);

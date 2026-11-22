@@ -1,0 +1,153 @@
+{
+  "title": "La guía de estados",
+  "description": "The combat guide (src/status-guide.ts): the first time a status shows on a plate, the party's or a foe's, the fight stops behind a card that says what it does; read, it is kept, and «Cómo jugar» → En combate shows every card found. A card whose words or numbers changed since it was read shows again, «HA CAMBIADO». Cards are off in automated browsers unless the page asks (?guides=1). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&guides=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "localStorage.removeItem('gerard35.guides.v1')"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 3, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.foes[0].timed = { quemado: { level: 2, left: 10, next: 2 } }; })"
+    },
+    {
+      "until": "!document.querySelector('.guide-card').hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "card-quemado",
+      "delay": 900,
+      "caption": "Quemado shows for the first time, on a dog: the fight stops behind its card"
+    },
+    {
+      "eval": "window.__clock = window.gerard.battleUI.live.foes[0].timed.quemado.left"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "until": "window.gerard.battleUI.live.foes[0].timed.quemado.left === window.__clock",
+      "timeout": 2000,
+      "caption": "The fight's clock stands still while the card is up"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "document.querySelector('.guide-card').hidden",
+      "timeout": 5000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.allies[0].statuses = { sangrado: 3 }; s.foes[1].timed = { confusion: { level: 1, left: 30, next: 30 } }; })"
+    },
+    {
+      "until": "!document.querySelector('.guide-card').hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "card-sangrado",
+      "delay": 900,
+      "caption": "Two new at once: the first (Sangrado, on Gerard) …"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "!document.querySelector('.guide-card').hidden && document.querySelector('.guide-card h2').textContent === 'Confusión'",
+      "timeout": 10000
+    },
+    {
+      "shot": "card-confusion",
+      "delay": 900,
+      "caption": "… then the next, Confusión on another dog"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "shot": "combate-sigue",
+      "delay": 900,
+      "caption": "Read: the fight goes on, and the same statuses never stop it again"
+    },
+    {
+      "eval": "localStorage.setItem('gerard35.guides.v1', JSON.stringify({ ...JSON.parse(localStorage.getItem('gerard35.guides.v1')), quemado: 'version-vieja' }))"
+    },
+    {
+      "open": "/?story=got-wrapper&guides=1"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 3, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.foes[2].timed = { quemado: { level: 1, left: 10, next: 2 } }; s.foes[0].timed = { confusion: { level: 1, left: 30, next: 30 } }; })"
+    },
+    {
+      "until": "!document.querySelector('.guide-card').hidden",
+      "timeout": 10000
+    },
+    {
+      "shot": "card-ha-cambiado",
+      "delay": 900,
+      "caption": "Quemado's card was read at an older version: it shows again, «HA CAMBIADO»; Confusión, read as it is, does not"
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "eval": "window.gerard.battleUI.end()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "press": "KeyH"
+    },
+    {
+      "shot": "como-jugar-controles",
+      "delay": 900,
+      "caption": "Cómo jugar: the controls, and beside the title the two views"
+    },
+    {
+      "eval": "document.querySelector('.status-sheet [data-help-view=\"combate\"]').click()"
+    },
+    {
+      "shot": "como-jugar-combate",
+      "delay": 900,
+      "caption": "En combate: every card found, by group, and the one under the cursor"
+    },
+    {
+      "eval": "document.querySelector('.status-sheet [data-guide=\"sangrado\"]').focus()"
+    },
+    {
+      "shot": "como-jugar-sangrado",
+      "delay": 600,
+      "caption": "Moving through them shows each one's card"
+    }
+  ]
+}

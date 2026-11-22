@@ -512,8 +512,8 @@ otra cara de Quemado: sus pulsos devuelven PV en vez de quitarlos (`TimedSpec.he
 enemigo gasta su turno en un golpe normal a uno de los suyos (`CONFUSED_BLOW`, a sí mismo si está
 solo) y olvida lo que había anunciado (`confusedAct`). *Encogido* (Rayo encogedor, 15 s) le quita
 un 25 % de la Defensa que tenga mientras dura (`TimedSpec.cut`, en `current` y `statShifts`) y la
-escena lo encoge. *Rayo de energía* alarga 5 s lo que el enemigo lleve con reloj, nunca una cura; el anillo
-del reloj se mide entonces contra lo que le queda. Un estado puede además acabar con la ronda
+escena lo encoge. *Rayo de energía* devuelve al principio lo que el enemigo lleve con reloj, nunca una cura (como
+*Reinicio* en todos; hasta el 2026-11-22 alargaba 5 s), y el anillo del reloj vuelve a llenarse. Un estado puede además acabar con la ronda
 (`Timed.until`): el *Cegado* de Explosión dura hasta que acaba el turno de los enemigos.
 **Perder un turno** (`Combatant.out`): tras Explosión, Aitor no actúa la ronda siguiente (ya cuenta
 como `spent` al empezarla) y Bip vuelve a formarse al acabar; si nadie del grupo puede elegir, los
@@ -552,6 +552,35 @@ propia tiene una de las dos cosas, así que no aparta nada.
 
 `just screenshots stat-motes --gpu` muestra las partículas subiendo, los dos a la vez, un enemigo con
 cuatro estados y el resumen con el teclado y con el mando.
+
+## La guía de estados
+
+(2026-11-22, Aitor; `src/status-guide.ts`.) La primera vez que un estado sale en la placa de alguien,
+del equipo o de un enemigo, el combate se para y sale una card con lo que hace: su icono, su grupo,
+su nombre, en quién está y el texto. El reloj del combate no corre mientras está (`root.dataset.guide`
+en `tickClock`); se cierra con Confirmar, Volver o Enter, y si han salido varios a la vez van uno tras
+otro. Espera a un momento tranquilo: nada jugándose, nadie nombrando un movimiento, el combate sin
+acabar. Leída, se guarda con la partida y en el navegador (`guides` en el snapshot de `main.ts`), y
+**Cómo jugar → En combate** del menú de usuario las enseña todas, por grupos, con la de debajo del
+cursor al lado.
+
+- **Qué tiene card**: todos los estados de `STATUSES` y `TIMED` (una prueba lo exige), los de las
+  ánimas que salen como icono (Cortina, Cargado, Racha, Compás, la definitiva dormida o despierta…),
+  Punto débil, Shock, los atributos arriba o abajo, un movimiento anunciado y Débil / Resiste.
+- **Qué no**: la regla propia de un jefe aunque salga como estado (la canción de La Voz, la luz de
+  Fran, el Enfado, Converge, la Reacción del Átomo, Encarnado). Una card dice qué hace un estado,
+  nunca qué hacer con él: la respuesta de un combate se lee en la placa o se encuentra probando.
+- **Si cambia, vuelve a salir.** La versión de una card (`guideVersion`) sale de su texto y de los
+  números de su regla (`rule`: el `TIMED` del estado, sus constantes). Un commit que cambia
+  cualquiera de los dos hace que la card salga otra vez la próxima vez que aparezca ese estado, con
+  «HA CAMBIADO» en lugar de su grupo. Cambiar lo que hace un estado en el código sin tocar sus números
+  pide cambiar también su texto, que tiene que seguir siendo cierto.
+- **Un estado nuevo** lleva su card en `GUIDES`: el texto con la forma de las descripciones (qué
+  hace, cuánto, cuánto dura), sus números sacados de la regla y su color, el de su icono en
+  `style.css`. Un icono que no es de la placa se dibuja en `SIGN_ICONS`.
+- **En las capturas** (un navegador automático) no sale ninguna, para no tapar los escenarios, salvo
+  con `?guides=1`. `just screenshots guia-estados --gpu` las enseña: la primera, dos seguidas, una que ha
+  cambiado y Cómo jugar.
 
 ## Habilidades de los miedos
 

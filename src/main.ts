@@ -1,6 +1,7 @@
 import { isDpad } from './controller';
 import { createControllerUI } from './controller-ui';
 import { createExplorationUI } from './exploration-ui';
+import { guideVersion, isGuide, type GuidesSeen } from './status-guide';
 import { createGame } from './game';
 import { type Direction } from './movement';
 import { ENVIRONMENTS, type EnvironmentId } from './environments';
@@ -305,6 +306,14 @@ function keepXp() { try { localStorage.setItem(xpKey, JSON.stringify(story.xp));
 const dualsKey = 'gerard35.duals.v1';
 try { story.duals = JSON.parse(localStorage.getItem(dualsKey) ?? '[]'); } catch { /* Storage is optional. */ }
 function keepDuals() { try { localStorage.setItem(dualsKey, JSON.stringify(story.duals)); } catch { /* Storage is optional. */ } }
+/** The combat guide's cards read, each at the version it was read at (src/status-guide.ts). Kept in the browser and the save, like the duals. */
+const guidesKey = 'gerard35.guides.v1';
+let guidesSeen: GuidesSeen = {};
+const readGuides = (value: unknown): GuidesSeen => value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).filter(([, v]) => typeof v === 'string')) : {};
+try { guidesSeen = readGuides(JSON.parse(localStorage.getItem(guidesKey) ?? '{}')); } catch { /* Storage is optional. */ }
+function keepGuides() { try { localStorage.setItem(guidesKey, JSON.stringify(guidesSeen)); } catch { /* Storage is optional. */ } }
+/** An automated browser (the screenshot scenarios) never gets a card in its way, unless the page asks for them (`?guides=1`). */
+const guidesOn = !navigator.webdriver || new URLSearchParams(location.search).get('guides') === '1';
 /**
  * Two players from chapter 2 (docs/party.md). `solo` is for development only: player 1 also plays
  * Aitor. It comes from ?solo (just dev-solo) or the switch on the Mando page, and is remembered.
@@ -329,7 +338,7 @@ const playing = (): Control => !waitsForPad && !control.secondPad ? { ...control
  * party stands, the missions as they run, and what used to live only in this browser (who wears
  * what, the globe, EXP, the Ecos de luz, the duals found). «Continuar» finds all of it as it was.
  */
-const snapshot = () => ({ ...story.snapshot, loadout: story.loadout, kept: story.kept, xp: story.xp, improvements: story.improvements, duals: story.duals });
+const snapshot = () => ({ ...story.snapshot, loadout: story.loadout, kept: story.kept, xp: story.xp, improvements: story.improvements, duals: story.duals, guides: guidesSeen });
 function restoreSnapshot(saved: Record<string, unknown>) {
   if ('kept' in saved) story.kept = saved.kept as Record<string, unknown>;
   story.snapshot = saved;
@@ -337,8 +346,10 @@ function restoreSnapshot(saved: Record<string, unknown>) {
   if ('xp' in saved) readXp(saved.xp);
   if (Array.isArray(saved.improvements)) story.improvements = saved.improvements;
   if (Array.isArray(saved.duals)) story.duals = saved.duals;
+  // A card read in either place stays read; where both have it, the one read at its current version wins.
+  for (const [id, version] of Object.entries(readGuides(saved.guides))) if (!guidesSeen[id] || (isGuide(id) && version === guideVersion(id))) guidesSeen[id] = version;
   // This browser's copies follow the server's.
-  keepLoadout(); keepKept(); keepXp(); keepEcos(); keepDuals();
+  keepLoadout(); keepKept(); keepXp(); keepEcos(); keepDuals(); keepGuides();
 }
 /** What was last sent: the flags, the days (a new hour is worth saving too) and the snapshot (a step is too). */
 const progress = () => JSON.stringify([story.saved, story.days, snapshot()]);
@@ -430,6 +441,11 @@ try {
     solo: () => playing().mode === 'solo',
     // The fight's clock (statuses timed in seconds) stops with the pause menu.
     paused: () => menuOpen(),
+    // The first time a status shows, its card stops the fight; read, it is kept with the save.
+    guides: guidesOn ? {
+      seen: () => guidesSeen,
+      mark: (id, version) => { guidesSeen = { ...guidesSeen, [id]: version }; keepGuides(); storyChanged(); },
+    } : undefined,
     pulse: (id, status, by) => game.statusPulse(id, status, by),
     ecos: news => game.ecoNews(news),
     // A fall wakes Gerard up at home in chapter 2's castle, and on the Meridiana at night (late, docs/chapter-2.md
@@ -509,6 +525,8 @@ try {
     wear: (member, classId) => { if (story.wear(member, classId)) { keepLoadout(); storyChanged(); } },
     equip: (member, classId, on) => { if (on ? story.equip(member, classId) : story.unequip(member, classId)) { keepLoadout(); storyChanged(); } },
     use: item => { exploration.close(); storyEvent({ type: 'use', item }); },
+    // «Cómo jugar» keeps every card of the combat guide read.
+    guides: () => guidesSeen,
     // With a second player on Aitor, each player gets their own half of the status screen.
     split: () => partnerDriven(control, story.partner),
     partner: () => game.partnerPosition,

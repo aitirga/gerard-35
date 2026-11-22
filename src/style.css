@@ -303,6 +303,21 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 @keyframes reveal-kicker { from { opacity: 0; letter-spacing: 1.2em; } }
 @keyframes reveal-name { from { opacity: 0; scale: 1.7; } }
 @keyframes reveal-rise { from { opacity: 0; translate: 0 8px; } }
+/* The combat guide (battle-ui `showGuide`): the first time a status shows, the fight stops behind a card
+   in its colour: its icon, its group (or «HA CAMBIADO»), its name, who carries it now and what it does. */
+.guide-card { position: absolute; z-index: 9; inset: 0; display: grid; place-items: center; background: #05080abf; animation: guide-dim .25s ease-out both; }
+.guide-card[hidden] { display: none; }
+.guide-card-box { display: grid; justify-items: center; gap: 8px; width: min(470px, 90vw); padding: 26px 30px 22px; text-align: center; border: 1px solid color-mix(in srgb, var(--status) 45%, transparent); border-top: 3px solid var(--status); border-radius: 16px; background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--status) 18%, transparent), transparent 60%), #0b1714f5; box-shadow: 0 24px 70px #000b, 0 0 44px color-mix(in srgb, var(--status) 22%, transparent); animation: guide-in .4s cubic-bezier(.16,1,.3,1) both; }
+.guide-card-icon { width: 68px; height: 68px; margin-bottom: 4px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--status) 55%, transparent), 0 0 34px color-mix(in srgb, var(--status) 30%, transparent); }
+.guide-card-icon svg { width: 36px; height: 36px; }
+.guide-card .battle-kicker { color: var(--status); font-size: 11px; letter-spacing: .32em; }
+.guide-card h2 { margin: 0; font: italic 900 36px/1 'Manrope', sans-serif; letter-spacing: -.045em; color: color-mix(in srgb, var(--status) 55%, white); text-shadow: 3px 3px 0 #0006; }
+.guide-card-who { font: 600 10px/1 'JetBrains Mono', monospace; letter-spacing: .15em; text-transform: uppercase; color: color-mix(in srgb, var(--battle-paper) 62%, transparent); }
+.guide-card p { max-width: 400px; margin: 8px 0 12px; font-size: 15px; line-height: 1.55; color: var(--battle-paper); }
+.guide-card-ok { padding: 10px 20px; border: 1px solid var(--status); border-radius: 999px; background: color-mix(in srgb, var(--status) 16%, transparent); color: var(--battle-paper); font: 700 13px/1 'Manrope', sans-serif; cursor: pointer; }
+.guide-card-ok:is(:hover, :focus-visible) { outline: none; background: color-mix(in srgb, var(--status) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--status) 30%, transparent); }
+@keyframes guide-dim { from { opacity: 0; } }
+@keyframes guide-in { from { opacity: 0; scale: .92; translate: 0 10px; } }
 @keyframes reveal-rays { 0% { opacity: 0; scale: .4; rotate: -10deg; } 18% { opacity: 1; } 70% { opacity: .55; } 100% { opacity: 0; scale: 1.25; rotate: 16deg; } }
 @keyframes battle-in { from { opacity: 0; clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); } to { opacity: 1; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); } }
 @media (max-width: 600px) {
@@ -1735,6 +1750,30 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .user-help-intro h2 { font-size: 24px; }
 .help-page .menu-controls { margin: 0; overflow: hidden; }
 .help-page .menu-controls > div { padding: 9px 4px; }
+/* Cómo jugar's two views (the controls, the combat guide), and the guide: the cards found, by group, and the one under the cursor. */
+.user-help-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.help-views { display: flex; flex: none; gap: 6px; }
+.status-sheet .help-views button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border: 1px solid var(--ui-line); border-radius: 999px; background: #ffffff05; color: var(--ui-paper); font: 700 12px/1 'Manrope', sans-serif; transition: border-color .18s, background-color .18s, color .18s; }
+.status-sheet .help-views button[aria-pressed="true"] { border-color: var(--ui-gold); background: color-mix(in srgb, var(--ui-gold) 16%, transparent); color: var(--ui-gold); }
+.status-sheet .help-views button:is(:hover, .is-cursor) { outline: none; border-color: var(--ui-gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-gold) 30%, transparent); }
+.help-views small { min-width: 18px; padding: 2px 5px; border-radius: 9px; background: color-mix(in srgb, var(--ui-gold) 22%, transparent); font: 700 10px/1 'JetBrains Mono', monospace; text-align: center; }
+.guide-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 22px; min-height: 0; }
+.guide-page[data-empty] { grid-template-columns: 1fr; place-items: center; }
+.guide-list { display: grid; align-content: start; gap: 14px; max-height: 100%; overflow: auto; padding: 12px; border: 1px solid var(--ui-line); border-top: 3px solid var(--sheet-accent); border-radius: 14px; background: #ffffff03; }
+.guide-list ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.status-sheet .guide-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; padding: 6px 10px 6px 6px; border: 1px solid var(--ui-line); border-radius: 10px; background: #ffffff04; color: var(--ui-paper); text-align: left; transition: translate .18s, background-color .18s, border-color .18s; }
+.status-sheet .guide-row:is(:hover, .is-cursor) { outline: none; translate: 3px 0; border-color: var(--status); background-color: color-mix(in srgb, var(--status) 14%, transparent); }
+.guide-row strong { overflow: hidden; font: italic 700 14px/1.1 'Manrope', sans-serif; letter-spacing: -.02em; white-space: nowrap; text-overflow: ellipsis; }
+.guide-row-icon, .guide-detail-icon, .guide-card-icon { display: grid; place-items: center; border-radius: 50%; background: #1b1216d9; }
+.guide-row-icon { width: 28px; height: 28px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--status) 45%, transparent); }
+.guide-row-icon svg, .guide-detail-icon svg, .guide-card-icon svg { fill: var(--status); color: var(--status); filter: drop-shadow(0 0 2px color-mix(in srgb, var(--status) 60%, transparent)); }
+.guide-row-icon svg { width: 15px; height: 15px; }
+.guide-detail { display: grid; align-content: start; justify-items: start; gap: 14px; padding: 22px 22px 20px; border: 1px solid color-mix(in srgb, var(--status) 35%, transparent); border-radius: 14px; background: radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--status) 14%, transparent), transparent 60%), #ffffff05; animation: detail-in .25s ease-out both; }
+.guide-detail-icon { width: 76px; height: 76px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--status) 50%, transparent), 0 0 30px color-mix(in srgb, var(--status) 18%, transparent); }
+.guide-detail-icon svg { width: 38px; height: 38px; }
+.guide-detail .battle-kicker { color: var(--status); }
+.guide-detail h2 { margin: 4px 0 0; font: italic 900 clamp(26px, 3.2cqi, 38px)/1 'Manrope', sans-serif; letter-spacing: -.05em; color: color-mix(in srgb, var(--status) 55%, white); text-shadow: 3px 3px 0 #0006; }
+.journal-content .guide-detail-text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ui-paper); }
 /* M: the map on its own, centred (in its own half with two players), at two scales. */
 .status-sheet[data-layout="map"] { padding: 22px 24px 16px; animation: map-open .22s ease-out both; }
 #exploration-panel:not([data-split="true"]) .status-sheet[data-layout="map"] { align-self: center; width: min(1280px, 100%); height: min(860px, 100%); }
