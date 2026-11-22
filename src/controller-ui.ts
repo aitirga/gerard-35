@@ -55,6 +55,8 @@ export function createControllerUI(callbacks: {
   /** Flushes progress and releases the house lights when leaving the game. */
   exit: () => void;
   resume: () => void;
+  /** In a fight that can be fought again (not chapter 2's castle): whether it can now, and fighting it again from the start. */
+  retry?: { able: () => boolean; run: () => void };
   /** Fills the "Luces de casa" page (src/home-lights-ui.ts). */
   lights: (section: HTMLElement) => void;
   /** Fills the "Sonido" page (src/sound-ui.ts). */
@@ -71,12 +73,14 @@ export function createControllerUI(callbacks: {
   const padIcon = icon('<path d="M7 7h10c3 0 4 9 3 10s-3-1-5-3H9c-2 2-4 4-5 3S4 7 7 7Z"/><path d="M7 9v4m-2-2h4m6-1h.01M18 12h.01"/>');
   const soundIcon = icon('<path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11"/>');
   const lightIcon = icon('<path d="M9 18h6m-5 3h4M8 13a6 6 0 1 1 8 0c-1 1-1 2-1 3H9c0-1 0-2-1-3Z"/>');
+  const retryIcon = icon('<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>');
   const exitIcon = icon('<path d="M10 4H5v16h5m3-13 5 5-5 5m-4-5h9"/>');
   root.innerHTML = `<header class="journal-heading"><div><div class="pause-brand"><span class="battle-kicker">GERARD <b>35</b></span><span class="pause-state">EN PAUSA</span></div><h1 id="controller-title">Un respiro.</h1></div><button class="journal-close" data-back><span>Volver al juego</span> <kbd data-glyph="cancel">Esc</kbd></button></header>
     <section data-page="home">
       <p class="menu-intro">Tómate tu tiempo. La aventura puede esperar.</p>
       <nav class="pause-options" aria-label="Menú de pausa">
         <button data-open="settings"><span class="menu-option-icon">${gear}</span><span class="menu-option-copy"><strong>Configuración</strong><small>Mandos, sonido y luces de casa</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
+        <button data-retry hidden><span class="menu-option-icon">${retryIcon}</span><span class="menu-option-copy"><strong>Reintentar el combate</strong><small>Desde el principio, como si no hubiera empezado</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
         <button data-exit><span class="menu-option-icon">${exitIcon}</span><span class="menu-option-copy"><strong>Salir del juego</strong><small>Hasta la próxima aventura</small></span><span class="menu-option-arrow" aria-hidden="true">↗</span></button>
       </nav>
     </section>
@@ -144,6 +148,7 @@ export function createControllerUI(callbacks: {
     if (callbacks.context().startsWith('journal:')) callbacks.panel(null);
     previousFocus = document.activeElement as HTMLElement;
     callbacks.direction(null, null, false); callbacks.pause(true);
+    get('[data-retry]').hidden = !callbacks.retry?.able();
     root.showModal(); showPage('home');
   }
   function close() { if (!root.open) return; if (page === 'exited') callbacks.resume(); abort(); root.close(); callbacks.pause(false); previousFocus?.focus({ preventScroll: true }); }
@@ -170,6 +175,7 @@ export function createControllerUI(callbacks: {
   root.querySelectorAll<HTMLButtonElement>('[data-open]').forEach(button => { button.onclick = () => showPage(button.dataset.open as typeof page); });
   get('[data-exit]').onclick = () => { abort(); callbacks.exit(); showPage('exited'); };
   get('[data-resume]').onclick = close;
+  get('[data-retry]').onclick = () => { const retry = callbacks.retry; close(); if (retry?.able()) retry.run(); };
   function keydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Escape') {

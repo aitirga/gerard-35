@@ -1,0 +1,62 @@
+{
+  "title": "Reintentar el combate desde la pausa",
+  "description": "In a fight that can be fought again (everywhere but chapter 2's castle), the pause menu offers «Reintentar el combate»: the fight opens again from the start and the one left reaches nothing. Outside a fight the option is not there. Run it with --gpu: without it the scene's dissolve between fights is too slow for the headless browser.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper"
+    },
+    {
+      "until": "document.title.startsWith('Meridiana') && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "wait": 1000
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "shot": "pausa-fuera-de-combate",
+      "delay": 800,
+      "caption": "Walking the street: the pause menu has no retry"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "eval": "window.gerard.battleUI.open(window.gerard.story.battleParty(true), 3, { animas: window.gerard.story.classes })"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.battleUI.tweak(s => { s.foes[0].hp = 0; s.foes[1].hp = Math.ceil(s.foes[1].maxHp / 3); s.allies[0].hp = Math.ceil(s.allies[0].maxHp / 4); })"
+    },
+    {
+      "shot": "combate-a-medias",
+      "delay": 1200,
+      "caption": "A fight going badly: one foe down, Gerard low"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "shot": "pausa-en-combate",
+      "delay": 800,
+      "caption": "Paused in the fight: «Reintentar el combate» between Configuración and Salir del juego"
+    },
+    {
+      "eval": "document.querySelector('#controller-menu [data-retry]').click()"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && window.gerard.battleUI.live?.foes.every(f => f.hp === f.maxHp) && window.gerard.battleUI.live?.allies.every(a => a.hp === a.maxHp)",
+      "timeout": 60000
+    },
+    {
+      "shot": "combate-de-nuevo",
+      "delay": 1500,
+      "caption": "The same fight from the start: every foe up and the party whole"
+    }
+  ]
+}

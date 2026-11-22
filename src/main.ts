@@ -1061,6 +1061,7 @@ try {
     } : undefined,
     pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
+    retry: { able: () => battleUI.retriable, run: () => battleUI.retry() },
     lights: section => mountHomeLightsPage(section, homeLights),
     sound: section => mountSoundPage(section, audio),
     board: listener => { listener(artilugio.board.connected); return artilugio.onBoard(status => listener(status.connected)); },

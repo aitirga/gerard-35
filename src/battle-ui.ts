@@ -2996,6 +2996,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     },
     /** Development (the picker's Ayudas): changes the fight as a help asks, and redraws it at once. */
     tweak(change: (state: BattleState) => void) { if (!state) return; change(state); render(); },
+    /** Whether the pause menu can offer to fight this again from the start: a fight under way or lost, where a fall is forgiven (`forgiving`). */
+    get retriable() { return !!state && !!reopen && !finale && state.phase !== 'won' && state.phase !== 'escaped' && !!callbacks.forgiving?.(); },
+    /** The pause menu's «Reintentar el combate»: the fight opens again from the start, and this one reaches nothing (`fallen`). */
+    retry() { if (ui.retriable && !holdingRewards()) close('retry'); },
     /** Development: leaves the fight at once, with no result (the picker, before going elsewhere). */
     end() { if (state) close(); },
     /**
