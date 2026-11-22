@@ -2409,7 +2409,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         c.steamed?.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, `¡${TIMED.cegado.name}!`, 'status', 'El agua se va en vapor', 'cegado'); }, 560 + i * 80));
       }
       // Reinicio: every clock on each foe back to its whole time.
-      effect.restarted?.forEach(r => landed.push({ target: r.target, id: 'reinicio', text: 'Reinicio', detail: r.statuses.map(id => TIMED[id].name).join(' · ') }));
+      // Rayo de energía does it on one: what started over, by name.
+      effect.restarted?.forEach(r => landed.push({ target: r.target, id: 'reinicio', text: effect.skill === 'reinicio' ? 'Reinicio' : r.statuses.length > 1 ? 'Vuelven a empezar' : 'Vuelve a empezar', detail: r.statuses.map(id => TIMED[id].name).join(' · ') }));
       if (effect.exploded) landed.push({ target: effect.actor, id: 'explosion', text: 'Pierde su turno', detail: 'Bip se recompone' });
       if (effect.charging) landed.push({ target: effect.charging, id: 'carga', text: '¡Cargado!', detail: 'Sale al empezar la ronda' });
       if (effect.stalking) landed.push({ target: effect.actor, id: 'acecho', text: 'Al acecho', detail: 'Salta al empezar la ronda' });

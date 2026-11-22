@@ -136,10 +136,11 @@ export const SKILLS = [
   // Tecnópata's skills are Bip's: Aitor points, Bip does it (docs/animas/tecnopata/). Its ánima does
   // not level: the two rays are there from the start, the rest are nodes of its tree (`node`).
   // Rayo de energía: a beam; what is running out on the foe by the clock (TIMED: a Bomba remota, a fire, the smoke,
-  // Confusión; never a cure) lasts `extend` seconds longer. On a bomb that is more time to grow (BOMBA).
-  { id: 'rayo-energia', name: 'Rayo de energía', cost: 1, side: 'foes', power: 16, kind: 'magic', extend: 5, description: 'Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.', class: 'tecnopata' },
+  // Confusión; never a cure) starts over from its whole time (`restart`, as Reinicio does on every foe; Aitor 2026-11-22:
+  // it used to add 5 s). On a bomb that is more time to grow (BOMBA).
+  { id: 'rayo-energia', name: 'Rayo de energía', cost: 1, side: 'foes', power: 16, kind: 'magic', restart: true, description: 'Daño mágico no elemental leve a un enemigo. Sus estados con reloj vuelven a empezar.', class: 'tecnopata' },
   // Bomba remota (Aitor 2026-11-21): Bip sticks a bomb on a foe (`bomb`: the timed status Bomba, BOMBA). It goes off when its
-  // time is up, harder the longer it has been on: stretching its clock (Rayo de energía, Telemetría, Reinicio) loads it, and
+  // time is up, harder the longer it has been on: stretching or restarting its clock (Rayo de energía, Telemetría, Reinicio) loads it, and
   // Explosión sets it off now. Its strength changes, so it skips the fixed shape (`abstract`).
   { id: 'bomba-remota', name: 'Bomba remota', cost: 2, side: 'foes', power: 0, kind: 'magic', bomb: true, abstract: true, description: 'Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.', class: 'tecnopata' },
   // Rayo de sanación: a cure that comes bit by bit on the fight's clock (`regen`: a timed status, as
@@ -1890,11 +1891,11 @@ export interface BattleEffect {
   finale?: { hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; poisoned: { target: string; level: number }[]; crystallised: string[] };
   /** A definitiva woke with this action: the powder has now been all three things. */
   awoken?: SkillId;
-  /** Rayo de energía: the timed statuses it made last longer on its target, and by how many seconds. */
+  /** Telemetría: the timed statuses Bip's Atacar made last longer on its target, and by how many seconds. */
   extended?: { statuses: TimedId[]; seconds: number };
   /** Combustión burst on `target` (a physical blow found its fire at IV): the fire blast on each foe, and the fires it raised. */
   combustion?: { target: string; hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; steamed?: string[] };
-  /** Reinicio: the clocks it started over on each foe. */
+  /** Reinicio and Rayo de energía: the clocks they started over on each foe. */
   restarted?: { target: string; statuses: TimedId[] }[];
   /** Escudo de bits raised (its PV), or what it took in this action and whether it broke. */
   bits?: { raised?: number; took?: number; broke?: boolean; mended?: number };
@@ -3249,7 +3250,7 @@ function blowBomb(state: BattleState, foe: Combatant, effect?: BattleEffect): nu
   }
   return amount;
 }
-/** Reinicio: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
+/** Reinicio and Rayo de energía: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
 function restartClocks(foe: Combatant) {
   // Bajo cero's ice is not a clock that starts over: it melts.
   const statuses = TIMED_IDS.filter(id => id !== 'congelado' && !TIMED[id].heal && foe.timed?.[id] && foe.timed[id]!.until === undefined);
@@ -4067,18 +4068,24 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.burn = { id: ability.burn, level: fire.level };
         state.message += fire.level > 1 ? ` ¡El fuego sube: ${TIMED[ability.burn].name} ${roman(fire.level)}!` : ' ¡Se quema!';
       }
-      // Rayo de energía: whatever is running out on them by the clock (never a cure) lasts longer.
-      // Telemetría gives Bip's own Atacar a little of the same.
+      // Rayo de energía: whatever is running out on them by the clock (never a cure) starts over, as Reinicio does on every foe.
+      if (action === 'skill' && ability && 'restart' in ability && target.hp > 0) {
+        const statuses = restartClocks(target);
+        if (statuses.length) {
+          effect.restarted = [{ target: target.id, statuses }];
+          state.message += ` ${statuses.map(id => TIMED[id].name).join(' y ')}: ${statuses.length > 1 ? 'vuelven' : 'vuelve'} a empezar.`;
+        }
+      }
+      // Telemetría gives Bip's own Atacar a few seconds more on the same clocks.
       const telemetry = action === 'attack' && effect.amount > 0 && passive(state, actor, 'telemetria');
-      const extend = action === 'skill' && ability && 'extend' in ability ? ability.extend : telemetry ? TELEMETRIA : 0;
-      if (extend && target.hp > 0) {
+      if (telemetry && target.hp > 0) {
         // The water's own Mojado and Hundido last as long as it does: the water's clock is the one that grows.
         const longer = TIMED_IDS.filter(id => !TIMED[id].heal && target.timed?.[id] && !(target.timed.agua && (id === 'mojado' || id === 'hundido')));
-        for (const id of longer) target.timed![id]!.left += extend;
+        for (const id of longer) target.timed![id]!.left += TELEMETRIA;
         if (longer.length) {
-          effect.extended = { statuses: longer, seconds: extend };
-          if (telemetry) note(effect, 'telemetria', actor);
-          state.message += ` ${longer.map(id => TIMED[id].name).join(' y ')}: ${extend} s más.`;
+          effect.extended = { statuses: longer, seconds: TELEMETRIA };
+          note(effect, 'telemetria', actor);
+          state.message += ` ${longer.map(id => TIMED[id].name).join(' y ')}: ${TELEMETRIA} s más.`;
         }
       }
       // An absorbed bolt still finds the water (Conducción), and a blow that took nothing still counts for El que no converge's Error.

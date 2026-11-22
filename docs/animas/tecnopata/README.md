@@ -47,12 +47,12 @@ rays and the bomb; Defensa because Bip stands in front; Fuerza down since Aitor 
    on its clock (`BOMBA`, the timed status *Bomba*).
 2. **Time loads it.** It grows while it is on: it goes off with magic of no element of power
    **10 + 1.5 per second on**, **50 at most** (about 27 s). So stretching its clock is loading it:
-   Rayo de energía (+5 s), Telemetría (+3 s with each Atacar), Reinicio (its whole time again, on
-   every foe) and Bomba remota again on the same foe (its clock over, keeping what it grew).
+   Rayo de energía (its whole time again, on one foe), Telemetría (+3 s with each Atacar), Reinicio (its whole
+   time again, on every foe) and Bomba remota again on the same foe (its clock over, keeping what it grew).
 3. **It goes off** when its clock is empty, or now with Explosión, as grown as it is.
 
-The bomb on a 12 s fuse alone is 28 (media); stretched once with Rayo de energía, 35 (alta); kept
-up with Reinicio, 50 (muy alta). Its description says it plainly but not in the fixed shape, so it
+The bomb on a 12 s fuse alone is 28 (media); started over once with Rayo de energía, up to 46 (alta)
+by how late it is fired; kept up with it or Reinicio, 50 (muy alta). Its description says it plainly but not in the fixed shape, so it
 is `abstract` (its strength changes with time).
 
 **Bip in front: Escolta** (built). Bip leaves Aitor's side and stands by an ally for 2 rounds: each
@@ -67,7 +67,7 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 
 | From | Skill | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- |
-| Root | Rayo de energía | 1 | 16 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj duran 5 segundos más.` | Built (cost 2 → 1, power 18 → 16) |
+| Root | Rayo de energía | 1 | 16 magic | `Daño mágico no elemental leve a un enemigo. Sus estados con reloj vuelven a empezar.` | Built (cost 2 → 1, power 18 → 16; since 2026-11-22 it starts the clocks over instead of adding 5 s) |
 | Root | **Bomba remota** | 2 | 10 + 1.5/s, top 50 | *Abstract*: `Bip le pega una bomba a un enemigo. Estalla a los 12 segundos con daño mágico no elemental, más cuanto más tiempo lleve puesta.` | Built |
 | Root | Rayo de sanación | 1 | 20 over 15 s | `Cura leve a un aliado herido. La cura llega poco a poco durante 15 segundos.` | Built |
 | Bip | Explosión | 2 | 32 magic, all | `Daño mágico de fuego medio a todos los enemigos. Los ciega durante 1 ronda. Hace estallar sus bombas. Pierdes tu siguiente turno.` | Built |
@@ -104,13 +104,13 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 | Time | Does | On the foes |
 | --- | --- | --- |
 | 0 s | Aitor: Bomba remota on A | A: bomb, 12 s |
-| 4 s | Aitor: Rayo de energía on A | A: 16; its bomb 8 + 5 = 13 s left |
+| 4 s | Aitor: Rayo de energía on A | A: 16; its bomb back to 12 s left |
 | 8 s | B announces a big blow on Gerard; Aitor: Escolta on Gerard | Bip goes to Gerard |
 | 10 s | B hits Gerard | Gerard takes a third; B: a bomb, 12 s |
 | 12 s | Aitor: Atacar on A (Telemetría) | A: 18; its bomb +3 s |
-| 16 s | Aitor: Rayo de energía on A | A: 16; its bomb +5 s |
+| 16 s | Aitor: Rayo de energía on A | A: 16; its bomb back to 12 s |
 | 22 s | B's bomb goes off | B: 28 |
-| 29 s | A's bomb goes off, 29 s on | A: about 50; Enjambre wakes |
+| 28 s | A's bomb goes off, 28 s on | A: 50; Enjambre wakes |
 
 ### Look (built 2026-11-21, `just screenshots bomba-remota --gpu`)
 
@@ -216,8 +216,9 @@ Bip fires (`BIP_SKILLS` in `src/battle-scene.ts`).
 | Taller | Rayo encogedor | 1 | Defensa −25 % | *Abstract*: `Encoge a un enemigo durante 15 segundos: su Defensa baja un 25 %.` |
 | Mente | Control remoto | 2 | 34 physical, the foe's own | *Abstract*: `Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.` |
 
-- **Rayo de energía**: a cyan ray. Quemado, Cegado, Confusión and Encogido on its target last 5 s
-  more (`extend`); a cure never. Its target's clock shows it (+5 s, the ring refilling).
+- **Rayo de energía**: a cyan ray. Quemado, Cegado, Confusión and Encogido on its target start over
+  from their whole time (`restart`, as Reinicio on everyone; until 2026-11-22 it added 5 s); a cure
+  never. Its target's clock shows it (*Vuelve a empezar*, the ring refilling).
 - **Rayo de sanación**: a green ray to an ally; *Sanación*, a timed status whose pulses give PV back
   (one every 3 s, 20 PV in all at level I), a level up if cast again while it lasts.
 - **Explosión**: Bip dives into the foes and blows up (fire: it melts the pringue); every foe
@@ -254,8 +255,7 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   Combustión, Mojado, Cegado, Confusión, Encogido, Envenenado, Cristalizado; never a cure) starts
   over from its whole time, at the level it has; one with more left than that keeps it (after Rayo
   de energía). Explosión's blinding, which ends with the round, is not a clock and stays as it is.
-  Rayo de energía buys five seconds on one; Reinicio buys the whole time back on everyone, for his
-  whole pool. With Vulcano and Combustión it keeps the field burning at its top; with Confusión it
+  Rayo de energía buys the whole time back on one; Reinicio on everyone, for his whole pool. With Vulcano and Combustión it keeps the field burning at its top; with Confusión it
   is thirty seconds more of a foe hitting its own.
 - **Look, built** (`just screenshots grado-iii --gpu`): a wave of nanites leaves Bip along the
   floor; over each foe a dial of cyan turns backwards and closes while a scan climbs it from its

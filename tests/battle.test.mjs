@@ -927,7 +927,7 @@ const techFight = (dogs = 2) => {
 };
 const turnOf = (s, id) => { s.phase = 'player'; s.active = s.allies.indexOf(byId(s, id)); delete s.spent; delete s.queued; byId(s, id).secondary = byId(s, id).maxSecondary; };
 
-test('Rayo de energía hits with magic and makes what runs out by the clock on the foe last 5 seconds more, never a cure', () => {
+test('Rayo de energía hits with magic and starts what runs out by the clock on the foe over from its whole time, never a cure', () => {
   const s = techFight();
   assert.deepEqual(skillsFor(s, byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor'], 'the two rays and the bomb, and the nodes bought');
   assert.deepEqual(skillsFor(createBattle(TECH, 1, false, undefined, ['matemagico']), byId(s, 'aitor')).map(x => x.id), ['rayo-energia', 'bomba-remota', 'rayo-sanacion'], 'only the two rays and the bomb from the start');
@@ -935,11 +935,11 @@ test('Rayo de energía hits with magic and makes what runs out by the clock on t
   turnOf(s, 'aitor');
   const ray = act(s, 'skill', 'dog-0', 'rayo-energia');
   assert.ok(ray.amount > 0);
-  assert.deepEqual(ray.extended, { statuses: ['quemado', 'cegado'], seconds: 5 });
-  assert.equal(s.foes[0].timed.quemado.left, 8); assert.equal(s.foes[0].timed.quemado.level, 2, 'the same fire, longer');
-  assert.equal(s.foes[0].timed.cegado.left, 11);
+  assert.deepEqual(ray.restarted, [{ target: 'dog-0', statuses: ['quemado', 'cegado'] }]);
+  assert.equal(s.foes[0].timed.quemado.left, TIMED.quemado.seconds); assert.equal(s.foes[0].timed.quemado.level, 2, 'the same fire, from the start');
+  assert.equal(s.foes[0].timed.cegado.left, TIMED.cegado.seconds);
   turnOf(s, 'aitor');
-  assert.equal(act(s, 'skill', 'dog-1', 'rayo-energia').extended, undefined, 'nothing to stretch, only the blow');
+  assert.equal(act(s, 'skill', 'dog-1', 'rayo-energia').restarted, undefined, 'nothing to start over, only the blow');
 });
 
 test('Rayo de sanación leaves a cure on an ally that gives PV back on the clock for 15 seconds, a level up if cast again', () => {
@@ -1046,8 +1046,8 @@ test('Rayo encogedor shrinks a foe for 15 seconds: a quarter of its Defensa gone
   const ram = act(structuredClone(s), 'attack', 'dog-0').amount;
   assert.equal(ram, plain + quarter, 'Bip\'s ram (physical) lands as much harder as the Defensa it lost');
   const ray = act(s, 'skill', 'dog-0', 'rayo-energia');
-  assert.deepEqual(ray.extended.statuses, ['encogido']); assert.equal(s.foes[0].timed.encogido.left, 20);
-  runClock(s, 20);
+  assert.deepEqual(ray.restarted[0].statuses, ['encogido']); assert.equal(s.foes[0].timed.encogido.left, TIMED.encogido.seconds);
+  runClock(s, TIMED.encogido.seconds);
   assert.equal(s.foes[0].timed?.encogido, undefined);
   assert.deepEqual(statShifts(s, s.foes[0]), []);
 });
@@ -1169,15 +1169,15 @@ test('Bomba remota: a bomb on a foe goes off when its clock is up, harder the lo
   const [blast] = runClock(s, 1.5);
   assert.equal(blast.status, 'bomba'); assert.ok(blast.blast); assert.ok(blast.amount > 0);
   assert.equal(dog.maxHp - dog.hp, blast.amount); assert.equal(dog.timed.bomba, undefined, 'gone once it blows');
-  // Stretched, it grows: Rayo de energía gives it 5 s, and it goes off later and harder.
+  // Started over, it grows: Rayo de energía gives it its 12 s again, and it goes off later and harder.
   const late = techFight();
   turnOf(late, 'aitor'); act(late, 'skill', 'dog-0', 'bomba-remota');
   runClock(late, 6); turnOf(late, 'aitor');
   const ray = act(late, 'skill', 'dog-0', 'rayo-energia');
-  assert.ok(ray.extended.statuses.includes('bomba'));
+  assert.ok(ray.restarted[0].statuses.includes('bomba')); assert.equal(late.foes[0].timed.bomba.left, BOMBA.seconds);
   const before = late.foes[0].hp;
-  assert.equal(runClock(late, 6.5).length, 0, 'still on: 5 s more');
-  const [big] = runClock(late, 5);
+  assert.equal(runClock(late, BOMBA.seconds - 1).length, 0, 'still on: its whole fuse again');
+  const [big] = runClock(late, 1.5);
   assert.ok(big.amount > blast.amount, `${big.amount} > ${blast.amount}`);
   assert.equal(before - late.foes[0].hp, big.amount);
   assert.ok(bombPower(0) < bombPower(12) && bombPower(1000) === BOMBA.top, 'it grows with time, up to its top');

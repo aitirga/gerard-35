@@ -2514,7 +2514,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       shake = Math.max(shake, .6); pulse?.(.8, .6); zoom.x = Math.max(zoom.x, HIT.punch.size * 1.2);
       return land(felt, ax, 0, az);
     }
-    // Rayo de energía: the bolt bursts on them, sparks everywhere; what it made last longer flares in a ring round them.
+    // Rayo de energía: the bolt bursts on them, sparks everywhere; the clocks it started over flare in a ring round them.
     effects.impact(v3(chest), v3(from), 1.3, { colour: BIP.cyan, feet: floorUnder(target) });
     const way = { x: ax, y: 0, z: az };
     dualFx.ring(v3(chest), way, .3, BIP.cyan, { count: 60, outward: 4, life: .35, size: 1.3, light: 3 });
@@ -2523,7 +2523,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     dualFx.line(v3(bipMuzzle(from, chest)), v3(chest), BIP.cyan, { count: Math.round(from.distance(chest) * 45), life: .4, size: 1.4 });
     dualFx.after(.08, () => dualFx.burst('bipzap', { at: v3(bipMuzzle(from, chest)), to: v3(chest), shape: 'line', count: 40, speed: 1.5, life: [.2, .45] }));
     hit(target, cyanFlash, 1.2);
-    if (action.extended) {
+    if (action.extended || action.restarted) {
       const { height, radius } = extent(target), feet = floorUnder(target);
       dualFx.ring({ x: feet.x, y: feet.y + height * .5, z: feet.z }, up, Math.max(.55, radius * .8), BIP.cyan, { count: 90, life: .9, size: 1.2, light: 2 });
     }
