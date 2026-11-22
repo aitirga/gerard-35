@@ -38,6 +38,10 @@ export const AGUA = {
   mark: 20, current: 10, pulse: 2,
   /** How far the cell reaches past the outermost foe (m), and its line width (px). */
   margin: .24, line: 1.4,
+  /** How far apart two neighbouring cells' walls stand at least (m). */
+  gap: .06,
+  /** How far the cell's walls stand over the water at its third mark (m). */
+  headroom: .12,
   /** Seconds a mark of ice takes to melt: what a mark of water lasts. */
   ice: 20,
   /**
@@ -46,6 +50,15 @@ export const AGUA = {
    */
   blows: 8,
 } as const;
+
+/**
+ * Each mark's tick and band for a cell whose tallest foe is `tallest` m: the third mark stands a hand over its head and
+ * the other two shrink with it, so a small foe's cell is only a little taller than it (never taller than `AGUA.ticks`'s).
+ */
+export function markHeights(tallest: number) {
+  const top = Math.max(.5, tallest + .1), k = Math.min(1, top / AGUA.ticks[2]);
+  return { ticks: [AGUA.ticks[0] * k, AGUA.ticks[1] * k, top], bands: AGUA.bands.map(b => b * k) };
+}
 
 export const AGUA_KINDS = {
   // Air let go under water: beads of glass that rise and wobble.
@@ -474,6 +487,8 @@ export interface AguaScene {
   /** A fighter's feet, and their model (for their size). */
   at(id: string): V3 | undefined;
   model(id: string): pc.Entity | undefined;
+  /** Where the other foes stand, each with a cell of its own: this one stops halfway to theirs (`createFreaticaField`). */
+  neighbours?(): V3[];
 }
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 
@@ -575,13 +590,13 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   let driven: { left?: number; current?: number; ice?: number } | undefined;
   const half = { w: 1.5, d: 1.5 }, fwd = new pc.Vec3(0, 0, 1), across = new pc.Vec3(1, 0, 0);
   let yaw = 0, height = 2.6;
-  const ticks = [...AGUA.ticks];
+  const ticks = [...AGUA.ticks], bands = [...AGUA.bands];
   const tweens: Tween[] = [];
   const tween = (dur: number, step: (k: number) => void, end?: () => void, delay = 0) => tweens.push({ t0: time + delay, dur, step, end });
   const after = (delay: number, run: () => void) => tween(.001, () => {}, run, delay);
   const bubbles = new Map<string, GpuEmitter>();
   let cloud: GpuEmitter | undefined, cloudLeft = 0;
-  const full = (n: number) => n > 0 ? ticks[n - 1] + AGUA.bands[n - 1] : 0;
+  const full = (n: number) => n > 0 ? ticks[n - 1] + bands[n - 1] : 0;
   /** How tall the ice stands with `left` marks of it still to melt (it sinks all the while, not a mark at a time). */
   const iceTall = (left: number) => { const m = Math.min(3, Math.ceil(left)); return m <= 0 ? 0 : full(m - 1) + (full(m) - full(m - 1)) * (left - (m - 1)); };
   const camera = () => (app.root.findComponents('camera') as pc.CameraComponent[]).find(c => c.enabled && c.entity.enabled)?.entity;
@@ -606,12 +621,23 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       minZ = Math.min(minZ, q.z - body.radius); maxZ = Math.max(maxZ, q.z + body.radius);
       tallest = Math.max(tallest, body.height); floorY = Math.min(floorY, f.p.y);
     }
+    minX -= AGUA.margin; maxX += AGUA.margin; minZ -= AGUA.margin; maxZ += AGUA.margin;
+    // Two foes side by side never share a cell, nor stand one inside the other: where a neighbour's cell (as big as this
+    // one) would reach into this one, this one stops halfway to it, on the side it stands.
+    const wide = (maxX - minX) / 2, deep = (maxZ - minZ) / 2;
+    for (const n of scene.neighbours?.() ?? []) {
+      const q = local(n);
+      if (q.x - wide >= maxX || q.x + wide <= minX || q.z - deep >= maxZ || q.z + deep <= minZ) continue;
+      if (Math.abs(q.x) >= Math.abs(q.z)) { if (q.x > 0) maxX = Math.max(Math.min(maxX, q.x / 2 - AGUA.gap), minX + .2); else minX = Math.min(Math.max(minX, q.x / 2 + AGUA.gap), maxX - .2); }
+      else if (q.z > 0) maxZ = Math.max(Math.min(maxZ, q.z / 2 - AGUA.gap), minZ + .2); else minZ = Math.min(Math.max(minZ, q.z / 2 + AGUA.gap), maxZ - .2);
+    }
     const mx = (minX + maxX) / 2, mz = (minZ + maxZ) / 2;
     centre.add(across.clone().mulScalar(mx)).add(fwd.clone().mulScalar(mz)); centre.y = floorY;
-    half.w = (maxX - minX) / 2 + AGUA.margin; half.d = (maxZ - minZ) / 2 + AGUA.margin;
-    // The third mark stands a hand over the tallest head.
-    ticks[2] = Math.max(AGUA.ticks[2], tallest + .1);
-    height = full(3) + .22;
+    half.w = (maxX - minX) / 2; half.d = (maxZ - minZ) / 2;
+    // The third mark stands a hand over the tallest head, and the cell only a little over that (`markHeights`).
+    const marksAt = markHeights(tallest);
+    marksAt.ticks.forEach((t, i) => { ticks[i] = t; }); marksAt.bands.forEach((b, i) => { bands[i] = b; });
+    height = full(3) + AGUA.headroom;
     yaw = Math.atan2(fwd.x, fwd.z) * pc.math.RAD_TO_DEG;
     root.setPosition(centre); root.setEulerAngles(0, yaw, 0);
     u.cell[0] = half.w; u.cell[1] = half.d; u.cell[2] = height;
@@ -978,7 +1004,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       }
     } else if (marks && !moving && !breaking) {
       if (driven?.left !== undefined) clock = Math.min(AGUA.mark, driven.left); else clock -= dt * rate;
-      level = ticks[marks - 1] + AGUA.bands[marks - 1] * Math.max(0, clock / AGUA.mark);
+      level = ticks[marks - 1] + bands[marks - 1] * Math.max(0, clock / AGUA.mark);
       if (clock <= 0 && !driven) {
         marks--; clock = AGUA.mark; u.ticks[3] = 0;
         stopBubbles();
@@ -1026,7 +1052,10 @@ export function createFreaticaField(app: pc.AppBase, effects: Effects, scene: Ag
   const cell = (id: string) => {
     let c = cells.get(id);
     if (!c) {
-      c = createFreaticaFx(app, effects, { fighters: () => scene.fighters().filter(f => f.party || f.id === id), at: scene.at, model: scene.model });
+      c = createFreaticaFx(app, effects, {
+        fighters: () => scene.fighters().filter(f => f.party || f.id === id), at: scene.at, model: scene.model,
+        neighbours: () => foes().filter(other => other !== id).map(other => scene.at(other)).filter((p): p is V3 => !!p),
+      });
       c.setGrey(grey); c.setRate(rate); cells.set(id, c);
     }
     return c;

@@ -1,6 +1,6 @@
 import type { BattleState } from '../battle';
 import { screenAxes, ORBIT, type V3 } from '../dual-fx';
-import { AGUA } from '../freatica-fx';
+import { AGUA, markHeights } from '../freatica-fx';
 import type { GpuKind } from '../fight-particles';
 import type { DuoFighter, DuoStage, DuoStaging } from './types';
 
@@ -62,8 +62,8 @@ const UP: V3 = { x: 0, y: 1, z: 0 };
 /** Where a foe's water stands over its feet (its cell's surface), or a hand over the floor when it has none. */
 function surfaceOf(f: DuoFighter, marks: number, left = 1) {
   if (marks <= 0) return .32;
-  const m = Math.min(3, marks), ticks = [AGUA.ticks[0], AGUA.ticks[1], Math.max(AGUA.ticks[2], f.height + .1)];
-  return ticks[m - 1] + AGUA.bands[m - 1] * Math.max(0, Math.min(1, left)) + .02;
+  const m = Math.min(3, marks), { ticks, bands } = markHeights(f.height);
+  return ticks[m - 1] + bands[m - 1] * Math.max(0, Math.min(1, left)) + .02;
 }
 
 const timing = { contact: 1, end: 2.05 };

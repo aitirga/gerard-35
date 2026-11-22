@@ -1,6 +1,6 @@
 import type { BattleEffect, BattleState } from '../battle';
 import { screenAxes, type V3 } from '../dual-fx';
-import { AGUA } from '../freatica-fx';
+import { AGUA, markHeights } from '../freatica-fx';
 import type { GpuKind } from '../fight-particles';
 import type { DuoFighter, DuoStage, DuoStaging } from './types';
 
@@ -91,8 +91,8 @@ const clamp01 = (k: number) => Math.min(1, Math.max(0, k));
 /** How high a foe's water stands over its feet with `marks` (its top mark `left` of the way full), as its cell draws it (src/freatica-fx.ts). */
 function levelOf(f: DuoFighter, marks: number, left = 1) {
   if (marks <= 0) return 0;
-  const m = Math.min(3, Math.round(marks)), ticks = [AGUA.ticks[0], AGUA.ticks[1], Math.max(AGUA.ticks[2], f.height + .1)];
-  return ticks[m - 1] + AGUA.bands[m - 1] * clamp01(left);
+  const m = Math.min(3, Math.round(marks)), { ticks, bands } = markHeights(f.height);
+  return ticks[m - 1] + bands[m - 1] * clamp01(left);
 }
 
 /**

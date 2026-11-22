@@ -1,5 +1,5 @@
 import { screenAxes, type V3 } from '../dual-fx';
-import { AGUA } from '../freatica-fx';
+import { markHeights } from '../freatica-fx';
 import type { GpuKind } from '../fight-particles';
 import type { DuoFighter, DuoStage, DuoStaging } from './types';
 
@@ -56,8 +56,8 @@ function kinds(stage: DuoStage) {
   if (g) for (const [name, kind] of Object.entries(KINDS)) if (!g.get(name)) g.define(name, kind);
 }
 
-/** Where a mark of water stands round a foe (src/freatica-fx.ts `AGUA`: its tick and the band over it), over its floor. */
-const markHeight = (k: number) => AGUA.ticks[Math.min(k, 2)] + AGUA.bands[Math.min(k, 2)] * .6;
+/** Where a mark of water stands round a foe `tall` m high (src/freatica-fx.ts `markHeights`: its tick and the band over it), over its floor. */
+const markAt = (tall: number, k: number) => { const { ticks, bands } = markHeights(tall); return ticks[Math.min(k, 2)] + bands[Math.min(k, 2)] * .6; };
 
 /** The fight's seconds as the hold sees them, and when the last Géiser started on them. */
 let clock = 0, startedAt = -99;
@@ -76,6 +76,7 @@ export const staging: DuoStaging = {
     const floor = { ...foe.feet, y: foe.feet.y + .04 }, R = Math.max(.45, foe.radius * .9 + .2);
     const marks = e.water?.find(w => w.target === foe.id)?.from ?? 0, shown = Math.max(1, Math.min(3, marks));
     const jets = Math.max(1, e.strikes?.length ?? 1);
+    const markHeight = (k: number) => markAt(foe.height, k);
     const surface = marks ? markHeight(marks - 1) : .08;
     // Steam and bubbles keep below the camera: over a tall cell they stop at its head.
     const top = Math.min(surface, Math.max(.4, foe.height * .85));

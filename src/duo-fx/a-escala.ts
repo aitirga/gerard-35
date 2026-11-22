@@ -1,6 +1,6 @@
 import { waterOf } from '../battle';
 import { screenAxes, type V3 } from '../dual-fx';
-import { AGUA } from '../freatica-fx';
+import { markHeights } from '../freatica-fx';
 import type { GpuKind } from '../fight-particles';
 import type { DuoStage, DuoStaging } from './types';
 
@@ -46,8 +46,8 @@ function kinds(stage: DuoStage) {
   if (g) for (const [name, kind] of Object.entries(KINDS)) if (!g.get(name)) g.define(name, kind);
 }
 
-/** The water's surface at `marks` over a foe's floor (src/freatica-fx.ts `AGUA`), or a film on the floor when dry. */
-const levelOf = (marks: number) => marks <= 0 ? .04 : AGUA.ticks[Math.min(marks, 3) - 1] + AGUA.bands[Math.min(marks, 3) - 1] * .7;
+/** The water's surface at `marks` over the floor of a foe `tall` m high, as its cell draws it (src/freatica-fx.ts `markHeights`), or a film on the floor when dry. */
+const levelAt = (tall: number, marks: number) => { if (marks <= 0) return .04; const { ticks, bands } = markHeights(tall), m = Math.min(marks, 3) - 1; return ticks[m] + bands[m] * .7; };
 
 /** The fight's seconds as the hold sees them, when the last A escala started, and the foes it shrank with when each next ticks. */
 let clock = 0, startedAt = -99;
@@ -108,11 +108,12 @@ export const staging: DuoStaging = {
       fx.burst('a-escala-tape', { at: a, to: b, shape: 'line', count: Math.round(Math.hypot(b.x - a.x, b.z - a.z) * 30), life: [.8, 1] });
       fx.line(a, b, TEAL, { count: Math.round(Math.hypot(b.x - a.x, b.z - a.z) * 40), life: .7, size: 1.2 });
     });
+    const levelOf = (marks: number) => levelAt(foe.height, marks), ticks = markHeights(foe.height).ticks;
     const gauge = add(front, right, -W0 - .3), gaugeTop = Math.max(H0 + .2, levelOf(3) + .1);
     fx.after(.2, () => {
       fx.line(add(gauge, up, .02), add(gauge, up, gaugeTop), TEAL, { count: Math.round(gaugeTop * 30), life: END - .2, size: .8 });
       for (let k = 1; k <= 3; k++) {
-        const at = add(gauge, up, AGUA.ticks[k - 1]);
+        const at = add(gauge, up, ticks[k - 1]);
         fx.line(at, add(at, right, -.14), FOAM, { count: 8, life: END - .2, size: 1.1 });
         // Its numeral as strokes: one, two, three short uprights.
         for (let j = 0; j < k; j++) { const s = add(add(at, right, -.2 - j * .045), up, .03); fx.line(s, add(s, up, .09), TEAL, { count: 5, life: END - .2, size: .9 }); }
@@ -170,7 +171,7 @@ export const staging: DuoStaging = {
     });
     // The level crossing the gauge's next mark: it flashes there.
     if (to > from) fx.after(CONTACT - .06, () => {
-      const at = add(gauge, up, AGUA.ticks[to - 1]);
+      const at = add(gauge, up, ticks[to - 1]);
       fx.line(add(at, right, .02), add(at, right, -.22), '#ffffff', { count: 12, life: .5, size: 2.4 });
       fx.burst('bloom', { at, count: 1, spread: .02, life: [.18, .26], colour: TEAL, size: .3, light: { intensity: 1.6, range: 1.6, colour: TEAL } });
     });
@@ -215,7 +216,7 @@ export const staging: DuoStaging = {
       corners(stage, add(front, up, h / 2 + .02), w + .08, h / 2 + .05, CYAN, .7, .9, .14);
       const marks = waterOf(unit);
       if (marks) {
-        const g = add(front, right, -w - .2), lv = levelOf(marks);
+        const g = add(front, right, -w - .2), lv = levelAt(f.height, marks);
         stage.fx.line(add(g, up, Math.max(.02, lv - .15)), add(g, up, lv + .15), TEAL, { count: 8, life: .7, size: .9 });
         stage.fx.line(add(g, up, lv), add(add(g, up, lv), right, .1), FOAM, { count: 5, life: .7, size: 1.3 });
       }
