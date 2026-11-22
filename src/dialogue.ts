@@ -81,7 +81,7 @@ export interface Dialogue {
 /** Who talks from Gerard's side when they are not the one on it. */
 const PARTY = new Set<SpeakerId>(['gerard', 'gerard35', 'bernat', 'aitor']);
 
-const TYPE_SPEED_MS = 16;      // per character; 0 disables the typewriter
+const TYPE_SPEED_MS = 0;       // per character; 0 shows ordinary lines at once (rambling and spooky lines still type)
 const AUTO_ADVANCE_MS = 4200;  // after a line finishes typing; 0 waits for input
 const RAMBLING_TYPE_MS = 13;   // a rambling speaker talks fast…
 const RAMBLING_ADVANCE_MS = 450;  // …and barely stops between sentences
@@ -226,7 +226,7 @@ export function createDialogueBanner(hud: HTMLElement) {
       fullText = letters.map(l => l.textContent).join('');
     }
     shown = 0;
-    if (!TYPE_SPEED_MS || reducedMotion.matches) { finishLine(); return; }
+    if ((!TYPE_SPEED_MS && !line.pace) || reducedMotion.matches) { finishLine(); return; }
     if (line.pace !== 'spooky') text.textContent = '';
     root.dataset.typing = 'true';
     const speed = line.pace === 'rambling' ? RAMBLING_TYPE_MS : line.pace === 'spooky' ? SPOOKY_TYPE_MS : TYPE_SPEED_MS;
