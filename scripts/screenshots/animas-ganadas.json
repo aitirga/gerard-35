@@ -1,0 +1,93 @@
+{
+  "title": "Ánimas won at the end of each friend's mission",
+  "description": "Each friend's mission won (Emilie, Marta, Luca, the university) ends, after their lights go into Gerard and Aitor, with the big ÁNIMA DESBLOQUEADA banner and the ánima's name, as Nuria's does with Papagato (nuria-won).",
+  "steps": [
+    {
+      "open": "/?story=modelo&solo=1"
+    },
+    {
+      "until": "document.title && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "teleport": "modelo",
+      "cell": [
+        4,
+        2
+      ],
+      "settle": 1500
+    },
+    {
+      "eval": "window.gerard.story.inside = 'modelo'"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'no-converge', worn: [] })"
+    },
+    {
+      "until": "(document.querySelector('#hud[data-dialogue] .next')?.click(), true) && document.querySelector('.anima-banner:not([hidden])')?.dataset.anima === 'freatica'",
+      "timeout": 90000
+    },
+    {
+      "shot": "banner-freatica",
+      "delay": 900,
+      "caption": "Misión de Emilie ganada: ÁNIMA DESBLOQUEADA · Freática"
+    },
+    {
+      "open": "/?story=cuerdas&solo=1"
+    },
+    {
+      "until": "document.title && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'voz', worn: [] })"
+    },
+    {
+      "until": "(document.querySelector('#hud[data-dialogue] .next')?.click(), true) && document.querySelector('.anima-banner:not([hidden])')?.dataset.anima === 'sincopante'",
+      "timeout": 90000
+    },
+    {
+      "shot": "banner-sincopante",
+      "delay": 900,
+      "caption": "Misión de Marta ganada: ÁNIMA DESBLOQUEADA · Sincopante"
+    },
+    {
+      "open": "/?story=sagrada-luca&solo=1"
+    },
+    {
+      "until": "document.title && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'fran', worn: [] })"
+    },
+    {
+      "until": "(document.querySelector('#hud[data-dialogue] .next')?.click(), true) && document.querySelector('.anima-banner:not([hidden])')?.dataset.anima === 'prismatico'",
+      "timeout": 90000
+    },
+    {
+      "shot": "banner-prismatico",
+      "delay": 900,
+      "caption": "Misión de Luca ganada: ÁNIMA DESBLOQUEADA · Colorista"
+    },
+    {
+      "open": "/?story=parcelas&solo=1"
+    },
+    {
+      "until": "document.title && !document.querySelector('#hud[data-dialogue]')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'battle', won: true, encounter: 'sobremesa', worn: [] })"
+    },
+    {
+      "until": "(document.querySelector('#hud[data-dialogue] .next')?.click(), true) && document.querySelector('.anima-banner:not([hidden])')?.dataset.anima === 'dadaista'",
+      "timeout": 90000
+    },
+    {
+      "shot": "banner-dadaista",
+      "delay": 900,
+      "caption": "Misión de la universidad ganada: ÁNIMA DESBLOQUEADA · Dadista"
+    }
+  ]
+}

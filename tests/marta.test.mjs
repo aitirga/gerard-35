@@ -72,7 +72,8 @@ test('inside, each quality is its fight in turn, and La Voz only once the three 
 test('La Voz beaten: her ánima and her light, back in Alegia, the day spent, and nothing left inside', () => {
   const story = inside(QUALITIES.map(q => q.id));
   const won = story.handle({ type: 'battle', won: true, encounter: 'voz' });
-  assert.deepEqual(beats(won).slice(0, 5), ['dialogue', 'travel', 'dialogue', 'dialogue', 'lights']);
+  assert.deepEqual(beats(won).slice(0, 6), ['dialogue', 'travel', 'dialogue', 'dialogue', 'lights', 'anima']);
+  assert.deepEqual(won[5], { kind: 'anima', classId: 'sincopante', kept: true }, 'the ánima, big: ÁNIMA DESBLOQUEADA');
   assert.equal(won[3].dialogue, LINES_MARTA.coro, 'they send her to the choir before her light goes');
   assert.deepEqual(won[4].people, ['marta', 'marta'], 'two lights: two ecos');
   assert.equal(won[1].environment, ALEGIA);

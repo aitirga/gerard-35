@@ -754,7 +754,7 @@ export class Story {
     const beach: StoryEffect = { kind: 'travel', environment: BEACH, cell: { ...PLACES_UNI.home } };
     return [
       { kind: 'unmask' }, say(LINES_UNI.won), { kind: 'look', anchor: 'merendero-mesa', height: 8.5 }, { kind: 'photo', caption: LINES_UNI.photo },
-      { kind: 'lights', people: friendLights(['anna', 'sarah', 'soraya', 'nico', 'joan']) },
+      { kind: 'lights', people: friendLights(['anna', 'sarah', 'soraya', 'nico', 'joan']) }, { kind: 'anima', classId: 'dadaista', kept: true },
       { kind: 'portal', who: 'everyone', open: { ...PLACES_CAMP.vuelta } },
       beach, { kind: 'emerge', cell: { ...PLACES_UNI.out } }, say(LINES_UNI.home), say(LINES_UNI.coro), ...this.spend('fight'), ...this.nightfall(),
     ];
@@ -800,7 +800,7 @@ export class Story {
     for (const flag of ['anima-marta', 'luz-marta'] as const) this.set(flag);
     this.marta = freshMarta(); delete this.globe.marta;
     const home: StoryEffect = { kind: 'travel', environment: ALEGIA, cell: { ...PLACES_MARTA.back } };
-    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), say(LINES_MARTA.coro), { kind: 'lights', people: friendLights(['marta']) }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_MARTA.won), home, say(LINES_MARTA.home), say(LINES_MARTA.coro), { kind: 'lights', people: friendLights(['marta']) }, { kind: 'anima', classId: 'sincopante', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * El que no converge beaten: the why comes back to Emilie all at once; they come back out through her
@@ -813,7 +813,7 @@ export class Story {
     for (const flag of ['anima-emilie', 'luz-emilie'] as const) this.set(flag);
     this.emilie = freshEmilie(); delete this.globe.emilie;
     const home: StoryEffect = { kind: 'travel', environment: PISO, cell: { ...PLACES_PISO.laptop } };
-    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), say(LINES_EMILIE.coro), { kind: 'lights', people: friendLights(['emilie']) }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_EMILIE.won), home, say(LINES_EMILIE.home), say(LINES_EMILIE.coro), { kind: 'lights', people: friendLights(['emilie']) }, { kind: 'anima', classId: 'freatica', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /**
    * The laptop on her desk: once she has been spoken to, the Queen's whirlpool swells out of the screen
@@ -1063,7 +1063,7 @@ export class Story {
     for (const flag of ['anima-luca', 'luz-luca', 'peluqueria'] as const) this.set(flag);
     this.luca = freshLuca(); delete this.globe.luca;
     const out: StoryEffect = { kind: 'travel', environment: SAGRADA, cell: { ...PLACES_LUCA.won } };
-    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), say(LINES_LUCA.coro), { kind: 'lights', people: friendLights(['luca']) }, ...this.spend('fight'), ...this.nightfall()];
+    return [say(LINES_LUCA.won), out, say(LINES_LUCA.home), say(LINES_LUCA.coro), { kind: 'lights', people: friendLights(['luca']) }, { kind: 'anima', classId: 'prismatico', kept: true }, ...this.spend('fight'), ...this.nightfall()];
   }
   /** What a fight's end means for the story, before any ánima grows. */
   private afterBattle(event: Extract<StoryEvent, { type: 'battle' }>): StoryEffect[] {
