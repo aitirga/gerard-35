@@ -6,7 +6,7 @@
       "open": "/?mission=nuria&part=ring-1"
     },
     {
-      "eval": "navigator.getGamepads = () => []; window.borrowedPair = () => { const root = window.gerard.game.app.root; return ['Haru', 'Yuki'].every(name => root.find(e => e.name === name).length === 1 && root.findByName('Reparto').children.some(c => c.name === name)); }"
+      "eval": "navigator.getGamepads = () => []; window.borrowedPair = () => { const root = window.gerard.game.app.root; return ['Haru', 'Yuki'].every(name => root.find(e => e.name === name && e.parent?.name !== name).length === 1 && root.findByName('Reparto').children.some(c => c.name === name)); }"
     },
     {
       "until": "window.gerard && !document.querySelector('#hud[data-dialogue]') && window.borrowedPair()",
@@ -104,7 +104,7 @@
       "timeout": 90000
     },
     {
-      "until": "['Haru', 'Yuki'].every(name => window.gerard.game.app.root.find(e => e.name === name).length === 1 && window.gerard.game.app.root.findByName('Escenario de combate').children.some(c => c.name === name))",
+      "until": "['Haru', 'Yuki'].every(name => window.gerard.game.app.root.find(e => e.name === name && e.parent?.name !== name).length === 1 && window.gerard.game.app.root.findByName('Escenario de combate').children.some(c => c.name === name))",
       "timeout": 5000
     },
     {

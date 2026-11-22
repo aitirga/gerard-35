@@ -69,15 +69,9 @@
       "wait": 800
     },
     {
-      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"matemagico\"]').click()"
-    },
-    {
-      "shot": "aitor-matemagico",
+      "shot": "aitor-animas",
       "delay": 800,
-      "caption": "Ánimas in Aitor's half: he puts Matemágico on (Magia +1, Espíritu +1)"
-    },
-    {
-      "eval": "document.querySelector('.status-sheet[data-player=\"2\"] [data-wear=\"aitor\"][data-class-id=\"\"]').click()"
+      "caption": "Ánimas in Aitor's half: his own, Tecnópata, worn"
     },
     {
       "eval": "window.gerard.exploration.close()"
