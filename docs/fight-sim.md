@@ -24,6 +24,8 @@ just fight-sim levers --fight plato # the numbers that fight turns on, and which
 just fight-sim optimize --fight plato --auto 3   # the numbers that put its targets where they should be
 just fight-sim skills               # what each skill is worth, and what each fight becomes without it
 just fight-sim progress             # whether the party's growth keeps step with the story
+just fight-sim curve --done emilie  # what each fight should be from where the player is: side missions, castle, night
+just fight-sim optimize --curve --done emilie --fight voz --auto 4   # the numbers that hold that curve
 ```
 
 Every list is a set of combinations: this one plays 3 fights × 2 parties × 2 levels × 2 bots × 2 bans.
@@ -54,7 +56,8 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `skill` | `SKILLS` | `skill.zarpazos.strikes` |
 | `dual` | `DUALS` | `dual.zarpazos-de-fuego.power` |
 | `vertigo` | `VERTIGO`, the final boss's whole book, as `vertigo.boss` | `vertigo.boss.pisoton`, `vertigo.boss.gritoDown` |
-| `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.blind2` |
+| `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.plasma` |
+| `cegado` | `TIMED.cegado` and `CEGADO`: how long Cegado lasts, and how often its physical blows miss in smoke and in Explosión's flash | `cegado.rules.seconds`, `cegado.odds.smoke`, `cegado.odds.flash` |
 | `powder` | `POWDER_RULES`, what the elements make of Colorista's powder | `powder.rules.blast`, `powder.rules.poison`, `powder.rules.shard` |
 | `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
 | `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.vozRe`, `marta.rules.acorde`, `marta.rules.directo` |
@@ -62,6 +65,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `modelo` | `MODELO`, the foes of Emilie's model and El que no converge, as `modelo.rules` | `modelo.rules.seca`, `modelo.rules.descargaStep`, `modelo.rules.convergeTurns` |
 | `fear` | `FEAR_RULES` as `fear.rules`, and El Plato's blow as `fear.plato` (the onions hit with `ONIONS`, Vertitrón with `VERTIGO`) | `fear.rules.escortLayers`, `fear.plato.power` |
 | `luca`, `sobremesa`, `night` | `LUCA`, `SOBREMESA`, `NIGHT_PUPILS`, as `luca.rules`, `sobremesa.boss`, `night.rules` | `luca.rules.brillo`, `night.rules.perFriend` |
+| `guards` | `GUARDS` (`src/battle.ts`), the palace guards before the curtain, as `guards.rules` | `guards.rules.hp`, `guards.rules.animasPerGuard` |
 | `crit` | `CRIT_RULES`: how much harder a golpe crítico lands, and how much of each one's Crítico counts | `crit.rules.bonus`, `crit.rules.chance` |
 | `class` | `CLASS_STATS`, what wearing an ánima adds | `class.papagato.fuerza`, `class.dadaista.critico` |
 | `anima` | `ANIMAS`' `bonus`, what each friend's ánima adds to everyone | `anima.nuria.pv`, `anima.marta.velocidad` |
@@ -354,6 +358,38 @@ so read rounds and PV more than wins. `--story` gives each fight what the story 
 of its stretch, where a skill's absence shows in the wins. A die's face and Agitar are left out unless
 used: they are played through Tirar dado and take no turn.
 
+### Curve: what each fight should be as the party grows
+
+```sh
+just fight-sim curve                         # every side mission at 0 to 3 others behind; the castle and the night with fewer, as many and more than they ask
+just fight-sim curve --done emilie           # only the orders that start where the player is (Emilie's done): the rest in any order
+just fight-sim curve --orders all --fight voz   # every order, not one for each number of missions behind
+just fight-sim optimize --curve --done emilie --fight cuerdas-lealtad,cuerdas-directo,voz --vary foes.voz.hit=0..5/0.25
+```
+
+The pairs (§ Targets) ask every story point the same; the curve (`CURVE`, `curveGoals` in
+`src/balance.ts`) asks each kind of fight what it should be as the party grows (Aitor, 2026-11-22:
+«está bien sentirse más poderoso», the castle and the night «para medir su capacidad», the side
+missions «siempre un reto, porque es no-lineal el progreso y el orden»):
+
+| Kind | Where | `smart` | `casual` |
+| --- | --- | --- | --- |
+| Side mission (`side`) | Each open mission's fights that ask something, with 0, 1, 2 and 3 of the others behind | Wins 90 %, with 20–60 % of PV left (the top 5 points higher for each mission behind: growing is felt) in 12 rounds at most | 25 % at most, in every order |
+| Castle and night, fewer side missions than they ask (`short`) | The boss (and the night's elite) with one fewer | 50 % at most: «go and get another ánima» | – |
+| … as many as they ask (`asked`) | Each fight of the stretch | 85 %, with 15–65 % of PV | A boss 25 %, a room 60 % at most |
+| … more (`more`) | With every mission | 95 %, as easily as it likes | A boss 50 % at most |
+
+What each stretch asks for is `CASTLE_ASKS`: Aurelià two side missions, Dirección three, the Queen
+all four; the night one (Aitor, sizing them up: with Nuria's ánima alone «mejor no probarlo»). The
+Queen's return is off the curve: the melody decides it. `--done` names the open missions the
+player has done: they are behind every point, first, and are not played again. With the dual party
+only the number behind counts (the ánima a mission leaves is not worn), so one order per number is
+enough (`--orders ends`, the default); `--party` plays another.
+
+`--curve` is also a goal set for `levers` and `optimize`, which add to it the `TARGETS` of the same
+fights, so the other parties and the mission done first are held on the way. How a fight grows
+(`foes.<fight>.pv`, `.stat`, `.hit`) is the fight's own number for `--scope fight`.
+
 ### Coverage: what nothing holds yet
 
 `just fight-sim coverage` plays every target a little and watches what it reads, and lists what is
@@ -390,7 +426,7 @@ Three rules are numbers to try:
 | --- | --- |
 | `growth.rules.scale` | Every ánima's bonus times this: 0 is no attribute growth at all |
 | `growth.rules.pv`, `growth.rules.stat` | For each ánima gathered, this many PV, and this much Fuerza, Magia, Defensa and Espíritu, on top |
-| `foes.growth.pv`, `foes.growth.stat` | For each other open mission's ánima the party has, every foe of an open mission's fight starts with this share more PV and this much more of those four stats (`gatheredFor`: Nuria's ánima and the mission's own do not count, and the castle's fights never grow; Nuria's tower, meant to come first, grows by `foes.<fight>.stat` with every open mission's ánima a party brings to it, +3 of each for one, since 2026-11-22) |
+| `foes.growth.pv`, `foes.growth.stat` | For each other open mission's ánima the party has, every foe of an open mission's fight starts with this share more PV and this much more of those four stats (each fight's own, `foes.<fight>`, also `hit`: Fuerza and Magia on top, since 2026-11-22; `gatheredFor`: Nuria's ánima and the mission's own do not count, and the castle's fights never grow; Nuria's tower, meant to come first, grows by `foes.<fight>.stat` with every open mission's ánima a party brings to it, +3 of each for one, since 2026-11-22) |
 
 A level's EXP (`level.xp.N`) moves the level each point is reached with, since the points count their
 EXP (`STRETCH_XP`). `just game-sim run --tune …` plays the same numbers through the whole game:
@@ -711,6 +747,108 @@ Fixed on the way: switching ánima mid-fight dropped what the friends' ánimas g
   The bosses still say no to the careless (Aurelià 4 %, Dirección 2 %, Fran 5 %, La Voz 14 %).
 - El Cebollón can be outlasted without Zarpazos at level 2, curing with Ronroneo: twice the rounds.
 - Not re-run: `just game-sim` whole games.
+
+#### The yardstick and the side missions (Aitor, 2026-11-22)
+
+What was asked, with Nuria's tower and Emilie's model done and the other three to play: «Mejora el
+optimizador para que tenga en cuenta el progreso del jugador, está bien sentirse más poderoso, y que
+el castillo y Av. Meridiana noche no escalen tanto con la progresión del jugador (para medir su
+capacidad), pero las side quests deben escalarse, deben siempre ser un reto porque es no-lineal el
+progreso y el orden».
+
+**The bench** learned the curve (§ Curve): `just fight-sim curve --done emilie` is the table of what
+each fight is from where the player is, and `optimize --curve` the search that holds it, with the
+`TARGETS` of the same fights so nothing else breaks. How a fight grows is its own number now
+(`--scope fight` reaches `foes.<fight>.*`).
+
+**The rules that changed:**
+
+| Rule | Was | Is |
+| --- | --- | --- |
+| The foes' blows in the castle and at night (`FOE_BLOW.castle`, `steady` on the party) | 1 + 0.4 × what the ánimas have grown the party: they kept step with it | 1.24 always, what they were with all five: the same for the full party, harder for a smaller one, so the castle measures what has been done |
+| The night's pupils (`NIGHT_PUPILS`) | 6 × their PV and blows, less 1 a friend and 0.4 a level, down to 1: the night softened as the party grew | 1.25 always: the party's growth is what changes the fight |
+| The night's pupils' moves | **A bug**: out at night they only shoved (`enemyAct` sent their turn to the plain blow, as the encounter is not a castle one), so the night was won on PV alone | Their own moves, as inside (a test fails on the old code) |
+| How a side mission's fight grows (`FIGHT_GROWTH`, new field `hit`) | The four attributes alike and some PV: done last it was longer, and still a walk | Fuerza and Magia on top (`hit`), less PV: done last it is as dangerous and not longer |
+
+**The numbers**, found with `optimize --curve` per mission and held with `just game-sim`:
+
+| Number | Was | Is |
+| --- | --- | --- |
+| La parcela negra (`foes.camping-negra`) | pv .1, stat .75 | pv .05, stat 3.5, hit 3.75; `camping.rules.bombona` 28 → 24 |
+| El Campeón (`foes.campeon`) | pv 0, stat 1.25 | pv .05, stat 1, hit 3.5 |
+| La Sobremesa (`foes.sobremesa`) | pv 0, stat .25 | pv 0, stat 2.75, hit 3.5; Anna's Defensa 9 → 11 |
+| La Lealtad, Lo Directo, La Voz | pv .1 stat 0; pv .1 stat .25; pv 0 stat 1.25 | pv .05 stat 1.25 hit 1; pv .05 stat 2.25 hit .75; pv 0 stat 1.25 hit .75 |
+| Los capellanes, Las camisas, Fran | pv .1 stat .75; pv .025 stat 2; pv .025 stat 1.75 | pv .05 stat 3 hit .5; pv 0 stat 1.5 hit 4.5; pv 0 stat 2.5 hit 4.5 |
+| Aurelià (`foe.aurelia`) | 500 PV, 21 Fuerza, 12 Defensa, 12 Espíritu | 540, 25, 14, 11 |
+
+**The three missions left**, from where the player is (`curve --done emilie`, the dual party, 120
+fights a row; `smart` wins and PV left, `casual` wins):
+
+| Fight | Next (Emilie behind) | Third | Last | Before, last |
+| --- | --- | --- | --- | --- |
+| La parcela negra | 100 %, 53 %; 12 % | 98 %, 47 %; 2 % | 100 %, 58 %; 0 % | 100 %, 60 %; 99 % |
+| El Campeón | 100 %, 74 %; 1 % | 100 %, 70 %; 3 % | 100 %, 70 %; 0 % | 100 %, 84 %; 98 % |
+| La Sobremesa | 100 %, 64 %; 3 % | 99 %, 56 %; 4 % | 99 %, 52 %; 1 % | 100 %, 89 %; 67 % |
+| La Lealtad | 100 %, 62 %; 10 % | 100 %, 69 %; 18 % | 100 %, 70 %; 17 % | 100 %, 75 %; 84 % |
+| Lo Directo | 98 %, 62 %; 21 % | 98 %, 58 %; 16 % | 98 %, 59 %; 26 % | 100 %, 73 %; 88 % |
+| La Voz | 97 %, 64 %; 16 % | 99 %, 60 %; 18 % | 100 %, 74 %; 53 % | 100 %, 80 %; 74 % |
+| Los capellanes | 100 %, 64 %; 13 % | 99 %, 57 %; 6 % | 98 %, 57 %; 3 % | 100 %, 71 %; 88 % |
+| Las camisas | 100 %, 47 %; 35 % | 99 %, 59 %; 50 % | 98 %, 63 %; 31 % | 100 %, 72 %; 69 % |
+| Fran | 100 %, 63 %; 3 % | 100 %, 66 %; 6 % | 98 %, 71 %; 3 % | 100 %, 80 %; 51 % |
+
+Before, the later a mission came the more a careless party won it (up to 99 %); now it loses
+it in any order, and whoever thinks wins every one with a third to a half of its PV gone. Still
+soft: Las camisas (their question is a light one: `carta-sin-pensar` let 35 % through before) and
+La Voz done last with the cats grown (53 %: a whole point more of `hit` walled the thinking player
+who wears its newest ánimas, 67 % at the first try).
+
+**The castle and the night as the yardstick** (the same table): Aurelià with Emilie's alone 35 %
+in 16 rounds (90 % before: it did not ask for the two missions it is meant to), with two 99 % and
+68 % of its PV, with all four 100 % in 7 rounds; Dirección with two 76 %, with three 93 %. The
+night's elite with Nuria's ánima alone 1 %, with one friend more 85 %, with three 93 %; its rooms are
+won from the first friend on. Not tuned and still open: the second floor's 2a is the hard room it
+was (68 % with three), and careless play wins the third floor's 3c and 3d (87 %, 69 %); raising
+`year2` and `year3` moved one target for another (cliffs).
+
+**Whole games** (`just game-sim run --player pensando,corredor,casual --runs 12`):
+
+| Player | Before | Now |
+| --- | --- | --- |
+| `pensando` | 100 %, 186 min, 65.5 fights (4.4 lost) | 100 %, 191 min, 69.5 (6.4) |
+| `corredor` | 100 %, 166 min, 73.3 (3.1) | 100 %, 142 min, 65.5 (5.9) |
+| `casual` | 100 %, 834 min, 293 (95) | 100 %, 1052 min, 349 (116) |
+
+No new wall for whoever thinks or hurries: the walls left are the palace guards at the first try
+(on purpose) and the night with Nuria's ánima alone (what Aitor says: «mejor no probarlo»). La Voz
+done last is won at the first try 83 % of the time. `just fight-sim check`: 14 of 170 out, every one
+out before too (21 before), except Lo Directo's newest-ánimas target, moved from 65 to 55 % (whole
+games win it 92 % at the first try).
+
+#### The castle's first floor with Nuria and Emilie (Aitor, 2026-11-23)
+
+What was asked: the three guards before the curtain, the first floor and Aurelià, with Papagato and
+Freática at 2 or 3, «que sea un reto pero no imposible». Measured with the party as it comes
+(`storyPoint('castillo-1:emilie')`), Gerard on Matemágico and Aitor on Tecnópata, each with one of
+the two friends' ánimas to switch to, jar empty and bought.
+
+| Fight | Before (`smart`; `casual`) | Now |
+| --- | --- | --- |
+| The guards | 100 %, 67 % PV, 3.8 rounds; careless 100 %: two of them, won without thinking | 100 %, 45 % PV, 4.4 rounds; careless 5 % |
+| The guards with Nuria's alone | 66 % (the curtain should not open yet) | 1 % |
+| Rooms 1a, 1b, 1c | 96–100 %; careless 83–100 % (they teach) | the same |
+| La Delegada | 99 %, 43–57 % PV; careless 6–11 % | the same |
+| Aurelià | 50–80 %, 13–14 rounds; careless 0 % | 84–91 %, 9.7–10 rounds; careless 0–2 % |
+
+**A bug in Aurelià**: his next move was picked by his turns, and the Récord's run-up took a turn,
+so on the last straight he made one Expulsión and then Récord after Récord (`step` in his mark now
+counts what he has announced). **The numbers**: the guards stay three until the third friend's ánima
+(`GUARDS.animasPerGuard` 2 → 3), 220 → 250 PV and 30 → 31 a blow before what each ánima takes off;
+Aurelià 540 → 420 PV, Pregunta 85 → 105, the ruler with nobody to punish (`castigoLeve`) 16 → 28: a
+third shorter, and as dangerous. `CASTLE_ASKS` for the first floor 2 → 1: with one side mission it
+is the fight that is asked (the curve's dual party, which never wears Freática, is at 83 %);
+`castillo-1:none` is the castle with no side mission. New targets: `guardianes-con-dos-sin-pensar`,
+`aurelia-con-emilie` and its `-sin-pensar`; `aurelia-bien` (every ánima) is won in 4.5 to 10 rounds,
+not 7 to 13. El Empollón's Repaso no longer says it copies the blow (that is El Montón's).
 
 ### The final pass
 

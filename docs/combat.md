@@ -463,10 +463,10 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 
 | Atacar con | Sobre | Reacción | Qué hace |
 | --- | --- | --- | --- |
-| Agua | Quemado | **Humo** | Apaga el fuego y deja Cegado a su nivel: sus golpes, al 70 / 50 / 30 %, 10 s |
+| Agua | Quemado | **Humo** | Apaga el fuego y deja Cegado 10 s: sus golpes físicos fallan 2 de cada 3 veces (la magia no) |
 | Fuego | Sangrado | **Cauterizado** | El golpe no abre la herida: cada carga arde de golpe, 6 PV cada una |
 | Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
-| Fuego | Mojado | **Vapor** | El agua se va y deja Cegado I; mojado, no prende |
+| Fuego | Mojado | **Vapor** | El agua se va y deja Cegado; mojado, no prende |
 | Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan. A quien recibió el golpe estando mojado, **Shock** la mitad de las veces: pierde su siguiente turno |
 | Eléctrico | Quemado | **Plasma** | La descarga enciende de golpe todo lo que le quedaba al fuego: cada pulso que le faltaba, un 50 % más fuerte (`REACTION_RULES.plasma`), y se apaga. Un Quemado III recién puesto es mucho; uno a punto de acabarse, poco |
 | Fuego | Empolvado | **Estallido** | El polvo estalla: magia de fuego (22) a quien lo lleva y la mitad a cada uno de los demás; el de los otros empolvados estalla en cadena. Después todos arden un nivel más |
@@ -476,8 +476,8 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 **El agua contenida** (Freática, `docs/animas/freatica/README.md`, `CRECIDA` en `src/battle.ts`): el agua que
 Freática sube bajo un enemigo lo deja mojado mientras dure, así que todo lo de arriba la encuentra. Pero no
 se va: un rayo hace Conducción y el agua se queda con la **Corriente** 10 s (pulsos ×1, ×2, ×3 con su marca),
-y otro rayo mientras corre solo la renueva; el fuego le quita la marca de arriba (**Vapor**) y lo ciega al
-nivel que tenía. En la tercera marca está **Hundido**: un 2 % de toda su vida cada 2 s. Su definitiva, *Bajo
+y otro rayo mientras corre solo la renueva; el fuego le quita la marca de arriba (**Vapor**) y lo
+ciega. En la tercera marca está **Hundido**: un 2 % de toda su vida cada 2 s. Su definitiva, *Bajo
 cero*, lo **congela**: no actúa, recibe un cuarto, y el hielo se rompe a golpes con un golpe de agua muy alto.
 
 **Shock** (2026-11-17, `REACTION_RULES.shock`, `Combatant.shock`): un rayo sobre alguien mojado lo
@@ -499,7 +499,16 @@ pareja, **∂Q/∂t Condensador**, deja a Gerard *Cargado* (`Combatant.capacitor
 eléctrico hace el doble (`CONDENSADOR.scale`), y si un enemigo le golpea antes, la carga salta a ese
 enemigo (`CONDENSADOR.jump`, magia eléctrica).
 
-Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quemado, pasa por encima de
+**Cegado** (Aitor, 2026-11-23) no pulsa ni tiene niveles, y no se acumula: mientras dura, los golpes físicos
+del enemigo pueden fallar enteros (`misses` en `src/battle.ts`: no le quitan nada a nadie, no rompen cortinas
+ni gastan escudos); su magia sí acierta. Cuántos fallan, a los dados del combate (`CEGADO`): **2 de cada 3**
+en el humo (Humo, Vapor, Géiser, el hielo, los espejos de los capellanes, Bombardeo orbital) y **1 de cada 3**
+tras el fogonazo de Explosión, que ciega a todos a la vez durante la ronda. Probado con `just fight-sim`: el
+fallo seguro hacía ganables combates que no deben serlo (los guardianes con solo Nuria, Aurelià con una
+misión) y quitarle el fogonazo a Explosión perdía los que contesta (Negra, La Voz). Volver a cegarlo solo empieza su reloj otra vez
+(`blind`). En pantalla, «Falla · No ve nada» sobre quien iba a recibirlo, el golpe que pasa de largo
+hacia un lado, y una venda de hollín que le da vueltas en los ojos mientras busca a tientas
+(`src/status-fx.ts`). Cauterizado, como Sangrado y Quemado, pasa por encima de
 las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). **Mojado**
 (2026-11-15, 20 s, sin pulsos ni niveles) lo ponen Cubo acuático y, con la pasiva Capilaridad,
 el Atacar con agua; Vapor y Conducción las provoca también una habilidad con ese elemento (Foc
@@ -669,7 +678,7 @@ acción que consume los dos turnos. El catálogo de `DUALS` incluye siete dúos.
 | Rayo solar | Foc Binari + Rayo de energía | Bip debe seguir en pie al empezar la siguiente ronda para barrer con fuego a todos. |
 | Sutura de luz | Cardioide + Rayo de sanación | Cura a un aliado herido y amortigua el siguiente daño que reciba esa ronda. |
 | Relevo de sangre | Zarpa en la llaga + Estrella fugaz | Un remate traslada el Sangrado al rival con más PV. Dadista paga con un dado. |
-| Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado II durante 20 segundos. |
+| Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado durante 20 segundos (`ORBITAL_BLIND`). |
 | Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
@@ -878,8 +887,10 @@ regla de cada combate; `FOE_GROWTH`, la de los que no tienen una propia; `growth
 
 - **El equipo crece en porcentaje** (2026-11-21): cada ánima de un amigo da a todos un 12 % más de PV,
   Fuerza, Magia, Defensa y Espíritu, y cada nivel del ánima que se lleva puesta, un 3 % más. Los golpes
-  de los enemigos acompañan lo que dan las ánimas (con las cinco entran un 24 % más fuertes), no lo que
-  dan los niveles: subir de nivel hace el juego más fácil. **Una cura devuelve una parte de los PV** de
+  de los enemigos de las misiones acompañan lo que dan las ánimas (con las cinco entran un 24 % más
+  fuertes), no lo que dan los niveles: subir de nivel hace el juego más fácil. **En el castillo y de
+  noche en la Meridiana no** (2026-11-22): sus golpes entran siempre igual, un 24 % más fuertes, tenga
+  el equipo las ánimas que tenga, porque son la vara que mide lo que se ha hecho. **Una cura devuelve una parte de los PV** de
   quien la recibe (una cura media, la mitad): con poca vida, curarse es el margen
   ([fight-sim.md](fight-sim.md) § After the pass).
 - **Cada combate crece a su manera** (desde la pasada final, 2026-11-21). Un solo número para todos
@@ -891,11 +902,18 @@ regla de cada combate; `FOE_GROWTH`, la de los que no tienen una propia; `growth
   equipos a la vez, no con uno: el dúo de Matemágico y Papagato ya crecidos, un equipo que lleva sus
   dos ánimas más nuevas y ese mismo sin la respuesta ([fight-sim.md](fight-sim.md) § The final pass,
   as done).
+- **Crecen más en lo que pegan que en lo que aguantan** (2026-11-22, Aitor: «las side quest deben
+  escalarse, deben siempre ser un reto»): además de los cuatro atributos, la regla de cada combate
+  puede dar Fuerza y Magia de más (`hit`), para que hecha la última una misión sea igual de peligrosa
+  y no más larga. Lo que debe ser cada una en cada orden lo dice la curva del progreso
+  ([fight-sim.md](fight-sim.md) § The yardstick and the side missions).
 - La primera misión abierta es el combate tal como está afinado; las otras tres suman una, dos y
   tres veces su regla.
-- No cuentan el ánima de Nuria (está antes de todas) ni la de la propia misión. Los combates de
-  Nuria y los del castillo no crecen: sus números son los suyos, y los del castillo son los que piden
-  ánimas (Aurelià, las de Nuria y dos misiones; Dirección, las de casi todas: [fight-sim.md](fight-sim.md) § Power and the castle).
+- No cuentan el ánima de Nuria (está antes de todas) ni la de la propia misión. Los del castillo y
+  los alumnos que salen de noche no crecen: sus números son los suyos, y son los que piden ánimas
+  (Aurelià, las de Nuria y dos misiones; Dirección, tres; la noche, una: con menos no se ganan, con
+  las que piden son un reto y con más se nota el poder: [fight-sim.md](fight-sim.md) § Power and the castle,
+  § The yardstick and the side missions).
 - Crece todo lo que hay en el combate, también lo que entra más tarde (la Segunda voz, las polillas).
 - Nadie lo anuncia ni hay panel: se nota en los golpes.
 

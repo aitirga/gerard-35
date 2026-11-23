@@ -145,13 +145,16 @@ export function risingAt(grates: readonly Cell[], from: Cell, count: number, cle
 
 /**
  * How much stronger than inside the castle its pupils are out here at night (src/castle.ts
- * `NightFight`), from what the party has: each friend's ánima and each level its ánimas have grown
- * take some off, down to `floor`, as strong as inside. On the first nights a caught fight cannot be
- * won; with the friends' ánimas and a few levels it can. Tunable (`just fight-sim`, book `night`).
- * Provisional (2026-11-20): Aitor will balance the night later; El Empollón and La Chivata's group
- * is still won from the first night.
+ * `NightFight`): `start` times their PV and blows, less `perFriend` for each friend's ánima and
+ * `perLevel` for each level its ánimas have grown, down to `floor`. Since 2026-11-22 (Aitor: «que el
+ * castillo y la Meridiana de noche no escalen tanto con la progresión del jugador, para medir su
+ * capacidad») they are a quarter stronger than inside whatever the party has, so the night measures
+ * it: with Nuria's ánima only the first floor's elite cannot be beaten out here, with two or three
+ * friends it can, and with all of them it is a place to farm a little (docs/fight-sim.md § The
+ * yardstick and the side missions). Until that day they shoved instead of using their moves, and the
+ * night got weaker as the party grew. Tunable (`just fight-sim`, book `night`).
  */
-export const NIGHT_PUPILS = { start: 6, perFriend: 1, perLevel: .4, floor: 1 };
+export const NIGHT_PUPILS = { start: 1.25, perFriend: 0, perLevel: 0, floor: 1 };
 export function nightMight(friends: number, levels: Partial<Record<string, number>> = {}) {
   const grown = Object.values(levels).reduce((sum: number, level) => sum + Math.max(0, (level ?? 1) - 1), 0);
   return Math.max(NIGHT_PUPILS.floor, NIGHT_PUPILS.start - NIGHT_PUPILS.perFriend * friends - NIGHT_PUPILS.perLevel * grown);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CASTLE, CASTLE_ENCOUNTERS, CASTLE_PHASES, MELODY, castleEntry, extraSlots, floorFor, isCastle } from '../src/castle.ts';
 import { aitorTaken, artilugioLive, castleAfter, castleChips, castleIdle, castleNote, castleRoundEnd, castleTaken, montonCopy, nextNote } from '../src/castle-fight.ts';
 import { castleEnvironment } from '../src/castle-floor.ts';
-import { createFearBattle } from '../src/battle.ts';
+import { FOE_BLOW, createFearBattle } from '../src/battle.ts';
 import { Story } from '../src/story.ts';
 import { LINES_CASTLE } from '../src/castle-story.ts';
 import { flagsAt } from '../src/story-points.ts';
@@ -296,7 +296,7 @@ test('El Montón takes the shape of the first blow it takes, by what that blow c
   state.phase = 'enemy'; state.enemyActions = [];
   const copy = enemyAct(state, monton.id, gerard.id);
   assert.equal(copy.ability.id, 'copia');
-  assert.equal(before - gerard.hp, montonCopy(monton));
+  assert.equal(before - gerard.hp, Math.round(montonCopy(monton) * FOE_BLOW.castle), 'and as hard on whoever the party has grown (the castle is the yardstick)');
   assert.ok(gerard.shock, 'in shock: the next turn is lost');
   // A second blow changes nothing: the first one gave it its shape.
   monton.hp -= 40; castleAfter(undefined, state, { kind: 'skill', actor: gerard.id, skill: 'foc-binari', target: monton.id, amount: 40 });

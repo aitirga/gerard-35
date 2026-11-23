@@ -109,13 +109,13 @@ test('Sondeo eléctrico (level 2): a light bolt whose current lasts twice as lon
   assert.equal(e.current.seconds, 20); assert.equal(a.timed.corriente.left, 20);
 });
 
-test('Vapor: fire on a foe with water takes its top mark and blinds it at the level its water had', () => {
+test('Vapor: fire on a foe with water takes its top mark and blinds it, whatever the level of its water', () => {
   const s = fight(1), a = s.foes[0];
   recargas(s, a.id, 3);
   turn(s, 'gerard', 'fuego');
   const e = act(s, 'attack', a.id);
-  assert.equal(e.reaction.id, 'vapor'); assert.equal(e.reaction.level, 3);
-  assert.equal(waterOf(a), 2); assert.equal(a.timed.cegado.level, 3, 'Cegado III: its blows at 30 %');
+  assert.equal(e.reaction.id, 'vapor'); assert.equal(e.reaction.level, 1);
+  assert.equal(waterOf(a), 2); assert.equal(a.timed.cegado.level, 1, 'Cegado has no levels');
   assert.ok(!a.timed.quemado, 'a foe with water does not catch fire'); assert.ok(!a.timed.hundido, 'not sunk now');
 });
 

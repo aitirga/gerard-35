@@ -551,10 +551,11 @@ export const SOBREMESA = {
  * each pip of the face it shows. An Agente face down takes `downTaken` of every blow; its Contraseña is
  * `contrasena`. El Campeón's Rayo is `rayo` of magic on whom he said; his Plan fires at `planMost`
  * steps (`planMostII` in his Etapa II, from `stageAt` of his PV down) as a Rayo total of `rayoTotal`
- * on everyone; a magic blow on him lands at `campeonMagic` and takes his Plan a step down.
+ * on everyone; a magic blow on him lands at `campeonMagic` and takes his Plan a step down. The Bombona went from 24 to 18
+ * (2026-11-23) when Cegado's misses turned chance: Explosión's flash had been what held La parcela negra.
  */
 export const CAMPING = {
-  magoMagic: .5, magoPhysical: 1.4, bombona: 28,
+  magoMagic: .5, magoPhysical: 1.4, bombona: 18,
   dadoBase: 4, dadoPip: 6,
   downTaken: .5, contrasena: 18,
   rayo: 22, rayoTotal: 38, planMost: 3, planMostII: 2, stageAt: .5, campeonMagic: .7,
@@ -825,7 +826,8 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   // Its levels do not climb in a line (Aitor 2026-11-22): each step bigger than the last (×1, ×3, ×6, ×11), so feeding a fire
   // pays more the higher it already is. II stays ×3 (more than twice I, `inflict`'s rule); El Plato and El Campeón got PV for III.
   quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 6, 11], flat: 1, share: .01, cap: 100 },
-  // Cegado (Humo, below): it hurts nobody, the foe's blows land lighter while it lasts (`sighted`).
+  // Cegado (Humo, below): it hurts nobody; while it lasts the foe's physical blows often miss (`CEGADO`, `misses`). It has no
+  // levels and never adds up (Aitor 2026-11-23): laid again, its clock only starts over (`blind`).
   cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0 },
   // Sanación (Rayo de sanación): Quemado's other side, a pulse of PV back every few seconds.
   // A share of the carrier's PV, as every cure is (`HEAL`, src/stats.ts): a quarter of them over its 15 seconds at level I, and
@@ -1051,8 +1053,8 @@ export function ecoWorth(state: BattleState): number {
 /**
  * Reactions (docs/combat.md § Reacciones entre elementos): an Atacar with an element never lights a
  * status of its own; it turns what the foe already carries, whoever put it there.
- * Agua on Quemado is Humo: the fire goes out and leaves Cegado at the fire's level, its blows at
- * `blindN` of their weight. Fuego on Sangrado is Cauterizado: the blow opens no wound, every stack
+ * Agua on Quemado is Humo: the fire goes out and leaves Cegado (its physical blows miss while it
+ * lasts). Fuego on Sangrado is Cauterizado: the blow opens no wound, every stack
  * burns away at once for `cauterize` PV. Eléctrico on Cegado is Tormenta: the bolt runs through the
  * smoke, `storm` of magic on everyone blinded, and the smoke is gone. Eléctrico on Quemado is Plasma
  * (2026-11-23): the bolt sets the whole fire off at once, every pulse it had left `plasma` times as
@@ -1060,14 +1062,14 @@ export function ecoWorth(state: BattleState): number {
  */
 export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'conduccion' | 'plasma' | 'estallido' | 'veneno' | 'cristal';
 /**
- * With Mojado: Fuego on it is Vapor (the water goes up and leaves Cegado I), and Eléctrico on it is
+ * With Mojado: Fuego on it is Vapor (the water goes up and leaves Cegado), and Eléctrico on it is
  * Conducción (`conduct` of magic on everyone wet, who are left dry). A foe's bolt on the party lands
  * whole on the one it struck and `share` of it on the others wet. Either way, whoever was struck wet
  * is left in Shock with a chance of `shock`: their next turn is lost (`Combatant.shock`).
  */
 /** ∂Q/∂t Condensador: how many times the next electric blow lands, and what jumps to a foe that strikes first (base power). Tunable. */
 export const CONDENSADOR = { scale: 2, jump: 20 };
-export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5, plasma: 1.5 };
+export const REACTION_RULES = { cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5, plasma: 1.5 };
 /**
  * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a dome of Bip's bits over the party.
  * Every blow on one of them goes into it first: it stops `share` of it (all of it), out of its own PV,
@@ -1215,10 +1217,49 @@ export function elementOf(spec?: object): Element | undefined {
   const s = spec as { element?: Element; burn?: TimedId; melts?: boolean };
   return s.element ?? (s.burn ? TIMED[s.burn].element : undefined) ?? (s.melts ? 'fuego' : undefined);
 }
-/** A foe's blow as a blinded foe lands it: lighter the higher its Cegado. */
-function sighted(actor: Combatant, raw: number) {
-  const level = actor.timed?.cegado?.level;
-  return level ? Math.max(1, Math.round(raw * REACTION_RULES[`blind${Math.min(3, level) as 1 | 2 | 3}`])) : raw;
+/** How long Bombardeo orbital's salvos leave every foe they find Cegado (s): longer than a smoke's. */
+export const ORBITAL_BLIND = 20;
+/** Whom a blinded foe's physical blows missed during the action being resolved, for its effect (`missSay`). */
+const missTook: string[] = [];
+/**
+ * How often a blinded foe's physical blow misses (Aitor, 2026-11-23, `just fight-sim`, book `cegado`): in smoke (Humo,
+ * Vapor, Géiser, the ice, the chaplains' mirrors, Bombardeo orbital) two blows in three; in Explosión's flash, which blinds
+ * every foe at once for the round, one in three. A sure miss made the flash win fights it should not (the palace guards)
+ * and taking the flash away lost the fights it answers (Negra, La Voz).
+ */
+export const CEGADO = { smoke: .66, flash: .33 };
+/** Whether a blow of `actor`, blinded, misses this time (the fight's dice). */
+export function blindMiss(state: BattleState, actor: Combatant) {
+  const on = actor.timed?.cegado;
+  if (!on || actor.hp <= 0) return false;
+  return roll(state) < (on.until !== undefined ? CEGADO.flash : CEGADO.smoke);
+}
+/**
+ * Cegado: a physical blow of a blinded foe may miss `who` whole (`blindMiss`: nothing lands, nothing is broken or spent on
+ * them). Its magic still finds them. Says whether it missed, and keeps who for the effect.
+ */
+function misses(state: BattleState, actor: Combatant, who: Combatant) {
+  if (!blindMiss(state, actor)) return false;
+  if (!missTook.includes(who.id)) missTook.push(who.id);
+  return true;
+}
+/** Hands whom this action's blows missed to `effect`, and says so in place of their «−0 PV». */
+function missSay(state: BattleState, effect: BattleEffect, actor?: Combatant) {
+  const missed = missTook.splice(0);
+  if (!missed.length || !actor) return;
+  effect.missed = missed;
+  if (state.phase === 'lost') return;
+  const said = state.message.replace(/−0 PV(?=[.!,]| ·|$)/g, '¡Falla!');
+  state.message = said === state.message ? `${state.message} ${actor.name} no ve: ¡falla!` : `${said} ${actor.name} no ve nada.`;
+}
+/**
+ * Cegado on `c` for `seconds`: laid again, it never adds up, its clock starts over (a longer one already on keeps its own). `until`: it also ends with that
+ * round (Explosión's flash), unless a smoke of its own is already on, which stays as it is.
+ */
+function blind(c: Combatant, seconds: number = TIMED.cegado.seconds, until?: number) {
+  const on = c.timed?.cegado, smoke = on && on.until === undefined ? on : undefined;
+  if (until !== undefined && smoke) return;
+  c.timed = { ...c.timed, cegado: { level: 1, left: Math.max(seconds, smoke?.left ?? 0), next: TIMED.cegado.every, ...until !== undefined ? { until } : {} } };
 }
 /** A timed status on someone: its level (1 up), seconds left and seconds to its next pulse. */
 export interface Timed {
@@ -1279,6 +1320,8 @@ export interface Combatant {
   profile: ProfileId;
   /** How much larger the friends' ánimas have made them (.24: 24 % more): the foes' blows keep step with it (`FOE_BLOW`). */
   grown?: number;
+  /** In the castle or out at night: the foes' blows land as hard whatever the party has grown (`FOE_BLOW.castle`), so the fight measures it. */
+  steady?: boolean;
   /** The class the fighter wears, if any. */
   classId?: ClassId;
   kind?: FoeKind;
@@ -1592,7 +1635,9 @@ export type SongNews =
  * and nothing left on them), and what it left: wet, a fire at that level, dried by the fire, or the
  * bolt run through the water; `angry`, the grade of the Enfado it spent.
  */
-export interface NoteHit { target: string; amount: number; guarded?: true; wet?: true; burn?: number; dried?: true; conducted?: true; angry?: number }
+export interface NoteHit { target: string; amount: number; guarded?: true; wet?: true; burn?: number; dried?: true; conducted?: true; angry?: number;
+  /** Cegado: a physical note of hers, blinded, missed them. */
+  missed?: true }
 /** A choice queued ahead by an ally later in the round (`queue`). */
 export interface Queued { action: 'attack' | 'defend' | 'skill'; skill?: SkillId; target?: string; die?: number }
 /**
@@ -1919,6 +1964,8 @@ export interface BattleEffect {
   regen?: { id: TimedId; level: number };
   /** Explosión: Bip blew itself up; who it blinded until the round ends. */
   exploded?: boolean; blinded?: string[];
+  /** Cegado: whom a blinded foe's physical blows missed in this action (nothing landed on them). */
+  missed?: string[];
   /** Bombas remotas set off by this action (Explosión), with what each took; foes a bomb was stuck on (Bomba remota, Escolta, Enjambre). */
   detonated?: { target: string; amount: number }[]; planted?: string[];
   /** Escolta: Bip went to stand by `target` for these rounds. */
@@ -1995,7 +2042,7 @@ export interface BattleEffect {
   called?: { target: string; text: string; detail?: string; status?: string }[];
   /** Water left these Mojado: a foe's on the party (Ola, an Electrón, Inunda), or anyone's on a Celda seca, which switches on. */
   wetted?: string[];
-  /** El Átomo's fire left these Quemado; on these it found water and went up as Vapor (Cegado I). */
+  /** El Átomo's fire left these Quemado; on these it found water and went up as Vapor (Cegado). */
   burnt?: string[]; steamed?: string[];
   /** El Átomo lost an electron to this blow (`off`, Ionizado) or took one back (`on`, Captura). */
   electron?: { element: Element; mark: 'off' | 'on' };
@@ -2479,8 +2526,16 @@ export function createMinionBattle(gerardClassId?: ClassId, animas?: ClassId[]):
  * The Guardianes de Chicle before the throne stair (docs/chapter-2.md): far too strong without
  * ánimas, one fewer every two ánimas, and softer and weaker with each one.
  */
+/**
+ * The palace guards' numbers (`palaceGuards`), tunable as book `guards`: with no ánimas each one's
+ * `hp` and `power`, less `hpPerAnima` and `powerPerAnima` for each friend's ánima, and one guardian
+ * fewer every `animasPerGuard` ánimas. Three until the third ánima (Aitor, 2026-11-23: with Nuria's and
+ * a mission's, «un reto pero no imposible»; with two they were won without thinking, in three rounds). Power 33
+ * since Cegado makes physical blows miss (2026-11-23): with only Nuria's ánima, Explosión's flash had made them winnable.
+ */
+export const GUARDS = { hp: 250, hpPerAnima: 30, power: 33, powerPerAnima: 3, animasPerGuard: 3 };
 export function palaceGuards(animas: number) {
-  return { count: Math.max(1, 3 - Math.floor(animas / 2)), hp: Math.max(40, 220 - 30 * animas), power: Math.max(8, 30 - 3 * animas) };
+  return { count: Math.max(1, 3 - Math.floor(animas / GUARDS.animasPerGuard)), hp: Math.max(40, GUARDS.hp - GUARDS.hpPerAnima * animas), power: Math.max(8, GUARDS.power - GUARDS.powerPerAnima * animas) };
 }
 export type GuardStrength = ReturnType<typeof palaceGuards>;
 /**
@@ -2515,8 +2570,8 @@ export const FOE_GROWTH = { pv: 0, stat: 1.25 };
  * first fights are as they were. What the party keeps of its growth is the PV its cures give back
  * (`HEAL`) and the harder blows of its own. Tunable (`--tune foes.blow.share=0:.25:.4`).
  */
-export const FOE_BLOW = { share: .4 };
-const foeBlow = (target: Combatant) => 1 + FOE_BLOW.share * (target.grown ?? 0);
+export const FOE_BLOW = { share: .4, castle: 1.24 };
+const foeBlow = (target: Combatant) => target.steady ? FOE_BLOW.castle : 1 + FOE_BLOW.share * (target.grown ?? 0);
 /**
  * Each open fight's own growth (`pv`, `stat`, as `FOE_GROWTH`, which a fight not listed here takes): fights
  * do not lean on their foes' attributes alike (La Sobremesa's many small blows grow far more with a point of
@@ -2524,7 +2579,9 @@ const foeBlow = (target: Combatant) => 1 + FOE_BLOW.share * (target.grown ?? 0);
  * easier. Each is the one that keeps its fight the same question with one ánima behind it or with four,
  * found with the bench at both ends of the story (docs/fight-sim.md § The final pass). Book `foes.<fight>`.
  */
-export const FIGHT_GROWTH: Partial<Record<Encounter, { pv: number; stat: number }>> = {
+/** How a fight's foes grow for each ánima gathered: `pv`, a share of their PV; `stat`, Fuerza, Magia, Defensa and Espíritu; `hit`, Fuerza and Magia on top (harder, not longer). */
+export interface Growth { pv: number; stat: number; hit?: number }
+export const FIGHT_GROWTH: Partial<Record<Encounter, Growth>> = {
   // Nuria's tower, done after an open mission (`gatheredFor`): it grows by its blows, never by its length. +3 of each with
   // one ánima behind (2026-11-22, Emilie's): Vertitrón, La Escolta and the third ring are then what they are done first
   // (careless play loses, the answer wins); at the default +1, Freática made them a third of the fight.
@@ -2536,25 +2593,25 @@ export const FIGHT_GROWTH: Partial<Record<Encounter, { pv: number; stat: number 
   plato: { pv: 0, stat: 2.5 },
   escolta: { pv: 0, stat: 2.5 },
   'uri-vertigo': { pv: 0, stat: 2.5 },
-  'camping-magos': { pv: .1, stat: 1 },
-  'camping-dados': { pv: .1, stat: .75 },
-  'camping-agentes': { pv: 0, stat: 2.25 },
-  'camping-tienda': { pv: .05, stat: 2 },
-  'camping-negra': { pv: .1, stat: .75 },
-  campeon: { pv: 0, stat: 1.25 },
-  sobremesa: { pv: 0, stat: .25 },
-  'cuerdas-lealtad': { pv: .1, stat: 0 },
-  'cuerdas-cristalino': { pv: .1, stat: 1.5 },
-  'cuerdas-directo': { pv: .1, stat: .25 },
-  voz: { pv: 0, stat: 1.25 },
-  'modelo-celdas': { pv: 0, stat: 1.5 },
-  'modelo-oscilacion': { pv: 0, stat: 1.5 },
-  'modelo-atomo': { pv: .05, stat: 1 },
-  'no-converge': { pv: .075, stat: .25 },
-  'luca-recepcion': { pv: .15, stat: 3.25 },
-  'luca-sillones': { pv: .1, stat: .75 },
-  'luca-carta': { pv: .025, stat: 2 },
-  fran: { pv: .025, stat: 1.75 },
+  'camping-magos': { pv: .1, stat: 1, hit: 0 },
+  'camping-dados': { pv: .1, stat: .75, hit: 0 },
+  'camping-agentes': { pv: 0, stat: 2.25, hit: 0 },
+  'camping-tienda': { pv: .05, stat: 2, hit: 0 },
+  'camping-negra': { pv: .05, stat: 3.5, hit: 5.25 },
+  campeon: { pv: .05, stat: 1, hit: 3.5 },
+  sobremesa: { pv: 0, stat: 2.75, hit: 3.5 },
+  'cuerdas-lealtad': { pv: .05, stat: 1.25, hit: 1 },
+  'cuerdas-cristalino': { pv: .1, stat: 1.5, hit: 0 },
+  'cuerdas-directo': { pv: .05, stat: 2.25, hit: .75 },
+  voz: { pv: 0, stat: 1.25, hit: .75 },
+  'modelo-celdas': { pv: 0, stat: 1.5, hit: 0 },
+  'modelo-oscilacion': { pv: 0, stat: 1.5, hit: 0 },
+  'modelo-atomo': { pv: .05, stat: 1, hit: 0 },
+  'no-converge': { pv: .075, stat: .25, hit: 0 },
+  'luca-recepcion': { pv: .15, stat: 3.25, hit: 0 },
+  'luca-sillones': { pv: .05, stat: 3, hit: .5 },
+  'luca-carta': { pv: 0, stat: 1.5, hit: 4.5 },
+  fran: { pv: 0, stat: 2.5, hit: 4.5 },
 };
 /** How `encounter`'s foes grow with each ánima gathered: its own rule, or the one for all. */
 export const growthOf = (encounter?: string) => (encounter ? FIGHT_GROWTH[encounter as Encounter] : undefined) ?? FOE_GROWTH;
@@ -2568,10 +2625,11 @@ export function gatheredFor(encounter: string, animas: readonly string[] = []) {
   return own ? missions.filter(id => id !== own && animas.includes(id)).length : 0;
 }
 /** One foe grown by `gathered` ánimas (`FOE_GROWTH`). */
-function grow<T extends Combatant>(c: T, gathered = 0, rule = FOE_GROWTH): T {
-  if (!gathered || !(rule.pv || rule.stat)) return c;
-  const pv = Math.round(c.maxHp * (1 + rule.pv * gathered)), more = Math.round(rule.stat * gathered);
-  c.stats = { ...c.stats, pv, fuerza: c.stats.fuerza + more, magia: c.stats.magia + more, defensa: c.stats.defensa + more, espiritu: c.stats.espiritu + more };
+function grow<T extends Combatant>(c: T, gathered = 0, rule: Growth = FOE_GROWTH): T {
+  const hit = rule.hit ?? 0;
+  if (!gathered || !(rule.pv || rule.stat || hit)) return c;
+  const pv = Math.round(c.maxHp * (1 + rule.pv * gathered)), more = Math.round(rule.stat * gathered), harder = more + Math.round(hit * gathered);
+  c.stats = { ...c.stats, pv, fuerza: c.stats.fuerza + harder, magia: c.stats.magia + harder, defensa: c.stats.defensa + more, espiritu: c.stats.espiritu + more };
   c.hp = c.maxHp = pv;
   return c;
 }
@@ -2939,7 +2997,7 @@ const beaten = (state: BattleState) => {
   return state.foes.every(f => f.hp <= 0 || f.part);
 };
 /** What src/castle-fight.ts borrows from here: this file's own stats, PV and line-up. */
-const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), sighted: (actor, raw) => sighted(actor, raw), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random), heldAct: (state, held, move) => heldAct(state, held, move) };
+const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random), heldAct: (state, held, move) => heldAct(state, held, move) };
 /**
  * Someone the Queen holds acting on her side (docs/castle-bosses.md § Aitor, held): their own turn,
  * driven by player 2, with their own kit against the rest of the party. The same `act` runs on a
@@ -3111,7 +3169,7 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     // Powder first: it is what the element finds on top.
   } else if (target.hp > 0 && element === 'agua' && fire) {
     effect.reaction = { id: 'humo', level: smoke(target) };
-    state.message += ` ¡El agua apaga el fuego! ${TIMED.cegado.name} ${roman(fire.level)}.`;
+    state.message += ` ¡El agua apaga el fuego! ¡${TIMED.cegado.name}!`;
   } else if (target.hp > 0 && element === 'fuego' && bleeding) {
     delete target.statuses!.sangrado;
     const amount = hurt(state, target, bleeding * REACTION_RULES.cauterize);
@@ -3162,32 +3220,26 @@ function vapour(state: BattleState, target: Combatant, effect: BattleEffect) {
   const held = waterOf(target), level = steam(target);
   effect.reaction = { id: 'vapor', level };
   if (held) effect.water = [...effect.water ?? [], { target: target.id, from: held, to: held - 1 }];
-  state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(level)}.`;
+  state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`;
 }
 /** How many pulses a fire still has to give before its clock runs out (`runClock`): the next one, and one every `every` after it. */
 export const firePulses = (fire: Timed) => fire.left > 1e-6 ? Math.floor(Math.max(0, fire.left - fire.next) / TIMED.quemado.every + 1e-6) + 1 : 0;
-/** Humo: the fire on `c` goes out and leaves Cegado at its level. Returns that level. */
+/** Humo: the fire on `c` goes out and leaves Cegado (whatever the fire's level: it has none). Returns the level it shows, 1. */
 function smoke(c: Combatant) {
-  const { quemado: fire, ...rest } = c.timed!;
-  c.timed = { ...rest, cegado: { level: fire!.level, left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
-  return fire!.level;
+  const { quemado: _fire, ...rest } = c.timed!;
+  c.timed = rest;
+  blind(c);
+  return 1;
 }
 /**
- * Vapor: the water on `c` goes up and leaves Cegado I (a longer or higher smoke stays). Returns its level. Water held
- * under it (La crecida, `CRECIDA`) loses only its top mark, and blinds at the level the water had.
+ * Vapor: the water on `c` goes up and leaves Cegado (`blind`). Returns the level it shows, 1. Water held under it
+ * (La crecida, `CRECIDA`) loses only its top mark.
  */
 function steam(c: Combatant) {
-  const held = waterOf(c);
-  if (held) {
-    lowerWater(c, 1);
-    const on = c.timed?.cegado && c.timed.cegado.until === undefined ? c.timed.cegado : undefined;
-    c.timed = { ...c.timed, cegado: { level: Math.max(held, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
-    return c.timed.cegado!.level;
-  }
-  const { mojado: _out, ...rest } = c.timed!;
-  const on = rest.cegado && rest.cegado.until === undefined ? rest.cegado : undefined;
-  c.timed = { ...rest, cegado: { level: Math.max(1, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
-  return c.timed.cegado!.level;
+  if (waterOf(c)) lowerWater(c, 1);
+  else { const { mojado: _out, ...rest } = c.timed!; c.timed = rest; }
+  blind(c);
+  return 1;
 }
 /** Whether `actor` wears the ánima of the passive `id` and has it. */
 const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.classId === PASSIVES[id].anima && !!state.improved?.passives?.includes(id);
@@ -3313,7 +3365,7 @@ function restartClocks(foe: Combatant) {
  * (`TIMED.agua`); its top mark drains in `mark` seconds, and any water blow on that foe starts it over. A foe with water is
  * Mojado for as long as it stands, so it is wet for everything that asks. A bolt runs through the water as always
  * (Conducción) and stays in it as Corriente for `current` seconds, pulsing every `pulse`; while it runs a bolt only starts
- * it over. Fire takes the top mark as Vapor and blinds at the water's level. At the third mark the foe is Hundido. Bajo cero
+ * it over. Fire takes the top mark as Vapor and blinds. At the third mark the foe is Hundido. Bajo cero
  * freezes the water: `ice` seconds a mark; a frozen foe acts not and takes `frozen` of every blow; its ice holds `blows`
  * blows from outside (one of power `hard` or more counts two, each strike of a flurry one), and cracked through it breaks
  * for magic water damage from `breakLow` to `breakTop` by the ice left. A flame melts a mark of it; electricity does nothing.
@@ -3466,13 +3518,12 @@ function chill(state: BattleState, actor: Combatant, effect: BattleEffect, blows
     if (!foe || !ice || foe.hp <= 0) continue;
     if (b.magic && b.element === 'electrico') continue;
     if (b.magic && b.element === 'fuego') {
-      const level = ice.level, on = foe.timed!.cegado;
       ice.left -= CRECIDA.ice;
-      foe.timed!.cegado = { level: Math.max(level, on && on.until === undefined ? on.level : 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every };
+      blind(foe);
       delete foe.timed!.quemado;
       if (ice.left <= 1e-6) thaw(foe); else ice.level = Math.ceil(ice.left / CRECIDA.ice);
       (effect.ice ??= []).push({ target: foe.id, melted: true });
-      state.message += ` El fuego derrite una marca de hielo: ${TIMED.cegado.name} ${roman(level)}.`;
+      state.message += ` El fuego derrite una marca de hielo: ¡${TIMED.cegado.name}!`;
       continue;
     }
     const added = b.strikes * b.weight;
@@ -3934,11 +3985,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     // Explosión: the flash blinds whoever is still standing until the round is over (a longer smoke stays as it is).
     if ('blind' in ability!) {
       effect.exploded = true;
-      effect.blinded = targets.filter(foe => foe.hp > 0).map(foe => {
-        const on = foe.timed?.cegado;
-        if (!on || on.until !== undefined) foe.timed = { ...foe.timed, cegado: { level: Math.max(1, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every, until: state.round } };
-        return foe.id;
-      });
+      effect.blinded = targets.filter(foe => foe.hp > 0).map(foe => { blind(foe, TIMED.cegado.seconds, state.round); return foe.id; });
     }
     // …it sets off every Bomba remota it finds on them, as grown as it is now…
     if ('detonates' in ability!) {
@@ -3979,7 +4026,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         const held = waterOf(foe);
         steamed = Math.max(steamed, steam(foe));
         effect.water = [...effect.water ?? [], { target: foe.id, from: held, to: held - 1 }];
-        Object.assign(hitOf(foe), { burn: { id: 'cegado', level: foe.timed!.cegado!.level }, smoked: true });
+        Object.assign(hitOf(foe), { burn: { id: 'cegado', level: 1 }, smoked: true });
       }
       if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
     }
@@ -4010,7 +4057,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if ('wets' in ability!) state.message += smoked ? ' El agua apaga los fuegos y moja al resto.' : powdered.size === targets.length ? '' : ' ¡Mojados!';
     else if (smoked) state.message += ' El agua apaga los fuegos.';
     if ('raises' in ability! && effect.water?.length) state.message += ` El agua sube: ${effect.water.map(w => roman(w.to)).join(', ')}.${effect.water.some(w => w.to >= CRECIDA.marks && w.from < CRECIDA.marks) ? ' ¡Hundidos!' : ''}`;
-    if (landing === 'fuego' && effect.reaction?.id === 'vapor') state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(effect.reaction.level ?? 1)}.`;
+    if (landing === 'fuego' && effect.reaction?.id === 'vapor') state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`;
     if ('powders' in ability! && effect.hits.some(h => h.burn?.id === 'empolvado')) state.message += ` ¡${TIMED.empolvado.name}s!`;
     if ('restart' in ability!) state.message += effect.restarted?.length ? ' Sus relojes vuelven a empezar.' : ' No llevan nada con reloj.';
     if (effect.mana) state.message += ' Toma de tierra: maná +1.';
@@ -4497,15 +4544,10 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     if (d.bleed && target.hp > 0 && strikes.some(n => n > 0)) effect.status = { id: 'sangrado', stacks: cut(state, target, d.bleed) };
     if (d.leaves && target.hp > 0) { lay(target, d.leaves); effect.left = { id: d.leaves, targets: [target.id] }; }
     if (id === 'geiser') {
-      // All its water goes up in steam, and the steam is everyone's: Cegado at the level the water had (I from a dry foe).
+      // All its water goes up in steam, and the steam is everyone's: Cegado on every foe.
       if (marks) lowerWater(target, marks, effect);
-      const level = Math.max(1, marks);
-      effect.vapour = state.foes.filter(f => f.hp > 0 && !f.part).map(f => {
-        const on = f.timed?.cegado && f.timed.cegado.until === undefined ? f.timed.cegado : undefined;
-        f.timed = { ...f.timed, cegado: { level: Math.max(level, on?.level ?? 0), left: TIMED.cegado.seconds, next: TIMED.cegado.every } };
-        return f.id;
-      });
-      effect.reaction = { id: 'vapor', level };
+      effect.vapour = state.foes.filter(f => f.hp > 0 && !f.part).map(f => { blind(f); return f.id; });
+      effect.reaction = { id: 'vapor', level: 1 };
     }
     if (id === 'a-escala' && target.hp > 0) {
       target.timed = { ...target.timed, encogido: { level: 1, left: SCALE_SECONDS, next: SCALE_SECONDS } };
@@ -4524,7 +4566,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     if (peeled) effect.peeled = peeled;
     state.message += ` −${effect.amount} PV.`;
     if (spent) state.message += ' ¡Punto débil: el triple de daño!';
-    if (effect.vapour) state.message += ` ${marks ? 'Su agua se va entera en vapor' : 'El vapor lo llena todo'}: ¡${TIMED.cegado.name} ${roman(Math.max(1, marks))} para todos!`;
+    if (effect.vapour) state.message += ` ${marks ? 'Su agua se va entera en vapor' : 'El vapor lo llena todo'}: ¡${TIMED.cegado.name}s todos!`;
     if (id === 'a-escala' && target.hp > 0) state.message += ` ¡Se encoge! El agua le llega a ${roman(waterOf(target))}${target.timed?.hundido ? ': ¡hundido!' : '.'}`;
     if (id === 'staccato' && target.hp > 0) state.message += ' Un eco se queda cortando.';
     if (peeled && !target.layers && target.hp > 0) effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }];
@@ -4594,7 +4636,7 @@ function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital',
     if (amount && foe.weakSpot) delete foe.weakSpot;
     spendShield(state, foe, amount, effect);
     if (id === 'bombardeo-orbital' && amount && foe.hp) {
-      foe.timed = { ...foe.timed, cegado: { level: Math.max(foe.timed?.cegado?.level ?? 0, 2), left: 20, next: 10 } };
+      blind(foe, ORBITAL_BLIND);
     }
     effect.hits!.push({ target: foe.id, amount });
   }
@@ -4782,7 +4824,7 @@ const escortedNow = (state: BattleState) => state.allies.filter(a => a.escort &&
 export function enemyAct(state: BattleState, id: string, targetId?: string): BattleEffect | undefined {
   if (state.phase !== 'enemy' || state.enemyActions.includes(id)) return;
   const protectedAlly = state.allies.find(a => a.suture);
-  screenTook.length = 0; livesTook.length = 0;
+  screenTook.length = 0; livesTook.length = 0; missTook.length = 0;
   const escorted = escortedNow(state);
   const effect = enemyMove(state, id, targetId);
   // Escolta: the foe that struck someone Bip stands by gets a Bomba remota (one it carries already starts over).
@@ -4795,7 +4837,7 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
   // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
   if (effect) holdWater(state, effect); else holdWater(state);
-  if (effect) { cortinaSay(state, effect, state.foes.find(f => f.id === id)); livesSay(state, effect); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; }
+  if (effect) { missSay(state, effect, state.foes.find(f => f.id === id)); cortinaSay(state, effect, state.foes.find(f => f.id === id)); livesSay(state, effect); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; missTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);
@@ -4831,19 +4873,20 @@ function enemyMove(state: BattleState, id: string, targetId?: string): BattleEff
   if (actor.kind === 'voz' && state.song && !vozMove(state, actor)) { actor.turns = (actor.turns ?? 0) + 1; state.enemyActions.push(id); return; }
   if (actor.timed?.confusion) return confusedAct(state, actor);
   if (state.encounter === 'palace-minion') return minionAct(state, actor);
-  if ((FEAR_ENCOUNTERS as readonly string[]).includes(state.encounter)) return fearAct(state, actor, target);
+  // The castle's pupils out on the Meridiana at night (`night-guard`) fight with their own moves, as inside.
+  if ((FEAR_ENCOUNTERS as readonly string[]).includes(state.encounter) || isCastle(actor.kind)) return fearAct(state, actor, target);
   state.enemyActions.push(id);
   if (actor.power !== undefined) {
     // The palace guards: one heavy fist each, guarding takes two thirds off.
-    const hit = sighted(actor, physical(actor.power, current(state, actor), current(state, target)));
-    const amount = changeHealth(target, -(target.guarding ? Math.ceil(hit / 3) : hit));
+    const hit = misses(state, actor, target) ? 0 : physical(actor.power, current(state, actor), current(state, target));
+    const amount = hit ? changeHealth(target, -(target.guarding ? Math.ceil(hit / 3) : hit)) : 0;
     state.message = `${actor.name} aplasta a ${target.name} con un puño de chicle. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
     if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; }
     return { actor: actor.id, kind: 'enemy', target: target.id, amount };
   }
-  const strength = sighted(actor, physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, current(state, actor), current(state, target)));
+  const strength = misses(state, actor, target) ? 0 : physical(state.allies.length === 1 && state.foes.length > 1 ? 5 : 9, current(state, actor), current(state, target));
   const damage = target.guarding ? Math.ceil(strength / 3) : strength;
-  const amount = changeHealth(target, -damage);
+  const amount = damage ? changeHealth(target, -damage) : 0;
   state.message = `${actor.name} da un empujón a ${target.name}. −${amount} PV${target.guarding ? ' · Protegido' : ''}.`;
   if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Toca recuperar el aliento. Puedes volver a intentarlo.'; }
   return { actor: actor.id, kind: 'enemy', target: target.id, amount };
@@ -4860,7 +4903,7 @@ function confusedAct(state: BattleState, actor: Combatant): BattleEffect {
   delete actor.intent;
   const others = state.foes.filter(f => f !== actor && f.hp > 0 && !f.part);
   const victim = others.length ? others[Math.floor(roll(state) * others.length)] : actor;
-  const amount = hurt(state, victim, fearDamage(state, victim, sighted(actor, physical(CONFUSED_BLOW, current(state, actor), current(state, victim))), 'physical'));
+  const amount = misses(state, actor, victim) ? 0 : hurt(state, victim, fearDamage(state, victim, physical(CONFUSED_BLOW, current(state, actor), current(state, victim)), 'physical'));
   state.message = victim === actor ? `${actor.name}, confundido, se golpea a sí mismo. −${amount} PV.` : `${actor.name}, confundido, golpea a ${victim.name}. −${amount} PV.`;
   const effect: BattleEffect = { actor: actor.id, kind: 'enemy', target: victim.id, amount, confused: true };
   if (amount > 0) combust(state, actor, victim, effect);
@@ -5024,7 +5067,7 @@ function conduct(state: BattleState, actor: Combatant, target: Combatant, power:
   // It lands whole on the one it struck (the first one wet, if that one is dry) and part of it on the others.
   const struck = wet.find(a => a === target) ?? wet[0];
   const hits = wet.map(who => {
-    const raw = sighted(actor, magical(who === struck ? power : Math.round(power * REACTION_RULES.share), current(state, actor), current(state, who)));
+    const raw = magical(who === struck ? power : Math.round(power * REACTION_RULES.share), current(state, actor), current(state, who));
     const { mojado: _dry, ...rest } = who.timed!;
     who.timed = rest;
     return { target: who.id, amount: changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw)) };
@@ -5046,7 +5089,7 @@ function modeloTurn(state: BattleState, actor: Combatant, target: Combatant, eff
   actor.turns = (actor.turns ?? 0) + 1;
   const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
   const magic = (who: Combatant, power: number) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = magical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const alive = state.allies.filter(a => a.hp > 0);
@@ -5121,7 +5164,7 @@ function atomTurn(state: BattleState, actor: Combatant, target: Combatant, effec
   const alive = state.allies.filter(a => a.hp > 0), lit = actor.electrons ?? [];
   const wet = (a: Combatant) => !!a.timed?.mojado;
   const shocked = () => (effect.shocked ?? []).map(id => ` ¡${state.allies.find(a => a.id === id)?.name} queda en shock!`).join('');
-  /** Fire on `who`: a burn if dry, Vapor if wet (the water goes, Cegado I stays). */
+  /** Fire on `who`: a burn if dry, Vapor if wet (the water goes, Cegado stays). */
   const burn = (who: Combatant, power: number) => {
     const amount = magic(who, power);
     if (who.hp > 0 && wet(who)) { steam(who); (effect.steamed ??= []).push(who.id); }
@@ -5130,8 +5173,8 @@ function atomTurn(state: BattleState, actor: Combatant, target: Combatant, effec
   };
   if (!lit.length) {
     use('choque');
-    const raw = sighted(actor, physical(MODELO.choque, current(state, actor), current(state, target)));
-    effect.amount = changeHealth(target, -(target.guarding ? Math.ceil(raw / 3) : raw));
+    const raw = misses(state, actor, target) ? 0 : physical(MODELO.choque, current(state, actor), current(state, target));
+    effect.amount = raw ? changeHealth(target, -(target.guarding ? Math.ceil(raw / 3) : raw)) : 0;
     state.message = `El núcleo desnudo de ${actor.name} choca contra ${target.name}. −${effect.amount} PV.`;
     return;
   }
@@ -5299,7 +5342,7 @@ function crack(state: BattleState, glass: Combatant) {
   glass.cracked = true;
   const alive = state.allies.filter(a => a.hp > 0);
   const shard = (who: Combatant) => {
-    const raw = sighted(glass, physical(MARTA.estallido, current(state, glass), current(state, who)));
+    const raw = physical(MARTA.estallido, current(state, glass), current(state, who));
     return changeHealth(who, -Math.min(who.hp - 1, Math.round((who.guarding ? Math.ceil(raw / 3) : raw) * foeBlow(who))), false, true);
   };
   const news: BattleEffect = { kind: 'enemy', actor: glass.id, ability: foeAbility('estallido'), cracked: true };
@@ -5360,7 +5403,7 @@ function cuerdasTurn(state: BattleState, actor: Combatant, target: Combatant, ef
   const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
   const alive = state.allies.filter(a => a.hp > 0);
   const zap: Hit = (who, power) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = magical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   /** Whom it said, if still standing; and who is next (next round's turn order). */
@@ -5483,12 +5526,14 @@ function voiceNote(state: BattleState, voz: Combatant, tone: ToneId): SongNews {
   const who = angry || (alive.find(a => a.id === voz.facing) ?? alive[0]);
   if (!who) return news;
   const power = MARTA[note.power];
+  // Blinded, her physical notes miss (`misses`); her other notes still find them.
+  const blinded = !!note.physical && blindMiss(state, voz);
   const strike = (at: Combatant) => {
-    const raw = sighted(voz, note.physical ? physical(power, current(state, voz), current(state, at)) : magical(power, current(state, voz), current(state, at)))
+    const raw = (note.physical ? physical(power, current(state, voz), current(state, at)) : magical(power, current(state, voz), current(state, at)))
       * (at === angry ? 1 + MARTA.enfado * grade : 1);
     return changeHealth(at, -Math.round(at.guarding ? Math.ceil(raw / 3) : raw));
   };
-  const plain = (at: Combatant): NoteHit => ({ target: at.id, amount: strike(at), ...at.guarding ? { guarded: true } : {}, ...at === angry ? { angry: grade } : {} });
+  const plain = (at: Combatant): NoteHit => blinded ? { target: at.id, amount: 0, missed: true } : { target: at.id, amount: strike(at), ...at.guarding ? { guarded: true } : {}, ...at === angry ? { angry: grade } : {} };
   if (note.all) { news.hits = alive.map(plain); return news; }
   if (note.element === 'electrico' && !who.guarding && who.timed?.mojado) {
     // The bolt finds the water: it runs through everyone wet (whoever holds on takes a third) and dries them.
@@ -5504,6 +5549,7 @@ function voiceNote(state: BattleState, voz: Combatant, tone: ToneId): SongNews {
     return news;
   }
   const hit = plain(who);
+  if (hit.missed) { news.hits = [hit]; return news; }
   if (!who.guarding && who.hp > 0 && note.element === 'agua') { soak(who); hit.wet = true; }
   else if (!who.guarding && who.hp > 0 && note.element === 'fuego') {
     if (who.timed?.mojado) { const { mojado: _dry, ...rest } = who.timed; who.timed = rest; hit.dried = true; }
@@ -5679,12 +5725,12 @@ function createLucaBattle(party: PartySlot[], encounter: LucaEncounter, animas?:
 }
 /**
  * The chaplains dazzled (docs/quests/luca.md § Review C): the light the nave's mirrors bring to their
- * chairs is in their eyes as the fight starts, Cegado II for `deslumbre` seconds (their blows lighter).
+ * chairs is in their eyes as the fight starts, Cegado for `deslumbre` seconds (their physical blows miss).
  */
 export function dazzle(state: BattleState) {
-  const blind = state.foes.filter(f => f.kind === 'capellan' && f.hp > 0);
-  for (const f of blind) f.timed = { ...f.timed, cegado: { level: 2, left: LUCA.deslumbre, next: TIMED.cegado.every } };
-  if (blind.length) state.message = `${state.message} La luz de los espejos les da en la cara: casi no ven.`;
+  const dazzled = state.foes.filter(f => f.kind === 'capellan' && f.hp > 0);
+  for (const f of dazzled) blind(f, LUCA.deslumbre);
+  if (dazzled.length) state.message = `${state.message} La luz de los espejos les da en la cara: no ven nada.`;
 }
 /** How much of a blow one of the salon's foes takes: Fran through his Brillo; a lamp and a shirt of Luca's only in their own light. */
 function lucaTaken(state: BattleState, target: Combatant) {
@@ -5788,7 +5834,7 @@ function lucaTurn(state: BattleState, actor: Combatant, target: Combatant, effec
   const use = (id: FoeAbilityId) => { effect.ability = foeAbility(id); };
   const alive = state.allies.filter(a => a.hp > 0);
   const zap: Hit = (who, power) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = magical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const remember = (ability: FoeAbilityId, power: number, all: boolean, magic: boolean) => { state.copied = { ability, power, all, magic, by: actor.name }; };
@@ -5915,7 +5961,7 @@ function campingTurn(state: BattleState, actor: Combatant, target: Combatant, ef
     if (actor.intent?.ability === 'bombona') {
       delete actor.intent;
       const blast: Hit = (who, power) => {
-        const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+        const raw = magical(power, current(state, actor), current(state, who));
         return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
       };
       use('bombona'); onEveryone(state, effect, target, blast, CAMPING.bombona);
@@ -5944,7 +5990,7 @@ function campingTurn(state: BattleState, actor: Combatant, target: Combatant, ef
 function campeonTurn(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
   const alive = state.allies.filter(a => a.hp > 0);
   const beam: Hit = (who, power) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = magical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   if ((actor.plan ?? 0) >= planMost(actor)) {
@@ -6036,11 +6082,11 @@ function sobremesaTurn(state: BattleState, actor: Combatant, target: Combatant, 
   const throwDice = (n: number) => Array.from({ length: n }, () => 1 + Math.floor(roll(state) * 6));
   // A share of the target's PV: as many in a hundred as the dice add up to; holding on takes two thirds off.
   const share = (who: Combatant, dice: number[]) => {
-    const raw = sighted(actor, Math.max(1, Math.round(who.maxHp * dice.reduce((a, b) => a + b, 0) * SOBREMESA.pip / 100)));
+    const raw = Math.max(1, Math.round(who.maxHp * dice.reduce((a, b) => a + b, 0) * SOBREMESA.pip / 100));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const sung: Hit = (who, power) => {
-    const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+    const raw = magical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const raise = (c: Combatant) => {
@@ -6221,7 +6267,7 @@ function vertigoTurn(state: BattleState, actor: Combatant, target: Combatant, ef
     state.message = 'El ojo de Vertitrón empieza a cargarse. Gira cada vez más rápido…';
   } else {
     const zap: Hit = (who, power) => {
-      const raw = sighted(actor, magical(power, current(state, actor), current(state, who)));
+      const raw = magical(power, current(state, actor), current(state, who));
       return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
     };
     onEveryone(state, effect, target, zap, VERTIGO.rayo);
@@ -6254,7 +6300,8 @@ function rushTurn(c: Combatant) {
 function fearAct(state: BattleState, actor: Combatant, target: Combatant): BattleEffect | undefined {
   state.enemyActions.push(actor.id);
   const hit: Hit = (who, power) => {
-    const raw = sighted(actor, physical(power, current(state, actor), current(state, who)));
+    if (misses(state, actor, who)) return 0;
+    const raw = physical(power, current(state, actor), current(state, who));
     return changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const effect: BattleEffect = { actor: actor.id, kind: 'enemy', target: target.id };

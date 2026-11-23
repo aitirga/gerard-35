@@ -85,21 +85,26 @@ test('the picker\'s castle stage picks the first day at it, ánimas pushing it l
   assert.deepEqual([0, 1, 2, 3, 4].map(c => nightTier(c).id), ['calma', 'calma', 'tensa', 'dura', 'ultima']);
 });
 
-test('at night the castle pupils of the floor the party is on walk the Meridiana, stronger out there the fewer friends and levels', async () => {
+test('at night the castle pupils of the floor the party is on walk the Meridiana, as strong whatever the party has gathered', async () => {
   const { nightMight, NIGHT_PUPILS } = await import('../src/night.ts');
   const { nightGroup, castlePhase, CASTLE_FIGHTS } = await import('../src/castle.ts');
-  const { createEncounter } = await import('../src/battle.ts');
+  const { createEncounter, enemyAct } = await import('../src/battle.ts');
   const floor = castlePhase(1);
   assert.deepEqual([1, 2, 3, 4, 5].map(n => nightGroup(n, 1)), [...floor.fights, floor.elite, floor.fights[0]], 'its rooms in turn, La Delegada last');
   assert.ok(nightGroup(1, 2).endsWith('-2a') && nightGroup(1, 3).endsWith('-3a'), 'a floor further on, its own pupils');
   assert.equal(nightMight(0), NIGHT_PUPILS.start);
-  assert.ok(nightMight(1, { papagato: 2 }) < nightMight(1) && nightMight(1) < nightMight(0), 'each friend and each level takes some off');
-  assert.equal(nightMight(9, { papagato: 9, matemagico: 9 }), NIGHT_PUPILS.floor, 'never weaker than inside');
+  assert.ok(NIGHT_PUPILS.start > 1, 'a little stronger out here than inside');
+  assert.equal(nightMight(4, { papagato: 5, freatica: 3 }), nightMight(0), 'the yardstick: friends and levels do not soften them, the party grows against them');
   const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
   const inside = createEncounter(party, 'alumnos-1a'), out = createEncounter(party, 'night-guard', { night: { room: 'alumnos-1a', might: 2 } });
   assert.equal(out.encounter, 'night-guard', 'still the night: lost, they wake late; won, the hunt goes on');
   assert.deepEqual(out.foes.map(f => f.kind), [...CASTLE_FIGHTS['alumnos-1a']]);
   assert.deepEqual(out.foes.map(f => f.maxHp), inside.foes.map(f => f.maxHp * 2));
+  // Out here they fight with their own moves, as inside, not a plain shove.
+  out.phase = 'enemy';
+  const effects = out.foes.map(pupil => { const effect = enemyAct(out, pupil.id); assert.ok(!/empujón/.test(out.message), `${pupil.kind} shoved: ${out.message}`); return effect; });
+  assert.ok(effects.some(effect => effect?.ability), 'a move of their own, named');
+  assert.ok(out.allies.every(a => a.steady) && inside.allies.every(a => a.steady), 'the castle and the night do not grow their blows with the party');
 });
 
 // ——— How each pupil hunts (src/night-pupils.ts) ———————————————————————————————————————————

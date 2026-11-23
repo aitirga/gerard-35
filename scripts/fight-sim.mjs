@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { BUILDS, CASTLE_STAGE_IDS, DUO, MISSIONS, MISSION_IDS, MISSION_PARTY, POLICIES, SIM_VERSION, STRETCHES, STRETCH_IDS, TARGETS, TECH, catalogue, conclude, fullKit, judge, storyJobs, storyPoint, sweepSetups, targetSetup, tunables, withTuning } from '../src/battle-sim.ts';
-import { coverage, levers, optimize, pairGoals, progressLines, readsOf, skillReport, targetGoals, variable } from '../src/balance.ts';
+import { CURVE, coverage, curveGoals, levers, miss, optimize, pairGoals, progressLines, readsOf, skillReport, targetGoals, variable } from '../src/balance.ts';
 import { createPool } from './fight-sim-pool.mjs';
 import { DEFAULT_INTENT, askJev, jevLines, jevRequest } from './fight-sim-jev.mjs';
 import { balanceData, balancePage } from './fight-sim-report.mjs';
@@ -28,6 +28,9 @@ El banco de balance (docs/fight-sim.md § The balance bench):
   just fight-sim skills                   Qué vale cada habilidad: usos, daño, PV por maná y qué pasa sin ella (con todo abierto)
   just fight-sim progress                 Si el crecimiento del equipo acompaña a la historia: cada punto con lo que suma
                                           cada ánima de amigo a 0, como está y al doble (o los --tune que se den)
+  just fight-sim curve [--done emilie]    Lo que cada combate debería ser según lo que el equipo lleva hecho: las misiones
+                                          secundarias, un reto en cualquier orden; el castillo y la noche, la vara que mide
+                                          (con menos misiones de las que piden, no; con las que piden, un reto; con más, poder)
   just fight-sim coverage                 Lo que la pasada final aún no sujeta: combates sin pareja, habilidades y ánimas que
                                           ningún objetivo juega, números que ningún objetivo lee
 
@@ -36,6 +39,9 @@ Qué se mide en levers y optimize (una de tres):
   --target a,b       Esos objetivos, por su id
   --pairs            Las parejas de la historia en vez de los objetivos: pensando gana ≥ 90 %, sin pensar ≤ 20 %,
                      en cada punto de --at y --build (con --fight, solo esos combates)
+  --curve            La curva del progreso (just fight-sim curve): cada misión en cada orden, el castillo y la noche
+                     con menos, las mismas y más misiones de las que piden. --done a,b: lo que el jugador ya ha hecho;
+                     --orders all: todos los órdenes (por defecto, uno por cada número de misiones detrás)
 Opciones de optimize:
   --vary p=a..b/s    Un número que la búsqueda puede mover, entre a y b, de s en s; sin rango, un 40 % a cada lado
   --auto N           Sin --vary: los N números propios del combate que más lo mueven (los busca con levers)
@@ -90,9 +96,9 @@ Opinión de Jev, solo si se pide (necesita TYPESAFE_API_KEY en .env):
 
 Los bots no son personas: sirven para comparar combinaciones, no para medir cómo se siente un combate.
 `;
-const LISTS = { '--at': 'at', '--build': 'builds', '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas', '--improved': 'improved', '--target': 'targets', '--anima': 'only' };
+const LISTS = { '--done': 'done', '--at': 'at', '--build': 'builds', '--fight': 'fights', '--party': 'parties', '--level': 'levels', '--policy': 'policies', '--ban': 'bans', '--friends': 'friends', '--animas': 'animas', '--improved': 'improved', '--target': 'targets', '--anima': 'only' };
 const NUMBERS = { '--runs': 'runs', '--seed': 'seed', '--error': 'error', '--think': 'think', '--max-rounds': 'maxRounds', '--workers': 'workers', '--budget': 'budget', '--keep': 'keep', '--check-runs': 'checkRuns', '--auto': 'auto', '--delta': 'delta', '--top': 'top' };
-const FLAGS = { '--baseline': 'baseline', '--json': 'json', '--jev': 'jev', '--jev-dry-run': 'jevDryRun', '--help': 'help', '--pairs': 'pairs', '--story': 'story' };
+const FLAGS = { '--baseline': 'baseline', '--json': 'json', '--jev': 'jev', '--jev-dry-run': 'jevDryRun', '--help': 'help', '--pairs': 'pairs', '--story': 'story', '--curve': 'curve' };
 
 /** Words to options; anything unknown is an error, so a typo never reads as a result. */
 export function parseArguments(argv) {
@@ -115,7 +121,7 @@ export function parseArguments(argv) {
       (options.vary ??= {})[path] = spec;
       continue;
     }
-    if (!(flag in LISTS || flag in NUMBERS || flag === '--out' || flag === '--intent' || flag === '--scope')) throw new Error(`Opción desconocida: ${flag}`);
+    if (!(flag in LISTS || flag in NUMBERS || flag === '--out' || flag === '--intent' || flag === '--scope' || flag === '--orders')) throw new Error(`Opción desconocida: ${flag}`);
     const value = inline ?? words[++i];
     if (value === undefined || value.startsWith('--')) throw new Error(`Falta el valor de ${flag}`);
     if (flag in LISTS) options[LISTS[flag]] = value.split(',');
@@ -159,6 +165,12 @@ function pointsFrom(options, tuning = {}, builds = ['nada', 'mixto']) {
 }
 /** What levers and optimize measure: the story's pairs, the targets named, or those of the fights named. */
 function goalsFrom(options, tuning = {}) {
+  // The curve, and the targets of the same fights with it, so what holds them (other parties, the mission done first) is not broken on the way.
+  if (options.curve) {
+    const curve = withTuning(tuning, () => curveGoals({ fights: options.fights, done: options.done, orders: options.orders, party: options.parties?.[0], build: options.builds?.[0] }));
+    const fights = new Set(curve.map(goal => goal.fight));
+    return [...curve, ...targetGoals(TARGETS.filter(t => fights.has(t.fight)))];
+  }
   if (options.pairs) return pairGoals(pointsFrom(options, tuning, ['mixto']), { fights: options.fights, party: options.parties?.[0] });
   if (options.targets) return targetGoals(options.targets.map(id => TARGETS.find(t => t.id === id) ?? (() => { throw new Error(`Objetivo desconocido: ${id}. Están en just fight-sim list.`); })()));
   if (options.fights) {
@@ -318,6 +330,31 @@ async function command(options, play) {
     if (deciding.length) say(`\nLo que decide combates (sin ello se pierden 30 puntos o más):\n${deciding.map(l => `- ${l.name}: ${l.decides.slice(0, 4).map(d => `${d.fight} con ${d.party} (${points100(-d.drop)})`).join('; ')}${l.decides.length > 4 ? `; y ${l.decides.length - 4} más` : ''}`).join('\n')}`);
     say(`\nCombates de la tabla, con todo: ${found.base.filter(r => r.win >= .99 && (r.hpLeftWon ?? 0) >= .85).length} de ${found.base.length} son triviales (se ganan siempre con más del 85 % de PV) y ${found.base.filter(r => r.win <= .2).length} casi nunca se ganan.`);
     say('«sin ella»: lo que cambian las victorias, las rondas de una victoria y los PV al ganar si se prohíbe, de media donde se usa.\nLos bots no son personas: una habilidad que «no se usa» puede sobrar, o puede que el bot no sepa valorarla (worth, src/battle-sim.ts).');
+  } else if (options.command === 'curve') {
+    // What each fight should be as the party grows (src/balance.ts CURVE): played once, a line per fight and point.
+    const tuning = tunings(options.tune)[0], runs = options.runs ?? 120;
+    const goals = withTuning(tuning, () => curveGoals({ fights: options.fights, done: options.done, orders: options.orders, party: options.parties?.[0], build: options.builds?.[0] }));
+    const rows = await play(goals.map(goal => ({ setup: goal.setup, runs, seed: shared.seed, tuning })));
+    const lines = [], held = goals.map((goal, i) => miss(goal.want, rows[i]) < .1);
+    for (const [i, goal] of goals.entries()) {
+      let line = lines.find(l => l.fight === goal.fight && l.at === goal.at);
+      if (!line) lines.push(line = { fight: goal.fight, at: goal.at, kind: goal.kind, behind: goal.behind, held: true, wrong: [] });
+      line[goal.policy] = rows[i];
+      if (!held[i]) { line.held = false; line.wrong.push(goal.policy === 'smart' ? (rows[i].win < (goal.want.win?.[0] ?? 0) ? 'duro' : rows[i].win > (goal.want.win?.[1] ?? 1) ? 'pasa' : (rows[i].hpLeftWon ?? 0) > (goal.want.hpLeftWon?.[1] ?? 1) ? 'paseo' : 'justo') : 'sin pensar gana'); }
+    }
+    const KIND = { side: 'misión', short: 'faltan', asked: 'las que pide', more: 'más' };
+    say(`La curva del progreso${options.done ? `, con ${options.done.join(', ')} hecha${options.done.length > 1 ? 's' : ''}` : ''} · ${runs} combates por fila · ${tuningLabel(tuning) || 'los números del juego'}`);
+    say(`Misión: pensando gana ≥ ${percent(CURVE.side.smart).trim()} con ${percent(CURVE.side.hp[0]).trim()}–${percent(CURVE.side.hp[1]).trim()} de PV (+${percent(CURVE.side.power).trim()} por misión detrás), sin pensar ≤ ${percent(CURVE.side.casual).trim()}. Castillo y noche: con menos de las que piden, pensando ≤ ${percent(CURVE.gate.short).trim()}; con las que piden, ≥ ${percent(CURVE.gate.asked.smart).trim()}; con más, ≥ ${percent(CURVE.gate.more.smart).trim()}.`);
+    say(`\n${cell('combate', 24)}${cell('punto', 40)}${cell('detrás', 18)}${cell('pensando', 10)}${cell('PV', 6)}${cell('rondas', 8)}${cell('sin pensar', 12)}`);
+    for (const l of lines) {
+      const s = l.smart, c = l.casual;
+      say(`${cell(l.fight, 24)}${cell(l.at, 40)}${cell(`${l.behind} · ${KIND[l.kind]}`, 18)}${cell(s ? percent(s.win).trim() : '–', 10)}${cell(s?.hpLeftWon == null ? '–' : percent(s.hpLeftWon).trim(), 6)}${cell(s?.roundsWon ?? '–', 8)}${cell(c ? percent(c.win).trim() : '–', 12)}${l.held ? 'ok' : `MAL: ${l.wrong.join(', ')}`}`);
+    }
+    const bad = lines.filter(l => !l.held);
+    say(`\nCumplen ${lines.length - bad.length} de ${lines.length}.${bad.length ? ` «duro»: pensando no gana; «pasa»: con menos misiones de las que pide, se gana; «paseo»: se gana con demasiado PV; «sin pensar gana»: no pregunta nada.` : ''}`);
+    say('Para buscar los números que la cumplen: just fight-sim optimize --curve [--done …] --fight <combate> --auto 4');
+    report = { version: SIM_VERSION, runs, seed: shared.seed, tuning, curve: CURVE, lines };
+
   } else if (options.command === 'progress') {
     const runs = options.runs ?? 100, tried = options.tune ? tunings(options.tune) : [0, 1, 2].map(scale => ({ 'growth.rules.pct': Math.round(scale * tunables()['growth.rules.pct'] * 1000) / 1000 }));
     const now = tunables(), variants = [];
@@ -371,7 +408,7 @@ async function command(options, play) {
     say(`\nNúmeros que ningún objetivo lee, por libro (${Object.values(found.numbers).flat().length} de ${Object.keys(tunables()).length}):`);
     for (const [book, paths] of Object.entries(found.numbers)) say(`  ${cell(book, 12)}${cell(paths.length, 5)}${paths.slice(0, 6).join(', ')}${paths.length > 6 ? ', …' : ''}`);
     say('\nLo que no sale aquí está sujeto por algún objetivo. Lo que sale, la pasada final no lo nota si se rompe: --json lo da entero.');
-  } else throw new Error(`Orden desconocida: ${options.command}. Usa run, check, story, report, levers, optimize, skills, progress, coverage, list o help.`);
+  } else throw new Error(`Orden desconocida: ${options.command}. Usa run, check, story, report, levers, optimize, skills, progress, curve, coverage, list o help.`);
   await jevStep(options, report, say);
   if (options.out) {
     await mkdir(dirname(resolve(options.out)), { recursive: true });

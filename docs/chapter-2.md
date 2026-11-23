@@ -222,12 +222,15 @@ vea, lo saben todos."*, *"Esa no corre. Tampoco para."*… He also sizes them up
 show: whose floor they come from, and by the friends' ánimas whether to stop (`sizeUp`).
 
 **Caught.** The group of the pupil that touched Gerard is the fight, with the castle's own rules
-(`night-guard` with a `NightFight`), stronger out here the fewer friends and levels the party has
-(`nightMight`: PV and blows times its might, never weaker than inside): on the first nights it
-cannot be won, with the friends' ánimas and grown levels it can. Escaping is allowed, and the group
+(`night-guard` with a `NightFight`), each pupil with its own moves and a quarter stronger out here
+than inside whatever the party has (`nightMight`: PV and blows times 1.25; since 2026-11-22 it no
+longer softens with friends and levels, so the night measures the party: [fight-sim.md](fight-sim.md)
+§ The yardstick and the side missions). With no friend's ánima it cannot be won; with Nuria's alone
+La Delegada's group cannot; with one friend more it can, as Aitor says when he sizes them up; with
+all of them it is a place to farm a little. Escaping is allowed, and the group
 stands still a few seconds after it. Beaten, they wake at 11:00 the next day (*"Las once…"*);
-winning melts the group and the hunt goes on. Its numbers are provisional (book `night`): Aitor
-balances the night later, and El Empollón and La Chivata's group is still won from the first night.
+winning melts the group and the hunt goes on. Until 2026-11-22 the pupils out here only shoved
+(their castle moves were never called at night).
 
 How hard it is goes with her spread (`NIGHT_TIERS`, by `stage`):
 
@@ -389,8 +392,10 @@ thorns, the storm, the eyes, and last the tall towers guarding the keep. The cas
 network map loses towers and shrinks with it.
 
 Guard strength is a pure function of the ánimas the party holds (`palaceGuards` in
-`src/battle.ts`). Provisional numbers: three guardians with 220 PV and 30-point hits with no
-ánimas, losing a guardian every two ánimas and 30 PV and 3 points per ánima.
+`src/battle.ts`, `GUARDS`). Three guardians with 250 PV and 31-point hits with no ánimas, losing a
+guardian every three ánimas and 30 PV and 3 points per ánima: with Nuria's alone they cannot be
+beaten, with hers and one mission's they are a fair fight that asks for blows on all three
+([fight-sim.md](fight-sim.md) § The castle's first floor with Nuria and Emilie).
 
 ## Friends and ánimas (block 3)
 

@@ -194,6 +194,19 @@ test('Aurelià: whoever holds on through the Expulsión stays in the room', () =
   assert.equal(by(s, 'aitor').castle.expelled, CASTLE.expulsado);
 });
 
+test('Aurelià: on the last straight Expulsión and Récord take turns; the run-up is not a move of its own', () => {
+  const s = fight('aurelia'), boss = of(s, 'aurelia');
+  assert.ok(stageMoment(s, 'aurelia-recta'));
+  const said = [];
+  for (let n = 0; n < 7; n++) {
+    for (const a of s.allies) { a.hp = a.maxHp; delete a.castle; }
+    foeTurn(s, boss, 'gerard');
+    said.push(boss.intent?.ability ?? '-');
+  }
+  // Announced: Expulsión, then Récord (charged, then run), then Expulsión again, and so on.
+  assert.deepEqual(said, ['expulsion', 'record', 'record', 'expulsion', 'record', 'record', 'expulsion']);
+});
+
 test('Dirección: each says what she will do; struck with what undoes her folder she loses it, once until they trade', () => {
   const s = fight('direccion'), [mar, montse, pilar] = s.foes;
   assert.deepEqual(s.foes.map(d => d.intent.ability), ['expediente', 'horario', 'circular'], 'on their plates from the first round');

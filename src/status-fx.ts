@@ -15,7 +15,7 @@ import { ensureFluidKinds } from './fluid-fx.ts';
 export type StatusLookId = 'quemado' | 'combustion' | 'virus' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido' | 'cargado';
 export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta' | 'plasma';
 /** How a status moves whoever carries it (battle-scene plays it). */
-export type StatusMotion = 'freeze' | 'twitch' | 'sway';
+export type StatusMotion = 'freeze' | 'twitch' | 'sway' | 'grope';
 
 /** A stream of one kind off the fighter, so many a second at each level. */
 interface Stream {
@@ -104,10 +104,16 @@ export const STATUS_KINDS: Record<string, GpuKind> = {
     drag: 8, gravity: 30, collide: true, bounce: 0, friction: 1, settle: true, flat: true, size: [.045, .105], sizeJitter: .7, shape: 'dot', glass: .28, core: 0,
     colours: ['#e01a28', '#8a0d16', '#3a0709'], intensity: [1.45, 1, .7], middle: .25, fadeOut: .3, additive: .02, opacity: .92, life: [8, 13],
   },
-  // Smoke that blinds: dark haze that clings round their head, turning.
+  // Smoke that blinds: dark haze that clings round their head, turning. Smoke grey, never possession's violet.
   smog: {
-    drag: 1.8, gravity: -.1, curl: .8, response: 1, size: [.07, .2], sizeJitter: .6, shape: 'glow',
-    colours: ['#c4bccc', '#8e8798', '#5e5866'], intensity: [1.1, .95, .85], middle: .4, fadeIn: .25, fadeOut: .5, additive: .15, opacity: .2,
+    drag: 1.8, gravity: -.1, curl: .8, response: 1, size: [.09, .24], sizeJitter: .6, shape: 'glow', blur: [.6, 1.1], core: 0,
+    colours: ['#bcc3c1', '#7f8a88', '#4b5452'], intensity: [.95, .85, .75], middle: .4, fadeIn: .2, fadeOut: .5, additive: .05, opacity: .38,
+  },
+  // Cegado's blindfold: a thick, nearly opaque band of soot wound round their eyes, which the field keeps turning. Its grey
+  // leans cool and a touch green so that under a fight's warm, pink light it still reads as smoke, never as possession's violet.
+  soot: {
+    drag: 3.2, gravity: 0, curl: .35, response: 1, size: [.11, .18], sizeJitter: .45, shape: 'glow', blur: [.5, .9], core: 0,
+    colours: ['#56605f', '#323a3a', '#1b2020'], intensity: [.8, .7, .6], middle: .5, fadeIn: .25, fadeOut: .45, additive: 0, opacity: .7,
   },
 }
 
@@ -174,11 +180,17 @@ export const STATUS_LOOKS: Record<StatusLookId, StatusLook> = {
     ] },
     tint: [.035, .004, .004],
   },
+  // It has no levels (battle.ts `blind`): the same thick smoke whatever put it there.
   cegado: {
     name: 'Cegado', family: 'físico', seconds: 10,
-    shows: 'Humo oscuro que se le pega a la cabeza y le da vueltas sin dejarle ver.',
-    streams: [{ kind: 'smog', rate: [45, 75, 110], from: 'head', spread: .25, speed: .2, life: [1.4, 2.2] }],
-    field: { height: .85, swirl: 5, pull: 3.5, lift: .2, turbulence: .4, reach: .5 },
+    shows: 'Una venda de hollín que le da vueltas a la altura de los ojos y humo gris que se le escapa por arriba; busca a tientas, girando la cabeza a un lado y a otro. Sus golpes físicos fallan.',
+    streams: [
+      { kind: 'soot', rate: [90, 90, 90], from: 'head', spread: .2, speed: .12, life: [1.1, 1.6] },
+      { kind: 'smog', rate: [60, 60, 60], from: 'head', spread: .3, up: .35, speed: .18, life: [1.4, 2.2] },
+    ],
+    field: { height: .85, swirl: 9, pull: 6, lift: .05, turbulence: .25, reach: .4 },
+    pulse: { every: 1.6, streams: [{ kind: 'smog', count: [26, 26, 26], rate: [0, 0, 0], from: 'head', spread: .35, up: .6, speed: .35, life: [1, 1.6] }] },
+    motion: 'grope',
   },
   paralizado: {
     name: 'Paralizado', family: 'físico', seconds: 8,
@@ -399,7 +411,7 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
     /** How their statuses move them: frozen stands still, paralysed twitches, poisoned and dizzy sway. */
     motion(id: string): StatusMotion | undefined {
       const looks = (on.get(id) ?? []).filter(s => !s.ending).map(s => STATUS_LOOKS[s.look].motion);
-      return looks.includes('freeze') ? 'freeze' : looks.includes('twitch') ? 'twitch' : looks.includes('sway') ? 'sway' : undefined;
+      return looks.includes('freeze') ? 'freeze' : looks.includes('twitch') ? 'twitch' : looks.includes('sway') ? 'sway' : looks.includes('grope') ? 'grope' : undefined;
     },
     /**
      * A cut opens on `id` (a blow that adds Sangrado): blood flung along the blow from where it landed,
@@ -424,6 +436,19 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
       const n = Math.min(10, bled);
       g.burst('bloodspray', { at, count: 24 + n * 12, spread: .1, velocity: { x: dir.x * 3.8, y: 2.3, z: dir.z * 3.8 }, cone: .85, speed: 2, life: [.7, 1.3], size: 1.2 });
       g.burst('blood', { at, count: 10 + n * 6, shape: 'surface', fighter: f.index, above: .25, outward: 1.6, up: .9, speed: .9, life: [1.2, 2.2] });
+    },
+    /**
+     * Cegado: `id`'s physical blow found nothing (battle.ts `misses`). The smoke round its head is torn off along the
+     * swing (`dir`) and goes on past `at`, where the blow went by whoever it was meant for.
+     */
+    miss(id: string, at: { x: number; y: number; z: number }, dir: { x: number; z: number }) {
+      const f = find(id), g = gpu();
+      if (!f || !g) return;
+      ensureKinds();
+      const body = bodyFor(f), head = { x: f.feet.x, y: f.feet.y + body.height * .85, z: f.feet.z };
+      g.burst('soot', { at: head, count: 50, spread: .25, velocity: { x: dir.x * 3, y: .1, z: dir.z * 3 }, speed: .5, cone: .5, life: [.6, 1.1] });
+      g.burst('smog', { at, count: 90, spread: .3, velocity: { x: dir.x * 3.4, y: .25, z: dir.z * 3.4 }, speed: .6, cone: .45, life: [.8, 1.4] });
+      g.burst('mote', { at, count: 16, spread: .2, velocity: { x: dir.x * 5, y: .3, z: dir.z * 5 }, speed: .8, cone: .3, life: [.25, .45], colour: '#e4e7eb' });
     },
     /** An Atacar with an element lands on `id`: a little burst of it, no status (docs/combat.md § Reacciones entre elementos). */
     touch(element: 'agua' | 'fuego' | 'electrico', id: string) {

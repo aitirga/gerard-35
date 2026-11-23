@@ -1,0 +1,77 @@
+{
+  "title": "Cegado: sus golpes físicos suelen fallar",
+  "description": "docs/combat.md § Reacciones entre elementos (Cegado, Aitor 2026-11-23). Cegado ya no tiene niveles ni se acumula: mientras dura, los golpes físicos del enemigo fallan 2 de cada 3 veces en el humo y 1 de cada 3 tras el fogonazo de Explosión (CEGADO). Dos perros cegados en el probador de combates (Gerard en Matemágico, Aitor en Papagato, sin perder PV): la venda de hollín que les da vueltas en los ojos, cómo buscan a tientas, su chip sin nivel y, al atacar, el golpe que pasa de largo con «Falla · No ve nada». Ejecutar con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.g = window.gerard.game; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foes = () => g.fighterIds().filter(f => !f.party).map(f => f.id); window.closeUp = (id, h = 1.2) => { const p = g.fighterAt(id); g.frame({ x: p.x, y: p.y + .5, z: p.z }, h); }; window.blindAll = () => ui.tweak(s => s.foes.forEach(f => { f.timed = { ...f.timed, cegado: { level: 1, left: 600, next: 10 } }; }));"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "blindAll()"
+    },
+    {
+      "shot": "cegados",
+      "delay": 2500,
+      "caption": "Los dos perros cegados: la venda de hollín a la altura de los ojos, humo gris que se escapa por arriba, y su chip de Cegado sin nivel, solo con su reloj"
+    },
+    {
+      "eval": "document.querySelector('#battle').style.visibility = 'hidden'; closeUp(foes()[0])"
+    },
+    {
+      "record": "a-tientas",
+      "seconds": 3,
+      "warmup": 1,
+      "caption": "De cerca: la venda le da vueltas sin parar y él gira la cabeza a un lado y a otro, buscando"
+    },
+    {
+      "eval": "document.querySelector('#battle').style.visibility = ''; g.frame()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 60000
+    },
+    {
+      "eval": "cmd('defend')"
+    },
+    {
+      "until": "ui.fight.phase === 'enemy'",
+      "timeout": 60000
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-miss]')",
+      "timeout": 30000
+    },
+    {
+      "shot": "falla-numero",
+      "delay": 60,
+      "caption": "El primero falla: en lugar del número, «Falla · No ve nada» en el gris del humo, barrido hacia un lado, y el golpe que pasa de largo"
+    },
+    {
+      "eval": "const p = g.fighterAt('gerard'), q = g.fighterAt('aitor'); g.frame({ x: (p.x + q.x) / 2, y: p.y + .6, z: (p.z + q.z) / 2 }, 2.6)"
+    },
+    {
+      "record": "falla",
+      "seconds": 3.5,
+      "caption": "El segundo perro, a ciegas: se lanza contra quien cree tener delante y pasa de largo por un lado, arrastrando el humo; nadie encaja el golpe"
+    },
+    {
+      "eval": "g.frame()"
+    }
+  ]
+}

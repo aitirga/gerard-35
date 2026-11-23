@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater, ORBITAL_BLIND } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -347,6 +347,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * with the definitiva's name under it. Once for each time it goes off, whatever shows it first.
    */
   const livesShown = new WeakSet<object>();
+  /** Cegado: a blinded foe's physical blow went past whoever it was meant for. Smoke grey, over them, where its number would be. */
+  const missPop = (id: string, dx = 0) => pop(id, 'Falla', 'status', 'No ve nada', 'cegado', dx)?.setAttribute('data-miss', '');
   function livesPop(id: string, saved: { blow: number; amount: number }) {
     if (livesShown.has(saved)) return;
     livesShown.add(saved);
@@ -417,6 +419,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
         : id === 'hundido' ? { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' }
         : id === 'congelado' ? { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
+        // Cegado has no level: what it does, and its clock.
+        : id === 'cegado' ? { id, name: `${TIMED[id].name}: sus golpes físicos suelen fallar`, mark: '', timed: true, lasts: `${Math.ceil(on.left)} s` }
         : { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }),
     ] : [];
   }
@@ -534,10 +538,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     ];
     onPlates.set(c.id, { guides: [...new Set(ids.filter(isGuide))], who: c.name });
   }
-  /** The card on screen: which, and what had the focus before it. */
-  let guideOpen: { id: GuideId; focus: HTMLElement | null } | undefined;
-  /** A card waits for a quiet moment: nothing playing, nobody being named, the fight not over. */
-  function guideReady() {
   /**
    * Something the party has just found or learned (a dual, an ánima, a level's skill) holds the
    * screen until either player confirms (A, Enter, Space or a click), never on a timer; a press
@@ -563,6 +563,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     callbacks.sound('ui-back');
     holdOn.done();
   }
+  /** The card on screen: which, and what had the focus before it. */
+  let guideOpen: { id: GuideId; focus: HTMLElement | null } | undefined;
+  /** A card waits for a quiet moment: nothing playing, nobody being named, the fight not over. */
+  function guideReady() {
     return !!state && !!callbacks.guides && !guideOpen && !holdOn && !busy && !finale && !heldChoice && !['won', 'lost', 'escaped'].includes(state.phase)
       && !root.dataset.entering && !root.dataset.beat && !root.dataset.announcing && !root.dataset.revealing && !callbacks.paused();
   }
@@ -809,6 +813,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const name = FOE_ABILITIES[item.ability].name, kind = item.element ? `${name} · ${ELEMENTS[item.element].name}` : vozNote(item.tone).physical ? `${name} · Físico` : name;
         const token = generation;
         item.hits.forEach((hit, i) => {
+          if (hit.missed) { missPop(hit.target, i * 16); return; }
           if (hit.amount) { pop(hit.target, `−${hit.amount}`, 'damage', hit.conducted && item.hits.length > 1 && i ? 'Conducción' : hit.angry ? `${kind} · Enfado${hit.guarded ? ' · Protegido' : ''}` : hit.guarded ? `${kind} · Protegido` : kind, undefined, i * 16); callbacks.pulse(hit.target); }
           // What it left on them, a beat after the number, in its colour.
           const left = hit.wet ? { id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: '' } : hit.burn ? { id: 'quemado', text: `¡${TIMED.quemado.name}${hit.burn > 1 ? ` ${roman(hit.burn)}` : ''}!`, detail: hit.burn > 1 ? 'El fuego sube' : '' }
@@ -1334,12 +1339,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Whatever the last victory screen had going stops: a new one, or the fight closing. */
   function resetRewards() {
     rewardToken++; cancelAnimationFrame(rewardFrame); clearTimeout(rewardTimer); clearTimeout(revealTimer);
+    if (revealing) holdOn?.done();
     filling = false; revealing = false; reveals = [];
     const result = get('.battle-result'), band = get('.skill-reveal');
     result.removeAttribute('data-holding'); delete result.dataset.released; delete result.dataset.revealing;
     band.hidden = true; delete band.dataset.leaving;
   }
-    if (revealing) holdOn?.done();
   function settleRewards(token: number) {
     if (token !== rewardToken || filling || revealing || !holdingRewards()) return;
     clearTimeout(rewardTimer);
@@ -2368,6 +2373,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (effect.frozen) { /* its stamps below */ }
       // The bit dome stopped the whole blow: nothing reached them, the dome's own pop says what it took (below).
       else if (effect.kind === 'enemy' && effect.bits?.took && !effect.amount && !effect.hits?.some(h => h.amount > 0)) { /* the dome's pop */ }
+      // Cegado: a blinded foe's physical blow went past everyone it was meant for; whatever did land shows its number.
+      else if (effect.kind === 'enemy' && effect.missed?.length) {
+        const missed = new Set(effect.missed);
+        for (const id of missed) missPop(id);
+        if (effect.target && !missed.has(effect.target) && effect.amount) hurtPop(effect.target, effect.amount, label);
+        effect.hits?.forEach(h => { if (!missed.has(h.target) && h.amount) pop(h.target, `−${h.amount}`, 'damage', label); });
+        effect.splash?.forEach(h => { if (!missed.has(h.target) && h.amount) pop(h.target, `−${h.amount}`, 'damage', ''); });
+      }
       else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0), 'crit' in rain[0] && !!rain[0].crit);
       else if (effect.hits) effect.hits.forEach(h => h.target === effect.lives?.target ? livesPop(h.target, effect.lives) : h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
       else if (effect.target && target) {
@@ -2400,7 +2413,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.awoken) { const awoken = effect.awoken; setTimeout(() => { if (token === generation) ultiAwoke(awoken); }, 900); }
       if (effect.detonation === 'bombardeo-orbital') {
         for (const h of effect.hits ?? []) if (h.amount && state!.foes.find(f => f.id === h.target)?.timed?.cegado) {
-          landed.push({ target: h.target, id: 'cegado', text: '¡Cegado II!', detail: '20 s' });
+          landed.push({ target: h.target, id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: `${ORBITAL_BLIND} s` });
         }
       }
       if (effect.relay) landed.push({ target: effect.relay.target, id: 'sangrado', text: '¡Relevo!', detail: `Sangrado ×${effect.relay.stacks}` });
@@ -2445,7 +2458,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
           ? { target: id, id: 'envenenado', text: `¡${TIMED.envenenado.name}${(state.foes.find(f => f.id === id)?.timed?.envenenado?.level ?? 1) > 1 ? ` ${roman(state.foes.find(f => f.id === id)!.timed!.envenenado!.level)}` : ''}!`, detail: 'El agua corre el polvo' }
           : { target: id, id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' });
       } else if (reaction && effect.target && !effect.hits?.some(h => h.smoked)) {
-        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' }, plasma: { id: 'plasma', text: '¡Plasma!', detail: `${TIMED.quemado.name} ${roman(reaction.level ?? 1)}, de golpe` }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'El agua corre el polvo' }, cristal: { id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' } }[reaction.id];
+        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' }, plasma: { id: 'plasma', text: '¡Plasma!', detail: `${TIMED.quemado.name} ${roman(reaction.level ?? 1)}, de golpe` }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'El agua corre el polvo' }, cristal: { id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' } }[reaction.id];
         landed.push({ target: effect.target, ...says });
         reaction.hits?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 140 + i * 90));
       }
@@ -2501,7 +2514,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Vulcano: the volcano under each of them.
       // The newer duals: what each leaves, named over whoever carries it.
       if (effect.left) for (const id of effect.left.targets) landed.push({ target: id, id: effect.left.id, text: `¡${TIMED[effect.left.id].name}!`, detail: DUAL_LEFT[effect.left.id] ?? `${TIMED[effect.left.id].seconds} s` });
-      if (effect.vapour) for (const id of effect.vapour) landed.push({ target: id, id: 'cegado', text: 'Vapor', detail: `${TIMED.cegado.name} ${roman(state!.foes.find(f => f.id === id)?.timed?.cegado?.level ?? 1)}` });
+      if (effect.vapour) for (const id of effect.vapour) landed.push({ target: id, id: 'cegado', text: 'Vapor', detail: TIMED.cegado.name });
       if (effect.mirrored) landed.push({ target: effect.mirrored.target, id: 'bits', text: `Caleidoscopio −${effect.mirrored.amount}`, detail: 'Devuelve el golpe' });
       if (effect.fooled) landed.push({ target: effect.fooled, id: 'confusion', text: '¡Trampantojo!', detail: `${TIMED.confusion.name} · 20 s` });
       if (effect.dual?.id === 'suceso-seguro') for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'racha', text: 'Suceso seguro', detail: 'Crítico seguro' });
@@ -2673,6 +2686,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (after) callbacks.fallen?.(after);
     // A card left open goes with the fight, unread: it shows again next time.
     guideOpen = undefined; delete root.dataset.guide; root.querySelector<HTMLElement>('.guide-card')!.hidden = true; onPlates.clear();
+    holdOn?.done();
     generation++; state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
     outside().forEach(el => { el.inert = false; }); delete hud.dataset.battle;
     const ended = callbacks.change(undefined);
@@ -2684,9 +2698,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!target) return;
     // A guide card holds the fight: only its own button answers.
     if (guideOpen) { if (target.matches('.guide-card-ok')) closeGuide(); return; }
+    // Something new holds the screen: any click goes on (`holdUntilConfirm`).
+    if (holdOn) { releaseHold(); return; }
     // A level reached holds the way out until it has all shown (`settleRewards`).
     if (target.closest('.battle-result')) { if (holdingRewards()) return; const after = target.dataset.after; close(after === 'retry' || after === 'rewind' ? after : undefined); return; }
-    holdOn?.done();
     if (target.matches('.summary-key')) { toggleSummary(); return; }
     // A move ready ahead in a partner's dock: only that partner's player picks it (the mouse is player 1).
     const queueDock = target.closest<HTMLElement>('.queue-panel, .queue-plate')?.closest<HTMLElement>('.battle-dock');
@@ -2698,8 +2713,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       return;
     }
     // Mouse and keyboard belong to player 1, a controller's confirm to its player (`control`): each only in their own dock.
-    // Something new holds the screen: any click goes on (`holdUntilConfirm`).
-    if (holdOn) { releaseHold(); return; }
     if (!split()) { if (turnDriver() !== pointerPlayer || busy) return; clickIn(target); return; }
     // A fighter's card stands in their player's dock, yet anyone may aim at it (a cure for the partner):
     // only the dock's own commands are its player's.
@@ -2767,6 +2780,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (!event.repeat && ['Enter', ' ', 'Escape'].includes(event.key)) closeGuide();
       return;
     }
+    if (holdOn) {
+      event.preventDefault(); event.stopPropagation();
+      if (!event.repeat && ['Enter', ' '].includes(event.key)) releaseHold();
+      return;
+    }
     // Aitor held, played from the keyboard (alone, or with no second pad): its arrows and Enter.
     if (heldChoice && heldDriver() === 1) {
       const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm' } as Record<string, ControlAction>)[event.key];
@@ -2780,11 +2798,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!over && split()) { withPlayer(1, () => { if (!locked()) keyIn(event); }); event.preventDefault(); event.stopPropagation(); return; }
     if (!over && (turnDriver() !== 1 || busy)) { event.preventDefault(); event.stopPropagation(); return; }
     keyIn(event);
-    if (holdOn) {
-      event.preventDefault(); event.stopPropagation();
-      if (!event.repeat && ['Enter', ' '].includes(event.key)) releaseHold();
-      return;
-    }
   }
   // ——— Aitor held: player 2 plays her side ————————————————————————————————————————————
   /** Whom the Queen holds, if this foe is her and her turn is theirs to play now (not lost to the artilugio's first note). */
@@ -3073,6 +3086,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (finale) return;
       // A guide card holds the fight: either player's confirm or back closes it.
       if (guideOpen) { if (action === 'confirm' || action === 'cancel') closeGuide(); return; }
+      if (holdOn) { if (action === 'confirm') releaseHold(); return; }
       if (heldChoice) { if (player === heldDriver() && action !== 'prev' && action !== 'next') heldControl(action); return; }
       if (action === 'cancel' && summaryOpen) { toggleSummary(false); return; }
       const ended = ['won', 'lost', 'escaped'].includes(state.phase);
@@ -3086,7 +3100,6 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const press = () => {
         // L / R: their fighter's previous or next ánima.
         if (action === 'prev' || action === 'next') changeAnima(action === 'prev' ? -1 : 1);
-      if (holdOn) { if (action === 'confirm') releaseHold(); return; }
         else if (action === 'cancel') back();
         else if (action === 'confirm') { const button = cursor(); if (button && !button.disabled && !button.closest('[hidden], [inert]')) { pointerPlayer = player; try { button.click(); } finally { pointerPlayer = 1; } } }
         else if (action !== 'menu') navigate(action);

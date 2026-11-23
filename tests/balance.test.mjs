@@ -6,7 +6,7 @@ import { CASTLE_UNLOCKS } from '../src/castle.ts';
 import { FOE_XP, LEVEL_XP, XP_RULES, fightXp } from '../src/levels.ts';
 import { improvementOf, stageOf } from '../src/ecos.ts';
 import { CASTLE_STAGES, CASTLE_STAGE_IDS, DUO, MISSION_PARTY, STRETCHES, STRETCH_IDS, TARGETS, createFight, fullKit, playRuns, seeded, simulate, storyJobs, storyPoint, stretchOf, tallyRuns, tunables, watchReads, withTuning } from '../src/battle-sim.ts';
-import { coverage, inScope, inline, levers, miss, optimize, pairGoals, progressLines, readsOf, skillReport, targetGoals, variable } from '../src/balance.ts';
+import { CASTLE_ASKS, CURVE, coverage, curveGoals, inScope, inline, levers, miss, optimize, pairGoals, progressLines, readsOf, skillReport, targetGoals, variable } from '../src/balance.ts';
 import { parseArguments } from '../scripts/fight-sim.mjs';
 import { createPool } from '../scripts/fight-sim-pool.mjs';
 
@@ -105,8 +105,10 @@ test('an open mission\'s foes grow with the other missions\' ánimas behind it, 
   // Its `stat` for each of the others behind, rounded on the sum; its `pv`, a share of its PV for each.
   assert.deepEqual([['nuria', 'marta'], ['nuria', 'marta', 'emilie'], all].map(friends => fran(friends).stats.defensa - first.stats.defensa), [1, 2, 3].map(n => Math.round(rule.stat * n)));
   const four = c => [c.stats.fuerza, c.stats.magia, c.stats.defensa, c.stats.espiritu];
-  assert.deepEqual(four(last), four(first).map(value => value + Math.round(rule.stat * 3))); assert.equal(last.maxHp, Math.round(first.maxHp * (1 + rule.pv * 3))); assert.equal(last.stats.velocidad, first.stats.velocidad);
-  assert.deepEqual(four(fran(all, { 'foes.fran.stat': 0 })), four(first), 'the rule is a number: at 0 the fight is the one tuned');
+  // `hit` on top of Fuerza and Magia: harder, not longer (2026-11-22).
+  const more = Math.round(rule.stat * 3), harder = more + Math.round(rule.hit * 3);
+  assert.deepEqual(four(last), four(first).map((value, i) => value + (i < 2 ? harder : more))); assert.equal(last.maxHp, Math.round(first.maxHp * (1 + rule.pv * 3))); assert.equal(last.stats.velocidad, first.stats.velocidad);
+  assert.deepEqual(four(fran(all, { 'foes.fran.stat': 0, 'foes.fran.hit': 0 })), four(first), 'the rule is numbers: at 0 the fight is the one tuned');
   const longer = fran(all, { 'foes.fran.pv': .1 });
   assert.equal(longer.maxHp, Math.round(first.maxHp * 1.3)); assert.equal(longer.hp, longer.maxHp);
   // The fight screen and the whole-game simulator start their fights here, with the story's ánimas.
@@ -117,7 +119,7 @@ test('an open mission\'s foes grow with the other missions\' ánimas behind it, 
   for (const lamp of started(all).foes.filter(foe => foe.kind === 'lampara')) assert.equal(lamp.stats.defensa, started([]).foes.find(foe => foe.id === lamp.id).stats.defensa + Math.round(rule.stat * 3), 'everything in the fight grows alike');
   // Whoever joins later comes as grown as the rest: La Voz's second voice.
   const voz = createEncounter(slots, 'voz', { friends: all, random: seeded(1) }), plain = createEncounter(slots, 'voz', { random: seeded(1) });
-  assert.equal(voz.foes[0].stats.magia, plain.foes[0].stats.magia + Math.round(FIGHT_GROWTH.voz.stat * 3)); assert.equal(voz.grown, 3);
+  assert.equal(voz.foes[0].stats.magia, plain.foes[0].stats.magia + Math.round(FIGHT_GROWTH.voz.stat * 3) + Math.round(FIGHT_GROWTH.voz.hit * 3)); assert.equal(voz.grown, 3);
 });
 
 test('inside the castle a fight is worth three times its foes, and out at night half as much again', () => {
@@ -207,4 +209,24 @@ test('rows played in threads are the rows played here, piece by piece', async ()
   const jobs = [{ setup: onion, runs: 45, seed: 9, tuning: off }, { setup: { ...onion, fight: 'cebolla', party: DUO }, runs: 22, seed: 9, tuning: { ...off, 'foe.cebolla.pv': 90 } }];
   const pool = createPool(2);
   try { assert.deepEqual(await pool.play(jobs), await inline(jobs)); } finally { await pool.close(); }
+});
+
+test('the curve: side missions a challenge in any order, the castle and the night the yardstick of what the party has done', () => {
+  const all = curveGoals(), done = curveGoals({ done: ['emilie'] });
+  // Every side mission at none to all three of the others behind it; the missions done are never played again, and are behind every point.
+  for (const id of ['universidad', 'marta', 'luca']) assert.deepEqual([...new Set(done.filter(g => g.kind === 'side' && g.at.startsWith(`${id}:`)).map(g => g.behind))], [1, 2, 3], id);
+  assert.ok(!done.some(g => g.at.startsWith('emilie:')) && all.some(g => g.at === 'emilie:first'));
+  assert.ok(done.filter(g => g.kind === 'side').every(g => g.at.endsWith(':last') || g.at.split(':')[1].split('/')[0] === 'emilie'), 'the missions done first, in the order given');
+  // Doing more is felt, a little: the PV a side mission may leave rises with each mission behind it, and careless play loses at every point.
+  const hp = behind => all.find(g => g.kind === 'side' && g.behind === behind && g.policy === 'smart').want.hpLeftWon[1];
+  assert.ok(hp(3) > hp(0) && hp(3) - hp(0) <= 3 * CURVE.side.power + 1e-9);
+  assert.ok(all.filter(g => g.kind === 'side' && g.policy === 'casual').every(g => g.want.win[1] === CURVE.side.casual));
+  // The castle: one fewer side mission than a stretch asks for only its boss is asked to say no; the Queen's return (the melody) is off the curve.
+  const short = all.filter(g => g.kind === 'short');
+  assert.deepEqual([...new Set(short.map(g => g.fight))].sort(), ['aurelia', 'direccion', 'night-guard:delegada-1']);
+  assert.ok(short.filter(g => g.fight === 'aurelia').every(g => g.behind === CASTLE_ASKS['castillo-1'] - 1));
+  assert.ok(!all.some(g => g.fight === 'reina-vuelta'));
+  assert.ok(all.some(g => g.kind === 'more' && g.fight === 'aurelia' && g.at === 'castillo-1'), 'and with every mission, its power');
+  // The bench can move how each fight grows: it is the fight's own.
+  assert.ok(inScope('foes.fran.hit', 'fight') && !inScope('foes.growth.stat', 'fight') && !inScope('foes.blow.castle', 'fight'));
 });

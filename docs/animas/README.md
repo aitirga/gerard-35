@@ -526,7 +526,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Matemágico + Tecnópata | **Rayo solar** | Foc Binari + Rayo de energía | 1 · 1 | Built (2026-11-06): charges a turn, sweeps every foe with Quemado II as the next round starts |
 | Matemágico + Tecnópata | **Sutura de luz** | Cardioide + Rayo de sanación | node · 1 | Playable. Heals a wounded ally and halves the next damage this round |
 | Papagato + Dadista | **Relevo de sangre** | Zarpa en la llaga + Estrella fugaz | 3 · 3 | Playable. On a killing blow the wound passes to the enemy with the most remaining PV |
-| Tecnópata + Sincopante | **Bombardeo orbital** | Explosión + Ostinato | node · 1 | Playable. Three volleys on every foe next round, with Cegado II for 20 s |
+| Tecnópata + Sincopante | **Bombardeo orbital** | Explosión + Ostinato | node · 1 | Playable. Three volleys on every foe next round, with Cegado for 20 s |
 | Matemágico + Colorista | **Reserva de color** | Foc Binari + Brochazo | 1 · 1 | Playable. A fuse of powder on a foe explodes after its turn or when it falls (its text still says paint) |
 | Matemágico + Tecnópata | **Sobrecalentamiento** | Foc Binari + Escudo de bits | 1 · node | Built (2026-11-20; redone 2026-11-21 as a plain dual). A dome of fire over the party swells and bursts: its own bits fly at each foe and go off on it (Quemado II); no shield is left |
 | Matemágico + Sincopante | **Vulcano** (dúo mayor) | Foc Binari + Ostinato | 1 · 1, and its node | Built (2026-11-20). A volcano of particles for 20 s that raises every foe's fire each 5 s |
@@ -841,8 +841,10 @@ over Matemágico's wearer.
 
 ### Cegado (blinded, timed)
 
-- A **timed** status that hurts nobody: 10 s on the fight's clock, its level the level of the fire it
-  came from. The foe's blows land at 70 % / 50 % / 30 % (`REACTION_RULES`, `sighted`), whatever they are.
+- A **timed** status that hurts nobody: 10 s on the fight's clock, with **no levels** and no stacking
+  (Aitor, 2026-11-23): laid again, its clock only starts over (`blind`). While it lasts the foe's physical
+  blows **miss whole two times in three** in smoke and one in three after Explosión's flash (`CEGADO`,
+  `misses`); its magic still lands.
 - Left by Humo (Atacar · Agua on Quemado). Atacar · Eléctrico spends it (Tormenta). Details in
   `docs/combat.md` § Reacciones entre elementos.
 
@@ -854,7 +856,7 @@ Atacar with water once Capilaridad is bought.
 
 | On Mojado | Reaction | What happens |
 | --- | --- | --- |
-| Fire (Atacar · Fuego, Foc Binari, Pirámide ígnea) | **Vapor** | The water goes and leaves Cegado I; a wet foe does not catch fire |
+| Fire (Atacar · Fuego, Foc Binari, Pirámide ígnea) | **Vapor** | The water goes and leaves Cegado; a wet foe does not catch fire |
 | Electricity (Atacar · Eléctrico, Punto eléctrico) | **Conducción** | Mojado goes from every wet foe and each takes magic damage (20, `REACTION_RULES.conduct`) |
 
 Water on a burning foe is still Humo (it puts the fire out, it does not wet). By kind of blow,
@@ -883,8 +885,7 @@ in the effects lab (`src/freatica-fx.ts`); **the rule is built** (2026-11-21, `C
 - **A water's level is the level of what happens in it**: the current (§ Corriente) and the
   steam (below) are of level I, II or III with it, read at the moment they act.
 - **Vapor**: any fire on a foe with water does not light it (as on any wet foe). Its water
-  **loses its top mark** and **that foe is Cegado at the level its water had** (its blows at
-  70 / 50 / 30 %), for Cegado's time. Electricity on it afterwards is Tormenta, as always.
+  **loses its top mark** and **that foe is Cegado** (its physical blows miss), for Cegado's time. Electricity on it afterwards is Tormenta, as always.
 - **At the third mark** the foe is Hundido (§ Hundido). Freática's definitiva turns the water to
   ice (§ Congelado).
 - **Who holds it**: the water stands while whoever raised it stands, whatever ánima they wear

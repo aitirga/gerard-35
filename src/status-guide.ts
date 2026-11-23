@@ -10,7 +10,7 @@
  * A card's version (`guideVersion`) is its words and the numbers it is built from (`rule`): when a
  * commit changes either, the card shows again the next time its status does.
  */
-import { BITS, BLEED_BONUS, BOMBA, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
+import { BITS, BLEED_BONUS, BOMBA, CEGADO, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
 import type { IconId } from './status-icons.ts';
 
 /** Where a card stands in «Cómo jugar»: what weighs on whoever carries it, what helps them, and the fight's own signs. */
@@ -71,8 +71,8 @@ export const GUIDES = {
     text: `El fuego en su nivel ${roman(COMBUSTION.level)}, más alto de lo que llega solo. Quema más que nunca, y un golpe físico lo hace estallar: daño de fuego a todos los enemigos, y el fuego prende en los demás.`,
   },
   cegado: {
-    name: 'Cegado', group: 'contra', icon: 'cegado', colour: '#c7ccd4', rule: [TIMED.cegado, REACTION_RULES.blind1, REACTION_RULES.blind2, REACTION_RULES.blind3],
-    text: `No ve bien: sus golpes pegan menos mientras dura, al ${percent(REACTION_RULES.blind1)} en el nivel I, al ${percent(REACTION_RULES.blind2)} en el II y al ${percent(REACTION_RULES.blind3)} en el III. ${lasts('cegado')}`,
+    name: 'Cegado', group: 'contra', icon: 'cegado', colour: '#c7ccd4', rule: [TIMED.cegado, CEGADO],
+    text: `No ve nada: mientras dura, sus golpes físicos suelen fallar, ${Math.round(CEGADO.smoke * 3)} de cada 3 en el humo y ${Math.round(CEGADO.flash * 3)} de cada 3 tras el fogonazo de Explosión. La magia sí la acierta. No se acumula: si vuelve a cegarse, su reloj empieza de nuevo. ${lasts('cegado')}`,
   },
   confusion: {
     name: 'Confusión', group: 'contra', icon: 'confusion', colour: '#4fe0ff', rule: TIMED.confusion,

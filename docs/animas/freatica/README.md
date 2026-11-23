@@ -118,7 +118,7 @@ The rules themselves are shared and live in [`../README.md`](../README.md) § Ag
 | Mark | Seen | What it does to the foe standing in it |
 | --- | --- | --- |
 | **I** | To the ankles | It is **Mojado** for as long as its water stands, with no clock of its own. So fire does not catch on it (Vapor), and electricity runs through it (Conducción) |
-| **II** | To the waist | The same, and what happens in its water is of level II: the current pulses twice as hard, the steam blinds at II |
+| **II** | To the waist | The same, and what happens in its water is of level II: the current pulses twice as hard (the steam blinds as at any mark) |
 | **III** | Over its head | Level III for the current and the steam, and it is **Hundido**: every 2 s it loses 2 % of its PV |
 
 - **Each foe carries its own water** (Aitor's): its own cell, level and clock. Raising one foe's
@@ -129,9 +129,8 @@ The rules themselves are shared and live in [`../README.md`](../README.md) § Ag
   through every wet foe, and every foe with water is wet; Shock on a coin for the one struck),
   but **the water does not go**: each water it ran through keeps the current for 10 s, pulsing on
   its foe every 2 s at its own level. A bolt while it runs only starts its 10 s over.
-- **Vapor**: any fire on a foe with water takes its top mark and leaves that foe Cegado at the
-  level its water had (its blows at 70 / 50 / 30 %). At the third mark it is the strongest blind
-  in the game, and it costs the sinking.
+- **Vapor**: any fire on a foe with water takes its top mark and leaves that foe Cegado (its
+  physical blows miss; Cegado has no levels since 2026-11-23). At the third mark it costs the sinking.
 - **Agua contenida** (Aitor's, the mathematical part): each water stands in **a cell**, a straight
   prism with edges of white light round its foe and a staff gauge up one edge, its three marks
   numbered. It is a control volume: what goes in, what comes out, and the level between.
@@ -281,7 +280,7 @@ foes of 260 PV, Espíritu 10. Numbers rounded, first guesses.
 | 2 · Aitor | *Recarga* on A | A's water at **II**: its current is now −4 every 2 s |
 | 2 · Gerard | Atacar · Eléctrico on A | −19; the current's 10 s start over (no second Conducción while it runs) |
 | 3 · Aitor | *Recarga* on A | A's water at **III**: *¡Hundido!* −5 every 2 s (2 % of 260), and the current −6: about 55 PV in ten seconds, with nobody striking. B has not been touched |
-| 4 · A announces a heavy blow | Gerard: Atacar · Fuego on A | *Vapor*: A's water drops to II, A is **Cegado III** (its blows at 30 %) and is not sunk now |
+| 4 · A announces a heavy blow | Gerard: Atacar · Fuego on A | *Vapor*: A's water drops to II, A is **Cegado** (its physical blow misses) and is not sunk now |
 | 4 · Aitor | *Recarga* on A, or at level 6 *Riada* | A back at III; with *Riada*, B at I as well |
 | 5 · Aitor | *Bajo cero* (A is at III) | A frozen for a minute, B for 20 s if it had water, both melting from that moment. Then blows on A's ice, each at a quarter: four hard ones (two of its eight each) break it two rounds later, with about a mark and a half of ice left, for about −75; with Atacar alone it melts before the eighth |
 
@@ -295,7 +294,7 @@ choice between keeping it under, widening the water to the others and spending i
 Hooks, for the duals still to choose:
 
 - **Standing water under a foe**: a partner's electric half charges it and every other foe's
-  water; a fire half blinds it at its water's level.
+  water; a fire half blinds it.
 - **A level to spend**: a dual could throw the water through the partner's blow, a strike a mark.
 - **A clock that is a thing in the scene**: whatever stretches clocks (Tecnópata's *Rayo de
   energía*, *Telemetría*) could hold the water or the current longer.
@@ -460,7 +459,7 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
 - **When the wearer falls, the water wets both sides**: built as proposed. The water is held by whoever
   raised it last; the ice is not water and stays.
 - **How a flurry counts**: each strike one, as proposed; a blow of power 35 or more (an *alto*) counts two.
-  A physical blow cracks whatever its element; magic fire melts a mark (Cegado at the ice's level, any fire
+  A physical blow cracks whatever its element; magic fire melts a mark (Cegado, any fire
   it lit put out); magic electricity does nothing; any other magic cracks.
 - **The ice spends the water**, as proposed.
 - **Bajo cero** wakes the first time a foe's water reaches III while Freática is worn, and can be used
@@ -499,7 +498,7 @@ are light and that fight is short. Its fights last longer (more rounds to win). 
   Whether the ánima is too slow against three or four foes before then.
 - **Shock**: a foe with water is wet, so a free spark has a coin for a lost turn. Held to
   one coin each time the water is charged, never while the current runs.
-- **Cegado III** for one mark and a free flame; Cegado's 10 s may become 20 s
+- **Cegado** for one mark and a free flame (no levels since 2026-11-23: its physical blows miss); Cegado's 10 s may become 20 s
   ([`../README.md`](../README.md) § How long a clock status lasts).
 - **Golpe de ariete**: the largest blow is three of base 26 on each foe at the third mark, each its own golpe
   crítico roll; ×1.5 on a foe weak to water (Vertitrón).

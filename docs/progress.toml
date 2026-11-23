@@ -180,6 +180,13 @@ title = "Banco de balance: palancas, optimizador, habilidades, progresión y cob
 grep = "skillReport"
 in = "scripts/fight-sim.mjs"
 
+# docs/fight-sim.md § Curve (Aitor, 2026-11-22): the side missions a challenge in any order, the castle
+# and the night the yardstick (fewer side missions than asked: no; as many: a challenge; more: power).
+[[block.item]]
+title = "Curva del progreso en el banco: lo que debe ser cada combate según lo hecho (just fight-sim curve, optimize --curve)"
+grep = "curveGoals"
+in = "scripts/fight-sim.mjs"
+
 # Gerard plays on the Windows PC at home with the local server (decided 2026-11-19). The steps are
 # in the README; done once it has been played there.
 [[block.item]]
@@ -1454,7 +1461,7 @@ done = true
 title = "El crecimiento del equipo acompaña a la historia: cada ánima sube al equipo, los enemigos de las misiones abiertas crecen con ellas, los niveles 5 a 7 se alcanzan y el castillo pide ánimas"
 priority = "pruebas"
 used = ["FOE_GROWTH", "FIGHT_GROWTH", "gatheredFor", "XP_RULES", "ANIMA_GROWTH"]
-note = "Cada ánima da +1 a Fuerza, Magia, Defensa y Espíritu (ANIMA_GROWTH); por cada ánima de otra misión abierta, los enemigos de cada combate crecen según su propia regla (FIGHT_GROWTH, desde la pasada final: de un cuarto de punto a tres en los cuatro atributos y hasta un 15 % de PV, lo que deja su pregunta igual hecha la primera o la última); LEVEL_XP de 4 a 7 en 950, 1.150, 1.400 y 1.700, los combates del castillo valen el triple de EXP y los de noche vez y media (XP_RULES); Aurelià pide las ánimas de Nuria y dos misiones, y Dirección las de casi todas (objetivos aurelia-con-una, aurelia-con-dos, direccion-con-dos). Medido en docs/fight-sim.md § Progression y § Power and the castle."
+note = "Cada ánima da un 12 % más de todo (ANIMA_GROWTH); por cada ánima de otra misión abierta, los enemigos de cada combate crecen según su propia regla (FIGHT_GROWTH: atributos, Fuerza y Magia de más desde el 22-11 y algo de PV, lo que deja cada misión un reto hecha en cualquier orden: just fight-sim curve); el castillo y la noche no crecen ni se ablandan con el equipo (FOE_BLOW.castle, NIGHT_PUPILS), miden lo hecho; LEVEL_XP de 4 a 7 en 950, 1.150, 1.400 y 1.700, los combates del castillo valen el triple de EXP y los de noche vez y media (XP_RULES); Aurelià pide las ánimas de Nuria y dos misiones, y Dirección las de casi todas (objetivos aurelia-con-una, aurelia-con-dos, direccion-con-dos). Medido en docs/fight-sim.md § Progression y § Power and the castle."
 
 [[block.item]]
 title = "Pasada final de pulido"

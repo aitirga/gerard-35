@@ -415,7 +415,7 @@ export const CASTLE = {
   empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 3, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
   salto: .5, derrame: 32,
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
-  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 85, expuesto: 1.5, castigo: 40, castigoLeve: 16,
+  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 105, expuesto: 1.5, castigo: 40, castigoLeve: 28,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 80, recordRounds: 2,
   expediente: 18, horario: 6, circular: 16, conducida: 2.6, actaEvery: 3, resolucion: 100, cargoEvery: 4, voto: 1.3,
   manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 74, mano: .25, aplastar: 44,
@@ -495,6 +495,8 @@ export interface CastleMark {
   stunned?: boolean;
   marked?: boolean; blows?: { round: number; kind: 'physical' | 'magic' }[]; expelled?: number; held?: string;
   phase?: AureliaPhase; lap?: number; clocks?: string[]; tripped?: string; exposed?: boolean; record?: number;
+  /** Aurelià: the moves he has announced in this phase, which picks the next of its cycle. */
+  step?: number;
   /** A directiva: struck with what undoes her element, she loses the move she had announced (`overruled`), once until they next trade (`warned`). */
   elements?: Element[]; signed?: boolean; overruled?: boolean; warned?: boolean;
   /** The Queen: the layers already torn off her (`peeled`); La Pompa being blown, and the rounds it has left. One of her hands: which. */

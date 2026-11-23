@@ -2220,6 +2220,16 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="cegado"] { --status: #c7ccd4; }
 .summary-tags [data-status="cegado"] { --status: #c7ccd4; }
 .damage-pop[data-kind="status"][data-status="cegado"] { --status: #d6dae0; }
+/* Cegado: a blinded foe's physical blow went past them. «Falla» in the smoke's grey, swept off sideways and fading as it goes, never a number. */
+.damage-pop[data-miss] strong { font-size: 24px; color: #e3e6ea; -webkit-text-stroke-width: 4px; animation-name: pop-miss; }
+.damage-pop[data-miss] small { color: #b9bec6; }
+@keyframes pop-miss {
+  0% { opacity: 0; translate: -26px 4px; scale: .7; filter: blur(3px); }
+  20% { opacity: 1; translate: 0 -6px; scale: 1.08; filter: blur(0); }
+  34% { scale: 1; }
+  72% { opacity: 1; translate: 6px -16px; filter: blur(0); }
+  100% { opacity: 0; translate: 34px -24px; filter: blur(2.5px); }
+}
 /* Tecnópata's: Sanación a cure's green, Confusión Bip's cyan (never violet: that is fear's). */
 .unit-statuses i[data-status="sanacion"], .summary-tags [data-status="sanacion"] { --status: #7fe3a0; }
 .damage-pop[data-kind="status"][data-status="sanacion"] { --status: #8ff0b0; }

@@ -274,7 +274,7 @@ Proposals (Aitor chose **A, B, C, E and G** on 2026-11-16, built the same day; D
 - **The mirrors (C)**: three of the nave's mirrors turn a quarter at a time (`src/espejos.ts`, pure
   and tested). Only one way of the eight brings the north window's light down the aisle, along row
   12, down x 20 and along row 20 to the chaplains' chairs, two turns from how they start (three
-  until the walk through it, below). Aitor notices the light coming into the nave. Solved, the chaplains start their fight Cegado II
+  until the walk through it, below). Aitor notices the light coming into the nave. Solved, the chaplains start their fight Cegado
   (`dazzle`): the same fight with more PV left. Optional, and rewarded.
 - **The apse as Fran's zone (E, 2026-11-20, Aitor)**: El Telescopio and La Laca are gone, and the
   apse with them as a fight. Its queue moves on once La carta is won; it keeps its own windows' light

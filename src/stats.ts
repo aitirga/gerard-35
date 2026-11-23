@@ -64,7 +64,7 @@ export const PROFILES = {
    * and Soraya, who need each other, are the frailest; Nico, who shields the rest, the toughest.
    */
   'sobremesa-alvaro': base(78, 12, 10, 10, 10),
-  'sobremesa-anna': base(72, 13, 10, 9, 10),
+  'sobremesa-anna': base(72, 13, 10, 11, 10),
   'sobremesa-sarah': base(72, 10, 12, 10, 11),
   'sobremesa-miquel': base(81, 13, 10, 11, 10),
   'sobremesa-joan': base(62, 10, 13, 9, 9),
@@ -107,7 +107,7 @@ export const PROFILES = {
   monton: base(250, 12, 12, 10, 10),
   // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
   // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
-  aurelia: base(500, 21, 11, 12, 12),
+  aurelia: base(420, 25, 11, 14, 11),
   atril: base(90, 1, 1, 10, 8),
   // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
   // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.

@@ -1758,6 +1758,20 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     shine(id, f, dt);
   }
   const floorUnder = (f: Fighter) => new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z), f.base.z);
+  /** Cegado: a blinded foe's blow that missed whoever it was aimed at (`BattleEffect.missed`). */
+  const whiffed = (action?: BattleEffect) => !!action && action.kind === 'enemy' && !!action.target && !!action.missed?.includes(action.target);
+  /** Which side a blinded foe swings wide on: fixed for each foe, not the same for all of them. */
+  const whiffSide = (id: string) => ([...id].reduce((sum, c) => sum + c.charCodeAt(0), 0) % 2 ? 1 : -1);
+  /**
+   * The swing that found nothing: the smoke round its head is torn off along the blow and goes on past
+   * them, on the side it went wide (`whiffSide`), with a swish and no impact.
+   */
+  function whiffBurst(action: BattleEffect, actor: Fighter, target: Fighter) {
+    const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d, side = whiffSide(action.actor);
+    const chest = chestOf(target), wide = extent(target).radius + .45;
+    statusFx.miss(action.actor, v3(new pc.Vec3(chest.x - uz * side * wide, chest.y, chest.z + ux * side * wide)), { x: ux, z: uz });
+    cue('gust');
+  }
   /**
    * One-shot contact feedback: a flash and sparks where the blow lands, a ring and dust at the feet,
    * a flash on whoever is affected. Returns how a blow lands (hit-feel.ts); support skills only glow.
@@ -1770,6 +1784,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   }
   function contactBurst(action: BattleEffect, actor?: Fighter, target?: Fighter) {
     if (!actor || action.kind === 'escape') return;
+    // Cegado: the blow goes past whoever it was meant for (`whiffed`): no impact, only the swing and the smoke it drags.
+    if (target && whiffed(action)) return whiffBurst(action, actor, target);
     duoStruck(action, target);
     // Acompañamiento: the eco at this fighter's side repeats the blow a moment after it lands.
     const repeat = action.accompanied;
@@ -4088,6 +4104,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const shell = domeStopped(effect) && actor && target ? domeEntry(actor, target) : undefined;
       const stopAt = shell && actor && target ? Math.max(1.65, Math.hypot(target.base.x - actor.base.x, target.base.z - actor.base.z) - Math.hypot(shell.x - actor.base.x, shell.z - actor.base.z) + extent(actor).radius + .2) : undefined;
       const motion = actor && target && !support && !catStrike && !botStrike && !casting && !dicing && !dual && !planted ? contactMotion(actor.base, target.base, t, stopAt) : undefined;
+      // Cegado: this blow goes by whoever it was meant for (`whiffed`).
+      const whiff = whiffed(effect);
       // How far the caster's hand is up: raised before the streams leave, lowered once they land.
       // Sending Bip, the wearer points it at the target until it is back.
       const raise = casting && animate ? smooth(t / (castLaunch * .85)) * (1 - smooth((t - castContact - .12) / .35))
@@ -4165,13 +4183,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           else position.set(motion.x, f.base.y, motion.z);
           strike = smooth((t - .28) / .18) * (1 - smooth((t - .57) / .2));
           lean = strike * (f.rigid ? 8 : 13);
+          // Cegado: it lunges at where it thinks they are and goes by, wide on its side, half turned and off balance.
+          if (whiff && animate) {
+            const past = Math.sin(clamp01((t - .18) / .75) * Math.PI), side = whiffSide(id) * (f.rigid ? .4 : 1);
+            position.x += (-motion.uz * side * .85 + motion.ux * .45) * past; position.z += (motion.ux * side * .85 + motion.uz * .45) * past;
+            roll = side * past * (f.rigid ? 3 : 14); lean += past * 6;
+          }
           hop = f.party || f.rigid || !animate ? 0 : Math.sin(clamp01((t - .16) / .46) * Math.PI) * .3;
         }
         if (support && id === effect?.actor) strike = animate ? Math.sin(clamp01(t / .8) * Math.PI) * .65 : 0;
         const lifted = id === effect?.actor && !dual ? raise : dual && id === roles!.caster ? drawing : 0;
         if (lifted) lean = -lifted * 5;
         const guarding = state?.allies.find(a => a.id === id)?.guarding ?? false;
-        if (motion && id === effect?.target && animate) {
+        if (motion && id === effect?.target && animate && !whiff) {
           const recoil = motion.recoil * (guarding ? .12 : f.rigid ? .05 : .34);
           position.x += motion.ux * recoil; position.z += motion.uz * recoil;
           lean = -motion.recoil * (guarding ? 5 : f.rigid ? 1.5 : 18);
@@ -4324,7 +4348,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         f.shrink = animate ? f.shrink + ((shrunk ? SHRUNK : 1) - f.shrink) * (1 - Math.exp(-dt * 8)) : shrunk ? SHRUNK : 1;
         f.model.setLocalScale(f.scale.x * f.shrink * (1 + squash * .09), f.scale.y * f.shrink * (1 - squash * .16 + breathe), f.scale.z * f.shrink * (1 + squash * .09));
         if (stance === 'sway' && animate && down < 0) roll += Math.sin(time * 2.3 + f.seed) * (f.rigid ? 1.2 : 6);
-        f.model.setLocalEulerAngles(lean, f.turn, roll);
+        // Cegado: it searches for them, turning one way and the other and leaning in to peer, never settling.
+        const groping = stance === 'grope' && animate && down < 0 && id !== effect?.actor ? (Math.sin(time * 1.35 + f.seed * 2.1) * 20 + Math.sin(time * 3.2 + f.seed) * 5) * (f.rigid ? .3 : 1) : 0;
+        if (groping) lean += (f.rigid ? 1 : 4) + Math.sin(time * 2.6 + f.seed) * (f.rigid ? .5 : 2);
+        f.model.setLocalEulerAngles(lean, f.turn + groping, roll);
         if (fall) f.model.setPosition(position.x, groundHeight(position.x, position.z) + hop + fall * .22, position.z);
         else { f.model.setPosition(position); f.plantFeet(groundHeight, hop); }
         if (stance === 'twitch' && animate && down < 0 && Math.random() < .4) f.model.translate((Math.random() - .5) * .05, Math.random() * .02, (Math.random() - .5) * .05);

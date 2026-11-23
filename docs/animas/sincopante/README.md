@@ -311,7 +311,7 @@ Sincopante brings to a pair:
 - **Da capo**: the duals themselves, again. It is the ánima for a party that plays its duals.
 
 **Bombardeo orbital** is playable with Tecnópata. Explosión and Ostinato lift Bip above the foes;
-the next round opens with three astral strikes per foe and Cegado II for 20 seconds.
+the next round opens with three astral strikes per foe and Cegado for 20 seconds.
 
 Other ideas:
 

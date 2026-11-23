@@ -3,15 +3,15 @@
  * into decisions. A loss that says how far a set of fights is from what it is meant to be (`miss`),
  * a search that finds the numbers that bring it to nothing (`optimize`), the numbers that move a
  * fight and by how much (`levers`), what each skill is worth and what happens without it
- * (`skillReport`), what nobody measures yet (`coverage`) and how the party's growth carries through
- * the story (`progressLines`). Pure: whoever calls hands in how rows are played (`Play`), here and
+ * (`skillReport`), what nobody measures yet (`coverage`), how the party's growth carries through
+ * the story (`progressLines`) and what each fight should be as the party grows (`curveGoals`). Pure: whoever calls hands in how rows are played (`Play`), here and
  * now (`inline`) or shared among threads (scripts/fight-sim-pool.mjs).
  */
 import { ANIMA_NAMES, DUALS, SKILLS, kitIn, skillKnown, type ClassId } from './battle.ts';
 import { LEVELLED, topOf } from './levels.ts';
 import {
-  FIGHTS, FIRST_FIGHTS, PAIR, STRETCHES, TARGETS, createFight, playFight, seeded, simulate, storyJobs, stretchOf, targetSetup, tunables, watchReads, withTuning,
-  type Ban, type Policy, type Row, type Setup, type StoryJob, type StoryPoint, type Target, type Tuning,
+  CASTLE_STAGE_IDS, DUO, FIGHTS, FIRST_FIGHTS, MISSIONS, MISSION_IDS, PAIR, STRETCHES, TARGETS, createFight, playFight, seeded, simulate, storyJobs, storyPoint, stretchOf, targetSetup, tunables, watchReads, withTuning,
+  type Ban, type CastleStageId, type MissionId, type Policy, type Row, type Setup, type StoryJob, type StoryPoint, type Target, type Tuning,
 } from './battle-sim.ts';
 
 /** One row to play: a setup, how many fights, the seed and the numbers tried. */
@@ -33,6 +33,116 @@ export function pairGoals(points: StoryPoint[], options: { fights?: string[]; pa
     id: `${job.setup.fight}@${job.at}/${job.build}:${job.setup.policy}`, setup: job.setup,
     want: job.setup.policy === 'smart' ? { win: [PAIR.with, 1] } : { win: [0, PAIR.without] },
   }));
+}
+// ── What a fight should be as the party grows ────────────────────────────
+/**
+ * How many side missions each stretch of the castle asks for (docs/fight-sim.md § Power and the castle): Aurelià one
+ * (Aitor, 2026-11-23: with Papagato and Freática at 2 or 3, «un reto pero no imposible»), Dirección three, the Queen all four. The night on the Meridiana, met before the castle, asks for one: Aitor says so
+ * when he sees them (src/night.ts `sizeUp`: with Nuria's ánima alone, «mejor no probarlo»).
+ */
+export const CASTLE_ASKS: Record<CastleStageId, number> = { 'castillo-1': 1, 'castillo-2': 3, 'castillo-3': 4 };
+const NIGHT_ASKS = 1;
+/** The groups the night's hunters bring before the castle (src/castle.ts `nightGroup`, first floor), the elite last. */
+const NIGHT_ROOMS = ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1'] as const;
+/** The fights that say no to a party with fewer side missions than they ask for, and that a careless one never takes. */
+const BOSSES = ['aurelia', 'direccion'];
+/** Fights the curve leaves out: the Queen's return is won by the melody (the artilugio), not by what the party has grown. */
+const OFF_CURVE = ['reina-vuelta'];
+/**
+ * What each fight should be as the party grows (Aitor, 2026-11-22: «está bien sentirse más poderoso»; the castle and the
+ * night «no escalen tanto con la progresión del jugador, para medir su capacidad»; the side missions «deben siempre ser
+ * un reto, porque es no-lineal el progreso y el orden»).
+ * - `side`: a side mission's fights that ask something, in whatever order it is done: `smart` wins, ending with a share
+ *   of its PV in `hp` (the top rises `power` for each mission behind it: growing is felt, but never as a walk) in
+ *   `rounds` at most (a foe that grows is harder, not longer), and `casual` wins `casual` at most.
+ * - `gate`: the castle's and the night's, which do not grow with the party. With fewer side missions than they ask
+ *   for, a boss (or the night's elite) says no: `smart` wins `short` at most. With what they ask, a challenge
+ *   (`asked`; a room, which three careless blows can tip, lets `casual` win `room` at most). With more, the party's
+ *   power (`more`): `smart` wins almost always, by as much as it likes, and a careless one still loses a boss.
+ */
+export const CURVE = {
+  side: { smart: .9, hp: [.2, .6] as [number, number], power: .05, casual: .25, rounds: 12 },
+  gate: { short: .5, asked: { smart: .85, hp: [.15, .65] as [number, number], casual: .25, room: .6 }, more: { smart: .95, casual: .5 } },
+};
+/** Where a goal of the curve stands: a side mission with `behind` others done, or a gate with fewer, as many or more than it asks. */
+export type CurveKind = 'side' | 'short' | 'asked' | 'more';
+export interface CurveGoal extends Goal { at: string; fight: string; kind: CurveKind; behind: number; policy: Policy }
+export interface CurveOptions {
+  /** Only these fights (a mission's, a floor's, `night-guard:<room>`); by default every one that asks something. */
+  fights?: string[];
+  /** The open missions already done (`emilie`): only the orders that start from where the player is. */
+  done?: MissionId[];
+  /** `ends` (default): one order for each number of missions behind; `all`: every order. */
+  orders?: 'ends' | 'all';
+  party?: string; build?: string;
+}
+const OPEN = () => MISSION_IDS.filter(id => !MISSIONS[id].intro);
+/** Every set of `pool` with `size` members that holds all of `must`, in a stable order; `ends` keeps one, turning with `turn`. */
+function setsOf(pool: MissionId[], size: number, must: MissionId[], orders: 'ends' | 'all', turn: number): MissionId[][] {
+  const out: MissionId[][] = [];
+  const walk = (from: number, picked: MissionId[]) => {
+    // The missions done come first, in the order given: a shared ánima's level counts from its friend's mission on.
+    if (picked.length === size) { if (must.every(id => picked.includes(id))) out.push([...must, ...picked.filter(id => !must.includes(id))]); return; }
+    for (let i = from; i < pool.length; i++) walk(i + 1, [...picked, pool[i]]);
+  };
+  walk(0, []);
+  return orders === 'all' || out.length <= 1 ? out : [out[turn % out.length]];
+}
+const named = (id: string, behind: MissionId[], all: number) => !behind.length ? `${id}:first` : behind.length === all ? `${id}:last` : `${id}:${behind.join('/')}`;
+/**
+ * The curve's goals: each side mission's fights at each number of missions behind it, and the castle's and the night's at
+ * one fewer side mission than they ask, as many, and every one (`CURVE`). With `done`, only the orders that start where
+ * the player is: the missions done are behind every point, and are not played again.
+ */
+export function curveGoals(options: CurveOptions = {}): CurveGoal[] {
+  const open = OPEN(), done = options.done ?? [], orders = options.orders ?? 'ends', build = options.build ?? 'mixto', party = options.party ?? DUO;
+  for (const id of done) if (!open.includes(id)) throw new Error(`"${id}" is not an open mission: use ${open.join(', ')}.`);
+  const wanted = (fight: string) => !options.fights || options.fights.includes(fight) || options.fights.includes(fight.split(':')[0]);
+  const goals: CurveGoal[] = [];
+  const add = (at: string, point: StoryPoint, fight: string, kind: CurveKind, behind: number, boss: boolean) => {
+    const { side, gate } = CURVE;
+    const want = (policy: Policy): Wanted | undefined => kind === 'side'
+      ? policy === 'smart' ? { win: [side.smart, 1], hpLeftWon: [side.hp[0], Math.min(1, side.hp[1] + side.power * behind)], roundsWon: [0, side.rounds] } : { win: [0, side.casual] }
+      : kind === 'short' ? policy === 'smart' ? { win: [0, gate.short] } : undefined
+      : kind === 'asked' ? policy === 'smart' ? { win: [gate.asked.smart, 1], hpLeftWon: gate.asked.hp } : { win: [0, boss ? gate.asked.casual : gate.asked.room] }
+      : policy === 'smart' ? { win: [gate.more.smart, 1] } : boss ? { win: [0, gate.more.casual] } : undefined;
+    for (const policy of ['smart', 'casual'] as const) {
+      const w = want(policy);
+      if (w) goals.push({ id: `${fight}@${at}:${policy}`, at, fight, kind, behind, policy, setup: { fight, party, policy, ...point.setup }, want: w });
+    }
+  };
+  // The side missions, in whatever order they come.
+  for (const [turn, id] of open.entries()) {
+    if (done.includes(id)) continue;
+    const others = open.filter(other => other !== id), fights = STRETCHES[id].fights.filter(f => !teaches(f) && wanted(f));
+    if (!fights.length) continue;
+    for (let size = done.length; size <= others.length; size++) for (const behind of setsOf(others, size, done, orders, turn)) {
+      const at = named(id, behind, others.length), point = storyPoint(at, build);
+      for (const fight of fights) add(at, point, fight, 'side', behind.length, false);
+    }
+  }
+  // The castle: one side mission fewer than a stretch asks for, as many, and all.
+  for (const [turn, stage] of CASTLE_STAGE_IDS.entries()) {
+    const asks = CASTLE_ASKS[stage], fights = STRETCHES[stage].fights.filter(f => !teaches(f) && !OFF_CURVE.includes(f) && wanted(f));
+    if (!fights.length) continue;
+    for (const [size, kind] of [[asks - 1, 'short'], [asks, 'asked'], [open.length, 'more']] as const) {
+      if (size < done.length || size < 0 || (kind === 'more' && asks === open.length)) continue;
+      for (const behind of setsOf(open, size, done, orders, turn)) {
+        const at = behind.length === open.length ? stage : `${stage}:${behind.join('/') || 'none'}`, point = storyPoint(at, build);
+        for (const fight of fights) if (kind !== 'short' || BOSSES.includes(fight)) add(at, point, fight, kind, size, BOSSES.includes(fight));
+      }
+    }
+  }
+  // The night before the castle: met on the way home from any mission (the last one's, with every other behind it).
+  const nights = NIGHT_ROOMS.map(room => `night-guard:${room}`).filter(wanted);
+  if (nights.length) for (const [size, kind] of [[NIGHT_ASKS - 1, 'short'], [NIGHT_ASKS, 'asked'], [open.length - 1, 'more']] as const) {
+    if (size < done.length) continue;
+    for (const behind of setsOf(open, size, done, orders, 1)) {
+      const id = open.find(other => !behind.includes(other))!, at = named(id, behind, open.length - 1), point = storyPoint(at, build);
+      for (const fight of nights) if (kind !== 'short' || fight.endsWith('delegada-1')) add(`noche·${at}`, point, fight, kind, size, fight.endsWith('delegada-1'));
+    }
+  }
+  return goals;
 }
 /** Whether a target asks for something to happen in its fight at least once (`Target.happens`). */
 const reaches = (target: Target) => Object.values(target.happens ?? {}).some(range => range[0] >= 1);
@@ -77,7 +187,10 @@ const WITHOUT = .8;
 const PARTY_BOOKS = ['skill', 'dual', 'class', 'growth', 'heal'], SHARED_BOOKS = ['reaction', 'element', 'powder', 'crit', 'level', 'xp', 'stage', 'foes'];
 const PARTY_PROFILES = ['foe.gerard.', 'foe.bernat.', 'foe.gerard35.', 'foe.aitor.'];
 export function inScope(path: string, scope: Scope) {
-  const book = path.split('.')[0], party = PARTY_BOOKS.includes(book) || PARTY_PROFILES.some(prefix => path.startsWith(prefix));
+  const [book, id] = path.split('.');
+  // How a fight grows with the ánimas gathered (`foes.<fight>`) is the fight's own; the rule for all and the blows' are shared.
+  if (book === 'foes' && id !== 'growth' && id !== 'blow') return scope !== 'party';
+  const party = PARTY_BOOKS.includes(book) || PARTY_PROFILES.some(prefix => path.startsWith(prefix));
   return scope === 'all' || (scope === 'party' ? party : !party && !SHARED_BOOKS.includes(book));
 }
 

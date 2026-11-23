@@ -11,9 +11,9 @@ import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
   ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant } from './battle.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
@@ -190,7 +190,8 @@ export function storyPoint(at: string, build = 'mixto', levels?: Partial<Record<
   const intro = MISSION_IDS.filter(other => MISSIONS[other].intro), open = MISSION_IDS.filter(other => !MISSIONS[other].intro && other !== id);
   // A castle floor is met with every mission behind it unless the point names the ones it comes with (`castillo-2:universidad/marta`).
   const all = order === 'last' || !!castle && order === 'first';
-  const named = all ? open : order === 'first' ? [] : order.split('/') as MissionId[];
+  // `none`: only the introduction behind, for a castle floor met with no side mission (`castillo-1:none`).
+  const named = all ? open : order === 'first' || order === 'none' ? [] : order.split('/') as MissionId[];
   for (const other of named) if (!open.includes(other)) throw new Error(`"${other}" cannot be behind "${id}": use first, last or ${open.join('/')}.`);
   const missions: MissionId[] = mission?.intro ? [] : [...intro, ...named];
   const done: StretchId[] = [...missions, ...castle ? CASTLE_STAGE_IDS.slice(0, CASTLE_STAGE_IDS.indexOf(id as CastleStageId)) : []];
@@ -250,9 +251,12 @@ const BOOKS = {
   marta: { rules: MARTA },
   castle: { rules: CASTLE, strong: STRONG },
   night: { rules: NIGHT_PUPILS },
+  guards: { rules: GUARDS },
   modelo: { rules: MODELO },
   luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
+  // Cegado: how long it lasts (s), and how often a physical blow misses in smoke and in Explosión's flash (battle.ts `CEGADO`).
+  cegado: { rules: STATUS_TIMED.cegado, odds: CEGADO },
   element: { rules: ELEMENT_RULES },
   // The golpe crítico: how much harder it lands (`bonus`) and how much of each one's Crítico counts (`chance`: 0 turns chance crits off).
   crit: { rules: CRIT_RULES },
@@ -581,7 +585,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     for (const id of MENTAL_STATUSES) value += Math.max(0, (ally.statuses?.[id] ?? 0) - (after.allies[i].statuses?.[id] ?? 0)) * 4;
   });
   // Cegado: what the foes would no longer do this turn and about half the next, the real rules on a copy.
-  if (after.foes.some((foe, i) => (foe.timed?.cegado?.level ?? 0) > (before.foes[i]?.timed?.cegado?.level ?? 0))) {
+  // It has no levels: what counts is a foe blinded now that was not, or whose smoke now lasts longer.
+  if (after.foes.some((foe, i) => (foe.timed?.cegado?.left ?? 0) > (before.foes[i]?.timed?.cegado?.left ?? 0) + 1e-6)) {
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
   // Shock (Cortocircuito's for sure): the turn the foe loses, the real rules on a copy.
@@ -1073,9 +1078,11 @@ export interface Target extends Setup {
 }
 const L1 = { papagato: 1 }, L2 = { papagato: 2 }, L3 = { papagato: 3 };
 /** Uri's tower with both ánimas grown: Papagato at 2 (ring 1 needs it), Matemágico at 1 or 2 (2 if Gerard wears it up the tower), 3 for whoever grinds. */
-const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 }, P3M3 = { papagato: 3, matemagico: 3 };
+const P2M1 = { papagato: 2, matemagico: 1 }, P2M2 = { papagato: 2, matemagico: 2 }, P3M2 = { papagato: 3, matemagico: 2 };
 /** The party on reaching the castle with Nuria's ánima and one side mission's, with two and with three; and with them all at each of its three stages. */
 const ONE = storyPoint('marta:universidad').setup, TWO = storyPoint('emilie:universidad/marta').setup, THREE = storyPoint('luca:universidad/marta/emilie').setup;
+/** The party at the castle with Nuria's ánima and Emilie's, Papagato and Freática worn as each likes: what Aurelià asks for (`CASTLE_ASKS`). */
+const WATER_CATS = 'gerard:matemagico/papagato+aitor:tecnopata/freatica', WITH_EMILIE = storyPoint('castillo-1:emilie').setup;
 const FLOOR_1 = storyPoint('castillo-1').setup, FLOOR_2 = storyPoint('castillo-2').setup, FLOOR_3 = storyPoint('castillo-3').setup;
 /**
  * The party as each open mission meets it: done the first of the four (only Nuria's ánima behind it, `AT_UNI`, `AT_MARTA`,
@@ -1111,7 +1118,8 @@ export const TARGETS: readonly Target[] = [
   // The Guardianes de Chicle (docs/chapter-2.md § The palace): a gate, not a question. They count the friends' ánimas.
   { id: 'guardianes-sin-amigos', fight: 'palace-guards', party: TECH, animas: ['matemagico', 'tecnopata'], policy: 'smart', win: [0, .05], why: 'Sin ánimas de amigos los tres guardianes no se ganan ni pensando: ir, perder, despertarse y salir a buscar a los amigos.' },
   { id: 'guardianes-con-nuria', fight: 'palace-guards', party: DUO, ...AT_MARTA, policy: 'smart', win: [0, .1], why: 'Con solo el ánima de Nuria siguen siendo tres y demasiado: la cortina no se abre todavía.' },
-  { id: 'guardianes-con-dos', fight: 'palace-guards', party: DUO, ...ONE, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [3, 7], why: 'Con el ánima de Nuria y la de una misión ya son dos y más blandos: la pelea es justa y la cortina se abre.' },
+  { id: 'guardianes-con-dos', fight: 'palace-guards', party: DUO, ...ONE, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .85], roundsWon: [3, 7], why: 'Con el ánima de Nuria y la de una misión siguen siendo tres, pero más blandos: con golpes a todos y fuego la pelea es justa y la cortina se abre.' },
+  { id: 'guardianes-con-dos-sin-pensar', fight: 'palace-guards', party: WATER_CATS, ...WITH_EMILIE, policy: 'casual', win: [0, .3], why: 'Sin cambiar de ánima y de uno en uno, los tres guardianes aguantan más que el equipo.' },
   { id: 'cebollitas-faciles', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'casual', win: [.98, 1], hpLeftWon: [.5, 1], why: 'Las cebollas pequeñas son fáciles: con ellas sube de nivel Papagato, sin darle vueltas.' },
   { id: 'cebollitas-a-puñetazos', fight: 'crias-1', party: MISSION_PARTY, levels: L1, policy: 'attack', win: [.95, 1], why: 'Incluso solo Atacar basta contra las pequeñas.' },
   { id: 'cebolla-nivel-1', fight: 'cebolla', party: MISSION_PARTY, levels: L1, policy: 'casual', win: [.2, .95], hpLeftWon: [0, .35], why: 'Sin Zarpazos, la Cebolla se gana por los pelos o no se gana.' },
@@ -1141,11 +1149,11 @@ export const TARGETS: readonly Target[] = [
   { id: 'escolta-sin-pensar', fight: 'escolta', party: MISSION_PARTY, levels: P2M1, policy: 'casual', win: [0, .15], why: 'A lo loco, la Cebolla y los suyos ganan casi siempre.' },
   // The way home at night (src/night.ts): the one that catches them brings the palace's whole guard, as the palace has it now,
   // so the street tells the truth about the palace. Without friends' ánimas there is no winning it: get home unseen.
-  // At night the castle's pupils of the floor the party is on walk the Meridiana, stronger out there the fewer friends
-  // and levels the party has (src/night.ts `nightMight`). Provisional numbers: Aitor balances the night later.
+  // At night the castle's pupils of the floor the party is on walk the Meridiana, a quarter stronger than inside whatever
+  // the party has (src/night.ts `nightMight`): the night measures it (docs/fight-sim.md § The yardstick and the side missions).
   { id: 'noche-sin-amigos', fight: 'night-guard:alumnos-1a', party: 'gerard:matemagico+aitor:tecnopata', animas: ['matemagico', 'tecnopata'], policy: 'smart', win: [0, .05], why: 'Sin ánimas de amigos, los alumnos del castillo que salen de noche no se ganan ni pensando: hay que llegar a casa sin que te pillen.' },
   { id: 'noche-con-nuria', fight: 'night-guard:delegada-1', party: DUO, friends: ['nuria'], levels: P2M2, policy: 'smart', win: [0, .2], why: 'Con el ánima de Nuria, La Delegada y los suyos aún son demasiados aquí fuera: Aitor ya lo dice, mejor no probarlo.' },
-  { id: 'noche-con-tres', fight: 'night-guard:delegada-1', party: DUO, friends: ['nuria', 'universidad', 'marta'], levels: P3M3, policy: 'smart', win: [.6, 1], why: 'Con tres amigos y las ánimas crecidas, ya se les puede: lo que ganan fuera es lo que ganarían dentro.' },
+  { id: 'noche-con-tres', fight: 'night-guard:delegada-1', party: DUO, ...TWO, policy: 'smart', win: [.6, 1], why: 'Con tres amigos, las ánimas crecidas y lo comprado en el tarro, ya se les puede: lo que ganan fuera es lo que ganarían dentro.' },
   // Vertitrón, the final boss. Its numbers are VERTIGO (book vertigo.boss), PROFILES.vertigo and its eye's (foe.vertigo-ojo).
   // Grito liberador is what decides it: every shout makes the party weaker and it stronger for good, so a long fight turns on them.
   { id: 'vertigo-duo-bien', fight: 'uri-vertigo', party: DUO, levels: P2M2, policy: 'smart', win: [.9, 1], hpLeftWon: [.5, .9], roundsWon: [3.5, 8], duals: [1, 5], why: 'Con los gatos en Aitor y el fuego en Gerard, quien descubre los duales lo tumba deprisa, antes de que grite mucho.' },
@@ -1206,10 +1214,11 @@ export const TARGETS: readonly Target[] = [
   // The four open missions done last (2026-11-21, the final pass): each fight that asks a question, held at the other end of the story too.
   ...doneLast('camping-negra', 'La parcela negra', UNI_LAST, { win: [.85, 1], hpLeftWon: [.15, .6] }, NEW_WATER, [.7, 1], [0, .2]),
   ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [3, 11] }, NEW_WATER, [.82, 1], [0, .15]),
-  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [7, 16] }, NEW_WATER, [.82, 1], [0, .25]),
+  ...doneLast('sobremesa', 'La Sobremesa', UNI_LAST, { win: [.85, 1], roundsWon: [4.5, 16] }, NEW_WATER, [.82, 1], [0, .25]),
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
-  ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.65, 1], [0, .3]),
-  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [5.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
+  // With its two newest ánimas at level 1 it is the cliff it always was (docs/fight-sim.md § The final pass, as done); whole games win it 92 % at the first try.
+  ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.55, 1], [0, .3]),
+  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
   ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.66, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
   ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
@@ -1244,7 +1253,9 @@ export const TARGETS: readonly Target[] = [
   { id: 'delegada-segundo-sin-pensar', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Cuatro al mismo y con marca: sin orden se pierde.' },
   { id: 'gemelos-tercero-bien', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'smart', win: [.82, 1], why: 'Los Gemelos de tercero con el Empollón: bajarlos a la par (un golpe a todos, o la chispa que pasa de uno al otro), con golpes físicos contra el chicle rancio, y alternar contra el Empollón.' },
   { id: 'gemelos-tercero-sin-pensar', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .8], why: 'De uno en uno, el que cae se levanta y los dos siguen pegando: se pierde.' },
-  { id: 'aurelia-bien', fight: 'aurelia', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [7, 13], why: 'Aurelià con las ánimas de todos: romper el atril (fuego o chispa), defender la Pregunta, hacerle tropezar con un estado nuevo en cada vuelta, aguantar la Expulsión y guardarse un estado para tirarlo en la carrerilla del Récord.' },
+  { id: 'aurelia-bien', fight: 'aurelia', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [4.5, 10], why: 'Aurelià con las ánimas de todos, que le sobran (el castillo mide lo crecido): romper el atril (fuego o chispa), defender la Pregunta, hacerle tropezar con un estado nuevo en cada vuelta, aguantar la Expulsión y guardarse un estado para tirarlo en la carrerilla del Récord.' },
+  { id: 'aurelia-con-emilie', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, policy: 'smart', win: [.7, 1], hpLeftWon: [.35, .8], roundsWon: [8, 12], why: 'Con Nuria y Emilie, Papagato y Freática a 2 o 3: un reto que se gana. El sangrado y el agua le hacen tropezar en la carrera; defender la Pregunta y guardarse un estado para el Récord.' },
+  { id: 'aurelia-con-emilie-sin-pensar', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, policy: 'casual', win: [0, .15], why: 'Con lo justo y sin defender la Pregunta ni guardar nada para el Récord, se pierde.' },
   { id: 'aurelia-con-dos', fight: 'aurelia', party: DUO, ...TWO, policy: 'smart', win: [.75, 1], why: 'Con Nuria y dos misiones hechas ya se le puede: más justo y más largo, pero se gana.' },
   { id: 'aurelia-con-una', fight: 'aurelia', party: TECH, ...ONE, policy: 'smart', win: [0, .35], why: 'Con Nuria y una sola misión detrás falta fondo: el Dictado y la Pregunta se llevan al equipo antes de que caiga.' },
   { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, ...TWO, policy: 'casual', win: [0, .3], why: 'Con lo justo para entrar (Nuria y dos misiones), sin defender la Pregunta ni la Expulsión, pegándole tras el atril, a mitad de daño, y sin tropiezos: el Ritmo se acumula, el Récord llega entero y se pierde.' },

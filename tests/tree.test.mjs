@@ -39,10 +39,10 @@ test('Vasos comunicantes: water on every foe leaves them Mojado for 20 seconds; 
   const e = act(s, 'skill', undefined, 'vasos');
   assert.equal(g.secondary, MANA_POINTS - 2); assert.equal(e.element, 'agua');
   assert.equal(e.hits.length, 3); assert.ok(e.hits.every(h => h.amount > 0));
-  assert.deepEqual(e.hits.map(h => h.burn), [{ id: 'mojado', level: 1 }, { id: 'cegado', level: 2 }, { id: 'mojado', level: 1 }]);
+  assert.deepEqual(e.hits.map(h => h.burn), [{ id: 'mojado', level: 1 }, { id: 'cegado', level: 1 }, { id: 'mojado', level: 1 }]);
   assert.ok(s.foes[0].timed.mojado && s.foes[2].timed.mojado);
-  assert.equal(s.foes[1].timed.quemado, undefined); assert.equal(s.foes[1].timed.cegado.level, 2); assert.equal(s.foes[1].timed.mojado, undefined);
-  assert.deepEqual(e.reaction, { id: 'humo', level: 2 });
+  assert.equal(s.foes[1].timed.quemado, undefined); assert.equal(s.foes[1].timed.cegado.level, 1); assert.equal(s.foes[1].timed.mojado, undefined);
+  assert.deepEqual(e.reaction, { id: 'humo', level: 1 });
   // Mojado hurts nobody and runs out on the clock.
   const hp = s.foes[0].hp;
   assert.deepEqual(runClock(s, TIMED.mojado.seconds - 1), []); assert.equal(s.foes[0].hp, hp); assert.ok(s.foes[0].timed.mojado);

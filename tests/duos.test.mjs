@@ -123,12 +123,12 @@ test('Caleidoscopio: a dome that stops the blow, gives it back to whoever struck
   assert.equal(by(s, 'gerard').hp, by(s, 'gerard').maxHp);
 });
 
-test('Géiser: a blow for each mark of its water, all of it spent, and the steam blinds every foe at that level', () => {
+test('Géiser: a blow for each mark of its water, all of it spent, and the steam blinds every foe', () => {
   const s = pair('matemagico', 'freatica');
   s.foes[0].timed = water(3);
   const e = actDual(s, 'geiser', 'dog-0');
   assert.equal(e.strikes.length, 3); assert.equal(waterOf(s.foes[0]), 0);
-  assert.deepEqual(s.foes.map(f => f.timed.cegado.level), [3, 3, 3]); assert.deepEqual(e.vapour, ['dog-0', 'dog-1', 'dog-2']);
+  assert.deepEqual(s.foes.map(f => f.timed.cegado.level), [1, 1, 1], 'Cegado has no levels'); assert.deepEqual(e.vapour, ['dog-0', 'dog-1', 'dog-2']);
   const dry = pair('matemagico', 'freatica');
   const one = actDual(dry, 'geiser', 'dog-1');
   assert.equal(one.strikes, undefined, 'one blow on a dry foe'); assert.equal(dry.foes[0].timed.cegado.level, 1);

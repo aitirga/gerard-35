@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { STRONG, STRONG_LIGHTS, floorFor } from '../src/castle.ts';
 import { createEncounter } from '../src/battle.ts';
-import { createFight, seeded, simulate, DUO } from '../src/battle-sim.ts';
+import { createFight, seeded, simulate, storyPoint, DUO } from '../src/battle-sim.ts';
 import { roomTag } from '../src/castle-pupils.ts';
 import { Story } from '../src/story.ts';
 import { flagsAt, stepOf } from '../src/story-points.ts';
@@ -35,7 +35,8 @@ test('the simulator knows them by the setup or by the fight\'s name, and they ar
   assert.ok(byName.strong && bySetup.strong);
   assert.deepEqual(byName.foes.map(f => f.maxHp), bySetup.foes.map(f => f.maxHp));
   assert.ok(createFight({ fight: 'night-guard:encarnados', party: DUO, policy: 'smart' }, seeded(2)).strong);
-  const setup = { party: DUO, policy: 'smart', friends: ['nuria', 'universidad', 'marta'], levels: { papagato: 3 } };
+  // The party the second floor asks for (the castle does not soften for a smaller one).
+  const setup = { party: DUO, policy: 'smart', ...storyPoint('castillo-2').setup };
   const room = simulate({ ...setup, fight: 'alumnos-2d' }, 12, 5), red = simulate({ ...setup, fight: 'alumnos-2d:encarnados' }, 12, 5);
   assert.ok(red.roundsWon > room.roundsWon, `${red.roundsWon} rounds against ${room.roundsWon}`);
 });

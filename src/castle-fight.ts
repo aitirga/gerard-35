@@ -8,7 +8,7 @@
  * Preliminary (2026-11-19): the dynamics, with first-guess numbers (src/castle.ts `CASTLE`).
  */
 import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, STATUSES, TIMED, addStatus, affinityName, elementOf, inflict, roman, stacks, woundScale,
-  type Affinity, type AffinityKey, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type StatusId, type TimedId } from './battle.ts';
+  type Affinity, type AffinityKey, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type StatusId, type TimedId , blindMiss } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
 import { type HeldMove, AURELIA_PHASES, CASTLE, closestToFalling, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, HANDS, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, gumOf, isCastle, yearOf,
   type AureliaPhase, type CastleEncounter, type CastleKind, type CastleMark, type CastleMoment, type Gum, type MontonForm, type PupilKind, type RoomEncounter, type Year } from './castle.ts';
@@ -17,7 +17,6 @@ import { type HeldMove, AURELIA_PHASES, CASTLE, closestToFalling, CASTLE_FIGHTS,
 export interface CastleKit {
   current(state: BattleState, c: Combatant): Stats;
   changeHealth(target: Combatant, delta: number): number;
-  sighted(actor: Combatant, raw: number): number;
   foe(id: string, name: string, kind: CastleKind, hp?: number): Combatant;
   lineUp(party: PartySlot[], unlocked: readonly ClassId[]): Combatant[];
   seedFrom(random: () => number): number;
@@ -198,8 +197,9 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
     message = `${who.length > 1 ? `${who.slice(0, -1).join(', ')} y ${who.at(-1)}` : who[0]}. Chicle con forma de alumno, la bata en los pliegues y una pompa donde iría la cara.`;
   }
   const unlocked = animas ?? [...new Set(party.flatMap(s => s.classId ? [s.classId] : []))];
+  // The castle and the night are the yardstick (Aitor, 2026-11-22): their blows do not grow with the party (`FOE_BLOW.castle`), so what it has gathered shows.
   const state: BattleState = {
-    allies: kit.lineUp(party, unlocked), foes,
+    allies: kit.lineUp(party, unlocked).map(ally => ({ ...ally, steady: true })), foes,
     active: 0, round: 1, phase: 'player', enemyActions: [], possessed: false, encounter,
     animas: unlocked, awakened: unlocked.includes('matemagico'), seed: kit.seedFrom(random),
     message: message!, castle,
@@ -291,7 +291,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     return hit(who, Math.round(power * scale * (marked ? CASTLE.chivatazo : 1)));
   };
   const spell: Hit = (who, power) => {
-    const raw = kit.sighted(actor, magical(Math.round(power * scale), kit.current(state, actor), kit.current(state, who)));
+    const raw = magical(Math.round(power * scale), kit.current(state, actor), kit.current(state, who));
     return kit.changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const everyone = (blow: Hit, power: (who: Combatant) => number, main: Combatant) => {
@@ -329,7 +329,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     }
   } else if (actor.kind === 'empollon') {
     use('repaso'); effect.amount = strike(target, CASTLE.repaso);
-    state.message = `${actor.name} repite el golpe de ${target.name}, igual, y se lo devuelve. −${effect.amount} PV.`;
+    state.message = `${actor.name} le recita la lección a ${target.name}, palabra por palabra, a la cara. −${effect.amount} PV.`;
   } else if (actor.kind === 'chivata') {
     // She points at whoever a big blow is already coming for; with nobody marked she marks, otherwise she pinches.
     const coming = state.foes.map(f => alive(f) ? named(f.intent) : undefined).find(Boolean);
@@ -409,7 +409,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       const marked = who.castle?.marked, bled = form === 'sangrado' ? stacks(who, 'sangrado') : 0;
       if (marked) { delete who.castle!.marked; called.push({ target: who.id, text: `×${CASTLE.chivatazo}`, detail: 'Chivatazo' }); }
       if (bled) delete who.statuses!.sangrado;
-      const raw = kit.sighted(actor, Math.max(1, Math.round(montonCopy(actor) * (marked ? CASTLE.chivatazo : 1) * woundScale(bled))));
+      const raw = Math.max(1, Math.round(montonCopy(actor) * (marked ? CASTLE.chivatazo : 1) * woundScale(bled)));
       return kit.changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
     };
     use('copia');
@@ -479,7 +479,10 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       said = `${actor.name} os mira por encima de las gafas.`;
     }
     const cycle: FoeAbilityId[] = phase === 'leccion' ? [...atril ? ['dictado' as const] : [], 'pregunta', 'castigo'] : phase === 'carrera' ? ['pregunta', 'castigo'] : ['expulsion', 'record'];
-    const next = cycle[(actor.turns! - 1) % cycle.length], whom = up.filter(alive);
+    // His moves come in turn by what he has announced, not by his turns: a run-up's rounds are not a move of their own
+    // (counting them, the last straight was one Expulsión and then Récord after Récord).
+    const next = cycle[(m.step ?? 0) % cycle.length], whom = up.filter(alive);
+    m.step = (m.step ?? 0) + 1;
     if (whom.length) {
       const at = closestToFalling(whom, state.round + actor.turns!);
       if (next === 'dictado' || next === 'record' || next === 'castigo') { announce(next); if (next === 'castigo') actor.intent = { ability: 'castigo' }; }
@@ -817,7 +820,7 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
     }
     const share = boss.hp / boss.maxHp, phase: AureliaPhase = share <= CASTLE.recta ? 'recta' : share <= CASTLE.carrera ? 'carrera' : 'leccion';
     if (phase !== m.phase) {
-      m.phase = phase; delete boss.intent; delete m.record; delete m.lap; boss.turns = 0;
+      m.phase = phase; delete boss.intent; delete m.record; delete m.lap; delete m.step; boss.turns = 0;
       if (phase === 'carrera') m.lap = CASTLE.vuelta;
       m.clocks ??= statusesOn(boss);
       called.push({ target: boss.id, text: AURELIA_PHASES[phase] });
@@ -1028,8 +1031,11 @@ export function runCastle(kit: CastleKit, state: BattleState, seconds: number): 
   m.lap = CASTLE.vuelta;
   const up = standing(state);
   if (!up.length) return false;
+  // Blinded (Cegado), the sprint may run past everyone: it misses them all (one roll for the whole lap).
+  const blinded = blindMiss(state, boss);
   const blow: Hit = (who, power) => {
-    const raw = kit.sighted(boss, physical(power, kit.current(state, boss), kit.current(state, who)));
+    if (blinded) return 0;
+    const raw = physical(power, kit.current(state, boss), kit.current(state, who));
     return kit.changeHealth(who, -(who.guarding ? Math.ceil(raw / 3) : raw));
   };
   const lasting = boss.lasting ??= { shifts: {}, from: 'Ritmo' };
@@ -1037,9 +1043,10 @@ export function runCastle(kit: CastleKit, state: BattleState, seconds: number): 
   const news: BattleEffect = { kind: 'enemy', actor: boss.id, ability: ability('sprint'), target: up[0].id, amount: blow(up[0], CASTLE.sprint) };
   const splash = up.slice(1).map(a => ({ target: a.id, amount: blow(a, CASTLE.sprint) }));
   if (splash.length) news.splash = splash;
+  if (blinded) news.missed = up.map(a => a.id);
   news.stats = [{ target: boss.id, way: 'up', stats: ['fuerza'] }];
   news.called = [{ target: boss.id, text: 'Vuelta', detail: `Ritmo ${Math.round(lasting.shifts.fuerza / CASTLE.ritmo)} · Fuerza +${lasting.shifts.fuerza}` }];
-  state.message = 'Aurelià cierra la vuelta y os pasa por encima sin frenar. Cada vuelta corre más.';
+  state.message = blinded ? 'Aurelià cierra la vuelta a ciegas y pasa de largo. Cada vuelta corre más.' : 'Aurelià cierra la vuelta y os pasa por encima sin frenar. Cada vuelta corre más.';
   (state.news ??= []).push(news);
   return true;
 }

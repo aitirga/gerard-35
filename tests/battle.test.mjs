@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { improve, createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual, ESCAPE, escapeChance, escapeShown, cornered } from '../src/battle.ts';
+import { ORBITAL_BLIND, improve, createBattle, act, enemyAct, nextRound, skillsFor, validTargets, boostRounds, BOOST_ROUNDS, switchAnima, wearAnima, SKILLS, STATUSES, addStatus, stacks, MANA_POINTS, DEFEND_CHARGE, REST_CHARGE, TIMED, pulseDamage, runClock, actDual, ESCAPE, escapeChance, escapeShown, cornered } from '../src/battle.ts';
 
 test('single ally completes a round and takes damage only during enemy turn', () => {
   const s = createBattle();
@@ -385,8 +385,9 @@ test('the palace guards cannot be beaten without ánimas, and can be backed off 
   const { palaceGuards, createGuardBattle, act, enemyAct, nextRound } = await import('../src/battle.ts');
   const { Story, STORY_FLAGS } = await import('../src/story.ts');
   const party = new Story(STORY_FLAGS.slice(0, STORY_FLAGS.indexOf('castle') + 1)).battleParty(true);
-  assert.deepEqual(palaceGuards(0), { count: 3, hp: 220, power: 30 });
-  assert.ok(palaceGuards(6).count === 1 && palaceGuards(6).hp === 40);
+  assert.deepEqual(palaceGuards(0), { count: 3, hp: 250, power: 33 });
+  assert.equal(palaceGuards(2).count, 3, 'three until the third ánima');
+  assert.ok(palaceGuards(6).count === 1 && palaceGuards(6).hp === 70);
   // Without ánimas, attacking every turn loses.
   const state = createGuardBattle(party, palaceGuards(0));
   for (let round = 0; round < 30 && state.phase !== 'lost' && state.phase !== 'won'; round++) {
@@ -1118,7 +1119,7 @@ test('Relevo de sangre relays only a killing wound and spends the chosen die', (
   assert.equal(stacks(s.foes[2], 'sangrado'), 3);
 });
 
-test('Bombardeo orbital waits for the round and the holder, strips three layers and leaves Cegado II', () => {
+test('Bombardeo orbital waits for the round and the holder, strips three layers and leaves Cegado for longer', () => {
   const s = pairBattle('sincopante', 'tecnopata');
   s.foes[1].layers = 5;
   const charge = actDual(s, 'bombardeo-orbital');
@@ -1130,7 +1131,7 @@ test('Bombardeo orbital waits for the round and the holder, strips three layers 
   endRound(s);
   assert.equal(s.foes[1].layers, 2);
   assert.equal(s.news.find(e => e.detonation).hits.length, 3);
-  assert.ok(s.foes.every(f => f.hp < 200 && f.timed.cegado.level === 2 && f.timed.cegado.left === 20));
+  assert.ok(s.foes.every(f => f.hp < 200 && f.timed.cegado.level === 1 && f.timed.cegado.left === ORBITAL_BLIND));
 });
 
 test('Reserva de color detonates exactly once after the marked turn or an early knockout', () => {

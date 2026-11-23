@@ -144,10 +144,10 @@ test('the Aspersión is said a turn ahead and takes Fuerza and Magia for the res
   assert.equal(s.phase, 'won');
 });
 
-test('the chaplains dazzled by the nave\'s mirrors start the fight Cegado II', () => {
+test('the chaplains dazzled by the nave\'s mirrors start the fight Cegado', () => {
   const s = fight('luca-sillones');
   dazzle(s);
-  for (const f of s.foes) assert.equal(f.timed?.cegado?.level, f.kind === 'capellan' ? 2 : undefined, f.id);
+  for (const f of s.foes) assert.equal(f.timed?.cegado?.left, f.kind === 'capellan' ? LUCA.deslumbre : undefined, f.id);
   assert.match(s.message, /espejos/);
 });
 

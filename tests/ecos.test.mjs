@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PASSIVES, SKILLS, act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, firePulses, improve, inflict, manaMax, nextRound, pulseDamage, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
+import { CEGADO, PASSIVES, SKILLS, act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, firePulses, improve, inflict, manaMax, nextRound, pulseDamage, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT } from '../src/battle-motion.ts';
 import { spellLaunch, startSounds } from '../src/battle-sounds.ts';
 import { impactSeconds } from '../src/home-lights.ts';
@@ -120,13 +120,13 @@ test('an element on its own changes nothing: same damage, no status', () => {
     assert.equal(stacks(dog(s), 'sangrado'), 0);
   }
 });
-test('Agua on Quemado: the fire goes out and leaves Cegado at its level; blows land lighter; it runs out', () => {
+test('Agua on Quemado: the fire goes out and leaves Cegado, whatever the fire\'s level; it runs out', () => {
   const s = fight();
   inflict(dog(s), 'quemado'); inflict(dog(s), 'quemado');
   const e = strike(s, 'agua');
-  assert.deepEqual(e.reaction, { id: 'humo', level: 2 });
+  assert.deepEqual(e.reaction, { id: 'humo', level: 1 });
   assert.equal(dog(s).timed.quemado, undefined);
-  assert.equal(dog(s).timed.cegado.level, 2);
+  assert.equal(dog(s).timed.cegado.level, 1, 'Cegado has no levels');
   // Nothing pulses, and its time runs out.
   const hp = dog(s).hp;
   assert.deepEqual(runClock(s, TIMED.cegado.seconds - 1), []);
@@ -135,14 +135,33 @@ test('Agua on Quemado: the fire goes out and leaves Cegado at its level; blows l
   runClock(s, 1.1);
   assert.equal(dog(s).timed.cegado, undefined);
 });
-test('a blinded foe hits lighter: the higher its Cegado, the less', () => {
-  const blow = level => {
-    const s = fight(); s.phase = 'enemy'; s.enemyActions = [];
-    const f = dog(s);
-    if (level) f.timed = { cegado: { level, left: 10, next: 10 } };
-    return enemyAct(s, f.id, 'gerard').amount;
+test('Cegado never adds up: smoke on smoke only starts its clock over', () => {
+  const s = fight();
+  inflict(dog(s), 'quemado'); strike(s, 'agua');
+  runClock(s, 6);
+  assert.ok(dog(s).timed.cegado.left < TIMED.cegado.seconds);
+  inflict(dog(s), 'quemado'); strike(s, 'agua');
+  assert.equal(dog(s).timed.cegado.level, 1);
+  assert.equal(dog(s).timed.cegado.left, TIMED.cegado.seconds);
+});
+test('a blinded foe\'s physical blows miss whole as often as CEGADO says, and it is said', () => {
+  const blow = (blind, odds) => {
+    const saved = { ...CEGADO }; Object.assign(CEGADO, { smoke: odds, flash: odds });
+    try {
+      const s = fight(); s.phase = 'enemy'; s.enemyActions = [];
+      const f = dog(s), hp = s.allies.find(a => a.id === 'gerard').hp;
+      if (blind) f.timed = { cegado: { level: 1, left: 10, next: 10 } };
+      const e = enemyAct(s, f.id, 'gerard');
+      return { e, lost: hp - s.allies.find(a => a.id === 'gerard').hp, message: s.message };
+    } finally { Object.assign(CEGADO, saved); }
   };
-  assert.ok(blow(1) < blow(0)); assert.ok(blow(3) <= blow(1));
+  const seen = blow(false, 1), blind = blow(true, 1), lucky = blow(true, 0);
+  assert.ok(seen.lost > 0 && !seen.e.missed);
+  assert.equal(blind.lost, 0); assert.equal(blind.e.amount, 0);
+  assert.deepEqual(blind.e.missed, ['gerard']);
+  assert.match(blind.message, /¡Falla!/); assert.doesNotMatch(blind.message, /−0 PV/);
+  assert.ok(lucky.lost > 0 && !lucky.e.missed, 'blinded, a blow can still find them');
+  assert.ok(CEGADO.smoke > CEGADO.flash, 'smoke blinds more than the flash');
 });
 test('Fuego on Sangrado: it seals the wound instead of opening it, every stack at once', () => {
   const s = fight();
