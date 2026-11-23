@@ -52,16 +52,15 @@ export const SPEAKERS = {
   /**
    * The castle (docs/castle-bosses.md): Aurelià and the management team, her violet for accent while she
    * holds them; the Queen, in the face she took (Nuria Mendoza's, the false lead: docs/lore.md); and
-   * Bernat at 35, on the phone. Only the Queen has a portrait yet: the others' drawn faces take their
-   * figures' colours (tools/figures.toml: Aurelià tanned and dark-haired in his white vest; Mar's dark
-   * bun and grey coat, Montse's grey bob and manila cardigan, Pilar's pale hair and steel-blue dress).
+   * Bernat at 35, on the phone. Portraits from `just character`, each from their own face and their
+   * figure (tools/figures.toml), with the Queen's marks on them.
    */
-  aurelia: { name: 'Aurelià', skin: '#c48f62', hair: '#4a2f22', top: '#d8c39b', accent: '#b07aff' },
+  aurelia: { name: 'Aurelià', portrait: 'aurelia', skin: '#c48f62', hair: '#4a2f22', top: '#d8c39b', accent: '#b07aff' },
   mar: { name: 'Mar', portrait: 'mar', skin: '#e6bb98', hair: '#7a3a22', top: '#4a4d55', accent: '#b07aff' },
   montse: { name: 'Montse', portrait: 'montse', skin: '#e2b48e', hair: '#b59f7e', top: '#c9b48a', accent: '#b07aff' },
   pilar: { name: 'Pilar', portrait: 'pilar', skin: '#d6a57c', hair: '#3b2a20', top: '#5a6a82', accent: '#b07aff' },
   reina: { name: 'La Reina Bubbaloo', portrait: 'reina', skin: '#f2a8c8', hair: '#e86aa6', top: '#c8306e', accent: '#ff6fae' },
-  bernat35: { name: 'Bernat', skin: '#dcb08a', hair: '#5b4636', top: '#4a5560', accent: '#9fc3d9' },
+  bernat35: { name: 'Bernat', portrait: 'bernat-adult', skin: '#dcb08a', hair: '#5b4636', top: '#4a5560', accent: '#9fc3d9' },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof SPEAKERS;

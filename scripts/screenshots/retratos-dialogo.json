@@ -1,0 +1,26 @@
+{
+  "title": "Retratos en la conversación",
+  "description": "src/dialogue.ts SPEAKERS: Luca, the castle's bosses (Aurelià, Mar, Montse, Pilar) and Bernat at 35 each speak with their own portrait in the conversation banner. Run it with --gpu.",
+  "steps": [
+    { "open": "/?mission=luca&part=door" },
+    { "eval": "navigator.getGamepads = () => []" },
+    { "until": "window.gerard && window.gerard.started", "timeout": 120000 },
+    { "wait": 1500 },
+    { "eval": "window.gerard.dialogue.show({ left: 'gerard35', right: 'luca', lines: [{ speaker: 'luca', text: 'Gerard. Aitor.' }] })" },
+    { "shot": "luca", "delay": 1500, "caption": "Luca by the pond, with his portrait" },
+    { "press": "KeyE" },
+    { "eval": "window.gerard.dialogue.show({ left: 'gerard35', right: 'aurelia', lines: [{ speaker: 'aurelia', text: 'Aurelià.' }] })" },
+    { "shot": "aurelia", "delay": 1500, "caption": "Aurelià, his new portrait: the wreath, the mantle, violet eyes" },
+    { "press": "KeyE" },
+    { "eval": "window.gerard.dialogue.show({ left: 'gerard35', right: 'mar', lines: [{ speaker: 'mar', text: 'Mar.' }, { speaker: 'montse', text: 'Montse.' }, { speaker: 'pilar', text: 'Pilar.' }] })" },
+    { "shot": "mar", "delay": 1500, "caption": "Dirección: Mar" },
+    { "press": "KeyE" },
+    { "shot": "montse", "delay": 1200, "caption": "Dirección: Montse" },
+    { "press": "KeyE" },
+    { "shot": "pilar", "delay": 1200, "caption": "Dirección: Pilar" },
+    { "press": "KeyE" },
+    { "eval": "window.gerard.dialogue.show({ left: 'gerard35', right: 'bernat35', lines: [{ speaker: 'bernat35', text: 'Gerard. Soy Bernat.' }] })" },
+    { "shot": "bernat35", "delay": 1500, "caption": "Bernat at 35, on the phone, with his adult portrait" },
+    { "press": "KeyE" }
+  ]
+}
