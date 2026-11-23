@@ -1118,6 +1118,7 @@ try {
         else if (battleUI.controllerContext !== 'world') battleUI.control(action, 2);
         else if (action === 'prev' || action === 'next') return;
         else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); }
+        else if (storyUI.noticeOpen && action === 'confirm') storyUI.confirmNotice();
         else if (!exploration.active && action === 'confirm') game.interact(true);
         return;
       }
@@ -1125,12 +1126,14 @@ try {
       else if (battleUI.controllerContext !== 'world') battleUI.control(action, 1);
       else if (action === 'prev' || action === 'next') exploration.control(action, 1);
       else if (dialogue.open) { if (action === 'confirm') dialogue.advance(); else if (action === 'cancel') dialogue.close(); }
+      // What was just found or gained waits for a confirm (story-ui `confirmNotice`).
+      else if (storyUI.noticeOpen && action === 'confirm') storyUI.confirmNotice();
       else if (exploration.active) exploration.control(action, 1);
       else if (action === 'confirm') game.interact();
     },
 
   });
-  interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else game.interact(); canvas.focus({ preventScroll: true }); });
+  interactButton.addEventListener('click', () => { if (lookAway) lookAway(); else if (dialogue.open) dialogue.advance(); else if (storyUI.noticeOpen) storyUI.confirmNotice(); else game.interact(); canvas.focus({ preventScroll: true }); });
   partnerButton.addEventListener('click', () => { if (!dialogue.open) game.interact(true); canvas.focus({ preventScroll: true }); });
   document.querySelector('#overview')!.addEventListener('click', () => game.toggleOverview());
   document.querySelectorAll<HTMLButtonElement>('[data-direction]').forEach(button => {

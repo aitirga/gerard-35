@@ -91,7 +91,7 @@
       "timeout": 40000
     },
     {
-      "until": "document.querySelector('.anima-banner[hidden]')",
+      "until": "(document.querySelector('.anima-banner:not([hidden]):not([data-leaving])') && window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', key: 'Enter' })), true) && document.querySelector('.anima-banner[hidden]')",
       "timeout": 40000
     },
     {

@@ -9,9 +9,10 @@ import { ANIMA_NAMES, MANA_LEVEL, PASSIVES, SKILLS, type ClassId, type SkillId }
 import { LEVELLED, passivesAt } from './levels';
 import { CLASSES } from './classes';
 
-const ITEM_NOTE_MS = 4200;
+/** A note or the ánima banner hears no confirm before this long on screen, so a press already on its way does not skip it. */
+const NOTE_MIN_MS = 500;
+const BANNER_MIN_MS = 900;
 const CARD_MS = 3400;
-const BANNER_MS = 3600;
 /** A cat's paw print, toes up (the Papagato banner's trail). */
 const PAW = `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 19c-5.5 0-11 6.6-11 11.2 0 3.4 2.7 5.3 5.6 5.3 2.2 0 3.6-1.1 5.4-1.1s3.2 1.1 5.4 1.1c2.9 0 5.6-1.9 5.6-5.3C31 25.6 25.5 19 20 19Z"/><ellipse cx="8" cy="17.5" rx="3.6" ry="4.6" transform="rotate(-20 8 17.5)"/><ellipse cx="15" cy="9.5" rx="3.6" ry="4.8" transform="rotate(-7 15 9.5)"/><ellipse cx="25" cy="9.5" rx="3.6" ry="4.8" transform="rotate(7 25 9.5)"/><ellipse cx="32" cy="17.5" rx="3.6" ry="4.6" transform="rotate(20 32 17.5)"/></svg>`;
 /** Where each print of the trail lands (left, bottom in px), left and right foot in turn, walking up onto the card. */
@@ -71,7 +72,7 @@ export function createStoryUI(hud: HTMLElement) {
   const banner = document.createElement('section');
   banner.className = 'anima-banner'; banner.hidden = true; banner.setAttribute('role', 'status');
   // The card and the paws apart, so the cat can walk off while the card fades.
-  banner.innerHTML = `<div class="anima-card"><span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><h2></h2></div><div class="anima-paws" aria-hidden="true"></div>`;
+  banner.innerHTML = `<div class="anima-card"><span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><h2></h2><small class="story-note-ok" data-glyph-template="{confirm} Continuar"></small></div><div class="anima-paws" aria-hidden="true"></div>`;
   // The ánimas (the lights of the people helped) the party has to spend at home: beside the menus'
   // buttons (the dock is made after this, so it goes in the first time it shows).
   const count = document.createElement('p');
@@ -98,6 +99,42 @@ export function createStoryUI(hud: HTMLElement) {
   doom.querySelector('button')!.addEventListener('click', () => endDoom?.());
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let hintGeneration = 0;
+  /**
+   * What the party finds or gains (an item, an ánima, a level) stays until a player confirms (A, E,
+   * Enter, Space or a click on it), never on a timer: one note at a time, the next one after it,
+   * and the big ánima banner before any. They wait unseen through a fight, a panel or a
+   * conversation (`quiet`), whose own presses are theirs.
+   */
+  const queue: { el: HTMLElement; at: number }[] = [];
+  let bannerHold: { at: number; done: () => void } | undefined;
+  const quiet = () => !hud.hasAttribute('data-battle') && !hud.hasAttribute('data-panel') && !hud.hasAttribute('data-dialogue') && !document.querySelector('dialog[open]');
+  const noticeOpen = () => (!!bannerHold || queue.length > 0) && quiet();
+  function post(el: HTMLElement) {
+    el.insertAdjacentHTML('beforeend', '<small class="story-note-ok" data-glyph-template="{confirm} Continuar"></small>');
+    el.addEventListener('click', () => { if (queue[0]?.el === el) confirmNotice(); });
+    queue.push({ el, at: performance.now() + NOTE_MIN_MS });
+    el.hidden = queue.length > 1;
+    notes.append(el);
+  }
+  function confirmNotice() {
+    if (!noticeOpen()) return;
+    const now = performance.now();
+    if (bannerHold) { if (now >= bannerHold.at) bannerHold.done(); return; }
+    const first = queue[0];
+    if (!first || now < first.at) return;
+    queue.shift();
+    first.el.dataset.leaving = 'true';
+    setTimeout(() => first.el.remove(), reducedMotion.matches ? 0 : 300);
+    const next = queue[0];
+    if (next) { next.el.hidden = false; next.at = now + NOTE_MIN_MS; }
+  }
+  // Before the game's own key handler (it is made after this), so the press goes on instead of using what is near.
+  window.addEventListener('keydown', event => {
+    if (!noticeOpen() || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.code !== 'KeyE' && event.code !== 'Enter' && event.code !== 'Space') return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (!event.repeat) confirmNotice();
+  }, { capture: true });
 
   return {
     item(id: ItemId) {
@@ -109,8 +146,7 @@ export function createStoryUI(hud: HTMLElement) {
       el.querySelector('span')!.textContent = `HAS CONSEGUIDO · ${ITEM_KIND_LABELS[item.kind].toUpperCase()}`;
       el.querySelector('strong')!.textContent = item.name;
       el.querySelector('p')!.textContent = item.effect ? `${item.description} ${item.effect}` : item.description;
-      notes.append(el);
-      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS);
+      post(el);
     },
     /** What an afternoon left the party (src/days.ts `EVENINGS`): a note with its name and what it does, as it will read in a fight. */
     boost(name: string, effect: string) {
@@ -119,8 +155,7 @@ export function createStoryUI(hud: HTMLElement) {
       el.innerHTML = `<span class="battle-kicker">HASTA MAÑANA POR LA NOCHE</span><strong></strong><p></p>`;
       el.querySelector('strong')!.textContent = name;
       el.querySelector('p')!.textContent = effect;
-      notes.append(el);
-      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
+      post(el);
     },
     /**
      * La Reina Bubbaloo screams (a boss of her castle beaten): her words shake over the whole picture
@@ -164,14 +199,13 @@ export function createStoryUI(hud: HTMLElement) {
       el.innerHTML = `<span class="battle-kicker">ÁNIMA DESBLOQUEADA</span><strong></strong><p></p>`;
       el.querySelector('strong')!.textContent = ANIMA_NAMES[classId];
       el.querySelector('p')!.textContent = CLASSES[classId].motto;
-      notes.append(el);
-      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
+      post(el);
     },
     /**
      * An ánima is the party's for good (Papagato, Nuria's mission won): ÁNIMA DESBLOQUEADA and its
-     * name, big in the middle; Papagato's comes with a trail of paw prints. It goes softly: the cat
-     * walks on off the card, its prints fading behind it the oldest first, and the card fades away.
-     * Resolves once it has gone.
+     * name, big in the middle; Papagato's comes with a trail of paw prints. It stays until a player
+     * confirms (`confirmNotice`), then goes softly: the cat walks on off the card, its prints fading
+     * behind it the oldest first, and the card fades away. Resolves once it has gone.
      */
     kept(classId: ClassId) {
       banner.dataset.anima = classId;
@@ -184,10 +218,14 @@ export function createStoryUI(hud: HTMLElement) {
       delete banner.dataset.leaving;
       banner.hidden = true; void banner.offsetWidth; banner.hidden = false;
       const still = reducedMotion.matches;
-      return new Promise<void>(resolve => setTimeout(() => {
-        banner.dataset.leaving = 'true';
-        setTimeout(() => { banner.hidden = true; delete banner.dataset.leaving; resolve(); }, still ? 0 : BANNER_OUT_MS[cat ? 'cat' : 'plain']);
-      }, still ? BANNER_MS / 2 : BANNER_MS));
+      bannerHold?.done();
+      return new Promise<void>(resolve => {
+        bannerHold = { at: performance.now() + BANNER_MIN_MS, done: () => {
+          bannerHold = undefined;
+          banner.dataset.leaving = 'true';
+          setTimeout(() => { banner.hidden = true; delete banner.dataset.leaving; resolve(); }, still ? 0 : BANNER_OUT_MS[cat ? 'cat' : 'plain']);
+        } };
+      });
     },
     /**
      * How many Ecos de luz the party has to spend, or `undefined` to hide it (before any is won); `gained`
@@ -215,8 +253,7 @@ export function createStoryUI(hud: HTMLElement) {
       const mana = level === MANA_LEVEL && LEVELLED.includes(classId);
       el.querySelector('strong')!.textContent = gifts.length ? `Aprende ${gifts.map(g => g.name).join(' y ')}` : mana ? 'Maná +1' : 'Se hace más fuerte';
       el.querySelector('p')!.textContent = gifts.length ? gifts.map(g => g.description).join(' ') : mana ? `Sube en 1 el maná de ${ANIMA_NAMES[classId]}.` : '';
-      notes.append(el);
-      setTimeout(() => { el.dataset.leaving = 'true'; setTimeout(() => el.remove(), reducedMotion.matches ? 0 : 300); }, ITEM_NOTE_MS * 1.5);
+      post(el);
     },
     /** A key and a verb that stays until the player has used it (or a newer hint replaces it). */
     hint(id: keyof typeof STORY_HINTS, learned?: () => boolean) {
@@ -327,6 +364,9 @@ export function createStoryUI(hud: HTMLElement) {
       return new Promise<void>(resolve => { endDoom = () => { if (performance.now() - shown < 1800) return; doom.hidden = true; endDoom = undefined; resolve(); }; });
     },
     get doomOpen() { return !doom.hidden; },
+    /** Whether a note or the ánima banner is waiting for a confirm now (`confirmNotice`). */
+    get noticeOpen() { return noticeOpen(); },
+    confirmNotice,
     /** A controller's confirm on the end screen. */
     confirmDoom() { endDoom?.(); },
     destroy() { hintGeneration++; clearTimeout(shoutLeaving); notes.remove(); hint.remove(); bubble.remove(); shout.remove(); card.remove(); banner.remove(); count.remove(); song.remove(); doom.remove(); },

@@ -13,7 +13,7 @@ import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_REVEAL, DUAL_SLOW, holdAfter } from './battle-motion';
+import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
 import { MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
@@ -208,6 +208,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     <section class="move-callout" aria-live="polite" hidden><span class="battle-kicker"></span><strong></strong><small></small></section>
     <section class="dual-banner" aria-live="polite" hidden><header><span class="battle-kicker">ATAQUE DUAL</span><h2></h2></header><div class="dual-halves"></div><footer><strong class="dual-total"></strong><p></p></footer></section>
     <section class="skill-reveal" aria-live="polite" hidden><i class="skill-reveal-rays" aria-hidden="true"></i><div class="skill-reveal-card"><span class="battle-kicker"></span><small class="skill-reveal-who"></small><div class="skill-reveal-skills"></div></div></section>
+    <button type="button" class="battle-hold" data-glyph-template="{confirm} Continuar" hidden></button>
     <p class="dev-badge" hidden>DEPURACIÓN · UN JUGADOR LLEVA A LOS DOS</p>
     <div class="battle-bottom">
       <section class="battle-dock" data-dock="1">
@@ -537,7 +538,32 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   let guideOpen: { id: GuideId; focus: HTMLElement | null } | undefined;
   /** A card waits for a quiet moment: nothing playing, nobody being named, the fight not over. */
   function guideReady() {
-    return !!state && !!callbacks.guides && !guideOpen && !busy && !finale && !heldChoice && !['won', 'lost', 'escaped'].includes(state.phase)
+  /**
+   * Something the party has just found or learned (a dual, an ánima, a level's skill) holds the
+   * screen until either player confirms (A, Enter, Space or a click), never on a timer; a press
+   * before HOLD_MIN is not heard, so one already on its way does not skip it.
+   */
+  const HOLD_MIN = 700;
+  let holdOn: { done: () => void; at: number; focus: HTMLElement | null } | undefined;
+  function holdUntilConfirm(): Promise<void> {
+    holdOn?.done();
+    const button = root.querySelector<HTMLButtonElement>('.battle-hold')!;
+    return new Promise(resolve => {
+      const focus = document.activeElement as HTMLElement | null;
+      holdOn = { at: performance.now() + HOLD_MIN, focus, done: () => {
+        holdOn = undefined; button.hidden = true; delete root.dataset.hold;
+        if (focus?.isConnected && !focus.closest('[hidden]') && document.activeElement === button) focus.focus({ preventScroll: true });
+        resolve();
+      } };
+      root.dataset.hold = 'true'; button.hidden = false; button.focus({ preventScroll: true });
+    });
+  }
+  function releaseHold() {
+    if (!holdOn || performance.now() < holdOn.at) return;
+    callbacks.sound('ui-back');
+    holdOn.done();
+  }
+    return !!state && !!callbacks.guides && !guideOpen && !holdOn && !busy && !finale && !heldChoice && !['won', 'lost', 'escaped'].includes(state.phase)
       && !root.dataset.entering && !root.dataset.beat && !root.dataset.announcing && !root.dataset.revealing && !callbacks.paused();
   }
   /** The first status on a plate whose card the players have not seen, or have seen before it changed: the fight stops for it. */
@@ -873,7 +899,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     banner.querySelector('h2')!.textContent = CLASSES.matemagico.name;
     banner.querySelector('p')!.textContent = CLASSES.matemagico.motto;
     banner.hidden = false;
-    await wait(2600);
+    await holdUntilConfirm();
     banner.hidden = true;
     delete root.dataset.beat;
     // The one new thing on screen: Habilidades pulses until it is opened.
@@ -1299,7 +1325,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * until every bar has filled, every skill learned has had the screen (`nextReveal`) and LEVEL_HOLD
    * has passed, so a quick press never skips it. Then it lights up (`data-released`).
    */
-  const LEVEL_HOLD = 900, REVEAL_MS = 2100, REVEAL_MORE = 700;
+  const LEVEL_HOLD = 900;
   /** What a level taught: skills (with their maná), or a passive that comes with the level (no cost: `passive`). */
   interface Reveal { skills: { name: string; description: string; cost?: number }[]; anima: string; who: string; level: number; colour: string; id: ClassId; passive?: true }
   let rewardToken = 0, filling = false, revealing = false, reveals: Reveal[] = [];
@@ -1313,6 +1339,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     result.removeAttribute('data-holding'); delete result.dataset.released; delete result.dataset.revealing;
     band.hidden = true; delete band.dataset.leaving;
   }
+    if (revealing) holdOn?.done();
   function settleRewards(token: number) {
     if (token !== rewardToken || filling || revealing || !holdingRewards()) return;
     clearTimeout(rewardTimer);
@@ -1323,18 +1350,19 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       result.querySelector<HTMLButtonElement>('button:not([hidden])')?.focus({ preventScroll: true });
     }, LEVEL_HOLD);
   }
-  /** What each level taught takes the screen, one ánima after another: REVEAL_MS, and REVEAL_MORE for each skill past the first (`revealSkill`). */
+  /** What each level taught takes the screen, one ánima after another, each until a player confirms (`revealSkill`). */
   function nextReveal(token: number) {
     if (token !== rewardToken) return;
     const band = get('.skill-reveal'), result = get('.battle-result'), next = reveals.shift();
     if (!next) { revealing = false; delete result.dataset.revealing; settleRewards(token); return; }
     revealing = true; result.dataset.revealing = '';
     revealSkill(band, next);
-    revealTimer = setTimeout(() => {
+    // It stays until a player confirms (`holdUntilConfirm`), then the next one comes.
+    void holdUntilConfirm().then(() => {
       if (token !== rewardToken) return;
       band.dataset.leaving = '';
       revealTimer = setTimeout(() => { if (token !== rewardToken) return; band.hidden = true; delete band.dataset.leaving; nextReveal(token); }, 320);
-    }, REVEAL_MS + (next.skills.length - 1) * REVEAL_MORE);
+    });
   }
   /**
    * What a level taught has the screen for a moment: a band across it in its ánima's colour,
@@ -1647,7 +1675,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * The first time a dual ever goes off (docs/combat.md § Ataques duales): nobody armed it, the two
    * players just chose its halves together. Time stops (the scene and the fight's clock) and the
    * banner comes in as «DÚO DESBLOQUEADO», with its name, who brought which half, the cost and what it
-   * does, for DUAL_REVEAL; then it goes off from there as an armed one does (`showDualBanner`).
+   * does, until a player confirms; then it goes off from there as an armed one does (`showDualBanner`).
    */
   function revealDual(effect: BattleEffect) {
     const d = effect.dual!, spec = DUALS.find(x => x.id === d.id), s = state!;
@@ -1659,10 +1687,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     banner.dataset.armed = d.id; banner.dataset.reveal = 'true';
     const bars = get('.dual-cinema'); bars.dataset.reveal = 'true'; bars.hidden = false;
     callbacks.sound('dual-armed');
-    callbacks.slowmo?.(0, DUAL_REVEAL);
+    // Time stands still until either player confirms (`holdUntilConfirm`), then eases back.
+    callbacks.slowmo?.(0, 3600);
     root.dataset.revealing = 'true';
     for (const id of d.actors) { const ally = s.allies.find(a => a.id === id); if (ally?.classId) flashAnima(dockOf(id), CLASSES[ally.classId].colour); }
-    return wait(DUAL_REVEAL * 1000).finally(() => { delete root.dataset.revealing; });
+    return holdUntilConfirm().finally(() => { callbacks.slowmo?.(0, 0); delete root.dataset.revealing; });
   }
   function hideDualBanner() {
     const banner = get('.dual-banner'), bars = get('.dual-cinema');
@@ -2007,7 +2036,10 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     switcher.classList.remove('is-stuck'); void switcher.offsetWidth;
     if (!next) { callbacks.sound('denied'); switcher.classList.add('is-stuck'); return; }
     callbacks.sound('anima-swap');
-    const putOn = () => {
+    // The view transition runs `putOn` a frame later, once `withPlayer` has put the other player's
+    // menu back: it works on this player's menu again, or their skills would fill the friend's sheet.
+    const player: PlayerId = split() ? ctx : 1;
+    const putOn = () => withPlayer(player, () => {
       callbacks.anima(actor.id, next);
       showDetails(false);
       render();
@@ -2016,7 +2048,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         if (selected === 'dual') fillDuals(); else fillSkills();
         focusOn(skillButtons().find(b => !b.hasAttribute('aria-disabled')) ?? skillButtons()[0] ?? get<HTMLButtonElement>('.skill-flyout .command-back'));
       }
-    };
+    }, true);
     if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) { putOn(); return; }
     // The browser keeps a picture of the old interface, so it leaves in its own look with the ánima
     // already changed and nothing waiting. Aitor's dock mirrors it, as it does everything else.
@@ -2654,6 +2686,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (guideOpen) { if (target.matches('.guide-card-ok')) closeGuide(); return; }
     // A level reached holds the way out until it has all shown (`settleRewards`).
     if (target.closest('.battle-result')) { if (holdingRewards()) return; const after = target.dataset.after; close(after === 'retry' || after === 'rewind' ? after : undefined); return; }
+    holdOn?.done();
     if (target.matches('.summary-key')) { toggleSummary(); return; }
     // A move ready ahead in a partner's dock: only that partner's player picks it (the mouse is player 1).
     const queueDock = target.closest<HTMLElement>('.queue-panel, .queue-plate')?.closest<HTMLElement>('.battle-dock');
@@ -2665,6 +2698,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       return;
     }
     // Mouse and keyboard belong to player 1, a controller's confirm to its player (`control`): each only in their own dock.
+    // Something new holds the screen: any click goes on (`holdUntilConfirm`).
+    if (holdOn) { releaseHold(); return; }
     if (!split()) { if (turnDriver() !== pointerPlayer || busy) return; clickIn(target); return; }
     // A fighter's card stands in their player's dock, yet anyone may aim at it (a cure for the partner):
     // only the dock's own commands are its player's.
@@ -2745,6 +2780,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!over && split()) { withPlayer(1, () => { if (!locked()) keyIn(event); }); event.preventDefault(); event.stopPropagation(); return; }
     if (!over && (turnDriver() !== 1 || busy)) { event.preventDefault(); event.stopPropagation(); return; }
     keyIn(event);
+    if (holdOn) {
+      event.preventDefault(); event.stopPropagation();
+      if (!event.repeat && ['Enter', ' '].includes(event.key)) releaseHold();
+      return;
+    }
   }
   // ——— Aitor held: player 2 plays her side ————————————————————————————————————————————
   /** Whom the Queen holds, if this foe is her and her turn is theirs to play now (not lost to the artilugio's first note). */
@@ -2825,8 +2865,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else if (COMMANDS[index]) choose(COMMANDS[index].id);
     }
     else if (event.key.toLowerCase() === 'i' && !event.repeat) { event.preventDefault(); showDetails(!details); }
-    else if (event.key.toLowerCase() === 'x' && !event.repeat) { event.preventDefault(); if (!locked() && state.phase === 'player' && (!selected || (selected === 'attack' && targeting))) nextElement(state.allies[state.active]); }
-    else if (['q', 'e'].includes(event.key.toLowerCase()) && !event.repeat) { event.preventDefault(); changeAnima(event.key.toLowerCase() === 'q' ? -1 : 1); }
+    // The keyboard is player 1's: split, the turn may still be on the partner's fighter, whose ánima and element are not Gerard's to change.
+    else if (event.key.toLowerCase() === 'x' && !event.repeat) { event.preventDefault(); withPlayer(1, () => { if (state && !locked() && state.phase === 'player' && (!selected || (selected === 'attack' && targeting))) nextElement(state.allies[state.active]); }); }
+    else if (['q', 'e'].includes(event.key.toLowerCase()) && !event.repeat) { event.preventDefault(); withPlayer(1, () => changeAnima(event.key.toLowerCase() === 'q' ? -1 : 1)); }
     else if (event.key.startsWith('Arrow')) { event.preventDefault(); navigate(event.key.slice(5).toLowerCase() as Direction); }
     event.stopPropagation();
   }
@@ -3005,14 +3046,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
      * Where the fight's input is; its third part names an open sub-menu (a command, the summary, or
      * the keyboard player's move ready ahead), so Escape backs out of it (or takes it back) before pausing.
      */
-    get controllerContext() { return !state ? 'world' : guideOpen ? `battle:guia:${guideOpen.id}` : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
+    get controllerContext() { return !state ? 'world' : guideOpen ? `battle:guia:${guideOpen.id}` : holdOn ? 'battle:hold' : `battle:${busy ? 'busy' : state.phase}:${selected ?? (summaryOpen ? 'summary' : queueContext())}:${selectedSkill ?? pickingDie ?? ''}:${targeting}`; },
     /**
      * The same for one player's controller. Split, it is that player's own menu and whether their
      * fighter can choose: a press is held back while their own screen changes, never because the
      * partner opened a menu or a move started playing.
      */
     controllerContextOf(player: PlayerId) {
-      if (!state || !split() || guideOpen) return ui.controllerContext;
+      if (!state || !split() || guideOpen || holdOn) return ui.controllerContext;
       const m = player === ctx ? { selected, selectedSkill, pickingDie, targeting } : menus[player];
       return `battle:${state.phase}:${m.selected ?? (summaryOpen ? 'summary' : '')}:${m.selectedSkill ?? m.pickingDie ?? ''}:${m.targeting}:${canAct(allyOf(player)) ? 'choosing' : 'waiting'}`;
     },
@@ -3045,6 +3086,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const press = () => {
         // L / R: their fighter's previous or next ánima.
         if (action === 'prev' || action === 'next') changeAnima(action === 'prev' ? -1 : 1);
+      if (holdOn) { if (action === 'confirm') releaseHold(); return; }
         else if (action === 'cancel') back();
         else if (action === 'confirm') { const button = cursor(); if (button && !button.disabled && !button.closest('[hidden], [inert]')) { pointerPlayer = player; try { button.click(); } finally { pointerPlayer = 1; } } }
         else if (action !== 'menu') navigate(action);

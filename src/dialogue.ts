@@ -82,7 +82,7 @@ export interface Dialogue {
 const PARTY = new Set<SpeakerId>(['gerard', 'gerard35', 'bernat', 'aitor']);
 
 const TYPE_SPEED_MS = 0;       // per character; 0 shows ordinary lines at once (rambling and spooky lines still type)
-const AUTO_ADVANCE_MS = 4200;  // after a line finishes typing; 0 waits for input
+const AUTO_ADVANCE_MS = 0;     // after a line finishes typing; 0 waits for the player's press (only rambling lines run on)
 const RAMBLING_TYPE_MS = 13;   // a rambling speaker talks fast…
 const RAMBLING_ADVANCE_MS = 450;  // …and barely stops between sentences
 const RAMBLING_CUT_MS = 380;   // how long a cut-off sentence stays, with its dash

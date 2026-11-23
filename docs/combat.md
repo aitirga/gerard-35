@@ -687,7 +687,7 @@ apunta: cada uno apunta su habilidad como siempre, sin cartel. Si uno **confirma
 el otro tiene elegida la que la completa (apuntándola, o confirmada y esperando turno), y el dual se
 puede ahora (`dualBlock`), sale el dual (`chanceDual`): apunta adonde apuntaba el que confirma, si su
 habilidad apunta; si no, adonde iba la del otro (confirmada, o adonde la estaba apuntando); si no, al primer enemigo en pie. Y antes de salir **se
-para el tiempo** (`revealDual`, `DUAL_REVEAL`, 3,2 s): la escena y el reloj del combate quietos bajo un
+para el tiempo** (`revealDual`, hasta que uno de los dos pulsa confirmar: `holdUntilConfirm`): la escena y el reloj del combate quietos bajo un
 velo oscuro y las bandas de cine, y el cartel con *DÚO DESBLOQUEADO*, el nombre, quién pone qué mitad,
 el maná y la descripción; suena `dual-armed`. Después sale como cualquier dual (el cartel estalla, el
 velo se va). Desde entonces está encontrado (en el juego, se guarda; en el probador de combates, hasta

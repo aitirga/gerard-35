@@ -79,7 +79,7 @@
       "caption": "ÁNIMA DESBLOQUEADA · Papagato: theirs for good, a cat's paw prints walking up onto the card"
     },
     {
-      "until": "document.querySelector('.anima-banner[hidden]')",
+      "until": "(document.querySelector('.anima-banner:not([hidden]):not([data-leaving])') && window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', key: 'Enter' })), true) && document.querySelector('.anima-banner[hidden]')",
       "timeout": 30000
     },
     {

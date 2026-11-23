@@ -51,13 +51,12 @@ export const BEAT = { breath: 250, status: 640, stats: 720, peel: 420, down: 460
  * simulator runs that much clock after a dual).
  */
 export const DUAL_FREEZE = .12, DUAL_SLOW = .35, DUAL_BANNER = 1.0, DUAL_BANNER_SEEN = .35, DUAL_EASE = .25, DUAL_SECONDS = 1.9, DUAL_CLOCK = 2.4;
-/**
+/*
  * The first time a dual ever goes off (it was not found yet), time stops before it: the scene and
- * the fight's clock stand still for DUAL_REVEAL real seconds under «DÚO DESBLOQUEADO», its name and
- * what it does, then the cinematic above plays as always. The fight's clock does not run meanwhile,
- * so the simulator's count does not change.
+ * the fight's clock stand still under «DÚO DESBLOQUEADO», its name and what it does, until a player
+ * confirms (battle-ui `holdUntilConfirm`); then the cinematic above plays as always. The fight's
+ * clock does not run meanwhile, so the simulator's count does not change.
  */
-export const DUAL_REVEAL = 3.2;
 /**
  * After a dual, the time to take it in (BEAT.dual, or BEAT.dualSeen once that dual has been seen); after a foe's ability that is not a plain blow
  * (`card`, its own picture in the scene) or a move announced a turn ahead, the time to see it (BEAT.ability).

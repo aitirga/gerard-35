@@ -316,6 +316,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .guide-card p { max-width: 400px; margin: 8px 0 12px; font-size: 15px; line-height: 1.55; color: var(--battle-paper); }
 .guide-card-ok { padding: 10px 20px; border: 1px solid var(--status); border-radius: 999px; background: color-mix(in srgb, var(--status) 16%, transparent); color: var(--battle-paper); font: 700 13px/1 'Manrope', sans-serif; cursor: pointer; }
 .guide-card-ok:is(:hover, :focus-visible) { outline: none; background: color-mix(in srgb, var(--status) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--status) 30%, transparent); }
+/* Something new holds the fight (battle-ui `holdUntilConfirm`: a dual found, an ánima, a level's skill):
+   the way on comes in once a press is heard, under whatever is showing. */
+.battle-hold { position: absolute; z-index: 9; left: 50%; top: 74%; translate: -50% 0; padding: 10px 20px; border: 1px solid #f4efe066; border-radius: 999px; background: #0b1714e6; color: var(--battle-paper); font: 700 13px/1 'Manrope', sans-serif; cursor: pointer; animation: hold-in .35s .7s ease-out both; }
+.battle-hold[hidden] { display: none; }
+.battle-hold:is(:hover, :focus-visible) { outline: none; border-color: #f4efe0; box-shadow: 0 0 0 3px #f4efe033; }
+@keyframes hold-in { from { opacity: 0; translate: -50% 6px; } }
 @keyframes guide-dim { from { opacity: 0; } }
 @keyframes guide-in { from { opacity: 0; scale: .92; translate: 0 10px; } }
 @keyframes reveal-rays { 0% { opacity: 0; scale: .4; rotate: -10deg; } 18% { opacity: 1; } 70% { opacity: .55; } 100% { opacity: 0; scale: 1.25; rotate: 16deg; } }
@@ -823,6 +829,12 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .story-note strong { display: block; margin-top: 6px; font-size: 15px; }
 .story-note p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; color: var(--ui-muted); }
 .story-note[data-leaving] { opacity: 0; translate: 20px 0; }
+/* Each note waits for a confirm (story-ui `confirmNotice`): the way on, small under what it says. */
+.story-note { cursor: pointer; }
+.story-note-ok { display: block; margin-top: 10px; font: 700 11px/1 'Manrope', sans-serif; letter-spacing: .04em; color: var(--ui-paper); opacity: .75; animation: hold-in-note .3s .5s ease-out both; }
+.anima-banner .story-note-ok { margin-top: 16px; font-size: 13px; color: #f3efdc; animation-delay: .9s; }
+.anima-banner[data-leaving] .story-note-ok { visibility: hidden; }
+@keyframes hold-in-note { from { opacity: 0; } }
 #story-card { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 4px; text-align: center; background: radial-gradient(ellipse at center, #10231bee, #071513f8); color: var(--ui-paper); animation: story-card-in .6s ease both; transition: opacity .6s; }
 #story-card[data-state="out"] { opacity: 0; }
 #story-card h1 { margin: 14px 0 8px; font: italic 500 clamp(40px, 5.6vw, 76px)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; }
