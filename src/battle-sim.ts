@@ -478,13 +478,14 @@ function bursts(state: BattleState, bubble: BattleState['foes'][number], blow: n
   return blow * turns >= bubble.hp;
 }
 /**
- * Whether a Gemelo brought down now stays down: its twin is down too, or those still to act this round could bring it down
- * with a plain blow each. Otherwise it is back on its feet at the round's end (`CASTLE.levantar`), and the blow bought nothing.
+ * Whether a Gemelo brought down now stays down: its twin is down too, or those still to act this round and the whole of the
+ * next could bring it down with a plain blow each. Otherwise it is back on its feet at the end of the next round
+ * (`CASTLE.levantar`), and the blow bought nothing.
  */
 function staysDown(before: BattleState, after: BattleState, fallen: BattleState['foes'][number]) {
   const twin = after.foes.find(f => f.id === fallen.castle?.twin);
   if (!twin || twin.hp <= 0 || twin.castle?.down) return true;
-  const still = after.allies.filter((a, i) => i > before.active && a.hp > 0);
+  const up = after.allies.filter(a => a.hp > 0), still = [...after.allies.filter((a, i) => i > before.active && a.hp > 0), ...up];
   return still.reduce((sum, a) => sum + damageOn({ ...after, active: after.allies.indexOf(a) }, { action: 'attack', target: twin.id }, twin.id), 0) >= twin.hp;
 }
 /** What a choice costs in maná, both halves for a dual. */

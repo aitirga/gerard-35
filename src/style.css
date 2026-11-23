@@ -436,6 +436,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 /* Compact nameplates stay anchored to each fighter. */
 .battle-targets { position: absolute; inset: 0; pointer-events: none; }
 .battle-target { position: absolute; left: 0; top: 0; display: grid; gap: 5px; min-width: 80px; padding: 7px; border: 0; background: transparent; color: var(--battle-paper); font-size: 11px; text-align: center; }
+/* Its bar keeps one width whatever the plate carries (its name while aimed at, a row of statuses or rules): the PV it shows never look like more. */
+.battle-target .enemy-health { width: 66px; justify-self: center; }
 .enemy-health { position: relative; display: block; height: 3px; overflow: hidden; border-radius: 2px; background: #172c2566; box-shadow: 0 1px 3px #10201966; }
 .enemy-health i, .enemy-health b { position: absolute; inset: 0 auto 0 0; }
 .enemy-health i { background: var(--dog-color); transition: width .5s cubic-bezier(.2,.8,.2,1); }
@@ -2264,6 +2266,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 @keyframes passive-in { 0% { opacity: 0; scale: .6 1.4; translate: 0 10px; } 10% { opacity: 1; scale: 1.06 1; translate: 0 0; } 16% { scale: 1; } 82% { opacity: 1; translate: 0 -6px; } 100% { opacity: 0; translate: 0 -16px; } }
 @keyframes passive-glint { to { transform: translateX(120%); } }
 .damage-pop[data-kind="status"][data-status="tormenta"] { --status: #ffe45c; }
+.damage-pop[data-kind="status"][data-status="plasma"] { --status: #ffd0a0; }
 
 /* The jar at home (src/jar-ui.ts): a window over the living room, one sky with a cluster of lights per ánima, the jar below. */
 #jar-panel { --amber: #ff9d1c; --amber-pale: #ffd98a; --gerard: #f3cf78; --aitor: #4fe0ff; position: absolute; inset: 0; z-index: 36; display: grid; place-items: center; container-type: size; color: var(--ui-paper); pointer-events: auto; }

@@ -55,15 +55,27 @@ test('escape ends cleanly and encounter state is fresh on reentry', () => {
   assert.throws(() => createBattle(1, 0));
 });
 
-test('Huir is not in the game; tried as chance it can fail and grow likelier', async () => {
-  const { createGuardBattle, palaceGuards } = await import('../src/battle.ts');
+test('Huir is in the game only in the friends\' missions and at night on the Meridiana; tried as chance it can fail and grow likelier', async () => {
+  const { createGuardBattle, createFearBattle, palaceGuards, FLEEABLE } = await import('../src/battle.ts');
   try {
     ESCAPE.mode = 'off';
     const off = createBattle();
-    assert.equal(escapeShown(), false); assert.equal(cornered(off), true);
+    assert.equal(escapeShown(off), false); assert.equal(cornered(off), true);
     assert.equal(act(off, 'escape'), undefined);
     const guards = createGuardBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard' }], palaceGuards(0));
     assert.equal(act(guards, 'escape'), undefined, 'not from the palace guards either');
+    const party = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }];
+    for (const encounter of ['cuerdas-lealtad', 'modelo-celdas', 'luca-sillones', 'camping-dados', 'crias-1']) {
+      const mission = createFearBattle(party, encounter);
+      assert.ok(escapeShown(mission) && !cornered(mission), `${encounter}: Huir is there`);
+      assert.equal(escapeChance(mission), 1, `${encounter}: and it works`);
+      act(mission, 'escape');
+      assert.equal(mission.phase, 'escaped');
+    }
+    const night = createGuardBattle(party, palaceGuards(0), undefined, 'night-guard');
+    assert.ok(escapeShown(night) && !cornered(night), 'the way home at night lets them run');
+    for (const boss of ['voz', 'no-converge', 'fran', 'campeon', 'camping-negra', 'uri-vertigo', 'sobremesa', 'aurelia', 'reina']) assert.ok(!FLEEABLE.has(boss), `${boss}: nobody runs from it`);
+    assert.ok(!FLEEABLE.has('alumnos-1a'), 'nor from the castle\'s rooms');
     ESCAPE.mode = 'chance';
     let failed = 0;
     for (let seed = 1; seed <= 40; seed++) {
@@ -172,7 +184,7 @@ test('Maná: three points to start, a skill spends its cost, Defender gives two 
   gerard.secondary = 0;
   assert.equal(act(s, 'skill', 'dog-0', 'foc-binari'), undefined, 'no maná, no skill');
 });
-test('each ánima keeps its own maná, and the ones not worn all round get some back at its end', () => {
+test('each ánima keeps its own maná, and the others get some back every time their wearer acts', () => {
   const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: 'matemagico', kit: ['matemagico', 'papagato'] }, { id: 'bernat', name: 'Bernat', profile: 'bernat' }], 2, false, undefined, ['matemagico', 'papagato']);
   // Foes that do not fall, so every round runs its whole course.
   s.foes.forEach(f => { f.hp = f.maxHp = 9999; });
@@ -186,15 +198,20 @@ test('each ánima keeps its own maná, and the ones not worn all round get some 
   s.active = s.allies.indexOf(gerard);
   act(s, 'skill', 'dog-0', 'foc-binari', 0);
   endRound();
-  assert.equal(gerard.secondary, MANA_POINTS - 1, 'worn all round: nothing back');
+  assert.equal(gerard.secondary, MANA_POINTS - 1, 'the one worn gets nothing back');
+  gerard.secondary = 0;
   wearAnima(s, 'papagato');
   assert.equal(gerard.secondary, MANA_POINTS, 'Papagato brings its own, full');
+  assert.equal(gerard.mana.matemagico, 0, 'put away, Matemágico keeps what it had');
   act(s, 'skill', 'dog-0', 'zarpazo');
-  endRound();
-  assert.equal(gerard.mana.matemagico, MANA_POINTS - 1, 'worn at the start of that round: no rest yet');
-  endRound();
-  assert.equal(gerard.mana.matemagico, Math.min(MANA_POINTS, MANA_POINTS - 1 + REST_CHARGE), 'a whole round off: some back');
+  assert.equal(gerard.mana.matemagico, REST_CHARGE, 'changed and acted: the one put away gets some back at once');
   assert.equal(gerard.secondary, MANA_POINTS - 1, 'the worn one rests not');
+  endRound();
+  assert.equal(gerard.mana.matemagico, REST_CHARGE, 'the round\'s end gives nothing of its own');
+  act(s, 'defend');
+  assert.equal(gerard.mana.matemagico, 2 * REST_CHARGE, 'any action counts, Defender too');
+  for (let i = 0; i < MANA_POINTS; i++) { endRound(); act(s, 'attack', 'dog-0'); }
+  assert.equal(gerard.mana.matemagico, MANA_POINTS, 'never past the top');
 });
 
 test('Foc Binari: light fire damage, and it sets the foe on fire (Quemado I)', () => {

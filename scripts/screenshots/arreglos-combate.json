@@ -1,0 +1,188 @@
+{
+  "title": "Arreglos de combate · maná, Huir, Gemelos, Plasma y la noche",
+  "description": "The fixes of 2026-11-23 (docs/combat.md § Maná, § Huir, § Reacciones entre elementos; docs/castle.md, Los Gemelos): Huir in the friends' missions and at night but not in their bosses, the Gemelos' health bar holding its width and the one felled alone staying down a round more, Plasma (Eléctrico on Quemado), an ánima in reserve getting maná back as soon as its wearer acts, and the night street lighting its pupils up and holding them still 2 s after a fight.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&escape=off&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22cuerdas-lealtad%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Aelectrico%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.pick = id => document.querySelector(`[data-element=\"${id}\"]`).click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "huir-mision",
+      "delay": 600,
+      "caption": "La Lealtad (Las cuerdas), playing as the game does (?escape=off): Huir is in the menu of a friend's mission"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&escape=off&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22voz%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Aelectrico%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.pick = id => document.querySelector(`[data-element=\"${id}\"]`).click();"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "huir-jefe",
+      "delay": 600,
+      "caption": "La Voz, the mission's boss: no Huir in the menu"
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&escape=off&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-1c%22%2C%22foes%22%3A2%2C%22free%22%3Afalse%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Aelectrico%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]'); window.pick = id => document.querySelector(`[data-element=\"${id}\"]`).click();"
+    },
+    {
+      "until": "(() => { if (!window.ready()) return false; if (document.querySelector('.turn-label').textContent === 'Aitor') { document.querySelector('#battle [data-command=\"defend\"] .command-trigger').click(); return false; } return document.querySelector('.turn-label').textContent === 'Gerard'; })()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.tweak(s => { const a = s.allies.find(x => x.id === 'aitor'); a.mana = { ...a.mana, tecnopata: 0 }; const f = s.foes[0]; f.hp = 75; f.timed = { ...f.timed, quemado: { level: 3, left: 10, next: 4 } }; })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "gemelo-ardiendo",
+      "delay": 400,
+      "caption": "Los Gemelos (no Huir in the castle). Gemelo 1 burns at Quemado III"
+    },
+    {
+      "eval": "window.pick('electrico')"
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "shot": "apuntar-gemelo",
+      "delay": 400,
+      "caption": "Aiming at a Gemelo: its name shows over it and its health bar keeps its width (it used to stretch with the name)"
+    },
+    {
+      "eval": "document.querySelector('#battle .battle-target.is-targeted').click()"
+    },
+    {
+      "until": "document.querySelector('.damage-pop[data-status=\"plasma\"]')",
+      "timeout": 20000
+    },
+    {
+      "shot": "plasma",
+      "caption": "Eléctrico on Quemado: ¡Plasma! Every pulse the fire had left lands at once, harder, and it goes out"
+    },
+    {
+      "until": "window.ready() && document.querySelector('.turn-label').textContent === 'Aitor'",
+      "timeout": 180000
+    },
+    {
+      "shot": "mana-antes",
+      "delay": 500,
+      "caption": "Aitor's turn, in Papagato: Tecnópata, in reserve, has no maná left; Gemelo 1 felled alone is held up by its twin (Caído)"
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "(() => { if (!window.ready()) return false; if (document.querySelector('.turn-label').textContent === 'Gerard') { document.querySelector('#battle [data-command=\"defend\"] .command-trigger').click(); return false; } return document.querySelector('.turn-label').textContent === 'Aitor'; })()",
+      "timeout": 180000
+    },
+    {
+      "shot": "mana-reserva",
+      "delay": 600,
+      "caption": "Round 2: Aitor acted in Papagato, so Tecnópata in reserve got 1 maná back at once. Gemelo 1 is still on the floor: it gets up at the end of this round, not the last"
+    },
+    {
+      "open": "/?story=metro&night=2&solo=1&escape=off"
+    },
+    {
+      "until": "!!window.gerard",
+      "timeout": 60000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.game.nightHunters.length >= 4",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.night = { g: () => window.gerard.game, s: () => window.gerard.game.nightStreet, n: 50, make(kind, dx, dz, more = {}) { const me = this.g().position, at = { x: me.x + dx, z: me.z + dz }; const p = { id: 'night-' + (++this.n) + '-1', group: more.group ?? 1, kind, position: at, facing: 0, mode: 'patrol', patrol: [{ x: Math.round(at.x), z: Math.round(at.z) }], next: 0, timer: 0, known: { x: me.x, z: me.z }, look: 0, seeing: false, stuck: 0, ...more }; this.s().pupils.push(p); return p; } }; const s = night.s(); s.tier = { ...s.tier, perTrain: 0 }; s.pupils.splice(0); night.g().standAt({ x: 112, z: 44 });"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "eval": "night.make('repetidor', 7, 3, { group: 2 }); night.make('chivata', -6, 4, { group: 3 }); night.make('gemelo', 5, -6, { group: 4, mode: 'chase', seeing: true }); night.make('empollon', 1.2, 0, { group: 1, mode: 'chase', seeing: true });"
+    },
+    {
+      "until": "!!window.gerard.battleUI.fight || document.querySelector('#hud[data-dialogue]')",
+      "timeout": 30000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]');"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "noche-huir",
+      "delay": 500,
+      "caption": "Caught on the Meridiana at night: Huir is in the menu"
+    },
+    {
+      "press": "Digit5",
+      "gap": 300
+    },
+    {
+      "until": "document.querySelector('.battle-result') && !document.querySelector('.battle-result').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "noche-seguimos",
+      "delay": 400,
+      "caption": "They run: the group that caught them stands still a while"
+    },
+    {
+      "eval": "document.querySelector('.battle-result button').click()"
+    },
+    {
+      "record": "noche-gracia",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Back on the street: every pupil about lights up where it stands (a ring at its feet, a flare, a second softer one halfway) and nobody moves for 2 s; then they hunt again"
+    }
+  ]
+}

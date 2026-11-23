@@ -18,7 +18,7 @@ test('every reaction starts from a status with a look, and leaves one when it le
     assert.ok(r.shows.length > 20 && r.element, `${id} says what it shows and which element sets it off`);
   }
   // The ten reactions of the design's table, and Conducción (electricity on Mojado, built).
-  assert.equal(Object.keys(REACTIONS).length, 11);
+  assert.equal(Object.keys(REACTIONS).length, 12);
 });
 
 test('looks are only sparks, drops, crystals and haze: no particle drawn as a flame or a puff', () => {

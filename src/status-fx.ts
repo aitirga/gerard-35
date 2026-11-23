@@ -13,7 +13,7 @@ import { ensureFluidKinds } from './fluid-fx.ts';
  * Particles are only sparks, drops, crystals and haze, never sprites with a shape of their own.
  */
 export type StatusLookId = 'quemado' | 'combustion' | 'virus' | 'mojado' | 'congelado' | 'envenenado' | 'sangrado' | 'cegado' | 'paralizado' | 'cauterizado' | 'mareo' | 'llorera' | 'sanacion' | 'confusion' | 'encogido' | 'cargado';
-export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta';
+export type ReactionId = 'humo' | 'conduccion' | 'paralisis' | 'congelar' | 'arrastre' | 'veneno-ardiente' | 'vapor' | 'anicos' | 'contagio' | 'cauterizado' | 'tormenta' | 'plasma';
 /** How a status moves whoever carries it (battle-scene plays it). */
 export type StatusMotion = 'freeze' | 'twitch' | 'sway';
 
@@ -259,6 +259,7 @@ export const REACTIONS: Record<ReactionId, { name: string; status: StatusLookId;
   contagio: { name: 'Contagio', status: 'envenenado', element: 'Agua', leaves: 'Envenenado más débil en los adyacentes', shows: 'El veneno se diluye en un vaho verde que fluye hasta quien tiene al lado y le prende.' },
   cauterizado: { name: 'Cauterizado', status: 'sangrado', element: 'Fuego', leaves: 'Cauterizado (no puede curarse)', shows: 'Un fogonazo sella las heridas: chisporroteo, una voluta de humo y las heridas brillando al rojo.' },
   tormenta: { name: 'Tormenta', status: 'cegado', element: 'Eléctrico', leaves: 'Daño a todos los que están en el humo', shows: 'La descarga salta por el humo de un luchador a otro: arcos entre todos los que están dentro.' },
+  plasma: { name: 'Plasma', status: 'quemado', element: 'Eléctrico', leaves: 'Todo lo que le quedaba al fuego, de golpe; se apaga', shows: 'La descarga se mete en la llama y la enciende entera de una vez: un fogonazo blanco, arcos por el cuerpo y la llama que revienta hacia fuera en brasas.' },
 };
 
 /** A fighter as status effects need them: who, their model, where their feet are, their slot in the fight's particles. */
@@ -519,6 +520,14 @@ export function createStatusFx(effects: Effects, hooks: { ignite(id: string, lev
           g?.burst('crackle', { at: chest, count: 140, shape: 'surface', fighter: f.index, outward: 1.8, up: 1.5, speed: 1, life: [.3, .7] });
           g?.burst('smog', { at: chest, count: 60, spread: .2, up: 1, speed: .4, life: [1, 1.8] });
           api.apply(id, 'cauterizado', { level });
+          break;
+        case 'plasma':
+          // The bolt goes into the flame and sets all of it off at once: a white flare, arcs over the body, the fire bursting out as embers.
+          g?.burst('flare', { at: chest, count: 4, spread: .12, life: [.18, .3], light: { intensity: 6, range: 3.5, colour: '#fff0d8' } });
+          g?.burst('arc', { at: chest, count: 10 * 10, chain: 10, shape: 'surface', fighter: f.index, outward: 2, speed: 1.5, life: [.18, .38], colour: '#f4f0ff', light: { intensity: 4, range: 3, colour: '#dfe6ff' } });
+          g?.burst('crackle', { at: chest, count: 260 + 80 * level, shape: 'surface', fighter: f.index, outward: 3.4, up: 1.6, speed: 1.8, life: [.35, .8], colour: '#ffb84a' });
+          g?.burst('ember', { at: chest, count: 120 + 40 * level, spread: body.radius * .6, speed: 3.6, up: 2.2, life: [.8, 1.6], colour: '#ffd9a0' });
+          g?.burst('smog', { at: head, count: 50, spread: .25, up: 1, speed: .5, life: [1, 1.8] });
           break;
         case 'tormenta': {
           // The bolt jumps through the smoke to everyone in it.

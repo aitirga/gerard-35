@@ -4370,7 +4370,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // The charge stays on show until the blow that lets it go lands.
         const charged = (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && effect?.discharge?.from === unit.id);
         syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
-          ? { ...unit.timed, quemado: shown ? { ...unit.timed!.quemado!, level: shown } : undefined } : unit.timed, charged);
+          // The fire it showed can be gone already (Plasma put it out, a Gemelo felled lost everything it carried): it stays as it was until the blow lands.
+          ? { ...unit.timed, quemado: shown ? { left: TIMED.quemado.seconds, next: TIMED.quemado.every, ...unit.timed?.quemado, level: shown } : undefined } : unit.timed, charged);
       }
       // A cortina follows the fight's word as the powder does: one a passive raised stands up, one whose rounds are over comes down.
       if (state) for (const ally of state.allies) powderFx.trackScreen(ally.id, cortinaRounds(state, ally) > 0, foesCentre, nextMix);

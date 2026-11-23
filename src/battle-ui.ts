@@ -1106,8 +1106,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!split()) { root.dataset.player = String(turnDriver()); root.toggleAttribute('data-waiting', waiting); }
     articles().forEach(article => {
       article.querySelector<HTMLButtonElement>('.command-trigger')!.disabled = blocked(article.dataset.command as Command);
-      // With Huir off (the game) it is not in the menu.
-      if (article.dataset.command === 'escape') article.hidden = !escapeShown();
+      // Huir is only in the menu of a fight the party can walk away from (`FLEEABLE`; every one in development).
+      if (article.dataset.command === 'escape') article.hidden = !escapeShown(s);
     });
     showElements();
     const aiming = targeting && !locked() && s.phase === 'player';
@@ -1120,7 +1120,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // Keys for the device in use (input-glyphs.ts fills the template).
     get('.command-help').dataset.glyphTemplate = targeting ? '{arrows} elegir · {confirm} aplicar · {cancel} volver'
       : selected === 'skill' || selected === 'dual' ? '{updown} elegir · {confirm} usar · {details} detalles · {cancel} volver'
-      : `{${({ 3: 'pickFew', 4: 'pick', 5: 'pickDev' } as const)[COMMANDS.length - (escapeShown() ? 0 : 1)] ?? 'pick'}} elegir · {confirm} confirmar · {prev} {next} ánima${elementsFor(s, actor).length ? ' · {element} elemento' : ''} · {cancel} volver`;
+      : `{${({ 3: 'pickFew', 4: 'pick', 5: 'pickDev' } as const)[COMMANDS.length - (escapeShown(s) ? 0 : 1)] ?? 'pick'}} elegir · {confirm} confirmar · {prev} {next} ánima${elementsFor(s, actor).length ? ' · {element} elemento' : ''} · {cancel} volver`;
     get('.flyout-hint').toggleAttribute('hidden', detailsLearned);
     return { aiming, eligible, cure };
   }
@@ -2259,11 +2259,15 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }
       // Its first blow lands: everything comes off but a flurry's other blows.
       unlanded = false;
+      const held = new Map(owed);
       owed.clear();
       // Rayo solar: the foes its beam has yet to cross keep their PV and fire on screen until it does.
       sweepOwed.forEach((amount, id) => { if (amount) owed.set(id, amount); });
       if (strikes) owed.set(effect.target!, strikes.slice(1).reduce((sum, amount) => sum + amount, 0));
       rain?.slice(1).forEach(drop => owed.set(drop.target, (owed.get(drop.target) ?? 0) + drop.amount));
+      // What is still to land never puts back more than the action took: a blow that took less than its number
+      // (a Gemelo held up at 1 PV, a fall the rules stopped) never makes the bar grow under it.
+      if (strikes || rain) for (const [id, amount] of owed) if (!sweepOwed.has(id)) owed.set(id, Math.min(amount, Math.max(0, held.get(id) ?? 0)));
       if (!sweep) landFire(0);
       render(); knock();
       const target = [...state.allies, ...state.foes].find(c => c.id === (effect.target ?? effect.actor));
@@ -2409,7 +2413,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
           ? { target: id, id: 'envenenado', text: `¡${TIMED.envenenado.name}${(state.foes.find(f => f.id === id)?.timed?.envenenado?.level ?? 1) > 1 ? ` ${roman(state.foes.find(f => f.id === id)!.timed!.envenenado!.level)}` : ''}!`, detail: 'El agua corre el polvo' }
           : { target: id, id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' });
       } else if (reaction && effect.target && !effect.hits?.some(h => h.smoked)) {
-        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'El agua corre el polvo' }, cristal: { id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' } }[reaction.id];
+        const says = { humo: { id: 'cegado', text: `¡${TIMED.cegado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'Se apaga el fuego' }, cauterizado: { id: 'cauterizado', text: '¡Cauterizado!', detail: `Sangrado × ${reaction.stacks ?? 0}` }, tormenta: { id: 'tormenta', text: '¡Tormenta!', detail: 'Salta por el humo' }, vapor: { id: 'cegado', text: `¡${TIMED.cegado.name}!`, detail: 'El agua se va en vapor' }, conduccion: { id: 'conduccion', text: '¡Conducción!', detail: 'Corre por el agua' }, plasma: { id: 'plasma', text: '¡Plasma!', detail: `${TIMED.quemado.name} ${roman(reaction.level ?? 1)}, de golpe` }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}${(reaction.level ?? 1) > 1 ? ` ${roman(reaction.level!)}` : ''}!`, detail: 'El agua corre el polvo' }, cristal: { id: 'cristalizado', text: `¡${TIMED.cristalizado.name}!`, detail: 'El polvo se hace esquirlas' } }[reaction.id];
         landed.push({ target: effect.target, ...says });
         reaction.hits?.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 140 + i * 90));
       }

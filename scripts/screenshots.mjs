@@ -76,7 +76,8 @@ const steps = {
   async open(step) {
     await page.emulateMedia({ reducedMotion: step.reducedMotion ?? 'no-preference' });
     const url = new URL(step.open, base);
-    await page.goto(url.href, { waitUntil: 'domcontentloaded' });
+    // Leaving a page with a fight on can take a while under load: a later `open` gets more than the default 30 s.
+    await page.goto(url.href, { waitUntil: 'domcontentloaded', timeout: step.timeout ?? 90000 });
     // The game is ready once the story has stood Gerard where it starts (main.ts `startStory`): before that a teleport is undone.
     await until(step.ready ?? '!!window.gerard?.started', 30000);
   },

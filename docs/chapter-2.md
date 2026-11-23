@@ -38,7 +38,9 @@ replaced by **open progression**, as decided on 2026-10-18:
   `src/main.ts`. Stepping back leaves whoever caught the party resting a while (`steppedBack` in
   `src/game.ts`: a patrol of Emilie's model; El que no converge waits until Gerard walks off). The
   exception is the Meridiana at night: caught and beaten there, only *Despertar*, and they wake late
-  (§ Night and the way home).
+  (§ Night and the way home). There and in the missions' fights (not their bosses) the party can also
+  run (*Huir*, `FLEEABLE`, docs/combat.md § Huir); back on the night street after any fight, every
+  pupil about lights up a moment and none moves for 2 s (`AFTER_FIGHT`), so they can be found first.
 - **But the days count** (decided on 2026-10-18, see *The Queen's advance* below): an unspoken
   countdown gives time a meaning and keeps side activities from eating the game.
 

@@ -106,7 +106,7 @@ const MATEMAGICO: Improvement[] = [
   passiveNode('matemagico', 'agua', 'capilaridad', 1, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
   // The dúo mayor past each of the other lines (docs/animas/README.md § Dúos mayores), after Aurelià as Vulcano.
   dualNode('matemagico', 'agua', 'marea', 'freatica', 1, 'capilaridad'),
-  { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados.' },
+  { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados. Sobre uno que arde, hace de golpe todo el daño que le quedaba al fuego, y más, y lo apaga.' },
   skillNode('matemagico', 'electrico', 'descarga', 1, 'electrico'),
   passiveNode('matemagico', 'electrico', 'toma-de-tierra', 1, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
   // Aitor 2026-11-21: past Toma de tierra, the current that stays in one foe and the charge he stores.

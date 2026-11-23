@@ -112,8 +112,8 @@ to close as it has stacks. Built (`cutRound`, `nextRound`).
   (`AGENTS.md`). Fire that cauterizes a wound closes it and is never a crítico.
 - **It holds while Papagato is worn by someone standing.** Switch to another ánima and the cats
   leave in their puff of smoke: the wound stays on the foe, but it gives no Crítico and five
-  stacks promise nothing. Against the maná rule that rewards switching (an ánima not worn all round
-  gets 1 back), that is the ánima's own tension: stay on Papagato to cash in, or leave to refill.
+  stacks promise nothing. Against the maná rule that rewards switching (each ánima in reserve
+  gets 1 back whenever its wearer acts), that is the ánima's own tension: stay on Papagato to cash in, or leave to refill.
 - **How five reads**, once it has the passive: the Sangrado chip under the foe's plate changes at
   five (larger, pulsing red), with no number or text added: the wound is open. The fight says
   *PASIVA · Olor a sangre* over the wearer when it gives a crítico (`../README.md` § The jar).

@@ -768,13 +768,13 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
     if (c.kind === 'gemelo' && c.hp <= 0 && !m.told) {
       const twin = state.foes.find(x => x.id === m.twin);
       if (twin && twin.hp > 0 && !twin.castle?.down) {
-        // Brought down alone: its twin holds it up, and gets it back on its feet when the round ends.
-        c.hp = 1; m.down = true; delete c.intent; delete c.statuses; delete c.timed;
-        called.push({ target: c.id, text: 'Caído', detail: 'Su gemelo lo levanta al acabar la ronda' });
-        said.push(`${c.name} cae, pero el otro lo sostiene de la bata. Si sigue en pie al acabar la ronda, lo levanta.`);
+        // Brought down alone: its twin holds it up, and gets it back on its feet at the end of the next round.
+        c.hp = 1; m.down = true; m.downAt = state.round; delete c.intent; delete c.statuses; delete c.timed;
+        called.push({ target: c.id, text: 'Caído', detail: 'Su gemelo lo levanta al acabar la ronda siguiente' });
+        said.push(`${c.name} cae, pero el otro lo sostiene de la bata. Si sigue en pie al acabar la ronda siguiente, lo levanta.`);
       } else {
         m.told = true;
-        if (twin?.castle?.down) { twin.hp = 0; twin.castle.told = true; delete twin.castle.down; said.push('Caen los dos a la vez. Nadie levanta a nadie.'); }
+        if (twin?.castle?.down) { twin.hp = 0; twin.castle.told = true; delete twin.castle.down; delete twin.castle.downAt; said.push('Caen los dos a la vez. Nadie levanta a nadie.'); }
       }
     }
     // A second-year pupil falls and its filling spills on the others: a fire, water, or a spark through whoever of them is wet.
@@ -949,7 +949,7 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
 }
 
 // ——— A round's end, and the next one's start ————————————————————————————————————————————
-/** The end of a round: a Gemelo held up gets back on its feet, an Acta not closed is void, and every few rounds Dirección trade elements. */
+/** The end of a round: a Gemelo held up since the round before gets back on its feet, an Acta not closed is void, and every few rounds Dirección trade elements. */
 export function castleRoundEnd(state: BattleState) {
   if (!state.foes.some(f => isCastle(f.kind))) return;
   const called: Called = [], said: string[] = [], f = fight(state);
@@ -962,7 +962,9 @@ export function castleRoundEnd(state: BattleState) {
     const m = c.castle;
     if (c.kind !== 'gemelo' || !m?.down) continue;
     const twin = state.foes.find(x => x.id === m.twin);
-    delete m.down;
+    // A whole round more on the floor: it gets up at the end of the round after the one it fell in.
+    if (alive(twin) && !twin.castle?.down && state.round < (m.downAt ?? state.round) + 1) continue;
+    delete m.down; delete m.downAt;
     if (alive(twin) && !twin.castle?.down) {
       c.hp = Math.max(1, Math.round(c.maxHp * CASTLE.levantar)); m.seen = c.hp;
       called.push({ target: c.id, text: 'Se levanta', detail: `+${c.hp} PV` }); said.push(`${twin.name} tira de ${c.name} y lo pone en pie.`);

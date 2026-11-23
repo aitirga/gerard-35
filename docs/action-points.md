@@ -14,8 +14,10 @@ shared pool called Ánima, were tried before):
   without an ánima on.
 - A skill spends its cost: *Foc Binari* 1, *Zarpazo sangriento* 1, *Zarpazos* 2, *Ronroneo* 2,
   *Zarpa en la llaga* 2.
-- **Resting ánimas recover**: at the end of each round every ánima not worn at any moment of it
-  gets 1 back (`REST_CHARGE`; `Combatant.worn` keeps which were worn).
+- **Resting ánimas recover**: every time a fighter acts (any action), each of their other ánimas
+  gets 1 back (`REST_CHARGE`, `restReserves`); the one worn while acting does not. Until 2026-11-23
+  it came at the end of the round and only for an ánima not worn at any moment of it, so changing
+  and acting in the same turn gave nothing back.
 - **Defender** gives the worn ánima 2 back (`DEFEND_CHARGE`, only that one; 2026-11-05), besides guarding.
 - Changing ánima is free and keeps the turn. Atacar and Defender are always free.
 - **What it looks like**: the vitals plate's row of circles is labelled *MANÁ* and shows the worn

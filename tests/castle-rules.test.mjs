@@ -80,6 +80,25 @@ test('Los Gemelos are weak to a spark, and one on a twin passes to the other', (
   assert.ok(e.called?.some(c => c.target === two.id && c.text === 'Pasa al otro'));
 });
 
+test('a Gemelo brought down alone stays down a whole round more, and its twin gets it up at the end of the next one', () => {
+  const s = fight('alumnos-1c'), [one, two] = s.foes;
+  one.hp = 0; castleAfter(KIT, s);
+  assert.equal(one.hp, 1); assert.ok(one.castle.down);
+  assert.equal(castleTaken(s, one, 'physical'), 0, 'held up, it takes nothing');
+  castleRoundEnd(s); s.round++;
+  assert.ok(one.castle.down, 'the round it fell in ends: still on the floor');
+  assert.equal(one.hp, 1);
+  castleRoundEnd(s); s.round++;
+  assert.ok(!one.castle.down, 'the next one ends: it is up');
+  assert.equal(one.hp, Math.round(one.maxHp * CASTLE.levantar));
+  // Felled again, and its twin brought down before the next round is over: both stay down.
+  one.hp = 0; castleAfter(KIT, s);
+  castleRoundEnd(s); s.round++;
+  two.hp = 0; castleAfter(KIT, s);
+  assert.equal(one.hp, 0); assert.equal(two.hp, 0);
+  assert.ok(one.castle.told && two.castle.told);
+});
+
 test('El Empollón does not know the kind of blow it has not learned, and forgets what it learned when confused', () => {
   const s = fight('alumnos-1b'), empollon = of(s, 'empollon');
   assert.equal(castleTaken(s, empollon, 'physical'), 1);

@@ -375,8 +375,8 @@ export type Hand = keyof typeof HANDS;
  * Empujón (`empujon`) a turn ahead; in its third year its crust takes `crust` blows to break and lets
  * `crusted` of anything else in. El Empollón resists the kind of blow it took last (`learned` of
  * it) and hits `repaso`. La Chivata's mark makes the next blow on whoever carries it land `chivatazo`
- * times as hard; her own is `senalar`. A Gemelo hits `gemelo` and gets its twin up with `levantar` of
- * its PV. La Delegada hits `orden`; a filling's element lands as ELEMENT_RULES says. Once El Empollón
+ * times as hard; her own is `senalar`. A Gemelo hits `gemelo`; one brought down alone is held up by its twin a whole round more and
+ * gets up at the end of the next one with `levantar` of its PV. La Delegada hits `orden`; a filling's element lands as ELEMENT_RULES says. Once El Empollón
  * has learned a kind of blow, the other lands `noSabe` times as hard. A spark on one Gemelo passes to
  * its twin, `salto` of it. A second-year pupil that falls spills its filling on the other pupils: a
  * fire, water, or a spark of `derrame` PV on whoever of them is wet, which costs them their turn.
@@ -486,8 +486,11 @@ export interface CastleMark {
   might?: number;
   /** An Encarnado (`STRONG`): harder than its kind, and worth an Eco de luz with its group. */
   strong?: true;
-  /** A Gemelo brought down alone: held up by its twin at 1 PV until the round ends. `found`: a blow has found what this one is weak to. `told`: its fall has been dealt with. */
-  down?: boolean; found?: boolean; told?: boolean;
+  /**
+   * A Gemelo brought down alone: held up by its twin at 1 PV, taking nothing, until the end of the round after the one
+   * it fell in (`downAt`, that round). `found`: a blow has found what this one is weak to. `told`: its fall has been dealt with.
+   */
+  down?: boolean; downAt?: number; found?: boolean; told?: boolean;
   /** It loses its next turn (the Queen, her Pompa burst or startled by a note). */
   stunned?: boolean;
   marked?: boolean; blows?: { round: number; kind: 'physical' | 'magic' }[]; expelled?: number; held?: string;

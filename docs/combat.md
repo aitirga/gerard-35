@@ -23,8 +23,8 @@ infantil.
 
 **Qué está construido** (2026-11-07): parte de esta dirección ya está en el juego y se describe en
 § *Estados en tiempo real*, que manda donde no coincidan: el reloj, Quemado (10 s, un pulso cada
-2 s, niveles I → III), Cegado, Mojado y las reacciones Humo, Cauterizado, Tormenta, Vapor y
-Conducción, con sus reglas propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, las barreras, las posiciones y el resto de reacciones.
+2 s, niveles I → III), Cegado, Mojado y las reacciones Humo, Cauterizado, Tormenta, Vapor,
+Conducción y Plasma, con sus reglas propias. Sigue sin construir: el turno aliado en paralelo, las fases separadas, las barreras, las posiciones y el resto de reacciones.
 
 **Decidido como dirección:** el combate mezcla **turnos y tiempo real**. Algunos estados no duran
 rondas sino **segundos**: *Quemado* no dura 2 turnos, dura **segundos** (la idea decía 20 s; construido con 10 s). Y si antes de que se apague
@@ -383,9 +383,12 @@ En la campaña las habilidades gastan **maná** (antes Secundaria y, unos días,
 ánima tiene **su propio maná**, y cada personaje el suyo: el Papagato de Gerard y el de Aitor no
 se gastan entre sí. Todas empiezan cada combate llenas, con 3 puntos (`MANA_POINTS` en
 `src/battle.ts`), que se ven como círculos bajo los PV del ánima puesta. Una habilidad gasta su
-coste; **Defender** devuelve 2 al ánima puesta, y solo a ella (`DEFEND_CHARGE`), sin pasar del máximo. Al final
-de cada ronda, cada ánima que no se ha llevado **en ningún momento** de esa ronda recupera 1
-(`REST_CHARGE`): quien quiera seguir usando habilidades cambia de ánima, que es lo que se busca.
+coste; **Defender** devuelve 2 al ánima puesta, y solo a ella (`DEFEND_CHARGE`), sin pasar del máximo. Cada
+vez que alguien actúa (Atacar, Defender, una habilidad, un dual), cada una de **sus otras ánimas**, las de
+reserva, recupera 1 (`REST_CHARGE`, `restReserves`); la que lleva puesta al actuar no. Quien quiera seguir
+usando habilidades cambia de ánima, que es lo que se busca: cambiar a Papagato y actuar ya recarga
+Matemágico. (Hasta el 2026-11-23 se recargaba al final de la ronda y solo el ánima que no se había llevado
+en ningún momento de ella, así que cambiar y actuar en el mismo turno no recargaba nada.)
 Cambiar sigue siendo gratis y no gasta el turno. Sin ánima no hay maná; Bernat no tiene. El
 diseño completo, con las ideas aún por probar, está en `docs/action-points.md`.
 
@@ -465,6 +468,7 @@ puesto, y nunca sobre un enemigo al que el propio golpe ha tumbado.
 | Eléctrico | Cegado | **Tormenta** | La descarga salta por el humo: magia (24) a todos los cegados, y se acaba el humo |
 | Fuego | Mojado | **Vapor** | El agua se va y deja Cegado I; mojado, no prende |
 | Eléctrico | Mojado | **Conducción** | Corre por el agua: magia (20) a todos los mojados, y se secan. A quien recibió el golpe estando mojado, **Shock** la mitad de las veces: pierde su siguiente turno |
+| Eléctrico | Quemado | **Plasma** | La descarga enciende de golpe todo lo que le quedaba al fuego: cada pulso que le faltaba, un 50 % más fuerte (`REACTION_RULES.plasma`), y se apaga. Un Quemado III recién puesto es mucho; uno a punto de acabarse, poco |
 | Fuego | Empolvado | **Estallido** | El polvo estalla: magia de fuego (22) a quien lo lleva y la mitad a cada uno de los demás; el de los otros empolvados estalla en cadena. Después todos arden un nivel más |
 | Agua | Empolvado | **Envenenado** | 20 s de veneno con pulsos, y cada golpe que recibe entra un 25 % más fuerte. No deja Mojado |
 | Eléctrico | Empolvado | **Cristalizado** | 20 s en los que cada golpe que recibe hace más que el anterior: +4, +8… hasta +20 |
@@ -486,8 +490,10 @@ salta la corriente; una parte de un jefe no lo recibe. Cuando el rayo es de un e
 sobre quien golpea y la mitad (`REACTION_RULES.share`) sobre los demás mojados.
 
 **Cortocircuito** (Matemágico, 2026-11-21) es el Shock seguro: sobre un enemigo mojado, o que tiene un
-movimiento anunciado, la corriente se queda en él (no salta, no hay Conducción) y pierde su siguiente
-turno; lo anunciado espera. No se repite sobre el mismo enemigo hasta que vuelva a actuar
+movimiento anunciado, la corriente se queda en él (no salta: ni Conducción ni Tormenta) y pierde su siguiente
+turno; lo anunciado espera. Lo que lleva encima sí reacciona (su polvo cristaliza, su fuego hace Plasma).
+Sobre cualquier otro enemigo es un rayo como otro, con todas sus reacciones (2026-11-23: antes no hacía
+ninguna). No se repite sobre el mismo enemigo hasta que vuelva a actuar
 (`Combatant.shorted`), así que retrasa un movimiento una vez y nunca deja a nadie sin jugar. Su
 pareja, **∂Q/∂t Condensador**, deja a Gerard *Cargado* (`Combatant.capacitor`): su siguiente golpe
 eléctrico hace el doble (`CONDENSADOR.scale`), y si un enemigo le golpea antes, la carga salta a ese
@@ -497,7 +503,9 @@ Cegado no pulsa (`levels` vacío en `TIMED`). Cauterizado, como Sangrado y Quema
 las reglas de los miedos; Tormenta es magia y las respeta (`fearDamage`). **Mojado**
 (2026-11-15, 20 s, sin pulsos ni niveles) lo ponen Cubo acuático y, con la pasiva Capilaridad,
 el Atacar con agua; Vapor y Conducción las provoca también una habilidad con ese elemento (Foc
-Binari, Pirámide ígnea, Punto eléctrico), no solo Atacar. Una **pasiva** que hace algo lo dice con una placa
+Binari, Pirámide ígnea, Punto eléctrico), no solo Atacar. El fuego de una habilidad nunca cauteriza: sobre
+alguien mojado y con sangrado, Foc Binari hace Vapor y deja la herida (2026-11-23: antes cauterizaba solo si
+además estaba mojado). Una **pasiva** que hace algo lo dice con una placa
 *PASIVA · nombre* sobre quien la tiene (`docs/animas/README.md` § The jar). Las reacciones que aún no
 se pueden dar (Envenenado, Congelado: nadie los pone todavía) esperan su aspecto ya hecho
 en `REACTIONS` (`src/status-fx.ts`). La pantalla: el número del golpe lleva el elemento debajo, la
@@ -770,9 +778,17 @@ desconocida (*?????*) ya no existe. `docs/dev-tools.md` § Combate.
 
 ## Huir
 
-En el juego no se huye: Huir no está en el menú (`ESCAPE.mode = 'off'` en `src/battle.ts`). Perder
-es la forma de echarse atrás: en las misiones de los amigos el combate se puede repetir, y dentro del
-palacio y del castillo es más peligroso, Gerard despierta en casa y toca volver más fuerte.
+En el juego (`ESCAPE.mode = 'off'` en `src/battle.ts`) Huir solo está en el menú de los combates de los
+que el grupo se puede retirar (`FLEEABLE`, 2026-11-23), y ahí siempre funciona: las misiones de los
+amigos (el laberinto de Uri y sus crías, el càmping, Las cuerdas, la maqueta de Emilie, el salón de Fran)
+y los alumnos sueltos por la Meridiana de noche. Sus jefes no (La parcela negra, El Campeón, La Voz, El que
+no converge, Fran, Vertitrón, La Sobremesa): ahí Huir no aparece. Quien se retira se queda como estaba,
+sin que cuente para la historia: una patrulla de la maqueta descansa un rato, el grupo de la Meridiana se
+queda quieto unos segundos. Al volver a la calle de noche tras un combate, ganado o del que se huyó,
+cada alumno que anda cerca se ilumina un momento (un anillo de luz a sus pies y un destello) y ninguno se
+mueve durante 2 s (`AFTER_FIGHT` en `src/night.ts`), para ver dónde está cada uno antes de que vuelvan a
+perseguir. En el resto (el palacio, el castillo, el capítulo 1) perder es la forma de echarse atrás, y
+dentro del palacio y del castillo Gerard despierta en casa y toca volver más fuerte.
 
 El código guarda otros dos modos:
 

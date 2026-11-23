@@ -60,7 +60,7 @@ import { CUERDAS_FIGHTS } from './battle';
 import { PLACES_MARTA } from './friends/marta';
 import { ringOf } from './tower';
 import { createChaser, rest, updateChaser, type Chaser } from './chasers';
-import { CLIMB, FIRST_CLEAR, HIDING_KINDS, NIGHT_DEV, RISE_CLEAR, avenueRows, huntersGrid, litLamps, nightTier, risingAt, sizeUp } from './night';
+import { AFTER_FIGHT, CLIMB, FIRST_CLEAR, HIDING_KINDS, NIGHT_DEV, RISE_CLEAR, avenueRows, huntersGrid, litLamps, nightTier, risingAt, sizeUp } from './night';
 import { STREET, carriageway, coverOf, createStreet, postGroups, removeGroup, restGroup, riseGroup, shows, stepStreet, type HidingKind, type Pupil, type Street, type StreetEvent } from './night-pupils';
 import { BODIES, createCrowd } from './crowd';
 import { dueMark, streetProgress, streetTone } from './street-unease';
@@ -664,11 +664,12 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
    * hunt the party, each its own way, more with each train under the median. `street` is the night
    * itself (who is out and what each is doing); `still` is how long Gerard has stood still, `from`
    * and `heading` where he was and which way he goes; `seen` and `hinted`, Aitor's two lines said;
-   * `pulse` paces La Chivata's pointing.
+   * `pulse` paces La Chivata's pointing. `grace`: a fight just over, the seconds left in which nobody
+   * on the street moves (`AFTER_FIGHT`), and whether they have been lit up yet (`lit`).
    */
   let nightHunt: {
     scene: string; street: Street; grates: Cell[]; seen: boolean; hinted: boolean; still: number;
-    from: Cell; heading: Cell; pulse: number;
+    from: Cell; heading: Cell; pulse: number; grace?: { left: number; lit: boolean; ring: boolean };
     /**
      * A floor of the castle instead of the street (src/castle-pupils.ts): the rooms whose pupils have
      * been put on it, and the light the party carries, kept on Gerard (El Ausente shows inside it).
@@ -768,7 +769,13 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     if (gone > 1e-4) night.heading = { x: dx / gone, z: dz / gone };
     night.from = { ...at };
     syncStalkers();
-    if (!battle && !cutscene && !paused) {
+    const grace = night.grace;
+    if (grace && !battle && !cutscene && !paused && !diffusing) {
+      // The street is back after a fight: everyone out is lit up where they stand, and nobody moves yet.
+      if (!grace.lit) { grace.lit = true; lightStalkers(1); }
+      if (!grace.ring && grace.left <= AFTER_FIGHT / 2) { grace.ring = true; lightStalkers(.5); }
+      if ((grace.left -= dt) <= 0) night.grace = undefined;
+    } else if (!grace && !battle && !cutscene && !paused) {
       const pace = !movement.walking ? 'still' : running() ? 'run' : 'walk';
       const events = stepStreet(night.street, dt, { position: at, pace, heading: pace === 'still' ? { x: 0, z: 0 } : night.heading, still: night.still }, cars);
       for (const event of events) showNight(event);
@@ -785,6 +792,21 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
     }
     placeStalkers(dt);
+  }
+  /**
+   * A fight on the way home is over: every pupil out near the party flashes where it stands, a ring
+   * of light at its feet and a flare over it, so the party can see where each one is before they
+   * move again (`AFTER_FIGHT`). `strength` 1 for the first, less for the reminder halfway.
+   */
+  function lightStalkers(strength: number) {
+    const street = nightHunt!.street;
+    for (const st of stalkers) {
+      if (!shows(st.pupil, street)) continue;
+      const at = scenery.toWorld(st.pupil.position.x, st.pupil.position.z), ground = scenery.groundHeight(at.x, at.z);
+      effects.emit('shock', new pc.Vec3(at.x, ground + .05, at.z), strength >= 1 ? 2 : 1, .1);
+      effects.emit('flash', new pc.Vec3(at.x, ground + 1.3, at.z), Math.round(2 * strength) || 1, .2);
+      if (strength >= 1) effects.emit('ray', new pc.Vec3(at.x, ground + 1, at.z), 10, .35);
+    }
   }
   /** The next groups climb out of these grates, each in a puff of the trains' draught. */
   function riseAt(cells: Cell[]) {
@@ -831,7 +853,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   }
   /** Each pupil where the street has it, drawn as what it is doing: climbing out, walking, winding up, flat under a car. */
   function placeStalkers(dt: number) {
-    const street = nightHunt!.street, moving = !reducedMotion.matches && !battle && !paused;
+    const street = nightHunt!.street, moving = !reducedMotion.matches && !battle && !paused, held = !!nightHunt!.grace;
     let chased = false;
     for (const st of stalkers) {
       const p = st.pupil, at = scenery.toWorld(p.position.x, p.position.z), ground = scenery.groundHeight(at.x, at.z);
@@ -849,7 +871,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       const lean = p.mode === 'windup' ? -12 + Math.sin(clock * 46) * 1.5 : p.mode === 'charge' ? 20 : 0;
       const sway = p.mode === 'stunned' ? Math.sin(clock * 5) * 9 : p.mode === 'alert' ? Math.sin(clock * 24) * 2 : 0;
       st.model.setLocalEulerAngles(lean, p.facing, sway);
-      const still = p.mode === 'rising' || p.mode === 'alert' || p.mode === 'windup' || p.mode === 'point' || p.mode === 'wall' || p.mode === 'stunned' || p.mode === 'flat' || p.mode === 'resting'
+      const still = held || p.mode === 'rising' || p.mode === 'alert' || p.mode === 'windup' || p.mode === 'point' || p.mode === 'wall' || p.mode === 'stunned' || p.mode === 'flat' || p.mode === 'resting'
         || (p.kind === 'monton' && p.mode === 'chase' && (p.pace ?? 'still') === 'still');
       const running = p.mode === 'charge' || (p.mode === 'chase' && (p.kind !== 'monton' || p.pace === 'run'));
       st.clips?.play(still ? 'rest' : running ? 'chase' : 'walk', moving ? p.mode === 'charge' ? 1.6 : 1 : 0);
@@ -2843,6 +2865,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       // A group beaten in the street melts where it stood (`syncStalkers` takes it apart) and the others hunt on; one walked away from stands still a while.
       if (fightingGroup !== undefined && nightHunt && battle.phase === 'won') removeGroup(nightHunt.street, fightingGroup);
       else if (fightingGroup !== undefined && nightHunt && battle.phase !== 'lost') restGroup(nightHunt.street, fightingGroup);
+      // Out on the avenue, whoever is still about lights up as the street comes back, and holds still a moment (`AFTER_FIGHT`).
+      if (fightingGroup !== undefined && nightHunt && !nightHunt.indoors && battle.phase !== 'lost') nightHunt.grace = { left: AFTER_FIGHT, lit: false, ring: false };
       if (battle.encounter === 'uri-vertigo' && battle.phase === 'won' && summit) summitKneel = { t: 0 };
       // A fall keeps where the fight stood and who started it, so fighting it again stages it there.
       // In Emilie's section: a patrol beaten is gone, one run from stands still a while; the boss falls once.

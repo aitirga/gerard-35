@@ -62,6 +62,11 @@ export const HIDING_KINDS = ['containers', 'shelter', 'terrace'] as const;
  * out takes CLIMB seconds, while it sees nothing.
  */
 export const RISE_CLEAR = 9, FIRST_CLEAR = 18, CLIMB = 2.5;
+/**
+ * A fight on the way home over (won or walked away from, 2026-11-23): every pupil still out near the
+ * party lights up a moment so they can be found, and none of them moves for AFTER_FIGHT seconds.
+ */
+export const AFTER_FIGHT = 2;
 
 const dist = (a: Cell, b: Cell) => Math.hypot(a.x - b.x, a.z - b.z);
 

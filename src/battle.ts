@@ -269,7 +269,7 @@ export const manaMax = (improved: Improved | undefined, id?: ClassId, levels?: P
   MANA_POINTS + (id ? (improved?.mana?.[id] ?? 0) + ((levels?.[id] ?? 1) >= MANA_LEVEL ? 1 : 0) : 0);
 /** What Defender gives back to the ánima worn (only that one). */
 export const DEFEND_CHARGE = 2;
-/** What an ánima not worn at all during a round gets back at its end. */
+/** What each of a fighter's other ánimas, resting, gets back every time they act (Atacar, Defender, a skill, a dual). */
 export const REST_CHARGE = 1;
 /** How many rounds a boost lasts, counting the one it is used in. */
 export const BOOST_ROUNDS = 3;
@@ -1054,9 +1054,11 @@ export function ecoWorth(state: BattleState): number {
  * Agua on Quemado is Humo: the fire goes out and leaves Cegado at the fire's level, its blows at
  * `blindN` of their weight. Fuego on Sangrado is Cauterizado: the blow opens no wound, every stack
  * burns away at once for `cauterize` PV. Eléctrico on Cegado is Tormenta: the bolt runs through the
- * smoke, `storm` of magic on everyone blinded, and the smoke is gone. Tunable (`just fight-sim`, book `reaction`).
+ * smoke, `storm` of magic on everyone blinded, and the smoke is gone. Eléctrico on Quemado is Plasma
+ * (2026-11-23): the bolt sets the whole fire off at once, every pulse it had left `plasma` times as
+ * hard, and it goes out. Tunable (`just fight-sim`, book `reaction`).
  */
-export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'conduccion' | 'estallido' | 'veneno' | 'cristal';
+export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'conduccion' | 'plasma' | 'estallido' | 'veneno' | 'cristal';
 /**
  * With Mojado: Fuego on it is Vapor (the water goes up and leaves Cegado I), and Eléctrico on it is
  * Conducción (`conduct` of magic on everyone wet, who are left dry). A foe's bolt on the party lands
@@ -1065,7 +1067,7 @@ export type ElementReaction = 'humo' | 'cauterizado' | 'tormenta' | 'vapor' | 'c
  */
 /** ∂Q/∂t Condensador: how many times the next electric blow lands, and what jumps to a foe that strikes first (base power). Tunable. */
 export const CONDENSADOR = { scale: 2, jump: 20 };
-export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5 };
+export const REACTION_RULES = { blind1: .7, blind2: .5, blind3: .3, cauterize: 6, storm: 24, conduct: 20, shock: .5, share: .5, plasma: 1.5 };
 /**
  * Escudo de bits (docs/animas/tecnopata/README.md § Grade III): a dome of Bip's bits over the party.
  * Every blow on one of them goes into it first: it stops `share` of it (all of it), out of its own PV,
@@ -1267,8 +1269,6 @@ export interface Combatant {
   racha?: number; shaken?: number;
   /** Dadista: the size the meteor comes in on their next turn (1 Meteoro, 2 Asteroide), kept only by using it turn after turn. */
   meteor?: number;
-  /** Ánimas worn at some moment of this round: they do not rest at its end. */
-  worn?: ClassId[];
   /** The ánimas this fighter can switch between (L / R): their own and the extras they equipped (docs/party.md). */
   kit?: ClassId[];
   /** The element chosen for their Atacar (`cycleElement`); it only counts while the ánima worn has it (`attackElement`). */
@@ -1620,21 +1620,30 @@ export function childParty(allyCount: number, gerardClass?: ClassId): PartySlot[
   return [{ id: 'gerard', name: 'Gerard', profile: 'gerard', classId: gerardClass }, ...(allyCount === 2 ? [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }] : [])];
 }
 /**
- * How Huir works (docs/combat.md § Huir). The game plays `off`: there is no Huir, and losing is how
- * a party backs off (fought again in the side missions; inside the palace and the castle, Gerard
- * wakes up at home to get stronger). `always`: it always works, as development plays it
- * (src/main.ts). `chance`: it works with `chance`, `step` more for each try that failed in the same
- * fight; a failed one spends that fighter's turn. `?escape=` in development tries the others.
+ * How Huir works (docs/combat.md § Huir). The game plays `off`: Huir is only in the menu of the fights
+ * the party can walk away from (`FLEEABLE`: the friends' missions and the way home at night), and there
+ * it always works; anywhere else losing is how a party backs off (inside the palace and the castle,
+ * Gerard wakes up at home to get stronger). `always`: it is in every fight and always works, as
+ * development plays it (src/main.ts). `chance`: it works with `chance`, `step` more for each try that
+ * failed in the same fight; a failed one spends that fighter's turn. `?escape=` in development tries the others.
  */
 export type EscapeMode = 'always' | 'chance' | 'off';
 export const ESCAPE: { mode: EscapeMode; chance: number; step: number } = { mode: 'off', chance: .5, step: .25 };
+/**
+ * The fights the game lets the party walk away from (2026-11-23): the friends' missions (Uri's maze and
+ * his young, the campsite, Las cuerdas, Emilie's model, Fran's salon) and the guards loose on the
+ * Meridiana at night. Not their bosses: there Huir is not in the menu at all.
+ */
+export const FLEEABLE: ReadonlySet<Encounter> = new Set(([
+  'cebollon', 'cebolla', 'plato', 'escolta', ...BROOD_ENCOUNTERS, ...CAMPING_ENCOUNTERS, ...CUERDAS_ENCOUNTERS, ...MODELO_ENCOUNTERS, ...LUCA_ENCOUNTERS, 'night-guard',
+] as Encounter[]).filter(id => !(['camping-negra', 'campeon', 'voz', 'no-converge', 'fran'] as Encounter[]).includes(id)));
 /** The chance the next Huir works in this fight. */
 export const escapeChance = (state: BattleState) => ESCAPE.mode === 'always' ? 1
-  : ESCAPE.mode === 'off' ? 0 : Math.min(1, ESCAPE.chance + ESCAPE.step * (state.escapeTries ?? 0));
-/** Whether Huir is in the menu at all. */
-export const escapeShown = () => ESCAPE.mode !== 'off';
+  : ESCAPE.mode === 'off' ? FLEEABLE.has(state.encounter) ? 1 : 0 : Math.min(1, ESCAPE.chance + ESCAPE.step * (state.escapeTries ?? 0));
+/** Whether Huir is in the menu of this fight at all. */
+export const escapeShown = (state: BattleState) => ESCAPE.mode !== 'off' || FLEEABLE.has(state.encounter);
 /** Nobody runs from possessed dogs, the palace minion or Vertitrón's roof; the palace guards and the maze's fears let them back off. */
-export const cornered = (state: BattleState) => !escapeShown() || state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa' || state.encounter === 'fran'
+export const cornered = (state: BattleState) => !escapeShown(state) || state.possessed || state.encounter === 'palace-minion' || state.encounter === 'uri-vertigo' || state.encounter === 'sobremesa' || state.encounter === 'fran'
   // The black pitch puts every lantern out round them, and El Campeón stands between them and the way on.
   || state.encounter === 'camping-negra' || state.encounter === 'campeon'
   // Where every string meets there is nowhere to back off to.
@@ -2366,7 +2375,7 @@ function spendSecondary(actor: Combatant, cost: number) {
 function fighter(slot: PartySlot, unlocked: readonly ClassId[] = []): Combatant {
   const stats = grown(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.grown);
   const points = slot.profile === 'bernat' ? 0 : MANA_POINTS;
-  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, ...slot.grown ? { grown: slot.grown } : {}, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, worn: slot.classId ? [slot.classId] : [], kit: kitOf(slot, unlocked), ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
+  return { id: slot.id, name: slot.name, profile: slot.profile, classId: slot.classId, stats, ...slot.grown ? { grown: slot.grown } : {}, hp: stats.pv, maxHp: stats.pv, secondary: slot.classId ? points : 0, maxSecondary: points, guarding: false, mana: {}, kit: kitOf(slot, unlocked), ...slot.evening ? { evening: { shifts: { ...slot.evening.shifts }, from: slot.evening.from } } : {} };
 }
 /** The fighter's maná goes with the ánima: the one taken off keeps what it had, the one put on brings its own, up to what it holds. */
 function swapMana(state: BattleState, actor: Combatant, to: ClassId | undefined) {
@@ -2374,9 +2383,13 @@ function swapMana(state: BattleState, actor: Combatant, to: ClassId | undefined)
   if (actor.classId) pools[actor.classId] = actor.secondary;
   actor.maxSecondary = manaMax(state.improved, to, state.levels);
   actor.secondary = to ? pools[to] ?? actor.maxSecondary : 0;
-  if (!to) return;
-  delete pools[to];
-  if (!(actor.worn ??= []).includes(to)) actor.worn.push(to);
+  if (to) delete pools[to];
+}
+/** `actor` has acted: each of their other ánimas, resting, gets some maná back (`REST_CHARGE`), up to what it holds. */
+function restReserves(state: BattleState, actor: Combatant) {
+  if (!wearsAnimas(actor)) return;
+  const pools = actor.mana ??= {};
+  for (const id of kitIn(state, actor)) if (id !== actor.classId) { const most = manaMax(state.improved, id, state.levels); pools[id] = Math.min(most, (pools[id] ?? most) + REST_CHARGE); }
 }
 function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
   const stats = { ...PROFILES[kind], ...(hp ? { pv: hp } : {}) };
@@ -2914,6 +2927,7 @@ function winMessage(state: BattleState) {
 }
 /** The ánima `actor` wears takes part in the fight: a win teaches it (src/levels.ts). */
 function took(state: BattleState, actor: Combatant) {
+  restReserves(state, actor);
   if (!actor.classId) return;
   const who = (state.fought ??= {})[actor.classId] ??= [];
   if (!who.includes(actor.id)) who.push(actor.id);
@@ -2992,19 +3006,20 @@ function shock(state: BattleState, who: Combatant, effect: BattleEffect) {
  * acted (`shorted`), so it delays a move once and never locks a foe down.
  */
 function shortCircuit(state: BattleState, target: Combatant, effect: BattleEffect) {
-  if (target.hp <= 0 || target.part) return;
+  if (target.hp <= 0 || target.part) return false;
   const wet = !!target.timed?.mojado, move = target.intent ? FOE_ABILITIES[target.intent.ability].name : undefined;
-  if (!wet && !move) return;
+  if (!wet && !move) return false;
   if (target.shorted) {
     effect.shorted = { target: target.id, why: 'again' };
     state.message += ` ${target.name} aún no se ha repuesto del último cortocircuito: esta vez aguanta.`;
-    return;
+    return true;
   }
-  if (target.shock) return;
+  if (target.shock) return true;
   target.shock = true; target.shorted = true;
   effect.shocked = [...effect.shocked ?? [], target.id];
   effect.shorted = { target: target.id, why: wet ? 'mojado' : 'anuncio', ...move ? { move } : {} };
   state.message += move ? ` ¡Cortocircuito! ${target.name} pierde su siguiente turno: ${move} tendrá que esperar.` : ` ¡Cortocircuito en el agua! ${target.name} pierde su siguiente turno.`;
+  return true;
 }
 /**
  * ∂Q/∂t Condensador: a foe's blow found someone carrying the charge, and it jumps to that foe
@@ -3084,8 +3099,12 @@ function powderTurned(state: BattleState, id: PowderTurn, effect: BattleEffect) 
   const wearer = remolinoOf(state);
   if (wearer) { raiseCortina(state, wearer, effect); note(effect, 'remolino', wearer); }
 }
-/** An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`, `POWDER_RULES`), if it finds anything to turn. */
-function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect, reach = false) {
+/**
+ * An element has landed on `target` with Atacar: what it turns (`REACTION_RULES`, `POWDER_RULES`), if it finds anything to turn.
+ * `reach`: a skill's bolt reaches everyone wet wherever it landed. `stays`: the current stays in `target` (Cortocircuito), so
+ * nothing jumps from it.
+ */
+function react(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect, reach = false, stays = false) {
   const fire = target.timed?.quemado, bleeding = stacks(target, 'sangrado');
   const wet = state.foes.filter(f => f.hp > 0 && f.timed?.mojado);
   if (powder(state, actor, target, element, effect)) {
@@ -3099,18 +3118,21 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     effect.reaction = { id: 'cauterizado', stacks: bleeding, hits: [{ target: target.id, amount }] };
     state.message += ` ¡Cauteriza la herida! −${amount} PV.`;
   } else if (target.hp > 0 && element === 'fuego' && target.timed?.mojado) {
-    const held = waterOf(target), level = steam(target);
-    effect.reaction = { id: 'vapor', level };
-    if (held) effect.water = [...effect.water ?? [], { target: target.id, from: held, to: held - 1 }];
-    state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(level)}.`;
-  } else if (target.hp > 0 && element === 'electrico' && target.timed?.cegado) {
+    vapour(state, target, effect);
+  } else if (target.hp > 0 && element === 'electrico' && fire) {
+    // Plasma: the bolt sets off all the fire had left to burn, harder, at once, and it goes out.
+    const left = firePulses(fire), amount = hurt(state, target, Math.max(1, Math.round(left * pulseDamage('quemado', fire.level, target.maxHp) * REACTION_RULES.plasma)));
+    delete target.timed!.quemado;
+    effect.reaction = { id: 'plasma', level: fire.level, hits: [{ target: target.id, amount }] };
+    state.message += ` ¡Plasma! El fuego estalla de golpe: −${amount} PV.`;
+  } else if (!stays && target.hp > 0 && element === 'electrico' && target.timed?.cegado) {
     const hits = state.foes.filter(f => f.hp > 0 && f.timed?.cegado).map(f => {
       delete f.timed!.cegado;
       return { target: f.id, amount: hurt(state, f, fearDamage(state, f, magical(REACTION_RULES.storm, current(state, actor), current(state, f)) * affinityScale(f, 'electrico'), 'magic', 'electrico')) };
     });
     effect.reaction = { id: 'tormenta', hits };
     state.message += ` ¡La descarga salta por el humo! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
-  } else if (element === 'electrico' && wet.length && (reach || (target.hp > 0 && target.timed?.mojado))) {
+  } else if (!stays && element === 'electrico' && wet.length && (reach || (target.hp > 0 && target.timed?.mojado))) {
     // Conducción: the water carries it to everyone wet (a skill's reaches them wherever it landed), and dries.
     // Water held under a foe (La crecida) does not go: it keeps the current; one already charged only starts it over.
     const seconds = currentFor(effect), running = wet.filter(f => f.timed?.agua && f.timed.corriente);
@@ -3135,6 +3157,15 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
   }
   if (effect.reaction) ground(state, actor, effect);
 }
+/** Vapor from a blow of fire on someone wet (`react`, or a skill that burns, which finds the water before it can light). */
+function vapour(state: BattleState, target: Combatant, effect: BattleEffect) {
+  const held = waterOf(target), level = steam(target);
+  effect.reaction = { id: 'vapor', level };
+  if (held) effect.water = [...effect.water ?? [], { target: target.id, from: held, to: held - 1 }];
+  state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(level)}.`;
+}
+/** How many pulses a fire still has to give before its clock runs out (`runClock`): the next one, and one every `every` after it. */
+export const firePulses = (fire: Timed) => fire.left > 1e-6 ? Math.floor(Math.max(0, fire.left - fire.next) / TIMED.quemado.every + 1e-6) + 1 : 0;
 /** Humo: the fire on `c` goes out and leaves Cegado at its level. Returns that level. */
 function smoke(c: Combatant) {
   const { quemado: fire, ...rest } = c.timed!;
@@ -3544,7 +3575,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action === 'escape') {
     state.phase = 'escaped'; endFight(state);
     state.message = state.encounter === 'palace-guards' ? 'Retrocedéis hasta el vestíbulo. Los guardianes vuelven a pegarse a la cortina.'
-      : state.encounter === 'night-guard' ? 'Echáis a correr. El guardián se queda un momento pegado a la acera.' : 'Te alejas con calma. La aventura sigue.';
+      : state.encounter === 'night-guard' ? 'Echáis a correr. Se quedan un momento pegados a la acera.'
+      : FLEEABLE.has(state.encounter) ? 'Retrocedéis sin darles la espalda. Seguirán ahí.' : 'Te alejas con calma. La aventura sigue.';
     return effect;
   }
   if (action === 'defend') {
@@ -3978,13 +4010,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if ('wets' in ability!) state.message += smoked ? ' El agua apaga los fuegos y moja al resto.' : powdered.size === targets.length ? '' : ' ¡Mojados!';
     else if (smoked) state.message += ' El agua apaga los fuegos.';
     if ('raises' in ability! && effect.water?.length) state.message += ` El agua sube: ${effect.water.map(w => roman(w.to)).join(', ')}.${effect.water.some(w => w.to >= CRECIDA.marks && w.from < CRECIDA.marks) ? ' ¡Hundidos!' : ''}`;
-    if (landing === 'fuego' && effect.reaction?.id === 'vapor' && !('evens' in ability!)) state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(effect.reaction.level ?? 1)}.`;
+    if (landing === 'fuego' && effect.reaction?.id === 'vapor') state.message += ` ¡El agua se va en vapor! ${TIMED.cegado.name} ${roman(effect.reaction.level ?? 1)}.`;
     if ('powders' in ability! && effect.hits.some(h => h.burn?.id === 'empolvado')) state.message += ` ¡${TIMED.empolvado.name}s!`;
-    if ('evens' in ability! && effect.hits.some(h => h.burn?.id === 'quemado')) state.message += ` El fuego de todos: ${TIMED.quemado.name} ${roman(Math.max(...effect.hits.map(h => h.burn?.id === 'quemado' ? h.burn.level : 0)))}.`;
     if ('restart' in ability!) state.message += effect.restarted?.length ? ' Sus relojes vuelven a empezar.' : ' No llevan nada con reloj.';
     if (effect.mana) state.message += ' Toma de tierra: maná +1.';
     if (actor.out !== undefined && actor.out > state.round) state.message += ` ${actor.name} pierde su siguiente turno.`;
     state.message += powderSaid;
+    // Pirámide ígnea: the fire everyone ends up with, after the powder has burst (it says what it raised).
+    if ('evens' in ability! && effect.hits.some(h => h.burn?.id === 'quemado')) state.message += ` El fuego de todos: ${TIMED.quemado.name} ${roman(Math.max(...effect.hits.map(h => h.burn?.id === 'quemado' ? h.burn.level : 0)))}.`;
     // Combustión: a physical blow on everyone sets off each fire at IV it finds.
     if (ability!.kind === 'physical') for (const foe of targets) if ((effect.hits.find(h => h.target === foe.id)?.amount ?? 0) > 0) combust(state, actor, foe, effect);
     // Siete vidas: Haru's claw went through every foe, one after another (`hunt`, for the fight to land them so);
@@ -4080,7 +4113,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       // Foc Binari sets them on fire; on someone already burning, the fire goes up a level. An onion's wet layers do not catch.
       if (action === 'skill' && ability && 'burn' in ability && target.timed?.empolvado) react(state, actor, target, 'fuego', effect);
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
-      else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) react(state, actor, target, 'fuego', effect);
+      // On someone wet the fire finds the water first: Vapor, and it does not catch (a skill's fire never cauterizes a wound: Atacar's does).
+      else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) { vapour(state, target, effect); ground(state, actor, effect); }
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0) {
         const fire = inflict(target, ability.burn, fireTop(state));
         bank(state, actor, target, effect);
@@ -4117,7 +4151,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         else if (frozenOf(target)) state.message += ' Su agua es hielo: no sube.';
       }
       // Cortocircuito: the current stays in its target and jumps nowhere.
-      if (action === 'skill' && ability && 'short' in ability) shortCircuit(state, target, effect);
+      // Cortocircuito: on someone wet or about to move the current stays in them and jumps nowhere (no Tormenta, no
+      // Conducción; what is on them still turns: powder, a fire); on anyone else it is a bolt like any other.
+      if (action === 'skill' && ability && 'short' in ability && shortCircuit(state, target, effect)) react(state, actor, target, 'electrico', effect, false, true);
       else if (element) react(state, actor, target, element, effect, action === 'skill');
       // A Celda seca takes water in by its own rule, whoever throws it: Mojado, and switched on.
       if (target.kind === 'celda-seca' && landing === 'agua' && !effect.reaction && target.hp > 0 && !target.timed?.mojado) {
@@ -6324,9 +6360,9 @@ export function changeAnima(state: BattleState, allyId: string, classId: ClassId
   const { hp } = ally;
   delete ally.racha; delete ally.meteor;
   swapMana(state, ally, classId ?? undefined);
-  const { secondary, maxSecondary, mana, worn, kit } = ally;
+  const { secondary, maxSecondary, mana, kit } = ally;
   Object.assign(ally, fighter({ id: ally.id, name: ally.name, profile: ally.profile, classId: classId ?? undefined }));
-  Object.assign(ally, { hp: Math.min(hp, ally.maxHp), secondary, maxSecondary, mana, worn, kit });
+  Object.assign(ally, { hp: Math.min(hp, ally.maxHp), secondary, maxSecondary, mana, kit });
   state.message = classId ? `${ally.name} cambia de ánima.` : `${ally.name} se quita el ánima.`;
   return true;
 }
@@ -6388,13 +6424,6 @@ export function nextRound(state: BattleState): StatusTick[] {
   lucaRoundEnd(state);
   // What lasts one round whatever its clock says (Explosión's blinding) ends with it.
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) if (c.timed?.[id]?.until !== undefined && c.timed[id]!.until! <= state.round) delete c.timed[id];
-  // Ánimas not worn all round get some maná back; next round counts afresh from the one worn.
-  for (const ally of state.allies) {
-    if (!wearsAnimas(ally)) continue;
-    const pools = ally.mana ??= {};
-    for (const id of kitIn(state, ally)) if (id !== ally.classId && !ally.worn?.includes(id)) { const most = manaMax(state.improved, id, state.levels); pools[id] = Math.min(most, (pools[id] ?? most) + REST_CHARGE); }
-    ally.worn = ally.classId ? [ally.classId] : [];
-  }
   for (const ally of state.allies) delete ally.suture;
   // A cortina nobody broke comes down with its last round.
   for (const ally of state.allies) if (ally.cortina !== undefined && (ally.cortina <= state.round || ally.hp <= 0)) delete ally.cortina;

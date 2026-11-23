@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PASSIVES, SKILLS, act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, improve, inflict, manaMax, nextRound, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
+import { PASSIVES, SKILLS, act, attackElement, createBattle, cycleElement, elementsFor, enemyAct, firePulses, improve, inflict, manaMax, nextRound, pulseDamage, REACTION_RULES, runClock, TIMED, wearAnima, addStatus, stacks, MANA_POINTS } from '../src/battle.ts';
 import { CAST_CONTACT, CONTACT_SECONDS, CURE_CONTACT, SPELL_CONTACT } from '../src/battle-motion.ts';
 import { spellLaunch, startSounds } from '../src/battle-sounds.ts';
 import { impactSeconds } from '../src/home-lights.ts';
@@ -166,6 +166,51 @@ test('Eléctrico on Cegado: the bolt runs through the smoke to everyone in it, a
   assert.ok(s.foes.every(f => !f.timed.cegado));
   // Nobody in smoke: nothing to run through.
   assert.equal(strike(fight(), 'electrico').reaction, undefined);
+});
+test('Eléctrico on Quemado is Plasma: every pulse the fire had left lands at once, harder, and it goes out', () => {
+  const s = fight();
+  dog(s).hp = dog(s).maxHp = 300;
+  dog(s).timed = { quemado: { level: 3, left: TIMED.quemado.seconds, next: TIMED.quemado.every } };
+  const pulses = firePulses(dog(s).timed.quemado), hp = dog(s).hp;
+  assert.equal(pulses, TIMED.quemado.seconds / TIMED.quemado.every);
+  const e = strike(s, 'electrico');
+  assert.equal(e.reaction.id, 'plasma'); assert.equal(e.reaction.level, 3);
+  assert.equal(e.reaction.hits[0].amount, Math.round(pulses * pulseDamage('quemado', 3, 300) * REACTION_RULES.plasma));
+  assert.ok(REACTION_RULES.plasma > 1, 'more than the fire would have done by itself');
+  assert.equal(dog(s).timed.quemado, undefined, 'the fire is gone');
+  assert.equal(hp - dog(s).hp, e.amount + e.reaction.hits[0].amount);
+  // A fire near its end has less left to give.
+  const late = fight(); dog(late).hp = dog(late).maxHp = 300;
+  dog(late).timed = { quemado: { level: 3, left: 2, next: 2 } };
+  assert.equal(strike(late, 'electrico').reaction.hits[0].amount, Math.round(pulseDamage('quemado', 3, 300) * REACTION_RULES.plasma));
+});
+test('a skill\'s fire on someone wet is Vapor, never Cauterizado; Cortocircuito\'s current turns what is on its target', () => {
+  const s = fight();
+  improve(s, improvedBy(['matemagico:fuego', 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito']));
+  gerard(s).secondary = gerard(s).maxSecondary = 9;
+  dog(s).hp = dog(s).maxHp = 300;
+  dog(s).timed = { mojado: { level: 1, left: 20, next: 20 } }; addStatus(dog(s), 'sangrado', 2);
+  const steamed = act(s, 'skill', dog(s).id, 'foc-binari');
+  assert.equal(steamed.reaction.id, 'vapor');
+  assert.equal(stacks(dog(s), 'sangrado'), 2, 'the wound is untouched');
+  assert.ok(!dog(s).timed.quemado && !dog(s).timed.mojado);
+  // Not wet and with nothing announced: Cortocircuito is a bolt like any other.
+  const short = fight();
+  improve(short, improvedBy(['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito']));
+  gerard(short).secondary = 9;
+  for (const f of short.foes) { delete f.intent; f.timed = { cegado: { level: 1, left: 10, next: 10 } }; }
+  short.phase = 'player'; short.active = short.allies.indexOf(gerard(short));
+  assert.equal(act(short, 'skill', dog(short).id, 'cortocircuito').reaction.id, 'tormenta');
+  // Wet: the current stays in it, nothing jumps; a fire on it still goes up as Plasma.
+  const held = fight();
+  improve(held, improvedBy(['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito']));
+  gerard(held).secondary = 9;
+  for (const f of held.foes) f.timed = { mojado: { level: 1, left: 20, next: 20 } };
+  dog(held).timed.quemado = { level: 2, left: 10, next: 2 };
+  held.phase = 'player'; held.active = held.allies.indexOf(gerard(held));
+  const e = act(held, 'skill', dog(held).id, 'cortocircuito');
+  assert.equal(e.shorted.why, 'mojado'); assert.equal(e.reaction.id, 'plasma');
+  assert.ok(dog(held, 1).timed.mojado, 'no Conducción to the other');
 });
 test('a reaction goes by the status, whoever put it there, and never on a foe the blow felled', () => {
   const s = fight();
