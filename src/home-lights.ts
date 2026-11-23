@@ -135,7 +135,7 @@ const PLACE_LOOKS: Record<Exclude<EnvironmentId, 'meridiana'>, { salon: [Lamp, L
   'bunkers-carmel': { salon: [hex('#ffb35c', .7, .6), hex('#eab4a0', .5, .5), hex('#9fb8d8', .5, .45), white(2400, .6)], rest: white(2600, .3) },
   // La Barceloneta: sand, the sea's turquoise, a pale midday sky and the rusted cubes.
   barceloneta: { salon: [white(4200, .85), hex('#4fa3a5', .6, .55), hex('#e6d0a2', .45, .6), hex('#b0603a', .5, .45)], rest: white(4000, .35) },
-  // Càmping Eurosport: pine olive, the bulbs' amber, the pool's teal and the evening's deep blue.
+  // Càmping Eurocamping: pine olive, the bulbs' amber, the pool's teal and the evening's deep blue.
   camping: { salon: [hex('#ffb35c', .7, .55), hex('#6a6b45', .55, .45), hex('#2b6f78', .55, .5), white(2300, .6)], rest: white(2400, .28) },
   // Sants at the end of the day: ochre houses in blue shade, and El Nucli's warm window.
   sants: { salon: [white(3800, .65), hex('#cfa463', .6, .5), hex('#7d93a6', .5, .45), hex('#ffb35c', .65, .6)], rest: white(3500, .28) },
@@ -255,7 +255,7 @@ const PALETTES: Record<BattleState['encounter'] | 'possessed', [Lamp, Lamp, Lamp
   'crias-3': [hex('#3aff8a', .55, .8), hex('#9a6cd8', .5, .75), hex('#ff3ad6', .5, .8), hex('#3a8aff', .5, .75)],
   // La Sobremesa: the campsite's warm bulbs, the friends' violet eyes, the pines and a card's red.
   sobremesa: [hex('#ffc46a', .7, .75), hex('#9a6cd8', .55, .75), hex('#6a6b45', .5, .6), hex('#c8423b', .55, .7)],
-  // Càmping Eurosport: the endless dusk's warm bulbs and pine olive, and each fight's own colour on top.
+  // Càmping Eurocamping: the endless dusk's warm bulbs and pine olive, and each fight's own colour on top.
   'camping-magos': [hex('#ffc46a', .7, .75), hex('#ff8a3a', .6, .8), hex('#6a6b45', .5, .6), hex('#3a6ac8', .5, .7)],
   'camping-dados': [hex('#ffc46a', .7, .75), white(3400, .6), hex('#6a6b45', .5, .6), hex('#c89a5a', .55, .65)],
   'camping-agentes': [hex('#ffc46a', .7, .75), hex('#2f6f78', .55, .75), hex('#6a6b45', .5, .6), hex('#e8dcc0', .5, .6)],

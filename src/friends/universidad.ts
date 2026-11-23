@@ -67,12 +67,12 @@ export const PLACES_UNI = {
  */
 export const SHALLOWS = { centre: { x: 99.5, z: 106 }, radius: 6 };
 
-/** Càmping Eurosport, through the spiral (assets/geo/camping, src/environments.ts `CAMPING`). */
+/** Càmping Eurocamping, through the spiral (assets/geo/camping, src/environments.ts `CAMPING`). */
 export const CAMP: EnvironmentId = 'camping';
 /** A named spot of the campsite (`anchors` of its zone) as the cell it falls on: rebuilding the zone keeps the mission in place. */
 function camp(anchor: string): Cell {
   const at = (CAMPING_SCENE as GeoScene).anchors?.[anchor];
-  if (!at) throw new Error(`Càmping Eurosport has no anchor «${anchor}»`);
+  if (!at) throw new Error(`Càmping Eurocamping has no anchor «${anchor}»`);
   return { x: Math.round(at.x), z: Math.round(at.z) };
 }
 /** Where things are in the campsite. */
@@ -187,7 +187,7 @@ export const LINES_UNI = {
   ),
   /** Out of the spiral: the campsite, in a summer evening that never ends. */
   camp: { left: 'gerard35', right: 'aitor', lines: [
-    aitor('Esto es el Eurosport. El camping.'),
+    aitor('Esto es el Eurocamping. El camping.'),
     gerard('Es verano. Hace un momento era noviembre.'),
     aitor('Están todas las tiendas montadas y no hay nadie. Ni un ruido.'),
     gerard('Anna tiene que estar por aquí. Y los demás detrás.'),
@@ -237,7 +237,7 @@ export const LINES_UNI = {
   ),
   /** Free: the seven on the grass by the table, themselves again. */
   won: group('anna',
-    line('anna', 'Gerard… Què hi fem aquí? Això és l\'Eurosport?'),
+    line('anna', 'Gerard… Què hi fem aquí? Això és l\'Eurocamping?'),
     line('miquel', 'Els nens. Amb qui hem deixat els nens?'),
     line('soraya', 'He de trucar al Guillem. Li he dit coses horribles.'),
     line('alvaro', 'Ja que som aquí… la foto. Hi ha un meló a la taula.'),
@@ -261,5 +261,5 @@ export const LINES_UNI = {
     line('anna', 'A cop de diapasó. Fet.'),
   ),
   /** Gerard's caption on the photo. */
-  photo: 'Càmping Eurosport · Los nueve y el melón',
+  photo: 'Càmping Eurocamping · Los nueve y el melón',
 };

@@ -4,7 +4,7 @@ import type { MeshBuilder } from '../geo-scenery';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A tent pitched on a campsite's pitch and left empty (Càmping Eurosport, docs/quests/universidad.md):
+ * A tent pitched on a campsite's pitch and left empty (Càmping Eurocamping, docs/quests/universidad.md):
  * faded canvas (`lona`) in its `colour`, a darker groundsheet skirt, the door unzipped onto the dark
  * inside, guy lines to pegs. `tent`: `iglu` (a dome, two poles crossing over it), `canadenca` (a ridge
  * tent, its door at the front end, a pole standing out at each end) or `familiar` (a tunnel tent on

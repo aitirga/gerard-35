@@ -1,4 +1,4 @@
-"""Las parcelas: a word-clue puzzle for the campsite (docs/quests/universidad.md § Càmping Eurosport).
+"""Las parcelas: a word-clue puzzle for the campsite (docs/quests/universidad.md § Càmping Eurocamping).
 
 A grid of pitches, each with a word on its sign. The reception's blackboard gives one clue at a
 time (a word and a number); the pitches that go with it are the friends'. A wrong pitch wakes its
@@ -138,7 +138,7 @@ def passes(result: dict, level: str) -> bool:
 
 
 COMPOSE = """You design the word-clue puzzle of a campsite in "Gerard 35", a birthday game. Two friends, Gerard and
-Aitor, will solve it together in Spanish. They went camping for years at Càmping Eurosport (a pool, near the
+Aitor, will solve it together in Spanish. They went camping for years at Càmping Eurocamping (a pool, near the
 beach) with their university friends Anna, Álvaro, Miquel, Sarah, Soraya and Nico; their ritual was a photo of
 everyone with a melon; they played a lot of board games there.
 
@@ -269,7 +269,7 @@ button.black{background:var(--black);color:#666;box-shadow:none}
 button:disabled{cursor:default;transform:none}
 footer{color:var(--muted);font-size:13px;margin-top:16px}
 </style></head><body><main>
-<h1>CÀMPING EUROSPORT · LAS PARCELAS · PRUEBA</h1>
+<h1>CÀMPING EUROCAMPING · LAS PARCELAS · PRUEBA</h1>
 <div id="board"><div id="clue"></div><div id="note"></div></div>
 <div id="grid"></div>
 <footer>Pulsa una parcela para elegirla. Las correctas encienden su farol; una equivocada despierta su tienda (un combate); la negra apaga todos los faroles.</footer>

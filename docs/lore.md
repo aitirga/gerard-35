@@ -174,7 +174,7 @@ friends' stories and the second round carry it.
 | **Nuria and Uri** | Friends of Gerard and Aitor who live in **Cardedeu**, reached by Rodalies from La Sagrera (chapter 2). Nuria, Gerard and Aitor once shared a flat; she has just become a mother. Not Nuria Mendoza. |
 | **Nil** | Nuria and Uri's baby (under a year old). In Nuria's mission Uri runs off down the street with him (`docs/quests/nuria.md`). |
 | **Haru and Yuki** | The cats who live with Nuria (both female: one white, one tricolour); they are Gerard's cats too, from when Nuria, Gerard and Aitor lived together. Nuria's ánima, **Papagato**, brings them into the party's fights. |
-| **The university friends** | Seven friends from university: the couples **Anna and Álvaro** and **Miquel and Sarah**, **Soraya** (her partner Guillem stays out of it), **Nico** and **Joan**. For years they went camping together at the Càmping Eurosport, with a photo of all of them with a melon every summer; many have children now. On Gerard's birthday the Queen holds them on the beach of the Barceloneta (`docs/quests/universidad.md`). |
+| **The university friends** | Seven friends from university: the couples **Anna and Álvaro** and **Miquel and Sarah**, **Soraya** (her partner Guillem stays out of it), **Nico** and **Joan**. For years they went camping together at the Càmping Eurocamping, with a photo of all of them with a melon every summer; many have children now. On Gerard's birthday the Queen holds them on the beach of the Barceloneta (`docs/quests/universidad.md`). |
 | **Marta** | Aitor's best friend, and Gerard's friend too. A singer (she and Aitor, on piano, played together in Keiran; she also sang in Mindtrap) and a dentist. Direct, crystal-clear and loyal. In the game she is in Alegia, and the Queen has taken her voice (`docs/quests/marta.md`). |
 | **Luca** | A very close friend; he and Gerard met at Gerard's first school. A maths teacher who studied astrophysics; eccentric, loud colours, touchy-feely, talks a lot. Lives with Fran and their adopted daughter, Yadelin. In the game he has gone grey outside the Sagrada Família (`docs/quests/luca.md`). |
 | **Fran** | Luca's partner, a hairdresser with his own salon. Under the Queen's hold he becomes brilliant, studies Gaudí's hyperboloids all day and turns the Sagrada Família into his salon: the mission's boss. Painted cold and self-absorbed; nothing real of theirs is named. |
@@ -191,7 +191,7 @@ friends' stories and the second round carry it.
   La Reina Bubbaloo's palace appears on top of it in chapter 2, with every pupil inside.
 - **Cardedeu** (Vallès Oriental): Nuria and Uri's town, by train.
 - **La Barceloneta** (the L4's beach): where the university friends wait for Gerard's birthday.
-- **Càmping Eurosport**: the campsite of the friends' summers, through the spiral in the sea; always
+- **Càmping Eurocamping**: the campsite of the friends' summers, through the spiral in the sea; always
   the same summer evening, with nobody in it.
 - **The Sagrada Família** (L5): Luca's mission. Outside, Luca grey by the pond; inside, Fran's
   salon zone by zone, where the light through the windows walks and cancels an element.

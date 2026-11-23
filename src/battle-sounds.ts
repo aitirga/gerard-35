@@ -122,7 +122,7 @@ export const FOE_SOUNDS: Record<FoeKind, Sounds> = {
   'sobremesa-joan': { start: [{ id: 'glitch', volume: .6 }], impact: [{ id: 'hit', volume: .8 }] },
   'sobremesa-soraya': { impact: [{ id: 'stat-up', volume: .7 }] },
   'sobremesa-nico': { impact: [{ id: 'guard' }] },
-  // Càmping Eurosport: gas hissing into a flare, a die falling flat, card on bone, a plaster fist.
+  // Càmping Eurocamping: gas hissing into a flare, a die falling flat, card on bone, a plaster fist.
   mago: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'fire-hit' }] },
   dado: { start: [{ id: 'creak', volume: .4 }], impact: [{ id: 'thump' }] },
   agente: { impact: [{ id: 'hit' }] },

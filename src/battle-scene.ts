@@ -303,7 +303,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     /** A friend in La Sobremesa: a part of its body whose place is their bone (`model`); the body flashes for them. */
     bone?: boolean;
     /**
-     * A Càmping Eurosport foe (src/camping-foes.ts): its model shows its rule each frame. They are canvas,
+     * A Càmping Eurocamping foe (src/camping-foes.ts): its model shows its rule each frame. They are canvas,
      * bone, card and plaster: no gum splashes off them, no pink trails, and only the mago breathes.
      */
     camp?: CampingKind;

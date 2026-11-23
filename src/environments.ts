@@ -699,7 +699,7 @@ export function withShallows(grid: readonly string[], centre: { x: number; z: nu
 }
 export const BARCELONETA: Environment = { ...BARCELONETA_GROUND, grid: withShallows(BARCELONETA_GROUND.grid, SHALLOWS.centre, SHALLOWS.radius) };
 /**
- * Càmping Eurosport, past the spiral off the beach (docs/quests/universidad.md § Càmping Eurosport):
+ * Càmping Eurocamping, past the spiral off the beach (docs/quests/universidad.md § Càmping Eurocamping):
  * the university friends' mini-dungeon, always the same summer evening. Its anchors name the cells
  * the story uses (`entrada`, `recepcio-pizarra`, `parcela-0` … `parcela-24`, `barrera-piscina`,
  * `campeon`, `merendero-mesa`, `foto`…).

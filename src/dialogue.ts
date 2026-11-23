@@ -46,7 +46,7 @@ export const SPEAKERS = {
   fran: { name: 'Fran', portrait: 'fran', skin: '#e2b896', hair: '#1d1a1a', top: '#1c1c20', accent: '#d9dde4' },
   /** The chaplains Fran has restyled in the Sagrada Família. */
   capellan: { name: 'Capellán', portrait: 'capellan', skin: '#dcb594', hair: '#3e7fc4', top: '#18181c', accent: '#e9e6dc' },
-  /** The campsite's foes (docs/quests/universidad.md § Càmping Eurosport), for the word each of them shouts as it falls in a fight; portraits from `just character`, of their figures (tools/figures.toml). */
+  /** The campsite's foes (docs/quests/universidad.md § Càmping Eurocamping), for the word each of them shouts as it falls in a fight; portraits from `just character`, of their figures (tools/figures.toml). */
   mago: { name: 'Mago de camping', portrait: 'mago', skin: '#c9b89a', hair: '#3a3428', top: '#7d7a5a', accent: '#e8b04a' },
   agente: { name: 'Agente', portrait: 'agente', skin: '#d8cfb8', hair: '#2a2622', top: '#c9bfa4', accent: '#e8b04a' },
   /**

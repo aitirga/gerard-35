@@ -1,4 +1,4 @@
-# Las parcelas (docs/quests/universidad.md § Càmping Eurosport): the words the puzzle's pitches can
+# Las parcelas (docs/quests/universidad.md § Càmping Eurocamping): the words the puzzle's pitches can
 # carry, one per line, in Spanish. `just parcelas` picks the grid from here and writes the clues.
 # Add the group's own words (jokes, places, things from those summers) before generating the real one:
 # adding words does not show what the puzzle will be.

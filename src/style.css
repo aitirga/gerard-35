@@ -493,7 +493,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="pelada"], .summary-tags [data-status="pelada"] { --status: #f0e6c8; }
 .unit-statuses i[data-status="transparente"], .summary-tags [data-status="transparente"] { --status: #b8f0ff; }
 .unit-statuses i[data-status="nil"], .summary-tags [data-status="nil"] { --status: #ff9f7a; }
-/* Càmping Eurosport's rules on a plate: a dado's face, an agente's side, El Campeón's form, a Bombona charged. */
+/* Càmping Eurocamping's rules on a plate: a dado's face, an agente's side, El Campeón's form, a Bombona charged. */
 .unit-statuses i[data-status="cara"], .summary-tags [data-status="cara"] { --status: #f2e6c8; }
 .unit-statuses i[data-status="boca-arriba"], .summary-tags [data-status="boca-arriba"] { --status: #ffe9a8; }
 .unit-statuses i[data-status="boca-abajo"], .summary-tags [data-status="boca-abajo"] { --status: #7fc4cc; }

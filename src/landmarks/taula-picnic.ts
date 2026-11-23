@@ -3,7 +3,7 @@ import type { LandmarkKit } from '../landmarks';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * Where people eat at a campsite (Càmping Eurosport, docs/quests/universidad.md). Default: a long
+ * Where people eat at a campsite (Càmping Eurocamping, docs/quests/universidad.md). Default: a long
  * picnic table of weathered wood along local x, its two benches fixed to it on A-frame legs, filling
  * the footprint (El merendero). `melo: true` leaves a melon on it, the group's melon, the one detail
  * no other place has. `style: "plegable"`: a folding aluminium camping table with four folding chairs

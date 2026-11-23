@@ -92,7 +92,7 @@ The beach is the L4's own stop on the network map, so a person pointing there is
 5. **The spiral** (decided): it is there beside Anna from the start; near her, she comes apart into
    particles that fall into the spiral typical of Nuria and Uri's mission (decided 2026-11-07),
    a little way past the shoreline and not far, and the party goes in after her.
-6. Inside (decided): **the spiral opens onto the campsite**, a mini-dungeon (§ Càmping Eurosport).
+6. Inside (decided): **the spiral opens onto the campsite**, a mini-dungeon (§ Càmping Eurocamping).
 7. Boss: **La Sobremesa** (§ Final boss).
 8. The ánima leaves them: _open_
 
@@ -106,9 +106,9 @@ The beach is the L4's own stop on the network map, so a person pointing there is
   on his own, so only Gerard counts.
 - Hours spent: _open_
 
-## Càmping Eurosport (the mini-dungeon)
+## Càmping Eurocamping (the mini-dungeon)
 
-**Decided**: past the spiral, a generic campsite, **Eurosport** by name, where they went for years; it
+**Decided**: past the spiral, a generic campsite, **Eurocamping** by name, where they went for years; it
 is what they all have in common. Its monsters are campsite mages and pieces of the board games they
 played there. The rest is a proposal, not built.
 
@@ -120,7 +120,7 @@ there. Coming from the November beach, the summer is the first strange thing.
 
 | Zone | What is there | What it asks |
 | --- | --- | --- |
-| **La entrada** | The barrier, the reception, the *CÀMPING EUROSPORT* sign | First fights: Magos de camping |
+| **La entrada** | The barrier, the reception, the *CÀMPING EUROCAMPING* sign | First fights: Magos de camping |
 | **Las parcelas** | A hedge maze of pitches and tents | Each patrol says a word as it falls | Magos and agentes on their rounds; dados and agentes behind the wrong tents |
 | **La tapia** | A tall wall of boards round the pool, one gate with a padlock of word wheels | The three words the maze's foes said |
 | **La piscina** | The pool at dusk, its water still, a blackboard on an easel | El Campeón, then Las parcelas |
@@ -185,7 +185,7 @@ failed flickers first.
 the fights and their models; the campsite scene itself is not): their rules are `CAMPING` in
 `src/battle.ts` (`campingTurn`, `campingTaken`, `campingRoundEnd`), their models
 `src/camping-foes.ts`, their tests `tests/camping-fight.test.mjs`, and `just fight-sim` holds each
-fight to what it should be (docs/fight-sim.md § Càmping Eurosport). Each rule shows on the foe's plate:
+fight to what it should be (docs/fight-sim.md § Càmping Eurocamping). Each rule shows on the foe's plate:
 *Cara N* on a dado (and the same face on top of the model), *Boca arriba* / *Boca abajo* on an agente
 (face down it turns its back), *Plan N/3* and *Etapa II* on El Campeón (the grate in his chest glows
 with it) and his Rayo's target, and *Bombona → todos* on a mago that has charged (its burner alight).
@@ -197,7 +197,7 @@ with it) and his Rayo's target, and *Bombona → todos* on a mago that has charg
 | **Agente** | A tall, gaunt figure cut from thick card, a struck-out word on its chest, its back the back of a card; in pairs (a Meshy figure, `[agente]`, 2026-11-21) | Each round one is face up and takes everything, the other face down and takes half. Ticks ignore this | *Contraseña*: a blow on one | Focus the one face up; put statuses on the one face down |
 | **El Campeón** | The villain of their superhero board game at life size (redone 2026-11-19, Aitor: «como si fuera un villano de los de los juegos de mesa… con sus ataques de rayos»): charcoal armour, a furnace grate glowing in his chest, glowing gauntlets, a cape of blue tarpaulin; **invented, no real character** (`tools/figures.toml` `[campeon]`) | **His Plan**, on his plate: a step up every turn; full (3), his next turn is the Rayo total on everyone and it starts again. **Every magic blow on him takes it a step down** («¡Plan frustrado!») and lands at 70 %; blows land whole. **Etapa II** at half his PV: the Plan fires at 2 | *Rayo*, said a turn ahead (*Rayo → X*), *Rayo total* | Frustrate the Plan with magic while blows do the damage, and hold on whoever he aims at. The mini-boss |
 
-**The fights** (ids the story starts; all in the fight tester's *Camping Eurosport* row, staged on the
+**The fights** (ids the story starts; all in the fight tester's *Camping Eurocamping* row, staged on the
 Barceloneta's sand until the campsite has a place of its own):
 
 | Id | Who | What it is |
@@ -518,7 +518,7 @@ then the rest. Each step is one or more commits, each playable from the picker.
    with Álvaro's last lines. Near Anna she turns, smiles and **comes apart into specks the spiral
    swallows** (story `portal`, `disintegrate` with `into`); the party goes through the same way, and so
    does anyone entering a portal (Uri's bubble too). `just screenshots universidad --gpu`.
-9. **Càmping Eurosport** (B4): the designed zone (`assets/geo/camping`, its landmarks, the endless
+9. **Càmping Eurocamping** (B4): the designed zone (`assets/geo/camping`, its landmarks, the endless
    evening), its foes and fights (`camping-*`, `campeon`, `CAMPING` book, `src/camping-foes.ts`, tuned
    in `TARGETS`), the pitches as a hedge maze, magos and agentes patrolling it and running at the party, the blackboard opening Las parcelas, each pitch's
    word on its sign and its lantern lit when found (and a bulb over the gate), a wrong tent's fight and the black pitch's, the

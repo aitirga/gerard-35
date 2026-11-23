@@ -320,7 +320,7 @@ export const isLuca = (kind?: FoeKind): kind is LucaKind => !!kind && (LUCA_KIND
 export const CUERDAS_KINDS = ['lealtad', 'cristalino', 'directo', 'eco', 'voz'] as const satisfies readonly CuerdasKind[];
 export const isCuerdas = (kind?: FoeKind): kind is CuerdasKind => !!kind && (CUERDAS_KINDS as readonly string[]).includes(kind);
 /**
- * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport, Monsters): each asks one
+ * Càmping Eurocamping's foes (docs/quests/universidad.md § Càmping Eurocamping, Monsters): each asks one
  * question, by kind of blow and never by who wears what, and shows its answer on its plate. A Mago de
  * camping takes half from magic and more from blows, and charges its Bombona a turn ahead (the chip
  * says so). A Dado shows its top face, the weight of its blow this round, and rolls again every round.
@@ -545,7 +545,7 @@ export const SOBREMESA = {
   duoEvery: 4, shield: .5,
 };
 /**
- * Càmping Eurosport's foes, every number in one book (`camping.rules`); their PV are their PROFILES
+ * Càmping Eurocamping's foes, every number in one book (`camping.rules`); their PV are their PROFILES
  * entries. A Mago de camping takes `magoMagic` of a magic blow and `magoPhysical` of a physical one,
  * and its Bombona is `bombona` of magic on everyone. A Dado's Tumbarse is `dadoBase` and `dadoPip` for
  * each pip of the face it shows. An Agente face down takes `downTaken` of every blow; its Contraseña is
@@ -1471,7 +1471,7 @@ export type Encounter = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guar
 export const BROOD_ENCOUNTERS = ['crias-1', 'crias-2', 'crias-3'] as const;
 export type BroodEncounter = (typeof BROOD_ENCOUNTERS)[number];
 /**
- * Càmping Eurosport's fights (docs/quests/universidad.md § Càmping Eurosport): the entrance's magos,
+ * Càmping Eurocamping's fights (docs/quests/universidad.md § Càmping Eurocamping): the entrance's magos,
  * the pitches' dados and agentes, a wrong pitch's tent waking, the black pitch, and El Campeón by the pool.
  */
 export const CAMPING_ENCOUNTERS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
@@ -5235,7 +5235,7 @@ function atomTurn(state: BattleState, actor: Combatant, target: Combatant, effec
 function modeloRoundEnd(state: BattleState) {
   for (const f of state.foes) if (f.hp > 0 && f.sign && (f.kind === 'oscilacion' || (f.kind === 'no-converge' && !f.converged))) f.sign = otherSign(f.sign);
 }
-/** Càmping Eurosport's foes, by name (more than one of a kind are numbered). */
+/** Càmping Eurocamping's foes, by name (more than one of a kind are numbered). */
 export const CAMPING_NAMES: Record<CampingKind, string> = { mago: 'Mago de camping', dado: 'Dado', agente: 'Agente', campeon: 'El Campeón' };
 /** What each campsite fight says as it starts, and as it is won. */
 const CAMPING_MESSAGES: Record<CampingEncounter, string> = {
@@ -5947,7 +5947,7 @@ function campingTaken(target: Combatant, blow: Blow) {
   return 1;
 }
 /**
- * The campsite foes' turns (docs/quests/universidad.md § Càmping Eurosport), each one named move. A
+ * The campsite foes' turns (docs/quests/universidad.md § Càmping Eurocamping), each one named move. A
  * Mago de camping charges its Bombona on one turn (announced: «Bombona → todos») and lets it go on the
  * next, magic on everyone; holding on takes two thirds off. A Dado falls on one with the weight of its
  * face (Tumbarse). An Agente strikes one (Contraseña). El Campeón fires his Rayo at whom he said and

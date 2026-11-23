@@ -173,7 +173,7 @@ export function buildScenery(app: pc.Application, environment: Environment) {
   const zoneLight = environment.palace?.theme?.light;
   // The Búnkers del Carmel are drawn at sunset: a golden sun (from the same side as everywhere) and lilac shade.
   const dusk = environment.id === 'bunkers-carmel';
-  // Càmping Eurosport is always the same summer evening: the sun very low and amber from the south-east,
+  // Càmping Eurocamping is always the same summer evening: the sun very low and amber from the south-east,
   // raking across the maze, so the tall walls throw the merendero into deep shade; dim blue shade, the bulbs doing the warmth.
   const evening = environment.id === 'camping';
   const ambient = zoneLight ? new pc.Color().fromString(zoneLight.ambient) : hollow ? new pc.Color(0.1, 0.17, 0.19) : night ? new pc.Color(0.19, 0.24, 0.3) : lamplit ? new pc.Color(0.27, 0.27, 0.27) : nave ? new pc.Color(0.3, 0.3, 0.33) : overcast ? new pc.Color(0.4, 0.44, 0.48) : dusk ? new pc.Color(0.36, 0.33, 0.4) : evening ? new pc.Color(0.13, 0.16, 0.25) : outdoor ? new pc.Color(0.33, 0.38, 0.46) : new pc.Color(0.48, 0.48, 0.43);

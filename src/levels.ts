@@ -54,7 +54,7 @@ export const FOE_XP: Record<FoeKind, number> = {
   // La Sobremesa: each friend freed is worth the same.
   'sobremesa-alvaro': 16, 'sobremesa-anna': 16, 'sobremesa-sarah': 16, 'sobremesa-miquel': 16,
   'sobremesa-joan': 16, 'sobremesa-soraya': 16, 'sobremesa-nico': 16,
-  // Càmping Eurosport: the small fights of the dungeon, and its mini-boss.
+  // Càmping Eurocamping: the small fights of the dungeon, and its mini-boss.
   mago: 14, dado: 10, agente: 12, campeon: 70,
   // Las cuerdas: a quality each platform, and La Voz at the centre.
   lealtad: 40, eco: 12, cristalino: 45, directo: 50, voz: 110,

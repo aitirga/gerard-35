@@ -341,7 +341,7 @@ title = "Sants"
 file = "src/geo/sants.json"
 
 [[block.item]]
-title = "Càmping Eurosport"
+title = "Càmping Eurocamping"
 file = "src/geo/camping.json"
 
 [[block.item]]
@@ -584,7 +584,7 @@ in = ["src/story.ts"]
 
 [[block.item]]
 title = "Amigos de la universidad: monstruos del càmping"
-# The campsite's foes and their fights (docs/quests/universidad.md § Càmping Eurosport).
+# The campsite's foes and their fights (docs/quests/universidad.md § Càmping Eurocamping).
 grep = "camping-negra"
 in = ["src/battle.ts"]
 

@@ -183,7 +183,7 @@ test('a car can park along x and blocks the two cells it covers', () => {
   assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff', along: 'x' }), [{ x: 4, z: 2 }, { x: 5, z: 2 }]);
   assert.deepEqual(propCells({ kind: 'car', x: 4, z: 2, color: '#fff' }), [{ x: 4, z: 2 }, { x: 4, z: 3 }]);
 });
-test('Càmping Eurosport: every anchor the story needs is walkable and reached, and the pool gate is the only way on', () => {
+test('Càmping Eurocamping: every anchor the story needs is walkable and reached, and the pool gate is the only way on', () => {
   const anchors = CAMPING.geo.anchors, cell = name => ({ x: Math.round(anchors[name].x), z: Math.round(anchors[name].z) });
   const pitches = Array.from({ length: 25 }, (_, n) => `parcela-${n}`);
   const names = ['entrada', 'salida', 'recepcio-pizarra', ...pitches, 'barrera-piscina', 'magos-1', 'magos-2', 'dados-1', 'dados-2', 'campeon', 'merendero-mesa', 'foto'];

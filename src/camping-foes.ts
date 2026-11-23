@@ -4,7 +4,7 @@ import { buildFoeBody } from './character-model';
 import { FOE_BODIES } from './foe-bodies';
 
 /**
- * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport, Monsters), built from
+ * Càmping Eurocamping's foes (docs/quests/universidad.md § Càmping Eurocamping, Monsters), built from
  * Meshy figures (tools/figures.toml, src/foe-bodies.ts) and primitives, named like Uri's fears where
  * the fight looks for a part (`Charco pringoso` under them, `Cabeza de chicle` for what sways). A Mago
  * de camping in a robe of old tent canvas with a head torch, a tent pole for a staff and a gas canister

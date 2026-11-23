@@ -2,7 +2,7 @@ import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
 
 /**
- * A boom barrier at a gate for cars (Càmping Eurosport's way in): a squat white post with its motor
+ * A boom barrier at a gate for cars (Càmping Eurocamping's way in): a squat white post with its motor
  * box, and the arm in red and white bands, `arm_m` long, raised (`raised`, default true: degrees up
  * from level, 80) or down across local +x. Walkers pass beside it; only the post is solid.
  */

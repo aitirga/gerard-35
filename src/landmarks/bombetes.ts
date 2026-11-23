@@ -5,7 +5,7 @@ import { bar, box } from '../landmark-shapes.ts';
 type V3 = [number, number, number];
 
 /**
- * Strings of warm bulbs hung from pine to pine over a campsite (Càmping Eurosport,
+ * Strings of warm bulbs hung from pine to pine over a campsite (Càmping Eurocamping,
  * docs/quests/universidad.md): each of `runs` is a list of points `[x, y, z]` in metres from the
  * landmark's centre (the trunks it is tied to, about 2.7 m up), the cable sagging between them with
  * a bulb every `every` metres and a turn of cable round each trunk. Long straight swags tied to the

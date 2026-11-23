@@ -2,7 +2,7 @@ import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
 
 /**
- * A campsite's reception hut (Càmping Eurosport, docs/quests/universidad.md § La entrada): a low
+ * A campsite's reception hut (Càmping Eurocamping, docs/quests/universidad.md § La entrada): a low
  * whitewashed hut under a flat roof with a deep eave, RECEPCIÓ painted on the fascia, green
  * shutters, the counter window's shutter rolled down, the door shut, a lamp lit over it, and the
  * notice blackboard on the front wall (local +z, the camera), in the middle, where Las parcelas'

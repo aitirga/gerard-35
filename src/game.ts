@@ -1202,7 +1202,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
   }
   /**
-   * Càmping Eurosport dressed by the story (docs/quests/universidad.md § Càmping Eurosport): the foes
+   * Càmping Eurocamping dressed by the story (docs/quests/universidad.md § Càmping Eurocamping): the foes
    * still waiting stand at their places (their fight models, src/camping-foes.ts); the pool gate's
    * padlock hangs until its words are found, then the gate swings open (`openCampGate`); each pitch
    * found on the pool's blackboard lights a bulb over the merendero's steel door, and once they all
@@ -1509,7 +1509,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       });
       return group;
     }
-    // Càmping Eurosport's patrols walk as the group they fight as: two magos, two agentes, side by side.
+    // Càmping Eurocamping's patrols walk as the group they fight as: two magos, two agentes, side by side.
     if (encounter in CAMPING_FIGHTS) {
       const group = new pc.Entity('Patrulla'), kinds = CAMPING_FIGHTS[encounter as CampingEncounter];
       kinds.forEach((kind, i) => {

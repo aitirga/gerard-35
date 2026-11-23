@@ -3,7 +3,7 @@ import type { LandmarkKit } from '../landmarks';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A campsite pool's edge (Càmping Eurosport, docs/quests/universidad.md § La piscina). The water is
+ * A campsite pool's edge (Càmping Eurocamping, docs/quests/universidad.md § La piscina). The water is
  * the place's own (a sketch `water` area, `look.water`), filled to the brim; this draws round the
  * footprint (the water's rectangle): the band of blue tiles at the waterline, a coping of pale stone
  * slabs, two steel ladders and the depth painted on the coping at both ends. Not solid: the water

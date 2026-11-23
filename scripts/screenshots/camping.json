@@ -1,6 +1,6 @@
 {
-  "title": "Càmping Eurosport · Al otro lado de la espiral",
-  "description": "The university friends' mini-dungeon (docs/quests/universidad.md § Càmping Eurosport), always the same summer evening and nobody there: the way in with the raised barrier, the reception and its blackboard, the pitches as a hedge maze round a roundabout (a tent and a sign post in each alcove, strings of bulbs over the lanes), the tall wooden wall and its gate, the pool with its lifeguard chair, and the merendero with the melon on its table. Camera frames use world units: a cell minus (34.5, 24.5).",
+  "title": "Càmping Eurocamping · Al otro lado de la espiral",
+  "description": "The university friends' mini-dungeon (docs/quests/universidad.md § Càmping Eurocamping), always the same summer evening and nobody there: the way in with the raised barrier, the reception and its blackboard, the pitches as a hedge maze round a roundabout (a tent and a sign post in each alcove, strings of bulbs over the lanes), the tall wooden wall and its gate, the pool with its lifeguard chair, and the merendero with the melon on its table. Camera frames use world units: a cell minus (34.5, 24.5).",
   "steps": [
     { "open": "/?story=metro" },
     { "wait": 1500 },

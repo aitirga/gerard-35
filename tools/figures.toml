@@ -411,7 +411,7 @@ about = """One of the qualities Marta has lost, loose in Las cuerdas, the void i
 THIS ONE, Lo Directo, saying things straight: a tall, imposing, faceless knight made of blades, the straightest line between two points. Everything about it is straight, sharp and symmetric, with no curve anywhere, and it is elaborate: many layers, not a simple shape. Its armour is hundreds of narrow sword blades of dark navy glass-steel, set edge to edge and overlapping in tiers like the scales of a pangolin made of swords: a broad chest of stacked blades, tall pauldrons of fanned blades rising at its shoulders, a high collar of upright blades round its neck, and a long heavy tabard of hanging blades split in front, down to its shins. Every blade's edge is a thin line of cold blue-white light, so the whole figure is drawn in fine straight lines of light. Its head is a tall pointed diamond of navy rising out of the collar, one narrow vertical slit of blue light in it, no face. Long arms in sleeves of overlapping blades held straight down its sides, ending in long blade tips that point at the floor. Long legs in greaves of blades that taper to sharpened points standing on the floor. A bright line of blue-white light runs down its front from the crown to the floor. It holds nothing."""
 height = 2.3
 
-# Càmping Eurosport (docs/quests/universidad.md § Monsters).
+# Càmping Eurocamping (docs/quests/universidad.md § Monsters).
 [campeon]
 name = "El Campeón"
 kind = "creature"

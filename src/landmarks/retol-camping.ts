@@ -2,8 +2,8 @@ import type { GeoLandmark } from '../geo';
 import type { LandmarkKit } from '../landmarks';
 
 /**
- * A campsite's sign by the road in (Càmping Eurosport, docs/quests/universidad.md § La entrada): a
- * long board on two pine logs, painted cream with the name in dark green, CÀMPING over EUROSPORT,
+ * A campsite's sign by the road in (Càmping Eurocamping, docs/quests/universidad.md § La entrada): a
+ * long board on two pine logs, painted cream with the name in dark green, CÀMPING over EUROCAMPING,
  * the two stars of its category and a pine between them. Its face is local +z, the camera. Tall
  * enough to hide Gerard: it opens the cut. `name` and `kind` change the words.
  */
@@ -19,8 +19,8 @@ export function build(kit: LandmarkKit, landmark: GeoLandmark) {
     [0, 0, 1], [0, 1], [1, 1], [1, 0], [0, 0]);
   kit.add('Troncos del rótulo', logs, kit.surface('fusta-passera', '#6e5a43'), { cut: true });
   kit.add('Tabla del rótulo', board, kit.mat('Madera del rótulo', '#5b4a37', 0.15), { cut: true });
-  const m = kit.mat('Rótulo CÀMPING EUROSPORT', '#ffffff', 0.25);
-  m.diffuseMap = kit.texture(paint(String(landmark.params.kind ?? 'CÀMPING'), String(landmark.params.name ?? 'EUROSPORT'), W / (top - bottom))); m.update();
+  const m = kit.mat('Rótulo CÀMPING EUROCAMPING', '#ffffff', 0.25);
+  m.diffuseMap = kit.texture(paint(String(landmark.params.kind ?? 'CÀMPING'), String(landmark.params.name ?? 'EUROCAMPING'), W / (top - bottom))); m.update();
   kit.add('Rótulo del camping', face, m, { cut: true, shadows: false });
 }
 

@@ -5,7 +5,7 @@ import type { MeshBuilder } from '../geo-scenery';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A campsite's fences (Càmping Eurosport, docs/quests/universidad.md), running along local x through
+ * A campsite's fences (Càmping Eurocamping, docs/quests/universidad.md), running along local x through
  * the footprint. `style`:
  * - `malla`, green wire mesh on green steel posts, 1.3 m;
  * - `seto`, a clipped hedge, 1.6 m, as thick as its footprint (the pitches' maze); `round: true`

@@ -1,9 +1,9 @@
 {
   "id": "camping",
-  "name": "Càmping Eurosport",
+  "name": "Càmping Eurocamping",
   "region": "Al otro lado de la espiral",
   "anchor": {
-    "address": "Càmping Eurosport (inventado: un camping de la costa, cerca de la playa)",
+    "address": "Càmping Eurocamping (inventado: un camping de la costa, cerca de la playa)",
     "lat": 41.6402,
     "lon": 2.7473
   },
@@ -25,8 +25,8 @@
     "checked": "2026-11-07",
     "streetview_capture": "",
     "notes": [
-      "DESIGNED: Càmping Eurosport, the university friends' mini-dungeon (docs/quests/universidad.md § Càmping Eurosport), invented: a generic campsite of the Catalan coast, not a real one. Always the same summer evening; tents pitched and empty, the bulbs lit, nobody there.",
-      "Route, one way from east to west: La entrada (the road in, the raised barrier, the reception with its blackboard, the CÀMPING EUROSPORT sign), Las parcelas (a hedge maze: five rows of pitches, each an alcove in the hedge with a tent and a sign post, opening onto lanes of sauló plugged here and there, a roundabout round a big pine in the middle, a square by the way in and a dead-end one by the wall), the tall wooden wall of the pool and its gate (`barrera-piscina`, the only way through, with a lamp per pitch to find), La piscina (still water, the lifeguard chair) and, past the hedge's open end, El merendero (long picnic tables under the pines, the melon on one).",
+      "DESIGNED: Càmping Eurocamping, the university friends' mini-dungeon (docs/quests/universidad.md § Càmping Eurocamping), invented: a generic campsite of the Catalan coast, not a real one. Always the same summer evening; tents pitched and empty, the bulbs lit, nobody there.",
+      "Route, one way from east to west: La entrada (the road in, the raised barrier, the reception with its blackboard, the CÀMPING EUROCAMPING sign), Las parcelas (a hedge maze: five rows of pitches, each an alcove in the hedge with a tent and a sign post, opening onto lanes of sauló plugged here and there, a roundabout round a big pine in the middle, a square by the way in and a dead-end one by the wall), the tall wooden wall of the pool and its gate (`barrera-piscina`, the only way through, with a lamp per pitch to find), La piscina (still water, the lifeguard chair) and, past the hedge's open end, El merendero (long picnic tables under the pines, the melon on one).",
       "Written from a plan in cells (1.25 m), so every anchor is a cell centre: `parcela-0` ... `parcela-24` row-major from the far row, left to right as the camera sees it, each the cell in front of its pitch's sign (landmark `rotulo-<n>`)."
     ],
     "viewpoints": []

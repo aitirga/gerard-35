@@ -3,7 +3,7 @@ import type { LandmarkKit } from '../landmarks';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A blackboard on an easel by the pool (Càmping Eurosport, docs/quests/universidad.md § La piscina):
+ * A blackboard on an easel by the pool (Càmping Eurocamping, docs/quests/universidad.md § La piscina):
  * the board of Las parcelas, moved from the reception. Two legs and a back strut of pine, the board
  * leaning back, *TORNEO* chalked at the top and the rest wiped; it faces local +z (the camera).
  */

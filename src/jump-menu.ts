@@ -33,7 +33,7 @@ const PLACES: Place[] = [
   { id: 'cardedeu-laberinto', name: 'La torre de Uri', detail: 'Al otro lado de la pompa', group: 'Cardedeu', open: false },
   { id: 'bunkers-carmel', name: 'Búnkers del Carmel', detail: 'Turó de la Rovira', group: 'Barcelona', open: false },
   { id: 'barceloneta', name: 'La Barceloneta', detail: 'La playa · L4', group: 'Barcelona', open: true },
-  { id: 'camping', name: 'Càmping Eurosport', detail: 'Al otro lado de la espiral', group: 'Barcelona', open: false },
+  { id: 'camping', name: 'Càmping Eurocamping', detail: 'Al otro lado de la espiral', group: 'Barcelona', open: false },
   { id: 'sants', name: 'Sants · Carrer de Valladolid', detail: 'De la Plaça de Sants a El Nucli', group: 'Barcelona', open: true },
   { id: 'el-nucli', name: 'El Nucli', detail: 'La tienda de juegos, Sants', group: 'Barcelona', open: true },
   { id: 'poble-sec', name: 'Poble Sec · Carrer de Blai', detail: 'Donde vive Emilie', group: 'Barcelona', open: false },
@@ -66,7 +66,7 @@ const TIER_NAMES: Record<string, string> = { calma: 'calma', tensa: 'tensa', dur
 const TOWER_FIGHTS = ['cebollon', 'cebolla', 'plato', 'escolta', 'uri-vertigo', 'crias-1', 'crias-2', 'crias-3'] as const;
 /** The university friends' mission (docs/quests/universidad.md): La Sobremesa. */
 const UNI_FIGHTS = ['sobremesa'] as const;
-/** Càmping Eurosport, the university friends' dungeon (docs/quests/universidad.md): its small fights, the black pitch and El Campeón. */
+/** Càmping Eurocamping, the university friends' dungeon (docs/quests/universidad.md): its small fights, the black pitch and El Campeón. */
 const CAMPING_FIGHTS = ['camping-magos', 'camping-dados', 'camping-agentes', 'camping-tienda', 'camping-negra', 'campeon'] as const;
 /** Las cuerdas, Marta's dungeon (docs/quests/marta.md): a quality after each maze, and La Voz. */
 const CUERDAS_FIGHTS = ['cuerdas-lealtad', 'cuerdas-cristalino', 'cuerdas-directo', 'voz'] as const;
@@ -446,7 +446,7 @@ export function createJumpMenu(panel: HTMLElement, callbacks: { travel: (id: Env
       ${f.adult ? `<div class="fight-row"><span>La peluquería</span><div class="fight-chips">${LUCA_FIGHTS.map(id => chip('encounter', id, LUCA_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Las cuerdas</span><div class="fight-chips">${CUERDAS_FIGHTS.map(id => chip('encounter', id, CUERDAS_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>El modelo de Emilie</span><div class="fight-chips">${MODELO_FIGHTS.map(id => chip('encounter', id, MODELO_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
-      ${f.adult ? `<div class="fight-row"><span>Camping Eurosport</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
+      ${f.adult ? `<div class="fight-row"><span>Camping Eurocamping</span><div class="fight-chips">${CAMPING_FIGHTS.map(id => chip('encounter', id, CAMPING_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Castillo</span><div class="fight-chips">${CASTLE_FIGHTS.map(id => chip('encounter', id, CASTLE_FIGHT_NAMES[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult ? `<div class="fight-row"><span>Torre de Uri</span><div class="fight-chips">${TOWER_FIGHTS.map(id => chip('encounter', id, TOWER_LABELS[id], f.encounter === id)).join('')}</div></div>` : ''}
       ${f.adult && (f.encounter === 'night-guard' || f.encounter.startsWith('alumnos-')) ? `<div class="fight-row"><span>Alumnos</span><div class="fight-chips">${chip('strong', '0', 'Como siempre', !f.strong)}${chip('strong', '1', 'Encarnados', !!f.strong)}</div></div>` : ''}

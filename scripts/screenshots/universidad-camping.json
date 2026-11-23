@@ -1,6 +1,6 @@
 {
   "title": "Misión de los amigos de la uni · el camping",
-  "description": "docs/quests/universidad.md § Càmping Eurosport, in the mission: the magos and agentes patrolling the paths and running at the party, the blackboard opening Las parcelas, each pitch's word on its sign, the pool's gate open once solved with El Campeón waiting, La Sobremesa at the long table, and the photo with the melon. Run it with --gpu.",
+  "description": "docs/quests/universidad.md § Càmping Eurocamping, in the mission: the magos and agentes patrolling the paths and running at the party, the blackboard opening Las parcelas, each pitch's word on its sign, the pool's gate open once solved with El Campeón waiting, La Sobremesa at the long table, and the photo with the melon. Run it with --gpu.",
   "steps": [
     {
       "open": "/?mission=universidad&part=camp&solo=1"

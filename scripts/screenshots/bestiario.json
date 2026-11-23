@@ -121,7 +121,7 @@
     {
       "shot": "campeon",
       "delay": 1500,
-      "caption": "El Campeón, Càmping Eurosport's mini-boss, redone: the board game's villain as a Meshy figure, the furnace grate in his chest, his Plan and his Rayo"
+      "caption": "El Campeón, Càmping Eurocamping's mini-boss, redone: the board game's villain as a Meshy figure, the furnace grate in his chest, his Plan and his Rayo"
     },
     {
       "eval": "window.bestiary.select('enemigo:mago')"

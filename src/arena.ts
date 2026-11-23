@@ -102,7 +102,7 @@ export const FOE_SIZE: Record<string, number> = {
   dog: .45, minion: .7, guardian: 1.1, cebollon: 1.15, cebolla: .85, plato: .6, vertigo: 1.6, cebollita: .42, platito: .32, fantasmita: .32,
   // La Sobremesa's whole body (its seven friends stand in it).
   sobremesa: 2.2,
-  // Càmping Eurosport's foes: people's size, the dice a little wider, El Campeón on its plinth.
+  // Càmping Eurocamping's foes: people's size, the dice a little wider, El Campeón on its plinth.
   mago: .45, dado: .55, agente: .42, campeon: .75,
   // Las cuerdas' foes: La Lealtad broad, an Eco small, La Voz a person's width with room for her rings.
   lealtad: .7, eco: .35, cristalino: .5, directo: .6, voz: .8,

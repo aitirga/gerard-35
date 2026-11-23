@@ -1174,7 +1174,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'sobremesa-sin-pensar', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'casual', win: [0, .05], why: 'Sin pensar gana la mesa: el dúo de la carta negra deja a uno con 1 PV, Joan no para de subir y la sopeta deshace lo que se le quita a uno solo.' },
   { id: 'sobremesa-a-punetazos', fight: 'sobremesa', party: DUO, ...AT_UNI, policy: 'attack', win: [0, .02], why: 'Solo Atacar no llega: son siete.' },
   { id: 'sobremesa-gatos-en-gerard', fight: 'sobremesa', party: MISSION_PARTY, ...AT_UNI, policy: 'smart', win: [.88, 1], why: 'Con los gatos en Gerard y Aitor con lo suyo también: lo que alcanza a todos decide, lo lleve quien lo lleve.' },
-  // Càmping Eurosport (docs/quests/universidad.md § Càmping Eurosport). Its numbers are CAMPING (book camping.rules) and
+  // Càmping Eurocamping (docs/quests/universidad.md § Càmping Eurocamping). Its numbers are CAMPING (book camping.rules) and
   // each foe's PROFILES entry (foe.mago…). The small fights teach one rule each and are easy for whoever reads the plate;
   // the black pitch is the hard one, and El Campeón the mini-boss: hold on while it is a hero, spend everything when it is not.
   { id: 'magos-entrada', fight: 'camping-magos', party: DUO, ...AT_UNI, policy: 'casual', win: [.95, 1], hpLeftWon: [.45, .95], roundsWon: [2.5, 5], why: 'La entrada: a golpes caen rápido, y la bombona solo se nota si nadie se agarra.' },

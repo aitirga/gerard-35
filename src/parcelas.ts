@@ -1,5 +1,5 @@
 /**
- * Las parcelas (docs/quests/universidad.md § Càmping Eurosport): the campsite's word-clue puzzle.
+ * Las parcelas (docs/quests/universidad.md § Càmping Eurocamping): the campsite's word-clue puzzle.
  * Pure: the board's rules and how a puzzle is loaded. The screen is `src/parcelas-ui.ts`; the
  * puzzles are made by `just parcelas` (tools/parcelas.py) into `src/parcelas/`.
  *

@@ -240,12 +240,12 @@ doors and named `anchors` (where the palace stands). A sketch may be drawn in th
   lookout, the Passeig Marítim's parapet and palms, the blocks behind with washing on the
   balconies; the L4 stair at the end of a street on the back edge (the real station is 700 m
   inland), the breakwater where the beach ends to the NNE and the W's sail past the SSW end.
-- **`camping`**: *Càmping Eurosport* (`docs/quests/universidad.md` § Càmping Eurosport), the
+- **`camping`**: *Càmping Eurocamping* (`docs/quests/universidad.md` § Càmping Eurocamping), the
   university friends' mini-dungeon past the spiral in the sea off the beach, on no line: a designed
   zone with no map data, an invented campsite of the coast written from a plan in 1.25 m cells
   (`sketch.json` holds its ground: the pine woods round it, the sauló lanes, the pool and its deck,
   the road in; every piece is a landmark). One way from east to west: the road in under the raised
-  barrier, the reception with its notice blackboard and the *CÀMPING EUROSPORT* sign; Las parcelas as
+  barrier, the reception with its notice blackboard and the *CÀMPING EUROCAMPING* sign; Las parcelas as
   a hedge maze behind one way in: 25 pitches, each an alcove in the hedge with a tent and a sign post
   (`rotulo-<n>`, the board Las parcelas writes its word on, an unlit lantern on its arm), plugged
   lanes, a roundabout round a big pine, two squares, strings of bulbs over the lanes; the tall wall of

@@ -18,7 +18,7 @@ export const ANIMAS = {
   // Nuria and Uri's mission is one (docs/quests/nuria.md): one household, one ánima.
   nuria: { id: 'nuria', friend: 'Nuria y Uri', name: 'Ánima de Nuria y Uri', colour: '#9fb4c8', note: 'Cardedeu. Por diseñar con su historia.' },
   // The university friends (docs/quests/universidad.md): one mission, one ánima, still to design with /anima.
-  universidad: { id: 'universidad', friend: 'Los amigos de la uni', name: 'Ánima de los amigos de la uni', colour: '#a8a89a', note: 'La Barceloneta y el Càmping Eurosport. Por diseñar.' },
+  universidad: { id: 'universidad', friend: 'Los amigos de la uni', name: 'Ánima de los amigos de la uni', colour: '#a8a89a', note: 'La Barceloneta y el Càmping Eurocamping. Por diseñar.' },
   // Marta (docs/quests/marta.md): her voice back. The wearable ánima is still to design with /anima.
   marta: { id: 'marta', friend: 'Marta', name: 'Ánima de Marta', colour: '#9fb8b4', note: 'Alegia y Las cuerdas. Por diseñar.' },
   // Emilie (docs/quests/emilie.md): the why back. Freática is its wearable form (docs/animas/freatica/README.md).

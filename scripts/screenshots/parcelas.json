@@ -1,6 +1,6 @@
 {
   "title": "Las parcelas: el tablero",
-  "description": "docs/quests/universidad.md § Càmping Eurosport. The word-clue board from the picker (the test puzzle): the blackboard's clue, the 25 pitches, each player's marker, a lantern lit, a tent woken, the next clue, the black pitch, and the way open. Generated against the current src/parcelas/prueba.json.",
+  "description": "docs/quests/universidad.md § Càmping Eurocamping. The word-clue board from the picker (the test puzzle): the blackboard's clue, the 25 pitches, each player's marker, a lantern lit, a tent woken, the next clue, the black pitch, and the way open. Generated against the current src/parcelas/prueba.json.",
   "steps": [
     {
       "open": "/?story=got-wrapper"

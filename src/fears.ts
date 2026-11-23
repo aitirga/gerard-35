@@ -180,7 +180,7 @@ export function createFears(app: pc.Application) {
 
   // Their young are the same fears, small (battle-scene.ts sizes them).
   const templates = new Map<FoeKind, pc.Entity>([['cebollon', onion], ['cebolla', onion], ['plato', dish], ['vertigo', vertigo], ['cebollita', onion], ['platito', dish], ['fantasmita', ghost]]);
-  // Càmping Eurosport's foes (src/camping-foes.ts) come with them, so the fight finds every model in one place.
+  // Càmping Eurocamping's foes (src/camping-foes.ts) come with them, so the fight finds every model in one place.
   const camping = createCampingFoes(app);
   camping.templates.forEach((model, kind) => templates.set(kind, model));
   // And Las cuerdas' (src/cuerdas-foes.ts): what Marta lost, and La Voz.
@@ -208,7 +208,7 @@ export function createFears(app: pc.Application) {
   const rig = (model: pc.Entity) => { let r = rigs.get(model); if (!r && model.findByName('Cadera')) { r = rigOf(model); rigs.set(model, r); } return r; };
   return {
     templates,
-    /** Càmping Eurosport's foes: what each one's model shows of its rule (`show`). */
+    /** Càmping Eurocamping's foes: what each one's model shows of its rule (`show`). */
     camping,
     /** Las cuerdas' foes, the same. */
     cuerdas,

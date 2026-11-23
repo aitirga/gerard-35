@@ -115,7 +115,7 @@ The university friends' (`docs/quests/universidad.md`):
 | `beach` | Up the sand behind the six, who face the sea; Anna in the water |
 | `tag` | The game of tag on: the friends running, the promenade shut by tentacles |
 | `spiral` | Anna gone into the spiral in the shallows: wading in goes to the campsite |
-| `camp` | Càmping Eurosport, just out of the spiral; the magos wait at the entrance |
+| `camp` | Càmping Eurocamping, just out of the spiral; the magos wait at the entrance |
 | `board` | In front of the reception's blackboard: Las parcelas |
 | `gate` | Las parcelas solved, every waiting foe beaten: the gate open, El Campeón by the pool |
 | `sobremesa` | El Campeón beaten: walking up to the long table starts La Sobremesa |
@@ -178,7 +178,7 @@ The fight tester. Choose:
   the gum guards. In chapter 2, **Torre de Uri** adds Uri's fears (El Cebollón, La Cebolla, El Plato
   Misterioso, ring 3's **La Cebolla y los suyos**), Vertitrón and a pack of each ring's young (a
   random mix each time; ring 3's sometimes with a cebolla), fought in the tower where Gerard stands.
-  **Camping Eurosport** has the university friends' dungeon (docs/quests/universidad.md): *Magos*,
+  **Camping Eurocamping** has the university friends' dungeon (docs/quests/universidad.md): *Magos*,
   *Dados*, *Agentes*, a *Tienda equivocada* (a die and two agentes), the *Parcela negra* (two magos
   and two dice) and *El Campeón*; on the Barceloneta's sand until the campsite has a place of its own.
   **Castillo** has every fight of the castle (docs/castle.md): each room's pupils by year, La

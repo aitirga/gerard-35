@@ -303,7 +303,7 @@ test('the boss has a moment for each of its phases', () => {
 test('no rule of the model asks for a skill or an ánima by name', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../src/battle.ts', import.meta.url), 'utf8');
-  const start = source.indexOf(' * How much of a blow a foe of the model takes'), end = source.indexOf('/** Càmping Eurosport\'s foes, by name');
+  const start = source.indexOf(' * How much of a blow a foe of the model takes'), end = source.indexOf('/** Càmping Eurocamping\'s foes, by name');
   const rules = source.slice(start, end);
   assert.ok(start > 0 && end > start);
   for (const id of [...SKILLS.map(s => s.id), 'papagato', 'matemagico', 'tecnopata']) assert.ok(!rules.includes(`'${id}'`), id);

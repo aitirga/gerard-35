@@ -71,7 +71,7 @@ export const PROFILES = {
   'sobremesa-soraya': base(77, 10, 12, 9, 10),
   'sobremesa-nico': base(102, 10, 10, 13, 12),
   /**
-   * Càmping Eurosport's foes (docs/quests/universidad.md § Càmping Eurosport): their rules do the work
+   * Càmping Eurocamping's foes (docs/quests/universidad.md § Càmping Eurocamping): their rules do the work
    * (battle.ts CAMPING), so their stats stay near the average. El Campeón is the mini-boss.
    */
   mago: base(130, 10, 12, 9, 11),

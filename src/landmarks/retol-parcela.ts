@@ -3,7 +3,7 @@ import type { LandmarkKit } from '../landmarks';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A campsite pitch's sign post (Càmping Eurosport, docs/quests/universidad.md § Las parcelas): a
+ * A campsite pitch's sign post (Càmping Eurocamping, docs/quests/universidad.md § Las parcelas): a
  * square pine post with a blank board on top, facing local +z (the camera and the cell in front of
  * it, where Gerard stands to read it), the pitch's `number` on a small enamel plate under it, and a
  * storm lantern hanging from an arm, unlit. Las parcelas writes its word on the board: the board's

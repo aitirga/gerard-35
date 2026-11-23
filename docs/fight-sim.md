@@ -59,7 +59,7 @@ just fight-sim run --fight uri-vertigo --party gerard:matemagico+aitor:papagato 
 | `reaction` | `REACTION_RULES`, what the elements turn | `reaction.rules.storm`, `reaction.rules.plasma` |
 | `cegado` | `TIMED.cegado` and `CEGADO`: how long Cegado lasts, and how often its physical blows miss in smoke and in Explosión's flash | `cegado.rules.seconds`, `cegado.odds.smoke`, `cegado.odds.flash` |
 | `powder` | `POWDER_RULES`, what the elements make of Colorista's powder | `powder.rules.blast`, `powder.rules.poison`, `powder.rules.shard` |
-| `camping` | `CAMPING`, Càmping Eurosport's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
+| `camping` | `CAMPING`, Càmping Eurocamping's foes, as `camping.rules` | `camping.rules.bombona`, `camping.rules.punetazo` |
 | `marta` | `MARTA`, Las cuerdas' foes and La Voz, as `marta.rules` | `marta.rules.vozRe`, `marta.rules.acorde`, `marta.rules.directo` |
 | `castle` | `CASTLE` (`src/castle.ts`), the castle's pupils, Aurelià, Dirección and the Queen, as `castle.rules` | `castle.rules.resolucion`, `castle.rules.year3`, `castle.rules.reinaVuelta` |
 | `modelo` | `MODELO`, the foes of Emilie's model and El que no converge, as `modelo.rules` | `modelo.rules.seca`, `modelo.rules.descargaStep`, `modelo.rules.convergeTurns` |
@@ -949,7 +949,7 @@ What the numbers say:
 - The biggest single action on Vertitrón (360 PV) is about 220, at most 240: Zarpazos de fuego on a
   Punto débil, the reward for finding both duals. Nothing else comes near.
 
-## Càmping Eurosport, as tuned
+## Càmping Eurocamping, as tuned
 
 Measured with `just fight-sim` (200 fights, seed 35), Papagato 2 and Matemágico 2. `DUO` is the dual
 party; `TECH` is Gerard on Matemágico and Aitor on Tecnópata, two ánimas of magic, the party the

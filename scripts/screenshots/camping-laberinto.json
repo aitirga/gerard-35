@@ -1,6 +1,6 @@
 {
-  "title": "Càmping Eurosport · Palabras, candado, pizarra y puerta blindada",
-  "description": "docs/quests/universidad.md § Càmping Eurosport: the hedge maze and its patrols, each group saying a word as it falls; the pool gate's padlock of three number wheels, opened with 7, 8, 5: the letters of the words the maze's foes say (Empiezo, Continúo, Acabo); the pool, El Campeón and Las parcelas' board on an easel; the merendero behind a steel door that lights a bulb per pitch found and opens when the board is solved (La Sobremesa a dark shape in the walls' shade until then, lit at once as the door opens); the sun very low over the whole campsite. No overview in the campsite. Run it with --gpu.",
+  "title": "Càmping Eurocamping · Palabras, candado, pizarra y puerta blindada",
+  "description": "docs/quests/universidad.md § Càmping Eurocamping: the hedge maze and its patrols, each group saying a word as it falls; the pool gate's padlock of three number wheels, opened with 7, 8, 5: the letters of the words the maze's foes say (Empiezo, Continúo, Acabo); the pool, El Campeón and Las parcelas' board on an easel; the merendero behind a steel door that lights a bulb per pitch found and opens when the board is solved (La Sobremesa a dark shape in the walls' shade until then, lit at once as the door opens); the sun very low over the whole campsite. No overview in the campsite. Run it with --gpu.",
   "steps": [
     {
       "open": "/?mission=universidad&part=camp&solo=1"

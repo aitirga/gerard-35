@@ -27,7 +27,7 @@ export function createCandadoUI(hud: HTMLElement, callbacks: {
 
   function render() {
     root.innerHTML = `<div class="candado-body">
-        <span class="candado-kicker">CÀMPING EUROSPORT · PISCINA</span>
+        <span class="candado-kicker">CÀMPING EUROCAMPING · PISCINA</span>
         <div class="candado-wheels" ${shake ? 'data-shake' : ''}>${turned.map((n, w) => `
           <button type="button" class="candado-wheel" data-wheel="${w}" ${w === wheel ? 'aria-current="true"' : ''} aria-label="Rueda ${w + 1}: ${n}">
             <small>${digit(n - 1)}</small>

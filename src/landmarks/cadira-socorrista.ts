@@ -3,7 +3,7 @@ import type { LandmarkKit } from '../landmarks';
 import { bar, box } from '../landmark-shapes.ts';
 
 /**
- * A pool's lifeguard chair (Càmping Eurosport's landmark, docs/quests/universidad.md § La piscina):
+ * A pool's lifeguard chair (Càmping Eurocamping's landmark, docs/quests/universidad.md § La piscina):
  * a tall white frame on four splayed legs, a slatted seat and back two metres up facing local +z
  * (the water and the camera), a footrest, rungs up the front, and an orange rescue float hung on its
  * side. Empty. Tall enough to hide Gerard: it opens the cut.

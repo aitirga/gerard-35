@@ -107,7 +107,7 @@ const campGrid = ENVIRONMENTS[CAMP].grid;
 const inCamp = () => { const s = new Story(flagsAt('camping')); s.startUni({ entered: true }); return s; };
 const board = (lit = [], shown = []) => ({ lit, shown, darkness: 0 });
 
-test('through the spiral is Càmping Eurosport: they say what they see once, and it takes an hour', () => {
+test('through the spiral is Càmping Eurocamping: they say what they see once, and it takes an hour', () => {
   const story = onBeach();
   story.handle({ type: 'near', id: 'uni-talk' });
   story.handle({ type: 'near', id: 'uni-spiral' });

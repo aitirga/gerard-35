@@ -5,7 +5,7 @@ import { choose, createBoard, currentClue, loadPuzzle, solved, type Board, type 
 import type { SoundId } from './sfx';
 
 /**
- * Las parcelas on screen (docs/quests/universidad.md § Càmping Eurosport): at the blackboard by the
+ * Las parcelas on screen (docs/quests/universidad.md § Càmping Eurocamping): at the blackboard by the
  * pool the puzzle opens as a board, the blackboard on top with the clue in chalk and the pitches below
  * as wooden signs; each one found lights a bulb over the merendero's steel door. Gerard and Aitor each move their own
  * marker and either can choose. Moves and buttons read the device in use (input-glyphs.ts).
@@ -60,7 +60,7 @@ export function createParcelasUI(hud: HTMLElement, callbacks: {
     const clue = currentClue(puzzle, board), done = solved(puzzle, board);
     root.innerHTML = `<div class="parcelas-dusk" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 1Q50 9 100 1" fill="none" stroke="#0b0d0a" stroke-width=".35" vector-effect="non-scaling-stroke"/></svg><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <header class="parcelas-board">
-        <span class="parcelas-kicker">CÀMPING EUROSPORT · PISCINA</span>
+        <span class="parcelas-kicker">CÀMPING EUROCAMPING · PISCINA</span>
         <div class="parcelas-chalk" aria-live="polite">${done
           ? '<strong>PASO ABIERTO</strong><small>La puerta de acero del merendero está abierta.</small>'
           : `<strong>${escape(clue!.word)}</strong><span class="parcelas-count">· ${clue!.count}</span>`}</div>

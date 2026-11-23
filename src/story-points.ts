@@ -82,7 +82,7 @@ export const STORY_ARCS = [
     // The morning after (docs/quests/coro.md § The room inside): they have come to the choir, as Gerard asked.
     { flags: ['coro-nuria'], label: 'Nuria y Uri, en el coro', spot: { environment: 'coro' } },
   ] },
-  { id: 'universidad', chapter: 2, title: 'Misión de los amigos de la uni', detail: 'La Barceloneta · Càmping Eurosport', after: 'metro', anima: 'universidad', steps: [
+  { id: 'universidad', chapter: 2, title: 'Misión de los amigos de la uni', detail: 'La Barceloneta · Càmping Eurocamping', after: 'metro', anima: 'universidad', steps: [
     { flags: ['clue-uni'], label: 'Aitor: los de la uni esperan en la playa' },
     { flags: ['barceloneta-uni'], label: 'En la playa, con los siete', spot: { environment: 'barceloneta' } },
     { flags: ['camping'], label: 'Dentro de la espiral: el camping' },
@@ -293,7 +293,7 @@ const UNI_PARTS: readonly MissionPart[] = [
   { id: 'beach', label: 'Detrás de ellos', detail: 'Los seis de espaldas mirando al mar; Anna en el agua', at: 'clue-uni', spot: beach(PLACES_UNI.retry.x, PLACES_UNI.retry.z) },
   { id: 'tag', label: 'El pilla-pilla', detail: 'Corren detrás; el paseo cerrado por los tentáculos', at: 'barceloneta-uni', spot: beach(PLACES_UNI.talk.x, PLACES_UNI.talk.z - 6), uni: { chase: true } },
   { id: 'spiral', label: 'La espiral en el agua', detail: 'Anna se ha ido por ella; entrar lleva al camping', at: 'barceloneta-uni', spot: beach(PLACES_UNI.anna.x, PLACES_UNI.anna.z - 4), uni: { spiral: true, sunk: true } },
-  { id: 'camp', label: 'Càmping Eurosport', detail: 'Recién salidos de la espiral; los magos rondan la entrada', at: 'camping', spot: camp(PLACES_CAMP.entrada), uni: { entered: true } },
+  { id: 'camp', label: 'Càmping Eurocamping', detail: 'Recién salidos de la espiral; los magos rondan la entrada', at: 'camping', spot: camp(PLACES_CAMP.entrada), uni: { entered: true } },
   { id: 'lock', label: 'El candado', detail: 'Las patrullas vencidas (sus siete palabras dichas); ante el candado del portón de la piscina', at: 'camping', spot: camp({ x: PLACES_CAMP.gate.x + 1, z: PLACES_CAMP.gate.z }), uni: { entered: true, beaten: CAMP_HUNTERS.map(h => h.id), told: ['gate'] } },
   { id: 'pool', label: 'La piscina', detail: 'El candado abierto: El Campeón ante la pizarra del torneo', at: 'candado', spot: camp({ x: PLACES_CAMP.gate.x - 3, z: PLACES_CAMP.gate.z }), uni: { entered: true, beaten: CAMP_HUNTERS.map(h => h.id), told: ['gate'] } },
   { id: 'board', label: 'La pizarra', detail: 'El Campeón vencido; ante la pizarra de la piscina: Las parcelas', at: 'candado', spot: camp({ x: PLACES_CAMP.tablero.x, z: PLACES_CAMP.tablero.z + 1 }), uni: { entered: true, beaten: [...CAMP_HUNTERS.map(h => h.id), 'campeon'], told: ['gate', 'board', 'door'] } },

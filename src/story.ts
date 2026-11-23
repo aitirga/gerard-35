@@ -253,7 +253,7 @@ export type StoryEffect =
 
 /** Scripted fights: the possessed street dogs, the palace minion that wakes Matemágico, and chapter 2's palace guards. */
 export type EncounterId = 'dogs' | 'palace-minion' | 'palace-guards' | 'night-guard' | 'sobremesa' | FearEncounter
-  // Càmping Eurosport (docs/quests/universidad.md): its small fights, the black pitch and El Campeón.
+  // Càmping Eurocamping (docs/quests/universidad.md): its small fights, the black pitch and El Campeón.
   | 'camping-magos' | 'camping-dados' | 'camping-agentes' | 'camping-tienda' | 'camping-negra' | 'campeon'
   // Las cuerdas (docs/quests/marta.md): a quality after each maze, and La Voz.
   | CuerdasEncounter
@@ -696,7 +696,7 @@ export class Story {
     return first ? [inside, { kind: 'dialogue', dialogue: LINES_UNI.camp }, ...this.spend('cafe')] : [inside];
   }
   /**
-   * In the campsite (docs/quests/universidad.md § Càmping Eurosport): its foes stand up as the party
+   * In the campsite (docs/quests/universidad.md § Càmping Eurocamping): its foes stand up as the party
    * comes near, the pool's gate says why it is shut, El Campeón comes down off its plinth, and at the
    * long table La Sobremesa is waiting.
    */
@@ -1575,7 +1575,7 @@ export class Story {
     // The castle: the Queen's pupils round their rooms, and each boss standing where it waits (src/castle-story.ts).
     const pupils = castleFears(this.castleHost, environment);
     if (pupils.length) return pupils;
-    // Càmping Eurosport's magos and agentes on their rounds (docs/quests/universidad.md), until beaten this visit.
+    // Càmping Eurocamping's magos and agentes on their rounds (docs/quests/universidad.md), until beaten this visit.
     if (environment === CAMP) return !this.adult || this.has('sobremesa') ? [] : CAMP_HUNTERS.filter(h => !this.uni.beaten.includes(h.id)).map(h => ({ ...h, id: `camp-${h.id}` }));
     if (environment !== MAZE || !this.adult || !this.nuria.lent || this.has('nuria-uri')) return [];
     return FEARS.filter(f => !this.nuria.beaten.includes(f.id));

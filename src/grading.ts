@@ -104,7 +104,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { temperature: -.04, lift: [.004, .006, .01], shadows: [-.004, .004, .014], highlights: [.012, .01, .004], contrast: 1.02, saturation: 1.04 },
     enhance: { vibrance: .1, highlights: -.08, dehaze: .04 },
   },
-  /** Càmping Eurosport: a summer evening that does not end, low amber light in the pines, blue-green shade, warm bulbs. */
+  /** Càmping Eurocamping: a summer evening that does not end, low amber light in the pines, blue-green shade, warm bulbs. */
   camping: {
     grade: { temperature: .01, lift: [.002, .006, .014], shadows: [-.01, .004, .024], highlights: [.022, .01, -.012], contrast: 1.06, saturation: .98 },
     enhance: { shadows: .04, highlights: -.1, vibrance: .05 },
