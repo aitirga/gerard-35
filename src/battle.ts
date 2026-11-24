@@ -592,9 +592,9 @@ export const CAMPING = {
  * grade, and spends it. Holding on still takes two thirds off.
  */
 export const MARTA = {
-  juramento: 46, lazoEvery: 4, resonancia: 12, resonanciaStep: 12, resonanciaMost: 48,
+  juramento: 48, lazoEvery: 4, resonancia: 16, resonanciaStep: 12, resonanciaMost: 48,
   cristalPhysical: 1.5, reflect: .5, destello: 34, crack: .5, estallido: 14, prisma: 22,
-  directo: 54, linea: 28, estocada: 60, clavado: 3.5,
+  directo: 54, linea: 28, estocada: 62, clavado: 3.5,
   // Her song is Marta's recording (src/song.ts): some 64 notes in 87 s, each one a beam, so each is small and her
   // Magia (13) against the party's Espíritu does the rest: light on Gerard (13), heavy on Aitor (10); Re, a physical
   // blow, the other way round. Each Crescendo is a quarter point of Magia (2026-11-20, `just fight-sim`).
@@ -2600,18 +2600,18 @@ export const FIGHT_GROWTH: Partial<Record<Encounter, Growth>> = {
   'camping-negra': { pv: .05, stat: 3.5, hit: 5.25 },
   campeon: { pv: .05, stat: 1, hit: 3.5 },
   sobremesa: { pv: 0, stat: 2.75, hit: 3.5 },
-  'cuerdas-lealtad': { pv: .05, stat: 1.25, hit: 1 },
+  'cuerdas-lealtad': { pv: .05, stat: 1.25, hit: 2.25 },
   'cuerdas-cristalino': { pv: .1, stat: 1.5, hit: 0 },
   'cuerdas-directo': { pv: .05, stat: 2.25, hit: .75 },
-  voz: { pv: 0, stat: 1.25, hit: .75 },
+  voz: { pv: 0, stat: 1.75, hit: .75 },
   'modelo-celdas': { pv: 0, stat: 1.5, hit: 0 },
   'modelo-oscilacion': { pv: 0, stat: 1.5, hit: 0 },
   'modelo-atomo': { pv: .05, stat: 1, hit: 0 },
   'no-converge': { pv: .075, stat: .25, hit: 0 },
   'luca-recepcion': { pv: .15, stat: 3.25, hit: 0 },
   'luca-sillones': { pv: .05, stat: 3, hit: .5 },
-  'luca-carta': { pv: 0, stat: 1.5, hit: 4.5 },
-  fran: { pv: 0, stat: 2.5, hit: 4.5 },
+  'luca-carta': { pv: 0, stat: 1, hit: 4.5 },
+  fran: { pv: 0, stat: 2.25, hit: 3.5 },
 };
 /** How `encounter`'s foes grow with each ánima gathered: its own rule, or the one for all. */
 export const growthOf = (encounter?: string) => (encounter ? FIGHT_GROWTH[encounter as Encounter] : undefined) ?? FOE_GROWTH;
@@ -5665,10 +5665,10 @@ export function songLabel(state: BattleState) {
  */
 export const LUCA = {
   aleteo: 11, polillasMost: 3,
-  estampar: 18,
+  estampar: 24,
   tijeretazo: 29,
   deslumbre: 14,
-  corte: 22, acolito: 55, acolitoCorte: 16, aspersion: 16, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
+  corte: 32, acolito: 55, acolitoCorte: 22, aspersion: 22, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';

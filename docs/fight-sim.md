@@ -1029,6 +1029,30 @@ while it stands; `smart` counts breaking the Calderón (an Acorde while she hold
 damage it saves. While she only sings she takes no turn and no time in the foes' phase (other
 turnless foes still count a turn's time; the fights tuned with them were measured so).
 
+### Marta and Luca, made a challenge (2026-11-24)
+
+Aitor, with Papagato 6, Freática 5 and Dadaísta 1 (Nuria, the uni and Emilie done): «aumenta algo la
+dificultad para que sea un reto». Measured with `just fight-sim curve` and `story --level` at that
+point, both missions were won `smart` 97–100 % with 51–74 % of PV left in every order, and careless
+play won Lo Directo, La Voz and Las camisas 30–56 %. Found with `optimize --curve` against a tighter
+curve (PV left 22–45 %), then held to every `TARGETS` pair:
+
+| Number | Was | Now |
+| --- | --- | --- |
+| La Lealtad PV · Juramento · Resonancia · growth `hit` | 260 · 46 · 12 · 1 | 290 · 48 · 16 · 2.25 |
+| Lo Directo PV · Estocada | 440 · 60 | 530 · 62 |
+| La Voz PV · growth `stat` | 620 · 1.25 | 720 · 1.75 |
+| Las camisas PV · Estampar · growth `stat` | 75 · 18 · 1.5 | 82 · 24 · 1 |
+| Fran's Corte · acolytes' Corte · Aspersión · growth `stat`/`hit` | 22 · 16 · 16 · 2.5/4.5 | 32 · 22 · 22 · 2.25/3.5 |
+
+At Aitor's point, `smart`: La Voz 91–99 % ending with 39–45 % of PV (was 53–59 %), Lo Directo 95–96 %
+with 43–46 %, Fran 96–97 % (was 100 %), Fran done first 93 % with 40 % (was 51 %); careless play now
+wins Lo Directo 2–18 %, La Voz 0–8 %, Las camisas 0–28 %. Fran resists more: his wins end with
+65–70 % of PV whatever his numbers, because the party heals between lamps and loses all at once
+when it loses; more PV or more growth turned him into a wall done last, not into a closer fight.
+Los capellanes were left as they were (harder Tijeretazo walled the party in two new ánimas).
+`directo-electrico` now asks 40 % and `voz-la-ultima-animas-nuevas` 60 %, on purpose.
+
 ## The castle, as tuned
 
 Final pass, 2026-11-21 (`just fight-sim story`, 200 fights, seed 35): the dual party at each floor's

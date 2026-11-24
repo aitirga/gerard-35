@@ -85,11 +85,11 @@ export const PROFILES = {
    * Defensa and Espíritu: what finds her hurts, and her Enfado (battle.ts MARTA) answers whoever
    * strikes her while she sings (2026-11-21, `just fight-sim`).
    */
-  lealtad: base(260, 12, 9, 15, 12),
+  lealtad: base(290, 12, 9, 15, 12),
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
-  directo: base(440, 16, 10, 11, 10),
-  voz: base(620, 12, 15, 5, 7),
+  directo: base(530, 16, 10, 11, 10),
+  voz: base(720, 12, 15, 5, 7),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
@@ -127,9 +127,9 @@ export const PROFILES = {
   'no-converge': base(540, 12, 13, 11, 12),
   // Fran's salon (docs/quests/luca.md § Monsters): frail moths, patches of pattern and the restyled chaplains.
   polilla: base(52, 10, 8, 8, 8),
-  'estampado-rojo': base(75, 12, 10, 11, 11),
-  'estampado-azul': base(75, 12, 10, 11, 11),
-  'estampado-oro': base(75, 12, 10, 11, 11),
+  'estampado-rojo': base(82, 12, 10, 11, 11),
+  'estampado-azul': base(82, 12, 10, 11, 11),
+  'estampado-oro': base(82, 12, 10, 11, 11),
   capellan: base(116, 12, 9, 9, 11),
   // Fran, under the Queen's hold, and the three lamps of the canopy he has made his chair's.
   fran: base(150, 13, 13, 12, 14),

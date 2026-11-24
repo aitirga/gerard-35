@@ -1201,7 +1201,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .35], why: 'Sin agarrarse a la Estocada ni guardarse para cuando se queda clavado, pega demasiado y aguanta demasiado.' },
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
   { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
-  { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.5, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan.' },
+  { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.4, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan a menudo (desde 2026-11-24 aguanta más: un reto, no un paseo).' },
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
@@ -1218,7 +1218,7 @@ export const TARGETS: readonly Target[] = [
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
   // With its two newest ánimas at level 1 it is the cliff it always was (docs/fight-sim.md § The final pass, as done); whole games win it 92 % at the first try.
   ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.55, 1], [0, .3]),
-  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.65, 1], [0, .3]),
+  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.6, 1], [0, .3]),
   ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.66, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
   ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
