@@ -238,8 +238,8 @@ goes with Gerard), and the screen's edges close in, beating like a heart while s
     round (every layer off is weight off). Over a round it hits about as hard as a Peso with splash,
     so the onions' tuning keeps its shape; reading it is what saves PV.
   - **The dynamic** (decided 2026-11-05): one hit a layer is too slow for the big ones, so they have to
-    level Papagato up on the little ones until it learns **Zarpazos** (level 2): four little claws, a
-    layer each. Holding on does not answer them, since a big one's weight also reaches everyone else
+    level Papagato up on the little ones until it learns **Zarpazos** (level 2): two little claws, a
+    layer each (four until 2026-11-24). Holding on does not answer them, since a big one's weight also reaches everyone else
     (half the blow, while it has layers), and fire does not either, since wet layers do not catch.
     Aitor says so as the Cebollón comes (*"no la pelamos ni en una semana"*) and Nuria when they come
     back after falling. Tuned and held there with `just fight-sim` (`docs/fight-sim.md`).
@@ -251,7 +251,7 @@ goes with Gerard), and the screen's edges close in, beating like a heart while s
   off); then it changes dish (**Cambio de plato**). The rhythm: blows, fire, then hold on, statuses
   or a dual.
 - **La Cebolla y los suyos** (ring 3's fear, `escolta`; replaced Game Over on 2026-11-05): a single
-  hunter that walks Game Over's patrol and does not come back. **La Cebolla half peeled** (5 layers,
+  hunter that walks Game Over's patrol and does not come back. **La Cebolla peeled down** (2 layers since 2026-11-24,
   `FEAR_RULES.escortLayers`; its first run-up a turn later, so the Aplastón lands in round 4,
   `escortAplastonFirst`), **a fantasmita** and **a cebollita** with one layer clearing the way for
   it. Each asks its own question: peel and brace the onion, finish or brace the fantasmita before

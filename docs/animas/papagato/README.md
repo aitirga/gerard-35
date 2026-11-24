@@ -53,9 +53,9 @@ work).
 
 ## Stats
 
-- **Built** (2026-11-20): **Fuerza +2, Crítico +15 %, Espíritu −1** (`CLASS_STATS`): the claws hit
-  hard and find the soft spot, and magic gets through to whoever wears it. A first guess, for the
-  balance.
+- **Built** (2026-11-20, lowered 2026-11-24): **Fuerza +1, Crítico +10 %, Espíritu −1** (`CLASS_STATS`):
+  the claws hit hard and find the soft spot, and magic gets through to whoever wears it. It was
+  Fuerza +2 and Crítico +15 % until Aitor found the ánima overpowered (2026-11-24).
 - **Crítico is an attribute** (decided by Aitor 2026-11-20): the chance that a blow is a golpe
   crítico (`../README.md` § Golpe crítico; `Stats.critico`, `PARTY_CRIT` in `src/stats.ts`). 5 % for
   everyone in the party; Papagato adds to it; foes have none.
@@ -71,7 +71,7 @@ Three shared rules, used together (`../README.md` § Shared mechanics): **physic
    are there they hurt at the end of every round, 2 PV a stack, Defensa or not.
 2. **The next physical blow that adds none spends the wound**, 20 % harder for each stack.
    Anyone's: Atacar, a partner's blow, a dual. That extra damage is all the wound gives at first.
-3. **Any blow can be a golpe crítico**, by the Crítico of whoever lands it (20 % on Papagato):
+3. **Any blow can be a golpe crítico**, by the Crítico of whoever lands it (15 % on Papagato):
    half as hard again on top, the number large, the fight frozen for an instant.
 4. **From level 5 the two meet** (*Olor a sangre*): whoever bleeds is hit critically more often,
    and a wound of five stacks or more, spent, is always a golpe crítico. That is what wakes Siete
@@ -79,7 +79,7 @@ Three shared rules, used together (`../README.md` § Shared mechanics): **physic
 
 So a turn is one of two things: **cut** (Zarpazo sangriento: the wound grows) or **cash in**
 (Atacar for free, Zarpa en la llaga for twice the wound, Acecho, the partner's best blow). Both of
-Haru's small attacks cut: Zarpazo sangriento deep (two stacks), Zarpazos wide (four claws, four
+Haru's small attacks cut: Zarpazo sangriento deep (two stacks), Zarpazos wide (two claws, two
 rolls of Crítico, one stack).
 
 **Cuts pile up** (decided by Aitor 2026-11-20, replacing the rule of 2026-11-05 that a skill that
@@ -102,9 +102,9 @@ to close as it has stacks. Built (`cutRound`, `nextRound`).
 - **One passive, and not from the start** (Aitor 2026-11-20: an ánima does not need a passive of
   its own from level 1). Up to level 4 the wound gives its extra damage and nothing else, and a
   crítico comes only from the Crítico attribute. Olor a sangre is what the ánima grows into.
-- **By example.** Gerard on Papagato has Crítico 20 % (5 and the ánima's 15); Aitor beside him,
+- **By example.** Gerard on Papagato has Crítico 15 % (5 and the ánima's 10); Aitor beside him,
   5 %. With Olor a sangre, on a foe that bleeds, with one stack or with nine, Gerard's blows are
-  críticos 40 % of the times and Aitor's 25 %, whatever the blow: a cut, Atacar, Foc Binari.
+  críticos 35 % of the times and Aitor's 25 %, whatever the blow: a cut, Atacar, Foc Binari.
   Spending a wound of two stacks is that roll. Spending one of **five or more** is no roll at all:
   it is a crítico. So the party cuts up to five and then picks who lands the blow.
 - **It covers the whole party**, not only the wearer: Aitor's Atacar on a wound Haru opened gets
@@ -128,7 +128,7 @@ here (4 to 7 on 2026-11-21). Cost is in maná (3 from the start, 4 from level 4)
 | Level | What it gives | Cat | Cost | Base | Description | State |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | **Zarpazo sangriento** | Haru | 1 | 16 physical, Sangrado +2 | `Daño físico leve a un enemigo. Añade sangrado.` | Built |
-| 2 | **Zarpazos** | Haru | 2 | 7 physical, four claws, Sangrado +1 | `Daño físico leve a un enemigo. Golpea cuatro veces. Añade sangrado.` | Built |
+| 2 | **Zarpazos** | Haru | 2 | 9 physical, two claws, Sangrado +1 | `Daño físico leve a un enemigo. Golpea dos veces. Añade sangrado.` | Built |
 | 2 | **Ronroneo** | Yuki | 2 | 16 heal at once and Sanación for 15 s, one ally; cleanses their mental statuses | `Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos. Quita sus efectos de estado mentales.` | Built |
 | 3 | **Zarpa en la llaga** | Haru | 2 | 26 physical; the wound counts double | `Daño físico medio a un enemigo. Gasta el sangrado: cada uno suma el doble de daño.` | Built |
 | 4 | **Maná +1** | — | — | 3 → 4 | — | Built |
@@ -154,8 +154,9 @@ here (4 to 7 on 2026-11-21). Cost is in maná (3 from the start, 4 from level 4)
 - **Zarpazos** is why Papagato has to grow in Nuria's mission: each little claw strips a layer off
   a big onion (`../../quests/nuria.md` § Monsters). Its description leaves the layers out on
   purpose. It is a cut too, a wide one (changed 2026-11-20 for the ánima to hold together: as a
-  blow that spent the wound, its first small claw threw the whole of it away): four claws, each
-  with its own roll of Crítico, and one stack.
+  blow that spent the wound, its first small claw threw the whole of it away): two claws, each
+  with its own roll of Crítico, and one stack. It had four claws of 7 until 2026-11-24 (Aitor: too
+  strong).
 - **Zarpa en la llaga** is the big way to cash in: each stack counts double (+40 %), and with Olor
   a sangre on a wound of five or more it is a sure crítico.
 - **Acecho** (new): Haru crouches, and nothing happens this turn. As the next round starts, before
@@ -379,7 +380,7 @@ building. The redesign is what should change that, and these are the numbers to 
 - Olor a sangre's 20 % and where five sits: three cuts today.
 - Zarpa en la llaga's double on a wound that can now reach 10.
 - Punto débil's triple on top of both.
-- Crítico +15 % on eight claws of Zarpazos de fuego.
+- Crítico +10 % on eight claws of Zarpazos de fuego.
 - Whether the bots know how to cut and cash in (a `smart` policy for it), or the sim will keep
   saying the wound is worth nothing.
 

@@ -195,12 +195,12 @@ test('Zarpazos lands several little hits, one layer each, and a plain blow only 
   s.levels = { papagato: 2 };
   const onion = s.foes[0], full = onion.layers, hp = onion.hp;
   const claws = act(s, 'skill', 'cebollon', 'zarpazos');
-  assert.equal(claws.strikes.length, 4);
-  assert.equal(claws.peeled, 4);
-  assert.equal(onion.layers, full - 4);
+  assert.equal(claws.strikes.length, 2);
+  assert.equal(claws.peeled, 2);
+  assert.equal(onion.layers, full - 2);
   assert.equal(claws.amount, claws.strikes.reduce((sum, n) => sum + n, 0));
   assert.equal(onion.hp, hp - claws.amount);
-  assert.match(s.message, /4 capas menos: quedan 6/);
+  assert.match(s.message, /2 capas menos: quedan 8/);
 });
 
 test('Zarpazos needs Papagato at level 2, and its claws stop when the foe falls', () => {

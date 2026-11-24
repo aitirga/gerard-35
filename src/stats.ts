@@ -49,11 +49,11 @@ export const PROFILES = {
   cebollon: base(150, 12, 10, 11, 10),
   /** La Cebolla: the same onion, between the little ones and El Cebollón (battle.ts ONIONS). */
   cebolla: base(110, 12, 10, 10, 10),
-  plato: base(290, 12, 12, 11, 10),
+  plato: base(260, 12, 12, 11, 10),
   /**
    * Vertitrón and its eye (a part of it, an optional target: broken, no more Rayo; battle.ts VERTIGO).
    */
-  vertigo: base(440, 18, 18, 10, 12),
+  vertigo: base(440, 18, 18, 9, 12),
   'vertigo-ojo': base(100, 10, 10, 9, 9),
   /** Their young, in twos and threes up the tower (docs/quests/nuria.md § The tower): little PV. The cebollitas are the easy ones. */
   cebollita: base(34, 11, 8, 9, 8),
@@ -64,7 +64,7 @@ export const PROFILES = {
    * and Soraya, who need each other, are the frailest; Nico, who shields the rest, the toughest.
    */
   'sobremesa-alvaro': base(78, 12, 10, 10, 10),
-  'sobremesa-anna': base(72, 13, 10, 11, 10),
+  'sobremesa-anna': base(80, 13, 10, 11, 9),
   'sobremesa-sarah': base(72, 10, 12, 10, 11),
   'sobremesa-miquel': base(81, 13, 10, 11, 10),
   'sobremesa-joan': base(62, 10, 13, 9, 9),
@@ -89,7 +89,7 @@ export const PROFILES = {
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
   directo: base(530, 16, 10, 11, 10),
-  voz: base(720, 12, 15, 5, 7),
+  voz: base(630, 12, 15, 5, 7),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
@@ -107,11 +107,11 @@ export const PROFILES = {
   monton: base(250, 12, 12, 10, 10),
   // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
   // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
-  aurelia: base(420, 25, 11, 14, 11),
+  aurelia: base(411, 25, 11, 14, 11),
   atril: base(90, 1, 1, 10, 8),
   // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
   // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.
-  directiva: base(245, 10, 20, 12, 14),
+  directiva: base(245, 10, 19, 12, 14),
   reina: base(620, 17, 17, 12, 13),
   mano: base(110, 12, 10, 11, 10),
   // La Pompa she blows: a thing to burst before it does. First guess.

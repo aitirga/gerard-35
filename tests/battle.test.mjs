@@ -294,7 +294,7 @@ test('L and R swap the active fighter\'s ánima for free among their own (their 
   const [gerard, bernat] = s.allies;
   assert.equal(gerard.stats.magia, 11);
   assert.equal(switchAnima(s, 1), 'papagato');
-  assert.equal(gerard.classId, 'papagato'); assert.equal(gerard.stats.magia, 10); assert.equal(gerard.stats.fuerza, 12); assert.equal(gerard.stats.critico, 20);
+  assert.equal(gerard.classId, 'papagato'); assert.equal(gerard.stats.magia, 10); assert.equal(gerard.stats.fuerza, 11); assert.equal(gerard.stats.critico, 15);
   assert.equal('velocidad' in gerard.stats, false, 'there is no Velocidad (docs/combat.md § Sin Velocidad)');
   assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo']);
   assert.equal(s.active, 0, 'the turn is still his');
@@ -479,7 +479,7 @@ test('Papagato grows: Zarpazos and Ronroneo at level 2, and Zarpa en la llaga, w
   assert.deepEqual(skillsFor(s, gerard).map(k => k.id), ['zarpazo', 'zarpazos', 'ronroneo', 'llaga']);
   s.foes[0].hp = s.foes[0].maxHp = 999;
   const flurry = act(s, 'skill', 'dog-0', 'zarpazos');
-  assert.equal(flurry.strikes.length, 4);
+  assert.equal(flurry.strikes.length, 2);
   assert.deepEqual(flurry.status, { id: 'sangrado', stacks: 1 }, 'a wide cut: one stack for the whole flurry');
   assert.match(SKILLS.find(k => k.id === 'zarpazos').description, /Añade sangrado\.$/);
   const plain = createBattle(party, 1, false, undefined, ['papagato']); plain.levels = { papagato: 3 };
@@ -649,8 +649,8 @@ test('Zarpazos de fuego\'s coins come from the fight\'s own dice: the same seed 
   const onion = createFearBattle(DUO, 'cebolla', undefined, () => .3);
   onion.levels = { papagato: 2 }; onion.foes[0].hp = onion.foes[0].maxHp = 999;
   const wet = actDual(onion, 'zarpazos-de-fuego', 'cebolla');
-  assert.equal(wet.peeled, 8); assert.equal(onion.foes[0].layers, 0);
-  assert.deepEqual(wet.coins.slice(0, 7), [0, 0, 0, 0, 0, 0, 0], 'no fire while it has layers');
+  assert.equal(wet.peeled, 7); assert.equal(onion.foes[0].layers, 0);
+  assert.deepEqual(wet.coins.slice(0, 6), [0, 0, 0, 0, 0, 0], 'no fire while it has layers');
 });
 
 test('Punto débil: a light blow that leaves the next damaging action on that foe three times as hard, every strike of it, once; ticks neither use nor spend it', async () => {
@@ -856,8 +856,8 @@ test('the golpe crítico: by the Crítico of whoever lands it, half as hard agai
   assert.equal(CRIT_RULES.chance, 0, 'by chance, off in the tests (tests/setup.mjs)');
   assert.equal(CRIT_RULES.bonus, .5);
   const base = duoFight();
-  assert.equal(byId(base, 'gerard').stats.critico, 5); assert.equal(byId(base, 'aitor').stats.critico, 20, 'Papagato finds the soft spot');
-  assert.equal(critChance(base, byId(base, 'aitor'), base.foes[0]), 20);
+  assert.equal(byId(base, 'gerard').stats.critico, 5); assert.equal(byId(base, 'aitor').stats.critico, 15, 'Papagato finds the soft spot');
+  assert.equal(critChance(base, byId(base, 'aitor'), base.foes[0]), 15);
   assert.equal(base.foes[0].stats.critico, 0); assert.equal(critChance(base, base.foes[0], byId(base, 'gerard')), 0, 'foes have none');
   /** Gerard's Atacar on the first dog, with `critico` Crítico and `bleeding` stacks on it. */
   const blow = (critico, bleeding = 0) => {
@@ -882,7 +882,7 @@ test('the golpe crítico: by the Crítico of whoever lands it, half as hard agai
     again(s, 'aitor'); again(tame, 'aitor');
     aitor.stats = { ...aitor.stats, critico: 100 }; byId(tame, 'aitor').stats = { ...aitor.stats, critico: 0 };
     const claws = act(s, 'skill', 'dog-0', 'zarpazos');
-    assert.deepEqual(claws.crits, [true, true, true, true]);
+    assert.deepEqual(claws.crits, [true, true]);
     assert.deepEqual(claws.strikes, act(tame, 'skill', 'dog-0', 'zarpazos').strikes.map(n => Math.round(n * 1.5)));
   } finally { CRIT_RULES.chance = 0; }
   assert.equal(blow(100)[0].crit, undefined, 'off again');
@@ -903,7 +903,7 @@ test('Olor a sangre (Papagato at 5): 20 more Crítico on a foe that bleeds, and 
   const s = fight(5, 5), gerard = byId(s, 'gerard'), aitor = byId(s, 'aitor'), [bleeding, clean] = s.foes;
   assert.equal(scentOf(s), aitor, 'whoever wears Papagato, standing');
   assert.equal(critChance(s, gerard, clean), 5); assert.equal(critChance(s, gerard, bleeding), 5 + SCENT.crit, 'the partner smells it too');
-  assert.equal(critChance(s, aitor, clean), 20); assert.equal(critChance(s, aitor, bleeding), 20 + SCENT.crit);
+  assert.equal(critChance(s, aitor, clean), 15); assert.equal(critChance(s, aitor, bleeding), 15 + SCENT.crit);
   assert.equal(critChance(s, bleeding, gerard), 0);
   // The partner who does not wear Papagato spends the wound: a crítico for sure, and it is added to the wound.
   const plain = act(fight(5, 0), 'attack', 'dog-0');

@@ -176,7 +176,7 @@ test('the skill table says what each action does and what the fight becomes with
   const claws = lines.find(l => l.id === 'zarpazos'), attack = lines.find(l => l.id === 'attack');
   assert.ok(claws && claws.known === 1 && claws.usedIn === 1 && claws.uses > 0 && claws.perUse > 0 && claws.perMana > 0);
   // Since cures give back a share of the PV, El Cebollón can be outlasted without Zarpazos: it takes far longer.
-  assert.ok(claws.drop >= 0 && claws.rounds >= 3, `without Zarpazos El Cebollón takes rounds more (${claws.rounds})`);
+  assert.ok(claws.drop >= 0 && claws.rounds >= 2.5, `without Zarpazos El Cebollón takes rounds more (${claws.rounds})`);
   assert.ok(attack && attack.drop === null, 'Atacar cannot be taken away');
   assert.ok(!lines.some(l => l.id === 'ostinato'), 'what the party cannot wear is not on its table');
 });

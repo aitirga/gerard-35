@@ -164,7 +164,7 @@ Impulso and Abrazo are out for now.
   Matemágico at every age; at 35, in fights whoever wears it thinks out loud: two
   ghostly little birds glide round the head while light bulbs and question marks of soft light
   drift up out of it and fade (`src/thoughts.ts`). Exploring, it does not show. **Papagato**
-  comes from Nuria's mission (Fuerza +2, Crítico +15 %, Espíritu −1). **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
+  comes from Nuria's mission (Fuerza +1, Crítico +10 %, Espíritu −1). **Tecnópata** is Aitor's own, his from chapter 2's first morning: a
   placeholder still to design (no stats, no skills, sage `#8cc6a8`). Some ánimas are one
   person's (`ANIMA_OWNERS`, `canWear` in `src/battle.ts`): Matemágico only Gerard, Tecnópata only
   Aitor; Papagato anyone but Bernat. **Dadista**, the university friends', is the one whose

@@ -1136,3 +1136,38 @@ nothing).
   20 s of Mojado before a Descarga, which a person can do and a bot does not. It works once: from the
   second time it floods and discharges in the one move (`wary`). The bots never let the clock run
   that long, so their numbers do not move.
+
+## Papagato lowered (2026-11-24)
+
+Aitor found Papagato overpowered. **Zarpazos** went from four claws of 7 to **two of 9** (still
+`leve`), and the ánima from Fuerza +2, Crítico +15 % to **Fuerza +1, Crítico +10 %**
+(`CLASS_STATS`). Before it, on that morning's main, `just fight-sim check` had 13 of 173 out, nine
+of them a `sin-pensar` that won too often, mostly in the castle: Papagato carried the party that does
+not think. Those nine now hold.
+
+The fights whose answer leans on the cats were retuned with `optimize`, each with its own numbers:
+
+| Fight | Number | Before | After |
+| --- | --- | --- | --- |
+| La Cebolla | `ONIONS.cebolla` layers, perLayer | 8, 6 | 7, 8 |
+| La Cebolla y los suyos | `FEAR_RULES.escortLayers` | 4 | 2 |
+| El Plato | `foe.plato.pv` | 290 | 260 |
+| Vertitrón | `foe.vertigo.defensa` | 10 | 9 |
+| La sobremesa | Anna's PV, Espíritu | 72, 10 | 80, 9 |
+| La Voz | `foe.voz.pv` | 720 | 630 |
+| Los capellanes | `FIGHT_GROWTH['luca-sillones'].stat` | 3 | 2 |
+| Las camisas | `LUCA.estampar` | 24 | 18 |
+| Fran | `LUCA.corte` | 32 | 26 |
+| Aurelià | PV, `CASTLE.pregunta` | 420, 105 | 411, 104 |
+| Dirección | Magia, `CASTLE.conducida` | 20, 2.6 | 19, 1.8 |
+
+**3 of 173 out** after it:
+
+- `cebollon-nivel-2` (`casual` at level 2 wins 10–30 %, asks 50 %). With half the claws, Zarpazos
+  no longer splits level 1 from level 2 enough for a player who does not think: every set of
+  `ONIONS.cebollon` numbers tried that lets `casual` win at 2 lets level 1 or the dual party at 1
+  win too. `smart` at 2 still wins 92–100 % and at 1 never. Left as it was, for Aitor to decide
+  (more claws, a Zarpazos that peels two layers a claw, or a lower bar for `casual`).
+- `plato-sin-duales` (7.5 rounds, asks 7 at most): fewer PV take `plato-bien` under its 3 rounds.
+- `directo-con-tecnopata`, out before the change and not touched.
+

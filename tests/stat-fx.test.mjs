@@ -77,9 +77,9 @@ test('the last layer off an onion breaks its defence, and the layers before it d
 test('Zarpazos taking the last layer breaks it too, however many claws it took; a foe that falls with it does not show it', () => {
   const s = createFearBattle(party, 'cebollon');
   s.levels = { papagato: 2 };
-  s.foes[0].layers = 3;
+  s.foes[0].layers = 2;
   const claws = act(s, 'skill', 'cebollon', 'zarpazos');
-  assert.equal(claws.peeled, 3);
+  assert.equal(claws.peeled, 2);
   assert.deepEqual(claws.stats, [{ target: 'cebollon', way: 'down', stats: ['defensa'] }]);
   const fallen = createFearBattle(party, 'cebollon');
   fallen.foes[0].layers = 1; fallen.foes[0].hp = 1;

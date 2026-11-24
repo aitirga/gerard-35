@@ -21,7 +21,7 @@ export const CLASS_STATS: Record<ClassId, StatBonus> = {
   // Counting everything twice sharpens the mind a little.
   matemagico: { magia: 1, espiritu: 1 },
   // Haru and Yuki at your feet: the claws hit hard and find the soft spot (Crítico), and magic gets through (docs/animas/papagato/).
-  papagato: { fuerza: 2, critico: 15, espiritu: -1 },
+  papagato: { fuerza: 1, critico: 10, espiritu: -1 },
   // Aitor's own: Bip stands in front and loads the bombs, Aitor never hits (docs/animas/tecnopata/ § Stats).
   tecnopata: { magia: 2, espiritu: 1, defensa: 2, fuerza: -1 },
   sincopante: { magia: 2, espiritu: 2, defensa: 1, fuerza: -1 },
@@ -118,7 +118,7 @@ export const SKILLS = [
   { id: 'zarpazo', name: 'Zarpazo sangriento', cost: 1, side: 'foes', power: 16, kind: 'physical', bleed: 2, description: 'Daño físico leve a un enemigo. Añade sangrado.', class: 'papagato' },
   // Learned as Papagato grows (src/levels.ts): `level` is the one that teaches it.
   // Zarpazos: a flurry of little claws, a wide cut. Each takes a layer off an onion (`strikes`) and rolls its own Crítico.
-  { id: 'zarpazos', name: 'Zarpazos', cost: 2, side: 'foes', power: 7, kind: 'physical', strikes: 4, bleed: 1, level: 2, description: 'Daño físico leve a un enemigo. Golpea cuatro veces. Añade sangrado.', class: 'papagato' },
+  { id: 'zarpazos', name: 'Zarpazos', cost: 2, side: 'foes', power: 9, kind: 'physical', strikes: 2, bleed: 1, level: 2, description: 'Daño físico leve a un enemigo. Golpea dos veces. Añade sangrado.', class: 'papagato' },
   // Ronroneo: Yuki settles on one ally and purrs. A cure at once (`instant`) and the rest bit by bit on
   // the fight's clock (`regen`), and it takes away every status marked `mental` in STATUSES (`cleanse`).
   { id: 'ronroneo', name: 'Ronroneo', cost: 2, side: 'allies', power: 16, kind: 'heal', regen: 'sanacion', instant: true, cleanse: 'mental', level: 2, description: 'Cura leve a un aliado herido. Sigue curándolo poco a poco durante 15 segundos. Quita sus efectos de estado mentales.', class: 'papagato' },
@@ -357,7 +357,7 @@ export type BroodKind = 'cebollita' | 'platito' | 'fantasmita';
 export type OnionKind = 'cebollita' | 'cebolla' | 'cebollon';
 export const ONIONS: Record<OnionKind, { layers: number; power: number; perLayer: number; cry: number; splash: number; size: readonly [number, number] }> = {
   cebollita: { layers: 2, power: 12, perLayer: 3, cry: 1, splash: 0, size: [.4, .66] },
-  cebolla: { layers: 8, power: 16, perLayer: 6, cry: 2, splash: .5, size: [.5, 1.3] },
+  cebolla: { layers: 7, power: 16, perLayer: 8, cry: 2, splash: .5, size: [.5, 1.3] },
   // 10 layers since only one of the party can wear Papagato at a time (2026-11-05): its blow at full layers is as heavy as ever.
   cebollon: { layers: 10, power: 13, perLayer: 5, cry: 2, splash: .5, size: [.55, 1.8] },
 };
@@ -513,7 +513,7 @@ const foeAbility = (id: FoeAbilityId) => ({ id, name: FOE_ABILITIES[id].name, ..
 export const FEAR_RULES = {
   aplastonEvery: 4, aplastonFirst: 3, aplaston: 1.5, escortAplastonFirst: 3,
   flipAt: .5, transparent: .5, sorpresaSingle: .5, sorpresaDual: 1, puaj: 37,
-  escortLayers: 4, mixChance: .35, mixLayers: 3,
+  escortLayers: 2, mixChance: .35, mixLayers: 3,
 };
 /**
  * Vertitrón (docs/quests/nuria.md § Final boss), every number in one book (`vertigo.boss`); its PV
@@ -2609,7 +2609,7 @@ export const FIGHT_GROWTH: Partial<Record<Encounter, Growth>> = {
   'modelo-atomo': { pv: .05, stat: 1, hit: 0 },
   'no-converge': { pv: .075, stat: .25, hit: 0 },
   'luca-recepcion': { pv: .15, stat: 3.25, hit: 0 },
-  'luca-sillones': { pv: .05, stat: 3, hit: .5 },
+  'luca-sillones': { pv: .05, stat: 2, hit: .5 },
   'luca-carta': { pv: 0, stat: 1, hit: 4.5 },
   fran: { pv: 0, stat: 2.25, hit: 3.5 },
 };
@@ -5665,10 +5665,10 @@ export function songLabel(state: BattleState) {
  */
 export const LUCA = {
   aleteo: 11, polillasMost: 3,
-  estampar: 24,
+  estampar: 18,
   tijeretazo: 29,
   deslumbre: 14,
-  corte: 32, acolito: 55, acolitoCorte: 22, aspersion: 22, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
+  corte: 26, acolito: 55, acolitoCorte: 22, aspersion: 22, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';

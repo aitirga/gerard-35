@@ -417,9 +417,9 @@ export const CASTLE = {
   empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 3, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
   salto: .5, derrame: 32,
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
-  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 105, expuesto: 1.5, castigo: 40, castigoLeve: 28,
+  carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 104, expuesto: 1.5, castigo: 40, castigoLeve: 28,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 80, recordRounds: 2,
-  expediente: 18, horario: 6, circular: 16, conducida: 2.6, actaEvery: 3, resolucion: 100, cargoEvery: 4, voto: 1.3,
+  expediente: 18, horario: 6, circular: 16, conducida: 1.8, actaEvery: 3, resolucion: 100, cargoEvery: 4, voto: 1.3,
   manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 74, mano: .25, aplastar: 44,
   pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, aitor: 30, aitorGrows: .35, reinaVuelta: .4,
 };
