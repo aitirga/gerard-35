@@ -6504,6 +6504,8 @@ export function nextRound(state: BattleState): StatusTick[] {
   const pounced = state.allies.filter(a => a.stalk).map(a => pounce(state, a)).filter(Boolean);
   if (pounced.length) state.message = `${pounced.join(' ')} ${state.message}`;
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); return ticks; }
+  // What landed before anyone chose can leave nobody on the party's side (the Queen takes Aitor with Gerard down).
+  if (fallen(state)) return ticks;
   // Nobody left to choose this round: the foes go again.
   if (state.active < 0) { state.active = 0; state.phase = 'enemy'; }
   return ticks;

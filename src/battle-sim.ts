@@ -875,7 +875,7 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
       const pressAt = state.song?.aim ?? state.song?.t;
       const hp = state.foes.map(f => f.hp), effect = play(state, choice, setup.ban);
       if (state.song) delete state.song.aim;
-      if (!effect) throw new Error(`The bot chose something illegal: ${JSON.stringify(choice)}`);
+      if (!effect) throw new Error(`The bot chose something illegal: ${JSON.stringify(choice)} (${state.encounter}, phase ${state.phase}, ${state.allies[state.active]?.id} at ${state.allies[state.active]?.hp} PV, round ${state.round}, ${JSON.stringify(state.allies.map(a => [a.id, a.hp, a.castle]))}, spent ${state.spent}, «${state.message}», ${JSON.stringify(setup).slice(0, 300)})`);
       // A blow that found La Voz in a silence: the partner may press inside the same one.
       if (state.song && pressAt !== undefined && !effect.chord && state.song.struck?.by === effect.actor && (effect.amount ?? 0) > 0) pressed = { t: pressAt, by: effect.actor };
       const key = effect.dual?.id ?? choice.skill ?? choice.action;
