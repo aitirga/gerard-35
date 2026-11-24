@@ -1029,7 +1029,7 @@ in = "src/castle-story.ts"
 
 # docs/animas/README.md § Ecos de luz (Aitor, 2026-11-21): more ecos, three quarters of the jar by the end.
 [[block.item]]
-title = "Más Ecos de luz: cada sala del castillo la primera vez, los niveles 5 y 7 de cada ánima compartida, y el bote a un eco por nodo"
+title = "Más Ecos de luz: cada sala del castillo la primera vez, los niveles 5 y 7 de cada ánima compartida, y el bote a un eco por nodo (tres un dúo mayor)"
 priority = "historia"
 used = ["ROOM_LIGHTS", "LIGHT_LEVELS"]
 

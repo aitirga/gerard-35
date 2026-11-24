@@ -150,11 +150,11 @@ game; 20 from the friends once all five missions are done).
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 21, and 2 for the definitiva |
-| Tecnópata's tree | 15, and 2 for the definitiva |
+| Matemágico's tree | 33 (four dúos mayores at 3, Combustión and Integral impropia at 3), and 2 for the definitiva |
+| Tecnópata's tree | 27 (three dúos mayores at 3, Escudo de bits at 3, Reinicio and Virus atómico at 2), and 2 for the definitiva |
 | Dadaísta | 1 for maná, 1 for Otra vez, 2 for the definitiva |
 | Each other shared ánima | 1 for maná, 2 for the definitiva |
-| All of it | 56 (52 while two definitivas sleep) |
+| All of it | 78 (74 while two definitivas sleep) |
 
 So at the end the party holds most of it, but not all, and re-does the split before a hard fight.
 
@@ -173,8 +173,8 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 - Three lines that need each other (a reaction takes two elements), and never the ecos for all
   three whole: deep in one or wide in two is the choice.
 - **Grade III** (Aitor 2026-11-20; in the sky once the castle's first boss has fallen, § Growth opens
-  with the castle): Fuego adds the passive *Combustión*, fire's fourth level (2, § Combustión), and past it the
-  node of the dúo mayor *Vulcano* (2, § Dúos mayores); Cálculo *Integral impropia* (2; a cure for everyone, then Sanación);
+  with the castle): Fuego adds the passive *Combustión*, fire's fourth level (3 ecos, § Combustión), and past it the
+  node of the dúo mayor *Vulcano* (3, § Dúos mayores); Cálculo *Integral impropia* (3; a cure for everyone, then Sanación);
   all built. Agua *Punto de congelación* and Eléctrico *Resonancia* are designed, waiting for the
   freezing rule. [matemagico/README.md](matemagico/README.md) § Grade III.
 
@@ -189,8 +189,8 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 
 **Grade III** (Aitor 2026-11-20, after the castle's first boss): Bip adds *Reinicio* (2 ecos; every
 clock on every foe starts over), Mente *Virus atómico* (2; what lands on a foe spreads to the others),
-Taller *Escudo de bits* (2; a dome over the party that stops each blow whole, which cures patch) and
-*Redundancia* (2; cures fill the dome to three times its PV), all built.
+Taller *Escudo de bits* (3; a dome over the party that stops each blow whole, which cures patch) and
+*Redundancia* (1; cures fill the dome to three times its PV), all built.
 [tecnopata/README.md](tecnopata/README.md) § Grade III.
 
 **How it is built.** A node is an `Improvement` in `src/ecos.ts` with its `line` (`LINES`) and
@@ -361,8 +361,11 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   each room of the castle the first time it is beaten (15, docs/castle.md § Ecos of the rooms); the
   Encarnados (up to 6); and each shared ánima on reaching levels 5 and 7 (`LIGHT_LEVELS` in
   `src/levels.ts`, read from the level's flag: up to 10). 55 at most. Every node of the jar costs
-  **one eco**, the definitivas two: 56 for the whole jar with the dúos mayores, 52 while Matemágico's
-  and Dadaísta's definitivas sleep. Measured in ten whole games before the friends' second eco
+  **one eco**, the definitivas two, and the big moves more (Aitor, 2026-11-24: the jar some 25 %
+  dearer): a **dúo mayor three**, grade III **three** for its big ones (Combustión, Integral
+  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico). 78 for the whole jar,
+  74 while Matemágico's and Dadaísta's definitivas sleep (it was 56 and 52): the 55 there are buy some
+  three quarters of it. Measured in ten whole games before the friends' second eco
   (2026-11-22): `pensando` 32 to 36 at the end, `corredor` 29 to 34; with it, ten more each. La
   Delegada of the first floor is never beaten on the way (the bots go past her), and only one or two
   Encarnados a game.
@@ -375,7 +378,9 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
 
 | Improvement | Ánima | Ecos | What it does |
 | --- | --- | --- | --- |
-| **A tree's node** | Matemágico, Tecnópata | 1 | An element for Atacar, a skill, a passive, Maná +1 or a dúo mayor (§ The jar) |
+| **A tree's node** | Matemágico, Tecnópata | 1 | An element for Atacar, a skill, a passive or Maná +1 (§ The jar) |
+| **Grade III** | Matemágico, Tecnópata | 3 or 2 | 3: Combustión, Integral impropia, Escudo de bits; 2: Reinicio, Virus atómico. What hangs past them (Redundancia, Rayo encogedor) is 1 |
+| **Dúo mayor** | Matemágico, Tecnópata | 3 | Lets the dual exist (§ Dúos mayores) |
 | **Maná +1** | Each | 1 | Its pool goes up by one (`manaMax`, for whoever wears it) |
 | **Otra vez** | Dadaísta | 1 | Agitar twice a fight |
 | **Definitiva** | Each | 2 | Wakes after Dirección where its move is built; otherwise asleep (`veiled`). § Definitivas |

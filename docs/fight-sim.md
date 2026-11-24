@@ -645,7 +645,7 @@ with a party without friends.
 
 **Encarnados.** Since the same day's second round they come out every other day, six at most, and
 the ecos come mostly from elsewhere (the rooms' first wins, levels 5 and 7, and a jar at one eco a
-node: docs/animas/README.md § Ecos de luz): 30 to 35 ecos at the end of 41, against 15 to 20 of 61.
+node, three a dúo mayor since 2026-11-24: docs/animas/README.md § Ecos de luz): 30 to 35 ecos at the end of 41, against 15 to 20 of 61.
 The story points count the rooms' (`FLOOR_ROOMS`) and the mixed build now runs through the whole jar;
 `just fight-sim check` did not move. In the first measure nobody looked for them and they gave one to six a game. They are a real fight where the floor is (second floor's 2d: `smart` 99 % in
 5.2 rounds with 58 % of PV left, `casual` 12 %; `encarnados-bien`, `encarnados-sin-pensar`), soft on

@@ -306,6 +306,5 @@ duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined 
 
 - Whether Análisis Parálisis and Cardioide keep their look, or get their own (a chalkboard of sums for
   Análisis, the cardioid drawn by hand).
-- Grade III (§ Grade III): Vulcano and Combustión take the tree from 17 to 21 ecos, Punto de
-  congelación to 23, when the whole game gives 12 to 16. They only show after Aurelià; keep them at
-  2 each and settle the total with the stages.
+- Grade III (§ Grade III): the tree costs 33 ecos since 2026-11-24 (each dúo mayor 3, Combustión and
+  Integral impropia 3; `src/ecos.ts`). They only show after Aurelià.

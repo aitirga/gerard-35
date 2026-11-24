@@ -297,7 +297,7 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   settling, while its dents and cracks close (Aitor 2026-11-21). It asks a choice
   under a big blow on its way: heal the one who is hurt or keep the dome standing.
 - **Redundancia** (Aitor 2026-11-21: *con una pasiva en el árbol permite sobrecurarlo por x3*): the
-  Taller line's last node, after Escudo de bits (2 ecos). With it bought, a dome raised by the party
+  Taller line's last node, after Escudo de bits (1 eco; Escudo de bits 3). With it bought, a dome raised by the party
   can be patched up to three times its PV (120 for Escudo de bits; `BITS.redundancia`, `cap`). No fight-sim target plays the shield yet.
 
 **Duals of the shield** (Aitor: *otro dual que hace que el escudo explote al combinarlo con Foc
@@ -326,7 +326,7 @@ Matemágico's reactions. Not built: to choose.
 *Metralla* (Explosión + Papagato's Zarpazo sangriento, node after Reinicio), *Idea fija* (Confusión +
 Sincopante's Ostinato, after Virus atómico) and *Caleidoscopio* (Escudo de bits + Colorista's Telón,
 after Redundancia), and the plain dual *Trampantojo* (Confusión + Colorista's Cortina). The tree
-costs 25 ecos with them.
+costs 27 ecos with them (2026-11-24: a dúo mayor 3, Escudo de bits 3, Reinicio and Virus atómico 2).
 
 ## In the world
 

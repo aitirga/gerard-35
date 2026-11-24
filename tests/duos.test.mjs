@@ -34,7 +34,7 @@ test('every dúo mayor has its node past the top of its line, after Aurelià, an
   assert.deepEqual(majors, ['vulcano', 'marea', 'fulgurita', 'suceso-seguro', 'metralla', 'idea-fija', 'caleidoscopio']);
   for (const id of majors) {
     const node = IMPROVEMENTS.find(item => item.kind === 'dual' && item.dual === id);
-    assert.ok(node, id); assert.equal(stageOf(node), 2, `${id}: after the first boss`); assert.equal(node.cost, 1, 'every node is one eco but the definitivas (2026-11-21)');
+    assert.ok(node, id); assert.equal(stageOf(node), 2, `${id}: after the first boss`); assert.equal(node.cost, 3, 'a dúo mayor costs 3 ecos (2026-11-24)');
   }
   // One a line: seven lines, seven dúos mayores.
   assert.equal(new Set(IMPROVEMENTS.filter(item => item.kind === 'dual').map(item => item.line)).size, 7);

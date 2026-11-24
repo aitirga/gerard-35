@@ -55,16 +55,22 @@ export const ELEMENT_ICONS: Record<Element | 'none', string> = {
 /** The ánimas that grow by a tree at the jar and never by level: the ones that are someone's own. */
 export const TREE_ANIMAS = Object.keys(ANIMA_OWNERS) as ClassId[];
 /**
+ * What the biggest nodes cost (Aitor, 2026-11-24: the jar some 25 % dearer, the big moves dearest): a
+ * dúo mayor 3 ecos, grade III 3 for its big ones (Combustión, Integral impropia, Escudo de bits) and 2
+ * for the rest (Reinicio, Virus atómico); everything else one, the definitivas two.
+ */
+const DUAL_COST = 3;
+/**
  * A dúo mayor's node (docs/animas/README.md § Dúos mayores, § The jar as one sky): bought with the
  * own ánima that brings a half, it is what lets the dual exist. In the jar it is a gold star between
  * that ánima's constellation and `partner`'s, and only there once both ends are lit (`after`, and
  * the partner's half learned), so its card can name both halves.
  */
-const dualNode = (anima: ClassId, line: LineId, dual: DualId, partner: ClassId, cost: number, after: string): Improvement => {
+const dualNode = (anima: ClassId, line: LineId, dual: DualId, partner: ClassId, after: string): Improvement => {
   const spec = DUALS.find(d => d.id === dual)!, halves = spec.parts.map(part => SKILLS.find(s => s.id === part)!);
   const one = halves.find(s => s.class === anima)!, two = halves.find(s => s.class !== anima)!;
   // Never before Aurelià, whatever it hangs from (Aitor 2026-11-21: the dúos mayores come after him, a «?» until both ends are lit).
-  return { id: `${anima}:${dual}`, anima, kind: 'dual', line, dual, partner, name: spec.name, cost, description: `Dúo mayor de ${one.name} y ${two.name}. ${spec.description}`, after: `${anima}:${after}`, stage: 2 };
+  return { id: `${anima}:${dual}`, anima, kind: 'dual', line, dual, partner, name: spec.name, cost: DUAL_COST, description: `Dúo mayor de ${one.name} y ${two.name}. ${spec.description}`, after: `${anima}:${after}`, stage: 2 };
 };
 const skillNode = (anima: ClassId, line: LineId, skill: SkillId, cost: number, after?: string): Improvement => {
   const spec = SKILLS.find(s => s.id === skill)!;
@@ -99,47 +105,47 @@ const MATEMAGICO: Improvement[] = [
   skillNode('matemagico', 'fuego', 'factor-comun', 1, 'fuego'),
   passiveNode('matemagico', 'fuego', 'rescoldo', 1, 'factor-comun', 'Pasiva. Los fuegos que prende Matemágico duran 15 segundos en vez de 10.'),
   // Grade III (docs/animas/matemagico/README.md § Grade III): the fire line's top, and the dúo mayor past it, both after Aurelià.
-  gradeIII(passiveNode('matemagico', 'fuego', 'combustion', 1, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.')),
-  dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 1, 'combustion'),
+  gradeIII(passiveNode('matemagico', 'fuego', 'combustion', 3, 'rescoldo', 'Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.')),
+  dualNode('matemagico', 'fuego', 'vulcano', 'sincopante', 'combustion'),
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
   passiveNode('matemagico', 'agua', 'capilaridad', 1, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
   // The dúo mayor past each of the other lines (docs/animas/README.md § Dúos mayores), after Aurelià as Vulcano.
-  dualNode('matemagico', 'agua', 'marea', 'freatica', 1, 'capilaridad'),
+  dualNode('matemagico', 'agua', 'marea', 'freatica', 'capilaridad'),
   { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados. Sobre uno que arde, hace de golpe todo el daño que le quedaba al fuego, y más, y lo apaga.' },
   skillNode('matemagico', 'electrico', 'descarga', 1, 'electrico'),
   passiveNode('matemagico', 'electrico', 'toma-de-tierra', 1, 'descarga', 'Pasiva. Una reacción entre elementos que provoque Matemágico le devuelve 1 de maná, una vez por ronda.'),
   // Aitor 2026-11-21: past Toma de tierra, the current that stays in one foe and the charge he stores.
   skillNode('matemagico', 'electrico', 'cortocircuito', 1, 'toma-de-tierra'),
   skillNode('matemagico', 'electrico', 'condensador', 1, 'cortocircuito'),
-  dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 1, 'condensador'),
+  dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 'condensador'),
   skillNode('matemagico', 'calculo', 'angulo', 1),
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
-  gradeIII(skillNode('matemagico', 'calculo', 'integral', 1, 'mana-1')),
-  dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 1, 'integral'),
+  gradeIII(skillNode('matemagico', 'calculo', 'integral', 3, 'mana-1')),
+  dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 'integral'),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [
   skillNode('tecnopata', 'bip', 'explosion', 1),
   passiveNode('tecnopata', 'bip', 'telemetria', 1, 'explosion', 'Pasiva. El Atacar de Bip alarga 3 segundos los estados con reloj de su objetivo.'),
   // Grade III (docs/animas/tecnopata/README.md § Grade III): each line's top, after Aurelià.
-  gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 1, 'telemetria')),
-  dualNode('tecnopata', 'bip', 'metralla', 'papagato', 1, 'reinicio'),
+  gradeIII(skillNode('tecnopata', 'bip', 'reinicio', 2, 'telemetria')),
+  dualNode('tecnopata', 'bip', 'metralla', 'papagato', 'reinicio'),
   skillNode('tecnopata', 'mente', 'confusion', 1),
   skillNode('tecnopata', 'mente', 'control-remoto', 1, 'confusion'),
-  gradeIII(skillNode('tecnopata', 'mente', 'virus', 1, 'control-remoto')),
-  dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 1, 'virus'),
+  gradeIII(skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto')),
+  dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 'virus'),
   // Taller is Bip as a protector since 2026-11-21: Escolta heads it where Rayo encogedor was (docs/animas/tecnopata/README.md).
   skillNode('tecnopata', 'taller', 'escolta', 1),
   passiveNode('tecnopata', 'taller', 'nanitos', 1, 'escolta', 'Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.'),
-  gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 1, 'nanitos')),
+  gradeIII(skillNode('tecnopata', 'taller', 'escudo-de-bits', 3, 'nanitos')),
   passiveNode('tecnopata', 'taller', 'redundancia', 1, 'escudo-de-bits', 'Pasiva. Las curas pueden reparar la cúpula de bits hasta el triple de sus PV.'),
   // Rayo encogedor left the head of Taller for Escolta (Aitor 2026-11-21); it waits at the line's end only so its dual,
   // A escala, can still be met, until the duals are looked at again.
   skillNode('tecnopata', 'taller', 'rayo-encogedor', 1, 'redundancia'),
-  dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 1, 'redundancia'),
+  dualNode('tecnopata', 'taller', 'caleidoscopio', 'prismatico', 'redundancia'),
   manaNode('tecnopata'),
 ];
 /** Dadista grows by level, and keeps one node of its own beside its maná: Agitar a second time in a fight (Aitor 2026-11-20). */
