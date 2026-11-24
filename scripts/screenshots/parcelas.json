@@ -63,15 +63,28 @@
       "caption": "A wrong pitch: its tent wakes (in the campsite, a fight)"
     },
     {
-      "eval": "document.querySelector('.parcela[data-index=\"9\"]').click()"
+      "eval": "document.querySelector('.parcela[data-index=\"1\"]').click()"
     },
     {
-      "eval": "document.querySelector('.parcela[data-index=\"16\"]').click()"
+      "shot": "third-pick",
+      "delay": 300,
+      "caption": "PLAYA · 3 after three picks (ARENA, MELÓN, REY): it stays on the blackboard, one pick left"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"8\"]').click()"
+    },
+    {
+      "shot": "plus-one",
+      "delay": 400,
+      "caption": "The fourth pick (3 + 1, PEÓN): the blackboard moves to AJEDREZ, with OLA and CONCHA still dark"
+    },
+    {
+      "eval": "document.querySelector('.parcela[data-index=\"14\"]').click()"
     },
     {
       "shot": "next-clue",
       "delay": 400,
-      "caption": "The first clue's pitches all lit: the blackboard shows the next clue"
+      "caption": "AJEDREZ's pitches all lit: the blackboard shows the next clue"
     },
     {
       "eval": "document.querySelector('.parcela[data-index=\"6\"]').click()"

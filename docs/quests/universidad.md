@@ -224,8 +224,11 @@ together, made by a generator). The dungeon's one mechanic nobody else uses:
   gold, Aitor cyan, their ánimas' colours) and either can choose. The board is also playable from the picker (*Misiones* → *LAS PARCELAS*),
   `just screenshots parcelas`.
 - The blackboard, written as a campsite notice (*TORNEO*), gives one clue at a time: a word and a
-  number (*«MAR · 2»*). That many pitches go with it. When they are all lit, the board shows the
-  next clue. A pitch that goes with a later clue can be lit early, as at the real table.
+  number (*«MAR · 2»*). That many pitches go with it. As at the real table, a clue lets the players
+  choose its number and one more (a 4 gives five picks, right or wrong); then, or as soon as its
+  pitches are all lit, the board shows the next clue (decided 2026-11-24: "al clicar 4 + 1 debería
+  cambiarse a pista"). A pitch that goes with a later clue can be lit early, and one left behind
+  late; past the last clue the board comes back to the first one still missing a pitch.
 - Choosing is a press on the board (*Elegir esta parcela*, through `data-glyph`). A right one lights a bulb over the steel door. A wrong one wakes its
   tent: a fight. **The black one** puts every lantern out and starts a hard fight; then the board
   starts again from the first clue.

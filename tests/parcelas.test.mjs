@@ -29,6 +29,22 @@ test('a pitch of a later clue can be lit early, and still counts', () => {
   assert.equal(currentClue(PUZZLE, play([1, 0, 3]).board).word, 'JUEGO');
 });
 
+test('a clue gives its number of picks and one more, then the next clue; the one left behind comes back', () => {
+  // MAR · 2: JUEGO's DADO, a tent and OLA are three picks, so JUEGO goes up with ARENA still dark.
+  assert.equal(currentClue(PUZZLE, play([1, 2]).board).word, 'MAR');
+  const { board, outcomes } = play([1, 2, 0]);
+  assert.deepEqual(outcomes, ['lit', 'tent', 'lit']);
+  assert.equal(currentClue(PUZZLE, board).word, 'JUEGO');
+  // CARTA finishes JUEGO; past the last clue, MAR again for ARENA.
+  assert.equal(currentClue(PUZZLE, play([1, 2, 0, 4]).board).word, 'MAR');
+  assert.ok(solved(PUZZLE, play([1, 2, 0, 4, 3]).board));
+});
+
+test('a board saved before the blackboard kept its clue reads as the first one', () => {
+  assert.equal(currentClue(PUZZLE, { lit: [0], shown: [], darkness: 0 }).word, 'MAR');
+  assert.equal(choose(PUZZLE, { lit: [0], shown: [], darkness: 0 }, 3).board.clue, 1);
+});
+
 test('a wrong pitch wakes its tent once and stays shown; a lit one cannot be chosen again', () => {
   const { board, outcomes } = play([2, 2, 0, 0]);
   assert.deepEqual(outcomes, ['tent', 'taken', 'lit', 'taken']);
