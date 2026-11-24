@@ -354,10 +354,10 @@ desk in rows, then the archive's aisles, and at their end his own desk.
 ```
 ######D#####################
 #GG........................#
-#....AA......AA......AA....#
+#....AA.B....AA......AA....#
 #....AA..AA..AA~.AA..AA....#
 #k...AA..AA..AA..AA..AA....#
-#..B.AA.~AA..AA..AA..AA....#
+#....AA.~AA..AA..AA..AA....#
 #....AA..AA..AA..AA.~AA....#
 #....AA..AA..AA..AA..AA....#
 #........AA......AA........#
@@ -391,7 +391,7 @@ desk in rows, then the archive's aisles, and at their end his own desk.
 | `secretaria-cola` | 9, 17 | *"Una cola delante de la finestreta. Nadie se mueve. Nadie se queja."* |
 | `secretaria-finestreta` | 6, 15 | *"La finestreta. Desde este lado nunca la había visto."* |
 | `secretaria-tablon` | 2, 16 | *"Circulares, el calendario escolar, los horarios. Todo en su sitio."* (the timetable is a natural home for the artilugio's room-order hint, `docs/story-outline.md` § El artilugio: later) |
-| `boss-secretaria` | 3, 5 | Before his desk |
+| `boss-direccion` | 7, 2 | The management team (Mar, Montse, Pilar), out of Direcció and before its door |
 | `la-mesa` | 1–2, 1 | Set-piece: his mug, the school's seal, the day's pile of forms, the one warm lamp |
 | `secretaria-llaves` | 2, 4 | *"Las llaves de todas las aulas, cada una en su gancho."* |
 | `secretaria-direccio` | 6, 1 | Gate until `zona-secretaria`: *"Direcció. Cerrada por dentro. Por debajo sale luz de escenario."*; once won it leads to the throne room's west door |

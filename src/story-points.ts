@@ -130,7 +130,7 @@ export const STORY_ARCS = [
     // The guards before the curtain beaten: gone for good, and the stair behind it climbs to the first floor.
     { flags: ['cortina'], label: 'Los guardianes vencidos: la cortina se abre', spot: { environment: 'palacio', cell: { x: 16, z: 10 } } },
     { flags: ['aurelia', 'luz-aurelia'], label: 'Aurelià vencido: la entrada pasa al gimnasio', spot: castleEntry(new Set(['aurelia'])) },
-    { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a Direcció', spot: castleEntry(new Set(['direccion'])) },
+    { flags: ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'], label: 'Dirección vencida: la entrada pasa a la puerta de Direcció', spot: castleEntry(new Set(['direccion'])) },
     { flags: ['aitor-poseido'], label: 'La Reina toma a Aitor: Gerard cae' },
     // Bernat's part (docs/quests/bernat.md, rounds 5 and 6): his call, the game told and his model of the flat, its riddle solved.
     { flags: ['bernat-llama'], label: 'Llama Bernat: venid a El Nucli', spot: { environment: 'meridiana' } },

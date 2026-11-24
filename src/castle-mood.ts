@@ -1,7 +1,8 @@
 /**
  * The castle changes when a boss falls (docs/castle.md § The castle after each boss). Its three
  * stretches are the three phases: the patio, the first floor and the gym (Aurelià's); the second
- * floor and the secretaría (Mar, Montse and Pilar's); the third floor and the throne (hers).
+ * floor and the secretaría, up to Direcció's door (the management team's: Mar, Montse and Pilar);
+ * the third floor and the throne (hers).
  *
  * - **Behind a boss beaten, it is the school again.** His stretch is `won`: her gum is gone from it,
  *   its colours go quiet and its light is a plain day's. What is left of her clots round the one door

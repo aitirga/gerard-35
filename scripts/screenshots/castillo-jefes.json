@@ -183,7 +183,7 @@
     {
       "shot": "secretaria-suya",
       "delay": 4000,
-      "caption": "The secretaría while it is theirs: Mar, Montse and Pilar wait in Direcció"
+      "caption": "The secretaría while it is theirs: Mar, Montse and Pilar wait before Direcció's door"
     },
     {
       "eval": "go('palacio-patio', 17, 2, ['direccion', 'luz-mar', 'luz-montse', 'luz-pilar'])"

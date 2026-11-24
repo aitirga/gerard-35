@@ -221,15 +221,16 @@ export const PALACE_GYM: Environment = {
  * Gerard's own office, entered for once from the visitors' side: a queue that never moves faces
  * the finestreta in the counter; behind it the office repeats (the same desk in rows, then the
  * archive's aisles of back-to-back cabinets with drifts of forms), and at their end, in the far
- * corner, his own desk under the only warm lamp. *Direcció* (2) is the last shortcut, to the throne.
+ * corner, his own desk under the only warm lamp. *Direcció* (2), beside it, is the management team's
+ * office: they wait before its door, and once they fall it is the way on, to the throne.
  */
 const OFFICE_PLAN = [
   '######2#####################', // 0
   '#GG........................#', // 1
-  '#....RR......RR......RR....#', // 2
+  '#....RR.B....RR......RR....#', // 2
   '#....RR..RR..RR~.RR..RR....#', // 3
   'k....RR..RR..RR..RR..RR....#', // 4
-  '#..B.RR.~RR..RR..RR..RR....#', // 5
+  '#....RR.~RR..RR..RR..RR....#', // 5
   '#....RR..RR..RR..RR.~RR....#', // 6
   '#....RR..RR..RR..RR..RR....#', // 7
   '#........RR......RR........#', // 8
@@ -276,8 +277,8 @@ export const PALACE_OFFICE: Environment = {
       { name: 'La secretaría', x: 1, z: 1, w: 26, d: 14, floor: 'tile' },
       { name: 'La sala de espera', x: 1, z: 15, w: 26, d: 5, floor: 'tile' },
     ],
-    // Where the zone's boss stands, before his desk; the desk itself is the set-piece.
-    anchors: { 'boss-secretaria': { x: 3, z: 5 }, 'la-mesa': { x: 2, z: 1 } },
+    // Where the management team stands, out of Direcció and before its door; his desk is the set-piece.
+    anchors: { 'boss-direccion': { x: 7, z: 2 }, 'la-mesa': { x: 2, z: 1 } },
   },
   interactions: [
     { id: 'secretaria-patio', cell: { x: 4, z: 19 }, label: 'Volver al patio', to: { environment: 'palacio-patio', cell: { x: 28, z: 2 } } },

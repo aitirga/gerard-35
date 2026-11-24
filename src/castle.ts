@@ -64,7 +64,8 @@ export const CASTLE_PHASES: readonly CastlePhase[] = [
     id: 2, environment: 'castillo-2', name: 'Castillo · Segundo curso', rooms: 10, lattice: [5, 3], from: 'gimnasio', to: 'secretaria',
     fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
     into: { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } }, out: { environment: 'palacio-gimnasio', cell: { x: 19, z: 2 } },
-    bossAt: { x: 3, z: 5 }, bossRadius: 3.2,
+    // The management team has come out of Direcció and waits before its door, at the far end of Gerard's office.
+    bossAt: { x: 7, z: 2 }, bossRadius: 3.2,
   },
   {
     id: 3, environment: 'castillo-3', name: 'Castillo · Tercer curso', rooms: 12, lattice: [5, 4], from: 'secretaria', to: 'trono',
@@ -78,10 +79,11 @@ export const castlePhase = (id: CastlePhaseId | CastlePlace) => CASTLE_PHASES.fi
 export const castlePhaseAt = (flags: Flags): CastlePhaseId => flags.has('direccion') ? 3 : flags.has('aurelia') ? 2 : 1;
 /**
  * The checkpoint (docs/castle.md § Structure): a boss beaten stays beaten, and from then on every
- * entry to the castle starts in that boss's room. None before Aurelià: the hall, as ever.
+ * entry to the castle starts in that boss's room. None before Aurelià: the hall, as ever. After
+ * Dirección, before Direcció's door, where the three of them stood: the way on to phase 3.
  */
 export function castleEntry(flags: Flags): { environment: 'palacio-gimnasio' | 'palacio-secretaria'; cell: Cell } | undefined {
-  if (flags.has('direccion')) return { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } };
+  if (flags.has('direccion')) return { environment: 'palacio-secretaria', cell: { x: 7, z: 2 } };
   if (flags.has('aurelia')) return { environment: 'palacio-gimnasio', cell: { x: 13, z: 16 } };
   return undefined;
 }

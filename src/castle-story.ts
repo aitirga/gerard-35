@@ -52,7 +52,7 @@ export const LINES_CASTLE = {
     gerard('Noto que cabe más. Como si hubiera sitio para otra.'),
     aitor('La puerta de los vestuarios ya no está pegada.'),
   ),
-  lockers: both(gerard('Los vestuarios. Detrás suena papel. Mucho papel.'), aitor('Secretaría queda por ahí. O quedaba.')),
+  lockers: both(gerard('Los vestuarios. Detrás suena papel. Mucho papel.'), aitor('¿Papel?'), gerard('Actas. Por ahí se llega a Direcció. O se llegaba.')),
   direccionBefore: withThem('mar',
     mar('Gerard. T\'esperàvem a les vuit. Hem de tancar l\'acta.'),
     montse('Només falta la teva signatura. I la de l\'acompanyant.'),

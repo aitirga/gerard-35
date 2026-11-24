@@ -45,7 +45,7 @@ const PLACES: Place[] = [
   { id: 'palacio-secretaria', name: 'Palacio · La secretaría', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'palacio-trono', name: 'Palacio · El salón del trono', detail: 'Dentro de la escuela', group: 'Palacio de la Reina', open: false },
   { id: 'castillo-1', name: 'Castillo · Primer curso', detail: 'Del patio al gimnasio; cambia cada día', group: 'Palacio de la Reina', open: false },
-  { id: 'castillo-2', name: 'Castillo · Segundo curso', detail: 'Del gimnasio a la secretaría; cambia cada día', group: 'Palacio de la Reina', open: false },
+  { id: 'castillo-2', name: 'Castillo · Segundo curso', detail: 'Del gimnasio a Direcció; cambia cada día', group: 'Palacio de la Reina', open: false },
   { id: 'castillo-3', name: 'Castillo · Tercer curso', detail: 'De Direcció al trono; cambia cada día', group: 'Palacio de la Reina', open: false },
   { id: 'alegia', name: 'Alegia · San Juan kalea', detail: 'Donde está Marta', group: 'Alegia', open: true },
   { id: 'cuerdas', name: 'Las cuerdas', detail: 'Al otro lado de la pompa', group: 'Alegia', open: false },

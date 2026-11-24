@@ -93,7 +93,7 @@ of the Queen's own figure: an adult, held by her, never a joke.
 ## Mar, Montse and Pilar
 
 **The management team**: **Mar**, the head, and **Montse** and **Pilar**, the two heads of
-studies. Three at once, held by her, in *Direcció*. Their fight is on *La sala de juntas* (`src/boss-stages.ts`, [palace-zones.md](places/palace-zones.md) § The bosses' stages): the blinds open, the three lamps, the stamp on the minutes; a lamp goes out with each who falls and the book shows the Acta's signatures. They are the people Gerard, the school's
+studies. Three at once, held by her, out of *Direcció* and waiting before its door, at the far end of Gerard's secretaría (`bossAt` of phase 2, `src/castle.ts`). Their fight is on *La sala de juntas* (`src/boss-stages.ts`, [palace-zones.md](places/palace-zones.md) § The bosses' stages): the blinds open, the three lamps, the stamp on the minutes; a lamp goes out with each who falls and the book shows the Acta's signatures. They are the people Gerard, the school's
 secretary, answers to every day. Phase 2's floor has gone dark and turned to manila and steel on
 the way here.
 

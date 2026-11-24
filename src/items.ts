@@ -41,7 +41,7 @@ const CATALOGUE = {
   'trofeo-emilie': { id: 'trofeo-emilie', name: 'Trofeo del modelo', kind: 'trophy', tint: '#27c2a0', effect: MISSION, description: 'Por dentro tiene una línea de agua que no se seca. Emilie volvió a entender su modelo.', icon: cup('<path d="M10 7.5q1-1 2 0t2 0"/>') },
   'trofeo-luca': { id: 'trofeo-luca', name: 'Trofeo de la peluquería', kind: 'trophy', tint: '#617ce2', effect: MISSION, description: 'Refleja colores que no hay en la sala. Luca volvió a verlos todos.', icon: cup('<path d="m10.5 6 3 2M13.5 6l-3 2"/>') },
   'trofeo-aurelia': { id: 'trofeo-aurelia', name: 'Trofeo de Aurelià', kind: 'trophy', tint: '#c9a86a', effect: AURELIA, description: 'Un silbato grabado en el asa. El gimnasio ya no se cierra por dentro.', icon: bigCup('<path d="m10.5 6.5 1.5 1.5 1.5-1.5"/>') },
-  'trofeo-direccion': { id: 'trofeo-direccion', name: 'Trofeo de Dirección', kind: 'trophy', tint: '#b9c3cc', effect: DIRECCION, description: 'Tres sellos de secretaría en la base: Mar, Montse, Pilar. Ya no firman nada.', icon: bigCup('<path d="M10 9.5h.01M12 9.5h.01M14 9.5h.01"/>') },
+  'trofeo-direccion': { id: 'trofeo-direccion', name: 'Trofeo de Dirección', kind: 'trophy', tint: '#b9c3cc', effect: DIRECCION, description: 'Tres sellos de Direcció en la base: Mar, Montse, Pilar. Ya no firman nada.', icon: bigCup('<path d="M10 9.5h.01M12 9.5h.01M14 9.5h.01"/>') },
 } as const satisfies Record<string, Omit<Item, 'id'> & { id: string }>;
 export type ItemId = keyof typeof CATALOGUE;
 export const ITEMS: Record<ItemId, Item> = CATALOGUE;

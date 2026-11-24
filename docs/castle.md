@@ -31,7 +31,7 @@ Rec Comtal → the hall (the guards, the curtain)
   to look round the school, but the gym's door is held shut from inside (`gymShut`) until Aurelià
   falls: he is reached through the floor. After him the stair comes out by his gym, a school again.
 - **The built zones are the fixed rooms.** The hall's curtain is where phase 1 starts, the gym is Aurelià's
-  room, the secretaría's *Direcció* is the management team's, the throne room is hers. What is
+  room, *Direcció* (off the secretaría, whose door the management team waits before) is the team's, the throne room is hers. What is
   generated lies between them.
 - **Checkpoints.** A boss beaten stays beaten, and from then on every entry to the castle starts in
   that boss's room: won, greyed, drifting back to being a school (the proposal already in
@@ -104,7 +104,7 @@ someone's.
 | Phase | Rooms on the path | From → to | Light | What shows up along the way |
 | --- | --- | --- | --- | --- |
 | 1 | 8 | Court green (the patio) → mat blue, marble and laurel | Day | Lanes painted on the floor, busts on plinths, a timeline running along the wall, a stopwatch heard before it is seen |
-| 2 | 10 | Mat blue → manila and steel (the secretaría), in the dark | Emergency lighting | Filing cabinets, stamps, tubes that fail, leaks, minutes pinned to the walls |
+| 2 | 10 | Mat blue → manila and steel (the secretaría, where Direcció's door is), in the dark | Emergency lighting | Filing cabinets, stamps, tubes that fail, leaks, minutes pinned to the walls |
 | 3 | 12 | Manila → night indigo and gold (the throne), in decay | Almost none | Old cracked gum, pink gone dull, playground things worn out |
 
 - Each phase drifts between **two identity cards that already exist** (visual-style.md), so no new
