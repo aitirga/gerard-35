@@ -129,6 +129,9 @@ const DUAL_TRIALS = {
   staccato: { gerard: 'papagato', aitor: 'sincopante', encounter: 'dogs', improved: [] },
   'cadaver-exquisito': { gerard: 'prismatico', aitor: 'dadaista', encounter: 'dogs', improved: [] },
   trampantojo: { gerard: 'prismatico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:confusion'] },
+  // Matemágico's duals with the ánimas he had none with. Electrólisis: water of three heights under the foes, and the fire to
+  // set the gas off (Foc Binari, Pirámide ígnea) bought.
+  electrolisis: { gerard: 'matemagico', aitor: 'freatica', encounter: 'dogs', improved: ['matemagico:agua', 'matemagico:vasos', 'matemagico:fuego', 'matemagico:factor-comun'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */

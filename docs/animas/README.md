@@ -547,6 +547,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Sincopante | **Staccato** | Zarpazo sangriento + Ostinato | 1 · 1 | Built (2026-11-21). An eco repeats the cut each 5 s for 20 s, a Sangrado each |
 | Colorista + Dadista | **Cadáver exquisito** | Puñado + Estrella fugaz | 1 · 3 | Built (2026-11-21). Three blows, each powdering and of a random element; with a streak of 3, all three different |
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
+| Matemágico + Freática | **Electrólisis** | Cubo acuático + Sondeo eléctrico | node · 2 | Built (2026-11-25). Every foe's water split into Gas at its level (§ Gas), with no Conducción; the next fire on any of them sets off the gas of all |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
@@ -1090,6 +1091,33 @@ cuerdas.)
   crack, three or four splinters thrown out, and *Esquirlas +4* (then *+8*, *+12*…) beside the
   number. Its icon on
   the plate, a splinter, with the 20 s ring.
+
+### Gas (Electrólisis's split water, timed)
+
+Left by the dual **Electrólisis** (Cubo acuático + Sondeo eléctrico, 2026-11-25): the current does not
+run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite` in `src/battle.ts`).
+
+- **Its level is the water it was made of**: the marks of La crecida (1–3), or I on a foe that was only
+  Mojado. Counted on each foe before anything else turns that water; a frozen foe has no water (its ice
+  is not split), and a dry one gets none.
+- **The water goes**: the foe is dried (no water, Mojado, Corriente or Hundido), and the blow itself makes
+  **no Conducción and no Shock**. That is its price: whatever Conducción, Vapor or Bajo cero would have
+  made of that water is given up.
+- **A timed status**: 20 s on the clock, no pulses. Unlit, it is gone.
+- **The next blow of fire on any foe that carries it sets off the gas of all** (`ignite`): any blow with
+  fire, a skill's, Atacar's, a dual's or a reaction's (Foc Binari, Pirámide ígnea, Atacar · Fuego,
+  Explosión, Estallido, Combustión's burst). A pulse never does (a fire burning on its own is no blow).
+  Found by one place, read as the action ends: whatever the path the fire came by.
+- **The blast**: one after another, from the foe the fire found outwards, every foe with gas takes magic
+  fire damage of `GAS.blast` (12) a level of its gas, with the Magia of whoever lit it (a weakness or a
+  resistance to fire counts), is left burning at least at Quemado I (wet again by then, it steams
+  instead; an onion's wet layers never catch) and loses the gas. Toma de tierra counts it as a reaction of
+  whoever lit it.
+- **How it shows**: over each foe a loose cloud of glass beads, as big as its level, breathing while it
+  waits; its icon three bubbles with its level. When it goes up, a front of fire runs through each cloud
+  in turn (the GPU `ignite` rule: each bead catches from a burning one near it), a dry crack a cloud, a
+  ring of pressure on the floor, and a fine drizzle after (hydrogen and oxygen make water; it wets nobody).
+  *¡El gas estalla!* over the one the fire found, then each blast's number as the front reaches it.
 
 ### Cortina de polvo (the powder screen)
 

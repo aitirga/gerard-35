@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, dualSingle, enemyAct, improve, IDEA_FIJA, POWDER_RULES, runClock, stacks, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
+import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, dualSingle, enemyAct, GAS, gasOf, improve, IDEA_FIJA, POWDER_RULES, runClock, stacks, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
 import { improvedBy, IMPROVEMENTS, stageOf } from '../src/ecos.ts';
+import { MAT_FRE, createFight, decide, legalChoices } from '../src/battle-sim.ts';
 
 // The dúos mayores of every line but fire (docs/animas/README.md § Dúos mayores) and the duals of the pairs that had
 // none (§ Combined skills): Marea, Fulgurita, Suceso seguro, Metralla, Idea fija, Caleidoscopio; Géiser, A escala, Seiche,
@@ -191,10 +192,121 @@ test('Trampantojo: a cortina on any ally; the foe that breaks it is powdered and
   assert.equal(gerard.decoy, undefined);
 });
 
+// Electrólisis (Matemágico's Cubo acuático + Freática's Sondeo eléctrico): the water split into gas, set off by the next fire.
+const ELECTRO = ['matemagico:agua', 'matemagico:vasos'];
+/** Gerard on Matemágico and Aitor on Freática, Electrólisis known, and `levels` of water under each foe (0: dry; 'wet': only Mojado). */
+function gassing(levels = [1, 2, 3]) {
+  const s = pair('matemagico', 'freatica', ELECTRO);
+  s.foes.forEach((f, i) => { if (levels[i] === 'wet') f.timed = { mojado: { level: 1, left: 20, next: 20 } }; else if (levels[i]) f.timed = water(levels[i]); });
+  return s;
+}
+/** Gerard's turn again, maná full, the round fresh. */
+function again(s, who = 0) { s.phase = 'player'; s.active = who; delete s.spent; for (const a of s.allies) a.secondary = a.maxSecondary; }
+
+test('Electrólisis: every foe\'s water becomes gas at its level (the marks, or I if only wet), dry and with no current', () => {
+  const s = gassing([3, 'wet', 0]);
+  s.foes[0].timed.corriente = { level: 3, left: 10, next: 2 };
+  const e = actDual(s, 'electrolisis');
+  assert.equal(e.dual.id, 'electrolisis'); assert.equal(e.hits.length, 3); assert.ok(e.hits.every(h => h.amount > 0));
+  assert.deepEqual(s.foes.map(gasOf), [3, 1, 0], 'three marks make gas III, Mojado alone gas I, a dry foe none');
+  assert.deepEqual(e.gas, [{ target: 'dog-0', level: 3 }, { target: 'dog-1', level: 1 }]);
+  assert.deepEqual(e.left, { id: 'gas', targets: ['dog-0', 'dog-1'] });
+  for (const f of s.foes) assert.ok(!f.timed?.agua && !f.timed?.mojado && !f.timed?.corriente && !f.timed?.hundido, `${f.id} is dry`);
+  assert.deepEqual(e.water, [{ target: 'dog-0', from: 3, to: 0 }], 'the water it took, for the cells to drain');
+  assert.equal(s.foes[0].timed.gas.left, TIMED.gas.seconds);
+});
+
+test('Electrólisis: the water splits, it does not conduct (no Conducción, no Shock), and frozen water is not water', () => {
+  const s = gassing([2, 2, 2]);
+  s.foes[2].timed = { congelado: { level: 2, left: 40, next: 60 } };
+  const e = actDual(s, 'electrolisis');
+  assert.equal(e.reaction, undefined); assert.equal(e.shocked, undefined); assert.equal(e.current, undefined);
+  assert.ok(s.foes.every(f => !f.shock));
+  assert.deepEqual(s.foes.map(gasOf), [2, 2, 0], 'the ice is not split');
+  assert.ok(s.foes[2].timed.congelado, 'and stays ice');
+});
+
+test('Electrólisis: the next fire blow on one sets off the gas of all, each by its level, and leaves them burning', () => {
+  const s = gassing([1, 2, 3]);
+  actDual(s, 'electrolisis');
+  again(s);
+  const hp = s.foes.map(f => f.hp);
+  const e = act(s, 'skill', 'dog-1', 'foc-binari');
+  assert.equal(e.ignited.from, 'dog-1');
+  assert.deepEqual(e.ignited.hits.map(h => h.target), ['dog-1', 'dog-0', 'dog-2'], 'from the one the fire found outwards');
+  assert.deepEqual(e.ignited.hits.map(h => h.level), [2, 1, 3]);
+  const blast = Object.fromEntries(e.ignited.hits.map(h => [h.target, h.amount]));
+  assert.ok(blast['dog-2'] > blast['dog-1'] && blast['dog-1'] > blast['dog-0'], 'more gas, a bigger blast');
+  assert.equal(s.foes[0].hp, hp[0] - blast['dog-0']); assert.equal(s.foes[2].hp, hp[2] - blast['dog-2']);
+  assert.ok(s.foes.every(f => gasOf(f) === 0), 'the gas is gone');
+  assert.ok(s.foes.every(f => f.timed.quemado?.level >= 1), 'every one burns');
+  assert.deepEqual(e.ignited.burns.map(b => b.target).sort(), ['dog-0', 'dog-1', 'dog-2']);
+  // Gone: the next fire is only fire.
+  again(s);
+  assert.equal(act(s, 'skill', 'dog-0', 'foc-binari').ignited, undefined);
+});
+
+test('Electrólisis: any fire sets it off (Atacar with fire, a fire on everyone); a fire pulse never does', () => {
+  const a = gassing([1, 1, 1]);
+  improve(a, improvedBy([...ELECTRO, 'matemagico:fuego']));
+  actDual(a, 'electrolisis');
+  a.foes[0].timed.quemado = { level: 2, left: 10, next: 2 };
+  a.phase = 'player';
+  const pulses = runClock(a, 6.1);
+  assert.ok(pulses.some(p => p.status === 'quemado'), 'the fire pulsed');
+  assert.deepEqual(a.foes.map(gasOf), [1, 1, 1], 'and the gas is still there');
+  again(a);
+  a.allies[0].element = 'fuego';
+  const swing = act(a, 'attack', 'dog-2');
+  assert.equal(swing.element, 'fuego'); assert.equal(swing.ignited?.hits.length, 3, 'Atacar with fire');
+  const b = gassing([1, 1, 1]);
+  improve(b, improvedBy([...ELECTRO, 'matemagico:fuego', 'matemagico:factor-comun']));
+  actDual(b, 'electrolisis'); again(b);
+  assert.equal(act(b, 'skill', undefined, 'factor-comun').ignited?.hits.length, 3, 'Pirámide ígnea on everyone');
+  // Water or electricity on it do nothing to it.
+  const c = gassing([1, 1, 1]);
+  actDual(c, 'electrolisis'); again(c);
+  assert.equal(act(c, 'attack', 'dog-0').ignited, undefined);
+  assert.deepEqual(c.foes.map(gasOf), [1, 1, 1]);
+});
+
+test('Electrólisis: the gas blast is magic fire, so a foe weak to fire takes more and one that resists it less', () => {
+  const s = gassing([1, 1, 1]);
+  s.foes[0].affinities = { fuego: 'weak' }; s.foes[2].affinities = { fuego: 'resist' };
+  actDual(s, 'electrolisis'); again(s);
+  s.foes.forEach(f => { f.hp = f.maxHp; });
+  const e = act(s, 'skill', 'dog-1', 'foc-binari');
+  const blast = Object.fromEntries(e.ignited.hits.map(h => [h.target, h.amount]));
+  assert.ok(blast['dog-0'] > blast['dog-1'] && blast['dog-1'] > blast['dog-2'], JSON.stringify(blast));
+  assert.equal(GAS.blast, 12);
+});
+
+test('Electrólisis: unlit, the gas goes after 20 seconds', () => {
+  const s = gassing([2, 2, 2]);
+  actDual(s, 'electrolisis');
+  s.phase = 'player';
+  runClock(s, TIMED.gas.seconds - 1);
+  assert.deepEqual(s.foes.map(gasOf), [2, 2, 2]);
+  runClock(s, 1.1);
+  assert.deepEqual(s.foes.map(gasOf), [0, 0, 0]);
+});
+
+test('Electrólisis: the simulator\'s pair of Matemágico and Freática can play it', () => {
+  const s = createFight({ fight: 'dogs:3', party: MAT_FRE, levels: { freatica: 4, matemagico: 4 }, improved: ELECTRO, policy: 'smart' }, () => .5);
+  s.foes.forEach(f => { f.timed = water(2); });
+  s.phase = 'player'; s.active = 0;
+  for (const a of s.allies) a.secondary = a.maxSecondary;
+  const options = legalChoices(s, {}, true, true).filter(o => o.dual === 'electrolisis');
+  assert.ok(options.length, 'it is among the choices');
+  assert.ok(['dual', 'skill', 'attack', 'defend'].includes(decide(s, { policy: 'smart' }, () => .5).action));
+  actDual(s, 'electrolisis');
+  assert.deepEqual(s.foes.map(gasOf), [2, 2, 2]);
+});
+
 test('two players agree on one fighter only when a dual goes to one (dualSingle)', () => {
   const single = DUALS.filter(dualSingle).map(d => d.id);
   // On one foe, or one ally (Sutura de luz cures one, Trampantojo's cortina stands before one).
   for (const id of ['zarpazos-de-fuego', 'punto-debil', 'reserva-de-color', 'idea-fija', 'sutura-de-luz', 'trampantojo']) assert.ok(single.includes(id), id);
   // On every foe, or on the whole party: nobody to agree on.
-  for (const id of ['rayo-solar', 'bombardeo-orbital', 'sobrecalentamiento', 'vulcano', 'marea', 'metralla', 'seiche', 'suceso-seguro', 'caleidoscopio']) assert.ok(!single.includes(id), id);
+  for (const id of ['rayo-solar', 'bombardeo-orbital', 'sobrecalentamiento', 'vulcano', 'marea', 'metralla', 'seiche', 'suceso-seguro', 'caleidoscopio', 'electrolisis']) assert.ok(!single.includes(id), id);
 });

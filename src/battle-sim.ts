@@ -12,7 +12,7 @@ import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts'
 import {
   ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, GAS, gasOf,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -52,6 +52,8 @@ export const MISSION_PARTY = 'gerard:papagato+aitor:-';
 export const DUO = 'gerard:matemagico+aitor:papagato';
 /** Gerard on Matemágico and Aitor on his own ánima: two of magic, the party the campsite's magos ask a question of. */
 export const TECH = 'gerard:matemagico+aitor:tecnopata';
+/** Gerard on Matemágico and Aitor on Freática: the water and what Matemágico makes of it (Electrólisis, Géiser, Marea). */
+export const MAT_FRE = 'gerard:matemagico+aitor:freatica';
 /**
  * The party as it goes into the castle's last two stages, with two of the friends' ánimas each beside their own (`extraSlots`):
  * what Dirección and the Queen are held to, since the base pair never wears them. `FULL` carries Freática, Prismático and
@@ -262,6 +264,8 @@ const BOOKS = {
   crit: { rules: CRIT_RULES },
   powder: { rules: POWDER_RULES },
   crecida: { rules: CRECIDA },
+  // Electrólisis's gas: its blast a level (`gas.rules.blast`) and how long it waits for a fire (`gas.timed.seconds`).
+  gas: { rules: GAS, timed: STATUS_TIMED.gas },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
   // Progression (docs/fight-sim.md § Progression): what wearing an ánima adds, what each friend's ánima adds to
@@ -424,6 +428,11 @@ const EYE_WORTH = .8, EYE_BROKEN = 30;
 /** A bomb is damage later, not now: the foe may fall first or the bomb be wasted on it. */
 const BOMB_WORTH = .7;
 const WATER_WORTH = 6, SUNK_PULSES = 6, CURRENT_PULSES = 4, ICE_ROUNDS_PER_MARK = 1.2;
+/**
+ * Electrólisis's gas, as `smart` sees it: the blast a level of it keeps waiting for a fire and the fire it leaves, a little
+ * less than its blast at average stats since the fire may not come in time. Spent, it comes back off as the blast's PV.
+ */
+const GAS_WORTH = 20;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
 /** Fran's canopy: a lamp broken is a Brillo he will never drink again, a light that eats nothing more and a lighter Aspersión; each Brillo off, the blows that land whole. */
@@ -552,6 +561,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
       if (waterOf(now) >= CRECIDA.marks && waterOf(foe) < CRECIDA.marks) value += pulseDamage('hundido', 1, now.maxHp) * SUNK_PULSES;
       if (now.timed?.corriente && !foe.timed?.corriente) value += pulseDamage('corriente', waterOf(now), now.maxHp) * CURRENT_PULSES;
     }
+    // Electrólisis: the gas laid on a foe still standing, a blast kept for the next fire (and given back when it goes up).
+    if (now.hp > 0 || gasOf(foe)) value += (gasOf(now) - gasOf(foe)) * GAS_WORTH;
     // El Repetidor's crust cracking: without it a lone healer would hold on behind Defender for ever.
     if (foe.kind === 'repetidor' && now.hp > 0) value += ((foe.castle?.crust ?? 0) - (now.castle?.crust ?? 0)) * CRUST_WORTH;
     // El Ausente the round it is there: the window.
