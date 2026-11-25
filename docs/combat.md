@@ -424,7 +424,9 @@ estados cuenta esos iconos, y la marca ▼ que una bajada de estadísticas deja 
 Mojado son un solo icono, y Quemado III cuenta uno (la variedad, no la profundidad). La placa no
 enseña solo estados: también lleva los iconos de lo que un jefe o un alumno es o está haciendo
 (Encarnado, Canción, Reacción, Converge, Enfado…), y esos cuentan igual; la lista entera, en
-`docs/animas/matemagico/README.md` § Serie de Fourier.
+`docs/animas/matemagico/README.md` § Serie de Fourier. La única excepción es Alterna (Corriente alterna):
+su icono está en la placa de los dos polos, pero es un circuito entre dos enemigos, no un estado de uno, y
+no cuenta.
 
 **Escalar.** El mismo elemento que llega mientras el estado sigue activo lo sube un nivel, hasta
 el último, y reinicia su reloj (`inflict`). Al apagarse desaparece entero. Cada nivel multiplica
@@ -556,8 +558,11 @@ enemigos vuelven a actuar. `just screenshots tecnopata-skills --gpu` lo muestra 
 puede pasar de un enemigo a otro. Solo lo hace *Atractor extraño* de Matemágico: los estados que se mueven de
 los demás enemigos los dejan todos a la vez y llegan a su objetivo uno tras otro, se suman donde ya lo tiene (niveles hasta su tope, el reloj más
 largo) y lo que se encuentra reacciona como si cayera un elemento (Humo, Vapor, Estallido, Envenenado).
-Se mueven Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión y Bomba; no
-se mueven el agua de La crecida, las curas, Virus, los de los dúos ni los que cuentan por rondas. Lo que
+Se mueven Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba y el Gas
+de Electrólisis (el único de un dúo que se mueve: es el agua que era; se suma hasta III); no se mueven el
+agua de La crecida, las curas, Virus, los demás de los dúos (ni Alterna, que es un circuito) ni los que
+cuentan por rondas. Llegar no es un golpe: el fuego que llega a un Gas no lo hace estallar, el Estallido
+que provoque por el camino sí. Lo que
 llega no se ha «puesto», así que Virus no lo contagia (`docs/animas/README.md` § Statuses that move).
 
 ## Atributos arriba o abajo, y el resumen
@@ -708,6 +713,7 @@ acción que consume los dos turnos. El catálogo de `DUALS` los reúne todos (la
 | Electrólisis | Cubo acuático + Sondeo eléctrico | El agua de todos se vuelve Gas (sin Conducción): quién trae el fuego, y cuándo, dentro de los 20 s. |
 | Campana de Gauss | Pirámide ígnea + Dados astrales | Qué enemigo tiene que arder más: la mitad de los dados de fuego caen sobre él y lo dejan al menos en Quemado III; los de al lado, en II. Dadista paga con un dado y gasta la racha. |
 | Corriente alterna | Cortocircuito + Crescendo | La corriente va y viene 20 s entre el blanco y el de al lado: un latido cada 5 s, por turnos y más fuerte cada vez. Cada latido es un rayo para las reacciones de la electricidad y, como cualquier rayo, gasta lo que convierte: el único pulso que reacciona (`electricBeat`). |
+| Arco voltaico | ∂Q/∂t Condensador + Acecho | Esperar cargado tiene un precio: el gato salta al empezar la siguiente ronda con un crítico seguro, físico y eléctrico a la vez, salvo que un enemigo golpee antes a quien espera; entonces la carga salta a ese enemigo y el golpe sale a la mitad. Quién golpearía primero, y cómo pararlo. |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno

@@ -25,6 +25,22 @@ Matemágico **does not level** and cannot be taken off: it grows by a skill tree
 paid with ecos de luz, and it is about **the elements**, not fire alone (`../README.md` § Two ways
 to grow). The level table below is what is built today and moves to the tree.
 
+### The tree (`src/ecos.ts`)
+
+Four lines from his core, each node bought with ecos at the jar (`../README.md` § The jar). Every node
+is 1 eco but the grade III ones, which only show after Aurelià (`growthStage`): Combustión, Integral
+impropia and the dúos mayores 3, Atractor extraño 2 (Aitor, 2026-11-25: «baja algún eco»).
+
+| Line | Nodes, in the order they open (ecos) | Ecos |
+| --- | --- | --- |
+| Fuego | Fuego (1) → Pirámide ígnea (1) → Rescoldo (1) → Combustión (3) → dúo mayor Vulcano (3) | 9 |
+| Agua | Agua (1) → Cubo acuático (1) → Capilaridad (1) → dúo mayor Marea (3); off Cubo acuático, Superficie mínima (1) | 7 |
+| Eléctrico | Eléctrico (1) → Punto eléctrico (1) → Toma de tierra (1) → Cortocircuito (1) → ∂Q/∂t Condensador (1) → dúo mayor Fulgurita (3) | 8 |
+| Cálculo | Ángulo exacto (1) → Análisis Parálisis (1) → Cardioide (1) → Maná +1 (1) → Integral impropia (3) → dúo mayor Suceso seguro (3); off Análisis, Serie de Fourier (1); off Maná +1, Atractor extraño (2) | 13 |
+| **All** | 33 before 2026-11-25; Serie de Fourier, Superficie mínima and Atractor extraño add 4 | **37**, and 2 for the definitiva |
+
+The four duals of 2026-11-25 (§ Duals) are not nodes: each is there once both of its halves are known.
+
 ## Stats
 
 Magia +1, Espíritu +1.
@@ -212,7 +228,7 @@ becomes an almost square chord. No status of its own. `just screenshots serie-de
 
 ## Cortocircuito and ∂Q/∂t Condensador (Aitor 2026-11-21, built)
 
-Two nodes of the electric line past Toma de tierra (2 ecos each, `src/ecos.ts`). Asked for as
+Two nodes of the electric line past Toma de tierra (1 eco each, `src/ecos.ts`). Asked for as
 electricity that is not "hit everyone": the line cashes in, and these two decide **when**.
 
 - **Cortocircuito** (2 maná, 14): the current stays in its foe and jumps nowhere (no Conducción). On a
@@ -448,8 +464,11 @@ burst of it where it lands, and it turns what the foe already carries, whoever p
 
 ## Duals
 
-Built with Papagato (2026-11-05, `DUALS` in `src/battle.ts`; how they fire in `../README.md` §
-Combined skills):
+With Papagato since 2026-11-05, and since 2026-11-25 one with each ánima he had none with: Freática
+(Electrólisis), Dadista (Campana de Gauss) and Sincopante (Corriente alterna), and a third with Papagato
+(Arco voltaico). `DUALS` in `src/battle.ts`; how they fire, and the pair table, in `../README.md` §
+Combined skills. As every dual, nothing in the fight points at them: two players pick the two halves,
+and it happens.
 
 | Dual | Matemágico + Papagato | Levels | Maná | Description |
 | --- | --- | --- | --- | --- |
@@ -480,12 +499,12 @@ bolt runs from one to the other through every foe; the water boils into bubbles,
 cell while the water sinks; the bubbles gather into a cloud of glass beads over each foe
 (`src/duo-fx/electrolisis.ts`). In the fight tester: «Probar un dúo» → Electrólisis (water I, II and III
 under three dogs).
-### Campana de Gauss (with Dadista, built 2026-11-25)
 
-**Campana de Gauss** = **Pirámide ígnea** + Dados astrales (Dadista, level 4): 2 maná + 1 maná and a
-die, once a fight. `Daño mágico de fuego leve a un enemigo. Caen más dados cuanto más Crítico, la
-mitad sobre él y el resto sobre los enemigos de al lado. Su fuego sube al menos a nivel III y el de
-los de al lado a nivel II. Derrite el pringue. Gasta la racha.`
+### With Dadista: Campana de Gauss (2026-11-25, built)
+
+| Dual | Matemágico + Dadista | Levels | Maná | Description |
+| --- | --- | --- | --- | --- |
+| **Campana de Gauss** | **Pirámide ígnea** + Dados astrales | node · 4 | 2 + 1 and a die | `Daño mágico de fuego leve a un enemigo. Caen más dados cuanto más Crítico, la mitad sobre él y el resto sobre los enemigos de al lado. Su fuego sube al menos a nivel III y el de los de al lado a nivel II. Derrite el pringue. Gasta la racha.` |
 
 - **Rules** (`bellFall`, `bellSplit`, `BELL` in `src/battle.ts`, tunable as `bell.rules.*`): `base` 4
   dice plus the Dados astrales count of whoever wears Dadista (`rainCount`, a die each 15 % of Crítico),
@@ -519,6 +538,7 @@ los de al lado a nivel II. Derrite el pringue. Gasta la racha.`
   out from the bottom up. If a light eats the fire, the balls still fall but the bins only smoke:
   nothing pours, nothing shakes. Sounds `peg`, `pachinko`, `chord-swell`. Screenshots:
   `just screenshots campana-de-gauss --gpu` (three dogs, four, and Aurelià with El Atril).
+
 ### With Sincopante: Corriente alterna (Aitor 2026-11-25, built)
 
 | Dual | Matemágico + Sincopante | Levels | Maná | Description |
@@ -541,7 +561,8 @@ to the pole it is for, flips over there and a bolt falls on it, brighter and a t
 (`string-1`…`string-4`). After the last the string snaps in the middle and each half whips back onto
 its pole, coming apart. The camera turns so the string crosses the picture as it is drawn, clear of
 scenery and of the commands on the left (`alternaShot`, `docs/graphics.md`).
-### Arco voltaico (built 2026-11-25)
+
+### With Papagato: Arco voltaico (2026-11-25, built)
 
 Acecho with the condenser's charge (`DualSpec.stalk`, `pounce` in `src/battle.ts`; its look in
 `src/duo-fx/arco-voltaico.ts`). Its turn nothing lands: whoever brings Acecho waits on the prey, charged
@@ -579,6 +600,25 @@ flash, and the bolt and the splinters have to read in that frame. Sound: the
 condenser's whine as it settles and as she springs, its snap on contact. The design said the sparks fall
 from above; with the arch opening down they rise from the floor, so the mirror sends them to the focus for
 real.
+
+### How the pieces of 2026-11-25 meet
+
+Each piece is a rule by kind, never a case for another: they meet through the statuses they leave.
+
+- **Atractor extraño and Electrólisis**: Gas is the one dual's own status that moves (it is the water it
+  was). Gathered, the foes' gas adds up to `GAS.top` (III) on one, a single big cloud for the next fire.
+  Fire that comes along with it is no blow and lights nothing; an Estallido on the way does.
+- **Campana de Gauss and Electrólisis**: each die of fire that lands is a blow of fire, so the first one on
+  a foe with gas sets off the gas of every foe (`ignite`), after the bell has shaped its fires.
+- **Serie de Fourier and the rest**: it counts the plate, so what the others leave pays it, Gas included,
+  one icon a kind (Atractor's pile counts as its variety, not its depth). Corriente alterna's Alterna is on
+  the plate but is a circuit, not a status: it is not counted (`plateCount`), and Atractor does not move it.
+- **Superficie mínima and Arco voltaico**: on the one waiting charged, a foe's blow bursts the film on it
+  first (Mojado) and then takes the jumping charge, which runs through that water (Conducción). The striker
+  of someone under the film who carries Gerard's own Condensador is wet before that charge jumps too.
+- **Corriente alterna's beats** are bolts for the reactions on whatever the others leave between them:
+  water from Cubo, Capilaridad or a film (Conducción), a fire (Plasma), smoke (Tormenta), powder (shards).
+  A pole whose water Electrólisis split has none left to conduct.
 
 ## Implementation
 

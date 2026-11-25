@@ -164,7 +164,7 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 | --- | --- | --- | --- |
 | **Fuego**, which piles up | Atacar · Fuego (built) | *Pirámide ígnea*: `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
 | **Agua**, which sets up | Atacar · Agua (built) | *Cubo acuático*: `Daño mágico de agua leve a todos los enemigos. Los moja.`; beside Capilaridad, *Superficie mínima* (2026-11-25): `Protege a un aliado hasta el final de la ronda. El enemigo que le golpee queda mojado.` (`matemagico/README.md` § Superficie mínima) | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
-| **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Punto eléctrico*: `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round; past it (2 ecos each, Aitor 2026-11-21) *Cortocircuito* and *∂Q/∂t Condensador* (`matemagico/README.md` § Cortocircuito and ∂Q/∂t Condensador) |
+| **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Punto eléctrico*: `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round; past it (1 eco each, Aitor 2026-11-21) *Cortocircuito* and *∂Q/∂t Condensador* (`matemagico/README.md` § Cortocircuito and ∂Q/∂t Condensador) |
 | **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each); off Análisis, a branch: *Serie de Fourier* (1, Aitor 2026-11-25): `Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.` It counts what the foe's plate shows (`plateMarks`, `matemagico/README.md` § Serie de Fourier) | Maná +1 |
 
 - **Mojado** (20 s, § Shared mechanics): it hurts nobody; electricity on it reaches every wet
@@ -1188,7 +1188,8 @@ foe twice if it stands alone). Both poles carry **Alterna** for **20 s**, its cl
   golpe crítico. Every number is in one book, `alterna.rules` for `just fight-sim --tune`: `first`,
   `step`, `beats` (how many) and `every` (the interval; the circuit lasts `beats × every`).
 - **It is the only pulse that reacts.** Each beat is a bolt for the reactions (`react`): on someone
-  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. Like any
+  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. Gas
+  (§ Gas) is not water any more: a beat leaves it be, only fire sets it off. Like any
   bolt it spends what it turns, so no beat feeds the next: what makes it pay is wetting, burning,
   blinding or powdering the pole whose beat is coming. Water held under a foe (§ Agua contenida) keeps
   its Mojado, as against any bolt. Toma de tierra gives its sender a maná for it, once a round as
@@ -1203,7 +1204,8 @@ foe twice if it stands alone). Both poles carry **Alterna** for **20 s**, its cl
   seconds more; past its fourth beat it beats on at its loudest. A second Corriente alterna (Da capo
   gives it back) that shares a pole never stretches the first: the plate shows the longer clock.
 - **It is a circuit, not a status on the foe.** It never spreads with Virus atómico; and what gathers
-  or counts a foe's statuses (Atractor extraño, Serie de Fourier) leaves it out.
+  or counts a foe's statuses leaves it out: Atractor extraño does not move it (no `moves`), and Serie de
+  Fourier shows its icon on the plate but does not count it (`plateCount`).
 - **Balance** (`just fight-sim`): `directo-alterna` and `directo-sin-alterna` in `TARGETS`, with the
   party `MAT_SINC`. On Lo Directo, alone and weak to electricity, the four beats all land on it and the
   fight is a round and a half shorter than with the halves apart. The bot values the beats to come with
