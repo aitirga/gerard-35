@@ -761,12 +761,14 @@ in = "src/battle.ts"
 title = "Matemágico: Serie de Fourier"
 grep = "id: 'fourier'"
 in = "src/battle.ts"
+note = "Su par en fight-sim: aurelia-carrera-fourier y aurelia-carrera-sin-fourier."
 
 # Aitor 2026-11-25 (docs/animas/matemagico/README.md § Atractor extraño): Cálculo's grade III beside Integral, 2 ecos.
 [[block.item]]
 title = "Matemágico: Atractor extraño (junta en un enemigo los estados con reloj de los demás)"
 grep = "id: 'atractor'"
 in = "src/battle.ts"
+note = "Su par en fight-sim: trio-segundo-atractor y trio-segundo-sin-atractor (el bot casi no la juega: lo que vale es de jugador)."
 # Matemágico grows (Aitor 2026-11-25, docs/animas/matemagico/README.md § Superficie mínima): the water line's guard,
 # its soap film drawn as a catenoid lattice (src/film-fx.ts).
 [[block.item]]
@@ -807,7 +809,7 @@ file = "scripts/screenshots/duos-nuevos.json"
 title = "Electrólisis (Cubo acuático + Sondeo eléctrico): el agua se separa en gas y el siguiente fuego lo hace estallar en todos"
 grep = "id: 'electrolisis'"
 in = "src/battle.ts"
-note = "Reglas, prueba en «Probar un dúo», aspecto propio (src/duo-fx/electrolisis.ts) y capturas (just screenshots electrolisis --gpu); sus objetivos de fight-sim, en la pasada de balance."
+note = "Reglas, prueba en «Probar un dúo», aspecto propio (src/duo-fx/electrolisis.ts) y capturas (just screenshots electrolisis --gpu); su par en fight-sim: delegada-electrolisis y delegada-sin-electrolisis (golpe a 20 desde el 2026-11-26; el bot nunca enciende el gas)."
 # Aitor 2026-11-25 (docs/animas/matemagico/README.md § Campana de Gauss): Pirámide ígnea + Dados astrales.
 [[block.item]]
 title = "Dúo Campana de Gauss: Matemágico y Dadista (tablero de Galton en la GPU)"
@@ -818,11 +820,11 @@ file = "scripts/screenshots/campana-de-gauss.json"
 title = "Dúo Corriente alterna (Cortocircuito + Crescendo): la corriente va y viene entre dos enemigos"
 grep = "id: 'corriente-alterna'"
 in = "src/battle.ts"
-note = "Reglas, prueba, cuerda de luz con pulso viajero (src/duo-fx/corriente-alterna.ts) y su captura (just screenshots corriente-alterna --gpu); sus números esperan la pasada de balance."
+note = "Reglas, prueba, cuerda de luz con pulso viajero (src/duo-fx/corriente-alterna.ts) y su captura (just screenshots corriente-alterna --gpu); su par en fight-sim: directo-alterna y directo-sin-alterna."
 # Aitor 2026-11-25 (the Matemágico expansion): Acecho with the condenser's charge, the first dual that waits on its prey.
 [[block.item]]
 title = "Dúo Arco voltaico (∂Q/∂t Condensador + Acecho): la gata espera cargada y salta por la parábola"
-note = "Reglas, prueba, aspecto (espejo parabólico en la GPU, src/duo-fx/arco-voltaico.ts) y su ensayo en «Probar un dúo». Sin objetivos de fight-sim todavía: los pone la fase de balance (el par aurelia-leccion-arco, con y sin el dúo); hasta entonces sale en `just fight-sim coverage`."
+note = "Reglas, prueba, aspecto (espejo parabólico en la GPU, src/duo-fx/arco-voltaico.ts) y su ensayo en «Probar un dúo». Su par en fight-sim: castigado-arco y castigado-sin-arco (El Castigado, segundo piso; poder 80 desde el 2026-11-26)."
 grep = "id: 'arco-voltaico'"
 in = "src/battle.ts"
 file = "scripts/screenshots/arco-voltaico.json"

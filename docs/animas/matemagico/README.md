@@ -198,6 +198,8 @@ for their variety.
   `just fight-sim skills` (everything open): 40.7 PV a maná, under Pirámide ígnea (44.1) and
   Explosión (44.7), no warning, nothing that "domina"; Punto débil as a dual is unchanged (14.8 PV a
   maná). `optimize` over `skill.fourier.power` 6–16 and `skill.fourier.harmonics` 3–5 keeps 10 and 5.
+  Its pair since 2026-11-26: `aurelia-carrera-sin-fourier`, the same party with Fourier bought and banned
+  (82 % against 87 % with it, 0.65 casts a fight at 49 PV each; `skills`: 82 PV a use, 41 a maná).
   Punto débil both counting and tripling every strike is the rule as approved; on a dog loaded with
   five statuses and Punto débil one cast does about 300, but setting that up costs the party turns.
 
@@ -300,8 +302,14 @@ longest; the one an Explosión, a Reinicio or a Combustión is about to cash). T
 statuses still have to give where they stand (`clockWorth` in `src/battle-sim.ts`): three small fires that
 add up to a bigger one go on the foe that will stand longest. In the castle's third-floor rooms (castillo-3,
 DUO and TECH) it never plays it: those foes carry little on the clock, and with or without it the rooms come
-out the same (2026-11-25, 60 runs). Its pair of `TARGETS` is still to write (the balance pass), in a fight
-whose foes carry statuses to gather (Colorista's powder, Pirámide ígnea's fires).
+out the same (2026-11-25, 60 runs). Balance pass (2026-11-26): the bot takes it about 0.02 a fight wherever
+a better blow is on the table (Pirámide ígnea, Cubo acuático on burning foes), at 1 maná or at power 26 alike,
+since moving fire adds its levels and loses pulses (three at II are 9 a pulse, one at III is 6) unless
+Combustión takes it to IV. Its pair, `trio-segundo-atractor` and `trio-segundo-sin-atractor` (alumnos-2a,
+DUO, the second floor with only the fire line that feeds it: Pirámide ígnea, Rescoldo, Combustión), holds it
+as it plays: 0.14 a fight, the gather landing 0.03 a fight, 93 % in 4.6 rounds with it and 92 % in 4.6
+without. Its numbers stay (2 maná, power 16): it is a player's piece the bot does not read, not the answer
+of any fight yet (`just fight-sim skills`: 26 PV a use, 13 a maná, «cara»).
 
 **Look** (`atractor` in `src/math-figures.ts`, contact 2.4 s, end 3.4 s; `just screenshots atractor-extrano --gpu`):
 the pen of light leaves his circle for the foe and draws the **Lorenz butterfly** round it (σ 10, ρ 28, β 8/3,
@@ -491,7 +499,8 @@ Yuki se esconde) is an idea for later.
 
 The current splits each foe's water into Gas at its level instead of running through it (no
 Conducción, no Shock); the next fire blow on any of them sets off the gas of all, 12 a level of
-magic fire each and Quemado I (`../README.md` § Gas). What it asks: who brings the fire and when,
+magic fire each and Quemado I (`../README.md` § Gas). Its blow is power 20 since 2026-11-26 (18 before: smart
+never took it, 0.03 a fight). What it asks: who brings the fire and when,
 inside the 20 s, and giving up what that water would have been (Conducción, Vapor, Bajo cero). Its
 look: Gerard plants two electrodes of gold neon at the ends of the foes' line, a − and a +; Freática's
 bolt runs from one to the other through every foe; the water boils into bubbles, two of hydrogen
@@ -499,6 +508,16 @@ bolt runs from one to the other through every foe; the water boils into bubbles,
 cell while the water sinks; the bubbles gather into a cloud of glass beads over each foe
 (`src/duo-fx/electrolisis.ts`). In the fight tester: «Probar un dúo» → Electrólisis (water I, II and III
 under three dogs).
+
+**Balance** (2026-11-26). At 20 smart takes it about half a fight where the electric blow on everyone pays
+(La Delegada and the Gemelos of the third year, 187 PV a use against 82 for Sondeo and 76 for Cubo: about
+1.1 times its halves before the gas, about 1.45 with it lit). It never lights the gas: wetting, splitting and
+lighting are three turns ahead of a two-ply bot, and where the gum is fresh (the first floor) nobody wets the
+foes first, while on the rancid gum of the third the fire takes nothing. So its pair,
+`delegada-electrolisis` and `delegada-sin-electrolisis` (`ONLY_MAT_FRE`: Gerard only on Matemágico, Aitor only
+on Freática, `FLOOR_3`), holds the dual taken (0.84 duals a fight against 0.28) and the room the same (100 %
+in 5.1 rounds, against 4.9). `gas.rules.blast` (12) is read by no target: no fight in the sim plays the
+answer it was made for. The sim gives the gas's blast to Electrólisis, not to the fire that lit it.
 
 ### With Dadista: Campana de Gauss (2026-11-25, built)
 
@@ -567,7 +586,7 @@ scenery and of the commands on the left (`alternaShot`, `docs/graphics.md`).
 Acecho with the condenser's charge (`DualSpec.stalk`, `pounce` in `src/battle.ts`; its look in
 `src/duo-fx/arco-voltaico.ts`). Its turn nothing lands: whoever brings Acecho waits on the prey, charged
 (`Combatant.stalk.charged`, the Acecho icon and the Cargado one on their plate). As the next round starts,
-before anyone chooses, the cat lands: **64, physical and electric at once, with the cat's wearer's stats**, a
+before anyone chooses, the cat lands: **80, physical and electric at once, with the cat's wearer's stats**, a
 sure golpe crítico. Being physical it spends the wound (+20 % a stack, Olor a sangre from five) and sets off
 Combustión; being electric it turns what Atacar·Eléctrico turns, in the same order (the powder first, then
 Plasma on a fire, Tormenta through smoke, Conducción through water), so on a bare Quemado IV Plasma takes
@@ -600,6 +619,14 @@ flash, and the bolt and the splinters have to read in that frame. Sound: the
 condenser's whine as it settles and as she springs, its snap on contact. The design said the sparks fall
 from above; with the arch opening down they rise from the floor, so the mirror sends them to the focus for
 real.
+
+**Balance** (2026-11-26). Power 64 → 80: at 64 the pounce was 1.15 times its halves (Acecho's critical
+plus what the charge adds to a bolt: 116 against 101 on a directiva, 178 against 158 on El Empollón), and
+smart never took it; at 80 it is about 1.4 times. Its pair, `castigado-arco` and `castigado-sin-arco`
+(El Castigado, DUO, the second floor with the electric line to Condensador, `ARC_AT`): El Castigado takes a
+point of Rabia for each blow that does not fell it, and the pounce weighs two. With it, 100 % in 3.7 rounds,
+0.5 pounces a fight at 191 PV each and Revienta 0.07 a fight; without, 98 % in 4.1 and 0.12. The sim
+credits a pounce's PV to whoever crouched (Acecho, or Arco voltaico), since 2026-11-26.
 
 ### How the pieces of 2026-11-25 meet
 

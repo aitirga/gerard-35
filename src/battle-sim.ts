@@ -947,6 +947,14 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     if (effect.reaction) count(effect.reaction.id);
     // Superficie mínima: a foe's blow went through a soap film and left it wet (or smoking, or poisoned).
     for (const _ of effect.film ?? []) count('pelicula');
+    // Electrólisis's gas going up (`gas`), and Atractor extraño bringing the others' statuses (`atrae`).
+    if (effect.ignited) count('gas');
+    if (effect.gathered?.length) count('atrae');
+    // A pounce lands as the round starts, out of anyone's turn: its PV are the action's that crouched (Acecho, or Arco voltaico).
+    if (effect.pounce) {
+      const key = effect.pounceDual?.id ?? 'acecho', pv = (effect.amount ?? 0) + (effect.reaction?.hits ?? []).reduce((sum, h) => sum + h.amount, 0);
+      run.damage[key] = (run.damage[key] ?? 0) + pv;
+    }
   };
   const watch = () => {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
@@ -1016,6 +1024,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
       const dealt = state.foes.reduce((sum, foe, i) => sum + (hp[i] ?? foe.maxHp) - foe.hp, 0);
       run.used[key] = (run.used[key] ?? 0) + 1;
       run.damage[key] = (run.damage[key] ?? 0) + dealt;
+      // The gas a fire set off is Electrólisis's, kept for that fire: its PV go to the dual that left it.
+      const blast = (effect.ignited?.hits ?? []).reduce((sum, h) => sum + h.amount, 0);
+      if (blast && key !== 'electrolisis') { run.damage[key] -= blast; run.damage.electrolisis = (run.damage.electrolisis ?? 0) + blast; }
       run.biggest = Math.max(run.biggest, dealt);
       if (markSpent(effect) || effect.hits?.some(h => h.weakSpot)) count(`triple:${key}`);
       note(effect); watch();
@@ -1235,6 +1246,18 @@ const ALTERNA_AT = {
   improved: [...MARTA_LAST.improved ?? [], 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'],
 };
 /**
+ * Arco voltaico's targets: the castle's second floor, where Papagato reaches Acecho (level 6), with the electric line
+ * bought up to ∂Q/∂t Condensador.
+ */
+const ARC_AT = { ...FLOOR_2, improved: [...FLOOR_2.improved ?? [], 'matemagico:cortocircuito', 'matemagico:condensador'] };
+/**
+ * Atractor extraño's targets: the second floor with the fire line that feeds it and nothing else of the jar (Pirámide
+ * ígnea to light everyone, Rescoldo, Combustión to take a fire to IV), so what it gathers is fire.
+ */
+const ATTRACT_AT = { ...FLOOR_2, improved: ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:combustion', 'matemagico:mana-1', 'matemagico:atractor', 'papagato:mana-1'], exact: true };
+/** Electrólisis's pair: Gerard only on Matemágico and Aitor only on Freática, the two halves and nothing to change to. */
+const ONLY_MAT_FRE = 'gerard:matemagico/matemagico+aitor:freatica/freatica';
+/**
  * Whoever wears the two newest ánimas instead of the cats, as someone trying each friend's ánima out does
  * (`just game-sim`'s players): the mission's last fights must be won that way too, not only with Papagato grown.
  */
@@ -1388,10 +1411,20 @@ export const TARGETS: readonly Target[] = [
   { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
   { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
   { id: 'castigado-sin-pensar', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Pegándole por el camino se le llena la Rabia y revienta sobre todos mientras el Empollón sigue: se pierde.' },
+  // Arco voltaico (Matemágico + Papagato, docs/animas/matemagico/README.md § Arco voltaico): El Castigado counts a point of
+  // Rabia for every blow that does not fell it, and the cat's single pounce, critical and electric, is a blow that weighs
+  // two. Measured 2026-11-26 at power 80: with it, 100 % in 3.7 rounds and Revienta 0.07 a fight; without, 98 % in 4.1 and 0.12.
+  { id: 'castigado-arco', fight: 'alumnos-2e', party: DUO, ...ARC_AT, policy: 'smart', win: [.95, 1], roundsWon: [3.3, 3.92], duals: [1.35, 2], why: 'Arco voltaico contra El Castigado: la gata espera cargada y cae de un solo salto, crítico y eléctrico, donde hacían falta dos o tres golpes. Menos golpes que no lo tumban, menos Rabia, y la sala se acorta.' },
+  { id: 'castigado-sin-arco', fight: 'alumnos-2e', party: DUO, ...ARC_AT, policy: 'smart', ban: ['arco-voltaico'], win: [.9, 1], roundsWon: [3.92, 4.6], duals: [.9, 1.35], why: 'Las mismas mitades por separado (Condensador y Acecho): se gana igual, con más golpes sobre El Castigado y más veces que revienta.' },
   { id: 'monton-bien', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'smart', win: [.8, 1], why: 'El Montón copia el primer golpe que recibe: abrir con uno flojo y sin nada (ni fuego, ni agua, ni corriente, ni sangrado, ni a todos), o darle una forma y pegarle con lo que la deshace; y la Chivata antes.' },
   { id: 'monton-sin-pensar', fight: 'alumnos-3d', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .78], why: 'Abrir con lo más fuerte le enseña un golpe a todos con sangrado: lo devuelve cada turno, triple sobre el marcado, y casi siempre se pierde.' },
   { id: 'delegada-bien', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'smart', win: [.78, 1], why: 'La Delegada: callarla o tumbarla primero, y bajar a los Gemelos a la par (una chispa en uno pasa al otro).' },
   { id: 'delegada-sin-pensar', fight: 'delegada-3', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .7], why: 'Con ella mandando, todos al mismo: sin orden se pierde.' },
+  // Electrólisis (Matemágico + Freática, docs/animas/matemagico/README.md § Electrólisis) against the third year's rancid
+  // gum, which the fire no longer melts: the dual is its electric blow on everyone (power 20), and the bot lays the gas and
+  // never lights it here (measured 2026-11-26: 0.55 a fight, `gas` 0). Held as it is: the dual taken, the room the same.
+  { id: 'delegada-electrolisis', fight: 'delegada-3', party: ONLY_MAT_FRE, ...FLOOR_3, policy: 'smart', win: [.95, 1], roundsWon: [4.6, 5.6], duals: [.55, 1.2], why: 'Matemágico y Freática contra La Delegada y los Gemelos de tercero: Electrólisis da en todos a la vez con su corriente y les deja gas. Aquí el fuego no prende el chicle rancio, así que el gas se queda sin estallar: la sala sale igual que sin ella.' },
+  { id: 'delegada-sin-electrolisis', fight: 'delegada-3', party: ONLY_MAT_FRE, ...FLOOR_3, policy: 'smart', ban: ['electrolisis'], win: [.95, 1], roundsWon: [4.4, 5.4], duals: [0, .55], why: 'Sin Electrólisis, Sondeo sobre el agua de la Riada hace lo mismo por Conducción.' },
   // Each floor leaves one room soft, where its gum is met on pupils already known (`teaching` in CASTLE_STAGES): won without
   // thinking more often than not, and never for free.
   { id: 'gemelos-segundo', fight: 'alumnos-2c', party: DUO, ...FLOOR_2, policy: 'casual', win: [.5, .9], hpLeftWon: [.3, .65], why: 'La sala blanda del segundo curso: los Gemelos y el Repetidor, ya conocidos, con relleno. Sin pensar se gana más veces que no, y cuesta más de media vida.' },
@@ -1400,6 +1433,11 @@ export const TARGETS: readonly Target[] = [
   { id: 'delegada-primero-sin-pensar', fight: 'delegada-1', party: DUO, ...FLOOR_1, policy: 'casual', win: [0, .5], why: 'Con ella mandando, los tres al mismo, y el Gemelo que cae vuelve a levantarse: sin orden se pierde más veces que se gana.' },
   { id: 'trio-segundo-bien', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'smart', win: [.66, 1], hpLeftWon: [.25, .6], why: 'Chivata, Repetidor y Empollón con relleno: la Chivata antes de que su marca triplique el Empujón avisado, Defender ese Empujón, alternar físico y mágico contra el Empollón, y a cada relleno lo que lo deshace. La sala más justa del curso.' },
   { id: 'trio-segundo-sin-pensar', fight: 'alumnos-2a', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .7], why: 'Dejando a la Chivata marcar y sin cubrir el Empujón, el marcado cae de un golpe: se pierde más veces que se gana.' },
+  // Atractor extraño (docs/animas/matemagico/README.md § Atractor extraño), with the fire line that feeds it (`ATTRACT_AT`):
+  // Pirámide ígnea lights everyone and Atractor takes the fire of whoever is about to fall to whoever is not. The bot only
+  // takes it now and then (0.14 a fight, measured 2026-11-26) and the room is the same with it or without: held so, on purpose.
+  { id: 'trio-segundo-atractor', fight: 'alumnos-2a', party: DUO, ...ATTRACT_AT, policy: 'smart', win: [.85, 1], roundsWon: [4.2, 5.1], why: 'Pirámide ígnea en todos y Atractor extraño cuando uno va a caer con su fuego encima: lo que le quedaba por arder pasa al que sigue en pie. Se usa poco y no cambia la sala: es una pieza de jugador, no la respuesta de esta pelea.' },
+  { id: 'trio-segundo-sin-atractor', fight: 'alumnos-2a', party: DUO, ...ATTRACT_AT, policy: 'smart', ban: ['atractor'], win: [.85, 1], roundsWon: [4.2, 5.1], happens: { atrae: [0, 0] }, why: 'Sin Atractor, el mismo fuego se queda donde cae: la sala sale igual.' },
   { id: 'empollones-bien', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'smart', win: [.88, 1], why: 'Dos Empollones y la Chivata: no repetir clase de golpe sobre el mismo Empollón (lo que no se sabe le entra más), y la Chivata primero.' },
   { id: 'empollones-sin-pensar', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .7], why: 'Repitiendo el mismo golpe los dos se lo aprenden y la pelea se alarga con la Chivata marcando: se pierde más veces que se gana.' },
   { id: 'delegada-segundo-bien', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'smart', win: [.78, 1], why: 'La Delegada de segundo, con los Gemelos y la Chivata: ella primero (o cegada, o confusa), luego la Chivata, y los Gemelos a la par.' },
@@ -1414,7 +1452,8 @@ export const TARGETS: readonly Target[] = [
   { id: 'aurelia-leccion-sin-campana', fight: 'aurelia', party: MAT_DAD, ...FLOOR_1, improved: [...FLOOR_1.improved ?? [], 'matemagico:fuego', 'matemagico:factor-comun'], policy: 'smart', ban: ['campana-de-gauss'], win: [.95, 1], hpLeftWon: [.6, .83], roundsWon: [7.5, 8.6], why: 'Sin la Campana el atril también arde, con Foc Binari y Pirámide, pero a fuego lento: una ronda más y menos PV al acabar.' },
   { id: 'aurelia-con-dos', fight: 'aurelia', party: DUO, ...TWO, policy: 'smart', win: [.75, 1], why: 'Con Nuria y dos misiones hechas ya se le puede: más justo y más largo, pero se gana.' },
   { id: 'aurelia-con-una', fight: 'aurelia', party: TECH, ...ONE, policy: 'smart', win: [0, .35], why: 'Con Nuria y una sola misión detrás falta fondo: el Dictado y la Pregunta se llevan al equipo antes de que caiga.' },
-  { id: 'aurelia-carrera-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', win: [.5, 1], why: 'Lo de aurelia-con-emilie con Serie de Fourier en el tarro: el sangrado, el agua y el fuego le llenan la placa y en La carrera cada estado nuevo es un Tropiezo; Fourier cobra esa variedad, un golpe por icono. Se usa y ayuda un poco (unos puntos de victoria), sin quitarle el sitio a nada.' },
+  { id: 'aurelia-carrera-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', win: [.78, 1], why: 'Lo de aurelia-con-emilie con Serie de Fourier en el tarro: el sangrado, el agua y el fuego le llenan la placa y en La carrera cada estado nuevo es un Tropiezo; Fourier cobra esa variedad, un golpe por icono. Se usa y ayuda un poco (unos puntos de victoria), sin quitarle el sitio a nada.' },
+  { id: 'aurelia-carrera-sin-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', ban: ['fourier'], win: [.7, .93], why: 'La misma pareja con Fourier en el tarro y sin usarla: lo de aurelia-con-emilie, unos puntos de victoria menos (82 % frente a 87 %, medido el 2026-11-26).' },
   { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, ...TWO, policy: 'casual', win: [0, .3], why: 'Con lo justo para entrar (Nuria y dos misiones), sin defender la Pregunta ni la Expulsión, pegándole tras el atril, a mitad de daño, y sin tropiezos: el Ritmo se acumula, el Récord llega entero y se pierde.' },
   { id: 'direccion-bien', fight: 'direccion', party: DUO, ...FLOOR_2, policy: 'smart', win: [.75, 1], roundsWon: [5, 9], why: 'Dirección con las ánimas de todos: leer lo que avisa cada una y desautorizar con lo que deshace su carpeta el gesto que más duele (la Circular estando mojados), dejar a una sin firmar el acta y Defender la Resolución. Mar primero acaba con las actas; la del agua primero le quita el filo a la chispa.' },
   { id: 'direccion-con-dos', fight: 'direccion', party: TECH, ...TWO, policy: 'smart', win: [0, .35], why: 'Con solo dos misiones detrás las tres juntas son demasiado: la Circular y la Resolución acaban con el grupo antes.' },

@@ -101,9 +101,9 @@ Then, to decide:
 | `hpLeftWon` | Party's PV left when it wins: a win at 5 % and one at 90 % are not the same fight |
 | `kos`, `firstKo`, `koRate` | How many fall, the round the first falls in, and how often anyone does |
 | `peeledBy`, `peeledRate` | Round the onions lose their last layer, and how often they do |
-| `used`, `damageShare` | Mean uses per fight of each action (dual ids included), and the share of the damage each one did |
+| `used`, `damageShare` | Mean uses per fight of each action (dual ids included), and the share of the damage each one did. A pounce's PV count for whoever crouched (Acecho, Arco voltaico), and a gas's blast for Electrólisis, not the fire that lit it |
 | `duals` | Mean dual attacks per fight |
-| `events` | Mean times per fight the foes did each thing (`aplaston`, `puaj`, `grito`, `rayo`…), Vertitrón's eye was broken (`ojo-roto`), and which action spent a Punto débil (`triple:<action>`) |
+| `events` | Mean times per fight the foes did each thing (`aplaston`, `puaj`, `grito`, `rayo`…), Vertitrón's eye was broken (`ojo-roto`), which action spent a Punto débil (`triple:<action>`), a foe's blow through a soap film (`pelicula`), Electrólisis's gas going up (`gas`) and Atractor extraño bringing anything (`atrae`) |
 | `biggest`, `biggestMax` | The most PV one action of the party took off: mean over fights, and the most in any. How close anything comes to a one-shot |
 
 `conclusions` says in plain words what changed the result between rows (level, ban, party, bot,

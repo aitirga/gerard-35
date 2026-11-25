@@ -268,7 +268,7 @@ skills):
   that hurts the foe lands three times as hard and spends it.
 - **Arco voltaico**: Acecho with the condenser's charge. Haru does not go into the dark: she waits
   crouched in plain sight, charged, and as the next round starts runs the parabola Gerard drew over the
-  prey and drops onto its focus: power 64, physical and electric, with the wearer's stats, a sure
+  prey and drops onto its focus: power 80 (64 until the balance pass of 2026-11-26), physical and electric, with the wearer's stats, a sure
   crítico that spends the wound, turns what a bolt turns and sets off Combustión. A foe that strikes the
   wearer first takes the charge and the pounce lands at half; softening that blow does not stop the jump,
   stopping or felling whoever would strike does. Details in `../matemagico/README.md` §
