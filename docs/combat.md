@@ -502,7 +502,8 @@ enemigo (`CONDENSADOR.jump`, magia eléctrica).
 **Superficie mínima** (Matemágico, 2026-11-25) prepara el agua con el golpe del propio enemigo: protege a un aliado
 hasta el final de la ronda (un tercio de cada golpe, como Defender) y cada enemigo cuyo golpe le alcance a través de
 la película recibe su agua, sin daño, con las reglas del agua (Mojado; Humo si ardía; Envenenado si estaba empolvado).
-Solo los golpes, nunca los pulsos. Es el agua que Cortocircuito convierte en un turno perdido.
+Solo los golpes que quitan PV, nunca los pulsos; un golpe a todos cuenta también en quien solo salpica (el Rayo
+total de El Campeón). Es el agua que Cortocircuito convierte en un turno perdido y la corriente en Conducción.
 
 **Cegado** (Aitor, 2026-11-23) no pulsa ni tiene niveles, y no se acumula: mientras dura, los golpes físicos
 del enemigo pueden fallar enteros (`misses` en `src/battle.ts`: no le quitan nada a nadie, no rompen cortinas

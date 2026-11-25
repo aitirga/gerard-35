@@ -1207,10 +1207,11 @@ fn fmodf(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
 fn lat(l: i32, c: i32) -> vec4f { return textureLoad(uLattices, vec2i(c, l), 0); }
 ${latticeRippleWgsl}
 // Thin-film interference, as this game paints it: from how thick a film is (0–1 fresh), back and forth
-// along gold → white → cyan → water blue, never through magenta or violet.
+// along gold → white → cyan → teal water blue (#2aa8d8), never through magenta or violet: its last stop has as
+// much green as blue in it, so gold laid over it sums to a warm white, never lilac.
 fn filmRamp(h: f32) -> vec3f {
   let t = 1.0 - abs(fract(h * 1.35) * 2.0 - 1.0);
-  let gold = vec3f(1.0, 0.6, 0.1); let white = vec3f(1.0, 0.95, 0.78); let cyan = vec3f(0.12, 0.88, 0.78); let blue = vec3f(0.03, 0.26, 0.9);
+  let gold = vec3f(1.0, 0.6, 0.1); let white = vec3f(1.0, 0.95, 0.78); let cyan = vec3f(0.12, 0.88, 0.78); let blue = vec3f(0.165, 0.66, 0.85);
   if (t < 0.22) { return mix(gold, white, t / 0.22); }
   if (t < 0.55) { return mix(white, cyan, (t - 0.22) / 0.33); }
   return mix(cyan, blue, (t - 0.55) / 0.45);

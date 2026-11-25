@@ -137,10 +137,11 @@ export const BUILDS: Record<string, readonly string[]> = {
   // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
   mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:escolta', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
     // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the passives, the second rungs, grade III and the definitivas.
+    // Not Superficie mínima (2026-11-25): bought here, smart plays it twice a castle room and the third-year rooms drop (`elementos` buys it).
     'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez', 'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos',
     'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1', 'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva'],
   // Everything into the elements: Atacar's three, then what lays and cashes them.
-  elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
+  elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:superficie-minima', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
   // Skills and maná, no element.
   tronco: ['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'tecnopata:explosion', 'tecnopata:confusion', 'tecnopata:escolta', 'matemagico:mana-1', 'tecnopata:control-remoto', 'papagato:mana-1'],
 };
@@ -452,23 +453,58 @@ function chargeWorth(state: BattleState) {
   return best * (CONDENSADOR.scale - 1) * .6;
 }
 /**
- * Superficie mínima: what a foe its film leaves wet is worth to `smart` (a turn Cortocircuito can take for sure, a bolt that
- * runs on to it, the gas or the current a dual makes of it). A copy never sees the foes' turn, so `filmWorth` plays it.
+ * What a guard on `ally` is worth to `smart`, holding on (Defender) or put on them (Superficie mínima, Escolta, Corchete): the
+ * two thirds of the foes' coming blows it keeps off them this round, and pulling them out of one that would bring them down.
  */
-const FILM_WORTH = 14;
+function guardWorth(threat: Threat, ally: Combatant) {
+  const coming = threat.hp.get(ally.id) ?? 0;
+  return coming * 2 / 3 + (coming >= ally.hp ? 30 : 0);
+}
 /**
- * What a soap film round `allyId` (Superficie mínima) is worth to `smart`: the foes' turn played on a copy (`threatOn`'s way)
- * after it, so the blows it is told of (a move announced on them) count for sure: the PV its guard keeps off them, and each foe
- * whose blow reaches them through it, FILM_WORTH, less the fire its water puts out (Humo).
+ * Superficie mínima: what a foe its film leaves wet is worth to `smart` when someone can turn that water and the copy below
+ * cannot price it (a turn Cortocircuito takes for sure, the gas or the current a dual makes of it); and its poison, or its smoke.
  */
-function filmWorth(after: BattleState, allyId: string, threat: Threat) {
-  const look = copy(after), ally = look.allies.find(a => a.id === allyId);
-  if (!ally) return 0;
-  const hp = ally.hp, fires = new Map(look.foes.map(f => [f.id, f.timed?.quemado?.level ?? 0]));
+const FILM_WORTH = 10;
+/** Whether anyone standing can turn a foe's water into something: an electric Atacar or skill (Punto eléctrico, Cortocircuito), or a dual on Cubo acuático or Cortocircuito. */
+function cashesWater(state: BattleState) {
+  const turns = (id: SkillId) => id === 'vasos' || id === 'cortocircuito';
+  return state.allies.some(a => a.hp > 0 && (elementsFor(state, a).includes('electrico') || skillsFor(state, a).some(s => s.id === 'cortocircuito' || 'element' in s && s.element === 'electrico')))
+    || dualOptions(state).some(o => (o.ok || o.reason === 'mana') && o.dual.parts.some(turns));
+}
+/** What its water adds to the best electric Atacar anyone standing could give `foeId` next (Conducción), the real rules on a copy. */
+function wetGain(look: BattleState, foeId: string) {
+  let best = 0;
+  look.allies.forEach((ally, i) => {
+    if (ally.hp <= 0 || !elementsFor(look, ally).includes('electrico')) return;
+    const wet = copy(look);
+    wet.phase = 'player'; wet.active = i;
+    const dry = copy(wet), foe = dry.foes.find(f => f.id === foeId);
+    if (foe?.timed) delete foe.timed.mojado;
+    const bolt: Choice = { action: 'attack', target: foeId, element: 'electrico' };
+    best = Math.max(best, damageOn(wet, bolt, foeId) - damageOn(dry, bolt, foeId));
+  });
+  return best;
+}
+/**
+ * What a soap film round `allyId` (Superficie mínima) adds to its guard (`guardWorth`) for `smart`: the foes' turn played on a
+ * copy (`threatOn`'s way) after it, so the blows it is told of (a move announced on them) count for sure. Each foe whose blow
+ * reaches them through it: if left wet (and dry before), what the water adds to the next electric Atacar on it (`wetGain`), or FILM_WORTH if only
+ * Cortocircuito or a dual can turn it, nothing if nobody can; poisoned, FILM_WORTH; blinded, FILM_WORTH less the fire put out.
+ */
+function filmWorth(after: BattleState, allyId: string) {
+  const look = copy(after);
+  if (!look.allies.some(a => a.id === allyId)) return 0;
+  const fires = new Map(look.foes.map(f => [f.id, f.timed?.quemado?.level ?? 0])), cash = cashesWater(after);
   look.phase = 'enemy'; look.enemyActions = [];
-  let touched = 0;
-  for (const foe of look.foes) if (foe.hp > 0 && look.phase === 'enemy') for (const t of enemyAct(look, foe.id)?.film ?? []) touched += FILM_WORTH - (t.left === 'cegado' ? (fires.get(t.target) ?? 0) * 10 : 0);
-  return touched + Math.max(0, (threat.hp.get(allyId) ?? 0) - (hp - ally.hp));
+  const left: { target: string; left: string }[] = [];
+  for (const foe of look.foes) if (foe.hp > 0 && look.phase === 'enemy') left.push(...enemyAct(look, foe.id)?.film ?? []);
+  let worth = 0;
+  for (const t of left) {
+    // Already wet, it only starts its clock over: nothing new.
+    if (t.left === 'mojado') worth += cash && !after.foes.find(f => f.id === t.target)?.timed?.mojado ? Math.max(wetGain(look, t.target), FILM_WORTH) : 0;
+    else worth += FILM_WORTH - (t.left === 'cegado' ? (fires.get(t.target) ?? 0) * 10 : 0);
+  }
+  return worth;
 }
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 7;
 /** A third-year Repetidor's crust: each of the blows that crack it, since every blow after the last one lands whole. */
@@ -612,8 +648,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (after.foes.some((foe, i) => foe.shock && !before.foes[i]?.shock)) value += sum(threat) - sum(threatOn(after));
   // ∂Q/∂t Condensador: about what the charge will add to the next electric blow, or take off a foe that strikes first.
   if (choice.skill === 'condensador') value += chargeWorth(before);
-  // Superficie mínima: the guard and the water the foes' own blows will bring, the real rules on a copy.
-  if (choice.skill === 'superficie-minima' && choice.target) value += filmWorth(after, choice.target, threat);
+  // Superficie mínima: the water the foes' own blows will bring, the real rules on a copy.
+  if (choice.skill === 'superficie-minima' && choice.target) value += filmWorth(after, choice.target);
   // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
   const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
   if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));
@@ -629,12 +665,14 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (choice.skill === 'da-capo') value += (before.usedDuals?.length ?? 0) * 40 + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
+  // A guard put on one ally (Superficie mínima, Escolta, Corchete): what holding on would be worth to them, as Defender's.
+  const guarded = skill?.kind === 'guard' && skill.side === 'allies' ? before.allies.find(a => a.id === choice.target) : undefined;
+  if (guarded) value += guardWorth(threat, guarded);
   value -= manaOf(choice) * 2.5;
   if (choice.action === 'defend') {
-    const coming = threat.hp.get(actor.id) ?? 0;
     // Defender only gathers maná into an ánima worn: wearing none, there is nothing to gather. With one
     // ánima each (the dual party) it is the only way maná comes back, so each point counts.
-    value += coming * 2 / 3 + (actor.classId ? Math.min(DEFEND_CHARGE, actor.maxSecondary - actor.secondary) * MANA_WORTH : 0) + (coming >= actor.hp ? 30 : 0) + (threat.mareo.get(actor.id) ?? 0) * 3;
+    value += guardWorth(threat, actor) + (actor.classId ? Math.min(DEFEND_CHARGE, actor.maxSecondary - actor.secondary) * MANA_WORTH : 0) + (threat.mareo.get(actor.id) ?? 0) * 3;
     // The castle: whoever holds on is not put out of the room (Aurelià's Expulsión) nor caught (the Queen's hand).
     if (before.foes.some(f => f.hp > 0 && f.intent?.target === actor.id && (f.intent.ability === 'expulsion' || f.intent.ability === 'atrapar'))) value += KEPT_WORTH;
   }
@@ -835,6 +873,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     if (effect.sung) count('atraviesa');
     if (effect.chord) count('acorde');
     if (effect.reaction) count(effect.reaction.id);
+    // Superficie mínima: a foe's blow went through a soap film and left it wet (or smoking, or poisoned).
+    for (const _ of effect.film ?? []) count('pelicula');
   };
   const watch = () => {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
@@ -1111,6 +1151,8 @@ const FLOOR_1 = storyPoint('castillo-1').setup, FLOOR_2 = storyPoint('castillo-2
  * A mission's fights are held at both ends: the order they are done in should not make them another fight.
  */
 const AT_UNI = storyPoint('universidad:first').setup, AT_MARTA = storyPoint('marta:first').setup, AT_EMILIE = storyPoint('emilie:first').setup, AT_LUCA = storyPoint('luca:first').setup;
+/** Superficie mínima with what turns its water: the water line to it and the electric one to Cortocircuito (`campeon-pelicula`). */
+const FILM_LINE = ['matemagico:agua', 'matemagico:vasos', 'matemagico:superficie-minima', 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'];
 const UNI_LAST = storyPoint('universidad:last').setup, MARTA_LAST = storyPoint('marta:last').setup, EMILIE_LAST = storyPoint('emilie:last').setup, LUCA_LAST = storyPoint('luca:last').setup;
 /**
  * Whoever wears the two newest ánimas instead of the cats, as someone trying each friend's ánima out does
@@ -1210,7 +1252,11 @@ export const TARGETS: readonly Target[] = [
   { id: 'campeon-bien', fight: 'campeon', party: DUO, ...AT_UNI, policy: 'smart', win: [.9, 1], hpLeftWon: [.3, .8], roundsWon: [6, 12], why: 'El Campeón, pensando: frustrarle el plan con magia antes de que se llene, Defender al que apunta y pegarle con golpes.' },
   { id: 'campeon-sin-pensar', fight: 'campeon', party: DUO, ...AT_UNI, policy: 'casual', win: [0, .2], why: 'Sin pensar, el villano gana: su plan se cumple una y otra vez y el Rayo total os barre.' },
   { id: 'campeon-a-punetazos', fight: 'campeon', party: DUO, ...AT_UNI, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: nadie le frena el plan.' },
-  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, ...AT_UNI, policy: 'smart', win: [.85, 1], why: 'Con dos de magia también se gana: frustran a la vez, aunque le pegan a la mitad.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
+  { id: 'campeon-con-tecnopata', fight: 'campeon', party: TECH, ...AT_UNI, policy: 'smart', win: [.85, 1], why: 'Con dos de magia también se gana: frustran a la vez, aunque le pegan a la mitad.' },
+  // Superficie mínima (docs/animas/matemagico/README.md): the film on whom his Rayo is announced at; the Rayo goes through it and
+  // leaves him wet, and Gerard's electric Atacar runs on the water (Conducción). Without it the same party holds on for longer.
+  { id: 'campeon-pelicula', fight: 'campeon', party: TECH, ...AT_UNI, improved: [...AT_UNI.improved!, ...FILM_LINE], policy: 'smart', win: [.9, 1], hpLeftWon: [.38, .6], happens: { pelicula: [2, 6.5], conduccion: [2, 6.5], 'rayo-total': [0, 1.1] }, why: 'Con Superficie mínima en quien apunta el Rayo, el golpe le deja mojado y la corriente le entra por el agua: su plan se cumple la mitad de veces y se sale con más PV.' },
+  { id: 'campeon-pelicula-sin', fight: 'campeon', party: TECH, ...AT_UNI, improved: [...AT_UNI.improved!, ...FILM_LINE], ban: ['superficie-minima'], policy: 'smart', win: [.85, 1], hpLeftWon: [.2, .38], happens: { conduccion: [0, .3], 'rayo-total': [1.1, 2] }, why: 'Sin la película, la misma pareja solo le frena con Cortocircuito y aguantando: el Rayo total llega el doble de veces y se sale justo.' },  // Las cuerdas (docs/quests/marta.md). Its numbers are MARTA (book marta.rules) and each foe's PROFILES entry
   // (foe.lealtad…). Each quality asks one question, answered by whoever reads its plate.
   { id: 'lealtad-bien', fight: 'cuerdas-lealtad', party: DUO, ...AT_MARTA, policy: 'smart', win: [.9, 1], hpLeftWon: [.4, .85], roundsWon: [2.5, 8], why: 'La Lealtad, pensando: callar primero a su Eco con lo que alcanza a todos, y que se agarre quien ella ha jurado golpear.' },
   { id: 'lealtad-sin-pensar', fight: 'cuerdas-lealtad', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .3], why: 'Sin pensar se pierde: su Juramento cae entero sobre quien no se agarra, y el Eco lo repite cada vez más fuerte.' },

@@ -393,9 +393,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       ...reactionIn(c) ? [{ id: 'reaccion' as const, name: reactionIn(c) === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${reactionIn(c)} turnos`, mark: String(reactionIn(c)), timed: false, lasts: `${reactionIn(c)} ${reactionIn(c) === 1 ? 'turno' : 'turnos'}` }] : [],
       ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
       // ∂Q/∂t Condensador: the charge he carries, until his next electric blow or a foe's on him.
+      ...c.capacitor ? [{ id: 'cargado' as const, name: 'Cargado: su siguiente golpe eléctrico hace el doble; si le golpean antes, salta al que le golpee', mark: '×2', timed: false, lasts: 'su siguiente golpe eléctrico' }] : [],
       // Superficie mínima: the soap film round them until the round ends.
       ...state && filmed(state, c) ? [{ id: 'pelicula' as const, name: 'Película de jabón: protegido hasta el final de la ronda; quien le golpee queda mojado', mark: '', timed: false, lasts: 'hasta el final de la ronda' }] : [],
-      ...c.capacitor ? [{ id: 'cargado' as const, name: 'Cargado: su siguiente golpe eléctrico hace el doble; si le golpean antes, salta al que le golpee', mark: '×2', timed: false, lasts: 'su siguiente golpe eléctrico' }] : [],
       // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
       ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
       ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
@@ -1938,7 +1938,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       const available = free ? uses > 0 && diceOf(state!, actor).length > 0 : validTargets(state!, 'skill', skill.id).length > 0;
       const reason = free ? !uses ? 'Usado' : available ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados'
         : !affordable ? 'Sin maná' : available ? 'ulti' in skill ? 'Definitiva' : costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
-      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'hammer' in skill || 'freezes' in skill ? 'Quienes tienen agua' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill) && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
+      return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'hammer' in skill || 'freezes' in skill ? 'Quienes tienen agua' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill || skill.kind === 'guard') && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
     }).join('') + sleepingUlti(actor, skillsFor(state, actor).length) || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
     fitSkills();
   }
@@ -2485,8 +2485,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // ∂Q/∂t Condensador: the charge stored, or let go on this blow.
       if (effect.capacitor === 'stored') landed.push({ target: effect.actor, id: 'cargado', text: '¡Cargado!', detail: 'Su siguiente golpe eléctrico, el doble' });
       if (effect.capacitor === 'spent' && effect.target) landed.push({ target: effect.target, id: 'cargado', text: '×2', detail: 'Suelta la carga' });
-      // Superficie mínima: the film burst on whoever struck through it, and its water landed on them a moment later.
-      effect.film?.filter(f => f.left !== 'envenenado').forEach(f => setTimeout(() => { if (token === generation) pop(f.target, `¡${TIMED[f.left].name}!`, 'status', f.left === 'cegado' ? 'El agua apaga el fuego' : 'La película estalla', f.left); }, 380));
+      // Superficie mínima: the film burst on whoever struck through it, and its water landed on them a moment later
+      // (Envenenado shows as the powder's reaction, unless the foe's own action already carried one).
+      effect.film?.filter(f => f.left !== 'envenenado' || effect.reaction?.id !== 'veneno').forEach(f => setTimeout(() => { if (token === generation) pop(f.target, `¡${TIMED[f.left].name}!`, 'status', f.left === 'cegado' ? 'El agua apaga el fuego' : 'La película estalla', f.left); }, 380));
       // A foe struck whoever carried it: the charge jumps back, a beat after the blow.
       if (effect.discharge) { const d = effect.discharge; setTimeout(() => { if (token === generation) pop(d.target, `−${d.amount}`, 'damage', 'La carga salta'); }, 420); }
       const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;

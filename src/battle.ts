@@ -3090,9 +3090,13 @@ function shortCircuit(state: BattleState, target: Combatant, effect: BattleEffec
   state.message += move ? ` ¡Cortocircuito! ${target.name} pierde su siguiente turno: ${move} tendrá que esperar.` : ` ¡Cortocircuito en el agua! ${target.name} pierde su siguiente turno.`;
   return true;
 }
-/** Whom a foe's action reached with a blow: its target and every hit that took PV (Condensador's charge, Superficie mínima's film). */
+/**
+ * Whom a foe's action reached with a blow: its target and every other it took PV from, one hit of many (`hits`) or a blow on
+ * everyone (`splash`: El Campeón's Rayo total). A blow that took nothing (a shield's, a miss) reached nobody. Condensador's
+ * charge and Superficie mínima's film.
+ */
 function struckBy(effect: BattleEffect) {
-  return new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...(effect.hits ?? []).filter(h => h.amount > 0).map(h => h.target)]);
+  return new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...[...effect.hits ?? [], ...effect.splash ?? []].filter(h => h.amount > 0).map(h => h.target)]);
 }
 /** Whoever stands under a soap film this round (Superficie mínima). */
 export const filmed = (state: BattleState, c: Combatant) => c.film === state.round;

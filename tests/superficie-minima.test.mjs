@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, createBattle, enemyAct, improve, nextRound, runClock, skillsFor, validTargets, SKILLS, TIMED } from '../src/battle.ts';
+import { CEGADO, act, createBattle, createEncounter, createFearBattle, enemyAct, improve, nextRound, planMost, roll, skillsFor, validTargets, SKILLS, TIMED } from '../src/battle.ts';
 import { IMPROVEMENTS, improvedBy, stageOf } from '../src/ecos.ts';
 
 // Superficie mínima (docs/animas/matemagico/README.md § Superficie mínima, Matemágico grows 2026-11-25): a guard like
@@ -82,14 +82,36 @@ test('every foe that strikes them that round is wet; one that strikes someone el
   assert.equal(other.film, undefined); assert.ok(!s.foes[2].timed?.mojado);
 });
 
-test('only blows: the clock\'s pulses and the round\'s ticks never touch it', () => {
+test('only blows: a foe\'s action that takes no PV (Vertitrón\'s Grito, the party\'s stats down) leaves nobody wet', () => {
+  const s = createFearBattle(PARTY, 'uri-vertigo', ['matemagico', 'tecnopata'], () => .5);
+  improve(s, improvedBy(LINE));
+  s.allies.forEach(a => { a.hp = a.maxHp = 999; });
+  const boss = s.foes.find(f => f.kind === 'vertigo');
+  boss.turns = 2;
+  film(s);
+  const e = foeTurn(s, boss.id);
+  assert.equal(e.ability.id, 'grito'); assert.ok(e.stats?.some(c => c.target === 'aitor' && c.way === 'down'));
+  assert.equal(e.film, undefined); assert.ok(!boss.timed?.mojado);
+});
+
+test('a blow that took nothing (a blinded foe\'s miss) went through no film: nobody wet', () => {
   const s = fight(); film(s);
-  by(s, 'aitor').statuses = { sangrado: 3 };
-  by(s, 'aitor').timed = { quemado: clock('quemado') };
-  runClock(s, 6);
-  s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id);
-  nextRound(s);
-  assert.ok(s.foes.every(f => !f.timed?.mojado));
+  s.foes[0].timed = { cegado: clock('cegado') };
+  // The fight's dice: a seed whose next roll misses.
+  let seed = 0;
+  while (roll({ seed }) >= CEGADO.smoke) seed++;
+  s.seed = seed;
+  const e = foeTurn(s, 'dog-0');
+  assert.ok(!e.amount, `missed: ${e.amount}`);
+  assert.equal(e.film, undefined); assert.ok(!s.foes[0].timed.mojado);
+});
+
+test('the blow that brings them down still goes through it: the striker is wet all the same', () => {
+  const s = fight(); film(s);
+  by(s, 'aitor').hp = 1;
+  const e = foeTurn(s, 'dog-0');
+  assert.equal(by(s, 'aitor').hp, 0);
+  assert.deepEqual(e.film, [{ from: 'aitor', target: 'dog-0', left: 'mojado' }]);
 });
 
 test('it goes with its round: next round the guard and the water are gone', () => {
@@ -108,4 +130,53 @@ test('on whoever carries a charge, the striker is wet before the charge jumps to
   const e = foeTurn(s, 'dog-0', 'gerard');
   assert.equal(e.film?.[0].left, 'mojado'); assert.equal(e.discharge?.target, 'dog-0');
   assert.ok(s.foes[0].timed.mojado);
+});
+
+// El Campeón (proposal § 3, the fight question it answers): his Rayo is announced at someone; the film on them leaves him wet.
+const CAMPEON_LINE = [...LINE, 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'];
+function campeon() {
+  const s = createFearBattle(PARTY, 'campeon', ['matemagico', 'tecnopata'], () => .5);
+  improve(s, improvedBy(CAMPEON_LINE));
+  s.allies.forEach(a => { a.hp = a.maxHp = 999; });
+  return s;
+}
+
+test('El Campeón: the film on whom his Rayo is announced at; the Rayo goes through it, he is wet, and next round Cortocircuito takes his turn', () => {
+  const s = campeon(), champion = s.foes[0], aimed = champion.intent.target;
+  assert.equal(champion.intent.ability, 'rayo-guantelete');
+  film(s, aimed);
+  const e = foeTurn(s, 'campeon', s.allies.find(a => a.id !== aimed).id);
+  assert.equal(e.ability.id, 'rayo-guantelete'); assert.equal(e.target, aimed, 'at whom he said');
+  assert.deepEqual(e.film, [{ from: aimed, target: 'campeon', left: 'mojado' }]);
+  assert.ok(champion.timed.mojado);
+  s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id);
+  nextRound(s);
+  assert.equal(by(s, aimed).film, undefined);
+  turn(s, 'gerard');
+  const shorted = act(s, 'skill', 'campeon', 'cortocircuito');
+  assert.equal(shorted.shorted?.why, 'mojado', 'for sure, on the water');
+  assert.equal(champion.shock, true);
+});
+
+test('El Campeón\'s Rayo total on everyone: the film round whoever it only splashes leaves him wet too', () => {
+  const s = campeon(), champion = s.foes[0];
+  champion.plan = planMost(champion);
+  film(s, 'gerard');
+  const e = foeTurn(s, 'campeon', 'aitor');
+  assert.equal(e.ability.id, 'rayo-total'); assert.equal(e.target, 'aitor');
+  assert.ok(e.splash.some(h => h.target === 'gerard' && h.amount > 0));
+  assert.deepEqual(e.film, [{ from: 'gerard', target: 'campeon', left: 'mojado' }]);
+});
+
+test('La Voz: guards last until their fighter acts again, but the film goes with its round (a known choice, as Defender\'s words)', () => {
+  const slots = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata' }];
+  const s = createEncounter(slots, 'voz', { animas: ['matemagico', 'tecnopata'], random: () => .5 });
+  improve(s, improvedBy(LINE));
+  assert.ok(s.song, 'a song fight');
+  turn(s, 'gerard'); act(s, 'skill', 'aitor', 'superficie-minima');
+  assert.equal(by(s, 'aitor').film, s.round);
+  s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id);
+  nextRound(s);
+  assert.equal(by(s, 'aitor').guarding, true, 'still guarded: nobody has acted since');
+  assert.equal(by(s, 'aitor').film, undefined, 'the film is gone with the round');
 });

@@ -2194,12 +2194,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     } else if (e.skill === 'condensador') figures.condensador({ centre, view, to: v3(chestOf(actor)), size });
     else if (e.skill === 'superficie-minima') {
       // Taken once: how big they are; where they stand, every frame (they may be thrown back by a blow).
-      const body = extent(target);
-      const id = e.target!;
+      const { height, radius } = extent(target), id = e.target!, held = { feet: { x: 0, y: 0, z: 0 }, height, radius };
       filmFx.cast(id, { centre, facing: screenAxes(view).facing, size, body: () => {
         if (fighters.get(id) !== target) return undefined;
         const p = target.model.getPosition();
-        return { feet: { x: p.x, y: groundHeight(p.x, p.z), z: p.z }, height: body.height, radius: body.radius };
+        held.feet.x = p.x; held.feet.y = groundHeight(p.x, p.z); held.feet.z = p.z;
+        return held;
       } });
     }
     else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
@@ -3927,8 +3927,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (state?.light) for (const foe of state.foes) if (foe.kind?.startsWith('estampado')) { const f = fighters.get(foe.id); if (f) lightShirt(f.model, shirtLit(state, foe)); }
       dualFx.update(dt);
       figures.update(dt);
-      // Superficie mínima: a film whose round is over (or whose ally fell) thins out and goes.
-      if (state) filmFx.keep(state.allies.filter(a => filmed(state!, a)).map(a => a.id), state.allies.filter(a => a.hp <= 0).map(a => a.id));
+      // Superficie mínima: a film whose round is over (or whose ally fell) thins out and goes; one the blow playing now
+      // will burst waits for it, even if that blow is what brings its ally down (the state is already past it).
+      if (state && filmFx.active) filmFx.keep(state.allies.filter(a => filmed(state!, a)).map(a => a.id), state.allies.filter(a => a.hp <= 0).map(a => a.id), animate && !impacted ? effect?.film?.map(f => f.from) : undefined);
       filmFx.update(dt);
       { const axes = screenAxes(viewDir()); stamps.update(dt, axes.right, axes.up, axes.facing); }
       if (mathCast.update(dt)) spellLaunch(effect?.element).forEach(sound => cue(sound.id, sound));
