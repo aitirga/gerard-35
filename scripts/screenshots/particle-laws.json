@@ -1,0 +1,20 @@
+{
+  "title": "Particle laws · Lorenz, Galton, a parabolic mirror and a fire front",
+  "description": "The GPU engine's motion laws, mirror volume and ignition rule (src/fight-particles.ts, docs/graphics.md § Fight particles on the GPU), as the effects lab shows them bare (src/law-lab.ts, just dev-fx): streams of four colours caught by the Lorenz field until ρ falls from 28 to 0.5 and it collapses into its origin; a Galton board whose ghost balls draw a bell while three of gold fall where their paths say; sparks raining along a paraboloid's axis that reflect through its focus and draw the caustic; a front of fire crossing a cloud of gas; bubbles rising fast through contained water and drifting once out of it. Played in a real fight, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
+  "steps": [
+    { "open": "/?story=matemagico&fxlab" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!window.lawLab && !!document.querySelector('.fx-lab [data-field=target] option')", "timeout": 90000 },
+    { "eval": "document.querySelector('.fx-lab').style.display = 'none'; document.querySelector('#battle').style.visibility = 'hidden'" },
+    { "wait": 1200 },
+    { "eval": "lawLab.act('quitar'); lawLab.act('bifurcacion')" },
+    { "record": "lorenz", "seconds": 5.2, "caption": "Lorenz: motes strung along an orbit keep to both lobes while streams of four colours are caught by the field and woven in; at 3.4 s ρ falls from 28 to 0.5 in 0.8 s and the whole attractor spirals into its origin, a flash where it ends" },
+    { "eval": "lawLab.act('galton')" },
+    { "record": "galton", "seconds": 3.4, "caption": "Galton board: ghost balls on random paths fill a bell; three gold balls fall into bins 3, 4 and 6 as their paths say" },
+    { "eval": "lawLab.act('espejo')" },
+    { "record": "mirror", "seconds": 2.4, "caption": "Parabolic mirror: sparks falling along its axis (5° off) reflect through the focus and draw the caustic" },
+    { "eval": "lawLab.act('ignicion')" },
+    { "record": "ignition", "seconds": 3.4, "caption": "Ignition: a cloud of gas lit at its left end; the front of fire runs through it" },
+    { "eval": "lawLab.act('burbujas')" },
+    { "record": "bubbles", "seconds": 4.4, "caption": "Bubbles in contained water: fast through it, drifting once out" }
+  ]
+}

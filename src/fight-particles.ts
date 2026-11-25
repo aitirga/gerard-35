@@ -82,6 +82,57 @@ export interface GpuKind {
    * 1/s), so it moves as one; `rest` is how many to a 20 cm cell before they push (6 by default).
    */
   fluid?: { pressure: number; viscosity?: number; rest?: number };
+  /** Bounces off `mirror` volumes, losing nothing: only the kinds that say so see a mirror at all. */
+  mirror?: boolean;
+  /**
+   * A bubble in a fluid: where the fluid's grid is packed (any fluid, as packed as a cell of 6 at full)
+   * it rises by `lift` m/s² and is carried by the flow there (`flow`, 1/s). Out of the fluid it keeps to
+   * its own gravity and drag (a slow drift); while no fluid is out it never looks.
+   */
+  bubble?: { lift: number; flow?: number };
+  /**
+   * Catches fire: within `radius` metres (0.2 by default) of a burning particle (a kind with `burns`), or
+   * of a point lit with `ignite(at, radius)`, it becomes `into` after about `delay` seconds (0.05 by
+   * default, ±40 % each). Each frame it looks at four particles near it on the ring (its batch: a cloud
+   * spawned at once lies on consecutive slots) and two anywhere, so a cloud burns from where it was lit
+   * outwards, a deflagration front, at about `radius / delay` m/s.
+   */
+  ignite?: { into: string; delay?: number; radius?: number };
+  /** Sets alight what can catch (`ignite`). True by default for any kind that some kind catches `into`. */
+  burns?: boolean;
+}
+
+/**
+ * A motion law particles follow in a space of its own (`law`, `GpuBurst.law`): the first fields that are
+ * not a push or a pull. Every field can change from frame to frame (ρ for a bifurcation, `at` to move it).
+ * - `lorenz`: the Lorenz field, `params` [σ, ρ, β, speed] (speed: its time units a second). Its point
+ *   (X, Y, Z) stands at `at` + (X, Z, Y) × `scale` in the law's own axes, so its two lobes stand side by
+ *   side along x and up y (0.05 m a unit makes the butterfly about 2.5 m tall at ρ 28). Below ρ = 1 the
+ *   origin (`at`) is all that is left: what follows it spirals into it (faster with a higher speed).
+ *   Integrated by RK2; each particle turns towards the field's velocity at `grip` (1/s).
+ * - `galton`: a Galton board standing in the law's x–y plane, its top peg at `at`; `params` [rows, row gap
+ *   (m), peg gap (m), fall (m/s²)]. Each particle falls straight onto the top peg, and at every row is
+ *   knocked half a peg gap left or right by one bit of its burst's `path` (`galtonPath`; random bits
+ *   without one, so many fall in a bell), hopping up by `bounce` of its speed (a quarter of a row at most), flashing by `spark` (its
+ *   brightness × 1 + spark, fading); past the last row it falls straight. Give its kinds gravity 0: the
+ *   law falls them itself, along the board's own down. `spread` (m) keeps a ball's particles that far apart.
+ *   Drop them at least half a row gap over the top peg, or they start past it.
+ */
+export type GpuLawName = 'lorenz' | 'galton';
+export interface GpuLaw {
+  readonly law: GpuLawName;
+  /** Its origin and axes (or the node it `follow`s). */
+  readonly at: pc.Vec3; readonly rotation: pc.Quat; follow?: pc.GraphNode;
+  params: [number, number, number, number];
+  /** Lorenz: metres a unit of its space. */
+  scale: number;
+  /** Lorenz: how quickly a particle turns to the field's velocity (1/s). Any law: the fastest it lets them go (m/s). */
+  grip: number; maxSpeed: number;
+  /** Galton: the hop off each peg (share of the speed it met it at), the flash, how far apart a ball's particles keep (m). */
+  bounce: number; spark: number; spread: number;
+  readonly alive: boolean;
+  /** Gone: its particles go on as their kinds would. */
+  remove(): void;
 }
 
 export interface GpuBurst {
@@ -122,6 +173,73 @@ export interface GpuBurst {
    * brightest, `range` metres.
    */
   light?: { intensity: number; range: number; colour?: string };
+  /** Its particles follow this law (`law`) while it lives, whatever their kind (not a lattice's). */
+  law?: GpuLaw;
+  /**
+   * A path through a `galton` law: one bit a row, 1 knocks it right (`galtonPath` makes one that ends in a
+   * bin). Every particle of the burst takes it; without one each draws its own at random.
+   */
+  path?: number;
+}
+
+// ── What the laws draw, worked out on the CPU once (the figures drawn over them, the rule's choices) ──
+
+/** A path through a Galton board of `rows` that ends in `bin` (0 the far left … `rows`): `bin` right turns among its rows, in a random order. */
+export function galtonPath(bin: number, rows: number, random: () => number = Math.random) {
+  const n = Math.max(0, Math.min(16, Math.round(rows))), right = Math.max(0, Math.min(n, Math.round(bin)));
+  const order = [...Array(n).keys()];
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  return order.slice(0, right).reduce((bits, row) => bits | (1 << row), 0);
+}
+/** The bin a path ends in: how many of its first `rows` turns go right. */
+export function galtonBin(path: number, rows: number) {
+  let bin = 0;
+  for (let r = 0; r < Math.min(16, rows); r++) bin += (path >> r) & 1;
+  return bin;
+}
+/** Where a bin lies across the board (its own x, metres from the top peg). */
+export const galtonBinX = (bin: number, rows: number, pegGap: number) => (bin - rows / 2) * pegGap;
+/** The board's pegs in its own space (metres; the top one at the origin, rows going down y): row r has r + 1. */
+export function galtonPegs(rows: number, rowGap: number, pegGap: number) {
+  const pegs: { x: number; y: number; row: number }[] = [];
+  for (let r = 0; r < rows; r++) for (let i = 0; i <= r; i++) pegs.push({ x: (i - r / 2) * pegGap, y: -r * rowGap, row: r });
+  return pegs;
+}
+/**
+ * When a ball born at rest `drop` metres over the top peg meets each row and then the bin line (`rows` + 1
+ * times, seconds after it is born), for timing what goes with it (a peg's flash, a tick).
+ */
+export function galtonTimes(o: { rows: number; rowGap: number; fall: number; bounce: number; drop: number }) {
+  const times: number[] = [];
+  let t = Math.sqrt(2 * Math.max(0, o.drop) / o.fall), speed = o.fall * t;
+  for (let r = 0; r <= o.rows; r++) {
+    times.push(t);
+    if (r === o.rows) break;
+    const up = o.bounce * speed;
+    t += (up + Math.sqrt(up * up + 2 * o.fall * o.rowGap)) / o.fall;
+    speed = Math.sqrt(up * up + 2 * o.fall * o.rowGap);
+  }
+  return times;
+}
+/**
+ * `count` points along a Lorenz orbit (RK4, `step` of its time apart), in a `lorenz` law's own space as the
+ * GPU lays it out: (X, Y, Z) is (X, Z, Y) × `scale` metres. Starts off its unstable middle and lets the
+ * orbit settle onto the attractor first. About 0.2 ms for 1 800 points.
+ */
+export function lorenzPoints(count: number, o: { sigma?: number; rho?: number; beta?: number; scale?: number; step?: number; settle?: number } = {}) {
+  const s = o.sigma ?? 10, r = o.rho ?? 28, b = o.beta ?? 8 / 3, k = o.scale ?? .05, h = o.step ?? .01;
+  const f = (x: number, y: number, z: number) => [s * (y - x), x * (r - z) - y, x * y - b * z];
+  let p = [1, 1, 1];
+  const advance = () => {
+    const [x, y, z] = p;
+    const a = f(x, y, z), c = f(x + a[0] * h / 2, y + a[1] * h / 2, z + a[2] * h / 2);
+    const d = f(x + c[0] * h / 2, y + c[1] * h / 2, z + c[2] * h / 2), e = f(x + d[0] * h, y + d[1] * h, z + d[2] * h);
+    p = p.map((v, i) => v + (a[i] + 2 * c[i] + 2 * d[i] + e[i]) * h / 6);
+  };
+  for (let i = 0; i < (o.settle ?? 300); i++) advance();
+  const points: { x: number; y: number; z: number }[] = [];
+  for (let i = 0; i < count; i++) { points.push({ x: p[0] * k, y: p[2] * k, z: p[1] * k }); advance(); }
+  return points;
 }
 
 /** A shape particles meet (a crystal), placed by `at` and `rotation` or by the node it `follow`s. */
@@ -130,16 +248,19 @@ export interface GpuVolume {
   /**
    * `sphere` (radius `size.x`), `box` (half-sizes), `crystal` (a double pyramid: half-width,
    * half-height, half-depth) or `quartz` (a hexagonal prism pointed at both ends: apothem, half the
-   * prism's length, each point's length).
+   * prism's length, each point's length) or `paraboloid` (a dish opening up its y axis from its vertex at
+   * `at`: focal length, rim radius, thickness; its focus `size.x` above the vertex).
    */
-  shape: 'sphere' | 'box' | 'crystal' | 'quartz'; readonly size: pc.Vec3;
+  shape: 'sphere' | 'box' | 'crystal' | 'quartz' | 'paraboloid'; readonly size: pc.Vec3;
   /**
    * `contain` keeps what is inside in (and what is outside out), bouncing; `solid` is bounced off;
    * `orbit` draws them onto a shell `distance` from its surface and swirls them round it; `attract`
    * pulls them in to settle on it and slide. `range`: how far past its surface it pulls (m).
+   * `mirror` reflects what crosses its surface, losing nothing (a paraboloid sends what falls along its
+   * axis through its focus), and only for kinds with `mirror`.
    */
-  mode: 'contain' | 'solid' | 'orbit' | 'attract'; strength: number; swirl: number; bounce: number; range: number; distance: number;
-  /** The kinds it affects (all by default). */
+  mode: 'contain' | 'solid' | 'orbit' | 'attract' | 'mirror'; strength: number; swirl: number; bounce: number; range: number; distance: number;
+  /** The kinds it affects (all by default; up to four). */
   kinds?: readonly string[];
   follow?: pc.GraphNode;
   remove(): void;
@@ -251,7 +372,7 @@ const W = 512, H = 256, N = W * H, BANDS = 5;
 export const MAX_KINDS = 256;
 // MAX_BATCHES: bursts a frame. The spawn loop stops at the frame's own count, so only a frame that uses them pays;
 // 256 since the newer duals' drawings (src/duo-fx) burst more than 64 on their busiest frames.
-const KIND_COLS = 13, MAX_BATCHES = 256, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
+const KIND_COLS = 15, MAX_BATCHES = 256, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
 const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
 /**
  * The fluid's grid: cells of `CELL` metres, `GX` × `GY` × `GZ` of them round where the fluid was last
@@ -262,9 +383,20 @@ const GX = 64, GY = 24, GZ = 64, GW = GX * GY, CELL = .2;
 const SURFACE_EVERY = 3;
 /** Crystals and other volumes particles meet; light groups (bursts that light their surroundings), the lights they share and how many particles each samples. */
 export const MAX_VOLUMES = 8;
-const VOLUME_COLS = 9, MAX_LIGHT_GROUPS = 8, FX_LIGHTS = 4, LIGHT_SAMPLES = 64;
-const VOLUME_SHAPES = { sphere: 0, box: 1, crystal: 2, quartz: 3 } as const;
-const VOLUME_MODES = { contain: 0, solid: 1, orbit: 2, attract: 3 } as const;
+const VOLUME_COLS = 10, MAX_LIGHT_GROUPS = 8, FX_LIGHTS = 4, LIGHT_SAMPLES = 64;
+const VOLUME_SHAPES = { sphere: 0, box: 1, crystal: 2, quartz: 3, paraboloid: 4 } as const;
+const VOLUME_MODES = { contain: 0, solid: 1, orbit: 2, attract: 3, mirror: 4 } as const;
+/**
+ * Motion laws alive at once (`law`), and the columns of each: its inverse transform (world to its
+ * space), its rotation (its space to the world), its four parameters, then [which law, scale, grip,
+ * top speed] and [spark, spread, bounce, 0]. A particle following one keeps `LAW_BASE + slot` where a
+ * lattice's member keeps its lattice.
+ */
+export const MAX_LAWS = 16;
+const LAW_COLS = 9, LAW_BASE = 4096;
+const LAW_IDS: Record<GpuLawName, number> = { lorenz: 1, galton: 2 };
+/** Points lit this frame (`ignite`). */
+const MAX_IGNITES = 8;
 
 // ── Light: where each light group's particles are and how bright, summed on the GPU ───────────
 // One texel per group and row: row 0 the brightness-weighted position (sum) and total brightness,
@@ -327,6 +459,8 @@ uniform uExtra: vec4f;
 var uLattices: texture_2d<uff>;
 var uGrid: texture_2d<uff>;
 uniform uGridAt: vec4f;
+var uLaws: texture_2d<uff>;
+var uIgnites: texture_2d<uff>;
 varying vUv0: vec2f;
 
 fn hashu(v: u32) -> u32 { var x = v; x ^= x >> 16u; x *= 0x7feb352du; x ^= x >> 15u; x *= 0x846ca68bu; x ^= x >> 16u; return x; }
@@ -370,18 +504,60 @@ fn sdfOf(v: i32, p: vec3f) -> f32 {
     let q = abs(p) / s.xyz;
     return (q.x + q.y + q.z - 1.0) / length(1.0 / s.xyz);
   }
-  // Quartz: a hexagonal prism (apothem a, half-length h) with a six-sided point at each end (length tip).
-  let q = abs(p.xz);
-  let hexR = max(q.x * 0.8660254 + q.y * 0.5, q.y);
-  let k = s.z / s.x;
-  return max(hexR - s.x, (hexR * k + abs(p.y) - (s.y + s.z)) / sqrt(k * k + 1.0));
+  if (s.w < 3.5) {
+    // Quartz: a hexagonal prism (apothem a, half-length h) with a six-sided point at each end (length tip).
+    let q = abs(p.xz);
+    let hexR = max(q.x * 0.8660254 + q.y * 0.5, q.y);
+    let k = s.z / s.x;
+    return max(hexR - s.x, (hexR * k + abs(p.y) - (s.y + s.z)) / sqrt(k * k + 1.0));
+  }
+  // A paraboloid dish: a shell of its thickness round the surface, cut at its rim.
+  return max(abs(dishAt(s, p)) - max(s.z, 0.005), length(p.xz) - s.y);
 }
+// A paraboloid y = r² / 4f (f its focal length, s.x): how far above its surface, near enough, and which way that is.
+fn dishAt(s: vec4f, p: vec3f) -> f32 { let f = max(s.x, 0.01); let r2 = dot(p.xz, p.xz); return (p.y - r2 / (4.0 * f)) / sqrt(1.0 + r2 / (4.0 * f * f)); }
+fn dishNormal(s: vec4f, p: vec3f) -> vec3f { let f = max(s.x, 0.01); return normalize(vec3f(-p.x / (2.0 * f), 1.0, -p.z / (2.0 * f))); }
+fn vWorld(v: i32, l: vec3f) -> vec3f { let a = vol(v, 3); let b = vol(v, 4); let c = vol(v, 5); return vec3f(dot(a.xyz, l) + a.w, dot(b.xyz, l) + b.w, dot(c.xyz, l) + c.w); }
+// Motion laws (\`law\`): a space of their own, from a rigid transform, and their parameters.
+fn law(l: i32, c: i32) -> vec4f { return textureLoad(uLaws, vec2i(c, l), 0); }
+fn lawLocal(l: i32, w: vec3f) -> vec3f { let a = law(l, 0); let b = law(l, 1); let c = law(l, 2); return vec3f(dot(a.xyz, w) + a.w, dot(b.xyz, w) + b.w, dot(c.xyz, w) + c.w); }
+fn lawIn(l: i32, w: vec3f) -> vec3f { return vec3f(dot(law(l, 0).xyz, w), dot(law(l, 1).xyz, w), dot(law(l, 2).xyz, w)); }
+fn lawTurn(l: i32, v: vec3f) -> vec3f { return vec3f(dot(law(l, 3).xyz, v), dot(law(l, 4).xyz, v), dot(law(l, 5).xyz, v)); }
+fn lawWorld(l: i32, v: vec3f) -> vec3f { return lawTurn(l, v) + vec3f(law(l, 3).w, law(l, 4).w, law(l, 5).w); }
+// The Lorenz field at a point (world velocity): (X, Y, Z) in its space is (x, z, y) / scale in the law's.
+fn lorenzAt(l: i32, w: vec3f) -> vec3f {
+  let p = law(l, 6); let l7 = law(l, 7);
+  let q = lawLocal(l, w) / max(l7.y, 1e-4);
+  let X = q.x; let Y = q.z; let Z = q.y;
+  let d = vec3f(p.x * (Y - X), X * (p.y - Z) - Y, X * Y - p.z * Z);
+  return lawTurn(l, vec3f(d.x, d.z, d.y)) * l7.y * p.w;
+}
+// The fluid's grid where a point is (trilinear): the momentum (xyz) and mass (w) there.
+fn gridSample(w: vec3f) -> vec4f {
+  let g = (w - uniform.uGridAt.xyz) / uniform.uGridAt.w - 0.5;
+  let c0 = vec3i(floor(g));
+  if (c0.x < 0 || c0.y < 0 || c0.z < 0 || c0.x >= ${GX - 1} || c0.y >= ${GY - 1} || c0.z >= ${GZ - 1}) { return vec4f(0.0); }
+  let t = g - floor(g);
+  var sum = vec4f(0.0);
+  for (var q = 0; q < 8; q++) {
+    let o = vec3i(q & 1, (q >> 1) & 1, (q >> 2) & 1);
+    let wx = select(1.0 - t.x, t.x, o.x == 1); let wy = select(1.0 - t.y, t.y, o.y == 1); let wz = select(1.0 - t.z, t.z, o.z == 1);
+    sum += textureLoad(uGrid, vec2i(c0.x + o.x + (c0.y + o.y) * ${GX}, c0.z + o.z), 0) * wx * wy * wz;
+  }
+  return sum;
+}
+// A lattice's member keeps its lattice + 1 (negative: loose); a law's follower keeps LAW_BASE + its law.
+fn latticeCode(m: f32) -> bool { return abs(m) > 0.5 && abs(m) < ${LAW_BASE - .5}; }
 fn normalOf(v: i32, p: vec3f) -> vec3f {
   let e = 0.01;
   let g = vec3f(sdfOf(v, p + vec3f(e, 0.0, 0.0)) - sdfOf(v, p - vec3f(e, 0.0, 0.0)), sdfOf(v, p + vec3f(0.0, e, 0.0)) - sdfOf(v, p - vec3f(0.0, e, 0.0)), sdfOf(v, p + vec3f(0.0, 0.0, e)) - sdfOf(v, p - vec3f(0.0, 0.0, e)));
   return normalize(vTurn(v, g) + vec3f(0.0, 1e-6, 0.0));
 }
-fn affects(v: i32, k: i32) -> bool { let m = floor(vol(v, 8).z / exp2(f32(k))); return vol(v, 8).z < 0.5 || m - 2.0 * floor(m * 0.5) > 0.5; }
+// The kinds it affects: all, or up to four by their slots.
+fn affects(v: i32, k: i32) -> bool {
+  let n = vol(v, 8).z; let l = vol(v, 9); let kf = f32(k);
+  return n < 0.5 || abs(l.x - kf) < 0.5 || (n > 1.5 && abs(l.y - kf) < 0.5) || (n > 2.5 && abs(l.z - kf) < 0.5) || (n > 3.5 && abs(l.w - kf) < 0.5);
+}
 // Lattices (src/lattice.ts): shapes held by particles.
 ${latticeWgsl(N)}
 
@@ -415,6 +591,9 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     let key = (u32(f32(index) - inChain + ${N}.0) % ${N}u) * 7u + u32(s0.w * 65535.0);
     let r1 = rnd(key, 1u); let r2 = rnd(key, 2u); let r3 = rnd(key, 3u); let r4 = rnd(key, 4u); let r5 = rnd(key, 5u); let r6 = rnd(key, 6u);
     kind = s0.z; seed = rnd(id * 7u + u32(s0.w * 65535.0), 7u); part = 0.0; release = 0.0; age = 0.0;
+    // A path through a Galton board (\`path\`): its bits are the seed's first sixteen.
+    let sPath = spawn4(8, b).w;
+    if (sPath > 0.5) { seed = (sPath - 1.0 + 0.25 + 0.5 * rnd(id, 15u)) / 65536.0; }
     size = s3.w * max(0.05, 1.0 + kin(i32(kind), 10).x * (rnd(id, 14u) * 2.0 - 1.0));
     life = mix(s4.x, s4.y, r1);
     tint = select(vec3f(1.0), s6.rgb, s6.w > 0.5);
@@ -495,7 +674,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     if (s3.x > 0.5 && s3.x < 1.5) { vel += cross(normalize(s7.xyz), normal) * s5.z; }
     // A lattice's member (s5.w: + bonded, − loose), born where it belongs (s7.w) or where the burst puts it.
     member = s5.w;
-    if (abs(member) > 0.5) {
+    if (latticeCode(member)) {
       let l = i32(abs(member) + 0.5) - 1; let o = i32(offset + 0.5);
       if (s7.w > 0.5) { pos = homeOf(l, o); vel = lat(l, 12).xyz; }
       // The cell before it along x leads it, so a strand draws each row of the lattice as a line.
@@ -522,7 +701,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     // A lattice's member: which lattice, bonded or loose, and its cell. With its lattice gone it is free.
     // Thrown (\`throwAt\`), a loose one flies at its point (\`aim\`) and goes off there.
     var ml = -1; var mo = 0; var bonded = false; var thrown = false; var aim = vec4f(0.0);
-    if (abs(member) > 0.5) {
+    if (latticeCode(member)) {
       let l = i32(abs(member) + 0.5) - 1;
       if (l < ${MAX_LATTICES} && lat(l, 6).y > 0.5 && abs(lat(l, 6).x - group) < 0.5) { ml = l; bonded = member > 0.0; mo = i32(fmodf(f32(index) - group + ${N}.0, ${N}.0) + 0.5); }
       else { member = 0.0; link = -1.0; chainPos = 0.0; }
@@ -582,6 +761,32 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
         acc += apart * k8.x * radius * 0.1;
         if (n > 0.0) { acc += (middle / n - pos) * k8.y + (heading / n - vel) * k8.z; }
       }
+      // Catching fire (\`ignite\`): a point lit this frame, or a burning particle near it among a few it
+      // looks at (four near it on the ring, its own cloud; two anywhere), sets it alight after a delay.
+      let ig = kin(k, 14);
+      if (ig.x > -0.5 && abs(member) < 0.5 && release >= 0.0) {
+        var lit = false;
+        let points = i32(uniform.uExtra.y);
+        for (var q = 0; q < ${MAX_IGNITES}; q++) {
+          if (q >= points) { break; }
+          let pt = textureLoad(uIgnites, vec2i(0, q), 0);
+          if (length(pos - pt.xyz) < pt.w) { lit = true; }
+        }
+        for (var j = 0; j < 6; j++) {
+          if (lit) { break; }
+          var other: i32;
+          if (j < 4) { other = index + i32(hashu(id * 5u + u32(j) + frame * 6151u) % 1024u) - 512; }
+          else { other = i32(hashu(id * 11u + u32(j) + frame * 4271u) % ${N}u); }
+          other = (other + ${N}) % ${N};
+          if (other == index) { continue; }
+          let oa = st(0, other); let ob = st(1, other);
+          if (!(ob.w > 0.0 && oa.w < ob.w)) { continue; }
+          if (kin(i32(st(2, other).x), 14).w < 0.5) { continue; }
+          if (length(oa.xyz - pos) < ig.z) { lit = true; }
+        }
+        // It burns once its age reaches −release.
+        if (lit) { release = -(age + ig.y * (0.6 + 0.8 * rnd(id * 3u + frame, 63u)) + 1e-4); }
+      }
       // A fluid: the grid round it (trilinear over the eight cells about it) gives how packed it is
       // there and which way it thins, and the flow there. Pushed down the packing it keeps its volume
       // and spreads; drawn into the flow it moves as one body.
@@ -608,12 +813,20 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
           if (mass > 0.05 && fl.y > 0.0) { vel = mix(vel, mom / mass, clamp(fl.y * dt, 0.0, 1.0)); }
         }
       }
+      // A bubble (\`bubble\`): where the fluid is packed it rises and is carried by the flow there.
+      let bb = kin(k, 13);
+      if ((bb.y != 0.0 || bb.z > 0.0) && uniform.uExtra.z > 0.5) {
+        let cell = gridSample(pos);
+        let full = clamp(cell.w / 6.0, 0.0, 1.5);
+        acc.y += bb.y * full;
+        if (cell.w > 0.05 && bb.z > 0.0) { vel = mix(vel, cell.xyz / cell.w, clamp(bb.z * dt * min(full, 1.0), 0.0, 1.0)); }
+      }
       // Volumes pull and swirl what is near them: onto their shell (orbit) or into them (attract).
       let volumes = i32(uniform.uExtra.x);
       for (var v = 0; v < ${MAX_VOLUMES}; v++) {
         if (v >= volumes) { break; }
         let m = vol(v, 7); let r = vol(v, 8);
-        if (m.x < 1.5 || !affects(v, k)) { continue; }
+        if (m.x < 1.5 || m.x > 3.5 || !affects(v, k)) { continue; }
         let lp = vLocal(v, pos);
         let d = sdfOf(v, lp);
         if (d > r.x) { continue; }
@@ -692,6 +905,50 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       // Turbulence steers the velocity towards the flow rather than adding to it forever.
       vel += (swirl - vel * 0.15) * min(1.0, dt * 3.0) * step(0.001, k0.z);
       vel *= exp(-k0.x * dt);
+      // A law (\`law\`): its motion, in its own space, over everything above.
+      if (member > ${LAW_BASE - .5}) {
+        let ls = i32(member - ${LAW_BASE}.0 + 0.5);
+        let l7 = law(ls, 7);
+        if (ls < ${MAX_LAWS} && l7.x > 0.5) {
+          if (l7.x < 1.5) {
+            // Lorenz, by RK2 (the midpoint): it turns to the field's velocity at its grip.
+            let v1 = lorenzAt(ls, pos);
+            let v2 = lorenzAt(ls, pos + v1 * dt * 0.5);
+            vel = mix(vel, v2, 1.0 - exp(-l7.z * dt));
+          } else {
+            // Galton: a fall decided beforehand. Above the top peg it steers onto it; crossing a row it is
+            // put on that row's peg its path leads to and knocked half a peg gap the way its bit says, on a
+            // hop timed to land on the next row's; past the last it falls straight.
+            let p = law(ls, 6); let l8 = law(ls, 8);
+            let rows = p.x; let gap = max(p.y, 0.01); let peg = p.z; let g = max(p.w, 0.01);
+            var L = lawLocal(ls, pos); var lv = lawIn(ls, vel);
+            let bits = u32(floor(seed * 65536.0));
+            let jx = (rnd(id, 61u) - 0.5) * 2.0 * l8.y; let jz = (rnd(id, 62u) - 0.5) * 2.0 * l8.y;
+            release *= exp(-10.0 * dt);
+            lv.y -= g * dt;
+            // The row it last met: a hop off a peg (never higher than a quarter of a gap) is still past it.
+            let rowNow = max(-1.0, floor(-L.y / gap + 0.3));
+            if (rowNow < -0.5) { lv.x = (jx - L.x) * 10.0; lv.z = (jz - L.z) * 10.0; }
+            let r = rowNow + 1.0;
+            if (-(L.y + lv.y * dt) / gap >= r && r < rows + 0.5) {
+              var x = 0.0;
+              for (var i = 0u; i < 16u; i++) { if (f32(i) >= r) { break; } x += select(-0.5, 0.5, ((bits >> i) & 1u) == 1u) * peg; }
+              L = vec3f(x + jx, -r * gap, jz);
+              if (r < rows - 0.5) {
+                let side = select(-1.0, 1.0, ((bits >> u32(r)) & 1u) == 1u);
+                let up = min(l8.z * abs(lv.y), sqrt(0.5 * g * gap));
+                let t = (up + sqrt(up * up + 2.0 * g * gap)) / g;
+                lv = vec3f(side * 0.5 * peg / t, up, 0.0);
+                release = l8.x;
+              } else { lv = vec3f(0.0, lv.y, 0.0); }
+              pos = lawWorld(ls, L);
+            }
+            vel = lawTurn(ls, lv);
+          }
+          let speed = length(vel);
+          if (speed > l7.w) { vel *= l7.w / speed; }
+        }
+      }
       var next = pos + vel * dt;
       // Volumes are glass: what is inside a containing one stays in, bouncing; the rest bounce off
       // them, or settle on an attracting one and slide.
@@ -699,6 +956,24 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
         if (v >= volumes) { break; }
         let m = vol(v, 7);
         if (!affects(v, k)) { continue; }
+        if (m.x > 3.5) {
+          // A mirror: what crosses its surface this step is put back where it crossed, its velocity
+          // reflected whole. Only the kinds that see mirrors; a dish only within its rim.
+          if (kin(k, 13).x < 0.5) { continue; }
+          let s = vol(v, 6); let dish = s.w > 3.5;
+          let lp = vLocal(v, pos); let lq = vLocal(v, next);
+          let hp = select(sdfOf(v, lp), dishAt(s, lp), dish); let hq = select(sdfOf(v, lq), dishAt(s, lq), dish);
+          if (hp * hq < 0.0) {
+            let hit = mix(lp, lq, hp / (hp - hq));
+            if (!dish || length(hit.xz) <= s.y) {
+              var n = normalOf(v, hit);
+              if (dish) { n = normalize(vTurn(v, dishNormal(s, hit))); }
+              vel -= n * dot(vel, n) * 2.0;
+              next = vWorld(v, hit) + n * sign(hp) * 0.004;
+            }
+          }
+          continue;
+        }
         let dp = sdfOf(v, vLocal(v, pos));
         var ln = vLocal(v, next);
         var dn = sdfOf(v, ln);
@@ -818,6 +1093,12 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     age += dt;
     // A member holds at its prime while bonded (or on its way home), and ages on once loose.
     if (ml >= 0 && (member > 0.0 || lat(ml, 10).z > 0.0)) { age = min(age, life * lat(ml, 15).w); }
+    // Alight (\`ignite\`): its delay run out, it becomes what it burns as.
+    if (release < 0.0 && abs(member) < 0.5 && part < 0.5 && age >= -release) {
+      let into = kin(i32(kind), 14).x;
+      if (into > -0.5) { kind = into; age = 0.0; life = lifeOf(kind, seed); }
+      release = 0.0;
+    }
     // Dying, it may become something else where it is.
     if (age >= life && k9.y > -0.5 && part < 0.5) { kind = k9.y; age = 0.0; life = lifeOf(kind, seed); vel *= 0.3; link = -1.0; part = 0.0; }
   }
@@ -1287,6 +1568,8 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   const kindTex = data(KIND_COLS, MAX_KINDS, 'Clases de partículas'), spawnTex = data(SPAWN_COLS, MAX_BATCHES, 'Nacimientos'), fieldTex = data(FIELD_COLS, MAX_FIELDS, 'Campos');
   const partTex = data(PART_COLS, MAX_PARTS, 'Partes de luchadores'), fighterTex = data(3, MAX_FIGHTERS, 'Luchadores'), surfaceTex = data(SURFACE_SAMPLES, MAX_FIGHTERS * 3, 'Superficie de luchadores'), floorTex = data(FLOOR, FLOOR, 'Suelo del combate');
   fill(floorTex, () => {});
+  const lawTex = data(LAW_COLS, MAX_LAWS, 'Leyes de movimiento'), igniteTex = data(1, MAX_IGNITES, 'Igniciones');
+  fill(lawTex, () => {}); fill(igniteTex, () => {});
   const volumeTex = data(VOLUME_COLS, MAX_VOLUMES, 'Volúmenes'), groupTex = data(1, MAX_LIGHT_GROUPS, 'Grupos de luz'), latticeTex = data(LATTICE_COLS, MAX_LATTICES, 'Retículas');
   const lightTex = data(MAX_LIGHT_GROUPS, 2, 'Luz de las partículas'), lightTarget = new pc.RenderTarget({ colorBuffer: lightTex, depth: false });
   fill(volumeTex, () => {}); fill(groupTex, () => {}); fill(latticeTex, () => {});
@@ -1313,6 +1596,9 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     row(10, [d.sizeJitter ?? 0, d.aspect ?? .25, Math.max(0, blur[0]), Math.max(0, blur[1])]);
     row(11, [d.life?.[0] ?? .5, d.life?.[1] ?? d.life?.[0] ?? .5, Math.min(1, Math.max(0, d.core ?? 1)), 0]);
     row(12, [d.fluid?.pressure ?? 0, d.fluid?.viscosity ?? 0, d.fluid?.rest ?? 6, 0]);
+    row(13, [d.mirror ? 1 : 0, d.bubble?.lift ?? 0, d.bubble?.flow ?? 0, 0]);
+    const burns = d.burns ?? defs.some(o => o?.ignite?.into === names[k]);
+    row(14, [d.ignite ? ref(d.ignite.into) : -1, Math.max(0, d.ignite?.delay ?? .05), d.ignite?.radius ?? .2, burns ? 1 : 0]);
   }
   function uploadKinds() { const out = kindTex.lock() as Float32Array; out.set(kindData); kindTex.unlock(); }
   function define(name: string, kind: GpuKind) {
@@ -1330,7 +1616,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   uploadKinds();
 
   const sim = pc.ShaderUtils.createShader(device, {
-    uniqueName: 'gerard-fight-particles-sim-3', attributes: { vertex_position: pc.SEMANTIC_POSITION },
+    uniqueName: 'gerard-fight-particles-sim-4', attributes: { vertex_position: pc.SEMANTIC_POSITION },
     vertexChunk: 'fullscreenQuadVS', fragmentWGSL: SIM_WGSL, fragmentOutputTypes: 'vec4',
   });
   const lightShader = pc.ShaderUtils.createShader(device, {
@@ -1370,7 +1656,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     state: u('uState'), kinds: u('uKinds'), spawns: u('uSpawns'), fields: u('uFields'), parts: u('uParts'), fighters: u('uFighters'), surface: u('uSurface'), floorMap: u('uFloorMap'),
     dt: u('uDt'), time: u('uTime'), frame: u('uFrame'), counts: u('uCounts'), floor: u('uFloor'),
     volumes: u('uVolumes'), extra: u('uExtra'), groups: u('uGroups'), lattices: u('uLattices'),
-    grid: u('uGrid'), gridAt: u('uGridAt'),
+    grid: u('uGrid'), gridAt: u('uGridAt'), laws: u('uLaws'), ignites: u('uIgnites'),
   };
 
   // The draw: one quad per slot; dead slots collapse to nothing in the vertex shader.
@@ -1463,6 +1749,8 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     // A chain must not wrap round the ring's end: its links follow the slot before them.
     const start = place(count, chain > 1);
     if (start < 0) return undefined;
+    // Following a law: its particles keep its slot where a lattice's members keep theirs.
+    if (!member && o.law?.alive) member = LAW_BASE + (o.law as LawState).slot;
     batches.push({ start, count, kind: k, o, member, home });
     if (defs[k].fluid) aimGrid(o.at, time + Math.max(o.life[1], defs[k].life?.[1] ?? 0) + .5);
     if (o.light) {
@@ -1535,11 +1823,12 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         out.set([inv[row], inv[4 + row], inv[8 + row], inv[12 + row]], o + row * 4);
         out.set([w[row], w[4 + row], w[8 + row], w[12 + row]], o + 12 + row * 4);
       }
-      let mask = 0;
-      for (const kind of v.kinds ?? []) { const k = names.indexOf(kind); if (k >= 0) mask += 2 ** k; }
+      // Up to four kinds by their slots (one not defined yet matches nothing).
+      const only = (v.kinds ?? []).slice(0, 4).map(kind => names.indexOf(kind)).map(k => k < 0 ? -99 : k);
       out.set([v.size.x, v.size.y, v.size.z, VOLUME_SHAPES[v.shape]], o + 24);
       out.set([VOLUME_MODES[v.mode], v.strength, v.swirl, v.bounce], o + 28);
-      out.set([v.range, v.distance, mask, 0], o + 32);
+      out.set([v.range, v.distance, only.length, 0], o + 32);
+      out.set([only[0] ?? -99, only[1] ?? -99, only[2] ?? -99, only[3] ?? -99], o + 36);
     }));
     return Math.min(volumes.length, MAX_VOLUMES);
   }
@@ -1550,6 +1839,49 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     aim?: { points: { at: Vec3Like; radius: number }[]; facing: number; speed: number; steer: number; arc: number; blast: number };
   }
   const lattices: LatticeState[] = [];
+  /** Motion laws in their slots (§ `law`), and the points lit this frame (`ignite`). */
+  interface LawState extends GpuLaw { slot: number; dead: boolean }
+  const laws: LawState[] = [];
+  /** Which slot a new law takes: the one freed longest ago, so particles of an old law are the least likely to pick up a new one. */
+  let lawTurn = 0;
+  const ignites: { at: Vec3Like; radius: number }[] = [];
+  function writeLaws() {
+    fill(lawTex, out => laws.forEach(l => {
+      if (l.follow) { l.at.copy(l.follow.getPosition()); l.rotation.copy(l.follow.getRotation()); }
+      rigid.setTRS(l.at, l.rotation, pc.Vec3.ONE);
+      rigidInverse.copy(rigid).invert();
+      const w = rigid.data, inv = rigidInverse.data, o = l.slot * LAW_COLS * 4;
+      for (let row = 0; row < 3; row++) {
+        out.set([inv[row], inv[4 + row], inv[8 + row], inv[12 + row]], o + row * 4);
+        out.set([w[row], w[4 + row], w[8 + row], w[12 + row]], o + 12 + row * 4);
+      }
+      const p = [...l.params];
+      // A board of at most sixteen rows: a path's bits are the seed's first sixteen.
+      if (l.law === 'galton') p[0] = Math.max(0, Math.min(16, Math.round(p[0])));
+      out.set(p, o + 24);
+      out.set([LAW_IDS[l.law], Math.max(1e-4, l.scale), Math.max(0, l.grip), Math.max(.01, l.maxSpeed)], o + 28);
+      out.set([l.spark, Math.max(0, l.spread), Math.max(0, l.bounce), 0], o + 32);
+    }));
+  }
+  function makeLaw(name: GpuLawName, o: Partial<Omit<GpuLaw, 'law' | 'at' | 'rotation' | 'alive' | 'remove'>> & { at?: Vec3Like; rotation?: pc.Quat } = {}): GpuLaw {
+    if (!(name in LAW_IDS)) throw new Error(`Unknown motion law: ${name}`);
+    if (laws.length >= MAX_LAWS) laws[0].remove();
+    const free = [...Array(MAX_LAWS).keys()].map(i => (lawTurn + i) % MAX_LAWS).find(i => !laws.some(l => l.slot === i))!;
+    lawTurn = (free + 1) % MAX_LAWS;
+    const at = new pc.Vec3(o.at?.x ?? 0, o.at?.y ?? 0, o.at?.z ?? 0), rotation = o.rotation?.clone() ?? new pc.Quat();
+    if (o.follow) { at.copy(o.follow.getPosition()); rotation.copy(o.follow.getRotation()); }
+    const { at: _at, rotation: _rotation, params, ...rest } = o;
+    const defaults: [number, number, number, number] = name === 'lorenz' ? [10, 28, 8 / 3, .5] : [8, .22, .2, 30];
+    const l: LawState = {
+      scale: .05, grip: 30, maxSpeed: name === 'lorenz' ? 12 : 30, bounce: .25, spark: 0, spread: 0,
+      ...rest, law: name, at, rotation, params: params ? [...params] as [number, number, number, number] : defaults,
+      slot: free, dead: false,
+      get alive() { return !l.dead; },
+      remove() { if (l.dead) return; l.dead = true; const i = laws.indexOf(l); if (i >= 0) laws.splice(i, 1); },
+    };
+    laws.push(l);
+    return l;
+  }
   const turn = new pc.Quat(), back = new pc.Quat(), spin = new pc.Vec3(), centre = new pc.Vec3();
   function writeLattices(dt: number) {
     fill(latticeTex, out => lattices.forEach(l => {
@@ -1749,6 +2081,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     get lightGroups() { return groups.length; },
     /** A volume particles meet: a crystal they stay in, bounce off, orbit or gather on. */
     volume(o: Partial<Omit<GpuVolume, 'remove' | 'at' | 'rotation' | 'size'>> & { at?: { x: number; y: number; z: number }; rotation?: pc.Quat; size?: { x: number; y: number; z: number } }): GpuVolume {
+      if ((o.kinds?.length ?? 0) > 4) throw new Error('A volume affects at most four kinds by name (or all)');
       if (volumes.length >= MAX_VOLUMES) volumes.shift();
       const v: GpuVolume = {
         shape: 'crystal', mode: 'contain', strength: 0, swirl: 0, bounce: .6, range: 1, distance: .1, ...o,
@@ -1763,10 +2096,20 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     lattice: makeLattice,
     /** Lattices alive (development and tests). */
     get lattices(): readonly GpuLattice[] { return [...lattices]; },
+    /**
+     * A motion law (`GpuLaw`, up to MAX_LAWS at once, the oldest giving way): bursts given it (`law`) follow
+     * it while it lives. `lorenz` takes [σ, ρ, β, speed] (10, 28, 8/3, 0.5 by default), `galton` [rows,
+     * row gap, peg gap, fall] (8, 0.22, 0.2, 30).
+     */
+    law: makeLaw,
+    /** Laws alive (development and tests). */
+    get laws(): readonly GpuLaw[] { return [...laws]; },
+    /** Lights every particle that can catch (`ignite`) within `radius` of `at`, this frame (up to MAX_IGNITES a frame). */
+    ignite(at: Vec3Like, radius: number) { if (ignites.length < MAX_IGNITES) ignites.push({ at: { x: at.x, y: at.y, z: at.z }, radius }); },
     /** Simulates `dt` (and draws) while `on`; off, nothing runs and nothing is drawn. */
     update(dt: number, on: boolean) {
       entity.enabled = on && draw;
-      if (!on) { batches.length = 0; placeLights(false); return; }
+      if (!on) { batches.length = 0; ignites.length = 0; placeLights(false); return; }
       for (const e of emitters) {
         e.acc += e.rate * dt;
         const n = Math.floor(e.acc);
@@ -1790,7 +2133,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         out.set([o.up ?? 0, Math.max(1, Math.round(o.chain ?? 1)), o.around ?? 0, b.member], row + 20);
         out.set([c?.[0] ?? 1, c?.[1] ?? 1, c?.[2] ?? 1, c ? 1 : 0], row + 24);
         out.set([end.x, end.y, end.z, b.home ? 1 : 0], row + 28);
-        out.set([o.band?.[0] ?? -1, o.band?.[1] ?? 2, Math.min(1, Math.max(0, o.fromPart ?? 0)), 0], row + 32);
+        out.set([o.band?.[0] ?? -1, o.band?.[1] ?? 2, Math.min(1, Math.max(0, o.fromPart ?? 0)), o.path === undefined ? 0 : (Math.max(0, Math.round(o.path)) & 0xffff) + 1], row + 32);
       }));
       live = Math.min(N, live + batches.reduce((n, b) => n + b.count, 0));
       fill(fieldTex, out => fields.slice(0, MAX_FIELDS).forEach((f, i) => {
@@ -1809,9 +2152,18 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       uniforms.extra.setValue(extra); uniforms.volumes.setValue(volumeTex);
       writeLattices(Math.min(dt, 1 / 20));
       uniforms.lattices.setValue(latticeTex);
+      writeLaws();
+      uniforms.laws.setValue(lawTex);
+      fill(igniteTex, out => ignites.forEach((p, i) => out.set([p.at.x, p.at.y, p.at.z, p.radius], i * 4)));
+      // Kept until a step with time in it reads them (a paused frame simulates nothing).
+      extra[1] = ignites.length; if (dt > 0) ignites.length = 0;
+      uniforms.ignites.setValue(igniteTex);
       uniforms.floor.setValue(floor);
       // The fluid: splat this frame's particles into the grid first, so the simulation reads it (§ The fluid).
       uniforms.gridAt.setValue(gridAt);
+      // Bubbles read the grid only while it is filled this frame (otherwise it holds an old one).
+      extra[2] = time < fluidUntil ? 1 : 0;
+      uniforms.extra.setValue(extra);
       if (time < fluidUntil) splat.render();
       uniforms.grid.setValue(gridTex);
       pc.drawQuadWithShader(device, targets[1 - current], sim, undefined, undefined, 'Partículas de combate');
@@ -1827,9 +2179,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       states.forEach(s => fill(s, () => {}));
       [...lattices].forEach(l => l.remove());
       batches.length = 0; emitters.length = 0; fields.length = 0; volumes.length = 0; groups.length = 0; live = 0; head = 0;
+      [...laws].forEach(l => l.remove()); ignites.length = 0;
       placeLights(false);
     },
-    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
+    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex, lawTex, igniteTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
   };
 }
 export type FightParticles = ReturnType<typeof createFightParticles>;

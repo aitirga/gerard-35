@@ -492,8 +492,11 @@ everywhere else, in reduced motion and in the headless tests, effects stay on th
   particles do with it: `contain` (glass: what is inside stays in and bounces off its inner walls,
   what is outside bounces off it), `solid` (bounced off), `orbit` (drawn onto a shell `distance` off
   its surface and swirled round its axis) or `attract` (pulled in to settle on its faces and slide).
-  `kinds` limits it to some kinds. `effects` draws a visible crystal of glass for it (`crystalAt`:
-  it grows in, turns, bobs, and shrinks away or shatters into shards with a flash).
+  `kinds` limits it to up to four kinds (by their slots; before 2026-11-25 a bit mask, which a float
+  could not hold past the 24th kind). `effects` draws a visible crystal of glass for it (`crystalAt`:
+  it grows in, turns, bobs, and shrinks away or shatters into shards with a flash). A `paraboloid` (a
+  dish opening up its y axis: focal length, rim radius, thickness) and the `mirror` mode are under
+  Laws, mirrors and fire fronts.
 - **Light from the particles**: a burst with `light: { intensity, range, colour? }` is a light group.
   After each step a small pass sums each group on the GPU (64 of its particles: brightness-weighted
   middle, colour and brightness, the colour and fade the draw uses) into an 8×2 float texture that
@@ -557,6 +560,49 @@ entre partículas, más como un fluido y luego se expande*). A kind marks itself
   it falls on them as one body), Combustión (a fireball and a river of burning gas to each it reaches),
   Sobrecalentamiento's burst and Reserva de color's blast (a fireball). Left without: Bombardeo orbital
   (columns of light) and Fin de fiesta (powder), where a fluid adds nothing.
+
+### Laws, mirrors and fire fronts (built 2026-11-25)
+
+What Matemágico's newer pieces stand on (Atractor extraño, Campana de Gauss, Arco voltaico, Electrólisis),
+general for any effect. `just dev-fx` shows each bare (src/law-lab.ts, «Partículas · leyes, espejo y
+fuego»), and `just screenshots particle-laws --gpu --scale 2` records them.
+
+- **Motion laws** (`gpu.law(name, o)`, up to `MAX_LAWS` 16 at once, the oldest giving way): the first
+  fields that are not a push or a pull. A burst given one (`law` on `GpuBurst` or an emitter, whatever its
+  kind) follows it while it lives; its particles keep `LAW_BASE + slot` where a lattice's members keep
+  theirs. The law has a space of its own (`at`, `rotation` or `follow`) and four `params`, written every
+  frame, so any of them can be animated. It runs last in a particle's step, after fields and drag.
+  - `lorenz` [σ, ρ, β, speed]: the Lorenz field, by RK2 (the midpoint), its point (X, Y, Z) at
+    `at` + (X, Z, Y) × `scale` (0.05 m a unit: a butterfly 2.5 m tall, lobes along x). Each particle turns to
+    the field's velocity at `grip` (1/s), never faster than `maxSpeed`; from far off the field throws them
+    in. Lowering ρ below 1 (with a higher speed) collapses all of it into `at`: Atractor's bifurcation.
+    `lorenzPoints(n)` gives the same orbit on the CPU, laid out the same way, for the figure drawn over it.
+  - `galton` [rows, row gap, peg gap, fall]: a board in its x–y plane, top peg at `at`. Each particle
+    falls onto the top peg and at every row is put on the peg its path leads to and knocked half a peg gap
+    by one bit of its seed, on a hop (`bounce`, a quarter of a row at most) timed to land on the next
+    row's peg, flashing by `spark`; past the last row it falls straight. A burst's `path` sets the bits
+    (`galtonPath(bin, rows)` makes one that ends in a bin), so the picture matches the rule without
+    reading anything back; without one each particle draws its own and many make a bell. `galtonPegs`,
+    `galtonBinX` and `galtonTimes` (when a ball meets each row) are the board's layout and timing. Its
+    kinds take gravity 0: the law falls them along the board's own down.
+- **Mirrors** (`mode: 'mirror'`, best with `shape: 'paraboloid'`): what crosses its surface this step is
+  put back where it crossed, its velocity reflected whole; only kinds with `mirror: true` see it, and a
+  dish only within its rim. Sparks falling along a paraboloid's axis cross at its focus (`size.x` above
+  the vertex); a few degrees off, they draw the caustic. It holds one of the eight volume slots only while
+  it stands.
+- **Catching fire** (`ignite: { into, delay, radius }` on a kind; `burns` marks what sets it alight, true by
+  default for any kind something catches `into`): each frame a particle that can catch looks at four
+  particles near it on the ring (a cloud spawned at once lies on consecutive slots) and two anywhere; one
+  burning within `radius`, or a point lit with `gpu.ignite(at, radius)` (up to eight a frame), sets it
+  alight, and after `delay` (±40 %) it becomes `into`, with that kind's `life`. A cloud burns from where it
+  was lit outwards, a front at about `radius / delay` m/s. The timer lives in `release` (negative), which a
+  free particle does not otherwise use.
+- **Bubbles** (`bubble: { lift, flow }` on a kind): where the fluid's grid is packed (any fluid, full at 6
+  to a cell) it rises by `lift` m/s² and is carried by the flow; out of the fluid it keeps to its own
+  gravity and drag, a slow drift. It reads the grid only on frames the grid was filled.
+
+Costs: a law's particles read its texture (nine texels) each step; a mirror two signed distances; a kind
+that can catch seven reads; a bubble eight. The kinds without them pay nothing.
 
 ## Lattices (`src/lattice.ts`)
 
