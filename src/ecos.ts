@@ -110,6 +110,8 @@ const MATEMAGICO: Improvement[] = [
   { id: 'matemagico:agua', anima: 'matemagico', kind: 'element', line: 'agua', element: 'agua', name: 'Agua', cost: 1, description: 'Atacar puede llevar agua. No moja. Sobre un enemigo quemado, apaga el fuego y lo ciega: sus golpes pierden fuerza.' },
   skillNode('matemagico', 'agua', 'vasos', 1, 'agua'),
   passiveNode('matemagico', 'agua', 'capilaridad', 1, 'vasos', 'Pasiva. Atacar con agua deja mojado al enemigo si no apaga ningún fuego.'),
+  // Superficie mínima (Matemágico grows, 2026-11-25): a branch off Cubo acuático beside Capilaridad, his first guard.
+  skillNode('matemagico', 'agua', 'superficie-minima', 1, 'vasos'),
   // The dúo mayor past each of the other lines (docs/animas/README.md § Dúos mayores), after Aurelià as Vulcano.
   dualNode('matemagico', 'agua', 'marea', 'freatica', 'capilaridad'),
   { id: 'matemagico:electrico', anima: 'matemagico', kind: 'element', line: 'electrico', element: 'electrico', name: 'Eléctrico', cost: 1, description: 'Atacar puede llevar electricidad. No paraliza. Sobre un enemigo cegado, salta por el humo: daño medio mágico a todos los cegados. Sobre uno mojado, corre por el agua a todos los mojados. Sobre uno que arde, hace de golpe todo el daño que le quedaba al fuego, y más, y lo apaga.' },

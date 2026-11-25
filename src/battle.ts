@@ -106,6 +106,10 @@ export const SKILLS = [
   // everyone wet (`react`, Conducción). Their ids are the names they had first (saves keep them).
   { id: 'factor-comun', name: 'Pirámide ígnea', cost: 2, side: 'all-foes', power: 24, kind: 'magic', element: 'fuego', melts: true, evens: 'quemado', node: true, description: 'Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.', class: 'matemagico' },
   { id: 'vasos', name: 'Cubo acuático', cost: 2, side: 'all-foes', power: 16, kind: 'magic', element: 'agua', wets: 'mojado', node: true, description: 'Daño mágico de agua leve a todos los enemigos. Los moja.', class: 'matemagico' },
+  // Superficie mínima (Agua, grade II): two gold rings and the soap film between them, a catenoid round an ally (`film`,
+  // Combatant.film). A guard as Defender's until the round ends; whoever's blow reaches them through it takes water with
+  // no blow, by water's rules (`filmTouch`): smoke on a fire, poison on powder, Mojado otherwise. It does not punish: it sets up.
+  { id: 'superficie-minima', name: 'Superficie mínima', cost: 1, side: 'allies', power: 0, kind: 'guard', film: true, node: true, description: 'Protege a un aliado hasta el final de la ronda. El enemigo que le golpee queda mojado.', class: 'matemagico' },
   // Integral impropia (Cálculo, grade III): everything the party lost, added up and given back, to everyone,
   // at once and then bit by bit on the fight's clock (`regen`), an integral that does not end.
   { id: 'integral', name: 'Integral impropia', cost: 3, side: 'party', power: 26, kind: 'heal', regen: 'sanacion', node: true, description: 'Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.', class: 'matemagico' },
@@ -1393,6 +1397,8 @@ export interface Combatant {
   shorted?: true;
   /** ∂Q/∂t Condensador: charge stored, for the next electric blow they give or for the foe that strikes them first. Shown as a status. */
   capacitor?: true;
+  /** Superficie mínima: the round a soap film stands round them (a guard till its end); whoever's blow reaches them through it is wet. Shown as a status. */
+  film?: number;
   /** Marks a debuff left on a foe (Ángulo exacto), by skill: its stats down by `amount` until the end of round `until`. */
   marks?: Partial<Record<SkillId, { amount: number; stats: (keyof Stats)[]; until: number }>>;
   /**
@@ -2083,6 +2089,11 @@ export interface BattleEffect {
   capacitor?: 'stored' | 'spent';
   /** ∂Q/∂t Condensador: a foe struck the one carrying the charge, and it jumped to that foe. */
   discharge?: { from: string; target: string; amount: number };
+  /**
+   * Superficie mínima: this foe's blow reached someone under a soap film (`from`), which burst and threw its water on the foe
+   * (`target`): what the water left on it, by water's rules (Mojado; Cegado, its fire put out as Humo; Envenenado, its powder run).
+   */
+  film?: { from: string; target: string; left: 'mojado' | 'cegado' | 'envenenado' }[];
   /** This foe's turn, lost to Shock: nothing else happened in it. */
   stunned?: true;
   /** El que no converge saw the party wait its water out, the first time: its figures stop for a moment (src/modelo-foes.ts). */
@@ -2314,7 +2325,7 @@ function fallen(state: BattleState) {
  * disagree. Agua and Mojado are one icon (the water's), fire at IV is Combustión's, a Mecha encendida is fire's icon and
  * Sutura de luz the cure's. `shown` is what the fight's screen holds back until a blow lands (a fire, the PV).
  */
-export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | StatusId | TimedId;
+export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | StatusId | TimedId;
 export function plateMarks(state: BattleState | undefined, c: Combatant, shown: { timed?: Combatant['timed']; hp?: number } = {}): PlateMark[] {
   if ((shown.hp ?? c.hp) <= 0) return [];
   const timed = shown.timed ?? c.timed ?? {}, ally = !!state?.allies.includes(c), marks: PlateMark[] = [];
@@ -2327,6 +2338,7 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
   put(reactionIn(c), 'reaccion');
   put(c.shock, 'shock');
   put(c.capacitor, 'cargado');
+  put(state && filmed(state, c), 'pelicula');
   put(state && rachaOf(c), 'racha');
   put(state && meteorOf(c), 'meteoro');
   put(c.suture, 'sutura');
@@ -3144,6 +3156,38 @@ function shortCircuit(state: BattleState, target: Combatant, effect: BattleEffec
   return true;
 }
 /**
+ * Whom a foe's action reached with a blow: its target and every other it took PV from, one hit of many (`hits`) or a blow on
+ * everyone (`splash`: El Campeón's Rayo total). A blow that took nothing (a shield's, a miss) reached nobody. Condensador's
+ * charge and Superficie mínima's film.
+ */
+function struckBy(effect: BattleEffect) {
+  return new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...[...effect.hits ?? [], ...effect.splash ?? []].filter(h => h.amount > 0).map(h => h.target)]);
+}
+/** Whoever stands under a soap film this round (Superficie mínima). */
+export const filmed = (state: BattleState, c: Combatant) => c.film === state.round;
+/**
+ * Superficie mínima: a foe whose blow reached someone under the film this round takes water from it, with no blow, by water's
+ * rules: on powder it runs as poison (`powder`), on a fire it puts it out into Humo, on anything else it leaves it Mojado and
+ * starts its held water's clock over (`refill`). Once an action, however many it reached. Only a foe's own action: the clock's
+ * pulses never call this. The film stays up until the round ends (its guard is Defender's).
+ */
+function filmTouch(state: BattleState, effect: BattleEffect) {
+  if (effect.kind !== 'enemy') return;
+  const foe = state.foes.find(f => f.id === effect.actor && f.hp > 0 && !f.part);
+  const under = foe && state.allies.find(a => filmed(state, a) && struckBy(effect).has(a.id));
+  if (!foe || !under) return;
+  // The powder's turn shows as a reaction (`powder`); whatever the foe's action said already stays.
+  const was = effect.reaction, wearer = state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') ?? under;
+  let left: 'mojado' | 'cegado' | 'envenenado';
+  state.message += ` La película de ${under.name} estalla sobre ${foe.name}.`;
+  if (powder(state, wearer, foe, 'agua', effect)) left = 'envenenado';
+  else if (foe.timed?.quemado) { smoke(foe); left = 'cegado'; state.message += ` ¡El agua apaga el fuego! ¡${TIMED.cegado.name}!`; }
+  else { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; left = 'mojado'; state.message += ' ¡Mojado!'; }
+  refill(foe);
+  if (was) effect.reaction = was;
+  (effect.film ??= []).push({ from: under.id, target: foe.id, left });
+}
+/**
  * ∂Q/∂t Condensador: a foe's blow found someone carrying the charge, and it jumps to that foe
  * (`CONDENSADOR.jump` of electric magic, with the wearer's stats).
  */
@@ -3151,7 +3195,7 @@ function discharge(state: BattleState, effect: BattleEffect) {
   if (effect.kind !== 'enemy') return;
   const foe = state.foes.find(f => f.id === effect.actor && f.hp > 0 && !f.part);
   if (!foe) return;
-  const struck = new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...(effect.hits ?? []).filter(h => h.amount > 0).map(h => h.target)]);
+  const struck = struckBy(effect);
   const wearer = state.allies.find(a => a.capacitor && struck.has(a.id));
   if (!wearer) return;
   delete wearer.capacitor;
@@ -3894,7 +3938,9 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     target.guarding = true;
     // Escolta: Bip stays by them for its rounds (`keepEscorts` guards them again as each round starts).
     if ('escort' in ability) { target.escort = { until: state.round + ability.escort - 1, by: actor.id }; effect.escorted = ability.escort; }
-    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ${'escort' in ability ? `Bip se queda a su lado: protegido durante ${ability.escort} rondas.` : 'Protegido hasta el final de la ronda.'}`;
+    // Superficie mínima: the film stands round them until the round ends (`filmed`, `filmTouch`).
+    if ('film' in ability) target.film = state.round;
+    state.message = `${actor.name} usa ${ability.name}${target === actor ? '' : ` con ${target.name}`}. ${'escort' in ability ? `Bip se queda a su lado: protegido durante ${ability.escort} rondas.` : 'film' in ability ? 'Una película de jabón le rodea hasta el final de la ronda.' : 'Protegido hasta el final de la ronda.'}`;
   } else if (ability?.kind === 'heal' && target) {
     // Cardioide: a curve of light under a friend gives back half their PV.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = target.id; effect.healed = true;
@@ -4980,6 +5026,8 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
     plantBomb(striker); effect.planted = [...effect.planted ?? [], striker.id];
     state.message += ` Bip le pega una bomba a ${striker.name}.`;
   }
+  // Superficie mínima first: the striker is wet before any charge jumps to it.
+  if (effect) filmTouch(state, effect);
   if (effect) discharge(state, effect);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
   // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
@@ -6619,6 +6667,8 @@ export function nextRound(state: BattleState): StatusTick[] {
   // What lasts one round whatever its clock says (Explosión's blinding) ends with it.
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) if (c.timed?.[id]?.until !== undefined && c.timed[id]!.until! <= state.round) delete c.timed[id];
   for (const ally of state.allies) delete ally.suture;
+  // Superficie mínima: the film goes with its round, burst or not.
+  for (const ally of state.allies) if (ally.film !== undefined && ally.film <= state.round) delete ally.film;
   // A cortina nobody broke comes down with its last round.
   for (const ally of state.allies) if (ally.cortina !== undefined && (ally.cortina <= state.round || ally.hp <= 0)) delete ally.cortina;
   // Escudo de bits: broken, or its last round over, it is gone.

@@ -166,7 +166,7 @@ export const traced = (chain: readonly Epicycle[], count = 160) => Array.from({ 
 export const GOLD = '#f3cf78';
 const HARMONIC_COLOURS: Partial<Record<PlateMark | 'marca', string>> = {
   quemado: '#ff8a2e', combustion: '#ff5a1a', mecha: '#ff8a2e', volcan: '#ff6a1a', bomba: '#ff7a2a',
-  mojado: '#5cc2f4', agua: '#5cc2f4', hundido: '#2f8fd8', corriente: '#ffe24a', marea: '#5cc2f4', seiche: '#5cc2f4',
+  mojado: '#5cc2f4', agua: '#5cc2f4', pelicula: '#5cc2f4', hundido: '#2f8fd8', corriente: '#ffe24a', marea: '#5cc2f4', seiche: '#5cc2f4',
   congelado: '#bfe8ff', cristalizado: '#d8fbff', fulgurita: '#d8fbff',
   sangrado: '#f04a12', metralla: '#f04a12',
   envenenado: '#6fdc4a', sanacion: '#3fcf58',

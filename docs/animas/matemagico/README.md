@@ -51,6 +51,7 @@ Foc Binari is his from the start; every other skill is a node of his tree, bough
 | Root | Foc Binari | 1 | 16 magic, fire, two streams | `Daño mágico de fuego leve a un enemigo. Golpea dos veces. Lo quema durante unos segundos. Si ya arde, el fuego sube de nivel. Derrite el pringue.` |
 | Fuego | Pirámide ígnea | 2 | 24 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` |
 | Agua | Cubo acuático | 2 | 16 magic, water, all | `Daño mágico de agua leve a todos los enemigos. Los moja.` |
+| Agua | Superficie mínima | 1 | a guard on one ally to the round's end; water, no blow, on whoever strikes them | `Protege a un aliado hasta el final de la ronda. El enemigo que le golpee queda mojado.` |
 | Eléctrico | Punto eléctrico | 2 | 26 magic, electric | `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` |
 | Eléctrico | Cortocircuito | 2 | 14 magic, electric | `Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. No se repite hasta que vuelva a actuar.` |
 | Eléctrico | ∂Q/∂t Condensador | 1 | ×2 on the next electric blow; 20 magic, electric, to a foe that strikes first | `Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.` |
@@ -224,7 +225,8 @@ electricity that is not "hit everyone": the line cashes in, and these two decide
   arcs, `cargado` in `src/status-fx.ts`). His next electric blow (Atacar · Eléctrico, Punto eléctrico,
   Cortocircuito) lands twice as hard (`CONDENSADOR.scale`; Conducción's own damage is not doubled).
   A foe that strikes him first takes the charge instead: 20 of electric magic (`CONDENSADOR.jump`),
-  lightning from him to it. One charge at a time.
+  lightning from him to it, a blow on everyone too (since 2026-11-25: `struckBy` counts its splash). One
+  charge at a time.
 - **Largest blow**: Punto eléctrico charged, about 52 at his stats today, plus Conducción apart.
 - **The sim** (`just fight-sim run`, smart, Gerard Matemágico + Aitor Tecnópata 3, the elements and
   water bought): neutral against Vertitrón and the dogs; against El Campeón Cortocircuito is played
@@ -298,6 +300,59 @@ target naming what it now carries, and each reaction's word (¡Humo!, ¡Vapor!, 
 one above the other. What came shows on the target as it lands: its powder for the instant the fire or the
 water meets it, its shards standing out of it. **Sound**: a low hum that trembles as the
 attractor does and falls an octave as ρ does (`chaos-hum`), and one struck note (`struck`).
+## Superficie mínima (Matemágico grows, 2026-11-25, built)
+
+A node of the water line off Cubo acuático, beside Capilaridad (1 eco, grade II, `src/ecos.ts`): his first
+guard, and the water line's second skill. Aitor approved it with the expansion (Fourier, Atractor extraño and
+four duals); `docs/animas/README.md` § The jar.
+
+- **Rules** (`superficie-minima` in `SKILLS`, `kind: 'guard'`, `film`; `filmTouch` in `src/battle.ts`). 1
+  maná, on any ally standing, himself too, never on someone already protected (the guards' rule in
+  `validTargets`). They take a third of each blow until the round ends, as with Defender or Corchete
+  (`Combatant.film` is the round; it goes in `nextRound`). Each foe whose blow reaches them through it that
+  round takes water, with no blow, by water's own rules: on powder, Envenenado (the powder's turn,
+  `reaction: 'veneno'`); on a fire, Humo (the fire out, Cegado); on anything else, Mojado for 20 s, and its
+  held water's clock starts over. Once an action however many it reaches; every foe that strikes them, not
+  only the first, and a blow on everyone counts on whoever it only splashes (El Campeón's Rayo total). Only
+  blows that take PV: the clock's pulses, the round's ticks, a foe's move that takes none (Vertitrón's Grito)
+  and a blow that took nothing (a miss, a shield's) never touch it. The blow that brings them down still goes
+  through it. On someone Cargado, the striker is wet before the charge jumps to it. In La Voz's fight a guard
+  lasts until its fighter acts again, but the film still goes with its round (as Defender's words say).
+- **It does not punish, it sets up** (unlike Escolta, Trampantojo and Caleidoscopio): the foe's own blow
+  leaves the water that Cortocircuito (a turn lost for sure), Conducción and the duals cash in.
+- **The question it answers**: a blow announced, with a name, on an ally (El Campeón's guantelete, the
+  Queen's hands, La Lealtad, Directo). Read the chip, put the film on that ally, and whoever strikes comes
+  out wet; next round Cortocircuito takes its turn, and an electric Atacar runs on the water (Conducción).
+- **The sim** (`src/battle-sim.ts`): its guard is worth what any guard on one ally is (`guardWorth`, Defender's
+  two thirds of the blows coming, shared with Escolta and Corchete). A copy never sees the foes' turn, so
+  `filmWorth` plays it on a copy after the film. Each foe it leaves wet that was dry, if someone standing can turn
+  the water: what the water adds to the best electric Atacar on it, the real rules on a copy (`wetGain`,
+  Conducción), or at least `FILM_WORTH` (10, for Cortocircuito or a dual on Cubo acuático or Cortocircuito);
+  nobody can, nothing. Poison and smoke count `FILM_WORTH` without that, the smoke less the fire it puts out.
+  The `elementos` build buys it right after Cubo acuático; `mixto` does not (bought beside Capilaridad, smart
+  plays it about twice a castle room and the third-year rooms and the Encarnados drop out of their targets:
+  left for the balance pass). Its pair, `campeon-pelicula` and `campeon-pelicula-sin` (Gerard with Aitor
+  Tecnópata at the start of the university's mission, the water line and the electric one to Cortocircuito):
+  with it the film goes on about four times a fight, Conducción follows each, the Rayo total comes half as
+  often (0.7 against 1.4) and they win with 46 % of their PV; without it, with 32 %.
+
+**Look** (`src/film-fx.ts`, the lattice's `catenoid` shape and `film` look). His dial opens water blue. In
+his circle, before his chest and towards the camera (clear of what hangs over his head), the pen draws two
+coaxial gold rings, gold to the core, one over the other, and pulls them apart: a soap film forms
+between them, a catenoid, r(z) = a·cosh(z/a), and while they part it stays the true minimal surface (its
+waist narrowing as `catenoidHeight` says). The rings fly to the ally, one to the ankles and one at the head (under their plate),
+and the film stretches into an hourglass sleeve (never a sphere: a bubble would be La Pompa's). Its colours
+are thin-film interference, from its thickness: gold, cream, cyan and teal water blue (#2aa8d8), never magenta
+or violet, draining down and swirling; its members are soft glows mostly laid over the fight, not added, so its
+front and back crossing can never sum to lilac. A blow through it: capillary ripples where it lands, then it bursts like soap,
+its bright rim running back from the hole, the water it sheds (plain water, not the film's colours) flying
+at whoever struck with a jet of Freática's water drops that arcs over and splashes on them: their Mojado (or
+Humo, or Envenenado). The rings stay, a little lit, with a faint water light between them until a new film
+forms there, since the guard lasts the round; if the blow brought the ally down, it bursts all the same and
+then goes. The round over with no blow: it starts thinning at once to black film from the top (0.9 s), its colours going out, and the last of it comes apart in a few motes, the rings dimming with
+it. **Sound**: glass ringing high and wet as it is drawn (`film-shimmer`), a soft pop and a splash as it
+bursts (`film-pop`, `splash`). **Icon**: a catenoid's profile, two gold ellipses joined by sides curving
+in, water blue (*Película de jabón*, with its card in the guide). `just screenshots superficie-minima --gpu`.
 
 ## How each skill looks (Aitor's notes on the sheet, 2026-11-21)
 
@@ -314,6 +369,7 @@ lands at its own moment (`FIGURES` in `src/battle-motion.ts`), and the fight's n
 | Pirámide ígnea | A triangle in fire, stroke by stroke, embers off the pen | An apex rises out of its middle into a burning pyramid that turns; it flies over the foes growing and trailing flame, draws in for a breath and blows up: flash, a ball of flame, sparks off its edges, a ring of fire on the floor, a gout to each foe. Then each fire rises to the highest, with its digit | 1.64 s |
 | Cubo acuático | A square in pale water light | Its back face slides out and the edges grow to it: a cube, turned to show its depth. It fills with water on its way to the middle of the foes (bubbles, the surface rocking with its speed; Freática's drops and bubbles), swells and bursts: water thrown all round that falls and splashes, a sheet on each foe | 1.96 s |
 | Integral impropia | ∫ from 0 to ∞, upright, its limits small | It turns a quarter as it goes to lie between the party at chest height, ends towards them; green light jets from each end into whoever is that side, and Sanación stays on them | 1.55 s |
+| Superficie mínima | Two coaxial gold rings, one over the other, pulled apart with a soap film between them (a catenoid) | The rings fly to the ally, to the ankles and over the head, the film an hourglass sleeve in thin-film colours, held to the round's end (§ Superficie mínima) | 1.4 s |
 | Punto eléctrico | A point of charge in front of him: a white-hot bead in a yellow glow, crackling | It rises, slows at the top and falls on its foe as lightning: three strikes a breath apart along fresh jagged paths, each forking, arcs that run round the foe and down to the floor, sparks that bounce, a ring on the floor | 1.0 s |
 
 `just screenshots matemagico-figuras --gpu` plays the five.
@@ -431,5 +487,5 @@ duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined 
 
 - Whether Análisis Parálisis and Cardioide keep their look, or get their own (a chalkboard of sums for
   Análisis, the cardioid drawn by hand).
-- Grade III (§ Grade III): the tree costs 35 ecos since 2026-11-25 (each dúo mayor 3, Combustión and
-  Integral impropia 3, Atractor extraño 2; `src/ecos.ts`). They only show after Aurelià.
+- Grade III (§ Grade III): the tree costs 37 ecos since 2026-11-25 (33 before Serie de Fourier, Atractor extraño and
+  Superficie mínima; each dúo mayor 3, Combustión and Integral impropia 3, Atractor extraño 2; `src/ecos.ts`). They only show after Aurelià.

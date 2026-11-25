@@ -1,7 +1,7 @@
 import type { StatusId, TimedId } from './battle.ts';
 
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado';
+export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado' | 'pelicula';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 /** A definitiva: three puffs going up at once (awake, or asleep and dimmer). */
 const DEFINITIVA_SVG = '<circle cx="8" cy="4.2" r="2.6"/><circle cx="3.6" cy="9" r="2.2"/><circle cx="12.4" cy="9" r="2.2"/><path d="M8 8v6.6M5.4 14.6h5.200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
@@ -20,6 +20,8 @@ export const STATUS_ICONS: Record<IconId, string> = {
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.
   cargado: '<path d="M.8 7.1h4.4v1.8H.8zM10.8 7.1h4.4v1.8h-4.4z" fill="currentColor"/><rect x="5" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/><rect x="9" y="2.2" width="2" height="11.6" rx=".6" fill="currentColor"/>',
+  // Superficie mínima: a catenoid's profile, its two rings in his gold and the film between them narrowing at the waist.
+  pelicula: '<path d="M2.6 2.6C5.6 5.4 5.6 10.6 2.6 13.4h10.8c-3-2.8-3-8 0-10.8z" fill="currentColor" opacity=".55"/><ellipse cx="8" cy="2.6" rx="5.6" ry="1.5" fill="none" stroke="#f3cf78" stroke-width="1.3"/><ellipse cx="8" cy="13.4" rx="5.6" ry="1.5" fill="none" stroke="#f3cf78" stroke-width="1.3"/>',
   // La Voz's Enfado: her voice gone sharp, a wave with a spike in it.
   enfado: '<path d="M.8 9.2h3.1l1.5-3.4 2.1 8.4 2.4-12.6 1.9 7.6h3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   // La Voz's song: a sung note, the same mark for every note (its colour says which).

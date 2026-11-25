@@ -28,6 +28,8 @@ export const FIGURES = {
   fourier: { contact: 1.6, end: 2.3 },
   // Atractor extraño: the butterfly drawn round the foe, the others' statuses streaming into it, and its collapse into the chest.
   atractor: { contact: 2.4, end: 3.4 },
+  // Superficie mínima: the rings drawn and parted, then flown to the ally; it settles round them at its contact (src/film-fx.ts).
+  'superficie-minima': { contact: 1.4, end: 1.85 },
 } as const satisfies Record<string, { contact: number; end: number }>;
 /**
  * Atractor extraño's beats, in the figure's own seconds (from CAST_LAUNCH): the pen draws the butterfly (`draw`); each other foe's

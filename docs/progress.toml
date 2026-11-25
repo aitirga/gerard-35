@@ -767,6 +767,14 @@ in = "src/battle.ts"
 title = "Matemágico: Atractor extraño (junta en un enemigo los estados con reloj de los demás)"
 grep = "id: 'atractor'"
 in = "src/battle.ts"
+# Matemágico grows (Aitor 2026-11-25, docs/animas/matemagico/README.md § Superficie mínima): the water line's guard,
+# its soap film drawn as a catenoid lattice (src/film-fx.ts).
+[[block.item]]
+title = "Matemágico: Superficie mínima"
+grep = "id: 'superficie-minima'"
+in = "src/battle.ts"
+file = "src/film-fx.ts"
+note = "La protección de la línea de Agua: quien golpea al aliado bajo la película queda mojado. Su par en fight-sim: campeon-pelicula y campeon-pelicula-sin."
 
 # Designed 2026-11-20 (docs/animas/matemagico/README.md § Grade III): water's levels and a fourth that
 # freezes, on the shared Congelado rule (not built yet either).

@@ -59,7 +59,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 
 | Ánima | Origin | Colour | Stats (wearer) | Skills | Status |
 | --- | --- | --- | --- | --- | --- |
-| [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari, Análisis Parálisis, Ángulo exacto; grado III with its figures (Cardioide, Pirámide ígnea, Cubo acuático, Integral impropia, Punto eléctrico); Cortocircuito and ∂Q/∂t Condensador; Atractor extraño | Playable |
+| [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari, Análisis Parálisis, Ángulo exacto; grado III with its figures (Cardioide, Pirámide ígnea, Cubo acuático, Integral impropia, Punto eléctrico); Cortocircuito and ∂Q/∂t Condensador; Serie de Fourier, Atractor extraño and Superficie mínima | Playable |
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
 | [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Fuerza +1, Crítico +10 %, Espíritu −1 (built 2026-11-20, a first guess) | Haru and Yuki: physical blows, Sangrado and golpes críticos | **Playable whole** (built 2026-11-21), redesigned 2026-11-20: the golpe crítico, cuts that pile up, liquid blood, Ronroneo on one ally; seven levels, with *Olor a sangre* at 5 (Crítico +20 % on whoever bleeds, sure on a wound of five), *Acecho* at 6 and *Cacería* at 7; and *Siete vidas*, the second definitiva in the game |
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designed whole and built (2026-11-21): Bomba remota (a bomb that grows with time on its clock) and Escolta (Bip in front of an ally), its stats and Enjambre; tree and grade III built |
@@ -150,11 +150,11 @@ game; 20 from the friends once all five missions are done).
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 36 (four dúos mayores at 3, Combustión and Integral impropia at 3, Atractor extraño at 2, Serie de Fourier at 1), and 2 for the definitiva |
+| Matemágico's tree | 37 (four dúos mayores at 3, Combustión and Integral impropia at 3, Atractor extraño at 2, Serie de Fourier and Superficie mínima at 1), and 2 for the definitiva |
 | Tecnópata's tree | 27 (three dúos mayores at 3, Escudo de bits at 3, Reinicio and Virus atómico at 2), and 2 for the definitiva |
 | Dadaísta | 1 for maná, 1 for Otra vez, 2 for the definitiva |
 | Each other shared ánima | 1 for maná, 2 for the definitiva |
-| All of it | 81 (77 while two definitivas sleep) |
+| All of it | 82 (78 while two definitivas sleep) |
 
 So at the end the party holds most of it, but not all, and re-does the split before a hard fight.
 
@@ -163,7 +163,7 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 | Line | 1 eco | 1 eco | 2 ecos |
 | --- | --- | --- | --- |
 | **Fuego**, which piles up | Atacar · Fuego (built) | *Pirámide ígnea*: `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
-| **Agua**, which sets up | Atacar · Agua (built) | *Cubo acuático*: `Daño mágico de agua leve a todos los enemigos. Los moja.` | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
+| **Agua**, which sets up | Atacar · Agua (built) | *Cubo acuático*: `Daño mágico de agua leve a todos los enemigos. Los moja.`; beside Capilaridad, *Superficie mínima* (2026-11-25): `Protege a un aliado hasta el final de la ronda. El enemigo que le golpee queda mojado.` (`matemagico/README.md` § Superficie mínima) | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
 | **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Punto eléctrico*: `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round; past it (2 ecos each, Aitor 2026-11-21) *Cortocircuito* and *∂Q/∂t Condensador* (`matemagico/README.md` § Cortocircuito and ∂Q/∂t Condensador) |
 | **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each); off Análisis, a branch: *Serie de Fourier* (1, Aitor 2026-11-25): `Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.` It counts what the foe's plate shows (`plateMarks`, `matemagico/README.md` § Serie de Fourier) | Maná +1 |
 
@@ -364,8 +364,8 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   `src/levels.ts`, read from the level's flag: up to 10). 55 at most. Every node of the jar costs
   **one eco**, the definitivas two, and the big moves more (Aitor, 2026-11-24: the jar some 25 %
   dearer): a **dúo mayor three**, grade III **three** for its big ones (Combustión, Integral
-  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico). 78 for the whole jar,
-  74 while Matemágico's and Dadaísta's definitivas sleep (it was 56 and 52): the 55 there are buy some
+  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico). 79 for the whole jar,
+  75 while Matemágico's and Dadaísta's definitivas sleep (78 and 74 before Superficie mínima, 56 and 52 before that): the 55 there are buy some
   three quarters of it. Measured in ten whole games before the friends' second eco
   (2026-11-22): `pensando` 32 to 36 at the end, `corredor` 29 to 34; with it, ten more each. La
   Delegada of the first floor is never beaten on the way (the bots go past her), and only one or two
@@ -857,8 +857,9 @@ over Matemágico's wearer.
 ### Mojado (wet, timed)
 
 Built 2026-11-15 (`TIMED.mojado`, `react` in `src/battle.ts`). 20 s on the clock, no levels, no
-pulses: it hurts nobody and waits for an element. Laid by Cubo acuático (every foe) and by
-Atacar with water once Capilaridad is bought.
+pulses: it hurts nobody and waits for an element. Laid by Cubo acuático (every foe), by
+Atacar with water once Capilaridad is bought, and by Superficie mínima on whoever strikes the ally under its film
+(water with no blow, by the same rules: Humo on a fire, Envenenado on powder).
 
 | On Mojado | Reaction | What happens |
 | --- | --- | --- |

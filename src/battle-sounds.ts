@@ -75,6 +75,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   cortocircuito: { start: [{ id: 'think' }], impact: [{ id: 'crack' }, { id: 'zap', delay: .04 }, { id: 'thump', volume: .5, delay: .08 }] },
   // ∂Q/∂t Condensador: the sum worked out, then the charge humming up into him.
   condensador: { start: [{ id: 'think' }], impact: [{ id: 'charge', volume: .55 }, { id: 'clink', volume: .4, delay: .2 }] },
+  // Superficie mínima: the film drawn between the rings rings like glass, wet; it settles round the ally with a soft guard.
+  // Its burst (a pop and the drops flung off) is the scene's, when a blow reaches it.
+  'superficie-minima': { start: [{ id: 'think' }, { id: 'film-shimmer', delay: .45 }], impact: [{ id: 'guard', volume: .55 }, { id: 'film-shimmer', volume: .45, delay: .05 }] },
   // Bip's signal takes; the foe's own blow lands from the scene.
   'control-remoto': { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .4, delay: .1 }] },
   virus: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'glitch' }, { id: 'zap', volume: .35, delay: .06 }, { id: 'glitch', volume: .5, delay: .18 }] },
