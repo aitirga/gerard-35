@@ -1,0 +1,39 @@
+{
+  "title": "Matemágico · su neón en los dúos",
+  "description": "What a dual's own look is handed to draw Matemágico's neon (src/duo-fx/types.ts `DuoStage.figure` and `draw`, src/math-figures.ts `NeonFigure`): tubes of light drawn stroke by stroke with his pen, in the camera's plane or turning in the world. Two studies in the effects lab (src/neon-lab.ts), not any dual's look: a board of pegs over the foes whose bell is drawn from the balls that fell, and a parabola with its focus and dashed directrix that turns until its focus sits on a dog. Then the sounds the new duals and skills draw on (src/sfx.ts: the additive tone, the plucked string, the chaotic hum and more), rendered and measured. Run it with --gpu.",
+  "steps": [
+    { "open": "/?story=matemagico&fxlab" },
+    { "until": "!!document.querySelector('#battle:not([hidden]):not([data-entering])') && !!document.querySelector('.fx-lab [data-neon]') && !!document.querySelector('.fx-lab [data-field=target] option')", "timeout": 90000 },
+    { "eval": "document.querySelector('.fx-lab [data-act=fold]').click()" },
+    { "wait": 800 },
+    {
+      "record": "galton",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "if (frame === 0) document.querySelector('.fx-lab [data-neon=galton]').click()",
+      "caption": "A board of pegs in the camera's plane over the dogs: its triangle, its pegs a tick of the pen each, the histogram of the balls that fell, the bell drawn from their own mean and spread, a flash and it fades"
+    },
+    { "eval": "document.querySelector('.fx-lab [data-neon=galton]').click()" },
+    { "shot": "galton-campana", "delay": 2350, "caption": "The board with its histogram and the bell drawn over it, in his gold and the fire's orange" },
+    { "wait": 1500 },
+    {
+      "record": "parabola",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "if (frame === 0) document.querySelector('.fx-lab [data-neon=parabola]').click()",
+      "caption": "A parabola with its focus and dashed directrix drawn facing the camera over Gerard, which rises and turns in the world, growing, until its axis points at the dog and its focus sits on its chest; a snap and it fades"
+    },
+    { "eval": "document.querySelector('.fx-lab [data-neon=parabola]').click()" },
+    { "shot": "parabola-dibujada", "delay": 750, "caption": "The parabola, its focus and its dashed directrix, drawn facing the camera" },
+    { "shot": "parabola-girando", "delay": 550, "caption": "Halfway round: the figure turned in the world, its axis on its way to the dog" },
+    { "wait": 1500 },
+    {
+      "eval": "(async () => { const { SOUNDS } = await import('/src/sfx.ts'); const ids = ['partial-1', 'partial-2', 'partial-3', 'partial-4', 'partial-5', 'partial-6', 'string-1', 'string-2', 'string-3', 'string-4', 'chaos-hum', 'struck', 'film-shimmer', 'film-pop', 'bubbles', 'gas-crack', 'peg', 'pachinko', 'chord-swell', 'whine', 'snap']; const rows = []; for (const id of ids) { const c = new OfflineAudioContext(2, 48000 * 2.4, 48000); const seconds = SOUNDS[id].synth(c, c.destination, .01, 1); const buffer = await c.startRendering(); let peak = 0, sum = 0, last = 0; for (let ch = 0; ch < 2; ch++) { const data = buffer.getChannelData(ch); for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i]); peak = Math.max(peak, v); sum += v * v / 2; if (v > .0005) last = Math.max(last, i / 48000); } } rows.push({ id, peak, rms: Math.sqrt(sum / Math.max(1, last * 48000)), seconds, last }); } window.neonSounds = rows; const el = document.createElement('pre'); el.id = 'neon-sounds'; el.style.cssText = 'position:fixed;left:12px;top:12px;z-index:9999;margin:0;padding:12px 16px;background:#101410f2;color:#e8f0e0;font:13px/1.5 ui-monospace,monospace'; el.textContent = rows.map(r => `${r.id.padEnd(13)} pico ${r.peak.toFixed(2)}  rms ${r.rms.toFixed(3)}  ${r.last.toFixed(2)} s de ${r.seconds.toFixed(2)}`).join('\\n'); document.body.append(el); })()"
+    },
+    { "until": "window.neonSounds?.length === 21", "timeout": 30000 },
+    { "until": "window.neonSounds.every(r => r.peak > .03 && r.peak <= 1 && r.last > .02 && r.last < r.seconds + .2)", "timeout": 2000 },
+    { "shot": "sonidos", "delay": 300, "caption": "The new sounds rendered and measured: each sounds, none clips, each ends when it says (partial-1 to 6 add one partial a strike; string-1 to 4 rise a tone a beat)" }
+  ]
+}

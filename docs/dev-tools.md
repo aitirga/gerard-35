@@ -608,6 +608,12 @@ close, keep effects stacking, repeat the last one or clean everything. It never 
 numbers or the story. Matemágico's *Foc Binari* has its own entry (the streams, then the burst or
 the fizzle). `just screenshots fx-lab --gpu` clicks through it.
 
+**Matemágico · figuras de neón (dúos)** ([src/neon-lab.ts](../src/neon-lab.ts)) draws two studies of
+what a dual's look can draw with his neon (`DuoStage.figure` and `draw`, docs/graphics.md § Ataques
+duales): *Galton y campana*, a board of pegs in the camera's plane over the foes whose bell is drawn
+from the balls that fell, and *Parábola y foco*, a parabola with its focus and dashed directrix that
+turns in the world until its focus sits on the picked foe. `just screenshots neon-duos --gpu`.
+
 **Sincopante · ecos** is a section at the top of the panel ([src/eco-lab.ts](../src/eco-lab.ts),
 [src/eco-fx.ts](../src/eco-fx.ts), and its shaders in [src/eco-shaders.ts](../src/eco-shaders.ts)). It plays Sincopante's ecos on their own,
 with a compás of their own; in a real fight the same piece is driven by the rules (`EcoScene.driven`,

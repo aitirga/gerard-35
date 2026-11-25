@@ -10,6 +10,7 @@ import { mountEcoLab } from './eco-lab';
 import { mountPowderLab } from './powder-lab';
 import { mountFreaticaLab } from './freatica-lab';
 import { mountLawLab } from './law-lab';
+import { mountNeonLab } from './neon-lab';
 
 type Game = Awaited<ReturnType<typeof createGame>>;
 
@@ -114,6 +115,8 @@ export function mountFxLab(game: Game, sfx: Sfx) {
   const freaticaLab = mountFreaticaLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
   // The GPU engine's laws, mirror and fire front (src/law-lab.ts).
   const lawLab = mountLawLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
+  // Matemágico's neon as the duals draw it (src/neon-lab.ts, `DuoStage.figure`).
+  const neonLab = mountNeonLab(game, panel.querySelector<HTMLElement>('.fx-lab-body')!);
   // Clicks here stay here: the fight's own menu never hears them.
   for (const type of ['keydown', 'pointerdown', 'click'] as const) panel.addEventListener(type, event => event.stopPropagation());
 
@@ -264,6 +267,6 @@ export function mountFxLab(game: Game, sfx: Sfx) {
 
   refresh(); applyHud();
   return {
-    destroy() { clearInterval(timer); ecoLab.destroy(); powderLab.destroy(); freaticaLab.destroy(); lawLab.destroy(); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
+    destroy() { clearInterval(timer); ecoLab.destroy(); powderLab.destroy(); freaticaLab.destroy(); lawLab.destroy(); neonLab.destroy(); panel.remove(); game.frame(); const battle = document.querySelector<HTMLElement>('#battle'); if (battle) battle.style.visibility = ''; },
   };
 }

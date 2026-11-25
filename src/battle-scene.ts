@@ -368,7 +368,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   /** Where Bip set off from when it went to stand by someone (Escolta), to fly there in an arc. */
   const escortFrom = new WeakMap<BattleEffect, pc.Vec3>();
   const peels = createOnionPeels(battleRoot, groundHeight);
-  let cue: (id: SoundId, options?: { delay?: number }) => void = () => {};
+  let cue: (id: SoundId, options?: { delay?: number; volume?: number; pan?: number }) => void = () => {};
   /** How many of this action's little claws have landed. */
   let clawed = 0;
   /** Dadista's sky skills: what of the action in play has started to fall and has landed. */
@@ -1044,6 +1044,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       pulse: (fringe, bloom, flash) => pulse?.(fringe, bloom, flash),
       punch: amount => { zoom.x = Math.max(zoom.x, HIT.punch.size * (1 + amount)); },
       cue: (id, options) => cue(id, options),
+      pan: at => {
+        const cam = app.systems.camera?.cameras[0], width = app.graphicsDevice.clientRect.width;
+        if (!cam || !width) return 0;
+        const s = cam.worldToScreen(new pc.Vec3(at.x, at.y, at.z));
+        return Math.max(-1, Math.min(1, s.x / width * 2 - 1));
+      },
+      figure: (name, o) => figures.neon(name, o?.look, o?.frame),
+      draw: (figure, strokes, seconds, o) => figures.drawNeon(figure, strokes, seconds, o),
       ground: (x, z) => groundHeight(x, z),
     };
   }
@@ -3643,6 +3651,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * Development (the effects lab): plays `next` as the fight would show it, without changing the
      * fight: a dual's choreography, a foe's ability. Nothing waits for it.
      */
+    /** Development (the effects lab's neon figures, src/neon-lab.ts): what a dual's own look is handed (src/duo-fx/types.ts `DuoStage`). */
+    duoStage: () => duoStage(),
     preview(next: BattleEffect) {
       if (!state) return false;
       settle(); effect = next; effectTime = 0; impact = undefined; impacted = false; clawed = 0; dualStarted = undefined; worldDone = undefined;

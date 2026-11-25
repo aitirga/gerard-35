@@ -182,6 +182,54 @@ function step(context: AudioContext, out: AudioNode, at: number, pitch: number, 
   noise(context, out, at, { cutoff: scuff * pitch, to: scuff * .5 * pitch, type: 'bandpass', q, attack: .004, length, gain });
   return length;
 }
+/**
+ * Additive synthesis: a note built up from its partials, the odd harmonics of a square wave (1, 3,
+ * 5…, each at 1/k of the first), `count` of them. One is a pure sine; six are a bright, almost
+ * square chord. The newest partial comes in with an accent over the rest, so each step is heard
+ * adding itself (Serie de Fourier: one more partial a strike, `partialSound`).
+ */
+function additive(context: AudioContext, out: AudioNode, at: number, { hz, count, length, gain }: { hz: number; count: number; length: number; gain: number }) {
+  for (let i = 0; i < count; i++) {
+    const k = 2 * i + 1, newest = i === count - 1;
+    tone(context, out, at, { from: hz * k, attack: newest ? .008 : .03, hold: length * .3, length, gain: gain / k * (newest ? 1.6 : 1) });
+  }
+  return length;
+}
+/** One strike of an additive tone: `count` partials (1–6), in tune with every other (no jitter). */
+const partial = (count: number): Sound => ({ synth: (c, out, at, p) => additive(c, out, at, { hz: 220 * p, count, length: .6, gain: .15 }) + .02, gap: 0, voices: 2 });
+/**
+ * A plucked string: its first eight harmonics as a string plucked a fifth of the way along sounds them
+ * (each sin(kπ/5)/k^1.5), the high ones dying first, and the finger's click of noise on top.
+ */
+function pluck(context: AudioContext, out: AudioNode, at: number, { hz, length, gain }: { hz: number; length: number; gain: number }) {
+  for (let k = 1; k <= 8; k++) {
+    const level = Math.abs(Math.sin(k * Math.PI / 5)) / k ** 1.5;
+    if (level > .01) tone(context, out, at, { type: 'sine', from: hz * k, attack: .003, length: length / (1 + .4 * (k - 1)), gain: gain * level });
+  }
+  noise(context, out, at, { cutoff: hz * 6, to: hz * 2, type: 'bandpass', q: 2, length: .03, gain: gain * .4 });
+  return length;
+}
+/** A string plucked a whole tone higher each beat (`beat` from 1): Corriente alterna's latidos (`stringSound`). */
+const plucked = (beat: number): Sound => ({ synth: (c, out, at, p) => pluck(c, out, at, { hz: 196 * 2 ** (2 * (beat - 1) / 12) * p, length: 1.1, gain: .3 }) + .02, gap: .05, voices: 2 });
+/** The x of a Lorenz attractor (σ 10, ρ 28, β 8/3) sampled `count` times, about −1 to 1: a tremble that never repeats. */
+function lorenzX(count: number) {
+  let x = 1, y = 1, z = 1;
+  const out = new Float32Array(count), dt = .008;
+  for (let i = -300; i < count * 4; i++) {
+    const dx = 10 * (y - x), dy = x * (28 - z) - y, dz = x * y - 8 / 3 * z;
+    x += dx * dt; y += dy * dt; z += dz * dt;
+    if (i >= 0 && i % 4 === 0) out[i / 4] = x / 20;
+  }
+  return out;
+}
+/** A struck note: a bell-like sine with its inharmonic partials (2.76 and 5.4 over it) and the strike's knock. */
+function struck(context: AudioContext, out: AudioNode, at: number, { hz, length, gain }: { hz: number; length: number; gain: number }) {
+  tone(context, out, at, { from: hz, attack: .002, length, gain });
+  tone(context, out, at, { from: hz * 2.76, attack: .002, length: length * .45, gain: gain * .35 });
+  tone(context, out, at, { from: hz * 5.4, attack: .002, length: length * .18, gain: gain * .18 });
+  noise(context, out, at, { cutoff: 3000, to: 900, type: 'bandpass', q: 1.5, length: .04, gain: gain * .6 });
+  return length;
+}
 export const SOUNDS = {
   // Menus: a soft tick to move, a rising pair to confirm, a falling note to go back.
   'ui-move': { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 1320 * p, length: .045, gain: .12 }); return .05; }, jitter: 15, gap: .03, voices: 2 },
@@ -379,8 +427,101 @@ export const SOUNDS = {
   'eco-la': { src: 'sfx/eco-la.mp3', volume: .3, gap: .05, voices: 2 },
   'eco-do': { src: 'sfx/eco-do.mp3', volume: .32, gap: .05, voices: 2 },
   'eco-dacapo': { src: 'sfx/eco-dacapo.mp3', volume: .55, gap: 1, voices: 1 },
+  // Additive synthesis (Serie de Fourier): each strike one partial more over a sine, until the tone is almost square (`partialSound`).
+  'partial-1': partial(1), 'partial-2': partial(2), 'partial-3': partial(3), 'partial-4': partial(4), 'partial-5': partial(5), 'partial-6': partial(6),
+  // A string plucked a tone higher each beat (Corriente alterna, `stringSound`).
+  'string-1': plucked(1), 'string-2': plucked(2), 'string-3': plucked(3), 'string-4': plucked(4),
+  // A low hum trembling as a Lorenz attractor does (its x drives the pitch), falling an octave as it settles (Atractor extraño), and the single note it ends on.
+  'chaos-hum': { synth: (c, out, at, p) => {
+    const length = 2, curve = lorenzX(128), cents = new Float32Array(curve.length);
+    curve.forEach((x, i) => { cents[i] = x * 140; });
+    const osc = c.createOscillator(), sub = c.createOscillator(), filter = c.createBiquadFilter(), env = c.createGain();
+    osc.type = 'sawtooth'; sub.type = 'sine';
+    for (const o of [osc, sub]) {
+      o.frequency.setValueAtTime((o === sub ? 46 : 92) * p, at);
+      o.frequency.exponentialRampToValueAtTime((o === sub ? 23 : 46) * p, at + length);
+      o.detune.setValueCurveAtTime(cents, at, length * .95);
+    }
+    filter.type = 'lowpass'; filter.Q.value = 4;
+    filter.frequency.setValueAtTime(900, at); filter.frequency.exponentialRampToValueAtTime(160, at + length);
+    env.gain.setValueAtTime(0, at); env.gain.linearRampToValueAtTime(.17, at + .35); env.gain.setValueAtTime(.17, at + length * .7); env.gain.exponentialRampToValueAtTime(.0001, at + length);
+    osc.connect(filter); sub.connect(filter); filter.connect(env).connect(out);
+    for (const o of [osc, sub]) { o.start(at); o.stop(at + length + .02); }
+    osc.onended = () => env.disconnect();
+    noise(c, out, at, { cutoff: 220, to: 70, attack: .4, hold: .8, length, gain: .09 });
+    return length + .02;
+  }, gap: 1, voices: 1 },
+  struck: { synth: (c, out, at, p) => struck(c, out, at, { hz: 293.66 * p, length: 1.4, gain: .3 }) + .02, jitter: 10, gap: .2, voices: 2 },
+  // Superficie mínima: a soap film drawn (glass ringing high, beating, over a wet hiss) and bursting (a soft pop, drops flung off).
+  'film-shimmer': { synth: (c, out, at, p) => {
+    [[2093, 2099.5], [2637, 2644], [3136, 3129], [3951, 3958]].forEach(([a, b], i) => {
+      tone(c, out, at + i * .06, { from: a * p, to: a * p * 1.01, attack: .12, hold: .25, length: .9, gain: .028 });
+      tone(c, out, at + i * .06, { from: b * p, to: b * p * 1.01, attack: .12, hold: .25, length: .9, gain: .028 });
+    });
+    noise(c, out, at, { cutoff: 5800 * p, to: 7600 * p, type: 'bandpass', q: 5, attack: .2, hold: .3, length: .95, gain: .1 });
+    tone(c, out, at + .1, { from: 320 * p, to: 640 * p, attack: .1, length: .5, gain: .04 });
+    return 1.05;
+  }, jitter: 15, gap: .3, voices: 1 },
+  'film-pop': { synth: (c, out, at, p) => {
+    tone(c, out, at, { from: 760 * p, to: 190 * p, attack: .002, length: .07, gain: .38 });
+    noise(c, out, at, { cutoff: 3200, to: 900, length: .05, gain: .18 });
+    noise(c, out, at + .03, { cutoff: 4200, to: 900, length: .26, gain: .14 });
+    [.04, .08, .13].forEach((t, i) => tone(c, out, at + t, { from: (900 + i * 260) * p, to: (1700 + i * 300) * p, length: .045, gain: .05 }));
+    return .3;
+  }, jitter: 60, gap: .08, voices: 3 },
+  // Electrólisis: water splitting into bubbles (each a little rising chirp), and the gas going off, a dry crack a cloud.
+  bubbles: { synth: (c, out, at, p) => {
+    const length = 1.2;
+    for (let i = 0; i < 22; i++) {
+      const t = at + Math.random() * (length - .12), hz = (480 + Math.random() * 900) * p, span = .03 + Math.random() * .05;
+      tone(c, out, t, { from: hz, to: hz * (1.5 + Math.random() * .4), attack: .004, length: span, gain: .05 + Math.random() * .05 });
+    }
+    noise(c, out, at, { cutoff: 420, to: 260, attack: .2, hold: .6, length, gain: .08 });
+    return length;
+  }, gap: .3, voices: 1 },
+  'gas-crack': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 1800 * p, to: 6000, type: 'highpass', q: .7, length: .03, gain: .5 });
+    noise(c, out, at + .005, { cutoff: 1300 * p, to: 500, type: 'bandpass', q: 1, length: .1, gain: .28 });
+    tone(c, out, at, { from: 170 * p, to: 55 * p, attack: .002, length: .14, gain: .3 });
+    return .16;
+  }, jitter: 120, gap: .03, voices: 4 },
+  // Campana de Gauss: a ball off a peg (one tick, panned where it falls) and a whole board of them rattling down, left to right and back.
+  peg: { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 4200 * p, to: 4050 * p, attack: .001, length: .035, gain: .09 }); tone(c, out, at, { from: 6300 * p, length: .02, gain: .03 }); noise(c, out, at, { cutoff: 7000, to: 9000, type: 'highpass', length: .012, gain: .08 }); return .04; }, jitter: 300, gap: 0, voices: 16 },
+  pachinko: { synth: (c, out, at, p) => {
+    const length = 1, ticks = 48;
+    for (let i = 0; i < ticks; i++) {
+      // Thickest in the middle of the fall, as the balls bunch up; each from where on the board it hits.
+      const u = (i + Math.random()) / ticks, t = at + (u < .5 ? Math.sqrt(u / 2) : 1 - Math.sqrt((1 - u) / 2)) * (length - .06);
+      const side = c.createStereoPanner(), hz = (3600 + Math.random() * 1400) * p;
+      side.pan.value = Math.max(-1, Math.min(1, (Math.random() + Math.random() - 1) * .9));
+      side.connect(out);
+      tone(c, side, t, { type: 'triangle', from: hz, to: hz * .97, attack: .001, length: .03, gain: .07 + Math.random() * .04 });
+      noise(c, side, t, { cutoff: 7000, to: 9000, type: 'highpass', length: .01, gain: .05 });
+    }
+    return length;
+  }, gap: .3, voices: 1 },
+  // A chord held while a curve is drawn: D major, soft triangles swelling in and out.
+  'chord-swell': { synth: (c, out, at, p) => { [293.66, 369.99, 440, 587.33].forEach((hz, i) => tone(c, out, at + i * .03, { type: 'triangle', from: hz * p, attack: .4, hold: .5, length: 1.6, gain: .06 })); return 1.65; }, jitter: 8, gap: .5, voices: 1 },
+  // Arco voltaico: a capacitor charging (a thin whine climbing as it fills) and its discharge, a snap.
+  whine: { synth: (c, out, at, p) => {
+    tone(c, out, at, { from: 900 * p, to: 6200 * p, attack: .25, hold: 1.1, length: 1.6, gain: .06 });
+    tone(c, out, at, { from: 1350 * p, to: 9300 * p, attack: .3, hold: 1.05, length: 1.6, gain: .025 });
+    noise(c, out, at, { cutoff: 2000 * p, to: 9000, type: 'bandpass', q: 6, attack: .4, hold: .9, length: 1.6, gain: .05 });
+    return 1.62;
+  }, jitter: 20, gap: .5, voices: 1 },
+  snap: { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 3000, to: 9000, type: 'highpass', q: .7, length: .025, gain: .45 });
+    tone(c, out, at, { type: 'square', from: 1900 * p, to: 220 * p, attack: .001, length: .035, gain: .1 });
+    tone(c, out, at, { from: 130 * p, to: 42 * p, attack: .002, length: .26, gain: .34 });
+    noise(c, out, at + .01, { cutoff: 2600 * p, to: 800, type: 'bandpass', q: 1.2, length: .12, gain: .22 });
+    return .28;
+  }, jitter: 60, gap: .1, voices: 2 },
 } satisfies Record<string, Sound>;
 export type SoundId = keyof typeof SOUNDS;
+/** The additive tone with `count` partials (1–6, clamped): strike `count` of Serie de Fourier. */
+export const partialSound = (count: number): SoundId => `partial-${Math.max(1, Math.min(6, Math.round(count)))}` as SoundId;
+/** The plucked string of beat `beat` (1–4, clamped), a whole tone higher each: Corriente alterna's latidos. */
+export const stringSound = (beat: number): SoundId => `string-${Math.max(1, Math.min(4, Math.round(beat)))}` as SoundId;
 
 /** Each place's footstep (`step` where it says nothing); `null` walks in silence. */
 export const STEPS: Partial<Record<EnvironmentId, SoundId | null>> = {
