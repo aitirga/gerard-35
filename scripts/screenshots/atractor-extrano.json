@@ -1,0 +1,254 @@
+{
+  "title": "Matemágico · Atractor extraño",
+  "description": "docs/animas/matemagico/README.md § Atractor extraño (Aitor 2026-11-25): the pen draws the Lorenz butterfly round the foe, the others' statuses stream into it and follow the Lorenz field on the GPU, and ρ falls until it all spirals into the chest. In the fight tester against three sturdy dogs, one player leading both; Aitor wears Colorista and then Tecnópata so the shards, the bomb and the confusion are real. Every cast is aimed at the front dog. Run it with --gpu. The clocks of what is gathered are set long by hand: a clip records slower than the fight's clock runs, and a 10 s fire would be out before the shot after it.",
+  "steps": [
+    {
+      "open": "/?story=prismatico-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22prismatico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22prismatico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Afactor-comun%22%2C%22matemagico%3Arescoldo%22%2C%22matemagico%3Acombustion%22%2C%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Acardioide%22%2C%22matemagico%3Amana-1%22%2C%22matemagico%3Aatractor%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22tecnopata%3Aconfusion%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aimAt = id => document.querySelector('.battle-target[data-target=\"' + id + '\"]:not(:disabled)')?.click(); ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('polvareda')"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('descarga')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aimAt('dog-0')"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "esquirlas",
+      "delay": 600,
+      "caption": "Before: Colorista's Polvareda powdered the three dogs and Gerard's Punto eléctrico set one dog's powder as shards (real ones, not put by hand)"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes.forEach(f => { delete f.timed.empolvado; f.timed.quemado = { level: 2, left: 40, next: 2 }; if (f.timed.cristalizado) f.timed.cristalizado.left = 40; }); s.foes[1].timed.envenenado = { level: 1, left: 40, next: 4 }; })"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "press": "ArrowDown",
+      "gap": 120
+    },
+    {
+      "press": "ArrowDown",
+      "gap": 120
+    },
+    {
+      "press": "ArrowDown",
+      "gap": 120
+    },
+    {
+      "press": "ArrowDown",
+      "gap": 120
+    },
+    {
+      "press": "ArrowDown",
+      "gap": 300
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "His skills with Cálculo bought past Maná +1: Atractor extraño, 2 maná"
+    },
+    {
+      "eval": "window.skill('atractor')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "tres-fuegos",
+      "seconds": 4.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 0 && window.aimAt('dog-2')",
+      "caption": "Aimed at the front dog. All three at Quemado II, the one Punto eléctrico struck also full of shards, the third poisoned, Combustión bought: the butterfly drawn round the front dog, the embers, shards and poison of the other two stream into it, the fight slows as it falls, and it spirals into the chest. The others' looks and plates let go as their statuses rise off them; the shards come out of the target as it lands"
+    },
+    {
+      "shot": "tres-fuegos-placas",
+      "delay": 150,
+      "caption": "The front dog at Quemado IV (Combustión), with the shards and the poison; the other two clean"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes.forEach(f => { f.timed = {}; delete f.statuses; }); s.foes[2].timed = { quemado: { level: 1, left: 40, next: 2 } }; s.foes[0].timed = { empolvado: { level: 1, left: 40, next: 20 }, cegado: { level: 1, left: 40, next: 10 } }; s.foes[1].timed = { mojado: { level: 1, left: 40, next: 20 }, encogido: { level: 1, left: 40, next: 15 } }; })"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('atractor')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "reacciones",
+      "seconds": 4.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 0 && window.aimAt('dog-2')",
+      "caption": "Aimed at the front dog, burning (Quemado I). Another dog is powdered and blinded, the third wet and shrunk. Everything leaves them at once; then the powder reaches the fire: ¡Estallido!, a blast on all three and everyone burns a level more; then the water puts the target's fire out: ¡Humo!, steam where they meet"
+    },
+    {
+      "shot": "reacciones-placas",
+      "delay": 150,
+      "caption": "After: the front dog blinded (Humo) and shrunk, no fire; the two that gave keep only the Estallido's new fire, Quemado I on each"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "KeyE",
+      "gap": 900
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes.forEach(f => { f.timed = {}; delete f.statuses; }); })"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('confusion')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aimAt('dog-1')"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('bomba-remota')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aimAt('dog-0')"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "bomba-confusion",
+      "delay": 300,
+      "caption": "Before: Bip's bomb stuck on one dog, another confused, both by Aitor's turns (only their clocks are set longer by hand, so they outlast the recording, which runs slower than the fight's clock)"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { if (f.timed?.bomba) f.timed.bomba.left = 40; if (f.timed?.confusion) f.timed.confusion.left = 40; }); })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('atractor')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "record": "bomba-confusion",
+      "seconds": 4.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 0 && window.aimAt('dog-2')",
+      "caption": "Atractor on the front dog: the bomb and the confusion leave the other two as their sparks rise off them, and come to it as the butterfly falls in"
+    },
+    {
+      "shot": "bomba-confusion-placas",
+      "delay": 150,
+      "caption": "After: the front dog carries the bomb and the confusion; the other two nothing"
+    }
+  ]
+}

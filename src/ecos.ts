@@ -124,6 +124,8 @@ const MATEMAGICO: Improvement[] = [
   skillNode('matemagico', 'calculo', 'cardioide', 1, 'analisis'),
   manaNode('matemagico', 'calculo', 'cardioide'),
   gradeIII(skillNode('matemagico', 'calculo', 'integral', 3, 'mana-1')),
+  // Atractor extraño (Aitor 2026-11-25: 2 ecos, not 3), beside Integral past Maná +1.
+  gradeIII(skillNode('matemagico', 'calculo', 'atractor', 2, 'mana-1')),
   dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 'integral'),
   // Serie de Fourier: a branch off Análisis Parálisis (grade II), a strike for each thing on a foe's plate.
   skillNode('matemagico', 'calculo', 'fourier', 1, 'analisis'),

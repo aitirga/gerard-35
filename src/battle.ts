@@ -109,6 +109,9 @@ export const SKILLS = [
   // Integral impropia (Cálculo, grade III): everything the party lost, added up and given back, to everyone,
   // at once and then bit by bit on the fight's clock (`regen`), an integral that does not end.
   { id: 'integral', name: 'Integral impropia', cost: 3, side: 'party', power: 26, kind: 'heal', regen: 'sanacion', node: true, description: 'Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.', class: 'matemagico' },
+  // Atractor extraño (Cálculo, grade III): a blow of the astral, and then every status on the clock that can move (`moves` in
+  // TIMED) leaves the other foes for its target, adding up where it is already on; what meets there reacts (`gather`).
+  { id: 'atractor', name: 'Atractor extraño', cost: 2, side: 'foes', power: 16, kind: 'magic', gathers: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Los estados con reloj de los demás enemigos pasan a él: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.', class: 'matemagico' },
   { id: 'descarga', name: 'Punto eléctrico', cost: 2, side: 'foes', power: 26, kind: 'magic', element: 'electrico', node: true, description: 'Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.', class: 'matemagico' },
   // Cortocircuito: a bolt that does not jump (`short`): on someone wet, or about to let go of a move announced, the
   // current shorts in them and they lose their next turn (Shock, for sure, which keeps what they announced waiting).
@@ -818,31 +821,36 @@ export interface TimedSpec {
   levels: readonly number[];
   /** The base pulse: `flat` PV plus `share` of the carrier's PV, counted up to `cap` PV. */
   flat: number; share: number; cap: number;
+  /**
+   * It can leave its carrier for another foe (Atractor extraño, `gather`): a trait of the kind of status, never of who
+   * carries it. Not La crecida's water (the floor under each foe), a cure, Virus, a dual's own, nor the ones counted in rounds.
+   */
+  moves?: boolean;
 }
 export const TIMED: Record<TimedId, TimedSpec> = {
   // Empolvado (Colorista's powder): it hurts nobody; it waits for an element (`powder`, `POWDER_RULES`).
-  empolvado: { name: 'Empolvado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  empolvado: { name: 'Empolvado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Envenenado (water on powder): a pulse every few seconds, and every blow on its carrier lands harder while it lasts.
-  envenenado: { name: 'Envenenado', seconds: 20, every: 4, levels: [1, 3, 5], flat: 2, share: .02, cap: 100 },
+  envenenado: { name: 'Envenenado', seconds: 20, every: 4, levels: [1, 3, 5], flat: 2, share: .02, cap: 100, moves: true },
   // Cristalizado (electricity on powder): it hurts nobody by itself; its level is how deep the shards are (`POWDER_RULES.shard` more a blow for each).
-  cristalizado: { name: 'Cristalizado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  cristalizado: { name: 'Cristalizado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Its fourth level is Combustión (`COMBUSTION`): only reached while the passive is in the fight (`fireTop`).
   // Its levels do not climb in a line (Aitor 2026-11-22): each step bigger than the last (×1, ×3, ×6, ×11), so feeding a fire
   // pays more the higher it already is. II stays ×3 (more than twice I, `inflict`'s rule); El Plato and El Campeón got PV for III.
-  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 6, 11], flat: 1, share: .01, cap: 100 },
+  quemado: { name: 'Quemado', element: 'fuego', seconds: 10, every: 2, levels: [1, 3, 6, 11], flat: 1, share: .01, cap: 100, moves: true },
   // Cegado (Humo, below): it hurts nobody; while it lasts the foe's physical blows often miss (`CEGADO`, `misses`). It has no
   // levels and never adds up (Aitor 2026-11-23): laid again, its clock only starts over (`blind`).
-  cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0 },
+  cegado: { name: 'Cegado', element: 'agua', seconds: 10, every: 10, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Sanación (Rayo de sanación): Quemado's other side, a pulse of PV back every few seconds.
   // A share of the carrier's PV, as every cure is (`HEAL`, src/stats.ts): a quarter of them over its 15 seconds at level I, and
   // each level up more than the last (×1, ×2.5, ×4: Aitor 2026-11-22, the cure was too thin).
   sanacion: { name: 'Sanación', heal: true, seconds: 15, every: 3, levels: [1, 2.5, 4], flat: 0, share: .05, cap: 1000 },
   // Confusión (Tecnópata): it hurts nobody; while it lasts the foe's blows go to its own (`enemyAct`).
-  confusion: { name: 'Confusión', seconds: 30, every: 30, levels: [], flat: 0, share: 0, cap: 0 },
+  confusion: { name: 'Confusión', seconds: 30, every: 30, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Encogido (Rayo encogedor): smaller, and a quarter of its guard gone while it lasts.
-  encogido: { name: 'Encogido', seconds: 15, every: 15, levels: [], flat: 0, share: 0, cap: 0, cut: { defensa: .25 } },
+  encogido: { name: 'Encogido', seconds: 15, every: 15, levels: [], flat: 0, share: 0, cap: 0, cut: { defensa: .25 }, moves: true },
   // Mojado (Vasos comunicantes, Capilaridad): it hurts nobody; it waits for electricity (Conducción) or fire (Vapor).
-  mojado: { name: 'Mojado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  mojado: { name: 'Mojado', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Volcán (the dúo mayor Vulcano): every beat a bomb of lava on its carrier, and its fire a level up (`runClock`).
   volcan: { name: 'Volcán', element: 'fuego', seconds: 20, every: 5, levels: [1], flat: 6, share: 0, cap: 0 },
   // The newer duals (`DUALS`). Marea: the cells joined, what rises in one rises in all (`raiseWater`). Fulgurita: the shards one
@@ -858,7 +866,7 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Bomba (Bomba remota, BOMBA): it never pulses; it counts how long it has been on (`Timed.age`) and goes off when its time is up (`runClock`).
-  bomba: { name: 'Bomba', seconds: 12, every: 12, levels: [], flat: 0, share: 0, cap: 0 },
+  bomba: { name: 'Bomba', seconds: 12, every: 12, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // La crecida (Freática, `CRECIDA`). Agua: its level is the marks (1–3), its clock the top mark's 20 s (`runWater` drains it).
   // Corriente: a bolt left in the water, Quemado's base pulse at ×1, ×2, ×3 with the water's mark. Hundido: while the water
   // stands at the third mark, 2 % of all the foe's PV every 2 s (the one pure share: no cap). Congelado (Bajo cero): the water
@@ -1265,6 +1273,8 @@ function blind(c: Combatant, seconds: number = TIMED.cegado.seconds, until?: num
   if (until !== undefined && smoke) return;
   c.timed = { ...c.timed, cegado: { level: 1, left: Math.max(seconds, smoke?.left ?? 0), next: TIMED.cegado.every, ...until !== undefined ? { until } : {} } };
 }
+/** What Atractor extraño brought to its target from one other foe (`BattleEffect.gathered`). */
+export interface Gathered { from: string; ids: TimedId[]; reactions: { id: ElementReaction; hits?: { target: string; amount: number }[] }[] }
 /** A timed status on someone: its level (1 up), seconds left and seconds to its next pulse. */
 export interface Timed {
   level: number; left: number; next: number;
@@ -1964,6 +1974,11 @@ export interface BattleEffect {
   bits?: { raised?: number; took?: number; broke?: boolean; mended?: number };
   /** Virus atómico: what spread from an infected foe to the others in this action. */
   spread?: { from: string; to: string[]; statuses: string[] }[];
+  /**
+   * Atractor extraño: what came to its target from each other foe (`from`), in the order it came, and what met there and
+   * reacted (an Estallido's PV on each foe; `water`, the mark Vapor took off La crecida's).
+   */
+  gathered?: Gathered[];
   /** A cure on the whole party (Integral): what each one got back. */
   cures?: { target: string; amount: number }[];
   /** Rayo de sanación: the cure over time it left on its target, at this level. */
@@ -3347,6 +3362,84 @@ function spread(state: BattleState, effect: BattleEffect) {
     state.message += ` El virus contagia: ${names.join(', ')}.`;
   }
 }
+/** How high a status gathered by Atractor extraño adds up to: fire's top (IV with Combustión), the shards' deepest, or its own last level. */
+const gatherTop = (state: BattleState, id: TimedId) => id === 'quemado' ? fireTop(state) : id === 'cristalizado' ? POWDER_RULES.shards : TIMED[id].levels.length || 1;
+/** What can leave `c` for Atractor extraño, in TIMED's order: its `moves` statuses, but not the Mojado of the water standing under it (La crecida's). */
+export const movable = (c: Combatant) => TIMED_IDS.filter(id => TIMED[id].moves && !!c.timed?.[id] && !(id === 'mojado' && c.timed.agua));
+/**
+ * Atractor extraño (docs/animas/matemagico/README.md § Atractor extraño): every status on the clock that can move (`moves`)
+ * leaves every other foe standing at once, and then reaches `target` one after another, in the plate's order. One it already
+ * has adds up: the levels to its top (`gatherTop`), the longer clock; two bombs add their charge up to `BOMBA.top` and keep the
+ * clock of the one closer to going off. What meets there reacts as an element landing would, with no blow of its own: water on
+ * a fire is Humo, fire on water Vapor, fire and powder Estallido, water and powder Envenenado. Since everything has left before
+ * anything arrives, the order of the plate never changes what the others are left with: the fire an Estallido lights on them
+ * stays on them, the same on each. A fire does not catch on an onion's wet layers: it stays where it was. If the blow felled the
+ * target, nothing comes; if a reaction fells it, what had not reached it yet is lost with it. What came was not put on anyone,
+ * so Virus never spreads it.
+ */
+function gather(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
+  if (target.hp <= 0 || target.part) return;
+  // Everything leaves first, off everyone.
+  const leaving = state.foes.filter(f => f !== target && f.hp > 0 && !f.part).map(from => ({
+    from,
+    on: movable(from).filter(id => !(id === 'quemado' && target.layers)).map(id => { const on = from.timed![id]!; delete from.timed![id]; return [id, on] as const; }),
+  })).filter(l => l.on.length);
+  if (!leaving.length) return;
+  const came: Gathered[] = leaving.map(({ from, on }) => {
+    const entry: Gathered = { from: from.id, ids: on.map(([id]) => id), reactions: [] };
+    for (const [id, status] of on) {
+      // An Estallido on the way can fell it: the rest goes down with it.
+      if (target.hp <= 0) break;
+      const turned = arrive(state, actor, target, id, status, effect);
+      if (turned) entry.reactions.push(turned);
+    }
+    return entry;
+  });
+  effect.gathered = came;
+  const names = [...new Set(came.flatMap(c => c.ids))].filter(id => target.timed?.[id]).map(id => `${TIMED[id].name}${TIMED[id].levels.length && target.timed![id]!.level > 1 ? ` ${roman(target.timed![id]!.level)}` : ''}`);
+  state.message += names.length ? ` Los estados de los demás caen en ${target.name}: ${names.join(', ')}.` : ` Lo de los demás cae en ${target.name}.`;
+  if (came.some(c => c.reactions.length)) ground(state, actor, effect);
+  // Nothing of it was put on anyone: Virus does not spread what came, nor what it set off.
+  for (const f of state.foes) if (f.virusSeen) f.virusSeen = seen(f);
+}
+/**
+ * One status `on`, of kind `id`, reaches `target` (Atractor extraño): it reacts with what it finds, as an element landing does
+ * (powder first), or adds up to the one already there. Returns the reaction, if any. Whatever a reaction does besides (the
+ * water's mark Vapor took, a passive, a definitiva woken) goes on `effect`.
+ */
+function arrive(state: BattleState, actor: Combatant, target: Combatant, id: TimedId, on: Timed, effect: BattleEffect): Gathered['reactions'][number] | undefined {
+  const t = target.timed ??= {};
+  const turn = (element: Element) => {
+    const scratch: BattleEffect = { kind: 'skill', actor: actor.id };
+    powder(state, actor, target, element, scratch);
+    carry(scratch, effect);
+    return scratch.reaction && { id: scratch.reaction.id, ...scratch.reaction.hits ? { hits: scratch.reaction.hits } : {} };
+  };
+  // Powder first: fire on it explodes, water on it is poison (and powder arriving finds a fire or water the same way).
+  if ((id === 'quemado' || id === 'mojado') && t.empolvado) return turn(id === 'quemado' ? 'fuego' : 'agua');
+  if (id === 'empolvado' && (t.quemado || t.mojado)) { t.empolvado = on; return turn(t.quemado ? 'fuego' : 'agua'); }
+  if (id === 'mojado' && t.quemado) { smoke(target); state.message += ` ¡El agua apaga el fuego! ¡${TIMED.cegado.name}!`; return { id: 'humo' }; }
+  if (id === 'quemado' && t.mojado) { const scratch: BattleEffect = { kind: 'skill', actor: actor.id }; vapour(state, target, scratch); carry(scratch, effect); return { id: 'vapor' }; }
+  // The water standing under it (La crecida) keeps its own Mojado, as long as the water: what comes runs into it.
+  if (id === 'mojado' && t.agua && t.mojado) return undefined;
+  const mine = t[id];
+  if (!mine) { t[id] = { ...on }; return undefined; }
+  if (id === 'bomba') {
+    const power = Math.min(BOMBA.top, bombPower(mine.age ?? 0) + bombPower(on.age ?? 0));
+    t.bomba = { ...mine, left: Math.min(mine.left, on.left), age: Math.max(0, (power - BOMBA.base) / BOMBA.perSecond) };
+    return undefined;
+  }
+  const level = Math.max(mine.level, on.level, Math.min(gatherTop(state, id), mine.level + on.level));
+  const until = mine.until !== undefined && on.until !== undefined ? Math.max(mine.until, on.until) : undefined;
+  t[id] = { level, left: Math.max(mine.left, on.left), next: mine.next, ...until !== undefined ? { until } : {} };
+  return undefined;
+}
+/** What a reaction worked out on a scratch effect did besides itself, onto the action's own `effect`. */
+function carry(scratch: BattleEffect, effect: BattleEffect) {
+  if (scratch.water) effect.water = [...effect.water ?? [], ...scratch.water];
+  for (const p of scratch.passives ?? []) if (!effect.passives?.some(q => q.id === p.id)) effect.passives = [...effect.passives ?? [], p];
+  if (scratch.awoken) effect.awoken = scratch.awoken;
+}
 /** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
 const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
 /** How high fire can climb in this fight: Combustión (IV) while its passive is in it, Quemado III otherwise. */
@@ -4275,6 +4368,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.afflicted = { id: 'virus', level: 1 };
         state.message += ' ¡Virus! Lo que reciba se contagia a los demás.';
       }
+      // Atractor extraño: the others' statuses on the clock come to it.
+      if (action === 'skill' && ability && 'gathers' in ability) gather(state, actor, target, effect);
     }
   }
   if (skill === 'punado' && target && state.foes.includes(target) && target.hp > 0 && effect.amount && !effect.annulled) {

@@ -59,7 +59,7 @@ them (Nuria → Papagato). Player-facing text says *ánima* for both, never *cla
 
 | Ánima | Origin | Colour | Stats (wearer) | Skills | Status |
 | --- | --- | --- | --- | --- | --- |
-| [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari, Análisis Parálisis, Ángulo exacto; grado III with its figures (Cardioide, Pirámide ígnea, Cubo acuático, Integral impropia, Punto eléctrico); Cortocircuito and ∂Q/∂t Condensador | Playable |
+| [**Matemágico**](matemagico/README.md) | Chapter 1's palace: Bernat begs Gerard to think | `#f3cf78` gold | Magia +1, Espíritu +1 | Foc Binari, Análisis Parálisis, Ángulo exacto; grado III with its figures (Cardioide, Pirámide ígnea, Cubo acuático, Integral impropia, Punto eléctrico); Cortocircuito and ∂Q/∂t Condensador; Atractor extraño | Playable |
 | [**Noísta**](noista/README.md) | Was chapter 1's palace: Gerard shouts "¡NO!" | `#e2483d` red | Magia +2, Espíritu +2, Defensa −1 | No-ta | Hidden: retired (2026-11-01), replaced by Matemágico |
 | [**Papagato**](papagato/README.md) | Nuria's mission (Cardedeu), `docs/quests/nuria.md` | `#f0954a` orange | Fuerza +1, Crítico +10 %, Espíritu −1 (built 2026-11-20, a first guess) | Haru and Yuki: physical blows, Sangrado and golpes críticos | **Playable whole** (built 2026-11-21), redesigned 2026-11-20: the golpe crítico, cuts that pile up, liquid blood, Ronroneo on one ally; seven levels, with *Olor a sangre* at 5 (Crítico +20 % on whoever bleeds, sure on a wound of five), *Acecho* at 6 and *Cacería* at 7; and *Siete vidas*, the second definitiva in the game |
 | [**Tecnópata**](tecnopata/README.md) | Aitor's own, from chapter 2's first morning (was the placeholder Físico) | `#4fe0ff` cyan | — | — | Designed whole and built (2026-11-21): Bomba remota (a bomb that grows with time on its clock) and Escolta (Bip in front of an ally), its stats and Enjambre; tree and grade III built |
@@ -150,11 +150,11 @@ game; 20 from the friends once all five missions are done).
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 34 (four dúos mayores at 3, Combustión and Integral impropia at 3, Serie de Fourier at 1), and 2 for the definitiva |
+| Matemágico's tree | 36 (four dúos mayores at 3, Combustión and Integral impropia at 3, Atractor extraño at 2, Serie de Fourier at 1), and 2 for the definitiva |
 | Tecnópata's tree | 27 (three dúos mayores at 3, Escudo de bits at 3, Reinicio and Virus atómico at 2), and 2 for the definitiva |
 | Dadaísta | 1 for maná, 1 for Otra vez, 2 for the definitiva |
 | Each other shared ánima | 1 for maná, 2 for the definitiva |
-| All of it | 79 (75 while two definitivas sleep) |
+| All of it | 81 (77 while two definitivas sleep) |
 
 So at the end the party holds most of it, but not all, and re-does the split before a hard fight.
 
@@ -174,7 +174,8 @@ So at the end the party holds most of it, but not all, and re-does the split bef
   three whole: deep in one or wide in two is the choice.
 - **Grade III** (Aitor 2026-11-20; in the sky once the castle's first boss has fallen, § Growth opens
   with the castle): Fuego adds the passive *Combustión*, fire's fourth level (3 ecos, § Combustión), and past it the
-  node of the dúo mayor *Vulcano* (3, § Dúos mayores); Cálculo *Integral impropia* (3; a cure for everyone, then Sanación);
+  node of the dúo mayor *Vulcano* (3, § Dúos mayores); Cálculo *Integral impropia* (3; a cure for everyone, then Sanación)
+  and beside it *Atractor extraño* (2; the others' statuses on the clock gathered on one foe, § Statuses that move);
   all built. Agua *Punto de congelación* and Eléctrico *Resonancia* are designed, waiting for the
   freezing rule. [matemagico/README.md](matemagico/README.md) § Grade III.
 
@@ -379,7 +380,7 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
 | Improvement | Ánima | Ecos | What it does |
 | --- | --- | --- | --- |
 | **A tree's node** | Matemágico, Tecnópata | 1 | An element for Atacar, a skill, a passive or Maná +1 (§ The jar) |
-| **Grade III** | Matemágico, Tecnópata | 3 or 2 | 3: Combustión, Integral impropia, Escudo de bits; 2: Reinicio, Virus atómico. What hangs past them (Redundancia, Rayo encogedor) is 1 |
+| **Grade III** | Matemágico, Tecnópata | 3 or 2 | 3: Combustión, Integral impropia, Escudo de bits; 2: Reinicio, Virus atómico, Atractor extraño. What hangs past them (Redundancia, Rayo encogedor) is 1 |
 | **Dúo mayor** | Matemágico, Tecnópata | 3 | Lets the dual exist (§ Dúos mayores) |
 | **Maná +1** | Each | 1 | Its pool goes up by one (`manaMax`, for whoever wears it) |
 | **Otra vez** | Dadaísta | 1 | Agitar twice a fight |
@@ -408,7 +409,7 @@ follow it: the own ánimas' constellations at the jar show and sell more nodes, 
 | Stage | Opens when | Constellations (own ánimas) | Levels (shared ánimas) | Also |
 | --- | --- | --- | --- | --- |
 | 1 | From the start | Grades I and II: every node but grade III | Up to level 4 | Two ánimas each |
-| 2 | The castle's first great boss is beaten (Aurelià) | **Grade III**: Combustión, Integral impropia, Reinicio, Virus atómico, Escudo de bits, and what hangs from them (Redundancia, the dúo mayor Vulcano) | Up to level 6 | **A slot for one more ánima: three each, the most in a fight at once.** The dúos mayores stand in the sky as a «?» |
+| 2 | The castle's first great boss is beaten (Aurelià) | **Grade III**: Combustión, Integral impropia, Atractor extraño, Reinicio, Virus atómico, Escudo de bits, and what hangs from them (Redundancia, the dúo mayor Vulcano) | Up to level 6 | **A slot for one more ánima: three each, the most in a fight at once.** The dúos mayores stand in the sky as a «?» |
 | 3 | The second boss is beaten (el Equipo de dirección) | **The definitivas** wake | Up to the top (7) | — |
 
 - **One number**: `growthStage` in `src/castle.ts` (from the flags `aurelia` and `direccion`), and
@@ -620,7 +621,7 @@ comes into that same sky, never as a page or a constellation opened on its own. 
 
 - **Everything open at once** on the 1600 × 900 sheet: Gerard's tree on the left, Aitor's on the
   right (`SKY`: where each core sits and which way each line grows, moved 2026-11-21 so seven dúos mayores each have a gap of their own, `BOWED_DOWN` turning an arc that would cross a name; `RINGS` a little tighter than
-  the old unfolded tree), and each shared ánima a small constellation scattered round and between
+  the old unfolded tree; a node that branches off the same one as another, as Atractor extraño beside Integral impropia past Maná +1, shares that one's ring `BRANCH` degrees to one side of the line), and each shared ánima a small constellation scattered round and between
   them, never a grid: its jar nodes one way (`nodes`), **the skills it has learned fighting** the
   other (`skills`) as small stars of its colour, chained faintly from the core (by level, never
   bought, a die's faces not counted; not pointable, their names come out when the constellation is
@@ -1090,6 +1091,21 @@ cuerdas.)
   crack, three or four splinters thrown out, and *Esquirlas +4* (then *+8*, *+12*…) beside the
   number. Its icon on
   the plate, a splinter, with the 20 s ring.
+
+### Statuses that move (Atractor extraño)
+
+A status on the clock can carry one more trait, `moves` (`TIMED` in `src/battle.ts`): it can leave its carrier
+for another foe. Only Matemágico's *Atractor extraño* moves them (`matemagico/README.md` § Atractor extraño): the
+other foes' moving statuses all leave them at once and reach its target one after another (so the plate's
+order never changes what the others are left with), adding up where it already has one (levels to their top,
+the longer clock; two bombs, their charge to its top and the sooner clock), and what meets there reacts
+as an element landing would (Humo, Vapor, Estallido, Envenenado). By kind, never by foe:
+
+| Moves | Stays |
+| --- | --- |
+| Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba (and Gas, once Electrólisis brings it) | La crecida's (Agua, Corriente, Hundido, Congelado, and the Mojado of water standing under a foe); the cures (Sanación); Virus; the duals' own (Volcán, Marea, Fulgurita, Metralla, Idea fija, Seiche, Staccato); everything counted in rounds (Sangrado, Mareo, Llorera) |
+
+What moves was not put on anyone: Virus never spreads it.
 
 ### Cortina de polvo (the powder screen)
 

@@ -276,6 +276,9 @@ applied no: it is now an active skill, § Virus atómico and Escudo de bits). Nu
   afterwards (a new one, a level up, one lit again; stacks of Sangrado too) lands on every other foe
   standing, at its level and with its time, carried by a stream of tiny Bips: *¡Contagio!* over each.
   What it carried before stays its own; the virus itself never spreads; Reinicio starts it over.
+  Matemágico's *Atractor extraño* (2026-11-25) gathers the others' statuses on one foe: what comes to an
+  infected one that way was not put on it and does not spread, and Virus itself never moves, so the two
+  never loop (`../matemagico/README.md` § Atractor extraño).
 - **Escudo de bits** (Aitor: *usa las animaciones de escudo con partículas; los ataques se dirigen
   ahí y nos protegen un porcentaje mientras dure o se rompa*; 2026-11-21: *más como un escudo
   redondeado, una semiesfera, y que los ataques la golpeen a ella; que tenga una vida y lo pare entero,

@@ -1,12 +1,13 @@
 import * as pc from 'playcanvas';
-import { CAST_LAUNCH, clamp01, smooth } from './battle-motion';
+import { ATRACTOR, CAST_LAUNCH, FIGURES, atractorLeave, clamp01, smooth } from './battle-motion';
 import type { Effects } from './effects';
-import type { GpuEmitter, GpuKind } from './fight-particles';
+import { lorenzPoints, type GpuEmitter, type GpuKind, type GpuLaw } from './fight-particles';
 import { AGUA_KINDS } from './freatica-fx';
 import { ensureFluidKinds } from './fluid-fx';
 import { SPELL_KINDS } from './math-cast';
 import { dft, epicycles, GOLD, meanOf, silhouette, traced, type P2 } from './fourier';
 import { writeSurface } from './surface-samples';
+import { POWDER_COLOURS } from './powder-fx';
 
 /**
  * The figures Matemágico draws (docs/animas/matemagico/README.md § How each skill looks, Aitor's notes
@@ -23,6 +24,9 @@ import { writeSurface } from './surface-samples';
  *   between the party, and green light jetting from both its ends to each of them.
  * - **Punto eléctrico** (`descarga`): a point of charge in front of him, which rises, crackling,
  *   and falls on its foe as lightning: several jagged, branching strikes and arcs that run on.
+ * - **Atractor extraño** (`atractor`): the pen draws the Lorenz butterfly round the foe; the other foes'
+ *   statuses rise off them in their own looks and stream into it, where the GPU makes every mote follow the
+ *   Lorenz field; then ρ falls below one and the whole of it spirals into the foe's chest.
  *
  * Strokes and edges are tubes of light (meshes, revealed a stretch at a time); everything that is
  * particles is on the GPU fight engine. Runs on the fight's clock (`update` with the fight's
@@ -118,7 +122,72 @@ export const FIGURE_KINDS = {
     shape: 'streak', drag: 2.4, gravity: 0, curl: .3, response: .2, size: [.014, .005], sizeJitter: .4, stretch: .05,
     colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [3.2, 2, .8], middle: .35, fadeIn: .02, fadeOut: .45, additive: 1, flicker: .2, core: .6,
   },
+  // Atractor extraño: what the Lorenz field carries (`law`, src/fight-particles.ts). Nothing pulls them but the law: no
+  // weight, no drag, no turbulence. Gold for his own motes and threads; each status that comes keeps its own look. The field
+  // packs thousands of them onto one thin ribbon, so they barely add light (`additive`): summed, they would all burn white.
+  'atractor-mota': {
+    shape: 'glow', size: [.026, .018], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, colours: ['#ffdf94', '#f3cf78', '#c98a2c'], intensity: [1.05, .9, .75], middle: .08,
+    fadeIn: .04, fadeOut: .05, additive: .25, opacity: .8, core: 0,
+  },
+  'atractor-hilo': {
+    shape: 'strand', size: [.007, .004], gravity: 0, drag: 0, curl: 0, follow: 26, colours: ['#fff4d6', '#f3cf78', '#b8792a'], intensity: [1.6, 1.3, 1], middle: .4, fadeIn: .06, fadeOut: .08, additive: .6, core: .2,
+  },
+  'atractor-brasa': {
+    shape: 'spark', size: [.018, .01], stretch: .03, gravity: 0, drag: 0, curl: 0, colours: ['#ffc070', '#ff8a2e', '#c2410c'], intensity: [1.3, 1.15, .9], middle: .3, fadeIn: .03, fadeOut: .06, flicker: .3, additive: .35, core: .1,
+  },
+  'atractor-gota': {
+    shape: 'glow', glass: .7, size: [.026, .02], sizeJitter: .4, gravity: 0, drag: 0, curl: 0, colours: ['#e2fbff', '#8fe4ff', '#45c2e6'], intensity: [1.1, 1, .85], middle: .3,
+    fadeIn: .04, fadeOut: .06, additive: .65, core: 0,
+  },
+  'atractor-polvo': {
+    shape: 'dot', size: [.02, .016], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.2, 1.1, 1], fadeIn: .04, fadeOut: .08, additive: .15, opacity: .95, core: 0,
+  },
+  'atractor-esquirla': {
+    shape: 'shard', size: [.03, .02], stretch: .02, spin: 420, gravity: 0, drag: 0, curl: 0, colours: ['#e4fdff', '#7fe6ff', '#2fb8cc'], intensity: [1.05, .9, .7], middle: .3, fadeIn: .03, fadeOut: .06, flicker: .4, additive: .6, core: .1,
+  },
+  'atractor-humo': {
+    shape: 'glow', size: [.05, .04], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, blur: .8, colours: ['#eef0f3', '#c7ccd4', '#8d939c'], intensity: [1, .9, .75], middle: .4, fadeIn: .08, fadeOut: .08, additive: .1, opacity: .6, core: 0,
+  },
+  'atractor-chispa': {
+    shape: 'spark', size: [.014, .008], stretch: .04, gravity: 0, drag: 0, curl: 0, colours: ['#fff6c8', '#fff09a', '#ffd84a'], intensity: [1.6, 1.4, 1.1], middle: .3, fadeIn: .02, fadeOut: .06, flicker: .5, additive: .4, core: .1,
+  },
+  // The collapse: the same motes laid along the wire as it spirals in, brighter, so the spiral itself burns gold.
+  'atractor-mota-viva': {
+    shape: 'glow', size: [.034, .02], sizeJitter: .4, gravity: 0, drag: 0, curl: 0, colours: ['#ffe4a0', '#f3cf78', '#d99a3a'], intensity: [1.5, 1.3, 1.05], middle: .1,
+    fadeIn: .02, fadeOut: .04, additive: .45, opacity: .9, core: .1,
+  },
+  // A status on its way to the attractor (not yet the law's): it flies straight and goes out as it arrives.
+  'atractor-estela': {
+    shape: 'streak', size: [.016, .01], sizeJitter: .4, stretch: .03, aspect: .3, gravity: 0, drag: 0, curl: .1, colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [2.6, 2, 1.2], middle: .3, fadeIn: .05, fadeOut: .25, additive: 1, core: .4,
+  },
+  // Fire and water meeting in it: a puff of steam.
+  // A soft glow rather than lit smoke: smoke takes the street's light, and on the pink street it bloomed magenta.
+  'atractor-vapor': {
+    shape: 'glow', size: [.07, .22], sizeJitter: .5, gravity: -1.2, drag: 1.4, curl: .5, response: .4, blur: [.6, 1.2], colours: ['#f4f7f8', '#dfe6ea', '#b4bec6'], intensity: [.8, .7, .55], middle: .3,
+    fadeIn: .05, fadeOut: .6, additive: 0, opacity: .4, core: 0,
+  },
+  // The collapse's flash: stars of white and gold thrown out of the foe's chest.
+  'atractor-destello': {
+    shape: 'star', size: [.05, .02], sizeJitter: .5, gravity: 0, drag: 2.4, colours: ['#ffffff', '#fff0c0', '#f3cf78'], intensity: [4.4, 3.2, 1.6], middle: .3, fadeOut: .5,
+  },
 } satisfies Record<string, GpuKind>;
+/**
+ * Atractor extraño: how each status that comes looks on its way and in the field: its kind and its colour (the plate's, src/style.css).
+ * Gold for whatever has no look of its own.
+ */
+const GATHER_LOOKS: Record<string, { kind: keyof typeof FIGURE_KINDS; colour: string | readonly string[] }> = {
+  quemado: { kind: 'atractor-brasa', colour: '#ff9a3f' },
+  mojado: { kind: 'atractor-gota', colour: '#8fd8ff' },
+  // Colorista's dry powder, its warmer and greener grains only: in the gold field its dusty reds would read as pink.
+  empolvado: { kind: 'atractor-polvo', colour: [POWDER_COLOURS[1], POWDER_COLOURS[2], POWDER_COLOURS[3], '#d9b48d'] },
+  envenenado: { kind: 'atractor-mota', colour: '#7fd45a' },
+  // Cyan-teal, not blue: over the warm streets a pale blue blends towards lavender, and violet is possession's.
+  cristalizado: { kind: 'atractor-esquirla', colour: '#7fe6ff' },
+  cegado: { kind: 'atractor-humo', colour: '#d6dae0' },
+  confusion: { kind: 'atractor-mota', colour: '#4fe0ff' },
+  encogido: { kind: 'atractor-mota', colour: '#9fe8ff' },
+  bomba: { kind: 'atractor-chispa', colour: '#fff2a8' },
+};
 /** Freática's water (src/freatica-fx.ts), for the cube: its drops and its bubbles. */
 const WATER_KINDS = { 'agua-gota': AGUA_KINDS['agua-gota'], 'agua-burbuja': AGUA_KINDS['agua-burbuja'] };
 
@@ -129,6 +198,8 @@ const len = (a: V3) => Math.hypot(a.x, a.y, a.z);
 const norm = (a: V3): V3 => { const d = len(a) || 1; return { x: a.x / d, y: a.y / d, z: a.z / d }; };
 const cross = (a: V3, b: V3): V3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 const UP: V3 = { x: 0, y: 1, z: 0 };
+/** A scratch point for `world`, which runs many times a frame while a figure is drawn. */
+const WORLD = new pc.Vec3();
 const easeIn = (k: number) => { k = clamp01(k); return k * k; };
 const easeOut = (k: number) => 1 - (1 - clamp01(k)) ** 3;
 const easeBack = (k: number) => { k = clamp01(k) - 1; return 1 + 2.2 * k * k * k + 1.2 * k * k; };
@@ -358,7 +429,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       /** A mesh of its own with its own material (a pyramid's faces, a cube's water). */
       own(mesh: pc.Mesh | undefined, material: pc.Material) { if (mesh) meshes.push(mesh); materials.push(material); },
       /** Where a point of its body is in the world. */
-      world(p: V3): V3 { const w = body.getWorldTransform().transformPoint(new pc.Vec3(p.x, p.y, p.z)); return { x: w.x, y: w.y, z: w.z }; },
+      world(p: V3): V3 { const w = body.getWorldTransform().transformPoint(WORLD.set(p.x, p.y, p.z), WORLD); return { x: w.x, y: w.y, z: w.z }; },
       destroy() { if (dead) return; dead = true; live.delete(self); root.destroy(); meshes.forEach(m => m.destroy()); materials.forEach(m => m.destroy()); },
       get dead() { return dead; },
     };
@@ -1104,7 +1175,130 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     };
   }
 
+  // ——— Atractor extraño ———
+  /**
+   * The pen of light leaves his circle for `chest` and draws the Lorenz butterfly round the foe (σ 10, ρ 28, β 8/3, worked
+   * out once here by RK4: `lorenzPoints`), a gold wire of a dozen loops standing in the picture's plane and turning slowly. Gold
+   * motes are left along it as it is drawn, and every one follows the Lorenz field on the GPU (`law`), so the lobes weave
+   * themselves. Meanwhile what each other foe carries (`sources`) rises off it in its own look and flies across to a lobe,
+   * where it bursts into thousands more that the field takes: embers, drops, powder, shards, grey smoke, sparks. Then ρ falls
+   * from 28 to 0.5 and the field's only rest is its origin, which slides into the chest: the whole butterfly spirals into it,
+   * the wire shrinking with it, and it ends in a flash of white and gold as the blow lands (FIGURES.atractor.contact).
+   * `steam`: fire and water meet in it (Humo, Vapor), a puff as the streams come together.
+   */
+  function atractor(o: { centre: V3; view: V3; chest: V3; feet: V3; sources: readonly { chest: V3; statuses: readonly string[] }[]; steam?: boolean; size?: number }) {
+    const g = gpu();
+    // The figure's own seconds: it starts at CAST_LAUNCH, so the blow lands at CONTACT.
+    const CONTACT = FIGURES.atractor.contact - CAST_LAUNCH, { draw: DRAW, arrive: ARRIVE, fall: FALL } = ATRACTOR, FALL_AT = CONTACT - FALL, SPEED = .8;
+    const scale = .062 * (o.size ?? 1), RHO = 28, MID = RHO - 1;
+    // How long a status takes to pour into its lobe, and how far round the orbit it runs meanwhile (of its 1 200 points).
+    const FLOOD = .38, FLOOD_POINTS = 360;
+    // It stands in the picture's plane (its x the screen's right, its y the screen's up), so the butterfly reads whole from
+    // the fight's high camera, and turns slowly about its own up: a little either way of facing it.
+    const { right: sr, up: su, facing: sf } = screen(o.view);
+    const axes = (t: number) => { const a = -.3 + t * .3, c = Math.cos(a), s = Math.sin(a); return { right: add(mix(ORIGIN, sr, c), sf, s), up: su }; };
+    // Where its middle stands: round the chest, but its lowest loops (Lorenz z ≈ 5) clear of the floor.
+    const mid0: V3 = { x: o.chest.x, y: Math.max(o.chest.y + .15, o.feet.y + .15 + su.y * (MID - 5) * scale), z: o.chest.z };
+    // The collapse: ρ eased down, its rest (its origin) sliding from the middle to the chest, the wire shrinking with it.
+    const fallK = (t: number) => smooth((t - FALL_AT) / FALL);
+    const rho = (t: number) => RHO + (.5 - RHO) * fallK(t);
+    const middle = (t: number) => mix(mid0, o.chest, fallK(t));
+    const origin = (t: number) => add(middle(t), su, -Math.max(0, rho(t) - 1) * scale);
+    const quat = (t: number) => frameRotation({ at: o.chest, ...axes(t) });
+    const law: GpuLaw | undefined = g?.law('lorenz', { at: origin(0), rotation: quat(0), scale, grip: 30, maxSpeed: 9, params: [10, RHO, 8 / 3, SPEED] });
+    const wire = neonFigure('Atractor extraño', FIGURE_LOOKS.gold, { at: origin(0), ...axes(0) });
+    // A dozen loops or so: enough to show how it winds, few enough that the wire stays a wire. Settled long enough that this
+    // stretch of the orbit goes round both wings about evenly (seven crossings, 56 % on one side).
+    const points = lorenzPoints(1200, { scale: 1, step: .01, settle: 1200 }).map(p => ({ x: p.x * scale, y: p.y * scale, z: p.z * scale }));
+    const stroke = wire.stroke(points, { radius: .009 });
+    // Particles live until the flash and not a breath more: once the field is gone they would fly off as they were.
+    const until = (t: number, k = 1) => { const left = Math.max(.05, CONTACT - t + .02); return [left * .9 * k, left * k] as const; };
+    const gold = ['#fff4d6', '#f3cf78', '#e9b44c'];
+    let t = 0, laid = 0, fallLaid = 0;
+    wire.animate(CONTACT + .12, now => {
+      t = now;
+      const a = axes(now), k = 1 - fallK(now) * .98, m = middle(now);
+      wire.place({ at: add(m, su, -MID * scale * k), ...a, scale: k });
+      // The wire stays the gold frame while the motes weave it, and burns up white as it falls in.
+      const falling = fallK(now);
+      wire.glow(.75 + .45 * falling, falling > .8 ? (falling - .8) * 3 : 0);
+      if (law) {
+        const at = origin(now);
+        law.at.set(at.x, at.y, at.z);
+        law.rotation.copy(quat(now));
+        law.params[1] = rho(now);
+        // Faster as it falls, so it is all in by the flash.
+        law.params[3] = SPEED + 4 * falling;
+      }
+      // The motes it leaves along the curve as the pen goes by: the lobes come alive behind it.
+      const drawn = Math.floor(clamp01(now / DRAW) * points.length);
+      if (g && law) for (; laid < drawn; laid += 6) {
+        const at = wire.world(points[laid]);
+        g.burst('atractor-mota', { at, count: 20, spread: .03, life: until(now), colour: gold[laid % 3], law });
+        if (laid % 63 === 0) g.burst('atractor-hilo', { at, count: 24, spread: .02, chain: 12, life: until(now), law });
+      }
+      // As it falls, the spiral itself glows: bright gold motes laid along the shrinking wire, more the further in it is.
+      if (g && law && falling > 0) for (let i = 0, n = Math.round(14 + 40 * falling); i < n; i++) {
+        const p = points[(fallLaid += 37) % points.length];
+        g.burst('atractor-mota-viva', { at: wire.world(p), count: 3, spread: .02, life: until(now), colour: gold[i % 3], law });
+      }
+    }, () => wire.destroy());
+    // The pen: a thread of gold from his circle to where the curve begins, then along it.
+    const first = wire.world(points[0]);
+    effects.trails.comet(lifted(o.centre, o.view), first, ['#fff4d6', '#f3cf78'], .14, { arc: .4, width: .035, life: .25, intensity: 3, core: .6, additive: 1 });
+    after(.12, () => drawStrokes([{ points: stroke.points, show: stroke.show, tip: k => stroke.tip(k) }], DRAW - .12, FIGURE_LOOKS.gold.core, { gone: () => wire.gone }));
+    if (!g || !law) return;
+    // The others' statuses rise off them in their own looks, and fly across to a lobe, where the field takes them.
+    let n = 0;
+    o.sources.forEach((source, si) => source.statuses.forEach((id, j) => {
+      const look = GATHER_LOOKS[id] ?? { kind: 'atractor-mota' as const, colour: '#e8f4f0' }, i = n++;
+      const tint = (c: number) => typeof look.colour === 'string' ? look.colour : look.colour[c % look.colour.length];
+      const leave = atractorLeave(si, j), flight = ARRIVE - leave;
+      const rise = emit(look.kind, { at: source.chest, shape: 'ball', spread: .28, rate: 900, velocity: { x: 0, y: 1.4, z: 0 }, speed: .5, life: [.35, .55], colour: tint(i) });
+      after(leave + .05, () => stop(rise));
+      after(leave, () => {
+        // A point of the curve on the side it comes from: it lands on a lobe.
+        // Each status of a foe to the other lobe from the one before it, the first to the side it comes from, so neither lobe takes it all.
+        const from = add(source.chest, UP, .7), side = (Math.sign((from.x - mid0.x) * sr.x + (from.z - mid0.z) * sr.z) || 1) * (j % 2 ? -1 : 1);
+        const pick = points.reduce((best, p, idx) => (idx % 7 === i % 7) && Math.sign(p.x) === side && p.y > (MID - 4) * scale && p.y < (MID + 8) * scale && Math.abs(p.x) > Math.abs(points[best].x) * .9 ? idx : best, 0);
+        const land = wire.world(points[pick]);
+        const v = { x: (land.x - from.x) / flight, y: (land.y - from.y) / flight, z: (land.z - from.z) / flight };
+        const colour = tint(i);
+        effects.trails.comet(from, land, ['#ffffff', typeof colour === 'string' ? colour : '#f3cf78'], flight, { arc: .5 + .25 * j, width: .05, life: .3, intensity: 2.6, core: .5, additive: 1, twist: { turns: 2, radius: .1, phase: i } });
+        const way = emit('atractor-estela', { at: from, shape: 'ball', spread: .18, rate: 1400, velocity: v, speed: .25, life: [flight * .85, flight], colour });
+        after(flight * .75, () => stop(way));
+        after(flight, () => {
+          // It pours into the lobe and runs along the orbit from where it landed, a little more of it each frame: the field
+          // takes thousands of them, already on their way round, so they weave rather than clump.
+          g.burst('atractor-estela', { at: land, count: 50, spread: .05, speed: 2, life: [.12, .25], colour });
+          let k = pick;
+          play(FLOOD, (now: number) => {
+            const to = pick + Math.round(now / FLOOD * FLOOD_POINTS);
+            for (; k < to; k += 2) {
+              const p = wire.world(points[k % points.length]);
+              g.burst(look.kind, { at: p, count: 5, spread: .08, speed: .08, life: until(t), colour: tint(i + k), law });
+              // Gold threads through every status that comes: the field is his, whatever it carries.
+              g.burst('atractor-mota', { at: p, count: 4, spread: .06, speed: .06, life: until(t), colour: gold[k % 3], law });
+              if (k % 30 === pick % 30) g.burst('atractor-hilo', { at: p, count: 24, spread: .02, chain: 12, life: until(t), colour: typeof colour === 'string' ? colour : undefined, law });
+            }
+          });
+        });
+      });
+    }));
+    // Fire and water meet in it: a puff of steam out of the middle.
+    if (o.steam) after(ARRIVE + .2, () => g.burst('atractor-vapor', { at: middle(ARRIVE + .2), count: 160, spread: .35, up: 1.4, speed: .9, life: [.9, 1.6] }));
+    // The flash as it lands in the chest.
+    after(CONTACT, () => {
+      g.burst('bloom', { at: o.chest, count: 1, spread: .03, life: [.18, .28], colour: '#fff4d6', size: 1.6, light: { intensity: 8, range: 7, colour: FIGURE_LOOKS.gold.halo } });
+      g.burst('atractor-destello', { at: o.chest, count: 220, spread: .05, speed: 3.4, life: [.4, .9] });
+      g.burst('atractor-mota', { at: o.chest, count: 600, spread: .04, speed: 4.2, life: [.2, .5], colour: '#fff4d6' });
+      g.burst('floorring', { at: { x: o.feet.x, y: o.feet.y + .05, z: o.feet.z }, count: 1, life: [.4, .55], colour: FIGURE_LOOKS.gold.halo, size: 1.5 });
+    });
+    after(CONTACT + .1, () => law.remove());
+  }
+
   return {
+    atractor,
     cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release, fourier,
     /** A dual's own figure and its drawing (`DuoStage.figure` and `draw`, src/duo-fx/types.ts). */
     neon: neonFigure, drawNeon,

@@ -11,7 +11,7 @@ import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
 import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
-import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, FOURIER_GAP, figureEnd, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
+import { ATRACTOR, atractorGiven, atractorLeave, ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, FOURIER_GAP, figureEnd, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
 import { MATERIAL_ROLES, RIG } from './character-model';
 import { faceOf } from './face';
@@ -36,7 +36,7 @@ import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 /** How a fight is laid out round its centre (src/arena.ts), whether it was moved to a pocket (src/pocket.ts), and how far apart its sides stand (1 as always). */
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
-import { createPowderFx, powderMix, FIESTA, TRACA_GAP } from './powder-fx';
+import { createPowderFx, powderMix, FIESTA, TRACA_GAP, type PowderMix } from './powder-fx';
 import { createEcoFx, type EcoFx } from './eco-fx';
 import { createFreaticaFight, FREATICA_SKILLS, HAMMER_GAP } from './freatica-fight';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
@@ -1936,6 +1936,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     // Matemágico's elements: their own pictures (the streams and comets left his circle in `castElement`).
     if (action.skill && ELEMENTAL.has(action.skill)) { elementBurst(action, target); return land(felt, dx / d, 0, dz / d); }
+    // Atractor extraño: the butterfly has fallen into the chest (its flash is the figure's); the foe takes it whole.
+    if (action.skill === 'atractor') { hit(target, gold, 1.5); shake = Math.max(shake, .5); pulse?.(.32, .35); gatherFx(action); return land(felt, dx / d, 0, dz / d); }
     const reach = target.party ? .15 : .6;
     // On Vertitrón's eye, the blow lands on the eye, just in front of it; on Gerard or Aitor, on the
     // middle of the body (their heads are big: higher, it reads as a blow over them).
@@ -2203,6 +2205,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const colours = [GOLD, ...(e.harmonics ?? []).map(harmonicColour)];
       fourierFigures.set(e, figures.fourier({ centre, view, model: target.model, chest: v3(chestOf(target)), floor: floorUnder(target).y, radius: extent(target).radius, colours, size }));
     } else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
+    else if (e.skill === 'atractor') {
+      // What each other foe gave it, as it gave it; fire and water that met in it steam.
+      const sources = (e.gathered ?? []).flatMap(g => { const f = fighters.get(g.from); return f ? [{ chest: v3(chestOf(f)), statuses: g.ids }] : []; });
+      const steam = !!e.gathered?.some(g => g.reactions.some(r => r.id === 'humo' || r.id === 'vapor'));
+      figures.atractor({ centre, view, chest: v3(chestOf(target)), feet: v3(floorUnder(target)), sources, steam, size });
+      // Each one's powder and shards go as its statuses rise off it (the rest of its looks follow the plate, `gathering`).
+      e.gathered?.forEach((g, i) => dualFx.after(atractorLeave(i), () => liftGiven(e, g.from)));
+      // The fall into the chest is the skill's payoff: the fight slows a breath as it begins.
+      dualFx.after(FIGURES.atractor.contact - CAST_LAUNCH - ATRACTOR.fall, () => clock.slow(.6, ATRACTOR.fall * .55, .25, 'scene'));
+    }
     else {
       const foes = reachedBy(e).map(({ f }) => figureFoe(f));
       if (e.skill === 'factor-comun') figures.piramide({ centre, view, foes, size });
@@ -2366,6 +2378,53 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (wallFor && shield === wallFor) wallFx?.wear(1 - wallSeen / Math.max(1, wallFor.max));
     // Broken by a blow still on its way: it gives way when that blow lands.
     if (!shield && wallFor && !(effect?.bits?.broke && !impacted)) { if (wallFor.broken) wallFx?.shatter(); else wallFx?.fade(); wallFx = undefined; wallFor = undefined; }
+  }
+  /**
+   * Atractor extraño: what met in its target and reacted, one after another as it lands: smoke or steam out of it, its powder
+   * going up on everyone it reaches, or running green.
+   */
+  function gatherFx(e: BattleEffect) {
+    const id = e.target;
+    if (!id || !e.gathered) return;
+    // Whatever was not lifted on its way (no motion) goes now.
+    for (const g of e.gathered) liftGiven(e, g.from);
+    const carried = gatherCarried.get(e), reactions = e.gathered.flatMap(g => g.reactions), ids = e.gathered.flatMap(g => g.ids);
+    // The powder that came is on it for an instant, so the fire or the water that meets it there finds it.
+    const powder = ids.includes('empolvado') ? carried?.mix ?? nextMix() : undefined;
+    if (powder && !powderFx.has(id)) powderFx.dust(id, powder, reactions.some(r => r.id === 'estallido' || r.id === 'veneno') ? 1 : TIMED.empolvado.seconds);
+    // Shards that came stand out of it now, for the longest of those that came.
+    const shards = state?.foes.find(f => f.id === id)?.timed?.cristalizado;
+    if (ids.includes('cristalizado') && shards) powderFx.crystallise([id], shards.left, true);
+    reactions.forEach((r, i) => dualFx.after(.12 + i * .14, () => {
+      if (r.id === 'estallido') { powderFx.ignite((r.hits ?? []).map(h => h.target)); shake = Math.max(shake, .45); }
+      else if (r.id === 'veneno') powderFx.soak([id]);
+      else if (r.id === 'humo' || r.id === 'vapor') statusFx.react(r.id, id);
+    }));
+  }
+  /**
+   * Atractor extraño, until it lands: who keeps showing what they had (its target, until the butterfly falls into it; whoever its
+   * Estallido reaches; each source until its statuses have risen off it, `atractorGiven`). A source that has given and that the
+   * Estallido is still to reach shows what it has now but the fire that Estallido lights (`bare`). Built again only when a source lets go.
+   */
+  let gatherHeld: { effect: BattleEffect; given: number; held: Set<string>; bare: Set<string> } | undefined;
+  function gatheringNow(e: BattleEffect) {
+    const sources = e.gathered ?? [], given = sources.filter((_, i) => effectTime >= atractorGiven(i)).length;
+    if (gatherHeld?.effect !== e || gatherHeld.given !== given) {
+      const blasted = new Set(sources.flatMap(g => g.reactions.flatMap(r => (r.hits ?? []).map(h => h.target)))), gone = new Set(sources.slice(0, given).map(g => g.from));
+      gatherHeld = { effect: e, given, held: new Set([e.target!, ...sources.slice(given).map(g => g.from), ...[...blasted].filter(id => !gone.has(id))]), bare: new Set([...gone].filter(id => blasted.has(id))) };
+    }
+    return gatherHeld;
+  }
+  /** Atractor extraño: what each action took off its sources (their powder's mix), and who has been lifted already. */
+  const gatherCarried = new WeakMap<BattleEffect, { mix?: PowderMix; lifted: Set<string> }>();
+  /** `from` gave its statuses to Atractor extraño's target: its powder and shards come off it quietly (they reappear on the target as it lands). */
+  function liftGiven(e: BattleEffect, from: string) {
+    let carried = gatherCarried.get(e);
+    if (!carried) gatherCarried.set(e, carried = { lifted: new Set() });
+    if (carried.lifted.has(from)) return;
+    carried.lifted.add(from);
+    const mix = powderFx.lift(from);
+    if (mix && !carried.mix) carried.mix = mix;
   }
   /** Virus atómico: what spread leaves its host as a stream of tiny Bips and settles on each of the others. */
   function spreadFx(e: BattleEffect) {
@@ -3108,6 +3167,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const unit = state?.foes.find(u => u.id === id), on = unit?.timed?.bomba;
       let b = bombs.get(id);
       if (b?.implode) continue;
+      // Atractor extraño: a bomb stays on its foe until it rises off it, and comes to the target as the butterfly falls in.
+      const gathered = animate && effect?.gathered && !impacted ? gatheringNow(effect) : undefined;
+      if (b && gathered?.held.has(id) && id !== effect?.target) continue;
       if (!on) {
         if (b && !b.fuse && !(animate && effect && !impacted && effect.detonated?.some(d => d.target === id))) { b.bomb.destroy(); bombs.delete(id); }
         if (!bombs.has(id)) continue;
@@ -3115,6 +3177,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       } else if (!b) {
         // Stuck on as the action that planted it lands (`ensureBomb` from its burst); without motion, at once.
         if (animate && effect && !impacted && effect.planted?.includes(id)) continue;
+        if (gathered && id === effect?.target) continue;
         b = ensureBomb(id);
       }
       const left = on?.left ?? 0, heat = on ? 1 - clamp01(left / BOMBA.seconds) : 1;
@@ -4436,8 +4499,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.
       const turning = effect?.reaction && !impacted ? new Set([effect.target, ...(effect.reaction.hits ?? []).map(h => h.target)]) : undefined;
+      // Atractor extraño: the others keep what they carry until it rises off them, its target until the butterfly falls into it.
+      const gathering = effect?.gathered && !impacted ? gatheringNow(effect) : undefined;
       if (state) for (const unit of [...state.allies, ...state.foes]) {
-        if (turning?.has(unit.id)) continue;
+        if (turning?.has(unit.id) || gathering?.held.has(unit.id)) continue;
+        if (gathering?.bare.has(unit.id)) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: undefined }, !!unit.capacitor); continue; }
         const shown = shownStacks.get(`${unit.id}:quemado`) ?? 0;
         if (dualBurn !== undefined && unit.id === effect?.target && unit.timed?.quemado) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: dualBurn ? { ...unit.timed.quemado, level: dualBurn } : undefined }, !!unit.capacitor); continue; }
         // The charge stays on show until the blow that lets it go lands.

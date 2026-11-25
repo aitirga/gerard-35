@@ -46,6 +46,8 @@ const WHO: Record<Player, string> = { 1: 'Gerard', 2: 'Aitor' };
 const W = 1600, H = 900;
 /** How far from its core each node of an own tree's line sits. */
 const RINGS = [80, 142, 204, 266, 328];
+/** Degrees off its line a node that branches beside another stands (`layout`). */
+const BRANCH = 13;
 /**
  * Where each constellation sits in the one sky. Gerard's tree on the left and Aitor's on the right,
  * each line growing its own way (degrees, 0 to the right, clockwise); the shared ones small and
@@ -184,7 +186,22 @@ export function createJarUI(hud: HTMLElement, story: Story, callbacks: { pause: 
       if (seat.lines) {
         for (const [line, angle] of Object.entries(seat.lines) as [LineId, number][]) {
           const flat = Math.abs(Math.cos(angle * Math.PI / 180)) > .8;
-          items.filter(item => item.line === line).forEach((item, i) => place(item, angle, RINGS[i], i + 1, flat ? (i % 2 ? 'above' : 'below') : sideOf(angle)));
+          // Down the line one ring a node; a node that branches off the same one as an earlier node (Atractor extraño beside
+          // Integral impropia, both past Maná +1) shares that node's ring, a little to one side of the line, then the other.
+          const ringOf = new Map<string, number>(), branches = new Map<string, number>();
+          let next = 0;
+          for (const item of items.filter(item => item.line === line)) {
+            const twin = [...ringOf.keys()].find(id => improvementOf(id)?.after === item.after && item.after);
+            if (twin) {
+              const i = ringOf.get(twin)!, k = (branches.get(twin) ?? 0) + 1, turn = BRANCH * Math.ceil(k / 2) * (k % 2 ? -1 : 1);
+              branches.set(twin, k);
+              place(item, angle + turn, RINGS[i], i + 1, flat ? (turn < 0 ? 'below' : 'above') : sideOf(angle + turn));
+              continue;
+            }
+            const i = Math.min(next++, RINGS.length - 1);
+            ringOf.set(item.id, i);
+            place(item, angle, RINGS[i], i + 1, flat ? (i % 2 ? 'above' : 'below') : sideOf(angle));
+          }
         }
         for (const item of apart) { const angle = item.kind === 'ulti' ? seat.ulti ?? -90 : seat.mana ?? 90; place(item, angle, 102, 1, sideOf(angle)); }
       } else apart.forEach((item, i) => { const angle = (seat.nodes ?? 90) + (i - (apart.length - 1) / 2) * 46; place(item, angle, 82, 1, sideOf(angle)); });
