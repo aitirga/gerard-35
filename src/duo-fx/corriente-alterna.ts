@@ -105,6 +105,8 @@ interface Wire {
   snapped?: number; seen: number;
 }
 const wires = new Map<string, Wire>();
+/** Circuits whose string the engine took back for another lattice (`hold`): not spun again while they last, or two would take each other's slots every frame. */
+const lost = new Set<string>();
 let clock = 0, startedAt = -99;
 const keyOf = (poles: readonly [string, string]) => `${poles[0]}|${poles[1]}`;
 
@@ -327,9 +329,11 @@ export const staging: DuoStaging = {
     clock += dt;
     const circuits = state.circuits ?? [], over = state.phase !== 'player' && state.phase !== 'enemy';
     // A circuit with no string (the dual went off unseen, or the fight was reloaded): spun at once.
-    if (!over) for (const c of circuits) if (!wires.has(keyOf(c.poles)) && clock - startedAt > timing.contact) spin(stage, c.poles, -1);
+    for (const key of lost) if (!circuits.some(c => keyOf(c.poles) === key)) lost.delete(key);
+    if (!over) for (const c of circuits) if (!wires.has(keyOf(c.poles)) && !lost.has(keyOf(c.poles)) && clock - startedAt > timing.contact) spin(stage, c.poles, -1);
     for (const w of [...wires.values()]) {
-      if (!w.body.alive) { wires.delete(w.key); continue; }
+      // One of its strands was taken for another lattice: the whole string goes, none of it left frozen where it was.
+      if (strands(w).some(s => !s.alive)) { for (const s of strands(w)) if (s.alive) s.remove(); wires.delete(w.key); lost.add(w.key); continue; }
       const c = circuits.find(x => keyOf(x.poles) === w.key);
       stretch(stage, w);
       if (w.snapped !== undefined) {

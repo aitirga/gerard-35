@@ -37,8 +37,12 @@ const COAT: GpuKind = {
   shape: 'powder', drag: 4, gravity: 0, curl: 0, response: 0, collide: true, bounce: 0, friction: 1, stick: 1, stickTime: 26, size: [.02, .046], sizeJitter: .6,
   colours: WHITE, intensity: BRIGHT, fadeIn: .05, fadeOut: .06, additive: 0, opacity: .92, core: 0,
 };
-/** The coat is a few kinds in turn: fire or water hides the one in use (all the powder goes at once) and the next powder uses the next. */
-const COATS = 3;
+/**
+ * The coat is a few kinds in turn: fire or water hides the one in use (all the powder goes at once) and the next powder uses the
+ * next whose hidden grains have all died (`nextSet`): shown again too soon, they would come back. Six, as Atractor extraño can lift
+ * the powder off three foes and put it down on a fourth within one coat's life.
+ */
+const COATS = 6;
 export const POWDER_KINDS: Record<string, GpuKind> = {
   pigment: {
     shape: 'powder', drag: 6.5, gravity: -.1, curl: .7, response: .6, size: [.1, .36], sizeJitter: .55,
@@ -115,8 +119,8 @@ export const POWDER_KINDS: Record<string, GpuKind> = {
   },
   ...Object.fromEntries(Array.from({ length: COATS }, (_, i) => [`coat-${i}`, COAT])),
 };
-/** The shards are a few kinds in turn too (`shardling-0`…), so one fighter's can come off and the others' stay (`unshard`). */
-const SHARD_SETS = 3;
+/** The shards are a few kinds in turn too (`shardling-0`…), so one fighter's can come off and the others' stay (`unshard`); as many as the coats, for the same reason. */
+const SHARD_SETS = 6;
 for (let i = 0; i < SHARD_SETS; i++) POWDER_KINDS[`shardling-${i}`] = POWDER_KINDS.shardling;
 /** Fin de fiesta, from the moment its puffs land (`at`): when the fire, the second puff, the water, the third puff and the spark come. */
 export const FIESTA = { contact: .9, repowder: .45, water: .85, third: 1.3, spark: 1.7, end: 2.4 };
@@ -175,6 +179,15 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
   const timers: { left: number; run(): void }[] = [];
   const after = (seconds: number, run: () => void) => timers.push({ left: seconds, run });
   let coat = 0, shardSet = 0;
+  /** Until when what was laid in each coat and each shard set lives on (hidden or not): a set is shown again only once its own have died. */
+  const coatUntil: number[] = Array(COATS).fill(0), shardUntil: number[] = Array(SHARD_SETS).fill(0);
+  /** The set after `at` with nothing hidden left alive in it; if every one still has some, the one whose last die soonest. */
+  function nextSet(until: number[], at: number) {
+    for (let k = 1; k < until.length; k++) if (until[(at + k) % until.length] <= now) return (at + k) % until.length;
+    let best = (at + 1) % until.length;
+    for (let i = 0; i < until.length; i++) if (i !== at && until[i] < until[best]) best = i;
+    return best;
+  }
   /** Who has shards standing out of them, for how long yet and in what colour. */
   const sharded = new Map<string, { left: number; pale: string }>();
 
@@ -196,7 +209,7 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     powdered.forEach(p => { p.shed?.remove(); p.haze?.remove(); });
     if (!g) return;
     g.define(`coat-${coat}`, { ...COAT, opacity: 0 });
-    coat = (coat + 1) % COATS;
+    coat = nextSet(coatUntil, coat);
     g.define(`coat-${coat}`, COAT);
   }
 
@@ -216,6 +229,7 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     if (!g || !f || f.index < 0) return false;
     g.burst(`shardling-${shardSet}`, { at: f.feet, shape: 'surface', fighter: f.index, above: .1, count: 80, outward: -.3, speed: .04, life: [Math.max(.5, seconds - 1.5), seconds], colour: pale });
     sharded.set(id, { left: seconds, pale });
+    shardUntil[shardSet] = Math.max(shardUntil[shardSet], now + seconds);
     return true;
   }
 
@@ -261,6 +275,7 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       const on = { at: f.feet, shape: 'surface' as const, fighter: f.index };
       const shades = shadesOf(colour), middle = middleOf(colour);
       for (const shade of shades) g.burst(`coat-${coat}`, { ...on, above: .08, count: Math.round(300 / shades.length), outward: -.4, speed: .05, life: [seconds - 2, seconds], colour: shade });
+      coatUntil[coat] = Math.max(coatUntil[coat], now + seconds);
       const shed = g.emitter('grain', { ...on, above: .2, rate: 16, outward: .2, speed: .12, life: [1.2, 2.2], colour: shades[0] });
       const haze = g.emitter('pigmenthaze', { at: f.chest, rate: 2.2, spread: f.body.radius + .25, speed: .25, life: [2, 3.4], size: .7, colour: middle });
       powdered.set(id, { shed, haze, left: seconds, colour: middle, mix: colour });
@@ -479,7 +494,7 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       if (!g || !ids.some(id => sharded.has(id))) return false;
       const keep = [...sharded.entries()].filter(([id]) => !ids.includes(id));
       g.define(`shardling-${shardSet}`, { ...POWDER_KINDS.shardling, opacity: 0 });
-      shardSet = (shardSet + 1) % SHARD_SETS;
+      shardSet = nextSet(shardUntil, shardSet);
       g.define(`shardling-${shardSet}`, POWDER_KINDS.shardling);
       sharded.clear();
       for (const [id, s] of keep) shard(id, Math.max(1, s.left), s.pale);

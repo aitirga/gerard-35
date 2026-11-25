@@ -33,9 +33,11 @@ export const LATTICE_DISSOLVES: Record<LatticeDissolve, number> = { random: 0, t
 
 /**
  * Lattices alive at once, the most particles one holds, how many of what is thrown at it each member
- * looks at a frame, and how many points its loose members can be thrown at (`throwAt`).
+ * looks at a frame, and how many points its loose members can be thrown at (`throwAt`). Eight: a
+ * Corriente alterna string takes three, and two circuits, a soap film bursting into its next one and a
+ * bit dome can all stand at once.
  */
-export const MAX_LATTICES = 4, MAX_MEMBERS = 8192, HIT_SAMPLES = 24, MAX_AIMS = 6;
+export const MAX_LATTICES = 8, MAX_MEMBERS = 8192, HIT_SAMPLES = 24, MAX_AIMS = 6;
 /**
  * Texels a lattice takes in its row of the lattice texture:
  *  0–2 its own space → world · 3–5 world → its own space · 6 first slot, count, nx, ny ·
