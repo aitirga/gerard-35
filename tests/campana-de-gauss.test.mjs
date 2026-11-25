@@ -190,3 +190,18 @@ test('a die of fire on a foe with Electrólisis\'s gas sets off the gas of all',
   assert.ok(s.foes.every(f => !f.timed?.gas), 'nobody keeps gas');
   assert.equal(s.foes[0].timed.quemado.level, 3, 'its own fire stays at III: the blast never lowers it');
 });
+
+test('the gas it sets off is lit by whoever brought the fire, whichever of the two pressed it', () => {
+  const run = active => {
+    const s = pair();
+    s.improved = improvedBy([...NODES, 'matemagico:rescoldo']);
+    s.active = active;
+    const gas = { level: 3, left: TIMED.gas.seconds, next: TIMED.gas.every };
+    for (const f of s.foes) f.timed = { gas: { ...gas } };
+    const e = actDual(s, 'campana-de-gauss', 'dog-1');
+    return { blast: e.ignited.hits.map(h => h.amount), fires: s.foes.map(f => f.timed.quemado?.left) };
+  };
+  const gerard = run(0), aitor = run(1);
+  assert.deepEqual(aitor, gerard, 'the same dual on the same foes ends the same');
+  assert.ok(gerard.fires.every(left => left === 15), 'Rescoldo: every fire lasts 15 s, the blast does not cut it back');
+});

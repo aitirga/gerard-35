@@ -115,7 +115,7 @@ export const SKILLS = [
   { id: 'integral', name: 'Integral impropia', cost: 3, side: 'party', power: 26, kind: 'heal', regen: 'sanacion', node: true, description: 'Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.', class: 'matemagico' },
   // Atractor extraño (Cálculo, grade III): a blow of the astral, and then every status on the clock that can move (`moves` in
   // TIMED) leaves the other foes for its target, adding up where it is already on; what meets there reacts (`gather`).
-  { id: 'atractor', name: 'Atractor extraño', cost: 2, side: 'foes', power: 16, kind: 'magic', gathers: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Los estados con reloj de los demás enemigos pasan a él: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.', class: 'matemagico' },
+  { id: 'atractor', name: 'Atractor extraño', cost: 2, side: 'foes', power: 16, kind: 'magic', gathers: true, node: true, description: 'Daño mágico no elemental leve a un enemigo. Le pasan Quemado, Mojado, Cegado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Gas y Bomba de los demás enemigos: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.', class: 'matemagico' },
   { id: 'descarga', name: 'Punto eléctrico', cost: 2, side: 'foes', power: 26, kind: 'magic', element: 'electrico', node: true, description: 'Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.', class: 'matemagico' },
   // Cortocircuito: a bolt that does not jump (`short`): on someone wet, or about to let go of a move announced, the
   // current shorts in them and they lose their next turn (Shock, for sure, which keeps what they announced waiting).
@@ -3683,10 +3683,11 @@ export const gasOf = (c: Pick<Combatant, 'timed'>) => c.timed?.gas?.level ?? 0;
  * never catch) and loses the gas; a foe still powdered sets off Estallido. With every foe that had gas fallen, nothing
  * goes up. Said in `effect.ignited`; Toma de tierra counts it as a reaction of whoever lit it.
  */
-function ignite(state: BattleState, effect: BattleEffect) {
+function ignite(state: BattleState, effect: BattleEffect, by?: Combatant) {
   const struck = lit.splice(0).map(id => state.foes.find(f => f.id === id)).find(f => f?.timed?.gas);
   if (!struck) return;
-  const actor = state.allies.find(a => a.id === effect.actor) ?? state.allies.find(a => a.hp > 0);
+  // Whoever brought the fire (a dual's half of fire, `by`), not whoever pressed it.
+  const actor = by ?? state.allies.find(a => a.id === effect.actor) ?? state.allies.find(a => a.hp > 0);
   // From the foe the fire found outwards, one after another, as the front runs from cloud to cloud.
   const from = state.foes.indexOf(struck), gassed = state.foes.filter(f => f.timed?.gas).sort((a, b) => Math.abs(state.foes.indexOf(a) - from) - Math.abs(state.foes.indexOf(b) - from));
   const hits: { target: string; amount: number; level: number }[] = [], burns: { target: string; level: number }[] = [], steamed: string[] = [];
@@ -3701,7 +3702,9 @@ function ignite(state: BattleState, effect: BattleEffect) {
     hits.push({ target: foe.id, amount, level });
     if (foe.hp <= 0 || foe.layers) continue;
     if (foe.timed?.mojado) { steam(foe); steamed.push(foe.id); continue; }
-    const fire = kindle(foe, 'quemado', 1);
+    // A fire already burning longer (Rescoldo's) keeps its clock: the blast only makes sure there is one.
+    const was = foe.timed?.quemado?.left ?? 0, fire = kindle(foe, 'quemado', 1);
+    fire.left = Math.max(fire.left, was);
     if (actor) bank(state, actor, foe, effect);
     burns.push({ target: foe.id, level: fire.level });
   }
@@ -4871,7 +4874,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     holder.charge = { dual: d.id, striker: striker.id };
     effect.charging = holder.id; delete effect.target;
     state.message = `¡Ataque dual! ${d.name}: ${holder.name} se carga. Saldrá al empezar la siguiente ronda.`;
-    ignite(state, effect); amplify(effect); checkEye(state, effect);
+    ignite(state, effect, striker); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
   }
@@ -4932,7 +4935,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
     if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
     chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
-    spread(state, effect); ignite(state, effect); amplify(effect); checkEye(state, effect);
+    spread(state, effect); ignite(state, effect, striker); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
   }
@@ -4940,7 +4943,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     // Its fire is Pirámide ígnea's: the stats of whoever brings that half.
     const fire = [a, b].find(c => c.classId === SKILLS.find(x => x.id === d.parts[0])!.class) ?? striker;
     bellFall(state, d, target, fire, roller, effect);
-    ignite(state, effect); amplify(effect); checkEye(state, effect);
+    ignite(state, effect, fire); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
   }
@@ -5032,7 +5035,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     }
     chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   }
-  ignite(state, effect); amplify(effect); checkEye(state, effect);
+  ignite(state, effect, striker); amplify(effect); checkEye(state, effect);
   settle(state);
   return effect;
 }
@@ -5349,7 +5352,7 @@ function release(state: BattleState, holder: Combatant) {
   effect.target = effect.hits[0]?.target; effect.amount = effect.hits[0]?.amount;
   chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   const said = `¡${d.name}! ${holder.name} barre a todos: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.${effect.hits.some(h => h.burn) ? ` ¡${TIMED[d.burn!].name} ${roman(d.burnLevel ?? 1)}!` : ''}`;
-  ignite(state, effect); amplify(effect); checkEye(state, effect);
+  ignite(state, effect, striker); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
   return said;
 }
@@ -6227,6 +6230,23 @@ function voiceNote(state: BattleState, voz: Combatant, tone: ToneId): SongNews {
   return news;
 }
 /**
+ * A note of La Voz's is a blow of hers like any foe's: whoever it found under Superficie mínima's film leaves her wet
+ * (`filmTouch`), and a charge it found (∂Q/∂t Condensador, Arco voltaico waiting) jumps to her (`discharge`). What that
+ * did goes out as news of its own (`takeNews`), with no blow in it: the note's numbers are the song's (`SongNews`).
+ */
+function noteAnswered(state: BattleState, voz: Combatant, note: SongNews) {
+  if (note.kind !== 'nota' || !note.hits.some(h => h.amount > 0)) return;
+  const said = state.message;
+  state.message = '';
+  const effect: BattleEffect = { kind: 'enemy', actor: voz.id, hits: note.hits.map(h => ({ target: h.target, amount: h.amount })) };
+  filmTouch(state, effect);
+  discharge(state, effect);
+  delete effect.hits;
+  // Won on the jump, the message is the win's (`discharge`); otherwise what it did follows whatever was said.
+  if (state.phase !== 'won') state.message = `${said} ${state.message.trim()}`.trim();
+  if (effect.film || effect.discharge || effect.arcDischarge) (state.news ??= []).push(effect);
+}
+/**
  * La Voz's song goes on (the fight's clock, `runClock`): `seconds` more of her recording, which never
  * stops or starts over. Every note that starts is a move of hers (`voiceNote`); her phrase coming
  * round is a Crescendo; and her PV say which part she is in (a new one starts her turns over).
@@ -6255,7 +6275,8 @@ function runSong(state: BattleState, seconds: number) {
       if (next && next.id !== voz.facing) { voz.facing = next.id; news.push({ kind: 'mira', target: next.id }); }
     }
     // In Bajo cero's ice she cannot sing: the notes go by unsung.
-    if (state.allies.some(a => a.hp > 0) && !frozenOf(voz)) news.push(voiceNote(state, voz, onset.tone));
+    if (state.allies.some(a => a.hp > 0) && !frozenOf(voz)) { const note = voiceNote(state, voz, onset.tone); news.push(note); noteAnswered(state, voz, note); }
+    if (state.phase === 'won') break;
   }
   song.t += seconds;
   voz.silent = !songAt(VOZ_SONG, song.t).sounding;

@@ -364,9 +364,10 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   `src/levels.ts`, read from the level's flag: up to 10). 55 at most. Every node of the jar costs
   **one eco**, the definitivas two, and the big moves more (Aitor, 2026-11-24: the jar some 25 %
   dearer): a **dúo mayor three**, grade III **three** for its big ones (Combustión, Integral
-  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico). 79 for the whole jar,
-  75 while Matemágico's and Dadaísta's definitivas sleep (78 and 74 before Superficie mínima, 56 and 52 before that): the 55 there are buy some
-  three quarters of it. Measured in ten whole games before the friends' second eco
+  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico, Atractor extraño). 82 for the whole
+  jar, 78 while Matemágico's and Dadaísta's definitivas sleep (78 and 74 before the Matemágico expansion's three nodes,
+  Atractor extraño, Serie de Fourier and Superficie mínima; 56 and 52 before the jar got dearer): the 55 there are buy
+  some 70 % of it. Measured in ten whole games before the friends' second eco
   (2026-11-22): `pensando` 32 to 36 at the end, `corredor` 29 to 34; with it, ten more each. La
   Delegada of the first floor is never beaten on the way (the bots go past her), and only one or two
   Encarnados a game.
@@ -1133,11 +1134,13 @@ run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite`
   Explosión, Estallido, Combustión's burst, each die of Campana de Gauss that lands). A pulse never does (a fire burning on its own is no blow).
   Found by one place, read as the action ends: whatever the path the fire came by.
 - **The blast**: one after another, from the foe the fire found outwards, every foe with gas takes magic
-  fire damage of `GAS.blast` (12) a level of its gas, with the Magia of whoever lit it (a weakness or a
+  fire damage of `GAS.blast` (12) a level of its gas, with the Magia of whoever lit it (in a dual, whoever
+  brought its fire, not whoever pressed it; a weakness or a
   resistance to fire counts), is left burning at least at Quemado I (wet again by then, it steams
   instead; an onion's wet layers never catch) and loses the gas. It is fire like any other: it **melts
   the pringue** of a foe in chicle, and a foe still **Empolvado** that it reaches sets off **Estallido**.
-  Toma de tierra counts it as a reaction of whoever lit it, and Rescoldo keeps the fire it leaves.
+  Toma de tierra counts it as a reaction of whoever lit it, and Rescoldo keeps the fire it leaves (a fire
+  already burning longer keeps its clock: the blast only makes sure there is one).
 - **A foe that falls keeps nothing to blow**: if every foe with gas has fallen (the fire that lit it
   felled the last one), nothing goes up, nothing is said and Toma de tierra gives nothing; their gas is
   simply gone. The simulator values only the gas of a foe standing (`gasWorth`).

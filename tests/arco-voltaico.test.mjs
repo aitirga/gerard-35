@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, addStatus, createBattle, discharge, dualSingle, enemyAct, improve, nextRound, stacks, takeNews, CONDENSADOR, CRIT_RULES, DUALS, TIMED } from '../src/battle.ts';
+import { act, actDual, addStatus, createBattle, createEncounter, discharge, dualSingle, enemyAct, improve, nextRound, runClock, stacks, takeNews, takeSongNews, CONDENSADOR, CRIT_RULES, DUALS, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
 
 // Arco voltaico (docs/animas/README.md § Combined skills): ∂Q/∂t Condensador + Acecho. The cat waits charged on its prey
@@ -195,4 +195,26 @@ test('Superficie mínima on the one waiting: whoever strikes comes out wet first
   assert.deepEqual(blow.film.map(f => [f.target, f.left]), [['dog-1', 'mojado']], 'the film bursts on the striker first');
   assert.equal(blow.arcDischarge.target, 'dog-1');
   assert.equal(blow.arcDischarge.reaction?.id, 'conduccion', 'the jump turns the water the film just left');
+});
+
+test('La Voz: a note that finds the one waiting charged makes the charge jump to her, as any foe\'s blow', () => {
+  const slots = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }];
+  const s = createEncounter(slots, 'voz', { animas: ['matemagico', 'papagato'], random: () => .5 });
+  s.levels = { papagato: 7 };
+  improve(s, improvedBy(ELECTRIC));
+  s.allies.forEach(a => { a.hp = a.maxHp = 999; a.secondary = a.maxSecondary; });
+  const voz = s.foes.find(f => f.kind === 'voz');
+  s.phase = 'player'; s.active = 0;
+  assert.ok(actDual(s, 'arco-voltaico', voz.id), 'the dual is cast');
+  const waiting = s.allies.find(a => a.stalk?.charged);
+  assert.ok(waiting, 'someone waits charged');
+  takeNews(s); s.phase = 'player';
+  const hp = voz.hp;
+  let note;
+  for (let i = 0; i < 400 && !note; i++) { runClock(s, .05); note = takeSongNews(s).find(n => n.kind === 'nota' && n.hits.some(h => h.target === waiting.id && h.amount > 0)); }
+  assert.ok(note, 'a note found the one waiting');
+  assert.equal(waiting.stalk.charged, false, 'the charge has jumped');
+  const news = takeNews(s).find(n => n.arcDischarge);
+  assert.ok(news, 'the jump comes as news');
+  assert.equal(news.arcDischarge.target, voz.id); assert.ok(voz.hp < hp);
 });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CEGADO, act, createBattle, createEncounter, createFearBattle, enemyAct, improve, nextRound, planMost, roll, skillsFor, validTargets, SKILLS, TIMED } from '../src/battle.ts';
+import { CEGADO, act, createBattle, createEncounter, createFearBattle, enemyAct, improve, nextRound, planMost, roll, runClock, skillsFor, takeNews, takeSongNews, validTargets, SKILLS, TIMED } from '../src/battle.ts';
 import { IMPROVEMENTS, improvedBy, stageOf } from '../src/ecos.ts';
 
 // Superficie mínima (docs/animas/matemagico/README.md § Superficie mínima, Matemágico grows 2026-11-25): a guard like
@@ -179,4 +179,24 @@ test('La Voz: guards last until their fighter acts again, but the film goes with
   nextRound(s);
   assert.equal(by(s, 'aitor').guarding, true, 'still guarded: nobody has acted since');
   assert.equal(by(s, 'aitor').film, undefined, 'the film is gone with the round');
+});
+
+test('La Voz: a note that reaches someone under the film is a blow of hers, and leaves her wet', () => {
+  const slots = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata' }];
+  const s = createEncounter(slots, 'voz', { animas: ['matemagico', 'tecnopata'], random: () => .5 });
+  improve(s, improvedBy(LINE));
+  s.allies.forEach(a => { a.hp = a.maxHp = 999; });
+  turn(s, 'gerard'); act(s, 'skill', 'gerard', 'superficie-minima');
+  turn(s, 'gerard'); act(s, 'skill', 'aitor', 'superficie-minima');
+  const voz = s.foes.find(f => f.kind === 'voz');
+  takeNews(s); s.phase = 'player';
+  let note;
+  for (let i = 0; i < 400 && !note; i++) { runClock(s, .05); note = takeSongNews(s).find(n => n.kind === 'nota' && n.hits.some(h => h.amount > 0)); }
+  assert.ok(note, 'a note landed');
+  assert.ok(note.hits.every(h => h.guarded), 'the film guards as Defender does');
+  const news = takeNews(s).find(n => n.film);
+  assert.ok(news, 'what the film did comes as news');
+  assert.equal(news.actor, voz.id); assert.equal(news.hits, undefined, 'no blow in it: the note\'s numbers are the song\'s');
+  assert.equal(news.film[0].target, voz.id);
+  assert.ok(voz.timed?.mojado || voz.timed?.cegado, 'she takes the water');
 });

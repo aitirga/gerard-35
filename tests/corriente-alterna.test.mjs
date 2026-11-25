@@ -203,11 +203,25 @@ test('a beat that breaks a boss\'s part tells it at once: Vertitrón\'s eye goes
 });
 
 test('Virus atómico never spreads the circuit: Alterna stays on its two poles', () => {
-  const s = pair();
-  s.foes[0].timed = { virus: on() };
-  actDual(s, 'corriente-alterna', 'dog-0');
+  // Infected as the skill leaves it (`virusSeen`, what it carried as Virus landed), then wired, then a foe acts:
+  // that action is when the virus spreads what is new on its host.
+  const wired = (fresh) => {
+    const s = pair();
+    s.foes[0].timed = { virus: on() };
+    s.foes[0].virusSeen = { timed: { ...s.foes[0].timed }, statuses: {} };
+    actDual(s, 'corriente-alterna', 'dog-0');
+    if (fresh) s.foes[0].timed[fresh] = on();
+    s.phase = 'enemy';
+    return { s, e: enemyAct(s, 'dog-2', 'gerard') };
+  };
+  const { s, e } = wired();
   assert.ok(s.foes[0].timed.alterna && s.foes[1].timed.alterna);
   assert.equal(s.foes[2].timed?.alterna, undefined);
+  assert.equal(e.spread, undefined, 'nothing else new on the host: nothing spreads');
+  // The same host, with a fire that came after Virus: that does spread, and the circuit still does not.
+  const lit = wired('quemado');
+  assert.deepEqual(lit.e.spread?.[0]?.statuses, [TIMED.quemado.name]);
+  assert.ok(lit.s.foes[2].timed?.quemado); assert.equal(lit.s.foes[2].timed?.alterna, undefined);
 });
 
 test('for the bot, a circuit is worth its beats to come, and less with each one spent', () => {
