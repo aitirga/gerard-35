@@ -809,7 +809,7 @@ file = "scripts/screenshots/duos-nuevos.json"
 title = "Electrólisis (Cubo acuático + Sondeo eléctrico): el agua se separa en gas y el siguiente fuego lo hace estallar en todos"
 grep = "id: 'electrolisis'"
 in = "src/battle.ts"
-note = "Reglas, prueba en «Probar un dúo», aspecto propio (src/duo-fx/electrolisis.ts) y capturas (just screenshots electrolisis --gpu); su par en fight-sim: delegada-electrolisis y delegada-sin-electrolisis (golpe a 20 desde el 2026-11-26; el bot nunca enciende el gas)."
+note = "Reglas, prueba en «Probar un dúo», aspecto propio (src/duo-fx/electrolisis.ts) y capturas (just screenshots electrolisis --gpu); su par en fight-sim: campeon-electrolisis y campeon-sin-electrolisis (golpe a 20 desde el 2026-11-26; el gas estalla 0.68 veces por pelea)."
 # Aitor 2026-11-25 (docs/animas/matemagico/README.md § Campana de Gauss): Pirámide ígnea + Dados astrales.
 [[block.item]]
 title = "Dúo Campana de Gauss: Matemágico y Dadista (tablero de Galton en la GPU)"

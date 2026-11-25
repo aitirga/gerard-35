@@ -119,7 +119,7 @@ keeps its job: **fire piles up, water sets up, electricity cashes in**; grade II
 | Fuego | Passive · **Combustión** | 2 | — | 24 magic, fire, all | `Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.` | Built |
 | Fuego | Dúo mayor · **Vulcano**, with Sincopante's Ostinato | 2 | 1 + 2 | 28 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20 segundos, un volcán les sube el fuego un nivel cada 5 segundos.` | Built |
 | Cálculo | **Integral impropia** | 2 | 3 | 26 heal, party, then Sanación | `Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.` | Built |
-| Cálculo | **Atractor extraño** (beside Integral, past Maná +1) | 2 | 2 | 16 magic, astral, one foe | `Daño mágico no elemental leve a un enemigo. Los estados con reloj de los demás enemigos pasan a él: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.` | Built (§ Atractor extraño) |
+| Cálculo | **Atractor extraño** (beside Integral, past Maná +1) | 2 | 2 | 16 magic, astral, one foe | `Daño mágico no elemental leve a un enemigo. Le pasan Quemado, Mojado, Cegado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Gas y Bomba de los demás enemigos: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.` | Built (§ Atractor extraño) |
 | Agua | Passive · **Punto de congelación** | 2 | — | — | `Pasiva. El agua puede subir hasta un nivel III y, un nivel más, congela: el enemigo no actúa hasta que el hielo se rompe o se derrite.` | Designed |
 | Eléctrico | **Resonancia** | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Designed (Aitor liked it, 2026-11-20); built with the freezing rule |
 
@@ -198,6 +198,8 @@ for their variety.
   `just fight-sim skills` (everything open): 40.7 PV a maná, under Pirámide ígnea (44.1) and
   Explosión (44.7), no warning, nothing that "domina"; Punto débil as a dual is unchanged (14.8 PV a
   maná). `optimize` over `skill.fourier.power` 6–16 and `skill.fourier.harmonics` 3–5 keeps 10 and 5.
+  The pair's wins overlap (87 % against 82 %), so the target with it also holds its blows past the
+  first (`armonico`, 1.2 a fight, at .6 at least) and the one without holds none.
   Its pair since 2026-11-26: `aurelia-carrera-sin-fourier`, the same party with Fourier bought and banned
   (82 % against 87 % with it, 0.65 casts a fight at 49 PV each; `skills`: 82 PV a use, 41 a maná).
   Punto débil both counting and tripling every strike is the rule as approved; on a dog loaded with
@@ -307,8 +309,8 @@ a better blow is on the table (Pirámide ígnea, Cubo acuático on burning foes)
 since moving fire adds its levels and loses pulses (three at II are 9 a pulse, one at III is 6) unless
 Combustión takes it to IV. Its pair, `trio-segundo-atractor` and `trio-segundo-sin-atractor` (alumnos-2a,
 DUO, the second floor with only the fire line that feeds it: Pirámide ígnea, Rescoldo, Combustión), holds it
-as it plays: 0.14 a fight, the gather landing 0.03 a fight, 93 % in 4.6 rounds with it and 92 % in 4.6
-without. Its numbers stay (2 maná, power 16): it is a player's piece the bot does not read, not the answer
+as it plays: the gather landing 0.03 to 0.05 a fight (`atrae`, held at .02 at least, so a broken gather fails it),
+93 % in 4.6 rounds with it and 92 % in 4.6 without. Its numbers stay (2 maná, power 16): it is a player's piece the bot does not read, not the answer
 of any fight yet (`just fight-sim skills`: 26 PV a use, 13 a maná, «cara»).
 
 **Look** (`atractor` in `src/math-figures.ts`, contact 2.4 s, end 3.4 s; `just screenshots atractor-extrano --gpu`):
@@ -345,7 +347,9 @@ four duals); `docs/animas/README.md` § The jar.
   blows that take PV: the clock's pulses, the round's ticks, a foe's move that takes none (Vertitrón's Grito)
   and a blow that took nothing (a miss, a shield's) never touch it. The blow that brings them down still goes
   through it. On someone Cargado, the striker is wet before the charge jumps to it. In La Voz's fight a guard
-  lasts until its fighter acts again, but the film still goes with its round (as Defender's words say).
+  lasts until its fighter acts again, but the film still goes with its round (as Defender's words say). Her
+  notes are her blows: one that reaches someone under the film leaves her wet, and one that finds a charge
+  (Condensador's, or Arco voltaico's waiting) makes it jump to her, told as news of its own (`noteAnswered`).
 - **It does not punish, it sets up** (unlike Escolta, Trampantojo and Caleidoscopio): the foe's own blow
   leaves the water that Cortocircuito (a turn lost for sure), Conducción and the duals cash in.
 - **The question it answers**: a blow announced, with a name, on an ally (El Campeón's guantelete, the
@@ -511,13 +515,17 @@ under three dogs).
 
 **Balance** (2026-11-26). At 20 smart takes it about half a fight where the electric blow on everyone pays
 (La Delegada and the Gemelos of the third year, 187 PV a use against 82 for Sondeo and 76 for Cubo: about
-1.1 times its halves before the gas, about 1.45 with it lit). It never lights the gas: wetting, splitting and
-lighting are three turns ahead of a two-ply bot, and where the gum is fresh (the first floor) nobody wets the
-foes first, while on the rancid gum of the third the fire takes nothing. So its pair,
-`delegada-electrolisis` and `delegada-sin-electrolisis` (`ONLY_MAT_FRE`: Gerard only on Matemágico, Aitor only
-on Freática, `FLOOR_3`), holds the dual taken (0.84 duals a fight against 0.28) and the room the same (100 %
-in 5.1 rounds, against 4.9). `gas.rules.blast` (12) is read by no target: no fight in the sim plays the
-answer it was made for. The sim gives the gas's blast to Electrólisis, not to the fire that lit it.
+1.1 times its halves before the gas, about 1.45 with it lit). In the castle it never lays gas: it is cast on
+dry foes, as an electric blow on everyone. The gas goes up where the fight wets the foes itself: El Campeón,
+whose own water the dual splits. For the bot to light it, `smart` values the gas at 28 a level (`GAS_WORTH`,
+the blast at the stats it is met with and the fire it leaves) and a fire that sets it off at what the blast
+does, nothing given back for the gas spent (it used to lose more by lighting than the blast gave). Its pair,
+`campeon-electrolisis` and `campeon-sin-electrolisis` (`ONLY_MAT_FRE`: Gerard only on Matemágico, Aitor only
+on Freática; `ELECTRO_AT`: the party after the other missions with Vasos comunicantes, Descarga and Freática's
+maná), holds the dual taken (0.77 a fight against 0.06) and the gas going up (0.68 a fight against none), so
+`gas.rules.blast` (12) is read; the fight comes out alike (99 %, 14.9 rounds against 14.2): a player's piece,
+not El Campeón's answer. The sim gives the gas's blast to Electrólisis, not to the fire that lit it, and the
+blast's Magia, Rescoldo and Toma de tierra are whoever brought the fire (a dual's fire half), not whoever pressed.
 
 ### With Dadista: Campana de Gauss (2026-11-25, built)
 
