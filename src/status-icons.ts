@@ -55,6 +55,8 @@ export const STATUS_ICONS: Record<IconId, string> = {
   metralla: '<path d="M8 5.4 9.3 8 8 10.6 6.7 8z"/><path d="M8 .8 9 3.6H7zM15.2 8l-2.8 1V7zM8 15.2 7 12.4h2zM.8 8l2.8-1v2zM13 3l-1.2 2.6-1.4-1.4zM3 3l2.6 1.2-1.4 1.4zM3 13l1.2-2.6 1.4 1.4zM13 13l-2.6-1.2 1.4-1.4z"/>',
   'idea-fija': '<path d="M13.4 8A5.4 5.4 0 1 1 8 2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 .6 11 2.6 8 4.6z"/><circle cx="7.2" cy="9.6" r="1.7"/><path d="M8.7 9.6V5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
   seiche: '<path d="M1.8 3v10.6h12.4V3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.6 6.2 13.4 9.4v3.4H2.6z"/>',
+  // Alterna (Corriente alterna): a sine running between its two poles.
+  alterna: '<circle cx="1.9" cy="8" r="1.6"/><circle cx="14.1" cy="8" r="1.6"/><path d="M3.6 8c1-4.6 2.6-4.6 3.4-1.6.4 1.6.6 1.6 1 0 .8-3 2.4-3 3.4 1.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
   staccato: '<circle cx="5.4" cy="11.6" r="2.3"/><path d="M7.4 11.6V2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="4" r="1.4"/><path d="M10 14.6 14.4 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
   // Bomba remota: a round bomb with its fuse and a spark.
   bomba: '<circle cx="7" cy="9.6" r="4.6"/><path d="M10.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.3 1.6v1.5M14.4 3.6h-1.5M12 2.2l.7.7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>',

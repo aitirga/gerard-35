@@ -3,7 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { BUILDS, CASTLE_STAGE_IDS, DUO, MISSIONS, MISSION_IDS, MISSION_PARTY, POLICIES, SIM_VERSION, STRETCHES, STRETCH_IDS, TARGETS, TECH, catalogue, conclude, fullKit, judge, storyJobs, storyPoint, sweepSetups, targetSetup, tunables, withTuning } from '../src/battle-sim.ts';
+import { BUILDS, CASTLE_STAGE_IDS, DUO, MISSIONS, MISSION_IDS, MISSION_PARTY, MAT_SINC, POLICIES, SIM_VERSION, STRETCHES, STRETCH_IDS, TARGETS, TECH, catalogue, conclude, fullKit, judge, storyJobs, storyPoint, sweepSetups, targetSetup, tunables, withTuning } from '../src/battle-sim.ts';
 import { CURVE, coverage, curveGoals, levers, miss, optimize, pairGoals, progressLines, readsOf, skillReport, targetGoals, variable } from '../src/balance.ts';
 import { createPool } from './fight-sim-pool.mjs';
 import { DEFAULT_INTENT, askJev, jevLines, jevRequest } from './fight-sim-jev.mjs';
@@ -63,7 +63,7 @@ Opciones de story (listas separadas por comas):
 
 Opciones de run (cada una acepta una lista separada por comas: se prueban todas las combinaciones):
   --fight a,b        Combates (por defecto, las tres cebollas: crias-1,cebolla,cebollon)
-  --party p,q        Equipos: ${MISSION_PARTY} · ${DUO} (los duales) · gerard:papagato · aitor:-
+  --party p,q        Equipos: ${MISSION_PARTY} · ${DUO} (los duales) · ${MAT_SINC} (Corriente alterna) · gerard:papagato · aitor:-
                      Tras una /, a qué más puede cambiar cada uno en el combate: gerard:matemagico/papagato+aitor:tecnopata/dadaista
   --level l,m        Niveles: papagato=1,papagato=2. Varios a la vez con /: papagato=2/matemagico=1
   --policy p,q       ${Object.keys(POLICIES).join(', ')} (por defecto casual,smart)

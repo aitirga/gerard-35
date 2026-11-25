@@ -1326,6 +1326,20 @@ lodged in each foe's front, glinting in turn; when a physical blow cashes in its
 the blow's contact), every splinter in its body lights at once, the lodged ones draw into the wound, and
 its edges are drawn apart instead of closing. When it ends, they fall out.
 
+**Corriente alterna.** Gerard's dial opens in yellow over him, a step towards the foe, and a resistor
+is drawn in it (two neon halves); a comet of nácar from Sincopante's wearer writes a crescendo hairpin
+(<) over the two poles. A string of light (`string` lattice of 400 members on its own air-deaf kind,
+`alterna-thread`: a yellow core in a gold body) draws tight between the poles' chests from its middle
+out, while the resistor flies to the target and snaps across its chest with Cortocircuito's flash and
+arcs; the blow plucks the string. The camera turns (up to 35°) so the string crosses the picture. While
+the circuit runs (`state.circuits`, read in `hold`) the string follows both chests, trembling more each
+beat; 0.8 s before a beat it is plucked at the far end and a d'Alembert pulse runs to the pole the beat
+is for (`travel`, its speed worked out so it arrives with the beat), flips over there with a flash, and
+the beat (`pulsed`) is a jagged bolt from above onto that foe, a gold halo round a white-hot core with
+forks, arcs over its body and a doubled ring on the floor under it, brighter each beat; its string sounds
+a tone higher (`string-1`…`string-4`). After the last beat the string snaps in the middle, each half
+recoils onto its pole and comes apart in motes. A fallen pole holds its end on the floor.
+
 **Staccato.** Beside the foe, clear of its plate, Sincopante's eco is drawn: a seafoam ring with five
 nácar arcs, a metronome arm ticking left and right; on the third tick Haru's claw makes one clean
 diagonal cut. A line of nácar carries it up into the eco, where the same stroke hangs small and bright.

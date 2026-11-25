@@ -10,9 +10,9 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, ALTERNA, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -52,6 +52,8 @@ export const MISSION_PARTY = 'gerard:papagato+aitor:-';
 export const DUO = 'gerard:matemagico+aitor:papagato';
 /** Gerard on Matemágico and Aitor on his own ánima: two of magic, the party the campsite's magos ask a question of. */
 export const TECH = 'gerard:matemagico+aitor:tecnopata';
+/** Gerard on Matemágico and Aitor on Sincopante: the party of Corriente alterna (Cortocircuito with Crescendo, its ecos sounding). */
+export const MAT_SINC = 'gerard:matemagico+aitor:sincopante';
 /**
  * The party as it goes into the castle's last two stages, with two of the friends' ánimas each beside their own (`extraSlots`):
  * what Dirección and the Queen are held to, since the base pair never wears them. `FULL` carries Freática, Prismático and
@@ -255,6 +257,8 @@ const BOOKS = {
   modelo: { rules: MODELO },
   luca: { rules: LUCA },
   reaction: { rules: REACTION_RULES },
+  // Corriente alterna's circuit: its first beat's power, how much more each, and how many (battle.ts `ALTERNA`).
+  alterna: { rules: ALTERNA },
   // Cegado: how long it lasts (s), and how often a physical blow misses in smoke and in Explosión's flash (battle.ts `CEGADO`).
   cegado: { rules: STATUS_TIMED.cegado, odds: CEGADO },
   element: { rules: ELEMENT_RULES },
@@ -604,6 +608,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   }
   // Sincopante's ecos: the notes still to come from those up (a call adds them, Crescendo raises them, Tutti spends them).
   value += ecoWorth(after) - ecoWorth(before);
+  // Corriente alterna: the beats its circuit has still to give (`circuitWorth`).
+  value += circuitWorth(after) - circuitWorth(before);
   // Da capo: every dual already used back, and the party's maná full (what each point gathered is worth).
   if (choice.skill === 'da-capo') value += (before.usedDuals?.length ?? 0) * 40 + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
   const skill = SKILLS.find(s => s.id === choice.skill);

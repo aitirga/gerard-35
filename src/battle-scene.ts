@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, type TimedPulse, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
@@ -1190,6 +1190,23 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const host = target ?? foes[0];
       if (host) Object.assign(lensWant, { yaw: 0, pitch: -5, zoom: .1, ...look(mid(foes.length ? foes : [host]), .6), y: 0 });
       spotWant = 0;
+    } else if (id === 'corriente-alterna' && target) {
+      // Corriente alterna: both poles of its circuit in the picture, the string drawn tight between them; the pair first. The
+      // camera turns (up to 35°) so the string runs across the picture, not into it, worked out once as it starts.
+      const ends = [...new Set(e.circuit ?? [])].map(p => fighters.get(p)).filter((f): f is Fighter => !!f), poles = ends.length ? ends : [target];
+      if (alternaTurn.effect !== e) {
+        let turn = 0;
+        if (poles.length > 1) {
+          const a = chestOf(poles[0]), b = chestOf(poles[1]), right = screenAxes(viewDir()).right;
+          turn = (Math.atan2(right.z, right.x) - Math.atan2(b.z - a.z, b.x - a.x)) * pc.math.RAD_TO_DEG;
+          turn = ((turn % 180) + 270) % 180 - 90;
+        }
+        alternaTurn = { effect: e, yaw: lens.yaw + Math.max(-35, Math.min(35, turn)) };
+      }
+      if (t < contact * .45) Object.assign(lensWant, { yaw: alternaTurn.yaw * .5, pitch: -5, zoom: .02, ...look(mid([...pair, ...poles]), .55), y: .15 });
+      else Object.assign(lensWant, { yaw: alternaTurn.yaw, pitch: -6, zoom: poles.length > 1 ? .1 : .2, ...look(mid(poles), .7), y: 0 });
+      poles.forEach(f => keep(f, 1.4)); pair.forEach(f => keep(f));
+      spotWant = t < contact + .35 ? 1 : 0;
     } else if (target) {
       const next = e.relay ? fighters.get(e.relay.target) : undefined;
       if (t < contact * .55) {
@@ -1204,6 +1221,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (spot && spotAmount > .002) spot(spotAmount, points);
   }
+  /** Corriente alterna's turn of the camera, worked out once for the effect that plays it (`duoLens`). */
+  let alternaTurn: { effect?: BattleEffect; yaw: number } = { yaw: 0 };
   /** Fight seconds the next glint of a lasting dual is due in: Sutura's stitches, a lit fuse, Bombardeo's beat. */
   const holds = { suture: 0, fuse: 0, orbit: 0, fleck: 0, volcano: 0 };
   /** Each foe's Volcán clock as last seen: when it jumps back up, a beat went off. */
@@ -3741,7 +3760,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * A timed status pulsed on a fighter (src/battle.ts `runClock`): they flare with it, and a pulse
      * that leaves them at 0 PV knocks them down as a blow would.
      */
-    pulse(id: string, status?: string, by?: string) {
+    pulse(id: string, status?: string, by?: string, reaction?: TimedPulse['reaction']) {
       const f = fighters.get(id), unit = state && [...state.allies, ...state.foes].find(u => u.id === id);
       if (!f || !unit) return;
       // A Bomba remota went off: its own blast, not a pulse's flare.
@@ -3751,8 +3770,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const stage = duoStage(effect), target = stage.fighter(id);
         if (target) for (const own of Object.values(DUO_STAGINGS)) own?.pulsed?.(stage, status, target, by ? stage.fighter(by) : undefined);
       }
-      // A dual's own lasting look draws its beat itself (src/duo-fx): a pale flash under it, not fire's.
-      hit(f, status && status in DUO_STAGINGS ? white : flame, .7);
+      // A dual's own lasting look draws its beat itself (src/duo-fx): a pale flash under it, not fire's. Corriente alterna's
+      // beat is a bolt: its flash is the bolt's, and what it turned shows as any reaction does (`reactFx`).
+      const bolt = status === 'alterna';
+      hit(f, bolt ? ELEMENT_FLASH.electrico : status && status in DUO_STAGINGS ? white : flame, bolt ? .9 : .7);
+      if (reaction) reactFx({ actor: id, kind: 'skill', target: id, reaction });
       f.hp = unit.hp;
     },
     /** A reaction between elements on a fighter (docs/combat.md): what was on them turns into what it leaves. */

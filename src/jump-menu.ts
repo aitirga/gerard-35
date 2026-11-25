@@ -129,6 +129,8 @@ const DUAL_TRIALS = {
   staccato: { gerard: 'papagato', aitor: 'sincopante', encounter: 'dogs', improved: [] },
   'cadaver-exquisito': { gerard: 'prismatico', aitor: 'dadaista', encounter: 'dogs', improved: [] },
   trampantojo: { gerard: 'prismatico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:confusion'] },
+  // Matemágico's duals with the ánimas that had none with him (docs/animas/matemagico/README.md § Duals).
+  'corriente-alterna': { gerard: 'matemagico', aitor: 'sincopante', encounter: 'dogs', improved: ['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */

@@ -781,6 +781,14 @@ note = "Hechos con sus reglas, su nodo en el bote, su prueba y su aspecto propio
 title = "Dúos nuevos: Géiser, A escala, Seiche, Staccato, Cadáver exquisito y Trampantojo"
 file = "scripts/screenshots/duos-nuevos.json"
 
+# Aitor 2026-11-25 (docs/animas/matemagico/README.md § Duals, docs/animas/README.md § Alterna): Matemágico's
+# Cortocircuito with Sincopante's Crescendo, a circuit between two foes that beats on each in turn.
+[[block.item]]
+title = "Dúo Corriente alterna (Cortocircuito + Crescendo): la corriente va y viene entre dos enemigos"
+grep = "id: 'corriente-alterna'"
+in = "src/battle.ts"
+note = "Reglas, prueba, cuerda de luz con pulso viajero (src/duo-fx/corriente-alterna.ts) y su captura (just screenshots corriente-alterna --gpu); sus números esperan la pasada de balance."
+
 # Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
 # the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).
 [[block.item]]

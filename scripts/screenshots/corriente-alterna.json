@@ -1,0 +1,141 @@
+{
+  "title": "Corriente alterna",
+  "description": "docs/animas/matemagico/README.md § Duals. From the fight tester's «Probar un dúo»: Matemágico's Cortocircuito with Sincopante's Crescendo against three dogs, then each of its four beats, alternating between the two poles. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22corriente-alterna%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "shot": "antes",
+      "caption": "Antes: tres perros; el último mojado, el de antes con Quemado II, y un eco de Ostinato sonando (Crescendo tiene qué subir)."
+    },
+    {
+      "eval": "(() => { const raf = window.requestAnimationFrame.bind(window); window.requestAnimationFrame = cb => raf(t => cb(window.__fake ?? t)); })()"
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('corriente-alterna'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"corriente-alterna\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"corriente-alterna\"]').click()"
+    },
+    {
+      "eval": "(() => { const { game, battleUI } = window.gerard, s = battleUI.live, target = s.foes[s.foes.length - 1].id; const points = s.foes.map(f => game.fighterAt(f.id)), mean = k => points.reduce((sum, p) => sum + p[k], 0) / points.length; game.frame({ x: mean('x'), y: mean('y') + 1, z: mean('z') }, 3.2); document.querySelector(`.battle-target[data-target=\"${target}\"]:not(:disabled)`).click(); })()"
+    },
+    {
+      "until": "!document.querySelector('.battle-hold').hidden",
+      "timeout": 30000
+    },
+    {
+      "shot": "desbloqueado",
+      "delay": 300,
+      "caption": "La primera vez: «DÚO DESBLOQUEADO», Cortocircuito de Gerard y Crescendo de Aitor."
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "corriente-alterna",
+      "caption": "Corriente alterna (Cortocircuito + Crescendo): el dial de Gerard en amarillo con la resistencia, el regulador de crescendo sobre la Sincopante, la cuerda de luz que se tensa entre los dos polos y la resistencia que se rompe sobre el objetivo.",
+      "seconds": 2.6,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 420,
+      "each": "window.__fake = window.frame === 0 ? performance.now() : window.__fake + 50"
+    },
+    {
+      "eval": "delete window.__fake"
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "despues",
+      "delay": 1100,
+      "caption": "Después: la cuerda tensa entre el objetivo y el perro de al lado, y el icono de Alterna en las dos placas."
+    },
+    {
+      "until": "(c => !!c && c.beat === 0 && c.next < 1.15)(window.gerard.battleUI.live?.circuits?.[0])",
+      "timeout": 60000
+    },
+    {
+      "record": "latido-1",
+      "caption": "Primer latido: el pulso corre por la cuerda hacia el otro polo (el que arde), se da la vuelta allí y el rayo cae en él: ¡Plasma!",
+      "seconds": 1.7,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 420,
+      "each": "window.__fake = window.frame === 0 ? performance.now() : window.__fake + 50"
+    },
+    {
+      "eval": "delete window.__fake"
+    },
+    {
+      "until": "(c => !!c && c.beat === 1 && c.next < 1.15)(window.gerard.battleUI.live?.circuits?.[0])",
+      "timeout": 60000
+    },
+    {
+      "record": "latido-2",
+      "caption": "Segundo latido: el pulso vuelve hacia el objetivo, mojado: el rayo y ¡Conducción!",
+      "seconds": 1.7,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 420,
+      "each": "window.__fake = window.frame === 0 ? performance.now() : window.__fake + 50"
+    },
+    {
+      "eval": "delete window.__fake"
+    },
+    {
+      "until": "(c => !!c && c.beat === 2 && c.next < 1.15)(window.gerard.battleUI.live?.circuits?.[0])",
+      "timeout": 60000
+    },
+    {
+      "record": "latido-3",
+      "caption": "Tercer latido: otra vez al otro polo, más alto y más brillante.",
+      "seconds": 1.7,
+      "fps": 20,
+      "tiles": 12,
+      "sheetWidth": 420,
+      "each": "window.__fake = window.frame === 0 ? performance.now() : window.__fake + 50"
+    },
+    {
+      "eval": "delete window.__fake"
+    },
+    {
+      "until": "(c => !!c && c.beat === 3 && c.next < 1.15)(window.gerard.battleUI.live?.circuits?.[0])",
+      "timeout": 60000
+    },
+    {
+      "record": "latido-4",
+      "caption": "Cuarto latido, el más fuerte; luego la cuerda se rompe por el centro y cada mitad se recoge sobre su polo.",
+      "seconds": 2.8,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 420,
+      "each": "window.__fake = window.frame === 0 ? performance.now() : window.__fake + 50"
+    },
+    {
+      "eval": "delete window.__fake"
+    },
+    {
+      "shot": "final",
+      "delay": 900,
+      "caption": "Se acabó la corriente: ni cuerda ni icono."
+    }
+  ]
+}

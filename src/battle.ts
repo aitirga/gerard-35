@@ -680,7 +680,8 @@ export const WEAK_SPOT = 3;
  */
 export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color' | 'sobrecalentamiento' | 'vulcano'
   | 'marea' | 'fulgurita' | 'suceso-seguro' | 'metralla' | 'idea-fija' | 'caleidoscopio'
-  | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo';
+  | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo'
+  | 'corriente-alterna';
 export interface DualSpec {
   id: DualId; name: string;
   parts: readonly [SkillId, SkillId];
@@ -708,7 +709,7 @@ export interface DualSpec {
   major?: boolean;
   /** Sangrado stacks each foe it lands on is left with; a blow that cuts piles up, it never spends the wound. */
   bleed?: number;
-  /** A timed status it leaves on every foe it reaches (Marea, Fulgurita, Metralla, Seiche; Staccato and Idea fija on its target). */
+  /** A timed status it leaves on every foe it reaches (Marea, Fulgurita, Metralla, Seiche; Staccato and Idea fija on its target; Corriente alterna on its two poles). */
   leaves?: TimedId;
   description: string; abstract?: boolean;
 }
@@ -754,6 +755,9 @@ export const DUALS: DualSpec[] = [
   { id: 'cadaver-exquisito', name: 'Cadáver exquisito', parts: ['punado', 'estrella-fugaz'], side: 'foes', kind: 'physical', power: 12, strikes: 3, description: 'Daño físico leve a un enemigo. Golpea tres veces. Cada golpe lo empolva y lleva un elemento al azar. Con racha 3 o más, los tres son distintos.' },
   // Trampantojo: a painted figure on the screen. Whoever goes through it no longer knows whose side it is on.
   { id: 'trampantojo', name: 'Trampantojo', parts: ['confusion', 'cortina'], side: 'allies', kind: 'guard', power: 0, description: 'Protege a un aliado con una cortina de polvo que reduce a la mitad el siguiente daño que reciba. El enemigo que la rompa queda confundido durante 20 segundos.' },
+  // Corriente alterna (Matemágico's Cortocircuito, Sincopante's Crescendo): the current goes to and fro between two foes on a
+  // fixed beat, each time harder, and every beat is a bolt for the reactions (`ALTERNA`, `runCircuits`, `electricBeat`).
+  { id: 'corriente-alterna', name: 'Corriente alterna', parts: ['cortocircuito', 'crescendo'], side: 'foes', kind: 'magic', element: 'electrico', power: 14, leaves: 'alterna', description: 'Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. Durante 20 segundos, la corriente va y viene entre él y el enemigo de al lado: cada 5 segundos golpea a uno de los dos, más fuerte cada vez. Cada golpe provoca las reacciones de la electricidad y gasta el estado con el que reacciona.' },
 ];
 /** The dual two skills make, in either order. */
 export const dualOf = (a: SkillId, b: SkillId) => DUALS.find(d => (d.parts[0] === a && d.parts[1] === b) || (d.parts[0] === b && d.parts[1] === a));
@@ -800,8 +804,8 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
 export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus' | 'bomba' | DualTimedId | WaterId;
-/** What the newer duals leave on a foe: Marea's joined cells, Fulgurita's shared shards, Metralla's open wounds, and the ecos of Idea fija, Seiche and Staccato. */
-export type DualTimedId = 'marea' | 'fulgurita' | 'metralla' | 'idea-fija' | 'seiche' | 'staccato';
+/** What the newer duals leave on a foe: Marea's joined cells, Fulgurita's shared shards, Metralla's open wounds, the ecos of Idea fija, Seiche and Staccato, and Corriente alterna's circuit. */
+export type DualTimedId = 'marea' | 'fulgurita' | 'metralla' | 'idea-fija' | 'seiche' | 'staccato' | 'alterna';
 /** La crecida's states (`CRECIDA`): the water under a foe, its current, the foe sunk in it, and the water frozen round it. */
 export type WaterId = 'agua' | 'corriente' | 'hundido' | 'congelado';
 export const WATER_IDS: readonly WaterId[] = ['agua', 'corriente', 'hundido', 'congelado'];
@@ -851,6 +855,9 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   'idea-fija': { name: 'Idea fija', seconds: 20, every: 5, levels: [1], flat: 0, share: 0, cap: 0 },
   seiche: { name: 'Seiche', seconds: 20, every: 5, levels: [1], flat: 7, share: 0, cap: 0 },
   staccato: { name: 'Staccato', seconds: 20, every: 5, levels: [1], flat: 5, share: 0, cap: 0 },
+  // Alterna (Corriente alterna): on both poles of the circuit, the clock of the current between them. It never pulses on its
+  // own: the circuit strikes one pole each beat (`runCircuits`, `ALTERNA`).
+  alterna: { name: 'Alterna', element: 'electrico', seconds: 20, every: 5, levels: [], flat: 0, share: 0, cap: 0 },
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Bomba (Bomba remota, BOMBA): it never pulses; it counts how long it has been on (`Timed.age`) and goes off when its time is up (`runClock`).
@@ -1047,6 +1054,35 @@ export function ecoWorth(state: BattleState): number {
       worth += Math.min(hurtNow, beats * healing(ECOS.pulse, owner.maxHp) * k * (e.grade === 2 ? state.allies.filter(a => a.hp > 0).length : 1)) * .9;
     } else if (e.kind === 'acompanamiento') worth += beats * .7 * magical(SKILLS.find(s => s.id === 'acompanamiento')!.power, stats, guard) * k * (e.grade === 2 ? foes.length : 1);
     else worth += Math.min(e.grade === 2 ? Infinity : aimed.hp, beats * magical(ECOS.pulse, stats, guard) * k * (e.grade === 2 ? foes.length : 1));
+  }
+  return worth;
+}
+/**
+ * What Corriente alterna's circuits are still worth, for the bot (src/battle-sim.ts): each beat still to come on the pole
+ * it would go to now, with its sender's Magia, and the first beat on a pole that carries something to turn (water, smoke,
+ * fire) worth that reaction, about; each beat `CIRCUIT_WAIT` as much as the one before it, since the fight may be over (or
+ * the pole down) before it sounds. Pure: a copy of the fight is looked at.
+ */
+const CIRCUIT_WAIT = .75;
+export function circuitWorth(state: BattleState): number {
+  let worth = 0;
+  for (const circuit of state.circuits ?? []) {
+    const sender = state.allies.find(a => a.id === circuit.by);
+    if (!sender) continue;
+    const poles = circuit.poles.map(id => state.foes.find(f => f.id === id && f.hp > 0));
+    const beats = circuit.left + 1e-6 >= circuit.next ? Math.floor((circuit.left - circuit.next) / TIMED.alterna.every + 1e-6) + 1 : 0, stats = current(state, sender), found = new Set<string>();
+    for (let k = circuit.beat, wait = 1; k < circuit.beat + beats; k++, wait *= CIRCUIT_WAIT) {
+      const victim = poles[k % 2] ?? poles[1 - k % 2];
+      if (!victim) break;
+      const guard = current(state, victim);
+      worth += wait * Math.min(victim.hp, magical(alternaPower(k), stats, guard) * affinityScale(victim, 'electrico'));
+      if (found.has(victim.id)) continue;
+      found.add(victim.id);
+      const fire = victim.timed?.quemado;
+      if (victim.timed?.mojado) worth += wait * magical(REACTION_RULES.conduct, stats, guard) * state.foes.filter(f => f.hp > 0 && f.timed?.mojado).length;
+      else if (fire) worth += wait * firePulses(fire) * pulseDamage('quemado', fire.level, victim.maxHp) * (REACTION_RULES.plasma - 1);
+      else if (victim.timed?.cegado) worth += wait * magical(REACTION_RULES.storm, stats, guard) * state.foes.filter(f => f.hp > 0 && f.timed?.cegado).length;
+    }
   }
   return worth;
 }
@@ -1274,7 +1310,13 @@ export interface TimedPulse { target: string; status: TimedId; level: number; am
   /** Idea fija: the foe whose eco made it strike `target`. */
   by?: string;
   /** A Bomba remota went off (its `amount`), and the definitiva it woke, if any (Enjambre). */
-  blast?: true; awoken?: SkillId }
+  blast?: true; awoken?: SkillId;
+  /**
+   * Corriente alterna's beat (`electricBeat`): `by` is the pole it came from; what it turned on `target` (the reaction, with
+   * the PV it took from each it reached), who it left in Shock, and whether Toma de tierra gave its sender a maná back.
+   */
+  reaction?: { id: ElementReaction; level?: number; hits?: { target: string; amount: number }[]; targets?: string[] };
+  shocked?: string[]; mana?: string }
 /** Siete vidas' ward went off on a pulse or a round's tick: what it would have taken (`blow`), and the cure it gave instead. */
 export interface Saved { blow: number; amount: number }
 /** Level in roman numerals, as the fight shows it ("Quemado II"). */
@@ -1559,6 +1601,8 @@ export interface BattleState {
   dacapo?: { woke?: true; used?: true };
   /** La crecida: who holds the foes' water (whoever raised it last); if they fall, every cell breaks (`holdWater`). */
   water?: { by: string };
+  /** Corriente alterna's circuits running now (`Circuit`, `runCircuits`). */
+  circuits?: Circuit[];
   /** Bajo cero in this fight: whether a foe's water has reached the third mark while Freática was worn, whether it went off, and whose Magia its ice breaks with. */
   cold?: { woke?: true; used?: true; by?: string };
   /** Enjambre (Tecnópata's definitiva): woken by a Bomba remota going off at its top while Tecnópata was worn; used. */
@@ -2034,6 +2078,8 @@ export interface BattleEffect {
   fooled?: string;
   /** A dual's own statuses, for the fight to show: who was left blinded by Géiser's steam, who a timed status of the dual was laid on. */
   vapour?: string[]; left?: { id: TimedId; targets: string[] };
+  /** Corriente alterna: the two poles of the circuit it left (the first beat goes to the first), the same one twice for a foe alone. */
+  circuit?: [string, string];
   /** Cadáver exquisito: the element each handful carried, in order. */
   drawn?: Element[];
   /** Nanitos: the timed statuses a cure took off its target. */
@@ -3278,7 +3324,8 @@ function spread(state: BattleState, effect: BattleEffect) {
     if (!host.timed?.virus || !host.virusSeen || host.hp <= 0) { delete host.virusSeen; continue; }
     const before = host.virusSeen, others = state.foes.filter(f => f !== host && f.hp > 0 && !f.part);
     // La crecida's states belong to each foe's own water (its Mojado too, while the water stands): they never spread.
-    const held = (id: TimedId) => (WATER_IDS as readonly TimedId[]).includes(id) || (id === 'mojado' && !!host.timed?.agua);
+    // Nor does Corriente alterna's circuit: it runs between its two poles only.
+    const held = (id: TimedId) => (WATER_IDS as readonly TimedId[]).includes(id) || id === 'alterna' || (id === 'mojado' && !!host.timed?.agua);
     const fresh = TIMED_IDS.filter(id => id !== 'virus' && !held(id) && !TIMED[id].heal && host.timed![id] && (host.timed![id] !== before.timed[id] || host.timed![id]!.level > (before.timed[id]?.level ?? 0)));
     const piled = STATUS_IDS.filter(id => stacks(host, id) > (before.statuses[id] ?? 0));
     host.virusSeen = seen(host);
@@ -4540,9 +4587,12 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     }
     if (bled) { closeWound(target); effect.bled = bled; }
     if (crits.some(Boolean)) { effect.crit = true; if (crits.length > 1) effect.crits = crits; }
-    if (elementOf(d)) powder(state, striker, target, elementOf(d)!, effect);
+    // Corriente alterna's blow is Cortocircuito's: on someone wet or about to move it shorts in them, otherwise a bolt like any other.
+    if (id === 'corriente-alterna') { if (shortCircuit(state, target, effect)) react(state, striker, target, 'electrico', effect, false, true); else react(state, striker, target, 'electrico', effect, true); }
+    else if (elementOf(d)) powder(state, striker, target, elementOf(d)!, effect);
     if (d.bleed && target.hp > 0 && strikes.some(n => n > 0)) effect.status = { id: 'sangrado', stacks: cut(state, target, d.bleed) };
-    if (d.leaves && target.hp > 0) { lay(target, d.leaves); effect.left = { id: d.leaves, targets: [target.id] }; }
+    if (id === 'corriente-alterna') wire(state, striker, target, effect);
+    else if (d.leaves && target.hp > 0) { lay(target, d.leaves); effect.left = { id: d.leaves, targets: [target.id] }; }
     if (id === 'geiser') {
       // All its water goes up in steam, and the steam is everyone's: Cegado on every foe.
       if (marks) lowerWater(target, marks, effect);
@@ -4598,6 +4648,89 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
 export const SCALE_SECONDS = 20;
 /** Idea fija: the base power of the blow its carrier lands on one of its own each beat, with its own Fuerza (Control remoto's). */
 export const IDEA_FIJA = 34;
+/**
+ * Corriente alterna (docs/animas/matemagico/README.md § Duals): the power of its circuit's beats, a crescendo, `first` and
+ * `step` more each beat, for `beats` beats (6, 9, 12, 15); a clock started over by Reinicio or stretched by Telemetría
+ * beats on at the last. The beats go to the poles in turn, the other one first, never by chance, so what comes next can be read.
+ */
+export const ALTERNA = { first: 6, step: 3, beats: 4 };
+/** The power of Corriente alterna's beat `k` (from 0). */
+export const alternaPower = (k: number) => ALTERNA.first + ALTERNA.step * Math.min(k, ALTERNA.beats - 1);
+/**
+ * A circuit of Corriente alterna between two foes: its poles (the first beat goes to the first, the next to the second, and
+ * so on; the same foe twice when it stood alone), who sent it (whose Magia the beats are, and whose Toma de tierra), the
+ * beats sounded and its clock. Both poles carry `TIMED.alterna` while it runs, with its clock, for the plate.
+ */
+export interface Circuit { poles: [string, string]; by: string; beat: number; left: number; next: number }
+/**
+ * Corriente alterna wires `target` to the next foe standing in the row (the one before if it is the last; itself if it
+ * is alone). A target felled by the blow leaves the circuit to the other pole alone.
+ */
+function wire(state: BattleState, by: Combatant, target: Combatant, effect: BattleEffect) {
+  const others = state.foes.filter(f => f.hp > 0 && !f.part && f !== target), at = state.foes.indexOf(target);
+  const other = state.foes.slice(at + 1).find(f => others.includes(f)) ?? state.foes.slice(0, at).reverse().find(f => others.includes(f)) ?? target;
+  if (other.hp <= 0) return;
+  (state.circuits ??= []).push({ poles: [other.id, target.id], by: by.id, beat: 0, left: TIMED.alterna.seconds, next: TIMED.alterna.every });
+  const poles = [...new Set([other, target])].filter(f => f.hp > 0);
+  for (const pole of poles) lay(pole, 'alterna');
+  effect.left = { id: 'alterna', targets: poles.map(f => f.id) };
+  effect.circuit = [other.id, target.id];
+  state.message += other === target ? ` La corriente se queda dando vueltas en ${target.name}.` : ` La corriente queda yendo y viniendo entre ${target.name} y ${other.name}.`;
+}
+/** What each electric reaction found on the foe it was set off on: the status an electric beat spends with it. */
+const REACTED: Partial<Record<ElementReaction, TimedId>> = { conduccion: 'mojado', plasma: 'quemado', tormenta: 'cegado', cristal: 'empolvado' };
+/**
+ * One beat of an electric circuit on `victim` (Corriente alterna): `power` of electric magic with its sender's stats, no
+ * golpe crítico, as a pulse; but it counts as a bolt for the reactions (`react`: Conducción, Plasma, Tormenta, Cristalizado),
+ * the only pulse that does, and the status it reacted with is spent on `victim`, so one beat never feeds the next: what
+ * gives it worth is wetting, burning, blinding or powdering the pole again between beats. Water held under a foe (La
+ * crecida) keeps its own Mojado, as it does against any bolt.
+ */
+function electricBeat(state: BattleState, sender: Combatant, victim: Combatant, power: number, level: number, from: Combatant): TimedPulse {
+  const said = state.message;
+  const amount = hurt(state, victim, fearDamage(state, victim, magical(power, current(state, sender), current(state, victim)) * affinityScale(victim, 'electrico'), 'magic', 'electrico'));
+  const effect: BattleEffect = { actor: sender.id, kind: 'skill', target: victim.id, amount };
+  react(state, sender, victim, 'electrico', effect);
+  const reaction = effect.reaction, spent = reaction && REACTED[reaction.id];
+  if (spent && victim.timed?.[spent] && !(spent === 'mojado' && victim.timed.agua)) delete victim.timed[spent];
+  // A pulse says nothing on the plate's message: its numbers and the reaction's name say it.
+  state.message = said;
+  return { target: victim.id, status: 'alterna', level, amount, ...from !== victim ? { by: from.id } : {},
+    ...reaction ? { reaction: { id: reaction.id, ...reaction.level ? { level: reaction.level } : {}, ...reaction.hits ? { hits: reaction.hits } : {}, ...reaction.targets ? { targets: reaction.targets } : {} } } : {},
+    ...effect.shocked?.length ? { shocked: effect.shocked } : {}, ...effect.mana ? { mana: sender.id } : {} };
+}
+/**
+ * Corriente alterna's circuits on the fight's clock: each beat strikes one pole, in turn, harder each time (`ALTERNA`), and
+ * a pole fallen leaves the beats to the other. Reinicio or Telemetría on either pole stretches the circuit's clock (it
+ * runs as long as its longer pole's). It ends with its clock, or with both poles down.
+ */
+function runCircuits(state: BattleState, seconds: number, pulses: TimedPulse[]) {
+  if (!state.circuits?.length) return;
+  for (const circuit of state.circuits) {
+    const poles = circuit.poles.map(id => state.foes.find(f => f.id === id)) as [Combatant | undefined, Combatant | undefined];
+    const sender = state.allies.find(a => a.id === circuit.by) ?? state.allies[0];
+    for (const pole of poles) if (pole && pole.hp > 0 && pole.timed?.alterna) circuit.left = Math.max(circuit.left, pole.timed.alterna.left);
+    let dt = seconds;
+    while (circuit.left > 1e-6 && dt >= circuit.next - 1e-6) {
+      dt -= circuit.next; circuit.left -= circuit.next; circuit.next = TIMED.alterna.every;
+      const aimed = poles[circuit.beat % 2], other = poles[1 - circuit.beat % 2];
+      const victim = aimed && aimed.hp > 0 ? aimed : other && other.hp > 0 ? other : undefined;
+      if (!victim) { circuit.left = 0; break; }
+      const power = alternaPower(circuit.beat);
+      circuit.beat++;
+      pulses.push(electricBeat(state, sender, victim, power, circuit.beat, victim === aimed ? other ?? victim : aimed ?? victim));
+    }
+    circuit.left -= dt; circuit.next -= dt;
+    if (poles.every(p => !p || p.hp <= 0)) circuit.left = 0;
+    for (const pole of poles) {
+      if (!pole?.timed?.alterna) continue;
+      if (circuit.left <= 1e-6 || pole.hp <= 0) delete pole.timed.alterna;
+      else Object.assign(pole.timed.alterna, { left: circuit.left, next: circuit.next });
+    }
+  }
+  state.circuits = state.circuits.filter(c => c.left > 1e-6);
+  if (!state.circuits.length) delete state.circuits;
+}
 /** A timed status a dual leaves on `c`, from its whole time. */
 function lay(c: Combatant, id: TimedId) {
   c.timed = { ...c.timed, [id]: { level: 1, left: TIMED[id].seconds, next: TIMED[id].every } };
@@ -6524,8 +6657,10 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   const echoed = runEcos(state, seconds);
   // La crecida: the water drains and the ice melts on their own clocks (`runWater`); the current and the sinking pulse below.
   runWater(state, seconds);
+  // Corriente alterna's circuits beat on their own clock, one pole at a time (`runCircuits`).
+  runCircuits(state, seconds, pulses);
   for (const c of [...state.foes, ...state.allies]) for (const id of TIMED_IDS) {
-    if (id === 'agua' || id === 'congelado') continue;
+    if (id === 'agua' || id === 'congelado' || id === 'alterna') continue;
     const on = c.timed?.[id];
     // A fire settled but still on its way (`waiting`): its clock starts when it lands.
     if (!on || waiting?.(c)) continue;

@@ -547,6 +547,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Sincopante | **Staccato** | Zarpazo sangriento + Ostinato | 1 · 1 | Built (2026-11-21). An eco repeats the cut each 5 s for 20 s, a Sangrado each |
 | Colorista + Dadista | **Cadáver exquisito** | Puñado + Estrella fugaz | 1 · 3 | Built (2026-11-21). Three blows, each powdering and of a random element; with a streak of 3, all three different |
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
+| Matemágico + Sincopante | **Corriente alterna** | Cortocircuito + Crescendo | node · 2 | Built (2026-11-25). Cortocircuito's blow, then for 20 s a circuit between the foe and the next in the row: a beat every 5 s on each in turn, harder each time, that sets off electricity's reactions and spends what it reacted with (§ Alterna) |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
@@ -1117,6 +1118,33 @@ churning slowly, grains falling from its foot onto the floor. Its icon on the al
 small curtain. A blow goes through it: the screen is torn open where the blow passes and the
 whole of it is thrown forward over whoever dealt it (a puff, as a handful's), and the number
 comes out with *Cortina −50 %*.
+
+### Alterna (Corriente alterna's circuit, timed)
+
+Built 2026-11-25 (`ALTERNA`, `Circuit`, `runCircuits` and `electricBeat` in `src/battle.ts`;
+`tests/corriente-alterna.test.mjs`). The dual *Corriente alterna* (Cortocircuito + Crescendo) wires
+its target to **the next foe standing in the row** (the one before it if it is the last; the same
+foe twice if it stands alone). Both poles carry **Alterna** for **20 s**, its clock on their plates.
+
+- **Every 5 s a beat strikes one pole, in a fixed order**: the other pole first, then the target, and
+  so on. Nothing by chance: what comes next can be read.
+- **A crescendo**: 6, 9, 12 and 15 of electric magic, with the Magia of whoever brought Cortocircuito.
+  Like any pulse it is never a golpe crítico.
+- **It is the only pulse that reacts.** Each beat is a bolt for the reactions (`react`): on someone
+  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. The
+  status it reacted with is spent on the foe it struck, so no beat feeds the next: what makes it pay
+  is wetting, burning, blinding or powdering the pole whose beat is coming. Water held under a foe
+  (§ Agua contenida) keeps its Mojado, as against any bolt. Toma de tierra gives its sender a maná for
+  it, once a round as always.
+- **A pole that falls** leaves the beats that remain to the other; with both down it is over.
+- It **never spreads** with Virus atómico (it is between two foes, not on one). A clock started over
+  (Reinicio) or stretched (Telemetría) on either pole keeps the circuit going: it beats on at 15.
+
+**How it shows** (`src/duo-fx/corriente-alterna.ts`): a string of light between the poles' chests (a
+`string` lattice, a yellow core in a gold body) trembles more each beat; a little before each, a pulse
+runs along it towards the pole the beat is for, flips over at that end, and a bolt falls on that foe.
+After the last beat the string snaps in the middle and each half recoils onto its pole. The icon: a
+sine between two dots, in yellow.
 
 ### How long a clock status lasts (proposal, 2026-11-14)
 
