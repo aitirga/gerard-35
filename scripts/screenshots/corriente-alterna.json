@@ -1,6 +1,6 @@
 {
   "title": "Corriente alterna",
-  "description": "docs/animas/matemagico/README.md § Duals. From the fight tester's «Probar un dúo»: Matemágico's Cortocircuito with Sincopante's Crescendo against three dogs, then each of its four beats, alternating between the two poles. Run it with --gpu.",
+  "description": "docs/animas/matemagico/README.md § Duals. From the fight tester's «Probar un dúo»: Matemágico's Cortocircuito with Sincopante's Crescendo against three dogs, with the dual's own camera (`alternaShot`), then each of its four beats, alternating between the two poles. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22corriente-alterna%22%7D"
@@ -27,7 +27,7 @@
       "eval": "document.querySelector('[data-dual=\"corriente-alterna\"]').click()"
     },
     {
-      "eval": "(() => { const { game, battleUI } = window.gerard, s = battleUI.live, target = s.foes[s.foes.length - 1].id; const points = s.foes.map(f => game.fighterAt(f.id)), mean = k => points.reduce((sum, p) => sum + p[k], 0) / points.length; game.frame({ x: mean('x'), y: mean('y') + 1, z: mean('z') }, 3.2); document.querySelector(`.battle-target[data-target=\"${target}\"]:not(:disabled)`).click(); })()"
+      "eval": "(() => { const s = window.gerard.battleUI.live, target = s.foes[s.foes.length - 1].id; document.querySelector(`.battle-target[data-target=\"${target}\"]:not(:disabled)`).click(); })()"
     },
     {
       "until": "!document.querySelector('.battle-hold').hidden",

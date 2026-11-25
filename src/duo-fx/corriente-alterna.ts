@@ -11,7 +11,7 @@ import type { DuoFighter, DuoStage, DuoStaging } from './types';
  *
  * - **Start**: Gerard's dial opens in yellow and a resistor is drawn in it; a comet of nácar from
  *   Sincopante's wearer writes a crescendo hairpin (<) over the two poles. A string of light draws tight between the two poles, from
- *   its middle out to each chest (a `string` lattice of 400 members: a yellow core in a gold body),
+ *   its middle out to each chest (three `string` lattices of 400 members: a yellow core in a gold neon body, a faint nácar rim),
  *   while the resistor flies to the target.
  * - **Contact**: the resistor lies across the target's chest and snaps, as Cortocircuito's always does:
  *   a flash, sparks and arcs over the foe, and the blow plucks the string.
@@ -19,11 +19,11 @@ import type { DuoFighter, DuoStage, DuoStaging } from './types';
  *   beat. A little before each beat it is plucked at the far end and a d'Alembert pulse runs towards
  *   the pole the beat is for, so what comes is read on the string; it flips over at that end, and the
  *   beat (`pulsed`) is a bolt from above onto that foe, brighter each time, its string a tone higher.
- * - **Last beat**: the string snaps in the middle and each half recoils onto its own pole.
+ * - **Last beat**: the string snaps in the middle and each half whips back onto its own pole, coming apart in motes as it goes.
  *
  * Matemágico's yellow and gold, Sincopante's nácar and seafoam; never violet nor pink (docs/visual-style.md).
  */
-const C = { bolt: '#ffe45c', hot: '#fff6c8', gold: '#f3cf78', body: '#e3a43a', core: '#fff09a', nacar: ORBIT.nacar, foam: ORBIT.foam } as const;
+const C = { bolt: '#ffe45c', hot: '#fff6c8', gold: '#f3cf78', body: '#e3a43a', amber: '#eb9a26', core: '#fff09a', nacar: ORBIT.nacar, foam: ORBIT.foam } as const;
 const BOLT_FLASH = [1, .94, .55] as const;
 const timing = { contact: .9, end: 2.4 };
 /** When the dial is drawn, when the resistor is (it flies from then to the contact), and when the string draws tight (fight seconds from the start). */
@@ -33,10 +33,19 @@ const LEAD = .8;
 const NACRE_LOOK = { core: '#ffffff', halo: ORBIT.foam };
 
 const KINDS = {
-  // The string's members: the fight's `thread`, deaf to the air, so a burning pole's updraft does not curl its end away.
+  // The string's members: the fight's `thread`, deaf to the air, so a burning pole's updraft does not curl its end away. Its
+  // hot core, its gold body (a neon tube's glass, brighter) and a faint wide rim of nácar round both.
   'alterna-thread': {
     drag: .2, gravity: 0, curl: 0, response: 0, size: [.011, .008], shape: 'strand',
-    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [3.4, 2.8, 1.2], middle: .5, fadeIn: .08, fadeOut: .35, additive: 1, flicker: .1,
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.7, 1.4, .6], middle: .5, fadeIn: .08, fadeOut: .35, additive: 1, flicker: .1,
+  },
+  'alterna-tube': {
+    drag: .2, gravity: 0, curl: 0, response: 0, size: [.011, .009], shape: 'strand',
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.5, 1.25, .5], middle: .5, fadeIn: .08, fadeOut: .35, additive: 1, flicker: .08,
+  },
+  'alterna-rim': {
+    drag: .2, gravity: 0, curl: 0, response: 0, size: [.012, .01], shape: 'strand', blur: [.4, .9],
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [.35, .28, .1], middle: .5, fadeIn: .1, fadeOut: .4, additive: 1, flicker: .05,
   },
   // The bolt of a beat: crisp white-hot dots along its way, gone in a blink, and the glow round them.
   'alterna-bolt': {
@@ -48,7 +57,7 @@ const KINDS = {
     colours: ['#fff6c8', '#ffe45c', '#f3cf78'], intensity: [3.2, 2, .7], middle: .3, fadeIn: 0, fadeOut: .6, additive: 1, core: .2,
   },
 } satisfies Record<string, GpuKind>;
-const FALLBACK: Record<string, string> = { 'alterna-thread': 'thread', 'alterna-bolt': 'glyph', 'alterna-halo': 'glyph' };
+const FALLBACK: Record<string, string> = { 'alterna-thread': 'thread', 'alterna-tube': 'thread', 'alterna-rim': 'thread', 'alterna-bolt': 'glyph', 'alterna-halo': 'glyph' };
 function ensure(stage: DuoStage) {
   const g = stage.effects.gpu;
   if (!g) return;
@@ -84,10 +93,10 @@ function trace(stage: DuoStage, pts: readonly V3[], kind: string, colour: string
 }
 
 // ── The string between the poles ──
-/** A string of light between a circuit's poles: its two lattices (gold body, yellow core), the pulses plucked so far and where its ends were last. */
+/** A string of light between a circuit's poles: its three lattices (yellow core, gold body, nácar rim), the pulses plucked so far and where its ends were last. */
 interface Wire {
   key: string; poles: [string, string]; alone: boolean;
-  body: GpuLattice; core: GpuLattice;
+  body: GpuLattice; core: GpuLattice; rim: GpuLattice;
   /** Fight seconds (this module's clock) it was made, and when it draws tight. */
   born: number; grow: readonly [number, number];
   /** Beats plucked for (the next pluck is for beat `plucked`), and the circuit's beats as last seen. */
@@ -121,15 +130,15 @@ function spin(stage: DuoStage, poles: [string, string], growFrom: number): Wire 
   if (!g) return;
   const alone = poles[0] === poles[1], placeholder = stage.fighter(poles[1])?.chest ?? { x: 0, y: 0, z: 0 };
   const ends = endsOf(stage, { poles, alone, ends: [placeholder, placeholder] }), mid = mix(ends[0], ends[1], .5);
-  const make = (kind: string, colour: string, scale: number) => g.lattice(kind, {
-    grid: [400, 1, 1], size: { x: .01, y: 0, z: 0 }, shape: 'string', life: 3, hold: .4, colour, scale,
-    rigidity: 600, bonds: 200, damping: 12, viscosity: 2, glow: .45, rim: 1.2, breakInto: 'spark',
+  const make = (kind: string, colour: string, scale: number, glow: number) => g.lattice(kind, {
+    grid: [400, 1, 1], size: { x: .01, y: 0, z: 0 }, shape: 'string', life: 1.4, hold: .35, colour, scale,
+    rigidity: 600, bonds: 200, damping: 12, viscosity: 2, glow, rim: 1.2, breakInto: 'spark',
     wave: { height: .004, length: .35, speed: 2.4 }, between: [mix(mid, ends[0], .02), mix(mid, ends[1], .02)],
   });
   try {
     ensure(stage);
-    const thread = kindOf(stage, 'alterna-thread'), body = make(thread, C.body, 2.6), core = make(thread, C.core, 1.1);
-    const w: Wire = { key: keyOf(poles), poles, alone, body, core, born: clock, grow: [growFrom, growFrom + (T.grow[1] - T.grow[0])], plucked: 0, beat: 0, ends, seen: clock };
+    const body = make(kindOf(stage, 'alterna-tube'), C.amber, 5.2, .3), core = make(kindOf(stage, 'alterna-thread'), C.core, .75, .15), rim = make(kindOf(stage, 'alterna-rim'), C.foam, 6.5, 0);
+    const w: Wire = { key: keyOf(poles), poles, alone, body, core, rim, born: clock, grow: [growFrom, growFrom + (T.grow[1] - T.grow[0])], plucked: 0, beat: 0, ends, seen: clock };
     wires.set(w.key, w);
     return w;
   } catch { return undefined; }
@@ -138,11 +147,11 @@ function spin(stage: DuoStage, poles: [string, string], growFrom: number): Wire 
 function stretch(stage: DuoStage, w: Wire) {
   const ends = endsOf(stage, w);
   w.ends = ends;
-  if (w.snapped !== undefined) { for (const s of [w.body, w.core]) s.span(ends[0], ends[1]); return; }
+  if (w.snapped !== undefined) { for (const s of strands(w)) s.span(ends[0], ends[1]); return; }
   const open = smooth((clock - w.born - w.grow[0]) / (w.grow[1] - w.grow[0])), mid = mix(ends[0], ends[1], .5);
   const a = mix(mid, ends[0], Math.max(.01, open)), b = mix(mid, ends[1], Math.max(.01, open));
   const tremble = .004 + .008 * clamp01(w.beat / 4);
-  for (const s of [w.body, w.core]) { s.span(a, b); s.wave.height = tremble; s.wave.speed = 2.4 + w.beat * .5; }
+  for (const s of strands(w)) { s.span(a, b); s.wave.height = tremble; s.wave.speed = 2.4 + w.beat * .5; }
 }
 /** The pulse for beat `k` (from 0), plucked at the far end, to reach the end of the pole it goes to in `seconds`. */
 function pluck(stage: DuoStage, w: Wire, k: number, toward: 1 | -1, seconds: number) {
@@ -156,17 +165,21 @@ function pluck(stage: DuoStage, w: Wire, k: number, toward: 1 | -1, seconds: num
     stage.fx.burst('spark', { at: there, count: 26 + 10 * k, spread: .05, speed: 2.4 + k * .6, life: [.2, .45], colour: C.hot });
   } });
   w.core.travel({ toward, from, height, speed, width: .2 + .03 * k, decay: 2.2, shine: shine + .8 });
+  w.rim.travel({ toward, from, height, speed, width: .3 + .03 * k, decay: 2.2, shine: shine * .6 });
   // Where it is plucked: a spark of gold and a ring of nácar, Sincopante's beat.
   stage.fx.burst('spark', { at: origin, count: 14 + 6 * k, spread: .04, speed: 1.6, life: [.15, .3], colour: C.gold });
   stage.fx.ring(origin, sub(w.ends[1], w.ends[0]), .08 + .02 * k, C.nacar, { count: 28, outward: 1.4, life: .35, size: 1.1 });
   stage.cue(stringSound(k + 1), { volume: .55 + .1 * Math.min(k, 3), pan: stage.pan(origin) });
 }
 const sub = (a: V3, b: V3): V3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+/** A string's three lattices. */
+const strands = (w: Wire) => [w.body, w.core, w.rim];
 /** The string snaps in its middle: each half recoils onto its own pole and comes apart in motes. */
 function snap(stage: DuoStage, w: Wire) {
   if (w.snapped !== undefined) return;
   w.snapped = clock;
-  for (const s of [w.body, w.core]) s.snap({ at: 0, seconds: .45, whip: .14 });
+  // Its glow goes at once (bunched on a pole it would pile up into a knot of light); the halves whip back slowly enough to be seen.
+  for (const s of strands(w)) { s.snap({ at: 0, seconds: .9, whip: .34 }); s.glow = 0; }
   const mid = mix(w.ends[0], w.ends[1], .5);
   stage.fx.burst('bloom', { at: mid, count: 1, spread: .02, life: [.16, .24], colour: C.hot, size: .7, light: { intensity: 3, range: 3.5, colour: C.bolt } });
   stage.fx.burst('spark', { at: mid, count: 60, spread: .05, speed: 3.4, up: .8, life: [.25, .55], colour: C.hot });
@@ -287,7 +300,7 @@ export const staging: DuoStaging = {
     // The string draws tight between the poles, from its middle out, a thread of gold from the dial to it first.
     const poles = (e.circuit ?? [target.id, target.id]) as [string, string];
     const old = wires.get(keyOf(poles));
-    if (old) { old.body.remove(); old.core.remove(); wires.delete(old.key); }
+    if (old) { for (const s of strands(old)) s.remove(); wires.delete(old.key); }
     const w = spin(stage, poles, T.grow[0]);
     if (w) {
       const mid = mix(w.ends[0], w.ends[1], .5);
@@ -300,7 +313,7 @@ export const staging: DuoStaging = {
       stage.fx.after(timing.contact + .02, () => {
         if (w.snapped !== undefined) return;
         const toward = (w.alone ? 1 : -1) as 1 | -1;
-        for (const s of [w.body, w.core]) s.travel({ toward, from: -toward * .85, height: .05, speed: 3.2, width: .16, decay: .9, shine: 1.8 });
+        for (const s of strands(w)) s.travel({ toward, from: -toward * .85, height: .05, speed: 3.2, width: .16, decay: .9, shine: 1.8 });
       });
     }
     stage.cue('charge', { delay: .1, volume: .6 });
@@ -321,8 +334,9 @@ export const staging: DuoStaging = {
       stretch(stage, w);
       if (w.snapped !== undefined) {
         const t = clock - w.snapped;
-        if (t > .5) for (const s of [w.body, w.core]) { s.breakInto = 'mote'; s.dissolve = smooth((t - .5) / .6); }
-        if (t > 1.25) { w.body.remove(); w.core.remove(); wires.delete(w.key); }
+        // The halves come apart as they whip back, so the recoil is what is seen, never two knots of light on the poles.
+        if (t > .05) for (const s of strands(w)) s.dissolve = smooth((t - .05) / .45);
+        if (t > .7) { for (const s of strands(w)) s.remove(); wires.delete(w.key); }
         continue;
       }
       if (c) {

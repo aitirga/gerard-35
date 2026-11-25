@@ -1098,6 +1098,14 @@ const FLOOR_1 = storyPoint('castillo-1').setup, FLOOR_2 = storyPoint('castillo-2
 const AT_UNI = storyPoint('universidad:first').setup, AT_MARTA = storyPoint('marta:first').setup, AT_EMILIE = storyPoint('emilie:first').setup, AT_LUCA = storyPoint('luca:first').setup;
 const UNI_LAST = storyPoint('universidad:last').setup, MARTA_LAST = storyPoint('marta:last').setup, EMILIE_LAST = storyPoint('emilie:last').setup, LUCA_LAST = storyPoint('luca:last').setup;
 /**
+ * Corriente alterna's targets: the party as the friends' missions leave it (`MARTA_LAST`), with Sincopante on Aitor at level 2
+ * (Crescendo) and Matemágico's electric line bought up to Cortocircuito.
+ */
+const ALTERNA_AT = {
+  ...MARTA_LAST, animas: [...MARTA_LAST.animas ?? [], 'sincopante' as const], levels: { ...MARTA_LAST.levels, sincopante: 2 },
+  improved: [...MARTA_LAST.improved ?? [], 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'],
+};
+/**
  * Whoever wears the two newest ánimas instead of the cats, as someone trying each friend's ánima out does
  * (`just game-sim`'s players): the mission's last fights must be won that way too, not only with Papagato grown.
  */
@@ -1208,6 +1216,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
   { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
   { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.4, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan a menudo (desde 2026-11-24 aguanta más: un reto, no un paseo).' },
+  // Corriente alterna (docs/animas/matemagico/README.md § Duals): Lo Directo with Sincopante beside Matemágico and the
+  // electric line up to Cortocircuito, the rest as at the end of the friends' missions (`ALTERNA_AT`). Alone, it is both
+  // poles: the circuit's four beats all land on the lance that is weak to electricity, and Cortocircuito's blow delays its
+  // announced Estocada.
+  { id: 'directo-alterna', fight: 'cuerdas-directo', party: MAT_SINC, ...ALTERNA_AT, policy: 'smart', win: [.9, 1], roundsWon: [10, 12.9], duals: [.5, 2], why: 'Corriente alterna sobre Lo Directo, que está solo y es débil a lo eléctrico: el golpe le retrasa la Estocada anunciada y los cuatro latidos le caen todos a él. Más de una ronda y media menos que sin el dúo.' },
+  { id: 'directo-sin-alterna', fight: 'cuerdas-directo', party: MAT_SINC, ...ALTERNA_AT, policy: 'smart', ban: ['corriente-alterna'], win: [.85, 1], roundsWon: [13, 16], why: 'Las mismas mitades por separado (Cortocircuito y Crescendo), sin el circuito: se gana igual, pero más largo y con menos vida.' },
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.

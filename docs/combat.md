@@ -681,7 +681,7 @@ acción que consume los dos turnos. El catálogo de `DUALS` los reúne todos (la
 | Relevo de sangre | Zarpa en la llaga + Estrella fugaz | Un remate traslada el Sangrado al rival con más PV. Dadista paga con un dado. |
 | Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado durante 20 segundos (`ORBITAL_BLIND`). |
 | Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
-| Corriente alterna | Cortocircuito + Crescendo | La corriente va y viene 20 s entre el blanco y el de al lado: un latido cada 5 s, por turnos y más fuerte cada vez. Cada latido provoca las reacciones de la electricidad y gasta el estado con el que reacciona: el único pulso que reacciona (`electricBeat`). |
+| Corriente alterna | Cortocircuito + Crescendo | La corriente va y viene 20 s entre el blanco y el de al lado: un latido cada 5 s, por turnos y más fuerte cada vez. Cada latido es un rayo para las reacciones de la electricidad y, como cualquier rayo, gasta lo que convierte: el único pulso que reacciona (`electricBeat`). |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno

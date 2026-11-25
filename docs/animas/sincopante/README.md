@@ -300,7 +300,7 @@ and Dados astrales about 140 at random.
 
 **Built (2026-11-25):** *Corriente alterna* (Matemágico's Cortocircuito + **Crescendo**), the first dual
 of Crescendo: Cortocircuito's blow, then a circuit between two foes that strikes one of them every
-5 s, in turn and harder each time (6, 9, 12, 15), each beat a bolt for the reactions
+5 s, in turn and harder each time (8, 11, 14, 17), each beat a bolt for the reactions
 (`../README.md` § Alterna; `../matemagico/README.md` § Duals). Crescendo only has a target with ecos
 sounding, so the dual turns up when Marta is already playing them.
 

@@ -1128,17 +1128,31 @@ foe twice if it stands alone). Both poles carry **Alterna** for **20 s**, its cl
 
 - **Every 5 s a beat strikes one pole, in a fixed order**: the other pole first, then the target, and
   so on. Nothing by chance: what comes next can be read.
-- **A crescendo**: 6, 9, 12 and 15 of electric magic, with the Magia of whoever brought Cortocircuito.
-  Like any pulse it is never a golpe crítico.
+- **A crescendo**: 8, 11, 14 and 17 of electric magic, with the Magia of whoever brought Cortocircuito
+  (even if they have fallen since: the current is already in the foes). Like any pulse it is never a
+  golpe crítico. Every number is in one book, `alterna.rules` for `just fight-sim --tune`: `first`,
+  `step`, `beats` (how many) and `every` (the interval; the circuit lasts `beats × every`).
 - **It is the only pulse that reacts.** Each beat is a bolt for the reactions (`react`): on someone
-  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. The
-  status it reacted with is spent on the foe it struck, so no beat feeds the next: what makes it pay
-  is wetting, burning, blinding or powdering the pole whose beat is coming. Water held under a foe
-  (§ Agua contenida) keeps its Mojado, as against any bolt. Toma de tierra gives its sender a maná for
-  it, once a round as always.
-- **A pole that falls** leaves the beats that remain to the other; with both down it is over.
-- It **never spreads** with Virus atómico (it is between two foes, not on one). A clock started over
-  (Reinicio) or stretched (Telemetría) on either pole keeps the circuit going: it beats on at 15.
+  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. Like any
+  bolt it spends what it turns, so no beat feeds the next: what makes it pay is wetting, burning,
+  blinding or powdering the pole whose beat is coming. Water held under a foe (§ Agua contenida) keeps
+  its Mojado, as against any bolt. Toma de tierra gives its sender a maná for it, once a round as
+  always, while the sender stands. What a reaction sets off besides (Fin de fiesta waking, Remolino's
+  cortina, La crecida's Corriente) shows as it would on a blow. A beat on a boss's part or a boss
+  tells the fight at once, as any pulse does (Vertitrón's eye going out, Lo Cristalino cracking, La Voz
+  falling).
+- **A pole that falls** leaves the beats that remain to the other; with both down it is over. A blow
+  that fells its own target leaves the circuit to the other pole alone, which takes the first beat.
+- **Each circuit keeps its own clock.** A clock started over (Reinicio, Rayo de energía) on a pole
+  gives every circuit on it a whole circuit's time again from where it is, and Telemetría a few
+  seconds more; past its fourth beat it beats on at its loudest. A second Corriente alterna (Da capo
+  gives it back) that shares a pole never stretches the first: the plate shows the longer clock.
+- **It is a circuit, not a status on the foe.** It never spreads with Virus atómico; and what gathers
+  or counts a foe's statuses (Atractor extraño, Serie de Fourier) leaves it out.
+- **Balance** (`just fight-sim`): `directo-alterna` and `directo-sin-alterna` in `TARGETS`, with the
+  party `MAT_SINC`. On Lo Directo, alone and weak to electricity, the four beats all land on it and the
+  fight is a round and a half shorter than with the halves apart. The bot values the beats to come with
+  `circuitWorth`, by what each foe really lets in (nothing off Lo Cristalino's glass).
 
 **How it shows** (`src/duo-fx/corriente-alterna.ts`): a string of light between the poles' chests (a
 `string` lattice, a yellow core in a gold body) trembles more each beat; a little before each, a pulse

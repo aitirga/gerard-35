@@ -448,7 +448,7 @@ try {
       seen: () => guidesSeen,
       mark: (id, version) => { guidesSeen = { ...guidesSeen, [id]: version }; keepGuides(); storyChanged(); },
     } : undefined,
-    pulse: (id, status, by, reaction) => game.statusPulse(id, status, by, reaction),
+    pulse: (id, status, by, beat) => game.statusPulse(id, status, by, beat),
     ecos: news => game.ecoNews(news),
     // A fall wakes Gerard up at home in chapter 2's castle, and on the Meridiana at night (late, docs/chapter-2.md
     // § Night and the way home: stepping back would leave the pupil that caught him touching him, and the fight again);

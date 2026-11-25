@@ -133,7 +133,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Whether the fight's clock is stopped (the pause menu is open). */
   paused: () => boolean;
   /** A timed status pulsed on a fighter (Quemado): the 3D fight shows it land. */
-  pulse: (id: string, status?: string, by?: string, reaction?: TimedPulse['reaction']) => void;
+  pulse: (id: string, status?: string, by?: string, beat?: TimedPulse) => void;
   /** Whether a fall here can be fought again or stepped back from: everywhere but chapter 2's castle, where it wakes Gerard up at home. */
   forgiving?: () => boolean;
   /** On the lost screen the players chose to fight again or go back to just before the fight: the end that follows is no fall. */
@@ -424,6 +424,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
         : id === 'hundido' ? { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' }
         : id === 'congelado' ? { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
+        // Alterna has no level either: the circuit it is a pole of, and its clock.
+        : id === 'alterna' ? { id, name: `${TIMED[id].name}: la corriente va y viene cada ${TIMED.alterna.every} s`, mark: '', timed: true, lasts: `${Math.ceil(on.left)} s` }
         // Cegado has no level: what it does, and its clock.
         : id === 'cegado' ? { id, name: `${TIMED[id].name}: sus golpes físicos suelen fallar`, mark: '', timed: true, lasts: `${Math.ceil(on.left)} s` }
         : { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }),
@@ -764,22 +766,40 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // It implodes first (src/bomb.ts `BOMB.implode`, 0.8 s): the number comes with the burst.
       else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) { pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); if (blast.awoken) ultiAwoke(blast.awoken); } }, 800); callbacks.pulse(p.target, p.status, p.by); }
       else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target, p.status, p.by); }
-      else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by, p.reaction); }
-      // Corriente alterna's beat is a bolt for the reactions: what it turned pops after its number, with the PV it took from
-      // each it reached, then whoever it left in Shock and the maná Toma de tierra gave back.
-      if (p.reaction) {
-        const says = reactionSays(p.reaction), when = generation, on = p.target;
-        setTimeout(() => { if (when === generation) pop(on, says.text, 'status', says.detail, says.id); }, 220);
-        p.reaction.hits?.forEach((h, i) => setTimeout(() => { if (when === generation) pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, 58); }, 360 + i * 90));
-        p.reaction.targets?.forEach((id, i) => { if (id !== on) setTimeout(() => { if (when === generation) pop(id, says.text, 'status', says.detail, says.id); }, 360 + i * 90); });
-      }
-      if (p.shocked) { const when = generation, shocked = p.shocked; setTimeout(() => { if (when === generation) shocked.forEach(id => pop(id, '¡Shock!', 'status', 'Pierde su siguiente turno', 'shock')); }, 600); }
-      if (p.mana) { const when = generation, who = p.mana; setTimeout(() => { if (when === generation) pop(who, PASSIVES['toma-de-tierra'].name, 'passive', 'Pasiva · Maná +1'); }, 700); }
+      // Corriente alterna's beat: its number named after the circuit (it has no level: the beat is not one), set aside when
+      // the reaction's own number on the same foe comes after it.
+      else if (p.status === 'alterna') { pop(p.target, `−${p.amount}`, 'damage', TIMED.alterna.name, undefined, p.reaction?.hits?.some(h => h.target === p.target) ? -48 : 0); callbacks.pulse(p.target, p.status, p.by, p); }
+      else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
+      if (p.status === 'alterna') beatSays(p);
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
     }
     // A fire can end the fight on its own: the result shows once nothing is being played.
     render();
+  }
+  /**
+   * What Corriente alterna's beat turned, after its number: the reaction's name over the foe it struck and the PV it took
+   * from each it reached, beside the beat's own; then, one after another in the same place once the name has gone, whoever
+   * it left in Shock and the water it left charged (La crecida's Corriente); the passives over whoever has them, a cortina
+   * it raised, and a definitiva it woke.
+   */
+  function beatSays(p: TimedPulse) {
+    const when = generation, later = (ms: number, show: () => void) => setTimeout(() => { if (when === generation) show(); }, ms);
+    const queued = new Map<string, number>(), after = (id: string) => { const n = queued.get(id) ?? 0; queued.set(id, n + 1); return 1600 + n * 1400; };
+    if (p.reaction) {
+      const says = reactionSays(p.reaction), on = p.target;
+      later(220, () => pop(on, says.text, 'status', says.detail, says.id));
+      p.reaction.hits?.forEach((h, i) => later(360 + i * 90, () => pop(h.target, `−${h.amount}`, 'damage', says.text.replace(/[¡!]/g, ''), undefined, h.target === on ? 52 : 58)));
+      p.reaction.targets?.forEach((id, i) => { if (id !== on) later(360 + i * 90, () => pop(id, says.text, 'status', says.detail, says.id)); });
+    }
+    for (const id of p.current?.targets ?? []) { const c = p.current!; later(after(id), () => pop(id, c.renewed ? 'Corriente' : '¡Corriente!', 'status', c.renewed ? `Otra vez ${c.seconds} s` : `${c.seconds} s`, 'corriente')); }
+    for (const id of p.shocked ?? []) later(after(id), () => pop(id, '¡Shock!', 'status', 'Pierde su siguiente turno', 'shock'));
+    for (const id of p.cortina ?? []) later(400, () => pop(id, 'Cortina', 'status', 'El siguiente golpe, a la mitad', 'cortina'));
+    p.passives?.forEach((n, i) => later(700 + i * 260, () => {
+      pop(n.who, n.name, 'passive', p.mana && n.id === 'toma-de-tierra' ? 'Pasiva · Maná +1' : 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour);
+      callbacks.sound('mark-set');
+    }));
+    if (p.awoken) { const awoken = p.awoken; later(900, () => ultiAwoke(awoken)); }
   }
   /**
    * Sincopante's ecos on their own (`takeEcoNews`): each note's number on whoever it reached, named

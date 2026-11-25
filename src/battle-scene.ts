@@ -1192,19 +1192,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       spotWant = 0;
     } else if (id === 'corriente-alterna' && target) {
       // Corriente alterna: both poles of its circuit in the picture, the string drawn tight between them; the pair first. The
-      // camera turns (up to 35°) so the string runs across the picture, not into it, worked out once as it starts.
+      // camera turns (up to 35° from where it rests) so the string runs across the picture, clear of the scenery and of the
+      // commands on the left (`alternaShot`), worked out once as it starts.
       const ends = [...new Set(e.circuit ?? [])].map(p => fighters.get(p)).filter((f): f is Fighter => !!f), poles = ends.length ? ends : [target];
-      if (alternaTurn.effect !== e) {
-        let turn = 0;
-        if (poles.length > 1) {
-          const a = chestOf(poles[0]), b = chestOf(poles[1]), right = screenAxes(viewDir()).right;
-          turn = (Math.atan2(right.z, right.x) - Math.atan2(b.z - a.z, b.x - a.x)) * pc.math.RAD_TO_DEG;
-          turn = ((turn % 180) + 270) % 180 - 90;
-        }
-        alternaTurn = { effect: e, yaw: lens.yaw + Math.max(-35, Math.min(35, turn)) };
-      }
-      if (t < contact * .45) Object.assign(lensWant, { yaw: alternaTurn.yaw * .5, pitch: -5, zoom: .02, ...look(mid([...pair, ...poles]), .55), y: .15 });
-      else Object.assign(lensWant, { yaw: alternaTurn.yaw, pitch: -6, zoom: poles.length > 1 ? .1 : .2, ...look(mid(poles), .7), y: 0 });
+      if (alternaFrame.effect !== e) alternaFrame = { effect: e, ...alternaShot(poles) };
+      const { yaw, shift } = alternaFrame;
+      if (t < contact * .45) Object.assign(lensWant, { yaw: yaw * .5, pitch: -5, zoom: .02, ...look(mid([...pair, ...poles]), .55), y: .15 });
+      else { const at = look(mid(poles), .7); Object.assign(lensWant, { yaw, pitch: -6, zoom: poles.length > 1 ? .1 : .2, x: at.x + shift.x, z: at.z + shift.z, y: 0 }); }
       poles.forEach(f => keep(f, 1.4)); pair.forEach(f => keep(f));
       spotWant = t < contact + .35 ? 1 : 0;
     } else if (target) {
@@ -1221,8 +1215,70 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     if (spot && spotAmount > .002) spot(spotAmount, points);
   }
-  /** Corriente alterna's turn of the camera, worked out once for the effect that plays it (`duoLens`). */
-  let alternaTurn: { effect?: BattleEffect; yaw: number } = { yaw: 0 };
+  /** Corriente alterna's shot, worked out once for the effect that plays it (`duoLens`, `alternaShot`). */
+  let alternaFrame: { effect?: BattleEffect; yaw: number; shift: { x: number; z: number } } = { yaw: 0, shift: { x: 0, z: 0 } };
+  /** Scenery boxes near the fight that could stand between its camera and a fighter, gathered once for where the fight is. */
+  let blockers: { key: string; boxes: pc.BoundingBox[] } | undefined;
+  function sceneryBoxes(): pc.BoundingBox[] {
+    const key = `${frame.x.toFixed(1)},${frame.z.toFixed(1)}`;
+    if (blockers?.key === key) return blockers.boxes;
+    const ours = new Set<pc.GraphNode>([...fighters.values()].map(f => f.model));
+    const boxes: pc.BoundingBox[] = [];
+    for (const r of app.root.findComponents('render') as pc.RenderComponent[]) {
+      if (!r.enabled || !r.entity.enabled) continue;
+      let n: pc.GraphNode | null = r.entity, fighter = false;
+      while (n && !fighter) { fighter = ours.has(n); n = n.parent; }
+      if (fighter) continue;
+      for (const m of r.meshInstances) {
+        const box = m.aabb, h = box.halfExtents;
+        // Not the ground, a whole block or a particle pool (too big to be a thing in the way), nor a kerb (too low to hide a chest).
+        if (!m.visible || h.x > 12 || h.z > 12 || box.getMax().y < frame.y + .5) continue;
+        if (Math.hypot(box.center.x - frame.x, box.center.z - frame.z) > 30) continue;
+        // A little wider than it is: a lamp's glow, a crown's leaves and the string's own glow reach past the box.
+        boxes.push(new pc.BoundingBox(box.center.clone(), new pc.Vec3(h.x + .4, h.y + .3, h.z + .4)));
+      }
+    }
+    blockers = { key, boxes };
+    return boxes;
+  }
+  /**
+   * Corriente alterna's shot: the turn of the camera (−35° to 35° from where it rests, every 5°) that lays the string
+   * between `poles` across the picture with neither chest nor the string's middle behind scenery (a streetlamp, a tree)
+   * and both poles clear of the commands on the left, little turned if it can; and how far the camera looks to the left
+   * of them, so they stand right of the commands. Worked out once, as the dual starts.
+   */
+  function alternaShot(poles: Fighter[]) {
+    const a = chestOf(poles[0]), b = chestOf(poles[poles.length - 1]), middle = new pc.Vec3();
+    const base = camera(), boxes = sceneryBoxes(), rect = app.graphicsDevice.clientRect, cam = app.systems.camera?.cameras[0];
+    const halfWide = (cam?.orthoHeight ?? 11) * .9 * rect.width / Math.max(1, rect.height);
+    // The commands' column, as a share of the picture's width (src/style.css `.commands`), and a breath beside it.
+    const column = Math.min(.4, 420 / Math.max(1, rect.width)) + .05;
+    const centre = poles.reduce((sum, f) => sum.add(f.base), new pc.Vec3()).mulScalar(1 / poles.length);
+    const aim = new pc.Vec3(frame.x + (centre.x - frame.x) * .7, 0, frame.z + (centre.z - frame.z) * .7);
+    const ray = new pc.Ray(), toward = new pc.Vec3();
+    let best = { score: Infinity, yaw: 0, shift: { x: 0, z: 0 } };
+    for (let turn = -35; turn <= 35; turn += 5) {
+      const r = turn * pc.math.DEG_TO_RAD, x = base.x * Math.cos(r) + base.z * Math.sin(r), z = base.z * Math.cos(r) - base.x * Math.sin(r);
+      // As the fight's camera stands for this shot (game.ts): turned, and lowered by its own pitch and the shot's.
+      const flat = Math.hypot(x, z), pitch = Math.atan2(base.y, flat) + (-7 - 6) * pc.math.DEG_TO_RAD;
+      const view = { x: x / flat * Math.cos(pitch), y: Math.sin(pitch), z: z / flat * Math.cos(pitch) }, { right } = screenAxes(view);
+      toward.set(view.x, view.y, view.z);
+      const along = Math.hypot(b.x - a.x, b.z - a.z), across = along > .1 ? Math.abs((b.x - a.x) * right.x + (b.z - a.z) * right.z) / along : 1;
+      let score = (1 - across) * 4 + Math.abs(turn) / 70;
+      // Both chests, and the string between them every fifth of its length (a lamp's head on it counts too).
+      for (const [k, weight] of [[0, 2.5], [.2, 1], [.4, 1], [.6, 1], [.8, 1], [1, 2.5]] as const) {
+        ray.set(middle.clone().lerp(a, b, k), toward);
+        if (boxes.some(box => box.intersectsRay(ray))) score += weight;
+      }
+      // Where each pole falls across the picture (0 left, 1 right), and how far the camera must look left to clear the commands.
+      const at = (p: pc.Vec3) => .5 + ((p.x - aim.x) * right.x + (p.z - aim.z) * right.z) / (2 * halfWide);
+      const left = Math.min(at(a), at(b)), rightmost = Math.max(at(a), at(b));
+      const need = Math.max(0, column - left), room = Math.max(0, .95 - rightmost), moved = Math.min(need, room);
+      score += (need - moved) * 10;
+      if (score < best.score) best = { score, yaw: turn, shift: { x: -right.x * moved * 2 * halfWide, z: -right.z * moved * 2 * halfWide } };
+    }
+    return { yaw: best.yaw, shift: best.shift };
+  }
   /** Fight seconds the next glint of a lasting dual is due in: Sutura's stitches, a lit fuse, Bombardeo's beat. */
   const holds = { suture: 0, fuse: 0, orbit: 0, fleck: 0, volcano: 0 };
   /** Each foe's Volcán clock as last seen: when it jumps back up, a beat went off. */
@@ -3760,7 +3816,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * A timed status pulsed on a fighter (src/battle.ts `runClock`): they flare with it, and a pulse
      * that leaves them at 0 PV knocks them down as a blow would.
      */
-    pulse(id: string, status?: string, by?: string, reaction?: TimedPulse['reaction']) {
+    pulse(id: string, status?: string, by?: string, beat?: TimedPulse) {
       const f = fighters.get(id), unit = state && [...state.allies, ...state.foes].find(u => u.id === id);
       if (!f || !unit) return;
       // A Bomba remota went off: its own blast, not a pulse's flare.
@@ -3774,7 +3830,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // beat is a bolt: its flash is the bolt's, and what it turned shows as any reaction does (`reactFx`).
       const bolt = status === 'alterna';
       hit(f, bolt ? ELEMENT_FLASH.electrico : status && status in DUO_STAGINGS ? white : flame, bolt ? .9 : .7);
-      if (reaction) reactFx({ actor: id, kind: 'skill', target: id, reaction });
+      if (beat?.reaction) reactFx({ actor: id, kind: 'skill', target: id, reaction: beat.reaction });
+      // A cortina the reaction raised (Remolino) stands up as any other.
+      if (beat?.cortina) powderFx.telon(beat.cortina, foesCentre(), beat.cortina.map(() => nextMix()));
       f.hp = unit.hp;
     },
     /** A reaction between elements on a fighter (docs/combat.md): what was on them turns into what it leaves. */
