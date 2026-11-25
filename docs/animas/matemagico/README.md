@@ -186,12 +186,17 @@ counts them afterwards, one blow a status.
 
 1. A blow of the astral, 16, on its target.
 2. Then every status on the clock **that moves** (`moves` in `TIMED`, a trait of the kind of status, never of
-   the foe) leaves each other foe standing, in the plate's order, for the target: Quemado, Cegado, Mojado,
-   Empolvado, Envenenado, Cristalizado, Encogido, Confusión and Bomba (Gas, when Electrólisis brings it).
+   the foe) leaves every other foe standing, **all at once**, and reaches the target one after another, in the
+   plate's order: Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión and Bomba
+   (Gas, when Electrólisis brings it). Since everything has left before anything arrives, the plate's order
+   never changes what the others are left with: the fire an Estallido on arrival lights on them stays on them,
+   the same on each.
    - **The same one already there adds up**: the levels to its top (fire III, IV with Combustión; the shards
      to `POWDER_RULES.shards`; poison III), keeping the longer clock. Three Quemado II make one Quemado IV
      with Combustión bought (III without it), and the others are left clean.
    - **Two bombs**: their charge adds up to `BOMBA.top`, with the clock of the one closer to going off.
+   - A Mojado that comes to a foe with La crecida's water under it runs into that water: the water's own
+     Mojado lasts as long as the water.
 3. **What does not move**: La crecida's water and everything of it (Agua, Corriente, Hundido, Congelado, and the
    Mojado of water standing under a foe), the cures, Virus, the duals' own (Volcán, Marea, Fulgurita, Metralla,
    Idea fija, Seiche, Staccato) and the statuses counted in rounds (Sangrado, Mareo, Llorera).
@@ -200,13 +205,17 @@ counts them afterwards, one blow a status.
    The status that came is spent in it. A fire does not catch on an onion's wet layers: it stays where it was.
 5. **No loop with Virus**: what came was not put on anyone, so it does not spread (nor what its reactions set
    off), and Virus itself stays where it is. What lands on an infected target afterwards spreads as ever.
-6. With one foe, only the blow. If the blow fells its target, nothing comes.
+6. With one foe, only the blow. Aimed at a boss's part, only the blow. Si el golpe no llega (anulado, reflejado,
+   caparazón, canto), no se junta nada. If the blow fells its target, nothing comes; if a reaction on the way
+   fells it, what had not reached it yet is lost with it (it has left the others all the same).
 
 Toma de tierra counts its reactions. The question it answers: who keeps the statuses (the one that will stand
 longest; the one an Explosión, a Reinicio or a Combustión is about to cash). The bot plays it by what the
-statuses still have to give where they stand (`clockWorth` in `src/battle-sim.ts`): with three foes at
-Quemado II, one of them big, it gathers on the big one; spread evenly it prefers Pirámide ígnea. Its pair of
-`TARGETS` is still to write (the balance pass).
+statuses still have to give where they stand (`clockWorth` in `src/battle-sim.ts`): three small fires that
+add up to a bigger one go on the foe that will stand longest. In the castle's third-floor rooms (castillo-3,
+DUO and TECH) it never plays it: those foes carry little on the clock, and with or without it the rooms come
+out the same (2026-11-25, 60 runs). Its pair of `TARGETS` is still to write (the balance pass), in a fight
+whose foes carry statuses to gather (Colorista's powder, Pirámide ígnea's fires).
 
 **Look** (`atractor` in `src/math-figures.ts`, contact 2.4 s, end 3.4 s; `just screenshots atractor-extrano --gpu`):
 the pen of light leaves his circle for the foe and draws the **Lorenz butterfly** round it (σ 10, ρ 28, β 8/3,
@@ -214,12 +223,16 @@ the pen of light leaves his circle for the foe and draws the **Lorenz butterfly*
 2.7 m tall, turning slowly. Gold motes are left along it as it is drawn, and every one follows the **Lorenz
 field on the GPU** (the `lorenz` law, src/fight-particles.ts), so the lobes weave themselves. Meanwhile what the
 other foes carry rises off them in its own look and flies to a lobe, where it pours in along the orbit:
-embers, drops, powder grains, ice-blue shards, grey smoke, sparks, poison green, a few thousand each.
+embers, drops, powder grains, cyan-teal shards, grey smoke, sparks, poison green, a few thousand each,
+with gold motes poured in among them so the field stays his. Each foe lets go of its looks as they rise off
+it: its plate, its powder and its shards, its bomb (`atractorGiven` in `src/battle-motion.ts`).
 Neighbours drift apart and the figure holds. Fire and water that meet in it give a puff of steam. Then
-**the bifurcation**: ρ falls from 28 to 0.5 in 0.75 s while the field's rest slides into the chest, and the
-whole butterfly spirals into it, the wire shrinking with it, to a flash of white and gold. Then the number,
-*Atractor* over the target naming what it now carries, and each reaction's word (¡Humo!, ¡Vapor!,
-¡Estallido!, ¡Envenenado!). The plates change as it lands. **Sound**: a low hum that trembles as the
+**the bifurcation**: the fight slows a breath, ρ falls from 28 to 0.5 in 1.05 s while the field's rest slides
+into the chest, and the whole butterfly spirals into it, the wire shrinking with it and burning brighter, bright
+gold motes laid along the closing spiral, to a flash of white and gold. Then the number, *Atractor* over the
+target naming what it now carries, and each reaction's word (¡Humo!, ¡Vapor!, ¡Estallido!, ¡Envenenado!),
+one above the other. What came shows on the target as it lands: its powder for the instant the fire or the
+water meets it, its shards standing out of it. **Sound**: a low hum that trembles as the
 attractor does and falls an octave as ρ does (`chaos-hum`), and one struck note (`struck`).
 
 ## How each skill looks (Aitor's notes on the sheet, 2026-11-21)

@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { CAST_LAUNCH, FIGURES, clamp01, smooth } from './battle-motion';
+import { ATRACTOR, CAST_LAUNCH, FIGURES, atractorLeave, clamp01, smooth } from './battle-motion';
 import type { Effects } from './effects';
 import { lorenzPoints, type GpuEmitter, type GpuKind, type GpuLaw } from './fight-particles';
 import { AGUA_KINDS } from './freatica-fx';
@@ -115,8 +115,8 @@ export const FIGURE_KINDS = {
   // weight, no drag, no turbulence. Gold for his own motes and threads; each status that comes keeps its own look. The field
   // packs thousands of them onto one thin ribbon, so they barely add light (`additive`): summed, they would all burn white.
   'atractor-mota': {
-    shape: 'glow', size: [.026, .018], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, colours: ['#fff1c8', '#f3cf78', '#c98a2c'], intensity: [1.25, 1.05, .85], middle: .08,
-    fadeIn: .04, fadeOut: .05, additive: .3, opacity: .75, core: 0,
+    shape: 'glow', size: [.026, .018], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, colours: ['#ffdf94', '#f3cf78', '#c98a2c'], intensity: [1.05, .9, .75], middle: .08,
+    fadeIn: .04, fadeOut: .05, additive: .25, opacity: .8, core: 0,
   },
   'atractor-hilo': {
     shape: 'strand', size: [.007, .004], gravity: 0, drag: 0, curl: 0, follow: 26, colours: ['#fff4d6', '#f3cf78', '#b8792a'], intensity: [1.6, 1.3, 1], middle: .4, fadeIn: .06, fadeOut: .08, additive: .6, core: .2,
@@ -125,14 +125,14 @@ export const FIGURE_KINDS = {
     shape: 'spark', size: [.018, .01], stretch: .03, gravity: 0, drag: 0, curl: 0, colours: ['#ffc070', '#ff8a2e', '#c2410c'], intensity: [1.3, 1.15, .9], middle: .3, fadeIn: .03, fadeOut: .06, flicker: .3, additive: .35, core: .1,
   },
   'atractor-gota': {
-    shape: 'glow', glass: .7, size: [.026, .02], sizeJitter: .4, gravity: 0, drag: 0, curl: 0, colours: ['#d8f2ff', '#8fd4ff', '#4fb2ea'], intensity: [1.2, 1.1, .95], middle: .3,
-    fadeIn: .04, fadeOut: .06, additive: .25, core: 0,
+    shape: 'glow', glass: .7, size: [.026, .02], sizeJitter: .4, gravity: 0, drag: 0, curl: 0, colours: ['#e2fbff', '#8fe4ff', '#45c2e6'], intensity: [1.1, 1, .85], middle: .3,
+    fadeIn: .04, fadeOut: .06, additive: .65, core: 0,
   },
   'atractor-polvo': {
     shape: 'dot', size: [.02, .016], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.2, 1.1, 1], fadeIn: .04, fadeOut: .08, additive: .15, opacity: .95, core: 0,
   },
   'atractor-esquirla': {
-    shape: 'shard', size: [.03, .02], stretch: .02, spin: 420, gravity: 0, drag: 0, curl: 0, colours: ['#cfe6ff', '#8fc4ff', '#4f86d6'], intensity: [1.4, 1.25, 1], middle: .3, fadeIn: .03, fadeOut: .06, flicker: .4, additive: .35, core: .1,
+    shape: 'shard', size: [.03, .02], stretch: .02, spin: 420, gravity: 0, drag: 0, curl: 0, colours: ['#e4fdff', '#7fe6ff', '#2fb8cc'], intensity: [1.05, .9, .7], middle: .3, fadeIn: .03, fadeOut: .06, flicker: .4, additive: .6, core: .1,
   },
   'atractor-humo': {
     shape: 'glow', size: [.05, .04], sizeJitter: .5, gravity: 0, drag: 0, curl: 0, blur: .8, colours: ['#eef0f3', '#c7ccd4', '#8d939c'], intensity: [1, .9, .75], middle: .4, fadeIn: .08, fadeOut: .08, additive: .1, opacity: .6, core: 0,
@@ -140,14 +140,20 @@ export const FIGURE_KINDS = {
   'atractor-chispa': {
     shape: 'spark', size: [.014, .008], stretch: .04, gravity: 0, drag: 0, curl: 0, colours: ['#fff6c8', '#fff09a', '#ffd84a'], intensity: [1.6, 1.4, 1.1], middle: .3, fadeIn: .02, fadeOut: .06, flicker: .5, additive: .4, core: .1,
   },
+  // The collapse: the same motes laid along the wire as it spirals in, brighter, so the spiral itself burns gold.
+  'atractor-mota-viva': {
+    shape: 'glow', size: [.034, .02], sizeJitter: .4, gravity: 0, drag: 0, curl: 0, colours: ['#ffe4a0', '#f3cf78', '#d99a3a'], intensity: [1.5, 1.3, 1.05], middle: .1,
+    fadeIn: .02, fadeOut: .04, additive: .45, opacity: .9, core: .1,
+  },
   // A status on its way to the attractor (not yet the law's): it flies straight and goes out as it arrives.
   'atractor-estela': {
     shape: 'streak', size: [.016, .01], sizeJitter: .4, stretch: .03, aspect: .3, gravity: 0, drag: 0, curl: .1, colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [2.6, 2, 1.2], middle: .3, fadeIn: .05, fadeOut: .25, additive: 1, core: .4,
   },
   // Fire and water meeting in it: a puff of steam.
+  // A soft glow rather than lit smoke: smoke takes the street's light, and on the pink street it bloomed magenta.
   'atractor-vapor': {
-    shape: 'smoke', size: [.08, .32], sizeJitter: .5, gravity: -1.2, drag: 1.4, curl: .5, response: .4, blur: [.5, 1.2], colours: ['#ffffff', '#e8eef2', '#b8c2ca'], intensity: [1.3, 1.1, .8], middle: .3,
-    fadeIn: .05, fadeOut: .6, additive: .2, opacity: .55, core: 0,
+    shape: 'glow', size: [.07, .22], sizeJitter: .5, gravity: -1.2, drag: 1.4, curl: .5, response: .4, blur: [.6, 1.2], colours: ['#f4f7f8', '#dfe6ea', '#b4bec6'], intensity: [.8, .7, .55], middle: .3,
+    fadeIn: .05, fadeOut: .6, additive: 0, opacity: .4, core: 0,
   },
   // The collapse's flash: stars of white and gold thrown out of the foe's chest.
   'atractor-destello': {
@@ -164,7 +170,8 @@ const GATHER_LOOKS: Record<string, { kind: keyof typeof FIGURE_KINDS; colour: st
   // Colorista's dry powder, its warmer and greener grains only: in the gold field its dusty reds would read as pink.
   empolvado: { kind: 'atractor-polvo', colour: [POWDER_COLOURS[1], POWDER_COLOURS[2], POWDER_COLOURS[3], '#d9b48d'] },
   envenenado: { kind: 'atractor-mota', colour: '#7fd45a' },
-  cristalizado: { kind: 'atractor-esquirla', colour: '#9cc8ff' },
+  // Cyan-teal, not blue: over the warm streets a pale blue blends towards lavender, and violet is possession's.
+  cristalizado: { kind: 'atractor-esquirla', colour: '#7fe6ff' },
   cegado: { kind: 'atractor-humo', colour: '#d6dae0' },
   confusion: { kind: 'atractor-mota', colour: '#4fe0ff' },
   encogido: { kind: 'atractor-mota', colour: '#9fe8ff' },
@@ -180,6 +187,8 @@ const len = (a: V3) => Math.hypot(a.x, a.y, a.z);
 const norm = (a: V3): V3 => { const d = len(a) || 1; return { x: a.x / d, y: a.y / d, z: a.z / d }; };
 const cross = (a: V3, b: V3): V3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 const UP: V3 = { x: 0, y: 1, z: 0 };
+/** A scratch point for `world`, which runs many times a frame while a figure is drawn. */
+const WORLD = new pc.Vec3();
 const easeIn = (k: number) => { k = clamp01(k); return k * k; };
 const easeOut = (k: number) => 1 - (1 - clamp01(k)) ** 3;
 const easeBack = (k: number) => { k = clamp01(k) - 1; return 1 + 2.2 * k * k * k + 1.2 * k * k; };
@@ -377,7 +386,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       /** A mesh of its own with its own material (a pyramid's faces, a cube's water). */
       own(mesh: pc.Mesh | undefined, material: pc.Material) { if (mesh) meshes.push(mesh); materials.push(material); },
       /** Where a point of its body is in the world. */
-      world(p: V3): V3 { const w = body.getWorldTransform().transformPoint(new pc.Vec3(p.x, p.y, p.z)); return { x: w.x, y: w.y, z: w.z }; },
+      world(p: V3): V3 { const w = body.getWorldTransform().transformPoint(WORLD.set(p.x, p.y, p.z), WORLD); return { x: w.x, y: w.y, z: w.z }; },
       destroy() { if (dead) return; dead = true; live.delete(self); root.destroy(); meshes.forEach(m => m.destroy()); materials.forEach(m => m.destroy()); },
       get dead() { return dead; },
     };
@@ -959,7 +968,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
   function atractor(o: { centre: V3; view: V3; chest: V3; feet: V3; sources: readonly { chest: V3; statuses: readonly string[] }[]; steam?: boolean; size?: number }) {
     const g = gpu();
     // The figure's own seconds: it starts at CAST_LAUNCH, so the blow lands at CONTACT.
-    const CONTACT = FIGURES.atractor.contact - CAST_LAUNCH, DRAW = .85, ARRIVE = .82, FALL = .75, FALL_AT = CONTACT - FALL, SPEED = .8;
+    const CONTACT = FIGURES.atractor.contact - CAST_LAUNCH, { draw: DRAW, arrive: ARRIVE, fall: FALL } = ATRACTOR, FALL_AT = CONTACT - FALL, SPEED = .8;
     const scale = .062 * (o.size ?? 1), RHO = 28, MID = RHO - 1;
     // How long a status takes to pour into its lobe, and how far round the orbit it runs meanwhile (of its 1 200 points).
     const FLOOD = .38, FLOOD_POINTS = 360;
@@ -984,14 +993,14 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     // Particles live until the flash and not a breath more: once the field is gone they would fly off as they were.
     const until = (t: number, k = 1) => { const left = Math.max(.05, CONTACT - t + .02); return [left * .9 * k, left * k] as const; };
     const gold = ['#fff4d6', '#f3cf78', '#e9b44c'];
-    let t = 0, laid = 0;
+    let t = 0, laid = 0, fallLaid = 0;
     wire.animate(CONTACT + .12, now => {
       t = now;
       const a = axes(now), k = 1 - fallK(now) * .98, m = middle(now);
       wire.place({ at: add(m, su, -MID * scale * k), ...a, scale: k });
-      // The wire dims while the motes weave it, and burns up white as it falls in.
+      // The wire stays the gold frame while the motes weave it, and burns up white as it falls in.
       const falling = fallK(now);
-      wire.glow(now < DRAW ? .8 : .32 + 1.1 * falling, falling > .6 ? (falling - .6) * 2.2 : 0);
+      wire.glow(.75 + .45 * falling, falling > .8 ? (falling - .8) * 3 : 0);
       if (law) {
         const at = origin(now);
         law.at.set(at.x, at.y, at.z);
@@ -1004,8 +1013,13 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       const drawn = Math.floor(clamp01(now / DRAW) * points.length);
       if (g && law) for (; laid < drawn; laid += 6) {
         const at = wire.world(points[laid]);
-        g.burst('atractor-mota', { at, count: 12, spread: .03, life: until(now), colour: gold[laid % 3], law });
+        g.burst('atractor-mota', { at, count: 20, spread: .03, life: until(now), colour: gold[laid % 3], law });
         if (laid % 63 === 0) g.burst('atractor-hilo', { at, count: 24, spread: .02, chain: 12, life: until(now), law });
+      }
+      // As it falls, the spiral itself glows: bright gold motes laid along the shrinking wire, more the further in it is.
+      if (g && law && falling > 0) for (let i = 0, n = Math.round(14 + 40 * falling); i < n; i++) {
+        const p = points[(fallLaid += 37) % points.length];
+        g.burst('atractor-mota-viva', { at: wire.world(p), count: 3, spread: .02, life: until(now), colour: gold[i % 3], law });
       }
     }, () => wire.destroy());
     // The pen: a thread of gold from his circle to where the curve begins, then along it.
@@ -1018,7 +1032,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     o.sources.forEach((source, si) => source.statuses.forEach((id, j) => {
       const look = GATHER_LOOKS[id] ?? { kind: 'atractor-mota' as const, colour: '#e8f4f0' }, i = n++;
       const tint = (c: number) => typeof look.colour === 'string' ? look.colour : look.colour[c % look.colour.length];
-      const leave = .3 + si * .08 + j * .06, flight = ARRIVE - leave;
+      const leave = atractorLeave(si, j), flight = ARRIVE - leave;
       const rise = emit(look.kind, { at: source.chest, shape: 'ball', spread: .28, rate: 900, velocity: { x: 0, y: 1.4, z: 0 }, speed: .5, life: [.35, .55], colour: tint(i) });
       after(leave + .05, () => stop(rise));
       after(leave, () => {
@@ -1041,7 +1055,9 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
             const to = pick + Math.round(now / FLOOD * FLOOD_POINTS);
             for (; k < to; k += 2) {
               const p = wire.world(points[k % points.length]);
-              g.burst(look.kind, { at: p, count: 8, spread: .08, speed: .08, life: until(t), colour: tint(i + k), law });
+              g.burst(look.kind, { at: p, count: 5, spread: .08, speed: .08, life: until(t), colour: tint(i + k), law });
+              // Gold threads through every status that comes: the field is his, whatever it carries.
+              g.burst('atractor-mota', { at: p, count: 4, spread: .06, speed: .06, life: until(t), colour: gold[k % 3], law });
               if (k % 30 === pick % 30) g.burst('atractor-hilo', { at: p, count: 24, spread: .02, chain: 12, life: until(t), colour: typeof colour === 'string' ? colour : undefined, law });
             }
           });

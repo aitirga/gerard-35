@@ -621,7 +621,7 @@ comes into that same sky, never as a page or a constellation opened on its own. 
 
 - **Everything open at once** on the 1600 × 900 sheet: Gerard's tree on the left, Aitor's on the
   right (`SKY`: where each core sits and which way each line grows, moved 2026-11-21 so seven dúos mayores each have a gap of their own, `BOWED_DOWN` turning an arc that would cross a name; `RINGS` a little tighter than
-  the old unfolded tree), and each shared ánima a small constellation scattered round and between
+  the old unfolded tree; a node that branches off the same one as another, as Atractor extraño beside Integral impropia past Maná +1, shares that one's ring `BRANCH` degrees to one side of the line), and each shared ánima a small constellation scattered round and between
   them, never a grid: its jar nodes one way (`nodes`), **the skills it has learned fighting** the
   other (`skills`) as small stars of its colour, chained faintly from the core (by level, never
   bought, a die's faces not counted; not pointable, their names come out when the constellation is
@@ -1096,13 +1096,14 @@ cuerdas.)
 
 A status on the clock can carry one more trait, `moves` (`TIMED` in `src/battle.ts`): it can leave its carrier
 for another foe. Only Matemágico's *Atractor extraño* moves them (`matemagico/README.md` § Atractor extraño): the
-other foes' moving statuses all go to its target, adding up where it already has one (levels to their top,
+other foes' moving statuses all leave them at once and reach its target one after another (so the plate's
+order never changes what the others are left with), adding up where it already has one (levels to their top,
 the longer clock; two bombs, their charge to its top and the sooner clock), and what meets there reacts
 as an element landing would (Humo, Vapor, Estallido, Envenenado). By kind, never by foe:
 
 | Moves | Stays |
 | --- | --- |
-| Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba (and Gas) | La crecida's (Agua, Corriente, Hundido, Congelado, and the Mojado of water standing under a foe); the cures (Sanación); Virus; the duals' own (Volcán, Marea, Fulgurita, Metralla, Idea fija, Seiche, Staccato); everything counted in rounds (Sangrado, Mareo, Llorera) |
+| Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba (and Gas, once Electrólisis brings it) | La crecida's (Agua, Corriente, Hundido, Congelado, and the Mojado of water standing under a foe); the cures (Sanación); Virus; the duals' own (Volcán, Marea, Fulgurita, Metralla, Idea fija, Seiche, Staccato); everything counted in rounds (Sangrado, Mareo, Llorera) |
 
 What moves was not put on anyone: Virus never spreads it.
 

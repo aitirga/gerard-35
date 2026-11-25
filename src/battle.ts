@@ -3319,30 +3319,33 @@ const gatherTop = (state: BattleState, id: TimedId) => id === 'quemado' ? fireTo
 export const movable = (c: Combatant) => TIMED_IDS.filter(id => TIMED[id].moves && !!c.timed?.[id] && !(id === 'mojado' && c.timed.agua));
 /**
  * Atractor extraño (docs/animas/matemagico/README.md § Atractor extraño): every status on the clock that can move (`moves`)
- * leaves each other foe standing, in the plate's order, for `target`. One it already has adds up: the levels to its top
- * (`gatherTop`), the longer clock; two bombs add their charge up to `BOMBA.top` and keep the clock of the one closer to going
- * off. What meets there reacts as an element landing would, with no blow of its own: water on a fire is Humo, fire on water
- * Vapor, fire and powder Estallido, water and powder Envenenado. A fire does not catch on an onion's wet layers: it stays
- * where it was. If the blow felled the target, nothing comes. What came was not put on anyone, so Virus never spreads it.
+ * leaves every other foe standing at once, and then reaches `target` one after another, in the plate's order. One it already
+ * has adds up: the levels to its top (`gatherTop`), the longer clock; two bombs add their charge up to `BOMBA.top` and keep the
+ * clock of the one closer to going off. What meets there reacts as an element landing would, with no blow of its own: water on
+ * a fire is Humo, fire on water Vapor, fire and powder Estallido, water and powder Envenenado. Since everything has left before
+ * anything arrives, the order of the plate never changes what the others are left with: the fire an Estallido lights on them
+ * stays on them, the same on each. A fire does not catch on an onion's wet layers: it stays where it was. If the blow felled the
+ * target, nothing comes; if a reaction fells it, what had not reached it yet is lost with it. What came was not put on anyone,
+ * so Virus never spreads it.
  */
 function gather(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
   if (target.hp <= 0 || target.part) return;
-  const came: Gathered[] = [];
-  for (const from of state.foes.filter(f => f !== target && f.hp > 0 && !f.part)) {
-    const entry: Gathered = { from: from.id, ids: [], reactions: [] };
-    for (const id of movable(from)) {
-      // An Estallido on the way can fell either of them, or set off this one's powder already.
-      if (target.hp <= 0 || from.hp <= 0) break;
-      const on = from.timed?.[id];
-      if (!on || (id === 'quemado' && target.layers)) continue;
-      delete from.timed![id];
-      entry.ids.push(id);
-      const turned = arrive(state, actor, target, id, on, effect);
+  // Everything leaves first, off everyone.
+  const leaving = state.foes.filter(f => f !== target && f.hp > 0 && !f.part).map(from => ({
+    from,
+    on: movable(from).filter(id => !(id === 'quemado' && target.layers)).map(id => { const on = from.timed![id]!; delete from.timed![id]; return [id, on] as const; }),
+  })).filter(l => l.on.length);
+  if (!leaving.length) return;
+  const came: Gathered[] = leaving.map(({ from, on }) => {
+    const entry: Gathered = { from: from.id, ids: on.map(([id]) => id), reactions: [] };
+    for (const [id, status] of on) {
+      // An Estallido on the way can fell it: the rest goes down with it.
+      if (target.hp <= 0) break;
+      const turned = arrive(state, actor, target, id, status, effect);
       if (turned) entry.reactions.push(turned);
     }
-    if (entry.ids.length) came.push(entry);
-  }
-  if (!came.length) return;
+    return entry;
+  });
   effect.gathered = came;
   const names = [...new Set(came.flatMap(c => c.ids))].filter(id => target.timed?.[id]).map(id => `${TIMED[id].name}${TIMED[id].levels.length && target.timed![id]!.level > 1 ? ` ${roman(target.timed![id]!.level)}` : ''}`);
   state.message += names.length ? ` Los estados de los demás caen en ${target.name}: ${names.join(', ')}.` : ` Lo de los demás cae en ${target.name}.`;
@@ -3368,6 +3371,8 @@ function arrive(state: BattleState, actor: Combatant, target: Combatant, id: Tim
   if (id === 'empolvado' && (t.quemado || t.mojado)) { t.empolvado = on; return turn(t.quemado ? 'fuego' : 'agua'); }
   if (id === 'mojado' && t.quemado) { smoke(target); state.message += ` ¡El agua apaga el fuego! ¡${TIMED.cegado.name}!`; return { id: 'humo' }; }
   if (id === 'quemado' && t.mojado) { const scratch: BattleEffect = { kind: 'skill', actor: actor.id }; vapour(state, target, scratch); carry(scratch, effect); return { id: 'vapor' }; }
+  // The water standing under it (La crecida) keeps its own Mojado, as long as the water: what comes runs into it.
+  if (id === 'mojado' && t.agua && t.mojado) return undefined;
   const mine = t[id];
   if (!mine) { t[id] = { ...on }; return undefined; }
   if (id === 'bomba') {

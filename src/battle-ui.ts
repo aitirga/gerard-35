@@ -13,7 +13,7 @@ import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, holdAfter } from './battle-motion';
+import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, atractorGiven, holdAfter } from './battle-motion';
 import { MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
@@ -281,6 +281,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const shownTimed = (c: Combatant) => ({ ...c.timed, quemado: shownFire(c), ...c.timed?.agua ? { mojado: undefined } : {} });
   /** An action chosen whose first blow has not landed: nobody's statuses change on screen until it does. */
   let unlanded = false;
+  /** While it has not landed, whose statuses show as they are now all the same (Atractor extraño's sources, once theirs have risen off them). */
+  const released = new Set<string>();
   /** Runs `action`, and what it changes on the fighters waits to show until it lands (`present`). */
   function holdBack<T extends BattleEffect | undefined>(action: () => T): T {
     const before = snapshot();
@@ -326,7 +328,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Each fighter's plate over the fight and where `positionTargets` last put it. */
   const plates = new Map<string, HTMLElement>(), plateAt = new WeakMap<HTMLElement, string>();
   /** A number or a word flying off a fighter. A `status` one (its id in `status`) is stamped on in its colour, above where the blow's numbers rise. */
-  function pop(id: string, text: string, kind: 'damage' | 'crit' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive' | 'lives', detail = '', status?: string, dx = 0) {
+  function pop(id: string, text: string, kind: 'damage' | 'crit' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive' | 'lives', detail = '', status?: string, dx = 0, dy = 0) {
     const at = positions.get(id);
     if (!at) return;
     const el = document.createElement('span');
@@ -336,7 +338,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     el.querySelector('strong')!.textContent = text;
     if (detail) el.querySelector('small')!.textContent = detail;
     // A passive's plate sits higher still, and stays a little longer: it is the ánima speaking, not the blow.
-    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' || kind === 'crit' || kind === 'lives' ? 8 : 26))}px, ${at.y - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
+    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' || kind === 'crit' || kind === 'lives' ? 8 : 26))}px, ${at.y - dy - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
     get('.battle-pops').append(el);
     setTimeout(() => el.remove(), kind === 'passive' || kind === 'lives' ? 1900 : kind === 'crit' ? 1600 : kind === 'status' ? 1350 : 1100);
     return el;
@@ -1245,14 +1247,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       platePips?.toggleAttribute('hidden', !animaMax(c));
       platePips?.toggleAttribute('data-dice', c.classId === DICED);
       plate?.querySelectorAll<HTMLElement>('.plate-pips i').forEach((pip, i) => { pip.dataset.pip = i < c.secondary ? 'full' : 'spent'; });
-      if (plate && !unlanded) showStatuses(plate, c);
+      if (plate && (!unlanded || released.has(c.id))) showStatuses(plate, c);
     }
     const order = state.allies.map(c => root.querySelector(`.party-card[data-unit="${c.id}"]`)!).filter(card => card.parentElement === roster);
     if (order.some((card, i) => roster.children[i] !== card)) order.forEach(card => roster.append(card));
     for (const foe of state.foes) {
       const plate = get<HTMLButtonElement>(`.battle-target[data-target="${foe.id}"]`);
       fill(plate.querySelector('.enemy-health')!, shownHp(foe) / foe.maxHp);
-      if (!unlanded) showStatuses(plate, foe);
+      if (!unlanded || released.has(foe.id)) showStatuses(plate, foe);
       const health = foe.hp === 0 ? 'fuera de combate' : foe.hp === foe.maxHp ? 'salud completa' : foe.hp / foe.maxHp <= .3 ? 'salud baja' : 'herido';
       plate.setAttribute('aria-label', `Elegir a ${foe.name}, ${health}`);
       plate.classList.toggle('is-down', shownHp(foe) === 0);
@@ -2263,6 +2265,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       firePop?.remove();
       firePop = pop(effect.target!, `¡${TIMED[effect.burn.id].name}${level > 1 ? ` ${roman(level)}` : ''}!`, 'status', level > 1 ? 'El fuego sube' : '', effect.burn.id);
     };
+    // Atractor extraño: each other foe's plate lets go of what it gave as its statuses rise off it (the scene's `atractorGiven`),
+    // but not of a fire its Estallido is still to light there.
+    effect.gathered?.forEach((g, i) => setTimeout(() => {
+      if (token !== generation || !unlanded) return;
+      released.add(g.from);
+      if (effect.gathered!.some(c => c.reactions.some(r => r.hits?.some(h => h.target === g.from)))) heldFire.set(g.from, { landed: 0 }); else heldFire.delete(g.from);
+      render();
+    }, atractorGiven(i) * 1000));
     await callbacks.change(state, effect, blow => {
       if (token !== generation || !state) return;
       if (blow && rain) {
@@ -2295,7 +2305,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         return;
       }
       // Its first blow lands: everything comes off but a flurry's other blows.
-      unlanded = false;
+      unlanded = false; released.clear();
       const held = new Map(owed);
       owed.clear();
       // Atractor extraño: the fires it took off the others (and any its Estallido lit) go as it lands, not once it is over.
@@ -2513,12 +2523,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         const names = [...new Set(effect.gathered.flatMap(g => g.ids))].filter(id => into?.timed?.[id]).map(id => `${TIMED[id].name}${TIMED[id].levels.length && into!.timed![id]!.level > 1 ? ` ${roman(into!.timed![id]!.level)}` : ''}`);
         landed.push({ target: effect.target, id: 'atractor', text: 'Atractor', detail: names.join(' · ') || 'Todo se junta' });
         const MET = { humo: { id: 'cegado', text: '¡Humo!', detail: 'El agua apaga el fuego' }, vapor: { id: 'cegado', text: '¡Vapor!', detail: 'El agua se va en vapor' }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}!`, detail: 'El agua corre el polvo' } } as Partial<Record<string, { id: string; text: string; detail: string }>>;
+        // What met, each a step higher than the one before, so they read one under another and never on top.
         effect.gathered.flatMap(g => g.reactions).forEach((r, i) => setTimeout(() => {
           if (token !== generation) return;
           const says = MET[r.id];
-          if (says) pop(effect.target!, says.text, 'status', says.detail, says.id);
-          r.hits?.forEach((h, j) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says?.text.replace(/[¡!]/g, '') ?? '', undefined, 58); }, 140 + j * 90));
-        }, 380 + i * 260));
+          if (says) pop(effect.target!, says.text, 'status', says.detail, says.id, 0, 52 * (i + 1));
+          r.hits?.forEach((h, j) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says?.text.replace(/[¡!]/g, '') ?? '', undefined, h.target === effect.target ? -70 : 0); }, 140 + j * 90));
+        }, 520 + i * 300));
       }
       // Virus atómico: what spread, over each foe it reached.
       effect.spread?.forEach(sp => sp.to.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, '¡Contagio!', 'status', sp.statuses.join(' · '), 'virus'); }, 480 + i * 80)));
@@ -2561,7 +2572,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       iceBreaks(effect, token);
     });
     // A blow the scene never got to (the fight cut short) still comes off.
-    if (owed.size || heldFire.size || unlanded) { owed.clear(); heldFire.clear(); unlanded = false; if (token === generation && state) render(); }
+    if (owed.size || heldFire.size || unlanded) { owed.clear(); heldFire.clear(); unlanded = false; released.clear(); if (token === generation && state) render(); }
     if (token === generation) { delete root.dataset.resolving; delete root.dataset.actor; }
   }
   /**

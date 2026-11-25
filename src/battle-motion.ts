@@ -27,6 +27,16 @@ export const FIGURES = {
   // Atractor extraño: the butterfly drawn round the foe, the others' statuses streaming into it, and its collapse into the chest.
   atractor: { contact: 2.4, end: 3.4 },
 } as const satisfies Record<string, { contact: number; end: number }>;
+/**
+ * Atractor extraño's beats, in the figure's own seconds (from CAST_LAUNCH): the pen draws the butterfly (`draw`); each other foe's
+ * statuses rise off it at `leave` (a breath later for each foe after the first, and for each status after a foe's first) and reach
+ * it by `arrive`; the butterfly falls into the chest over the last `fall` seconds before contact.
+ */
+export const ATRACTOR = { draw: .85, leave: .3, perFoe: .08, perStatus: .06, arrive: .82, fall: 1.05 } as const;
+/** When the `j`th status of the `i`th foe gathered leaves it (figure seconds). */
+export const atractorLeave = (i: number, j = 0) => ATRACTOR.leave + i * ATRACTOR.perFoe + j * ATRACTOR.perStatus;
+/** When the `i`th foe gathered has given all it had (action seconds): its looks and its plate let go of what it carried. */
+export const atractorGiven = (i: number) => CAST_LAUNCH + atractorLeave(i) + .06;
 export type FigureSkill = keyof typeof FIGURES;
 export const isFigure = (skill?: string): skill is FigureSkill => !!skill && skill in FIGURES;
 /** Cardioide: its motes reach whoever it cures here. */

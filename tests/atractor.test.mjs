@@ -163,3 +163,79 @@ test('with one foe only the blow lands; a target felled by it takes nothing; fir
   assert.equal(onion.foes[0].timed.quemado, undefined); assert.equal(onion.foes[1].timed.quemado.level, 2, 'the fire stays where it was');
   assert.ok(onion.foes[0].timed.cegado);
 });
+
+test('everything leaves first: the plate\'s order never changes what the others are left with', () => {
+  // Powder comes to a burning target: Estallido burns every foe a level more; that new fire stays on each source, the same on all.
+  const s = fight(CALCULO, 4);
+  s.foes[0].timed = { quemado: fire(1) };
+  s.foes[1].timed = { envenenado: on(1, 12, 4) };
+  s.foes[2].timed = { empolvado: dust() };
+  s.foes[3].timed = { cegado: on(1, 6, 10) };
+  const e = cast(s);
+  assert.ok(e.gathered.some(g => g.reactions.some(r => r.id === 'estallido')));
+  const burns = s.foes.slice(1).map(f => f.timed?.quemado?.level ?? 0);
+  assert.ok(burns.every(level => level === burns[0] && level > 0), `every source burns the same: ${burns}`);
+  assert.ok(s.foes.slice(1).every(f => !f.timed.envenenado && !f.timed.empolvado && !f.timed.cegado), 'and nothing else stays on them');
+  assert.ok(s.foes[0].timed.envenenado && s.foes[0].timed.cegado);
+  // The same, the powder on the first source instead of the second: the same outcome.
+  const t = fight(CALCULO, 4);
+  t.foes[0].timed = { quemado: fire(1) };
+  t.foes[1].timed = { empolvado: dust() };
+  t.foes[2].timed = { envenenado: on(1, 12, 4) };
+  t.foes[3].timed = { cegado: on(1, 6, 10) };
+  cast(t);
+  assert.deepEqual(t.foes.slice(1).map(f => f.timed?.quemado?.level ?? 0), burns);
+});
+
+test('an Estallido that fells its target on the way: what had not reached it is lost with it, and the givers keep none of it', () => {
+  const s = fight();
+  s.foes[0].timed = { empolvado: dust() };
+  s.foes[1].timed = { quemado: fire(2) };
+  s.foes[2].timed = { envenenado: on(2, 12, 4), confusion: on(1, 20, 30) };
+  // Enough to take the blow and not the blast.
+  const blow = fight(); turn(blow); const dealt = act(blow, 'skill', 'dog-0', 'atractor').amount;
+  s.foes[0].hp = dealt + 1;
+  const e = cast(s);
+  assert.equal(s.foes[0].hp, 0, 'the blast fells it');
+  assert.equal(e.gathered[0].reactions[0].id, 'estallido');
+  assert.deepEqual(e.gathered[1].ids, ['envenenado', 'confusion'], 'the second one\'s statuses left it all the same');
+  assert.ok(!s.foes[2].timed.envenenado && !s.foes[2].timed.confusion);
+});
+
+test('La crecida\'s water keeps its own Mojado: a Mojado that comes runs into it', () => {
+  const s = fight();
+  s.foes[0].timed = { agua: on(2, 30, 30), mojado: wet(30) };
+  s.foes[1].timed = { mojado: wet(5) };
+  cast(s);
+  assert.equal(s.foes[0].timed.mojado.left, 30);
+  assert.equal(s.foes[1].timed.mojado, undefined);
+});
+
+test('Toma de tierra counts a reaction on arrival: maná back', () => {
+  const s = fight([...CALCULO, 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra']);
+  s.foes[0].timed = { quemado: fire(1) }; s.foes[1].timed = { mojado: wet() };
+  const gerard = turn(s), before = gerard.secondary;
+  const e = act(s, 'skill', 'dog-0', 'atractor');
+  assert.equal(e.mana, 1); assert.ok(e.passives.some(p => p.id === 'toma-de-tierra'));
+  assert.equal(gerard.secondary, before - 2 + 1);
+});
+
+test('aimed at a boss\'s part, nothing moves', () => {
+  const s = fight();
+  s.foes[0].part = true;
+  s.foes[1].timed = { quemado: fire(2) };
+  const e = cast(s);
+  assert.equal(e.gathered, undefined); assert.equal(s.foes[1].timed.quemado.level, 2);
+});
+
+test('the smart bot gathers three small fires into one big one, onto the foe that will stand longest', async () => {
+  const { decide } = await import('../src/battle-sim.ts');
+  const s = fight();
+  // Three fires at I add up to one at III, which burns harder than the three apart (`clockWorth`); on the big one it burns all its clock.
+  s.foes.forEach((f, i) => { f.maxHp = i === 1 ? 300 : 30; f.hp = f.maxHp; f.timed = { quemado: fire(1) }; });
+  turn(s);
+  const setup = { fight: 'dogs:3', party: 'gerard:matemagico+aitor:tecnopata', policy: 'smart', ban: ['duals', 'factor-comun', 'foc-binari', 'cardioide', 'analisis', 'defend'] };
+  const choice = decide(s, setup, () => .99);
+  assert.equal(choice.skill, 'atractor', JSON.stringify(choice));
+  assert.equal(choice.target, 'dog-1');
+});

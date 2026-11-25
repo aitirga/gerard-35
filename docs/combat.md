@@ -538,7 +538,7 @@ enemigos vuelven a actuar. `just screenshots tecnopata-skills --gpu` lo muestra 
 
 **Estados que se mueven** (2026-11-25). Un estado con reloj puede llevar el rasgo `moves` (`TimedSpec`):
 puede pasar de un enemigo a otro. Solo lo hace *Atractor extraño* de Matemágico: los estados que se mueven de
-los demás enemigos pasan a su objetivo, se suman donde ya lo tiene (niveles hasta su tope, el reloj más
+los demás enemigos los dejan todos a la vez y llegan a su objetivo uno tras otro, se suman donde ya lo tiene (niveles hasta su tope, el reloj más
 largo) y lo que se encuentra reacciona como si cayera un elemento (Humo, Vapor, Estallido, Envenenado).
 Se mueven Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión y Bomba; no
 se mueven el agua de La crecida, las curas, Virus, los de los dúos ni los que cuentan por rondas. Lo que
