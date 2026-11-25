@@ -781,6 +781,14 @@ note = "Hechos con sus reglas, su nodo en el bote, su prueba y su aspecto propio
 title = "Dúos nuevos: Géiser, A escala, Seiche, Staccato, Cadáver exquisito y Trampantojo"
 file = "scripts/screenshots/duos-nuevos.json"
 
+# Aitor 2026-11-25 (the Matemágico expansion): Acecho with the condenser's charge, the first dual that waits on its prey.
+[[block.item]]
+title = "Dúo Arco voltaico (∂Q/∂t Condensador + Acecho): la gata espera cargada y salta por la parábola"
+note = "Reglas, prueba, aspecto (espejo parabólico en la GPU, src/duo-fx/arco-voltaico.ts) y su ensayo en «Probar un dúo». Sin objetivos de fight-sim todavía: los pone la fase de balance (aurelia-leccion-arco)."
+grep = "id: 'arco-voltaico'"
+in = "src/battle.ts"
+file = "scripts/screenshots/arco-voltaico.json"
+
 # Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
 # the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).
 [[block.item]]

@@ -669,7 +669,8 @@ el golpe bajo él y el turno del grupo ya sin él.
 ## Ataques duales
 
 Cada jugador elige una habilidad del ánima que lleva. Algunas parejas se convierten en una sola
-acción que consume los dos turnos. El catálogo de `DUALS` incluye siete dúos.
+acción que consume los dos turnos. La tabla recoge los primeros; el catálogo entero de `DUALS`, con sus parejas, está en
+`docs/animas/README.md` § Combined skills.
 
 | Dúo | Habilidades | Momento que lo decide |
 | --- | --- | --- |
@@ -764,6 +765,13 @@ Al empezar la ronda siguiente, antes de que nadie elija, sale solo (`nextRound` 
 noticia que la pantalla muestra en cuanto cierra la ronda): barre a todos los enemigos con el daño
 de quien trae la mitad de su tipo y les deja Quemado II como mínimo. Si quien lo guarda cae antes,
 se pierde.
+
+**Al acecho** (`DualSpec.stalk`, Arco voltaico: ∂Q/∂t Condensador + Acecho). Su turno no cae nada: quien
+trae Acecho espera sobre la presa, cargado (`Combatant.stalk`), y al empezar la ronda siguiente, antes de
+que nadie elija, salta (`pounce`): un golpe físico y eléctrico a la vez, crítico seguro, que gasta la
+herida, hace reaccionar lo que haría Atacar·Eléctrico y hace estallar Combustión. Si un enemigo le golpea
+antes, la carga salta a ese enemigo (`CONDENSADOR.jump`, con sus reacciones) y el golpe sale a la mitad
+(`jumped`). Si cae su presa, va a la que más sangra; si cae quien espera o se quita Papagato, se pierde.
 
 **Cómo se ven los dúos de otras ánimas** (`DUO`, `BLAST`, `startDuo` en `src/battle-scene.ts`; sus
 dibujos en `src/dual-fx.ts`). Cada uno mezcla el aspecto de sus dos ánimas, y no solo el dorado de

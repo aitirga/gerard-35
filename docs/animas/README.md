@@ -547,6 +547,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Sincopante | **Staccato** | Zarpazo sangriento + Ostinato | 1 · 1 | Built (2026-11-21). An eco repeats the cut each 5 s for 20 s, a Sangrado each |
 | Colorista + Dadista | **Cadáver exquisito** | Puñado + Estrella fugaz | 1 · 3 | Built (2026-11-21). Three blows, each powdering and of a random element; with a streak of 3, all three different |
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
+| Matemágico + Papagato | **Arco voltaico** | ∂Q/∂t Condensador + Acecho | node · 6 | Built (2026-11-25). Acecho with the condenser's charge: the cat waits charged and, as the next round starts, lands a physical and electric blow (64), a sure critical that turns what Atacar·Eléctrico would (Plasma, Conducción, Tormenta, the powder) and sets off Combustión as any physical blow does. A foe that strikes her first takes the charge (the condenser's jump, which turns what it finds) and the blow lands at half |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.

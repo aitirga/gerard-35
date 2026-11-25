@@ -601,7 +601,7 @@ test('dual descriptions follow the plain shape too, and each dual pairs a skill 
   const { DUALS, dualOf, dualCost } = await import('../src/battle.ts');
   const intensity = power => power <= 20 ? 'leve' : power <= 34 ? 'medi[oa]' : power <= 49 ? 'alt[oa]' : 'muy alt[oa]';
   assert.deepEqual(DUALS.map(d => d.id), ['zarpazos-de-fuego', 'punto-debil', 'rayo-solar', 'sutura-de-luz', 'relevo-de-sangre', 'bombardeo-orbital', 'reserva-de-color', 'sobrecalentamiento', 'vulcano',
-    'marea', 'fulgurita', 'suceso-seguro', 'metralla', 'idea-fija', 'caleidoscopio', 'geiser', 'a-escala', 'seiche', 'staccato', 'cadaver-exquisito', 'trampantojo']);
+    'marea', 'fulgurita', 'suceso-seguro', 'metralla', 'idea-fija', 'caleidoscopio', 'geiser', 'a-escala', 'seiche', 'staccato', 'cadaver-exquisito', 'trampantojo', 'arco-voltaico']);
   for (const d of DUALS) {
     const [a, b] = d.parts.map(id => SKILLS.find(s => s.id === id));
     assert.notEqual(a.class, b.class, `${d.name}: two ánimas`);

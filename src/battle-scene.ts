@@ -43,6 +43,7 @@ import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, 
 import { TONES, type ToneId } from './song';
 import { takeZero } from './anima-looks';
 import { DUO_STAGINGS, type DuoFighter, type DuoStage } from './duo-fx';
+import { ARC_POUNCE, arcGeometry, arcRun } from './duo-fx/arco-voltaico';
 import { createFluidFx } from './fluid-fx';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
@@ -1039,6 +1040,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         return id && f ? duoFighter(id, f) : undefined;
       },
       bip: () => { for (const b of bips.values()) if (b.shown && !b.gone) return v3(b.bip.entity.getPosition()); return undefined; },
+      cat: wearer => { const haru = catsOf(wearer)?.haru.entity; return haru?.enabled ? v3(haru.getPosition()) : undefined; },
       hit: (id, rgb, strength = 1) => { const f = fighters.get(id); if (f) hit(f, new pc.Color(rgb[0], rgb[1], rgb[2]), strength * (f.rigid ? .4 : 1)); },
       shake: amount => { shake = Math.max(shake, amount); },
       pulse: (fringe, bloom, flash) => pulse?.(fringe, bloom, flash),
@@ -1897,7 +1899,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
     const felt: Blow = { share: unit ? (action.amount ?? 0) / unit.maxHp : 0, skill: !!action.skill, guarded, ko: target.hp <= 0, swallowed: action.swallowed, beat: state?.phase === 'beat', crit };
     // Bip's ram comes from where Bip is, not from its wearer; Acecho's pounce from behind the prey.
-    const from = botAt(action) ?? (action.pounce ? pounceFrom(action, target) : actor.base);
+    // Arco voltaico's comes down the arch's axis, from the side the cat ran up.
+    const arc = action.pounceDual ? arcs.get(action) : undefined;
+    const from = botAt(action) ?? (arc ? new pc.Vec3(target.base.x - arc.dir.x * arc.reach, 0, target.base.z - arc.dir.z * arc.reach) : action.pounce ? pounceFrom(action, target) : actor.base);
     // Acecho lands hard: a heavier blow, the picture shakes and leans in.
     if (action.pounce) { shake = Math.max(shake, .75); zoom.x = Math.max(zoom.x, CRIT.punch * 1.6); cue('claw-deep'); cue('slam', { delay: .02 }); }
     const dx = target.base.x - from.x, dz = target.base.z - from.z, d = Math.hypot(dx, dz) || 1;
@@ -1955,6 +1959,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * once for each pounce.
    */
   const pounceSpots = new WeakMap<BattleEffect, pc.Vec3>();
+  /** Arco voltaico's arch for each pounce of it, from where the cat waited (src/duo-fx/arco-voltaico.ts `arcGeometry`): worked out once. */
+  const arcs = new WeakMap<BattleEffect, ReturnType<typeof arcGeometry>>();
+  function arcOf(action: BattleEffect, rest: pc.Vec3, prey: Fighter) {
+    let g = arcs.get(action);
+    if (g) return g;
+    const body = extent(prey);
+    g = arcGeometry({ x: rest.x, y: groundHeight(rest.x, rest.z), z: rest.z }, { chest: v3(chestOf(prey)), feet: v3(floorUnder(prey)), radius: Math.max(.25, body.radius), height: body.height });
+    arcs.set(action, g);
+    return g;
+  }
   function pounceFrom(action: BattleEffect, prey: Fighter) {
     let spot = pounceSpots.get(action);
     if (spot) return spot;
@@ -2807,6 +2821,15 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           }
         }
         at.y = 0;
+      } else if (effect?.stalker === id && effect.dual && effect.stalking && target) {
+        // Arco voltaico: she does not go into the dark. She crouches where she is, eyes on the prey, while the arch is drawn.
+        crouch = 1; look = target.base;
+      } else if (mine && effect?.pounceDual && target) {
+        // Arco voltaico's pounce: she runs the arch Gerard drew, a thrown body's flight, and drops down its axis onto the prey.
+        const g = arcOf(effect, rest, target), run = animate ? arcRun(g, { x: rest.x, y: groundHeight(rest.x, rest.z), z: rest.z }, t) : { at: v3(rest), lift: 0, crouch: 0 };
+        at = new pc.Vec3(run.at.x, 0, run.at.z); lift = run.lift; leap = 'leap' in run ? run.leap : undefined; crouch = run.crouch;
+        look = !animate || t >= ARC_POUNCE.stay ? center : t < ARC_POUNCE.apex ? new pc.Vec3(target.base.x + g.dir.x * 3, 0, target.base.z + g.dir.z * 3) : target.base;
+        glare = t >= ARC_POUNCE.foot && t < ARC_POUNCE.stay ? 1 : 0;
       } else if (mine && effect?.stalking && target) {
         // Acecho: she crouches, eyes on the prey; the dark pools under her and she sinks into it, her eyes flaring red as she goes.
         crouch = 1; look = target.base;
@@ -2870,6 +2893,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Low before the spring and low on landing, flying in between.
         leap = out > 0 && out < 1 ? out : back > 0 && back < 1 ? back : undefined;
         crouch = out <= 0 || (out >= 1 && back <= 0) ? 1 : 0;
+      } else if (wearing && ((stalked?.dual && prey && prey.hp > 0) || state?.news?.some(news => news.pounceDual && news.actor === id))) {
+        // Arco voltaico: charged, she waits where everyone can see her, crouched, eyes on the prey (her fur stands, src/duo-fx).
+        crouch = 1; if (prey) look = prey.base;
       } else if (wearing && ((prey && prey.hp > 0) || state?.news?.some(news => news.pounce && news.actor === id))) {
         // Gone into the dark until the round starts and her pounce plays (Acecho): nothing of her shows.
         gone = true;
@@ -3948,7 +3974,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
       // Freática's skills start their look on the cells at once (Recarga's tape, Riada's wave): the numbers come at their contact.
       if (effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' && state) freatica.play(effect, state);
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
@@ -4405,7 +4431,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         const shown = shownStacks.get(`${unit.id}:quemado`) ?? 0;
         if (dualBurn !== undefined && unit.id === effect?.target && unit.timed?.quemado) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: dualBurn ? { ...unit.timed.quemado, level: dualBurn } : undefined }, !!unit.capacitor); continue; }
         // The charge stays on show until the blow that lets it go lands.
-        const charged = (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && effect?.discharge?.from === unit.id);
+        // Arco voltaico waiting charged shows the same charge on whoever waits, from the moment the arch settles.
+        const arcCharged = !!unit.stalk?.charged && !(!impacted && effect?.dual?.id === 'arco-voltaico' && effect.stalker === unit.id);
+        const charged = arcCharged || (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && effect?.discharge?.from === unit.id);
         syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
           // The fire it showed can be gone already (Plasma put it out, a Gemelo felled lost everything it carried): it stays as it was until the blow lands.
           ? { ...unit.timed, quemado: shown ? { left: TIMED.quemado.seconds, next: TIMED.quemado.every, ...unit.timed?.quemado, level: shown } : undefined } : unit.timed, charged);
@@ -4533,7 +4561,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? FIGURES[effect.skill as FigureSkill].end : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? FIGURES[effect.skill as FigureSkill].end : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

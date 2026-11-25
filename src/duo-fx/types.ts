@@ -52,6 +52,8 @@ export interface DuoStage {
   wearer(anima: ClassId): DuoFighter | undefined;
   /** Where Bip hovers, if Tecnópata's drone is out. */
   bip(): V3 | undefined;
+  /** Where Papagato's cat (Haru) is now, on the floor, for whoever wears it (`wearer`'s id), if she is out. */
+  cat(wearer: string): V3 | undefined;
   /** A flash of `rgb` (0–1) on a fighter, `strength` about 1 (a big blow 1.5). */
   hit(id: string, rgb: readonly [number, number, number], strength?: number): void;
   /** The picture shakes at least this much (.1 a tap, .6 a big blow). */

@@ -82,6 +82,8 @@ const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;
 const lightEats = (state: BattleState, light: keyof typeof LIGHTS) => { const element = lightEatsNow(state, light); return element === 'fisico' ? 'Anula los golpes físicos' : element ? `Anula ${ELEMENTS[element].name.toLowerCase()}` : cancels(light) ? 'Ya no anula nada' : 'No anula nada'; };
 const lightText = (state: BattleState, light: keyof typeof LIGHTS) => `Luz ${LIGHTS[light].name.toLowerCase()}: ${lightEats(state, light).toLowerCase()} del equipo.`;
 /** What each status a newer dual leaves does, in the few words under its name as it lands. */
+/** A reaction's name over the PV it took, when it came on its own (Arco voltaico's charge jumping). */
+const REACTION_SAID: Record<string, string> = { plasma: 'Plasma', tormenta: 'Tormenta', conduccion: 'Conducción', estallido: 'Estallido', cauterizado: 'Cauterizado' };
 const DUAL_LEFT: Partial<Record<TimedId, string>> = {
   marea: 'El agua sube en todos a la vez', fulgurita: 'Las esquirlas cuentan juntas', metralla: 'La herida no se gasta',
   'idea-fija': 'Golpea a los suyos cada 5 s', seiche: 'Golpea y sostiene el agua', staccato: 'Corta de nuevo cada 5 s',
@@ -406,7 +408,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Sincopante's ecos, on whoever called them: one continuous icon, Compás, its hand going round once a beat.
       ...state && ecosOf(state, c).length ? [compasStatus(c)] : [],
       // Acecho: their cat crouched, to spring as the next round starts.
-      ...c.stalk ? [{ id: 'acecho' as const, name: `Acecho: salta sobre ${state?.foes.find(f => f.id === c.stalk!.target)?.name ?? 'su presa'} al empezar la ronda`, mark: '', timed: false, lasts: 'hasta que empiece la ronda' }] : [],
+      ...c.stalk ? [{ id: 'acecho' as const, name: `${c.stalk.dual ? DUALS.find(d => d.id === c.stalk!.dual)?.name ?? 'Acecho' : 'Acecho'}: salta sobre ${state?.foes.find(f => f.id === c.stalk!.target)?.name ?? 'su presa'} al empezar la ronda${c.stalk.dual && !c.stalk.charged ? ', sin su carga' : ''}`, mark: '', timed: false, lasts: 'hasta que empiece la ronda' }] : [],
+      // Arco voltaico waiting charged: the condenser's charge on whoever waits, until it lands or a foe's blow finds them first.
+      ...c.stalk?.charged ? [{ id: 'cargado' as const, name: 'Cargado: si le golpean antes de saltar, la carga salta al que le golpee y el golpe sale a la mitad', mark: '', timed: false, lasts: 'hasta que salte' }] : [],
       // Siete vidas: Yuki's ward, on everyone it covers, until the blow that would have killed one of them.
       ...warded(c) ? [{ id: 'siete-vidas' as const, name: 'Siete vidas: el próximo golpe que fuera a tumbar a alguien del equipo lo cura', mark: '', timed: false, lasts: 'hasta ese golpe' }] : [],
       ...c.bits && !c.bits.broken && c.bits.hp > 0 ? [{ id: 'bits' as const, name: `Escudo de bits: ${c.bits.hp} PV, para cada golpe entero`, mark: String(c.bits.hp), timed: false, lasts: rounds(Math.max(1, c.bits.until - (state?.round ?? 0) + 1)) }] : [],
@@ -2210,7 +2214,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // that lit it; whatever else it says comes with the last one.
     const strikes = effect.target && !effect.hits && (effect.strikes?.length ?? 1) > 1 ? effect.strikes! : undefined;
     // What the action is called on its numbers: the party's skill or dual. A foe's is named up top (`showCallout`) instead.
-    const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : DUALS.find(d => d.id === effect.detonation)?.name ?? effect.release?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
+    const label = effect.kind === 'enemy' ? (isCuerdas(state.foes.find(f => f.id === effect.actor)?.kind) && !effect.cancelled ? effect.ability?.name ?? '' : '') : DUALS.find(d => d.id === effect.detonation)?.name ?? effect.release?.name ?? effect.pounceDual?.name ?? effect.dual?.name ?? SKILLS.find(s => s.id === effect.skill)?.name ?? (effect.element ? ELEMENTS[effect.element].name : '');
     const spread = (blow: number) => strikes ? (blow / (strikes.length - 1) - .5) * 48 : 0;
     // Rayo solar's beam sweeps along the foes: each one's blow (its number, its PV, its fire) lands
     // as the beam crosses them, blow 1 + its place in `hits` (the scene's `solarCross`).
@@ -2446,7 +2450,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       effect.restarted?.forEach(r => landed.push({ target: r.target, id: 'reinicio', text: effect.skill === 'reinicio' ? 'Reinicio' : r.statuses.length > 1 ? 'Vuelven a empezar' : 'Vuelve a empezar', detail: r.statuses.map(id => TIMED[id].name).join(' · ') }));
       if (effect.exploded) landed.push({ target: effect.actor, id: 'explosion', text: 'Pierde su turno', detail: 'Bip se recompone' });
       if (effect.charging) landed.push({ target: effect.charging, id: 'carga', text: '¡Cargado!', detail: 'Sale al empezar la ronda' });
-      if (effect.stalking) landed.push({ target: effect.actor, id: 'acecho', text: 'Al acecho', detail: 'Salta al empezar la ronda' });
+      if (effect.stalking) landed.push({ target: effect.stalker ?? effect.actor, id: 'acecho', text: 'Al acecho', detail: effect.dual ? 'Cargado: salta al empezar la ronda' : 'Salta al empezar la ronda' });
+      if (effect.pounceDual?.half && effect.target) landed.push({ target: effect.target, id: 'cargado', text: 'Sin carga', detail: 'El golpe, a la mitad' });
       effect.ward?.forEach(id => landed.push({ target: id, id: 'siete-vidas', text: 'Siete vidas', detail: 'El golpe mortal, en cura' }));
       waterSays(effect).forEach(l => landed.push(l));
       if (!sweep) effect.hits?.forEach(h => { if (h.status) landed.push({ target: h.target, id: h.status.id, text: `¡${STATUSES[h.status.id].name}!`, detail: `× ${h.status.stacks}` }); });
@@ -2485,6 +2490,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.capacitor === 'spent' && effect.target) landed.push({ target: effect.target, id: 'cargado', text: '×2', detail: 'Suelta la carga' });
       // A foe struck whoever carried it: the charge jumps back, a beat after the blow.
       if (effect.discharge) { const d = effect.discharge; setTimeout(() => { if (token === generation) pop(d.target, `−${d.amount}`, 'damage', 'La carga salta'); }, 420); }
+      // Arco voltaico's charge jumping: what the bolt turned on that foe, a beat after it (Plasma, Conducción, Tormenta…).
+      effect.discharge?.reaction?.hits?.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', REACTION_SAID[effect.discharge!.reaction!.id] ?? '', undefined, i * 16); }, 700 + i * 80));
       const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
       if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);
       else if (boss && effect.diverged) setTimeout(() => { if (token === generation) pop(boss.id, 'Diverge', 'status', `Error ${effect.error?.left ?? boss.error ?? 0}`, 'error'); }, 420);

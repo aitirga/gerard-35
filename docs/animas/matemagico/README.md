@@ -270,6 +270,7 @@ Combined skills):
 | --- | --- | --- | --- | --- |
 | **Zarpazos de fuego** | **Foc Binari** + Zarpazos | 1 · 2 | 1 + 2 | `Daño físico de fuego leve a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
 | **Punto débil** | **Ángulo exacto** + Zarpazo sangriento | 2 · 1 | 1 + 1 | `Daño físico leve a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Arco voltaico** | **∂Q/∂t Condensador** + Acecho | node · 6 | 1 + 2 | `Daño físico eléctrico muy alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro. Si un enemigo golpea antes a quien espera, la carga salta a ese enemigo y el golpe sale a la mitad.` |
 
 Gerard draws the figure and Haru strikes it: eight claws round a circle of digits from `000` to
 `111`, each one that lands on a foe without layers flipping a coin for fire; or a protractor and a
@@ -277,6 +278,37 @@ dotted line to the spot, one blow, and the mark that makes the next action on it
 hard. Both are physical, so the blow uses Papagato's wearer's Fuerza; the fire melts the pringue
 too. Details in `../papagato/README.md` § Duals. The burning shield (*Cortina de fuego*, Foc Binari +
 Yuki se esconde) is an idea for later.
+
+### Arco voltaico (built 2026-11-25)
+
+Acecho with the condenser's charge (`DualSpec.stalk`, `pounce` in `src/battle.ts`; its look in
+`src/duo-fx/arco-voltaico.ts`). Its turn nothing lands: whoever brings Acecho waits on the prey, charged
+(`Combatant.stalk.charged`, the Acecho icon and the Cargado one on their plate). As the next round starts,
+before anyone chooses, the cat lands: **64, physical and electric at once, with the cat's wearer's stats**, a
+sure golpe crítico. Being physical it spends the wound (+20 % a stack, Olor a sangre from five) and sets off
+Combustión; being electric it turns what Atacar·Eléctrico turns, in the same order (the powder first, then
+Plasma on a fire, Tormenta through smoke, Conducción through water), so on a bare Quemado IV Plasma takes
+the fire, and on powder over it the shards set and the blow bursts it. If its prey fell, the cat takes
+whoever bleeds most.
+
+**The risk of waiting.** A foe whose blow finds the one waiting first takes the charge, as Condensador's
+does: `CONDENSADOR.jump` of electric magic with the waiting one's stats, which turns what it finds on that
+foe (Plasma on its fire, Conducción…); the pounce still comes, at `jumped` (half) of its power. One charge
+jumps a blow: if Gerard carries his own Condensador and the same blow finds both, his jumps. Protecting the
+cat (a cortina, Escolta, a guard) is part of the answer.
+
+**Look.** Gerard draws a gold parabola in front of him, its focus a bead and its directrix dashed; it rises
+and turns in the world until its axis stands over the prey and its focus sits on its chest, an arch of light
+running down to the floor either side (its focal length is what makes it meet the floor there). While the
+cat waits charged, sparks rise out of the floor in rings round the prey, parallel, strike a GPU mirror along
+the arch (a `paraboloid` volume in `mirror` mode, opening down) and converge on the focus; she crouches in
+plain sight with her fur standing with static. If the charge jumps, the arch swings about its vertex until
+its axis points at that foe, an arc leaves the vertex for it, and the mirror goes dark. The pounce: she runs
+the arch itself, her flight even across like a thrown body's, a trail of plasma behind her, drops down the
+axis onto the focus, a jagged bolt and the crítico, and the arch bursts into gold splinters. Sound: the
+condenser's whine as it settles and as she springs, its snap on contact. The design said the sparks fall
+from above; with the arch opening down they rise from the floor, so the mirror sends them to the focus for
+real.
 
 ## Implementation
 
