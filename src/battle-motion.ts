@@ -24,9 +24,15 @@ export const FIGURES = {
   descarga: { contact: 1, end: 1.7 },
   cortocircuito: { contact: 1, end: 1.6 },
   condensador: { contact: 1.3, end: 1.8 },
+  // Serie de Fourier: its circles turn out the foe's outline, which goes onto it; then a strike a circle (FOURIER_GAP apart).
+  fourier: { contact: 1.6, end: 2.3 },
 } as const satisfies Record<string, { contact: number; end: number }>;
 export type FigureSkill = keyof typeof FIGURES;
 export const isFigure = (skill?: string): skill is FigureSkill => !!skill && skill in FIGURES;
+/** Serie de Fourier's strikes, one a circle closing into a beam, this far apart. */
+export const FOURIER_GAP = .09;
+/** When a figure's action is over: Serie de Fourier's runs on a gap for each strike past the first. */
+export const figureEnd = (skill: FigureSkill, strikes = 1) => FIGURES[skill].end + (skill === 'fourier' ? Math.max(0, strikes - 1) * FOURIER_GAP : 0);
 /** Cardioide: its motes reach whoever it cures here. */
 export const CURE_CONTACT = FIGURES.cardioide.contact;
 export const clamp01 = (t: number) => Math.max(0, Math.min(1, t));

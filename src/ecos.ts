@@ -125,6 +125,8 @@ const MATEMAGICO: Improvement[] = [
   manaNode('matemagico', 'calculo', 'cardioide'),
   gradeIII(skillNode('matemagico', 'calculo', 'integral', 3, 'mana-1')),
   dualNode('matemagico', 'calculo', 'suceso-seguro', 'dadaista', 'integral'),
+  // Serie de Fourier: a branch off Análisis Parálisis (grade II), a strike for each thing on a foe's plate.
+  skillNode('matemagico', 'calculo', 'fourier', 1, 'analisis'),
 ];
 /** Tecnópata's tree: Bip, Mente and Taller, and a maná on its own. */
 const TECNOPATA: Improvement[] = [

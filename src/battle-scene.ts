@@ -11,7 +11,7 @@ import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
 import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
-import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
+import { ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, FOURIER_GAP, figureEnd, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
 import { MATERIAL_ROLES, RIG } from './character-model';
 import { faceOf } from './face';
@@ -27,7 +27,8 @@ import { createOnionPeels, skinOf, tintSkin } from './onion-peels';
 import type { StatWay } from './stat-fx';
 import { createStatArrows } from './stat-arrows';
 import { createStatMotes } from './stat-motes';
-import type { SoundId } from './sfx';
+import { partialSound, type SoundId } from './sfx';
+import { GOLD, harmonicColour } from './fourier';
 import type { Fears, RobotPose } from './fears';
 import { axes, catSpots, fightCamera, foeSize, formation, standing, type Layout } from './arena';
 import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
@@ -419,6 +420,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const mathCast = createMathCast(app, battleRoot, effects);
   // What his skills past Foc Binari draw in the middle of that circle (src/math-figures.ts).
   const figures = createMathFigures(app, battleRoot, effects);
+  /** Serie de Fourier's figure for each cast of it, for its strikes to land on (`fourierStrike`). */
+  const fourierFigures = new WeakMap<BattleEffect, ReturnType<typeof figures.fourier>>();
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
   /**
@@ -1923,6 +1926,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // The zero barely holds the picture, so the one lands right on its heels: tac-tac.
       return split ? { ...landed, stop: Math.min(landed.stop, .025) } : landed;
     }
+    // Serie de Fourier: its first circle closes into a beam (the figure's); the others land as they come (`fourierStrike`).
+    if (action.skill === 'fourier') {
+      fourierFigures.get(action)?.strike(0, v3(chestOf(target)));
+      if ((action.strikes?.length ?? 1) <= 1) fourierFigures.get(action)?.finish();
+      hit(target, gold, 1.1);
+      const many = (action.strikes?.length ?? 1) > 1, landed = land(many && unit ? { ...felt, share: action.strikes![0] / unit.maxHp, ko: false } : felt, dx / d, 0, dz / d);
+      return many ? { ...landed, stop: Math.min(landed.stop, .03) } : landed;
+    }
     // Matemágico's elements: their own pictures (the streams and comets left his circle in `castElement`).
     if (action.skill && ELEMENTAL.has(action.skill)) { elementBurst(action, target); return land(felt, dx / d, 0, dz / d); }
     const reach = target.party ? .15 : .6;
@@ -2187,7 +2198,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const shorts = !!e.shorted && e.shorted.why !== 'again';
       figures.cortocircuito({ centre, view, to: v3(chestOf(target)), radius: extent(target).radius, shorts, size });
     } else if (e.skill === 'condensador') figures.condensador({ centre, view, to: v3(chestOf(actor)), size });
-    else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
+    else if (e.skill === 'fourier') {
+      // A circle a strike: the dial gold, then the colour of each thing on its plate it counted.
+      const colours = [GOLD, ...(e.harmonics ?? []).map(harmonicColour)];
+      fourierFigures.set(e, figures.fourier({ centre, view, model: target.model, chest: v3(chestOf(target)), radius: extent(target).radius, colours, size }));
+    } else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
     else {
       const foes = reachedBy(e).map(({ f }) => figureFoe(f));
       if (e.skill === 'factor-comun') figures.piramide({ centre, view, foes, size });
@@ -2576,6 +2591,25 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * Foc Binari's second stream, the one, landing `at` seconds into the action: it sounds, flares on
    * the target (fire when it catches), lurches the picture and holds it, as hard as its own share.
    */
+  /**
+   * Serie de Fourier's strike `k` (past the first) lands: one more partial on the tone (additive synthesis), the next
+   * circle closing into its beam (src/math-figures.ts), the foe flaring and barely holding the picture, so they run tac-tac-tac.
+   */
+  function fourierStrike(action: BattleEffect, actor: Fighter | undefined, target: Fighter, k: number, animate: boolean, at: number) {
+    cue(partialSound(k + 1)); cue('hit', { volume: .25 });
+    if (action.crits?.[k]) cue('crit');
+    if (!animate || !actor) return;
+    const figure = fourierFigures.get(action);
+    figure?.strike(k, v3(chestOf(target)));
+    const last = k >= (action.strikes?.length ?? 1) - 1;
+    if (last) figure?.finish();
+    hit(target, gold, .8 + .08 * k);
+    shake = Math.max(shake, .08 + .03 * k);
+    const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
+    const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
+    const landed = land({ share: unit ? (action.strikes?.[k] ?? 0) / unit.maxHp : 0, skill: true, guarded: false, ko: last && target.hp <= 0 }, dx / d, 0, dz / d);
+    effectTime -= clock.stop(Math.min(landed.stop, last ? .08 : .025), effectTime - at);
+  }
   function secondStream(action: BattleEffect, actor: Fighter | undefined, target: Fighter, animate: boolean, at: number) {
     cue(action.burn || action.melted ? 'fire-hit' : 'fizzle');
     if (!animate || !actor) return;
@@ -4026,7 +4060,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const t = animate ? effectTime : ACTION_SECONDS;
       // The blows landed so far: one at contact, and a flurry's others a moment after each other
       // (Foc Binari's one a little later than a claw: tac, tac).
-      const spacing = casting ? CAST_GAP : CLAW_SECONDS;
+      const spacing = casting ? (effect?.skill === 'fourier' ? FOURIER_GAP : CAST_GAP) : CLAW_SECONDS;
       const claws = effect?.strikes?.length ?? 1;
       const blows = times ? (!animate ? claws : times.filter(at => t >= at).length) : !impacted ? 0 : !animate ? claws : Math.min(claws, 1 + Math.floor(Math.max(0, t - contact) / spacing));
       if (dual && target && blows > clawed) {
@@ -4047,7 +4081,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       } else if (effect?.strikes && target && blows > clawed) {
         // Each blow after the first tells the fight screen as it lands: the bar drops one hit at a time.
         for (let blow = Math.max(1, clawed); blow < blows; blow++) impact?.(blow);
-        if (clawed && casting) secondStream(effect, actor, target, animate, contact + spacing);
+        if (clawed && effect.skill === 'fourier') for (let blow = clawed; blow < blows; blow++) fourierStrike(effect, actor, target, blow, animate, contact + blow * spacing);
+        else if (clawed && casting) secondStream(effect, actor, target, animate, contact + spacing);
         else {
           if (clawed) cue('claw');
           if (clawed) for (let blow = clawed; blow < blows; blow++) if (effect.crits?.[blow]) cue('crit');
@@ -4533,7 +4568,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? FIGURES[effect.skill as FigureSkill].end : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

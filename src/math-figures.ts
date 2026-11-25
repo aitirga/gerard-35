@@ -5,6 +5,8 @@ import type { GpuEmitter, GpuKind } from './fight-particles';
 import { AGUA_KINDS } from './freatica-fx';
 import { ensureFluidKinds } from './fluid-fx';
 import { SPELL_KINDS } from './math-cast';
+import { aroundOnce, chainAt, dft, epicycles, GOLD, meanOf, middle, outline, traced, type P2 } from './fourier';
+import { writeSurface } from './surface-samples';
 
 /**
  * The figures Matemágico draws (docs/animas/matemagico/README.md § How each skill looks, Aitor's notes
@@ -106,6 +108,15 @@ export const FIGURE_KINDS = {
   'cifra-flujo': {
     shape: 'dot', drag: 0, gravity: 8, curl: .2, response: .15, size: [.032, .014], sizeJitter: .5,
     colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [5, 3.6, 2], middle: .4, fadeIn: .03, fadeOut: .22, additive: 1, flicker: .15, core: .6,
+  },
+  // Serie de Fourier: a circle closed into a beam (dots that hold the line and die), and what each strike throws off the skin.
+  'fourier-haz': {
+    shape: 'dot', drag: 12, gravity: 0, curl: 0, response: 0, size: [.03, .012], sizeJitter: .35,
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [7, 4, 1.6], middle: .3, fadeIn: .02, fadeOut: .5, additive: 1, flicker: .1, core: .75,
+  },
+  'fourier-piel': {
+    shape: 'streak', drag: 2.4, gravity: 0, curl: .3, response: .2, size: [.014, .005], sizeJitter: .4, stretch: .05,
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [3.2, 2, .8], middle: .35, fadeIn: .02, fadeOut: .45, additive: 1, flicker: .2, core: .6,
   },
 } satisfies Record<string, GpuKind>;
 /** Freática's water (src/freatica-fx.ts), for the cube: its drops and its bubbles. */
@@ -240,6 +251,9 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
   ensureKinds();
   const neon = new pc.ShaderMaterial({ uniqueName: 'gerard-matemagico-neon', attributes: { vertex_position: pc.SEMANTIC_POSITION, vertex_normal: pc.SEMANTIC_NORMAL }, vertexWGSL: NEON_VERTEX, fragmentWGSL: NEON });
   neon.name = 'Trazo de Matemágico'; neon.blendType = pc.BLEND_ADDITIVE; neon.depthWrite = false; neon.cull = pc.CULLFACE_BACK; neon.update();
+  /** The same light drawn over whatever it lies on (an outline laid over a foe's body): no depth test. */
+  const neonOver = neon.clone() as pc.ShaderMaterial;
+  neonOver.name = 'Trazo de Matemágico · encima'; neonOver.depthTest = false; neonOver.update();
   /** Where the camera is, for every stroke (written each frame). */
   const eye = new Float32Array(4);
   const cameraEntity = () => app.systems.camera?.cameras[0]?.entity;
@@ -282,11 +296,11 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     const self = {
       root, body,
       /** A stroke along `points` (local to `under`, the body by default), hidden until shown; `look` lights it in colours of its own. */
-      stroke(points: V3[], o: { radius?: number; under?: pc.Entity; look?: { core: string; halo: string } } = {}): Stroke {
+      stroke(points: V3[], o: { radius?: number; under?: pc.Entity; look?: { core: string; halo: string }; over?: boolean } = {}): Stroke {
         const a = tubeMesh(device, points, o.radius ?? .03, 8);
         meshes.push(a.mesh);
         const e = new pc.Entity(`${name} · trazo`);
-        const instance = new pc.MeshInstance(a.mesh, neon);
+        const instance = new pc.MeshInstance(a.mesh, o.over ? neonOver : neon);
         instance.cull = false;
         let glowS = glowU, coreS = coreU;
         if (o.look) {
@@ -883,8 +897,162 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     });
   }
 
+  // ——— Serie de Fourier ———
+  /**
+   * The foe's own outline, as the camera sees it (its real surface, src/surface-samples.ts), taken apart
+   * by a discrete Fourier transform (src/fourier.ts) and drawn back by a chain of circles of light, one a
+   * strike (`colours`: the dial's gold, then each thing it counted): each turns at its harmonic from the
+   * rim of the one before, and the chain's tip draws the outline in gold, leaving gold dust behind. Two
+   * circles give a wobbling ellipse; six, the foe. The outline leaves his circle and settles over the foe
+   * at its size. Then the scene calls `strike(k)` as each blow lands: a circle, the outermost first,
+   * closes into a beam to the foe, the outline over it flares in that circle's colour and the foe's skin
+   * throws it off. After the last the outline shrinks to a point and goes in motes. Everything is worked
+   * out here, once: each frame only moves the circles and a few emitters.
+   */
+  function fourier(o: { centre: V3; view: V3; model: pc.Entity; chest: V3; radius: number; colours: readonly string[]; size?: number }) {
+    const { right, up, facing } = screen(o.view);
+    // Its outline, in metres in the camera's plane round its chest.
+    const SAMPLES = 768, buffer = new Float32Array(SAMPLES * 4 * 3), got = writeSurface(o.model, buffer, 0, SAMPLES, SAMPLES);
+    const flat: P2[] = [];
+    for (let i = 0; i < got; i++) {
+      const d = { x: buffer[i * 4] - o.chest.x, y: buffer[i * 4 + 1] - o.chest.y, z: buffer[i * 4 + 2] - o.chest.z };
+      flat.push({ x: d.x * right.x + d.y * right.y + d.z * right.z, y: d.x * up.x + d.y * up.y + d.z * up.z });
+    }
+    if (!flat.length) for (let i = 0; i < 64; i++) { const a = i / 64 * Math.PI * 2; flat.push({ x: Math.cos(a) * o.radius, y: Math.sin(a) * o.radius * 1.6 }); }
+    // The chain starts at the transform's mean (the outline's own middle, a hair off the points'), drawn from his circle's.
+    // Its harmonics past the first a little louder (√|k|, up to ×2): the same series of a sharper outline, a caricature
+    // of the foe, so the small circles are seen turning. Never so loud that the outline loops over itself: it stays a
+    // shape round its middle, turning one way (plain, if it must).
+    const circlesOf = dft(outline(flat)), mean = meanOf(circlesOf), mid = middle(flat), count = Math.max(1, o.colours.length);
+    const louder = (cap: number) => epicycles(circlesOf, count).map(c => ({ ...c, radius: c.radius * Math.min(cap, Math.sqrt(Math.abs(c.k))) }));
+    const chain = [2, 1.6, 1.3, 1].map(louder).find(c => aroundOnce(traced(c, 192))) ?? louder(1);
+    mid.x += mean.x; mid.y += mean.y;
+    const curve = traced(chain, 192), reach = Math.max(.05, ...curve.map(p => Math.hypot(p.x, p.y)));
+    // Drawn in his circle smaller than the foe (about his circle's size); it grows back to the foe's size over it.
+    const s = Math.min(1, .78 * (o.size ?? 1) / reach);
+    const circles = figure('Serie de Fourier · círculos', FIGURE_LOOKS.gold), shape = figure('Serie de Fourier · contorno', { core: '#ffe9b0', halo: GOLD });
+    face(circles, o.centre, o.view); face(shape, o.centre, o.view);
+    shape.body.setLocalScale(s, s, s);
+    // Over his head, clear of it: as big as it is drawn, it would cover him.
+    const start = add(lifted(o.centre, o.view), up, reach * s * .55);
+    circles.root.setPosition(start.x, start.y, start.z); shape.root.setPosition(start.x, start.y, start.z);
+    // Each circle in its own colour through and through (a pale middle would turn blood's red pink): the colour reads from afar.
+    const look = (colour: string) => ({ core: colour, halo: colour });
+    const rings = chain.map((c, j) => {
+      const e = new pc.Entity('Epiciclo'); circles.body.addChild(e);
+      const r = c.radius * s, colour = o.colours[j] ?? GOLD;
+      const ring = circles.stroke(sample(Math.max(28, Math.min(72, Math.round(r * 180))), u => xy(Math.cos(u * Math.PI * 2) * r, Math.sin(u * Math.PI * 2) * r)), { under: e, radius: j ? .018 : .024, look: look(colour) });
+      const arm = new pc.Entity('Radio'); e.addChild(arm);
+      const spoke = circles.stroke(segment(xy(0, 0), xy(r, 0), 4), { under: arm, radius: .009, look: look(colour) });
+      return { e, arm, ring, spoke, c, colour, gone: false };
+    });
+    const outlineStroke = shape.stroke(curve.map(p => xy(p.x, p.y)), { radius: .05, over: true });
+    const DRAW = .81, MOVE = .35, SPIN = 1 / DRAW;
+    let turn = 0, struck = 0, ended = false, flash = 0;
+    const g = gpu(), who = effects.fighterIndex(o.model);
+    // Over the foe: where its outline's middle is, a little before it.
+    const front = o.radius * .7 + .12;
+    const over = { x: o.chest.x + right.x * mid.x + up.x * mid.y + facing.x * front, y: o.chest.y + right.y * mid.x + up.y * mid.y + facing.y * front, z: o.chest.z + right.z * mid.x + up.z * mid.y + facing.z * front };
+    /** The chain's points at its turn now, in the circles' own frame. */
+    const links = () => chainAt(chain, turn).map(p => xy(p.x * s, p.y * s));
+    const placeRings = () => {
+      const p = links();
+      rings.forEach((r, j) => {
+        r.e.setLocalPosition(p[j].x, p[j].y, 0);
+        r.arm.setLocalEulerAngles(0, 0, (r.c.phase + 2 * Math.PI * r.c.k * turn) * pc.math.RAD_TO_DEG);
+      });
+    };
+    circles.glow(0); shape.glow(1);
+    placeRings();
+    // Dust off the pen as it draws (gold, lingering along the outline), and a spark of each circle's colour where the next one rides its rim.
+    const dust = emit('cifra-flujo', { at: start, shape: 'ball', spread: .01, rate: 0, speed: .05, life: [.35, .7], colour: GOLD, size: .55 });
+    const joints = rings.slice(0, -1).map(r => emit('spellcore', { at: start, shape: 'ball', spread: .01, rate: 0, speed: .08, life: [.08, .18], colour: r.colour, size: .55 }));
+    // Each circle's own light on the GPU: motes of its colour all round its rim, turning with it.
+    const halos = rings.map(r => emit('spellcore', { at: start, shape: 'ring', axis: facing, spread: Math.max(.02, r.c.radius * s), rate: 0, speed: .02, around: 0, life: [.1, .2], colour: r.colour, size: .5 }));
+    // Each circle comes in as the chain reaches it: the dial at once, the last a breath later.
+    play(DRAW + MOVE + 6, (t, dt) => {
+      if (circles.dead && shape.dead) return;
+      // Once round while it draws; then on, slower, while it waits for its strikes.
+      turn += dt * SPIN * (t < DRAW ? 1 : .35);
+      if (!circles.dead) {
+        placeRings();
+        rings.forEach((r, j) => { if (!r.gone) { const k = smooth((t - j * .05) / .12); r.ring.show(0, k); r.spoke.show(0, k); } });
+        circles.glow(Math.min(1, t / .08) * 1.15, Math.max(0, flash));
+        const p = links();
+        joints.forEach((e, j) => { if (e) { e.at = circles.world(p[j + 1]); e.rate = rings[j + 1]?.gone || rings[j]?.gone ? 0 : 140; } });
+        halos.forEach((e, j) => { if (e) { e.at = circles.world(p[j]); e.rate = rings[j].gone ? 0 : 60 + 900 * rings[j].c.radius * s * smooth((t - j * .05) / .12); } });
+      }
+      if (dust) { dust.rate = t < DRAW ? 520 : 0; if (t < DRAW && !circles.dead) { const p = links(); dust.at = circles.world(p[p.length - 1]); } }
+      flash -= dt * 6;
+      if (shape.dead) return;
+      outlineStroke.show(0, Math.min(1, t / DRAW));
+      // It leaves his circle and settles over the foe at the foe's own size.
+      const k = smooth((t - DRAW) / MOVE), at = mix(start, over, k), lift = Math.sin(k * Math.PI) * .25;
+      shape.root.setPosition(at.x, at.y + lift, at.z);
+      const grow = s + (1 - s) * k;
+      if (!ended) shape.body.setLocalScale(grow, grow, grow);
+      if (!ended) shape.glow(1.1 + .8 * Math.max(0, flash), Math.max(0, flash) * .6);
+    }, () => { stop(dust); joints.forEach(stop); halos.forEach(stop); circles.destroy(); shape.destroy(); });
+    // As it settles, the outline breathes out gold all along it.
+    after(DRAW + MOVE, () => {
+      if (!g || shape.dead) return;
+      for (let i = 0; i < 24; i++) g.burst('cifra-flujo', { at: shape.world(xy(curve[i * 8].x, curve[i * 8].y)), to: shape.world(xy(curve[i * 8 + 8].x, curve[i * 8 + 8].y)), shape: 'line', count: 14, speed: .25, life: [.25, .5], colour: GOLD, size: .8 });
+    });
+    // The pen of light at the chain's tip while it draws.
+    pen(FIGURE_LOOKS.gold.core, DRAW, () => { if (circles.dead) return undefined; const p = links(); return circles.world(p[p.length - 1]); }, { size: 1 });
+    /** The outline lights up in `colour` all along it, a breath. */
+    function flare(colour: string) {
+      if (!g || shape.dead) return;
+      for (let i = 0; i < 16; i++) g.burst('fourier-haz', { at: shape.world(xy(curve[i * 12].x, curve[i * 12].y)), to: shape.world(xy(curve[i * 12 + 12].x, curve[i * 12 + 12].y)), shape: 'line', count: 22, speed: .15, life: [.12, .24], colour, size: 1.2 });
+    }
+    /** The outline shrinks to its middle and comes apart in motes of gold. */
+    function finish() {
+      if (ended || shape.dead) return;
+      ended = true;
+      const SHRINK = .3, from = shape.body.getLocalScale().x;
+      play(SHRINK, t => { if (shape.dead) return; const k = easeIn(t / SHRINK), size = Math.max(.001, from * (1 - k)); shape.body.setLocalScale(size, size, size); shape.glow(1 + k * 1.5, k); }, () => {
+        const at = shape.world(xy(0, 0));
+        shape.destroy(); circles.destroy(); stop(dust); joints.forEach(stop); halos.forEach(stop);
+        if (!g) return;
+        g.burst('bloom', { at, count: 1, spread: .04, life: [.14, .22], colour: GOLD, size: .8, light: { intensity: 3, range: 3, colour: GOLD } });
+        g.burst('cifra-flujo', { at, count: 360, shape: 'ball', spread: .05, speed: 1.6, up: .9, life: [.5, .9], colour: GOLD, size: .9 });
+        g.burst('cifra-flujo', { at, count: 140, shape: 'ball', spread: .04, speed: .8, up: 1.3, life: [.6, 1.1], colour: FIGURE_LOOKS.gold.core, size: 1.1 });
+      });
+    }
+    return {
+      /** Strike `k` lands: a circle (the outermost first) closes into a beam to `to`, the outline flares in its colour, and its skin throws it off. */
+      strike(k: number, to: V3) {
+        struck = Math.max(struck, k + 1);
+        const r = rings[rings.length - 1 - k];
+        flash = 1;
+        const colour = r?.colour ?? GOLD;
+        if (r && !r.gone && !circles.dead) {
+          r.gone = true;
+          const from = circles.world(links()[rings.length - 1 - k]);
+          play(.1, t => { const q = Math.max(.001, 1 - smooth(t / .1)); r.e.setLocalScale(q, q, q); }, () => { r.ring.show(0, 0); r.spoke.show(0, 0); });
+          if (g) {
+            g.burst('fourier-haz', { at: from, to, shape: 'line', count: 220, life: [.12, .24], colour, size: 2 });
+            g.burst('fourier-haz', { at: from, to, shape: 'line', count: 80, life: [.08, .14], colour: FIGURE_LOOKS.gold.core, size: 1 });
+            g.burst('bloom', { at: from, count: 1, spread: .03, life: [.08, .12], colour, size: .5 });
+            const flight = .07;
+            g.burst('spellcore', { at: from, count: 60, spread: .03, velocity: { x: (to.x - from.x) / flight, y: (to.y - from.y) / flight, z: (to.z - from.z) / flight }, speed: .2, life: [flight * .9, flight], colour, size: 1.1 });
+          }
+        }
+        flare(colour);
+        if (g) {
+          if (who >= 0) g.burst('fourier-piel', { at: o.chest, count: 420, shape: 'surface', fighter: who, outward: 2.2, speed: .8, life: [.2, .45], colour, fromPart: 0 });
+          g.burst('bloom', { at: to, count: 1, spread: .05, life: [.08, .13], colour, size: .7, light: { intensity: 2.6, range: 3, colour } });
+          g.burst('fourier-haz', { at: to, count: 120, shape: 'ball', spread: .06, speed: 3, life: [.15, .34], colour, size: 1.2 });
+        }
+        if (struck >= count) after(.12, finish);
+      },
+      /** No more strikes are coming (the foe fell first): it ends now. */
+      finish,
+    };
+  }
+
   return {
-    cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release,
+    cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release, fourier,
     /** A dual's own figure and its drawing (`DuoStage.figure` and `draw`, src/duo-fx/types.ts). */
     neon: neonFigure, drawNeon,
     /** Runs the figures on, `dt` in fight seconds. */
@@ -900,7 +1068,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     },
     /** Nothing left of any of them (a fight ending). */
     clear() { tracks.length = 0; [...running].forEach(stop); [...live].forEach(f => f.destroy()); },
-    destroy() { this.clear(); neon.destroy(); },
+    destroy() { this.clear(); neon.destroy(); neonOver.destroy(); },
     /** When a figure starts drawing, from the action's start. */
     start: CAST_LAUNCH,
   };
