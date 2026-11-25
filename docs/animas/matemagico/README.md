@@ -57,6 +57,7 @@ Foc Binari is his from the start; every other skill is a node of his tree, bough
 | Cálculo | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
 | Cálculo | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
 | Cálculo | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
+| Cálculo | Serie de Fourier | 2 | 10 magic, no element, 1 + up to 5 strikes | `Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.` |
 
 - **Pirámide ígnea** (named *Factor común* until 2026-11-21): every fire on the field goes up to
   the highest one's level (it lights none where there is none).
@@ -143,6 +144,69 @@ whose fire flares as they land; *¡Combustión!* over it and *PASIVA · Combusti
 
 - **Marea**: built 2026-11-21 as a dúo mayor with Freática's Recarga, with *Fulgurita* (Colorista's
   Puñado) and *Suceso seguro* (Dadista's Ases en dúo); `../README.md` § Dúos mayores.
+
+## Serie de Fourier (Aitor 2026-11-25, built)
+
+A branch of Cálculo off Análisis Parálisis, grade II (1 eco, `src/ecos.ts`; open from the start). The
+verb it brings is **counting**: the other lines and the partner leave statuses, and Fourier is paid
+for their variety.
+
+- **Rule** (`fourier` in `SKILLS`, `src/battle.ts`): 2 maná, power 10, magic with no element (nothing
+  reacts). It strikes once, and once more for each thing its target's plate shows as it is cast, up to
+  `harmonics` more (5: six strikes at most). Tunable as `skill.fourier.power` and `skill.fourier.harmonics`.
+- **What it counts is what the plate draws** (`plateMarks`, the same list `battle-ui` draws its icons
+  from, so the rule and the picture cannot disagree; `plateCount` adds Ángulo exacto's mark, the ▼
+  over the foe, and no other stat change). One icon, one strike: Agua and Mojado are one icon (the
+  water's); Punto débil, Shock, Combustión and a Mecha encendida each count. The plate also carries
+  icons that are not statuses, and they count as well: on a foe, Encarnado (a castle pupil's, for the
+  whole fight: one free strike against every Encarnado), Canción and Enfado (La Voz), Reacción (El
+  Átomo), Converge (El que no converge), a Cortina de polvo, Escudo de bits and Acecho where a foe
+  carries them; on an ally (Fourier never aims there), Luz, Racha, Meteoro, Sutura, Compás, Siete
+  vidas and a definitiva awake or asleep. The permanent Encarnado counting is the rule as approved
+  ("un icono, un golpe"); if it turns out too generous, `plateCount` is where to leave it out. **The variety, not the depth**: Quemado III is one;
+  Quemado, Mojado and Empolvado are three (the fire line pays for depth, this for variety).
+- **Each strike is a blow of its own** (the `strikes` path): Cristalizado digs a level deeper with
+  each, Envenenado lands each harder, Ángulo's −3 adds to each, the ice counts them as a flurry, and
+  Punto débil triples every one of them (and is spent). What the strikes put on it does not add
+  strikes: the count is taken as it is cast. A foe that falls partway takes no more.
+- **The question it answers**: which kind of blow, on a foe carrying many things. In *La carrera*
+  each new status is a Tropiezo of Aurelià's, and Fourier cashes in that variety; bosses full of
+  statuses too. Order matters: Atractor extraño gathers first, Fourier counts after.
+- **Balance** (2026-11-25): `aurelia-carrera-fourier` in `TARGETS` is `aurelia-con-emilie` (Nuria
+  and Emilie behind, Gerard on Matemágico or Papagato, Aitor on Tecnópata or Freática, smart) with
+  Fourier bought: the bleeding, the water and the fire fill Aurelià's plate, and the bot plays it
+  about 0.5 times a fight, winning 80–86 % against 71–79 % without it (a help, not the answer). With
+  the plain dúo at the first floor it is barely played (0.02 a fight: Aurelià's plate is thin there).
+  `just fight-sim skills` (everything open): 40.7 PV a maná, under Pirámide ígnea (44.1) and
+  Explosión (44.7), no warning, nothing that "domina"; Punto débil as a dual is unchanged (14.8 PV a
+  maná). `optimize` over `skill.fourier.power` 6–16 and `skill.fourier.harmonics` 3–5 keeps 10 and 5.
+  Punto débil both counting and tripling every strike is the rule as approved; on a dog loaded with
+  five statuses and Punto débil one cast does about 300, but setting that up costs the party turns.
+
+**Look** (`fourier` in `src/math-figures.ts`, the mathematics in `src/fourier.ts`). As it is cast, the
+foe's real surface (`src/surface-samples.ts`) is laid flat on the camera's plane and its silhouette
+traced, hollows and all (`silhouette`: the points in a 48-cell grid, its gaps closed, the boundary
+followed cell edge by cell edge and taken at 64 points evenly along it), then put through a discrete
+Fourier transform, once. The slowest circles, one a strike (|k| = 1, 2, 3, each both ways round, the
+bigger first), become a chain of neon circles drawn big (about 1.8 m) in the air between him and the
+foe, each turning at its harmonic off the rim of the one before, a spoke to where the next rides: the
+dial in his gold, then each in the colour of the thing it counted (fire orange, water blue, crystal and
+ice cyan-white, blood a deep orange-red, poison green, the charge yellow; anything else gold, never
+pink or violet), each lit all round its rim, with a bead of light where the next one rides in that
+one's colour. From the fight's high camera a dog's silhouette is a lumpy round, so its circles past
+the dial are a few centimetres: their beads at the pen are what shows their colours. Every stroke sits on a soft dark tube, so it reads on white plaster and keeps its colour over
+a magenta street. The chain's tip draws the series in gold over the whole silhouette, laid faintly
+behind it, so how near the count got is seen: **it is not a portrait**. One circle draws a circle, two
+an ellipse, four to six a blob that follows the silhouette's broad lines (back, belly, the head's
+side) and none of its legs: six terms cannot draw a dog, and the faint silhouette behind is what says
+whose it is. The curve leaves the air and settles over the foe at its own size, drawn over its body.
+Then a strike every 0.09 s (`FOURIER_GAP`), the outermost circle first: it closes into a beam of its
+colour round a gold core to the foe, the curve flares that colour all along it, the foe's skin throws
+it off and its body flashes in it, a bloom. After the last the curve shrinks to a point and goes in
+motes of gold. Lands at 1.6 s, ends at 2.3 s + 0.09 s a strike past the first (`figureEnd`). Each
+frame only moves the circles and emitters, from points kept in arrays it reuses. **Sound**: additive
+synthesis, one partial more each strike (`partial-1` … `partial-6`, `partialSound`): a sine that
+becomes an almost square chord. No status of its own. `just screenshots serie-de-fourier --gpu`.
 
 ## Cortocircuito and ∂Q/∂t Condensador (Aitor 2026-11-21, built)
 

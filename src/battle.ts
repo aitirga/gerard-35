@@ -96,6 +96,10 @@ export const SKILLS = [
   // `marks`, for BOOST_ROUNDS). Damage is flat, so every point off adds a point to every hit.
   { id: 'angulo', name: 'Ángulo exacto', cost: 1, side: 'foes', power: 3, kind: 'debuff', stats: ['defensa', 'espiritu'], node: true, description: 'Baja Defensa y Espíritu de un enemigo durante 3 rondas.', class: 'matemagico' },
   { id: 'cardioide', name: 'Cardioide', cost: 2, side: 'allies', power: 30, kind: 'heal', node: true, description: 'Cura media a un aliado herido.', class: 'matemagico' },
+  // Serie de Fourier: a blow for the foe's outline and one more for each thing its plate shows (`harmonics`, up to that many
+  // more): what is on it counted as it is cast (`plateCount`), the variety and not the depth. No element, so nothing reacts;
+  // every strike is a blow of its own (Cristalizado digs in each time, Ángulo's mark adds to each, the ice counts a flurry).
+  { id: 'fourier', name: 'Serie de Fourier', cost: 2, side: 'foes', power: 10, kind: 'magic', harmonics: 5, node: true, description: 'Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.', class: 'matemagico' },
   // The elements' lines, each a figure he draws (src/math-figures.ts). Fire piles up: Pirámide ígnea
   // takes the highest fire among the foes to all of them (`evens`). Water sets up: Cubo acuático leaves
   // them Mojado (`wets`), or puts a fire out into smoke. Electricity cashes in: Punto eléctrico jumps to
@@ -1873,6 +1877,8 @@ export interface BattleEffect {
   melted?: boolean;
   /** A skill of several little hits (Zarpazos), or one hit landed in parts (Foc Binari): the PV each one took, in order. `amount` is their sum. */
   strikes?: number[];
+  /** Serie de Fourier: what it counted on its target's plate as it was cast (`plateCount`), a strike each after the first. */
+  harmonics?: (PlateMark | 'marca')[];
   /** Layers this blow took off an onion. */
   peeled?: number;
   /** A blow that reaches the others too (a big onion's weight): what it did to each. */
@@ -2287,6 +2293,49 @@ function fallen(state: BattleState) {
   state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state);
   return true;
 }
+/**
+ * What a fighter's plate shows, one entry for each icon on it, in its order (docs/combat.md § Estados en tiempo real): battle-ui's
+ * `statusList` draws exactly these, and Serie de Fourier counts them (`plateCount`), so the rule and the picture cannot
+ * disagree. Agua and Mojado are one icon (the water's), fire at IV is Combustión's, a Mecha encendida is fire's icon and
+ * Sutura de luz the cure's. `shown` is what the fight's screen holds back until a blow lands (a fire, the PV).
+ */
+export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | StatusId | TimedId;
+export function plateMarks(state: BattleState | undefined, c: Combatant, shown: { timed?: Combatant['timed']; hp?: number } = {}): PlateMark[] {
+  if ((shown.hp ?? c.hp) <= 0) return [];
+  const timed = shown.timed ?? c.timed ?? {}, ally = !!state?.allies.includes(c), marks: PlateMark[] = [];
+  const put = (on: unknown, mark: PlateMark) => { if (on) marks.push(mark); };
+  put(c.castle?.strong, 'encarnado');
+  put(ally && state?.light && lightNow(state), 'luz');
+  put(c.kind === 'voz' && c.enfado && state, 'enfado');
+  put(c.kind === 'voz' && state?.song && songNow(state), 'cancion');
+  put(c.converged, 'converge');
+  put(reactionIn(c), 'reaccion');
+  put(c.shock, 'shock');
+  put(c.capacitor, 'cargado');
+  put(state && rachaOf(c), 'racha');
+  put(state && meteorOf(c), 'meteoro');
+  put(c.suture, 'sutura');
+  put(state && cortinaRounds(state, c), 'cortina');
+  put(state && awakeUlti(state, c), 'definitiva');
+  put(ally && ultiProgress(state!, c), 'dormida');
+  put(state && ecosOf(state, c).length, 'compas');
+  put(c.stalk, 'acecho');
+  put(warded(c), 'siete-vidas');
+  put(c.bits && !c.bits.broken && c.bits.hp > 0, 'bits');
+  put(c.fuse, 'mecha');
+  put(state && weakSpotRounds(state, c), 'punto-debil');
+  for (const [id, n] of Object.entries(c.statuses ?? {}) as [StatusId, number][]) put(n, id);
+  for (const [id, on] of Object.entries(timed) as [TimedId, Timed | undefined][]) {
+    if (on && !(id === 'mojado' && timed.agua)) marks.push(id === 'quemado' && on.level >= COMBUSTION.level ? 'combustion' : id);
+  }
+  return marks;
+}
+/**
+ * What Serie de Fourier counts on `c` (docs/animas/matemagico/README.md § Serie de Fourier): every icon on its plate, and
+ * a debuff's mark (Ángulo exacto: its ▼ over the foe) as one more. The variety, never the depth: Quemado III is one.
+ */
+export const plateCount = (state: BattleState, c: Combatant): (PlateMark | 'marca')[] =>
+  [...plateMarks(state, c), ...Object.values(c.marks ?? {}).some(m => m && m.until >= state.round) ? ['marca' as const] : []];
 /** Rounds a Punto débil on `c` still lasts, this one included (0: none). */
 export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !== undefined && c.weakSpot >= state.round && c.hp > 0 ? c.weakSpot - state.round + 1 : 0;
 /**
@@ -4106,7 +4155,10 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (melts && target.shell) { target.shell = false; effect.melted = true; }
       // Each hit is measured on its own, since the layers it finds change the next one's weight.
       // A physical blow on someone bleeding opens the wound: every claw of it lands harder.
-      const times = (action === 'skill' && ability && 'strikes' in ability ? ability.strikes : 1), layered = target.layers ?? 0, strikes: number[] = [];
+      // Serie de Fourier: one blow more for each thing on its plate as it is cast (`harmonics` the most), each in its colour.
+      const counted = action === 'skill' && ability && 'harmonics' in ability ? plateCount(state, target).slice(0, ability.harmonics) : undefined;
+      if (counted) effect.harmonics = counted;
+      const times = (action === 'skill' && ability && 'strikes' in ability ? ability.strikes : counted ? 1 + counted.length : 1), layered = target.layers ?? 0, strikes: number[] = [];
       const magic = action === 'skill' && ability!.kind === 'magic';
       // The element Atacar carries; fire seals a wound instead of opening it (`react`).
       const element = action === 'attack' ? attackElement(state, actor) : ability && 'element' in ability ? ability.element : undefined;
@@ -4257,7 +4309,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   accompany(state, actor, effect); offbeatNotes(state, actor, effect);
   // Bajo cero's ice takes the blows that reached it, and whoever held the water may have fallen (reflected magic).
   if (action === 'attack' || (action === 'skill' && ability && ability.kind !== 'heal' && !('freezes' in ability))) {
-    chill(state, actor, effect, iceBlows(effect, action === 'attack' ? 'physical' : ability!.kind, action === 'attack' ? 18 : ability!.power, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'skill' && !!ability && 'strikes' in ability));
+    chill(state, actor, effect, iceBlows(effect, action === 'attack' ? 'physical' : ability!.kind, action === 'attack' ? 18 : ability!.power, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'skill' && !!ability && ('strikes' in ability || 'harmonics' in ability)));
   }
   holdWater(state, effect);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);

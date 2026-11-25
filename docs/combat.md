@@ -416,6 +416,16 @@ despertar de Matemágico), el instante en que sale el nombre de lo que va a hace
 `src/battle-ui.ts`; cada pulso se ve como un número de daño y un destello en el combatiente, y
 puede terminar el combate por sí solo.
 
+**La placa es la regla.** Lo que un combatiente lleva se ve en su placa, un icono por estado
+(`plateMarks` en `src/battle.ts`: `battle-ui` dibuja exactamente esa lista). Una habilidad que cuente
+estados cuenta esos iconos, y la marca ▼ que una bajada de estadísticas deja sobre el enemigo (la de
+Ángulo exacto), y nada más (`plateCount`), para que lo que se ve y lo que se cobra no puedan discrepar:
+*Serie de Fourier* (Matemágico) golpea una vez más por cada uno, hasta seis golpes en total; Agua y
+Mojado son un solo icono, y Quemado III cuenta uno (la variedad, no la profundidad). La placa no
+enseña solo estados: también lleva los iconos de lo que un jefe o un alumno es o está haciendo
+(Encarnado, Canción, Reacción, Converge, Enfado…), y esos cuentan igual; la lista entera, en
+`docs/animas/matemagico/README.md` § Serie de Fourier.
+
 **Escalar.** El mismo elemento que llega mientras el estado sigue activo lo sube un nivel, hasta
 el último, y reinicia su reloj (`inflict`). Al apagarse desaparece entero. Cada nivel multiplica
 el pulso base (×1, ×3, ×6 para Quemado, y ×11 en Combustión: no lineal, cada salto mayor que el anterior, Aitor 2026-11-22), elegido para que mantenerlo siempre rinda más que

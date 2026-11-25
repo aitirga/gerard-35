@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, warded, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater, ORBITAL_BLIND } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -372,57 +372,65 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     pop(wearer.id, skill.name, 'passive', 'Definitiva · despierta')?.style.setProperty('--anima', CLASSES[skill.class].colour);
     callbacks.sound('mark-set');
   }
-  /** The statuses on someone, in the order the plate and the summary show them: stacks or level, and how long they last. */
-  function statusList(c: Combatant): { id: IconId; name: string; mark: string; timed: boolean; lasts: string; guide?: GuideId }[] {
-    const weak = state ? weakSpotRounds(state, c) : 0;
-    const song = c.kind === 'voz' && state?.song ? songNow(state) : undefined;
-    // Fran's salon: the light on now, on each of the party's plates (it only touches them).
-    const light = state?.light && state.allies.includes(c) ? lightNow(state) : undefined;
-    const asleep = state && state.allies.includes(c) ? ultiProgress(state, c) : undefined;
-    return shownHp(c) > 0 ? [
+  /**
+   * The statuses on someone, in the order the plate and the summary show them: stacks or level, and how long they last.
+   * Which icons, and in what order, is `plateMarks` (src/battle.ts), the list Serie de Fourier counts: only the words are here.
+   */
+  type StatusEntry = { id: IconId; name: string; mark: string; timed: boolean; lasts: string; guide?: GuideId };
+  function statusList(c: Combatant): StatusEntry[] {
+    const shown = shownTimed(c);
+    return plateMarks(state, c, { timed: shown, hp: shownHp(c) }).map(mark => statusEntry(c, mark, shown));
+  }
+  function statusEntry(c: Combatant, mark: PlateMark, shown: ReturnType<typeof shownTimed>): StatusEntry {
+    switch (mark) {
       // An Encarnado, as long as it stands: what it is and what beating it leaves.
-      ...c.castle?.strong ? [{ id: 'encarnado' as const, name: 'Encarnado: más entero y pega más. Vencido, suelta un Eco de luz.', mark: '', timed: false, lasts: 'todo el combate' }] : [],
-      ...light ? [{ id: 'luz' as const, name: lightText(state!, light), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') }] : [],
-      // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
+      case 'encarnado': return { id: 'encarnado', name: 'Encarnado: más entero y pega más. Vencido, suelta un Eco de luz.', mark: '', timed: false, lasts: 'todo el combate' };
+      // Fran's salon: the light on now, on each of the party's plates (it only touches them).
+      case 'luz': return { id: 'luz', name: lightText(state!, lightNow(state!)!), mark: '', timed: true, lasts: upcoming(state!.light!.t, 2, state!.light!.walk).map(id => LIGHTS[id].name).join(', ') };
       // La Voz angered by blows that went through her while she sang: whom her next note goes at, and how hard.
-      ...c.kind === 'voz' && c.enfado && state ? [{ id: 'enfado' as const, name: `Enfado: su siguiente nota va a por ${state.allies.find(a => a.id === c.enfado!.at)?.name ?? 'quien la enfadó'} y pega más`, mark: c.enfado.level > 1 ? String(c.enfado.level) : '', timed: false, lasts: 'su siguiente nota' }] : [],
-      ...song ? [{ id: 'cancion' as const, name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] }] : [],
+      case 'enfado': return { id: 'enfado', name: `Enfado: su siguiente nota va a por ${state!.allies.find(a => a.id === c.enfado!.at)?.name ?? 'quien la enfadó'} y pega más`, mark: c.enfado!.level > 1 ? String(c.enfado!.level) : '', timed: false, lasts: 'su siguiente nota' };
+      // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
+      case 'cancion': return { id: 'cancion', name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] };
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
-      ...c.converged ? [{ id: 'converge' as const, name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` }] : [],
+      case 'converge': return { id: 'converge', name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` };
       // El Átomo: its turns to its Reacción, in the corner; at 1 its next turn throws every electron it has at once.
-      ...reactionIn(c) ? [{ id: 'reaccion' as const, name: reactionIn(c) === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${reactionIn(c)} turnos`, mark: String(reactionIn(c)), timed: false, lasts: `${reactionIn(c)} ${reactionIn(c) === 1 ? 'turno' : 'turnos'}` }] : [],
-      ...c.shock ? [{ id: 'shock' as const, name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' }] : [],
+      case 'reaccion': { const n = reactionIn(c); return { id: 'reaccion', name: n === 1 ? 'Reacción: en su siguiente turno, todos sus electrones a la vez' : `Reacción en ${n} turnos`, mark: String(n), timed: false, lasts: `${n} ${n === 1 ? 'turno' : 'turnos'}` }; }
+      case 'shock': return { id: 'shock', name: 'Shock: pierde su siguiente turno', mark: '', timed: false, lasts: 'su siguiente turno' };
       // ∂Q/∂t Condensador: the charge he carries, until his next electric blow or a foe's on him.
-      ...c.capacitor ? [{ id: 'cargado' as const, name: 'Cargado: su siguiente golpe eléctrico hace el doble; si le golpean antes, salta al que le golpee', mark: '×2', timed: false, lasts: 'su siguiente golpe eléctrico' }] : [],
+      case 'cargado': return { id: 'cargado', name: 'Cargado: su siguiente golpe eléctrico hace el doble; si le golpean antes, salta al que le golpee', mark: '×2', timed: false, lasts: 'su siguiente golpe eléctrico' };
       // Dadista's Racha: the dice spent since it was put on, and what they are worth now.
-      ...state && rachaOf(c) ? [{ id: 'racha' as const, name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' }] : [],
-      ...state && meteorOf(c) ? [{ id: 'meteoro' as const, name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' }] : [],
-      ...c.suture ? [{ id: 'sanacion' as const, guide: 'sutura' as const, name: 'Sutura de luz', mark: '½', timed: false, lasts: 'el siguiente daño esta ronda' }] : [],
+      case 'racha': return { id: 'racha', name: `Racha ${rachaOf(c)}: Crítico +${rachaOf(c) * RACHA.crit} %`, mark: String(rachaOf(c)), timed: false, lasts: 'hasta cambiar de ánima o caer' };
+      case 'meteoro': return { id: 'meteoro', name: `${meteorOf(c) === 1 ? 'Meteoro' : 'Asteroide'}: el meteoro ha crecido`, mark: '', timed: false, lasts: 'solo si lo usa en su siguiente turno' };
+      case 'sutura': return { id: 'sanacion', guide: 'sutura', name: 'Sutura de luz', mark: '½', timed: false, lasts: 'el siguiente daño esta ronda' };
       // A cortina of powder in front of them, and the definitiva awake on whoever wears its ánima (Fin de fiesta, Siete vidas).
-      ...state && cortinaRounds(state, c) ? [{ id: 'cortina' as const, name: 'Cortina de polvo: el siguiente golpe, a la mitad', mark: '½', timed: false, lasts: `el siguiente golpe, o ${rounds(cortinaRounds(state, c))}` }] : [],
-      ...state && awakeUlti(state, c) ? [{ id: 'definitiva' as const, name: `${awakeUlti(state, c)!.name}: despierta`, mark: '', timed: false, lasts: 'una vez en este combate' }] : [],
+      case 'cortina': return { id: 'cortina', name: 'Cortina de polvo: el siguiente golpe, a la mitad', mark: '½', timed: false, lasts: `el siguiente golpe, o ${rounds(cortinaRounds(state!, c))}` };
+      case 'definitiva': return { id: 'definitiva', name: `${awakeUlti(state!, c)!.name}: despierta`, mark: '', timed: false, lasts: 'una vez en este combate' };
       // …and asleep: bought, on whoever wears its ánima, with how near it is to waking (`ultiProgress`).
-      ...asleep ? [{ id: 'dormida' as const, name: asleep.used ? `${asleep.name}: usada en este combate` : `${asleep.name}: dormida (${ultiMark(asleep)})`, mark: asleep.used ? '' : ultiMark(asleep), timed: false, lasts: asleep.used ? 'hasta el siguiente combate' : 'hasta que despierte' }] : [],
+      case 'dormida': { const asleep = ultiProgress(state!, c)!; return { id: 'dormida', name: asleep.used ? `${asleep.name}: usada en este combate` : `${asleep.name}: dormida (${ultiMark(asleep)})`, mark: asleep.used ? '' : ultiMark(asleep), timed: false, lasts: asleep.used ? 'hasta el siguiente combate' : 'hasta que despierte' }; }
       // Sincopante's ecos, on whoever called them: one continuous icon, Compás, its hand going round once a beat.
-      ...state && ecosOf(state, c).length ? [compasStatus(c)] : [],
+      case 'compas': return compasStatus(c);
       // Acecho: their cat crouched, to spring as the next round starts.
-      ...c.stalk ? [{ id: 'acecho' as const, name: `Acecho: salta sobre ${state?.foes.find(f => f.id === c.stalk!.target)?.name ?? 'su presa'} al empezar la ronda`, mark: '', timed: false, lasts: 'hasta que empiece la ronda' }] : [],
+      case 'acecho': return { id: 'acecho', name: `Acecho: salta sobre ${state?.foes.find(f => f.id === c.stalk!.target)?.name ?? 'su presa'} al empezar la ronda`, mark: '', timed: false, lasts: 'hasta que empiece la ronda' };
       // Siete vidas: Yuki's ward, on everyone it covers, until the blow that would have killed one of them.
-      ...warded(c) ? [{ id: 'siete-vidas' as const, name: 'Siete vidas: el próximo golpe que fuera a tumbar a alguien del equipo lo cura', mark: '', timed: false, lasts: 'hasta ese golpe' }] : [],
-      ...c.bits && !c.bits.broken && c.bits.hp > 0 ? [{ id: 'bits' as const, name: `Escudo de bits: ${c.bits.hp} PV, para cada golpe entero`, mark: String(c.bits.hp), timed: false, lasts: rounds(Math.max(1, c.bits.until - (state?.round ?? 0) + 1)) }] : [],
-      ...c.fuse ? [{ id: 'quemado' as const, guide: 'mecha' as const, name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' }] : [],
-      ...weak ? [{ id: 'punto-debil' as const, name: `Punto débil: el siguiente golpe hace el triple`, mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weak) }] : [],
-      ...(Object.entries(c.statuses ?? {}).filter(([, n]) => n) as [StatusId, number][]).map(([id, n]) => ({ id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) })),
+      case 'siete-vidas': return { id: 'siete-vidas', name: 'Siete vidas: el próximo golpe que fuera a tumbar a alguien del equipo lo cura', mark: '', timed: false, lasts: 'hasta ese golpe' };
+      case 'bits': return { id: 'bits', name: `Escudo de bits: ${c.bits!.hp} PV, para cada golpe entero`, mark: String(c.bits!.hp), timed: false, lasts: rounds(Math.max(1, c.bits!.until - (state?.round ?? 0) + 1)) };
+      case 'mecha': return { id: 'quemado', guide: 'mecha', name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' };
+      case 'punto-debil': return { id: 'punto-debil', name: 'Punto débil: el siguiente golpe hace el triple', mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weakSpotRounds(state!, c)) };
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
-      ...(Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]).map(([id, on]) => id === 'quemado' && on.level >= COMBUSTION.level
-        ? { id: 'combustion' as const, name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
-        // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
-        : id === 'hundido' ? { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' }
-        : id === 'congelado' ? { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }
-        // Cegado has no level: what it does, and its clock.
-        : id === 'cegado' ? { id, name: `${TIMED[id].name}: sus golpes físicos suelen fallar`, mark: '', timed: true, lasts: `${Math.ceil(on.left)} s` }
-        : { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }),
-    ] : [];
+      case 'combustion': { const on = shown.quemado!; return { id: 'combustion', name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }; }
+    }
+    // Past the cases above only a status or a timed one is left: a new mark of the plate without its words above is caught
+    // here by the compiler (it is not one of these), not by a crash below.
+    const rest: StatusId | TimedId = mark;
+    if (rest in STATUSES) { const id = rest as StatusId, n = c.statuses![id]!; return { id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) }; }
+    const id = rest as TimedId, on = shown[id];
+    if (!on) throw new Error(`Sin estado en la placa para ${id}`);
+    // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
+    if (id === 'hundido') return { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' };
+    if (id === 'congelado') return { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` };
+    // Cegado has no level: what it does, and its clock.
+    if (id === 'cegado') return { id, name: `${TIMED[id].name}: sus golpes físicos suelen fallar`, mark: '', timed: true, lasts: `${Math.ceil(on.left)} s` };
+    return { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` };
   }
   /** Compás: how many ecos `c` has up, at what grade, and the longest time one has left. */
   function compasStatus(c: Combatant) {

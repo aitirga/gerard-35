@@ -54,10 +54,10 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   }
   // Every node is one eco but the definitivas (2), the dúos mayores (3) and grade III (3 the big ones, 2
   // Reinicio and Virus atómico): Aitor, 2026-11-24, the jar some 25 % dearer, so some three quarters of it
-  // (74 ecos while two definitivas sleep, 55 to win) can be had by the game's end.
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 33);
+  // (75 ecos while two definitivas sleep, 55 to win) can be had by the game's end.
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 34);
   assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 27); // Escolta where Rayo encogedor was, Rayo encogedor at Taller's end, and Enjambre (2)
-  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 74);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 75);
   for (const item of IMPROVEMENTS.filter(i => i.kind === 'dual')) assert.equal(item.cost, 3, `${item.id}: a dúo mayor costs 3 ecos`);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {

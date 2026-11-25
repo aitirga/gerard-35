@@ -1,0 +1,287 @@
+{
+  "title": "Matemágico · Serie de Fourier",
+  "description": "docs/animas/matemagico/README.md § Serie de Fourier: the foe's own silhouette (its surface laid flat and traced round) put through a DFT and drawn back by a chain of circles, the slowest first, one a strike, over the whole silhouette drawn faintly. In the fight tester against three dogs (only the one it is cast on carries anything): nothing, three things, five, Ángulo's mark with Punto débil, and seven (the cap of six); then a castle pupil carrying four, on white plaster. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Afourier%22%2C%22matemagico%3Afuego%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp = 600; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "Cálculo with its new branch off Análisis Parálisis: Serie de Fourier"
+    },
+    {
+      "press": "Escape",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0];  })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "una",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "A dog with nothing on its plate: one circle, the dial, draws a plain circle between Gerard and the dog, over the dog's own silhouette drawn faintly (from this high camera a lumpy round); one strike"
+    },
+    {
+      "shot": "una-final",
+      "caption": "Nothing on its plate: as it ends"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0]; f.timed = { quemado: { level: 2, left: 20, next: 5 }, empolvado: { level: 1, left: 20, next: 5 }, envenenado: { level: 1, left: 20, next: 5 } }; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "tres",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Three things on the dog it is cast on, its neighbours clean (Quemado II, Empolvado, Envenenado): four circles. The dial is gold; the three small ones are a few centimetres, so their colours (orange, sand, green) show as beads at the pen. The curve is a blob nearer the faint silhouette than the circle was. Four strikes, outermost first"
+    },
+    {
+      "shot": "tres-final",
+      "caption": "Three things on its plate: as it ends"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0]; f.timed = { quemado: { level: 2, left: 20, next: 5 }, cristalizado: { level: 1, left: 20, next: 5 }, envenenado: { level: 1, left: 20, next: 5 }, mojado: { level: 1, left: 20, next: 5 } }; f.statuses = { sangrado: 3 }; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "seis",
+      "seconds": 3.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Five things on its plate (Sangrado, Quemado II, Cristalizado, Envenenado, Mojado): six circles; the curve (|k| up to 3) follows the silhouette's broad lines, not its legs. Six strikes, each circle closing into a beam of its colour round a gold core, the dog flashing in it, the tone gaining a partial each time"
+    },
+    {
+      "shot": "seis-final",
+      "caption": "Five things on its plate: as it ends"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0]; f.timed = { quemado: { level: 1, left: 20, next: 5 } }; f.weakSpot = s.round; f.marks = { angulo: { amount: 3, stats: ['defensa', 'espiritu'], until: s.round + 2 } }; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "marca-y-punto",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Quemado, Punto débil and Ángulo exacto's ▼ on the dog: four circles (the ▼ counts as one more; Punto débil is an icon of the plate); four strikes, every one tripled, and Punto débil spent"
+    },
+    {
+      "shot": "marca-y-punto-final",
+      "caption": "Ángulo's mark and Punto débil: as it ends"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0]; f.timed = { quemado: { level: 1, left: 20, next: 5 }, empolvado: { level: 1, left: 20, next: 5 }, envenenado: { level: 1, left: 20, next: 5 }, cegado: { level: 1, left: 20, next: 5 }, cristalizado: { level: 1, left: 20, next: 5 }, mojado: { level: 1, left: 20, next: 5 } }; f.statuses = { sangrado: 2 }; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "siete",
+      "seconds": 3.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Seven things on the dog's plate: still six circles and six strikes, the most there can be"
+    },
+    {
+      "shot": "siete-final",
+      "caption": "Seven things on its plate, six strikes: as it ends"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22alumnos-1a%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aangulo%22%2C%22matemagico%3Aanalisis%22%2C%22matemagico%3Afourier%22%2C%22matemagico%3Afuego%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.hp = a.maxHp = 600; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; delete f.weakSpot; delete f.statuses; delete f.marks; f.timed = {}; }); const f = s.foes[0]; f.timed = { empolvado: { level: 1, left: 20, next: 5 }, envenenado: { level: 1, left: 20, next: 5 }, cristalizado: { level: 1, left: 20, next: 5 } }; f.statuses = { sangrado: 2 }; })"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"fourier\"]').click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "eval": "document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click()"
+    },
+    {
+      "record": "alumno",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "On a castle pupil carrying four things, in the bright white-and-green room: five circles drawn over the green floor between Gerard and the pupil stay readable (the pupil now fully in frame); a person's tall silhouette gives a tall pinched loop; it settles over the pupil; five strikes"
+    },
+    {
+      "shot": "alumno-final",
+      "caption": "On a castle pupil: as it ends"
+    }
+  ]
+}

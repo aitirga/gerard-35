@@ -41,6 +41,8 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   // A boost's stats going up sound on their own (`stat-up`, from the scene).
   analisis: { start: [{ id: 'think' }], impact: [] },
   cardioide: { start: [{ id: 'cast-soft' }], impact: [{ id: 'heal' }] },
+  // Serie de Fourier: additive synthesis. Its first strike is a pure sine; each strike after it, from the scene, adds the next partial.
+  fourier: { start: [{ id: 'think' }], impact: [{ id: 'partial-1' }, { id: 'hit', volume: .35 }] },
   // Haru miaows as she goes; her claws are what land. Zarpazos' first claw lands here, the rest from the scene.
   zarpazo: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }, { id: 'hit', volume: .45 }] },
   zarpazos: { start: [{ id: 'meow' }], impact: [{ id: 'claw' }] },

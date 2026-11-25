@@ -150,11 +150,11 @@ game; 20 from the friends once all five missions are done).
 
 | Where | Everything in it |
 | --- | --- |
-| Matemágico's tree | 33 (four dúos mayores at 3, Combustión and Integral impropia at 3), and 2 for the definitiva |
+| Matemágico's tree | 34 (four dúos mayores at 3, Combustión and Integral impropia at 3, Serie de Fourier at 1), and 2 for the definitiva |
 | Tecnópata's tree | 27 (three dúos mayores at 3, Escudo de bits at 3, Reinicio and Virus atómico at 2), and 2 for the definitiva |
 | Dadaísta | 1 for maná, 1 for Otra vez, 2 for the definitiva |
 | Each other shared ánima | 1 for maná, 2 for the definitiva |
-| All of it | 78 (74 while two definitivas sleep) |
+| All of it | 79 (75 while two definitivas sleep) |
 
 So at the end the party holds most of it, but not all, and re-does the split before a hard fight.
 
@@ -165,7 +165,7 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 | **Fuego**, which piles up | Atacar · Fuego (built) | *Pirámide ígnea*: `Daño mágico de fuego medio a todos los enemigos. El fuego de todos sube al más alto.` | Passive · *Rescoldo*: his fires last 15 s, not 10 |
 | **Agua**, which sets up | Atacar · Agua (built) | *Cubo acuático*: `Daño mágico de agua leve a todos los enemigos. Los moja.` | Passive · *Capilaridad*: Atacar with water leaves the foe Mojado |
 | **Eléctrico**, which cashes in | Atacar · Eléctrico (built) | *Punto eléctrico*: `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` | Passive · *Toma de tierra*: a reaction he sets off gives him 1 maná back, once a round; past it (2 ecos each, Aitor 2026-11-21) *Cortocircuito* and *∂Q/∂t Condensador* (`matemagico/README.md` § Cortocircuito and ∂Q/∂t Condensador) |
-| **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each) | Maná +1 |
+| **Cálculo** | Ángulo exacto | Análisis Parálisis, then Cardioide (1 each); off Análisis, a branch: *Serie de Fourier* (1, Aitor 2026-11-25): `Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.` It counts what the foe's plate shows (`plateMarks`, `matemagico/README.md` § Serie de Fourier) | Maná +1 |
 
 - **Mojado** (20 s, § Shared mechanics): it hurts nobody; electricity on it reaches every wet
   foe (Conducción), fire on it makes Vapor (Cegado). Electricity lays no status of its own: it
