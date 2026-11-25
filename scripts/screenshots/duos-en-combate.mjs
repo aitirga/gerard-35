@@ -18,11 +18,12 @@ export function prepare(id) {
   return {
     /** Whether the move (`key`, the dual by default) has started on the scene. */
     began(key = id) { return began.has(key); },
-    confirm() {
+    /** Confirms the dual on its target: Gerard for the party's, else the foe at `foe` in the row (the first by default). */
+    confirm(foe = 0) {
       const s = battleUI.live;
       // The duals that are for the party (a cure, a boost, a dome, a cortina) are aimed at Gerard.
       const ally = ['sutura-de-luz', 'suceso-seguro', 'caleidoscopio', 'trampantojo'].includes(id);
-      const target = ally ? 'gerard' : s.foes[0].id;
+      const target = ally ? 'gerard' : (s.foes[foe] ?? s.foes[0]).id;
       const selector = ally ? '.roster-target' : '.battle-target';
       const button = document.querySelector(`${selector}[data-target="${target}"]:not(:disabled)`);
       if (!button) throw new Error(`Target unavailable for ${id}: ${target}`);
@@ -32,7 +33,8 @@ export function prepare(id) {
       const points = (id === 'sutura-de-luz' ? [target] : wide ? [...s.allies, ...s.foes].map(f => f.id) : s.foes.map(f => f.id)).map(unit => game.fighterAt(unit));
       const mean = key => points.reduce((sum, p) => sum + p[key], 0) / points.length;
       const orbital = id === 'bombardeo-orbital';
-      game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : wide ? 4.4 : 2.6);
+      // Campana de Gauss turns the fight's own camera across the row for its board: the clip keeps it.
+      if (id !== 'campana-de-gauss') game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : wide ? 4.4 : 2.6);
       button.click();
     },
     async impact(key = id) {

@@ -692,7 +692,7 @@ export const WEAK_SPOT = 3;
 export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color' | 'sobrecalentamiento' | 'vulcano'
   | 'marea' | 'fulgurita' | 'suceso-seguro' | 'metralla' | 'idea-fija' | 'caleidoscopio'
   | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo'
-  | 'electrolisis';
+  | 'electrolisis' | 'campana-de-gauss';
 export interface DualSpec {
   id: DualId; name: string;
   parts: readonly [SkillId, SkillId];
@@ -722,6 +722,11 @@ export interface DualSpec {
   bleed?: number;
   /** A timed status it leaves on every foe it reaches (Marea, Fulgurita, Metralla, Seiche; Staccato and Idea fija on its target). */
   leaves?: TimedId;
+  /**
+   * Campana de Gauss: Dados astrales' dice of light fall as blows of `power` each, half of them on its
+   * target and the rest on the foes beside it in the row, and shape their fire (`BELL`, `bellFall`).
+   */
+  bell?: boolean;
   description: string; abstract?: boolean;
 }
 export const DUALS: DualSpec[] = [
@@ -770,6 +775,9 @@ export const DUALS: DualSpec[] = [
   // Electrólisis (Cubo acuático + Sondeo eléctrico): the current splits each foe's water into gas instead of running through
   // it (no Conducción, no Shock); the next fire on any of them sets off the gas of all (`GAS`, `ignite`).
   { id: 'electrolisis', name: 'Electrólisis', parts: ['vasos', 'sondeo'], side: 'all-foes', kind: 'magic', element: 'electrico', power: 18, leaves: 'gas', description: 'Daño mágico eléctrico leve a todos los enemigos. Convierte su agua en gas durante 20 segundos, más fuerte cuanta más agua tenían. El siguiente golpe de fuego sobre uno hace estallar el gas de todos.' },
+  // Campana de Gauss: Dadista's dice of light fall through Gerard's pyramid, a board of pegs, and come out as fire
+  // shaped like a bell: the foe picked at the top of it, the ones beside it on its slopes.
+  { id: 'campana-de-gauss', name: 'Campana de Gauss', parts: ['factor-comun', 'dados-astrales'], side: 'foes', kind: 'magic', element: 'fuego', power: 6, burn: 'quemado', bell: true, description: 'Daño mágico de fuego leve a un enemigo. Caen más dados cuanto más Crítico, la mitad sobre él y el resto sobre los enemigos de al lado. Su fuego sube al menos a nivel III y el de los de al lado a nivel II. Derrite el pringue. Gasta la racha.' },
 ];
 /** The dual two skills make, in either order. */
 export const dualOf = (a: SkillId, b: SkillId) => DUALS.find(d => (d.parts[0] === a && d.parts[1] === b) || (d.parts[0] === b && d.parts[1] === a));
@@ -1899,6 +1907,11 @@ export interface BattleEffect {
   paid?: DieFace[];
   /** Dados astrales: each die of light in the order it fell, and on whom. */
   rain?: { target: string; amount: number }[];
+  /**
+   * Campana de Gauss: each die of fire in the order it fell, on whom, and where that is from its target (`side`:
+   * −1 the foe before it in the row, 1 the one after, 0 itself), for its look to drop each into its bin.
+   */
+  bell?: { target: string; amount: number; side: -1 | 0 | 1 }[];
   /** The meteor's stage this action left the wearer at (0: back to Meteorito), when it moved. */
   meteor?: number;
   /** Corchete: the ally it now protects until the round ends. */
@@ -4791,6 +4804,14 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     settle(state);
     return effect;
   }
+  if (d.bell) {
+    // Its fire is Pirámide ígnea's: the stats of whoever brings that half.
+    const fire = [a, b].find(c => c.classId === SKILLS.find(x => x.id === d.parts[0])!.class) ?? striker;
+    bellFall(state, d, target, fire, roller, effect);
+    ignite(state, effect); amplify(effect); checkEye(state, effect);
+    settle(state);
+    return effect;
+  }
   state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
   const eaten = annulled(state, a, elementOf(d), d.kind);
   if (eaten) {
@@ -4879,6 +4900,107 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   ignite(state, effect); amplify(effect); checkEye(state, effect);
   settle(state);
   return effect;
+}
+/**
+ * Campana de Gauss (`DualSpec.bell`): `base` dice and as many more as Dados astrales would drop for whoever wears
+ * Dadista (`rainCount`), never more than `most`. Half of them (rounded up) fall on the target and the rest, one by one,
+ * on the foe before it in the row and the one after it (the odd one by the fight's dice); a side with nobody there falls
+ * to the target. Then the target's fire is at least `top`, and that of each one beside it a die reached at least `beside`.
+ */
+export const BELL = { base: 4, most: 14, top: 3, beside: 2 };
+/** Where Campana de Gauss's `count` dice fall, in the order they drop: half on `target`, the rest beside it, shuffled. */
+function bellSplit(state: BattleState, count: number, target: Combatant, before?: Combatant, after?: Combatant): Combatant[] {
+  const rest = Math.floor(count / 2), odd = rest % 2 ? roll(state) < .5 : false;
+  const left = Math.floor(rest / 2) + (odd ? 1 : 0), right = rest - left;
+  const out = [
+    ...Array.from({ length: count - rest }, () => target),
+    ...Array.from({ length: left }, () => before ?? target),
+    ...Array.from({ length: right }, () => after ?? target),
+  ];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(roll(state) * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
+/**
+ * Campana de Gauss lands: each die a blow of the dual's power, magic fire with the stats of whoever brings Pirámide
+ * ígnea, never a golpe crítico (the luck is in how many fall). A die whose foe has already fallen goes to the first of
+ * the target and those beside it still standing. The first on a foe in pringue melts it; on a foe that sings or turns
+ * magic back it does nothing; an onion loses one layer however many reach it. Then ice takes its fire (a mark melts and
+ * that foe does not burn), and the fire it shapes (`BELL`; on water it is Vapor, wet layers never catch), and the Racha
+ * of whoever wears Dadista is spent.
+ */
+function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: Combatant, roller: Combatant | undefined, effect: BattleEffect) {
+  const row = dualTargets(state, d), at = row.indexOf(target), before = at > 0 ? row[at - 1] : undefined, after = at >= 0 ? row[at + 1] : undefined;
+  const count = Math.min(BELL.most, BELL.base + (roller ? rainCount(state, roller) : RAIN.least));
+  const eaten = annulled(state, striker, 'fuego', 'magic');
+  const dice: NonNullable<BattleEffect['bell']> = effect.bell = [];
+  // The target first, so whatever reads the first of the hits (an eco that repeats it) finds the foe picked.
+  const totals = new Map<Combatant, NonNullable<BattleEffect['hits']>[number]>([[target, { target: target.id, amount: 0 }]]);
+  const fallback = [target, before, after].filter((c): c is Combatant => !!c);
+  for (const wanted of bellSplit(state, count, target, before, after)) {
+    const foe = wanted.hp > 0 || eaten ? wanted : fallback.find(c => c.hp > 0);
+    if (!foe) break;
+    const side: -1 | 0 | 1 = foe === before ? -1 : foe === after ? 1 : 0;
+    const hit = totals.get(foe) ?? { target: foe.id, amount: 0 };
+    totals.set(foe, hit);
+    let amount = 0;
+    if (foe.hp > 0 && !eaten) {
+      if (foe.shell) { foe.shell = false; effect.melted = true; }
+      const blocked = singing(state, foe) || reflects(foe), weak = weakScale(state, foe);
+      amount = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak * affinityScale(foe, 'fuego'), 'dual'));
+      // A die of fire that lands is a blow of fire: on a foe with Electrólisis's gas, it sets the gas of all off (`ignite`).
+      if (amount > 0) lit.push(foe.id);
+      if (weak > 1 && amount > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; hit.weakSpot = true; }
+      if (amount > 0 && affinityOf(foe, 'fuego')) hit.affinity = affinityOf(foe, 'fuego');
+      spendShield(state, foe, amount, effect);
+      if (foe.layers && !blocked && !hit.peeled) { hit.peeled = 1; if (!--foe.layers) bare(foe); }
+    }
+    hit.amount += amount;
+    dice.push({ target: foe.id, amount, side });
+  }
+  const hits = effect.hits = [...totals.values()].filter(h => h.target === target.id || dice.some(die => die.target === h.target));
+  effect.amount = hits.reduce((sum, h) => sum + h.amount, 0);
+  state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
+  if (eaten) {
+    effect.annulled = eaten;
+    state.message += ` ${annulledText(eaten)}`;
+  } else {
+    state.message += ` Caen ${dice.length} dados de fuego: −${effect.amount} PV${hits.length > 1 ? ' entre todos' : ''}.`;
+    if (effect.melted) state.message += ' El pringue se derrite.';
+    if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    // Fire finds the powder first (all of it goes up), then the ice (a mark melts, and that foe does not burn), then
+    // shapes each one's fire.
+    const said = state.message;
+    state.message = '';
+    for (const foe of totals.keys()) powder(state, striker, foe, 'fuego', effect);
+    const powderSaid = state.message;
+    state.message = '';
+    chill(state, striker, effect, iceBlows({ kind: 'skill', actor: striker.id, rain: dice }, 'magic', d.power, 'fuego', true));
+    const iceSaid = state.message;
+    state.message = said;
+    const melted = new Set((effect.ice ?? []).filter(i => i.melted).map(i => i.target));
+    let steamed = 0;
+    for (const [foe, hit] of totals) {
+      if (foe.hp <= 0 || foe.layers || melted.has(foe.id) || !dice.some(die => die.target === foe.id && die.amount > 0)) continue;
+      if (foe.timed?.mojado || waterOf(foe) > 0) {
+        const held = waterOf(foe);
+        steamed = steam(foe);
+        if (held) effect.water = [...effect.water ?? [], { target: foe.id, from: held, to: held - 1 }];
+        Object.assign(hit, { burn: { id: 'cegado', level: steamed }, smoked: true });
+        continue;
+      }
+      const fire = kindle(foe, 'quemado', Math.min(fireTop(state), foe === target ? BELL.top : BELL.beside));
+      bank(state, striker, foe, effect);
+      hit.burn = { id: 'quemado', level: fire.level };
+    }
+    if (steamed) { effect.reaction ??= { id: 'vapor', level: steamed }; ground(state, striker, effect); state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`; }
+    const lit = hits.filter(h => h.burn?.id === 'quemado').map(h => `${state.foes.find(f => f.id === h.target)!.name} ${roman(h.burn!.level)}`);
+    if (lit.length) state.message += ` Arden: ${lit.join(', ')}.`;
+    state.message += powderSaid + iceSaid;
+    const peeled = hits.filter(h => h.peeled && !state.foes.find(f => f.id === h.target)?.layers && state.foes.find(f => f.id === h.target)!.hp > 0);
+    if (peeled.length) effect.stats = peeled.map(h => ({ target: h.target, way: 'down' as const, stats: ['defensa' as const] }));
+  }
+  const spent = roller ? rachaOf(roller) : 0;
+  if (roller && spent) { roller.racha = 0; effect.starred = spent; state.message += ' La racha empieza de cero.'; }
 }
 /** A escala: how long its target stays shrunk (longer than Rayo encogedor's, so the water has time to rise). */
 export const SCALE_SECONDS = 20;

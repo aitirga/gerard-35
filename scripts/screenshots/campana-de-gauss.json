@@ -1,0 +1,152 @@
+{
+  "title": "Campana de Gauss: dúo de Matemágico y Dadista",
+  "description": "docs/animas/matemagico/README.md § Campana de Gauss. From the fight tester's «Probar un dúo»: Pirámide ígnea + Dados astrales on the middle dog of three, then on the third of four. The fight's camera turns so the row runs across the picture; the gold board of pegs in its plane, her dice of cold light melting into single balls of fire that fall on their paths into the bins over each foe, the gold ghosts settling as the bell's sediment, the bell drawn from where they fell, and the fire pouring onto each foe. The 'después' shots are taken as the clip ends, just after the blow, the fight's clock stopped before the foes act and the camera still across the row. Run it with --gpu. The third clip plays the trial against Aurelià and El Atril (a trial may name another `encounter`).",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22campana-de-gauss%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('campana-de-gauss'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"campana-de-gauss\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"campana-de-gauss\"]').click()"
+    },
+    {
+      "eval": "preview.confirm(1)"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "campana",
+      "caption": "Campana de Gauss (Pirámide ígnea + Dados astrales) sobre el perro del medio, con la cámara del combate girada para que la fila cruce el cuadro: el tablero dorado de clavos, los dados de luz que se funden en bolas de fuego y caen por sus caminos, el poso dorado de las bolas fantasma, las cubetas sobre cada perro, la campana y el fuego que cae.",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 400,
+      "each": "if (window.frame === 67) window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "shot": "campana-despues",
+      "delay": 0,
+      "caption": "Justo después del golpe (el reloj parado): el del medio en Quemado III y los dos de al lado en Quemado II."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22campana-de-gauss%22%2C%22foes%22%3A4%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('campana-de-gauss'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"campana-de-gauss\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"campana-de-gauss\"]').click()"
+    },
+    {
+      "eval": "document.querySelector(`.battle-target[data-target=\"${window.gerard.battleUI.live.foes[2].id}\"]:not(:disabled)`).click()"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "campana-cuatro",
+      "caption": "Con cuatro perros y la cámara del propio combate, sobre el tercero: la mitad de los dados sobre él y el resto en los de al lado; el cuarto no recibe nada.",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 400,
+      "each": "if (window.frame === 67) window.gerard.game.app.timeScale = 0"
+    },
+    {
+      "shot": "campana-cuatro-despues",
+      "delay": 0,
+      "caption": "Con cuatro, justo después: Quemado III en el elegido, Quemado II en sus vecinos, nada en el del extremo."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22campana-de-gauss%22%2C%22encounter%22%3A%22aurelia%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('campana-de-gauss'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"campana-de-gauss\"]:not([aria-disabled])')",
+      "timeout": 30000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"campana-de-gauss\"]').click()"
+    },
+    {
+      "eval": "document.querySelector(`.battle-target[data-target=\"${window.gerard.battleUI.live.foes.find(f => f.kind === 'atril').id}\"]:not(:disabled)`).click()"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "campana-aurelia",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 400,
+      "each": "if (window.frame === 67) window.gerard.game.app.timeScale = 0",
+      "caption": "Contra Aurelià, sobre El Atril (fight={\"trial\":\"campana-de-gauss\",\"encounter\":\"aurelia\"}): la mitad de los dados en el atril y el resto en Aurelià, a su lado; las cubetas sobre cada uno."
+    },
+    {
+      "shot": "campana-aurelia-despues",
+      "caption": "Después: El Atril en Quemado III y Aurelià, tras él, en Quemado II."
+    }
+  ]
+}

@@ -549,6 +549,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Colorista + Dadista | **Cadáver exquisito** | Puñado + Estrella fugaz | 1 · 3 | Built (2026-11-21). Three blows, each powdering and of a random element; with a streak of 3, all three different |
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
 | Matemágico + Freática | **Electrólisis** | Cubo acuático + Sondeo eléctrico | node · 2 | Built (2026-11-25). Every foe's water split into Gas at its level (§ Gas), with no Conducción; the next fire on any of them sets off the gas of all |
+| Matemágico + Dadista | **Campana de Gauss** | Pirámide ígnea + Dados astrales | node · 4 | Built (2026-11-25). 4 dice of fire and as many as Dados astrales would drop (14 at most): half on the foe picked (rounded up), the rest split between the ones beside it in the row; its fire to III at least, theirs to II (`BELL`). Spends the Racha |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
@@ -1127,7 +1128,7 @@ run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite`
   one dual's own status that does: it is the water it was. Fire that comes with it is no blow and lights nothing.
 - **The next blow of fire on any foe that carries it sets off the gas of all** (`ignite`): any blow with
   fire, a skill's, Atacar's, a dual's or a reaction's (Foc Binari, Pirámide ígnea, Atacar · Fuego,
-  Explosión, Estallido, Combustión's burst). A pulse never does (a fire burning on its own is no blow).
+  Explosión, Estallido, Combustión's burst, each die of Campana de Gauss that lands). A pulse never does (a fire burning on its own is no blow).
   Found by one place, read as the action ends: whatever the path the fire came by.
 - **The blast**: one after another, from the foe the fire found outwards, every foe with gas takes magic
   fire damage of `GAS.blast` (12) a level of its gas, with the Magia of whoever lit it (a weakness or a

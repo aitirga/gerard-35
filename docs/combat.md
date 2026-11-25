@@ -706,6 +706,7 @@ Combined skills; aquí, algunos y el momento que los decide.
 | Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado durante 20 segundos (`ORBITAL_BLIND`). |
 | Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
 | Electrólisis | Cubo acuático + Sondeo eléctrico | El agua de todos se vuelve Gas (sin Conducción): quién trae el fuego, y cuándo, dentro de los 20 s. |
+| Campana de Gauss | Pirámide ígnea + Dados astrales | Qué enemigo tiene que arder más: la mitad de los dados de fuego caen sobre él y lo dejan al menos en Quemado III; los de al lado, en II. Dadista paga con un dado y gasta la racha. |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno

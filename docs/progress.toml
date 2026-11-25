@@ -808,6 +808,10 @@ title = "Electrólisis (Cubo acuático + Sondeo eléctrico): el agua se separa e
 grep = "id: 'electrolisis'"
 in = "src/battle.ts"
 note = "Reglas, prueba en «Probar un dúo», aspecto propio (src/duo-fx/electrolisis.ts) y capturas (just screenshots electrolisis --gpu); sus objetivos de fight-sim, en la pasada de balance."
+# Aitor 2026-11-25 (docs/animas/matemagico/README.md § Campana de Gauss): Pirámide ígnea + Dados astrales.
+[[block.item]]
+title = "Dúo Campana de Gauss: Matemágico y Dadista (tablero de Galton en la GPU)"
+file = "scripts/screenshots/campana-de-gauss.json"
 
 # Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
 # the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).

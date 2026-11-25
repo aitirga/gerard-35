@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
@@ -54,6 +54,8 @@ export const DUO = 'gerard:matemagico+aitor:papagato';
 export const TECH = 'gerard:matemagico+aitor:tecnopata';
 /** Gerard on Matemágico and Aitor on Freática: the water and what Matemágico makes of it (Electrólisis, Géiser, Marea). */
 export const MAT_FRE = 'gerard:matemagico+aitor:freatica';
+/** Gerard on Matemágico and Aitor on Dadista: the pair whose dual is Campana de Gauss. */
+export const MAT_DAD = 'gerard:matemagico+aitor:dadaista';
 /**
  * The party as it goes into the castle's last two stages, with two of the friends' ánimas each beside their own (`extraSlots`):
  * what Dirección and the Queen are held to, since the base pair never wears them. `FULL` carries Freática, Prismático and
@@ -264,6 +266,8 @@ const BOOKS = {
   // The golpe crítico: how much harder it lands (`bonus`) and how much of each one's Crítico counts (`chance`: 0 turns chance crits off).
   crit: { rules: CRIT_RULES },
   powder: { rules: POWDER_RULES },
+  // Campana de Gauss: how many dice of fire, how they share out, and the fire they leave (battle.ts `BELL`).
+  bell: { rules: BELL },
   crecida: { rules: CRECIDA },
   // Electrólisis's gas: its blast a level (`gas.rules.blast`) and how long it waits for a fire (`gas.timed.seconds`).
   gas: { rules: GAS, timed: STATUS_TIMED.gas },
@@ -1359,6 +1363,9 @@ export const TARGETS: readonly Target[] = [
   { id: 'aurelia-bien', fight: 'aurelia', party: DUO, ...FLOOR_1, policy: 'smart', win: [.9, 1], roundsWon: [4.5, 10], why: 'Aurelià con las ánimas de todos, que le sobran (el castillo mide lo crecido): romper el atril (fuego o chispa), defender la Pregunta, hacerle tropezar con un estado nuevo en cada vuelta, aguantar la Expulsión y guardarse un estado para tirarlo en la carrerilla del Récord.' },
   { id: 'aurelia-con-emilie', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, policy: 'smart', win: [.7, 1], hpLeftWon: [.35, .8], roundsWon: [8, 12], why: 'Con Nuria y Emilie, Papagato y Freática a 2 o 3: un reto que se gana. El sangrado y el agua le hacen tropezar en la carrera; defender la Pregunta y guardarse un estado para el Récord.' },
   { id: 'aurelia-con-emilie-sin-pensar', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, policy: 'casual', win: [0, .15], why: 'Con lo justo y sin defender la Pregunta ni guardar nada para el Récord, se pierde.' },
+  // Campana de Gauss (Matemágico + Dadista), from the first floor on (Dados astrales comes with Dadista at 4): the Atril picked.
+  { id: 'aurelia-leccion-campana', fight: 'aurelia', party: MAT_DAD, ...FLOOR_1, improved: [...FLOOR_1.improved ?? [], 'matemagico:fuego', 'matemagico:factor-comun'], policy: 'smart', win: [.95, 1], hpLeftWon: [.8, 1], roundsWon: [6.4, 7.4], duals: [.7, 1.2], why: 'Matemágico y Dadista contra Aurelià: la Campana sobre el Atril le echa la mitad de los dados y lo deja en Quemado III, y a Aurelià, a su lado, en II. El atril cae antes y la lección se acorta.' },
+  { id: 'aurelia-leccion-sin-campana', fight: 'aurelia', party: MAT_DAD, ...FLOOR_1, improved: [...FLOOR_1.improved ?? [], 'matemagico:fuego', 'matemagico:factor-comun'], policy: 'smart', ban: ['campana-de-gauss'], win: [.95, 1], hpLeftWon: [.6, .83], roundsWon: [7.5, 8.6], why: 'Sin la Campana el atril también arde, con Foc Binari y Pirámide, pero a fuego lento: una ronda más y menos PV al acabar.' },
   { id: 'aurelia-con-dos', fight: 'aurelia', party: DUO, ...TWO, policy: 'smart', win: [.75, 1], why: 'Con Nuria y dos misiones hechas ya se le puede: más justo y más largo, pero se gana.' },
   { id: 'aurelia-con-una', fight: 'aurelia', party: TECH, ...ONE, policy: 'smart', win: [0, .35], why: 'Con Nuria y una sola misión detrás falta fondo: el Dictado y la Pregunta se llevan al equipo antes de que caiga.' },
   { id: 'aurelia-carrera-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', win: [.5, 1], why: 'Lo de aurelia-con-emilie con Serie de Fourier en el tarro: el sangrado, el agua y el fuego le llenan la placa y en La carrera cada estado nuevo es un Tropiezo; Fourier cobra esa variedad, un golpe por icono. Se usa y ayuda un poco (unos puntos de victoria), sin quitarle el sitio a nada.' },

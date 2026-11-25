@@ -132,15 +132,22 @@ const DUAL_TRIALS = {
   // Matemágico's duals with the ánimas he had none with. Electrólisis: water of three heights under the foes, and the fire to
   // set the gas off (Foc Binari, Pirámide ígnea) bought.
   electrolisis: { gerard: 'matemagico', aitor: 'freatica', encounter: 'dogs', improved: ['matemagico:agua', 'matemagico:vasos', 'matemagico:fuego', 'matemagico:factor-comun'] },
+  // Campana de Gauss: Pirámide ígnea bought, three dogs in a row (or `encounter`: 'aurelia' for El Atril).
+  'campana-de-gauss': { gerard: 'matemagico', aitor: 'dadaista', encounter: 'dogs', improved: ['matemagico:fuego', 'matemagico:factor-comun'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
 export function validFight(value: unknown): FightSetup {
   const v: Partial<FightSetup> = value && typeof value === 'object' ? value as Partial<FightSetup> : DEFAULT_FIGHT;
+  const fights = ['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as const;
   if (isDualTrial(v.trial)) {
     const { gerard, aitor, encounter, improved } = DUAL_TRIALS[v.trial];
+    // A trial may be played against another fight than its own (a boss and its parts: how the dual reaches them).
+    const against = fights.find(e => e === v.encounter && e !== 'possessed' && e !== 'palace-minion');
     return { ...DEFAULT_FIGHT, adult: true, wear: { gerard, aitor }, animas: [gerard, aitor],
-      encounter, improved: [...improved], free: false, trial: v.trial };
+      encounter: against ?? encounter, improved: [...improved], free: false, trial: v.trial,
+      // A dual on more foes (or fewer) than the tester's three: how it reaches them.
+      foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes };
   }
   const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_IDS as string[]).includes(id);
   const animas = Array.isArray(v.animas) ? CLASS_IDS.filter(id => v.animas!.includes(id)) : DEFAULT_FIGHT.animas;
@@ -150,7 +157,7 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const encounter = fights.find(e => e === v.encounter) ?? 'dogs';
   const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,

@@ -28,6 +28,17 @@
       "eval": "preview.confirm()"
     },
     {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
       "until": "preview.began()",
       "timeout": 30000
     },
@@ -71,6 +82,17 @@
     },
     {
       "eval": "preview.confirm()"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
     },
     {
       "until": "preview.began()",
