@@ -419,8 +419,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
       case 'combustion': { const on = shown.quemado!; return { id: 'combustion', name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }; }
     }
-    if (mark in STATUSES) { const id = mark as StatusId, n = c.statuses![id]!; return { id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) }; }
-    const id = mark as TimedId, on = shown[id]!;
+    // Past the cases above only a status or a timed one is left: a new mark of the plate without its words above is caught
+    // here by the compiler (it is not one of these), not by a crash below.
+    const rest: StatusId | TimedId = mark;
+    if (rest in STATUSES) { const id = rest as StatusId, n = c.statuses![id]!; return { id, name: `${STATUSES[id].name} ${n}`, mark: String(n), timed: false, lasts: rounds(Math.ceil(n / STATUSES[id].decay)) }; }
+    const id = rest as TimedId, on = shown[id];
+    if (!on) throw new Error(`Sin estado en la placa para ${id}`);
     // La crecida: Hundido has no level; Congelado says how cracked its ice is, out of the blows it holds.
     if (id === 'hundido') return { id, name: `${TIMED[id].name}: pierde un ${Math.round(TIMED.hundido.share * 100)} % de su vida cada ${TIMED.hundido.every} s`, mark: '', timed: false, lasts: 'mientras su agua esté en la tercera marca' };
     if (id === 'congelado') return { id, name: `${TIMED[id].name} ${roman(on.level)}: no actúa y recibe poco daño${c.cracks ? ` · ${c.cracks} de ${CRECIDA.blows} golpes` : ''}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` };

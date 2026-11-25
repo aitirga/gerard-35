@@ -1928,9 +1928,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     // Serie de Fourier: its first circle closes into a beam (the figure's); the others land as they come (`fourierStrike`).
     if (action.skill === 'fourier') {
-      fourierFigures.get(action)?.strike(0, v3(chestOf(target)));
+      const colour = fourierFigures.get(action)?.strike(0, v3(chestOf(target)));
       if ((action.strikes?.length ?? 1) <= 1) fourierFigures.get(action)?.finish();
-      hit(target, gold, 1.1);
+      hit(target, colour ? new pc.Color().fromString(colour) : gold, 1.1);
       const many = (action.strikes?.length ?? 1) > 1, landed = land(many && unit ? { ...felt, share: action.strikes![0] / unit.maxHp, ko: false } : felt, dx / d, 0, dz / d);
       return many ? { ...landed, stop: Math.min(landed.stop, .03) } : landed;
     }
@@ -2201,7 +2201,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     else if (e.skill === 'fourier') {
       // A circle a strike: the dial gold, then the colour of each thing on its plate it counted.
       const colours = [GOLD, ...(e.harmonics ?? []).map(harmonicColour)];
-      fourierFigures.set(e, figures.fourier({ centre, view, model: target.model, chest: v3(chestOf(target)), radius: extent(target).radius, colours, size }));
+      fourierFigures.set(e, figures.fourier({ centre, view, model: target.model, chest: v3(chestOf(target)), floor: floorUnder(target).y, radius: extent(target).radius, colours, size }));
     } else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
     else {
       const foes = reachedBy(e).map(({ f }) => figureFoe(f));
@@ -2600,10 +2600,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (action.crits?.[k]) cue('crit');
     if (!animate || !actor) return;
     const figure = fourierFigures.get(action);
-    figure?.strike(k, v3(chestOf(target)));
+    // The foe flashes in the colour of the circle that struck it.
+    const colour = figure?.strike(k, v3(chestOf(target)));
     const last = k >= (action.strikes?.length ?? 1) - 1;
     if (last) figure?.finish();
-    hit(target, gold, .8 + .08 * k);
+    hit(target, colour ? new pc.Color().fromString(colour) : gold, .8 + .08 * k);
     shake = Math.max(shake, .08 + .03 * k);
     const unit = state && [...state.allies, ...state.foes].find(u => u.id === action.target);
     const dx = target.base.x - actor.base.x, dz = target.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;

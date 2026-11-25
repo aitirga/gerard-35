@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createBattle, improve, plateCount, plateMarks, skillsFor, SKILLS, CRECIDA } from '../src/battle.ts';
 import { improvedBy, improvementOf, stageOf } from '../src/ecos.ts';
-import { aroundOnce, chainAt, dft, epicycles, harmonicColour, meanOf, outline, traced } from '../src/fourier.ts';
+import { alongLength, chainAt, dft, epicycles, harmonicColour, meanOf, silhouette, traced } from '../src/fourier.ts';
 import { FIGURES, FOURIER_GAP, figureEnd } from '../src/battle-motion.ts';
 
 // Serie de Fourier (docs/animas/matemagico/README.md § Serie de Fourier): a strike for its target, and one more
@@ -86,11 +86,17 @@ test('each strike is a blow of its own: Cristalizado digs in a level deeper with
   assert.ok(e.strikes[2] > e.strikes[0], 'the shards make each strike land harder than the one before');
 });
 
-test('the count is taken as it is cast: what the strikes put on it does not add strikes', () => {
+test('the count is taken as it is cast: Punto débil, spent by the blow, still gave its strike', () => {
   const s = fight();
-  s.foes[0].timed = { quemado: timed() };
+  const dog = s.foes[0];
+  dog.timed = { quemado: timed() }; dog.weakSpot = s.round;
+  const before = plateCount(s, dog);
+  assert.deepEqual(before, ['punto-debil', 'quemado']);
   const e = cast(s);
-  assert.equal(strikesOf(e), 2);
+  assert.equal(e.weakSpot, 'spent');
+  assert.ok(!plateCount(s, dog).includes('punto-debil'), 'the blow spent it: the plate after it is not the one counted');
+  assert.equal(strikesOf(e), 1 + before.length, 'the strikes are the plate as it was cast');
+  assert.deepEqual(e.harmonics, before);
 });
 
 test('a foe that falls partway takes no more strikes', () => {
@@ -113,10 +119,44 @@ test('its look runs on a gap for each strike past the first', () => {
   assert.equal(figureEnd('cardioide', 6), FIGURES.cardioide.end);
 });
 
-test('the transform: every circle together draws the outline back, and the chain is biggest first', () => {
-  const body = [];
-  for (let i = 0; i < 400; i++) { const a = i / 400 * Math.PI * 2, r = .5 + .2 * Math.cos(3 * a); body.push({ x: Math.cos(a) * r * .8, y: Math.sin(a) * r * 1.4 }); }
-  const shape = outline(body), all = dft(shape);
+// A dog side-on, as its surface laid flat gives it: a body, four legs, a head, a tail, scattered points over each.
+function dogPoints() {
+  let seed = 7;
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647, points = [];
+  const box = (x0, y0, x1, y1, n) => { for (let i = 0; i < n; i++) points.push({ x: x0 + random() * (x1 - x0), y: y0 + random() * (y1 - y0) }); };
+  box(-.4, .25, .3, .55, 300);
+  for (const x of [-.38, -.26, .14, .24]) box(x, 0, x + .07, .3, 60);
+  box(.25, .45, .48, .68, 120); box(-.58, .48, -.38, .53, 30);
+  return points;
+}
+const inside = (curve, p) => {
+  let odd = false;
+  for (let i = 0, j = curve.length - 1; i < curve.length; j = i++) {
+    const a = curve[i], b = curve[j];
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) odd = !odd;
+  }
+  return odd;
+};
+
+test('the silhouette keeps the body\'s hollows: the gap between its legs is outside it, its belly inside', () => {
+  const body = silhouette(dogPoints());
+  assert.equal(body.length, 64);
+  assert.ok(inside(body, { x: -.05, y: .4 }), 'the belly');
+  assert.ok(!inside(body, { x: -.05, y: .08 }), 'between the front and back legs, under the belly');
+  assert.ok(!inside(body, { x: .42, y: .3 }), 'under the head, before the chest');
+  assert.ok(inside(body, { x: .17, y: .08 }), 'a leg');
+  // Anticlockwise (the body on its left): the biggest circle turns forward.
+  let area = 0;
+  for (let i = 0; i < body.length; i++) { const a = body[i], b = body[(i + 1) % body.length]; area += a.x * b.y - b.x * a.y; }
+  assert.ok(area > 0);
+  // Evenly along it.
+  const steps = body.map((p, i) => Math.hypot(body[(i + 1) % body.length].x - p.x, body[(i + 1) % body.length].y - p.y));
+  assert.ok(Math.max(...steps) < Math.min(...steps) * 1.6 + .01);
+  assert.equal(silhouette([]).length, 64, 'with nothing to go on, a round');
+});
+
+test('the transform: every circle together draws the silhouette back; cut short, the slowest go first', () => {
+  const shape = silhouette(dogPoints()), all = dft(shape);
   assert.equal(all.length, shape.length);
   const every = epicycles(all, all.length);
   for (let j = 0; j < shape.length; j += 7) {
@@ -124,29 +164,33 @@ test('the transform: every circle together draws the outline back, and the chain
     assert.ok(Math.hypot(tip.x - shape[j].x, tip.y - shape[j].y) < 1e-6, `point ${j}`);
   }
   const six = epicycles(all, 6);
-  assert.equal(six.length, 6);
-  for (let i = 1; i < six.length; i++) assert.ok(six[i].radius <= six[i - 1].radius);
+  assert.deepEqual(six.map(c => Math.abs(c.k)), [1, 1, 2, 2, 3, 3], 'each speed both ways round, slowest first');
+  assert.equal(six[0].k, 1, 'the dial is the way the silhouette goes round');
   assert.equal(epicycles(all, 0).length, 1, 'always the dial at least');
   assert.equal(traced(six, 100).length, 101);
+  // Each circle more draws it nearer.
+  const far = n => { const c = traced(epicycles(all, n), 64), m = meanOf(all); return shape.reduce((sum, p, i) => sum + Math.hypot(c[i].x + m.x - p.x, c[i].y + m.y - p.y), 0); };
+  assert.ok(far(6) < far(2) && far(2) < far(1));
+  assert.equal(alongLength([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }], 8).length, 8);
 });
 
-test('its circles are never pink nor violet (the Queen\'s and fear\'s): what has no colour of its own is his gold', () => {
-  const hue = hex => {
-    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b), min = Math.min(r, g, b);
-    if (max - min < .08) return -1;
+test('its circles are never pink nor violet (the Queen\'s and fear\'s), not even on its dark over a magenta street', () => {
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const hue = ([r, g, b]) => {
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    // Grey or pale (a white with a blush), not a colour: only a saturated pink is hers.
+    if (max - min < .08 || (max - min) / max < .25) return -1;
     const h = max === r ? ((g - b) / (max - min)) % 6 : max === g ? (b - r) / (max - min) + 2 : (r - g) / (max - min) + 4;
     return (h * 60 + 360) % 360;
   };
-  for (const mark of ['quemado', 'mojado', 'agua', 'cristalizado', 'sangrado', 'envenenado', 'empolvado', 'cegado', 'confusion', 'mareo', 'llorera', 'shock', 'punto-debil', 'marca', 'virus', 'compas']) {
-    const h = hue(harmonicColour(mark));
-    assert.ok(h < 0 || h < 255 || h > 345, `${mark}: ${harmonicColour(mark)} is violet or pink`);
+  // The pink (300–350) and the violet (255–300) are theirs.
+  const theirs = h => h >= 255 && h <= 350;
+  // A magenta street, half hidden by the dark each stroke is drawn on, and the stroke's light added over it.
+  const street = rgb('#8a2a5a'), over = colour => rgb(colour).map((c, i) => Math.min(1, street[i] * .5 + c));
+  for (const mark of ['quemado', 'mojado', 'agua', 'cristalizado', 'sangrado', 'metralla', 'envenenado', 'empolvado', 'cegado', 'confusion', 'mareo', 'llorera', 'shock', 'punto-debil', 'marca', 'virus', 'compas']) {
+    const colour = harmonicColour(mark);
+    assert.ok(!theirs(hue(rgb(colour))), `${mark}: ${colour} is violet or pink`);
+    assert.ok(!theirs(hue(over(colour))), `${mark}: ${colour} turns violet or pink over the street (${over(colour).map(c => c.toFixed(2))})`);
   }
   assert.equal(harmonicColour('confusion'), '#f3cf78');
-});
-
-test('a curve that loops over itself is told apart from one that goes round once', () => {
-  const circle = Array.from({ length: 65 }, (_, i) => ({ x: Math.cos(i / 64 * Math.PI * 2), y: Math.sin(i / 64 * Math.PI * 2) }));
-  assert.ok(aroundOnce(circle));
-  const eight = Array.from({ length: 129 }, (_, i) => { const t = i / 128 * Math.PI * 2; return { x: Math.sin(t), y: Math.sin(t) * Math.cos(t) }; });
-  assert.ok(!aroundOnce(eight));
 });

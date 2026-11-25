@@ -99,7 +99,7 @@ export const SKILLS = [
   // Serie de Fourier: a blow for the foe's outline and one more for each thing its plate shows (`harmonics`, up to that many
   // more): what is on it counted as it is cast (`plateCount`), the variety and not the depth. No element, so nothing reacts;
   // every strike is a blow of its own (Cristalizado digs in each time, Ángulo's mark adds to each, the ice counts a flurry).
-  { id: 'fourier', name: 'Serie de Fourier', cost: 2, side: 'foes', power: 10, kind: 'magic', harmonics: 5, node: true, description: 'Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis veces.', class: 'matemagico' },
+  { id: 'fourier', name: 'Serie de Fourier', cost: 2, side: 'foes', power: 10, kind: 'magic', harmonics: 5, node: true, description: 'Daño mágico no elemental leve a un enemigo. Golpea una vez más por cada efecto de estado distinto que tenga, hasta seis golpes en total.', class: 'matemagico' },
   // The elements' lines, each a figure he draws (src/math-figures.ts). Fire piles up: Pirámide ígnea
   // takes the highest fire among the foes to all of them (`evens`). Water sets up: Cubo acuático leaves
   // them Mojado (`wets`), or puts a fire out into smoke. Electricity cashes in: Punto eléctrico jumps to

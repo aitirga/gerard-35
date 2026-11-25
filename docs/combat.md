@@ -418,9 +418,13 @@ puede terminar el combate por sí solo.
 
 **La placa es la regla.** Lo que un combatiente lleva se ve en su placa, un icono por estado
 (`plateMarks` en `src/battle.ts`: `battle-ui` dibuja exactamente esa lista). Una habilidad que cuente
-estados cuenta esos iconos y nada más, para que lo que se ve y lo que se cobra no puedan discrepar:
-*Serie de Fourier* (Matemágico) golpea una vez más por cada uno, hasta seis veces; Agua y Mojado son
-un solo icono, y Quemado III cuenta uno (la variedad, no la profundidad).
+estados cuenta esos iconos, y la marca ▼ que una bajada de estadísticas deja sobre el enemigo (la de
+Ángulo exacto), y nada más (`plateCount`), para que lo que se ve y lo que se cobra no puedan discrepar:
+*Serie de Fourier* (Matemágico) golpea una vez más por cada uno, hasta seis golpes en total; Agua y
+Mojado son un solo icono, y Quemado III cuenta uno (la variedad, no la profundidad). La placa no
+enseña solo estados: también lleva los iconos de lo que un jefe o un alumno es o está haciendo
+(Encarnado, Canción, Reacción, Converge, Enfado…), y esos cuentan igual; la lista entera, en
+`docs/animas/matemagico/README.md` § Serie de Fourier.
 
 **Escalar.** El mismo elemento que llega mientras el estado sigue activo lo sube un nivel, hasta
 el último, y reinicia su reloj (`inflict`). Al apagarse desaparece entero. Cada nivel multiplica
