@@ -64,6 +64,8 @@ export interface DuoStage {
   cue(id: SoundId, options?: { delay?: number; volume?: number; pan?: number }): void;
   /** Where a point is on the screen from left (−1) to right (1), for a sound's `pan`. */
   pan(at: V3): number;
+  /** Whether a point is on screen and not behind the party's panels (the docks, the roster): for a figure that must read whole. Not every frame. */
+  clear(at: V3): boolean;
   /**
    * Matemágico's neon (src/math-figures.ts `NeonFigure`): a figure of tubes of light, his gold unless
    * `look` says, standing at `frame` (with none, its points are the world's; with `{ at, ...screenAxes(view) }`

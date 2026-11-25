@@ -3349,10 +3349,11 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
   if (actor === owner) ground(state, owner, effect);
 }
 /**
- * Electrólisis's gas (docs/animas/README.md § Gas): what its blast is at average stats, a level of gas at a time. Tunable
- * (`just fight-sim`, book `gas`).
+ * Electrólisis's gas (docs/animas/README.md § Gas): what its blast is at average stats, a level of gas at a time, and the
+ * most levels a foe can carry (`top`, as many as La crecida's marks; `TIMED.gas.levels` is empty, so anything that merges
+ * gas honours this instead of the generic cap). Tunable (`just fight-sim`, book `gas`).
  */
-export const GAS = { blast: 12 };
+export const GAS = { blast: 12, top: 3 };
 /** How the fight shows the gas going up (`ignite`): the front reaches each foe's cloud this many seconds after the last. */
 export const IGNITION_GAP = .3;
 /** The gas Electrólisis leaves on a foe: its level (the water it was made of), 0 if none. */
@@ -3361,8 +3362,9 @@ export const gasOf = (c: Pick<Combatant, 'timed'>) => c.timed?.gas?.level ?? 0;
  * A blow of fire landed on a foe that carries gas in the action just resolved (`lit`, from `fearDamage` and the duals of
  * fire; a pulse never comes through there): the gas of every foe goes up, one after another, in the order they stand.
  * Each takes magic fire damage of `GAS.blast` a level of its own gas with the Magia of whoever lit it (a weakness or a
- * resistance to fire counts), burns at least at level I (wet, it steams instead; an onion's wet layers never catch)
- * and loses the gas. Said in `effect.ignited`; Toma de tierra counts it as a reaction of whoever lit it.
+ * resistance to fire counts), melts its pringue, burns at least at level I (wet, it steams instead; an onion's wet layers
+ * never catch) and loses the gas; a foe still powdered sets off Estallido. With every foe that had gas fallen, nothing
+ * goes up. Said in `effect.ignited`; Toma de tierra counts it as a reaction of whoever lit it.
  */
 function ignite(state: BattleState, effect: BattleEffect) {
   const struck = lit.splice(0).map(id => state.foes.find(f => f.id === id)).find(f => f?.timed?.gas);
@@ -3377,6 +3379,8 @@ function ignite(state: BattleState, effect: BattleEffect) {
     if (foe.hp <= 0) continue;
     const stats = actor ? current(state, actor) : current(state, foe);
     const amount = hurt(state, foe, fearDamage(state, foe, magical(GAS.blast * level, stats, current(state, foe)) * affinityScale(foe, 'fuego'), 'magic', 'fuego'));
+    // Fire: it melts the pringue, as any fire does.
+    if (foe.shell) { foe.shell = false; effect.melted = true; }
     hits.push({ target: foe.id, amount, level });
     if (foe.hp <= 0 || foe.layers) continue;
     if (foe.timed?.mojado) { steam(foe); steamed.push(foe.id); continue; }
@@ -3385,8 +3389,14 @@ function ignite(state: BattleState, effect: BattleEffect) {
     burns.push({ target: foe.id, level: fire.level });
   }
   lit.length = 0;
+  // Every foe with gas had fallen (the fire that found it among them): nothing went up.
+  if (!hits.length) return;
   effect.ignited = { from: struck.id, hits, burns, ...steamed.length ? { steamed } : {} };
   state.message += ` ¡El gas estalla! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+  // Fire on powder: a foe still powdered that the blast found sets off Estallido (`powder`), once for all.
+  const dusted = actor && hits.map(h => state.foes.find(f => f.id === h.target)!).find(f => f.timed?.empolvado);
+  if (actor && dusted) powder(state, actor, dusted, 'fuego', effect);
+  lit.length = 0;
   if (actor) ground(state, actor, effect);
 }
 /** Bomba remota on `foe`: a new bomb, or the one on it started over, keeping what it has grown. `age`: born already grown (Enjambre). */
@@ -4439,6 +4449,8 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   const d = DUALS.find(x => x.id === id), a = state.allies[state.active], b = dualPartner(state);
   if (state.phase !== 'player' || !d || !a || !b || dualBlock(state, d, a, b)) return;
   const halves = halvesOf(d, a, b)!, cost = dualCost(d), targets = dualTargets(state, d);
+  // Nothing an earlier action noted may light this one's gas (`ignite`).
+  lit.length = 0;
   const target = targets.find(f => f.id === targetId) ?? targets[0];
   if (d.side === 'allies' && targetId && target.id !== targetId) return;
   const roller = [a, b].find(wearer => wearer.classId === DICED);
@@ -4682,7 +4694,7 @@ export const IDEA_FIJA = 34;
  * The water Electrólisis finds on `c`, as the level of the gas it makes: the marks of its water (La crecida), or 1 if it is
  * only Mojado. A frozen foe has no water (its ice is not split), nor does one that has fallen.
  */
-export const waterGas = (c: Combatant) => c.hp <= 0 || frozenOf(c) ? 0 : waterOf(c) || (c.timed?.mojado ? 1 : 0);
+export const waterGas = (c: Combatant) => c.hp <= 0 || frozenOf(c) ? 0 : Math.min(GAS.top, waterOf(c) || (c.timed?.mojado ? 1 : 0));
 /** A timed status a dual leaves on `c`, from its whole time. */
 function lay(c: Combatant, id: TimedId) {
   c.timed = { ...c.timed, [id]: { level: 1, left: TIMED[id].seconds, next: TIMED[id].every } };
@@ -4707,6 +4719,7 @@ function kindle(c: Combatant, id: TimedId, level: number): Timed {
 function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital', caster: Combatant, origin: string) {
   const d = DUALS.find(spec => spec.id === id)!;
   const effect: BattleEffect = { actor: caster.id, kind: 'skill', detonation: id, target: origin, element: d.element, hits: [] };
+  lit.length = 0;
   const blocked = annulled(state, caster, d.element, 'magic');
   if (blocked) effect.annulled = blocked;
   for (const foe of state.foes.filter(f => f.hp > 0)) {
@@ -4746,6 +4759,7 @@ function ignitePaint(state: BattleState, host: Combatant) {
 function release(state: BattleState, holder: Combatant) {
   const charge = holder.charge!;
   delete holder.charge;
+  lit.length = 0;
   const d = DUALS.find(x => x.id === charge.dual), striker = state.allies.find(a => a.id === charge.striker) ?? holder;
   if (!d || holder.hp <= 0) return;
   if (d.id === 'bombardeo-orbital') return blast(state, d.id, striker, state.foes.find(f => f.hp > 0)?.id ?? holder.id);

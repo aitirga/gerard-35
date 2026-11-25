@@ -2522,9 +2522,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // The gas goes up: its name over the one the fire found, then each blast as the front reaches it, and the fire it leaves.
       if (effect.ignited) {
         const g = effect.ignited;
-        landed.push({ target: g.from, id: 'gas', text: '¡El gas estalla!', detail: 'Arde en todos' });
+        landed.push({ target: g.from, id: 'gas', text: '¡El gas estalla!', detail: g.hits.length === 1 ? 'Estalla en uno' : `Estalla en ${g.hits.length}` });
         g.hits.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', `Gas ${roman(h.level)}`, undefined, 58); }, 260 + i * IGNITION_GAP * 1000));
-        g.burns.forEach((b, i) => setTimeout(() => { if (token === generation) { const says = fireSays(b.target, 'quemado', b.level); pop(b.target, says.text, 'status', says.detail || 'El gas lo prende', says.id); } }, 520 + i * IGNITION_GAP * 1000));
+        // A fire the blow itself already said (Foc Binari's Quemado on the one it struck) is not said twice.
+        const told = new Set([...effect.burn?.id === 'quemado' && effect.target ? [effect.target] : [], ...effect.reaction?.burns?.map(b => b.target) ?? [], ...(effect.hits ?? []).filter(h => h.burn?.id === 'quemado').map(h => h.target)]);
+        g.burns.filter(b => !told.has(b.target)).forEach((b, i) => setTimeout(() => { if (token === generation) { const says = fireSays(b.target, 'quemado', b.level); pop(b.target, says.text, 'status', says.detail || 'El gas lo prende', says.id); } }, 520 + i * IGNITION_GAP * 1000));
         g.steamed?.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, `¡${TIMED.cegado.name}!`, 'status', 'El agua se va en vapor', 'cegado'); }, 520 + i * 80));
       }
       if (effect.vapour) for (const id of effect.vapour) landed.push({ target: id, id: 'cegado', text: 'Vapor', detail: TIMED.cegado.name });

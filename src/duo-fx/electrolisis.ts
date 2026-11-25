@@ -101,21 +101,30 @@ function levelOf(f: DuoFighter, marks: number) {
   const m = Math.min(3, Math.round(marks)), { ticks, bands } = markHeights(f.height);
   return ticks[m - 1] + bands[m - 1];
 }
-/** The cloud of gas `level` makes over `f`: where its middle is and how big it is. */
+/** The cloud of gas `level` makes over `f`: where its middle is and how big it is. Over where its body is now (its chest), so it goes with a foe that lunges. */
 function cloudOf(f: DuoFighter, level: number) {
   const radius = .22 + .13 * Math.min(3, Math.max(1, level));
-  return { at: lift(f.feet, Math.min(f.height + .45, 2.6) + radius), radius };
+  return { at: { x: f.chest.x, y: f.feet.y + Math.min(f.height + .45, 2.6) + radius, z: f.chest.z }, radius };
 }
-/** The foes from left to right as the camera sees them, and the two electrodes' feet just past the ends. */
-function line(stage: DuoStage, foes: DuoFighter[]) {
+/** How tall the electrodes stand over the floor, by the tallest foe. */
+const tallFor = (foes: DuoFighter[]) => Math.max(1.6, Math.min(2.2, Math.max(...foes.map(f => f.height)) * 1.1));
+/**
+ * The foes from left to right as the camera sees them, and the two electrodes' feet just past the ends: a little behind
+ * the line, and further back (and in) until the whole of each, its plate, its bar and its sign, stands clear of the
+ * party's panels (`stage.clear`), so neither reads only by half.
+ */
+function line(stage: DuoStage, foes: DuoFighter[], tall: number) {
   const { right, facing } = screenAxes(stage.view);
   const sorted = [...foes].sort((a, b) => dot(a.feet, right) - dot(b.feet, right));
   const first = sorted[0], last = sorted[sorted.length - 1];
   const floorY = Math.min(...foes.map(f => f.feet.y));
-  // A little behind the line, so they stand clear of the foes and of the party's panels in front.
-  const minus = { ...add(add(first.feet, right, -(first.radius + .35)), facing, -.4), y: floorY };
-  const plus = { ...add(add(last.feet, right, last.radius + .35), facing, -.4), y: floorY };
-  return { sorted, minus, plus, right, facing };
+  const seen = (foot: V3) => [0, .5, 1, 1.15].every(k => stage.clear(lift(foot, .02 + k * tall)));
+  const place = (from: DuoFighter, side: number) => {
+    let foot = { ...add(add(from.feet, right, side * (from.radius + .35)), facing, -.4), y: floorY };
+    for (let i = 0; i < 10 && !seen(foot); i++) foot = { ...add(add(foot, facing, -.35), right, -side * .08), y: floorY };
+    return foot;
+  };
+  return { sorted, minus: place(first, -1), plus: place(last, 1), right, facing };
 }
 /** A jagged line from `a` to `b`: `n` bends, each a little off the straight way. */
 function jag(a: V3, b: V3, n: number, off: number, up: V3, side: V3): V3[] {
@@ -141,19 +150,19 @@ export const staging: DuoStaging = {
     const foes = (reached.length ? reached : stage.foes()).filter(f => !f.party);
     if (!foes.length || !stage.fx.on) return;
     const fx = stage.fx, g = stage.effects.gpu!;
-    const { sorted, minus, plus, right, facing } = line(stage, foes);
+    const tall = tallFor(foes);
+    const { sorted, minus, plus, right, facing } = line(stage, foes, tall);
     const marksOf = (f: DuoFighter) => e.water?.find(w => w.target === f.id)?.from ?? 0;
     const gasOf = (f: DuoFighter) => e.gas?.find(x => x.target === f.id)?.level ?? 0;
-    const tall = Math.max(1.6, Math.min(2.2, Math.max(...foes.map(f => f.height)) * 1.1));
 
     // Gerard plants the electrodes: two bars of gold neon, a plate at the foot of each, and their signs over them.
     const rods = stage.figure('Electrodos', { look: { core: '#ffd98a', halo: '#e0a640' } });
-    const bar = (foot: V3) => rods.stroke(neonCurve(10, u => lift(foot, .02 + u * tall)), { radius: .034 });
-    const plate = (foot: V3) => rods.stroke(neonCurve(8, u => lift(add(foot, right, (u - .5) * .3), .04)), { radius: .026 });
+    const bar = (foot: V3) => rods.stroke(neonCurve(10, u => lift(foot, .02 + u * tall)), { radius: .045 });
+    const plate = (foot: V3) => rods.stroke(neonCurve(8, u => lift(add(foot, right, (u - .5) * .44), .04)), { radius: .034 });
     const sign = (over: V3, plus: boolean) => {
-      const at = lift(over, tall + .26), s = .11;
-      const strokes = [rods.stroke([add(at, right, -s), add(at, right, s)], { radius: .028 })];
-      if (plus) strokes.push(rods.stroke([add(at, UP, -s), add(at, UP, s)], { radius: .028 }));
+      const at = lift(over, tall + .26), s = .13;
+      const strokes = [rods.stroke([add(at, right, -s), add(at, right, s)], { radius: .034 })];
+      if (plus) strokes.push(rods.stroke([add(at, UP, -s), add(at, UP, s)], { radius: .034 }));
       return strokes;
     };
     const bars = [bar(minus), bar(plus)], plates = [plate(minus), plate(plus)];
@@ -259,12 +268,15 @@ export const staging: DuoStaging = {
 
 /** The clouds breathe while the gas waits: a few puffs a second over each foe that carries it, its size by its level. */
 function holdGas(stage: DuoStage, dt: number, state: BattleState, playing: BattleEffect | undefined) {
-  const gassed = state.foes.filter(u => u.hp > 0 && u.timed?.gas);
-  for (const id of [...nextPuff.keys()]) if (!gassed.some(u => u.id === id)) nextPuff.delete(id);
-  if (!gassed.length || !stage.fx.on) return;
+  // Every frame of every fight: nothing made unless some foe carries gas.
+  const carries = (u: BattleState['foes'][number]) => u.hp > 0 && !!u.timed?.gas;
+  if (!nextPuff.size && !state.foes.some(carries)) return;
+  for (const id of nextPuff.keys()) if (!state.foes.some(u => u.id === id && carries(u))) nextPuff.delete(id);
+  if (!stage.fx.on) return;
   if (playing?.dual?.id === 'electrolisis' && clock - startedAt < TIMING.end) return;
   ensure(stage);
-  for (const u of gassed) {
+  for (const u of state.foes) {
+    if (!carries(u)) continue;
     const f = stage.fighter(u.id);
     if (!f) continue;
     const left = (nextPuff.get(u.id) ?? 0) - dt;

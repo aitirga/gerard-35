@@ -1099,7 +1099,8 @@ run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite`
 
 - **Its level is the water it was made of**: the marks of La crecida (1–3), or I on a foe that was only
   Mojado. Counted on each foe before anything else turns that water; a frozen foe has no water (its ice
-  is not split), and a dry one gets none.
+  is not split), and a dry one gets none. Never more than III (`GAS.top`): anything that adds gas to gas
+  holds to it, not to the generic cap of a timed status.
 - **The water goes**: the foe is dried (no water, Mojado, Corriente or Hundido), and the blow itself makes
   **no Conducción and no Shock**. That is its price: whatever Conducción, Vapor or Bajo cero would have
   made of that water is given up.
@@ -1111,8 +1112,12 @@ run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite`
 - **The blast**: one after another, from the foe the fire found outwards, every foe with gas takes magic
   fire damage of `GAS.blast` (12) a level of its gas, with the Magia of whoever lit it (a weakness or a
   resistance to fire counts), is left burning at least at Quemado I (wet again by then, it steams
-  instead; an onion's wet layers never catch) and loses the gas. Toma de tierra counts it as a reaction of
-  whoever lit it.
+  instead; an onion's wet layers never catch) and loses the gas. It is fire like any other: it **melts
+  the pringue** of a foe in chicle, and a foe still **Empolvado** that it reaches sets off **Estallido**.
+  Toma de tierra counts it as a reaction of whoever lit it, and Rescoldo keeps the fire it leaves.
+- **A foe that falls keeps nothing to blow**: if every foe with gas has fallen (the fire that lit it
+  felled the last one), nothing goes up, nothing is said and Toma de tierra gives nothing; their gas is
+  simply gone. The simulator values only the gas of a foe standing (`gasWorth`).
 - **How it shows**: over each foe a loose cloud of glass beads, as big as its level, breathing while it
   waits; its icon three bubbles with its level. When it goes up, a front of fire runs through each cloud
   in turn (the GPU `ignite` rule: each bead catches from a burning one near it), a dry crack a cloud, a

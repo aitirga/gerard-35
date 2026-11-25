@@ -489,6 +489,8 @@ export interface AguaScene {
   model(id: string): pc.Entity | undefined;
   /** Where the other foes stand, each with a cell of its own: this one stops halfway to theirs (`createFreaticaField`). */
   neighbours?(): V3[];
+  /** Whether the foes stand where they will fight (not still walking in): a cell is placed round a foe only then. */
+  settled?(): boolean;
 }
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 

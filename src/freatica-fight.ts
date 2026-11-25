@@ -102,6 +102,9 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
     // An action that never landed on screen (the fight cut short) lets the cells go after a while.
     if (waiting && time - waitedSince > 4) waiting = false;
     if (!state || waiting) return;
+    // Water a fight starts with (the tester's trials): the cells wait for the foes to stand where they fight, or they would
+    // be placed round where the foes were walking in.
+    if (scene.settled && !scene.settled()) return;
     const f = ready();
     if (!f) return;
     const up = standing();

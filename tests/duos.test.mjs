@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, dualSingle, enemyAct, GAS, gasOf, improve, IDEA_FIJA, POWDER_RULES, runClock, stacks, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
+import { act, actDual, bitsOf, createBattle, CRECIDA, DUALS, dualSingle, enemyAct, GAS, gasOf, improve, IDEA_FIJA, nextRound, POWDER_RULES, runClock, stacks, takeNews, TIMED, waterOf, CRIT_RULES } from '../src/battle.ts';
 import { improvedBy, IMPROVEMENTS, stageOf } from '../src/ecos.ts';
-import { MAT_FRE, createFight, decide, legalChoices } from '../src/battle-sim.ts';
+import { MAT_FRE, createFight, decide, gasWorth, legalChoices } from '../src/battle-sim.ts';
 
 // The dúos mayores of every line but fire (docs/animas/README.md § Dúos mayores) and the duals of the pairs that had
 // none (§ Combined skills): Marea, Fulgurita, Suceso seguro, Metralla, Idea fija, Caleidoscopio; Géiser, A escala, Seiche,
@@ -301,6 +301,105 @@ test('Electrólisis: the simulator\'s pair of Matemágico and Freática can play
   assert.ok(['dual', 'skill', 'attack', 'defend'].includes(decide(s, { policy: 'smart' }, () => .5).action));
   actDual(s, 'electrolisis');
   assert.deepEqual(s.foes.map(gasOf), [2, 2, 2]);
+});
+
+test('Electrólisis: a fire that fells the only foe with gas sets nothing off (no blast, no message, no maná)', () => {
+  const s = gassing(['wet', 0, 0]);
+  improve(s, improvedBy([...ELECTRO, 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra']));
+  actDual(s, 'electrolisis');
+  assert.deepEqual(s.foes.map(gasOf), [1, 0, 0]);
+  again(s); by(s, 'gerard').secondary = 1;
+  s.foes[0].hp = 1;
+  const e = act(s, 'skill', 'dog-0', 'foc-binari');
+  assert.equal(s.foes[0].hp, 0);
+  assert.equal(e.ignited, undefined); assert.equal(e.mana, undefined);
+  assert.doesNotMatch(s.message, /gas estalla/); assert.doesNotMatch(s.message, / {2}PV\./);
+  assert.equal(gasOf(s.foes[0]), 0, 'its gas is gone all the same');
+});
+
+/** Gerard on `g` and Aitor on `a`, `nodes` bought, gas `level` on all three dogs. */
+function gassed(g, a, nodes = [], level = 1) {
+  const s = pair(g, a, nodes);
+  for (const f of s.foes) f.timed = { gas: { level, left: TIMED.gas.seconds, next: TIMED.gas.every } };
+  return s;
+}
+const FIRE = ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo'];
+
+test('Electrólisis: a dual of fire sets the gas off, on one (Zarpazos de fuego, Géiser) or on all (Vulcano)', () => {
+  const claws = gassed('matemagico', 'papagato');
+  assert.equal(actDual(claws, 'zarpazos-de-fuego', 'dog-1').ignited?.hits.length, 3, 'Zarpazos de fuego');
+  assert.ok(claws.foes.every(f => !gasOf(f)));
+  const geiser = gassed('matemagico', 'freatica');
+  assert.equal(actDual(geiser, 'geiser', 'dog-0').ignited?.from, 'dog-0', 'Géiser');
+  const vulcano = gassed('matemagico', 'sincopante', [...FIRE, 'matemagico:combustion', 'matemagico:vulcano']);
+  const e = actDual(vulcano, 'vulcano');
+  assert.equal(e.ignited?.hits.length, 3, 'Vulcano'); assert.equal(e.ignited.from, 'dog-0');
+});
+
+test('Electrólisis: a fire let go as the round starts sets it off (Rayo solar\'s release, Reserva de color\'s fuse)', () => {
+  const sun = gassed('matemagico', 'tecnopata');
+  sun.levels.tecnopata = 7;
+  by(sun, 'aitor').charge = { dual: 'rayo-solar', striker: 'gerard' };
+  foesTurn(sun); sun.foes.forEach(f => enemyAct(sun, f.id)); nextRound(sun);
+  const sweep = takeNews(sun).find(n => n.release);
+  assert.equal(sweep.release.id, 'rayo-solar'); assert.equal(sweep.ignited?.hits.length, 3);
+  const fuse = gassed('matemagico', 'prismatico');
+  actDual(fuse, 'reserva-de-color', 'dog-1');
+  assert.ok(fuse.foes.every(f => gasOf(f)), 'the fuse itself is no fire yet');
+  foesTurn(fuse); enemyAct(fuse, 'dog-0'); enemyAct(fuse, 'dog-1');
+  const boom = fuse.news.find(n => n.detonation === 'reserva-de-color');
+  assert.equal(boom.ignited?.hits.length, 3);
+});
+
+test('Electrólisis: Combustión\'s burst, a physical blow\'s, sets it off', () => {
+  const s = gassed('matemagico', 'papagato', [...FIRE, 'matemagico:combustion']);
+  s.foes[0].timed.quemado = { level: 4, left: 10, next: 2 };
+  s.active = 1;
+  const e = act(s, 'attack', 'dog-0');
+  assert.equal(e.combustion?.target, 'dog-0'); assert.equal(e.ignited?.hits.length, 3);
+});
+
+test('Electrólisis: the blast is fire on whatever it finds: wet it steams, an onion\'s layers never catch, the pringue melts, powder goes up', () => {
+  const s = gassed('matemagico', 'freatica', ELECTRO);
+  s.foes[0].timed.mojado = { level: 1, left: 20, next: 20 };
+  s.foes[2].shell = true;
+  const e = act(s, 'skill', 'dog-1', 'foc-binari');
+  assert.equal(e.ignited.hits.length, 3);
+  assert.deepEqual(e.ignited.steamed, ['dog-0'], 'wet again: Vapor instead of fire');
+  assert.equal(s.foes[0].timed.quemado, undefined); assert.ok(s.foes[0].timed.cegado);
+  assert.equal(s.foes[2].shell, false, 'the pringue melts'); assert.ok(e.ignited.hits.find(h => h.target === 'dog-2').amount > 0);
+  const dust = gassed('matemagico', 'freatica', ELECTRO);
+  dust.foes[2].timed.empolvado = { level: 1, left: 20, next: 20 };
+  const blown = act(dust, 'skill', 'dog-0', 'foc-binari');
+  assert.equal(blown.reaction?.id, 'estallido', 'powder the blast finds: Estallido'); assert.equal(dust.foes[2].timed.empolvado, undefined);
+  const onion = gassed('matemagico', 'freatica', ELECTRO);
+  onion.foes[2].layers = 2;
+  const peeled = act(onion, 'skill', 'dog-0', 'foc-binari');
+  assert.ok(!peeled.ignited.burns.some(b => b.target === 'dog-2'), 'wet layers never catch');
+  assert.equal(onion.foes[2].timed.quemado, undefined);
+});
+
+test('Electrólisis: its blast is a reaction of whoever lit it: Toma de tierra gives maná, Rescoldo keeps the fire it leaves', () => {
+  const s = gassed('matemagico', 'freatica', [...ELECTRO, ...FIRE, 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra']);
+  const gerard = by(s, 'gerard');
+  gerard.secondary = 1;
+  const e = act(s, 'skill', 'dog-0', 'foc-binari');
+  assert.equal(e.mana, 1); assert.ok(e.passives.some(p => p.id === 'toma-de-tierra'));
+  assert.ok(e.passives.some(p => p.id === 'rescoldo'));
+  for (const b of e.ignited.burns.filter(b => b.target !== 'dog-0')) assert.ok(s.foes.find(f => f.id === b.target).timed.quemado.left > TIMED.quemado.seconds, `${b.target} keeps its fire`);
+});
+
+test('the simulator values only the gas of a foe standing: a fallen one\'s going up is no loss', () => {
+  const s = gassed('matemagico', 'freatica', ELECTRO, 2);
+  s.foes[2].hp = 0;
+  const before = structuredClone(s);
+  act(s, 'skill', 'dog-0', 'foc-binari');
+  assert.equal(gasOf(s.foes[2]), 0, 'its gas went with the others');
+  assert.equal(gasWorth(before.foes[2], s.foes[2]), 0);
+  assert.ok(gasWorth(before.foes[0], s.foes[0]) < 0, 'a living one\'s gas spent comes back off');
+  // A gassed foe that falls takes its blast to come with it.
+  const fell = structuredClone(before.foes[1]); fell.hp = 0;
+  assert.ok(gasWorth(before.foes[1], fell) < 0);
 });
 
 test('two players agree on one fighter only when a dual goes to one (dualSingle)', () => {

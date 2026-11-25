@@ -433,6 +433,11 @@ const WATER_WORTH = 6, SUNK_PULSES = 6, CURRENT_PULSES = 4, ICE_ROUNDS_PER_MARK 
  * less than its blast at average stats since the fire may not come in time. Spent, it comes back off as the blast's PV.
  */
 const GAS_WORTH = 20;
+/**
+ * The gas on a foe as `smart` values a change of it (`was` before a choice, `now` after): only a foe standing counts, so a
+ * fallen one's gas is neither a blast to come nor, going up with the others, a blast lost.
+ */
+export const gasWorth = (was: Combatant, now: Combatant) => ((now.hp > 0 ? gasOf(now) : 0) - (was.hp > 0 ? gasOf(was) : 0)) * GAS_WORTH;
 /** A thing with PV that is part of a fight's answer and never its win: Vertitrón's eye, Aurelià's lectern, the Queen's hands. */
 const isPiece = (foe: BattleState['foes'][number]) => foe.kind === 'vertigo-ojo' || castleProp(foe);
 /** Fran's canopy: a lamp broken is a Brillo he will never drink again, a light that eats nothing more and a lighter Aspersión; each Brillo off, the blows that land whole. */
@@ -562,7 +567,7 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
       if (now.timed?.corriente && !foe.timed?.corriente) value += pulseDamage('corriente', waterOf(now), now.maxHp) * CURRENT_PULSES;
     }
     // Electrólisis: the gas laid on a foe still standing, a blast kept for the next fire (and given back when it goes up).
-    if (now.hp > 0 || gasOf(foe)) value += (gasOf(now) - gasOf(foe)) * GAS_WORTH;
+    value += gasWorth(foe, now);
     // El Repetidor's crust cracking: without it a lone healer would hold on behind Defender for ever.
     if (foe.kind === 'repetidor' && now.hp > 0) value += ((foe.castle?.crust ?? 0) - (now.castle?.crust ?? 0)) * CRUST_WORTH;
     // El Ausente the round it is there: the window.
