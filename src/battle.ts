@@ -873,8 +873,9 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   seiche: { name: 'Seiche', seconds: 20, every: 5, levels: [1], flat: 7, share: 0, cap: 0 },
   staccato: { name: 'Staccato', seconds: 20, every: 5, levels: [1], flat: 5, share: 0, cap: 0 },
   // Gas (Electrólisis): the foe's water split. It never pulses; its level is the water it was made of (1–3), and the next fire
-  // blow on any foe that carries it sets off the gas of every one (`ignite`, `GAS`).
-  gas: { name: 'Gas', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
+  // blow on any foe that carries it sets off the gas of every one (`ignite`, `GAS`). The one dual's own status that moves
+  // (Atractor extraño, adding up to `GAS.top`): it is the water it was, and water moves.
+  gas: { name: 'Gas', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0, moves: true },
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Bomba (Bomba remota, BOMBA): it never pulses; it counts how long it has been on (`Timed.age`) and goes off when its time is up (`runClock`).
@@ -3427,8 +3428,8 @@ function spread(state: BattleState, effect: BattleEffect) {
     state.message += ` El virus contagia: ${names.join(', ')}.`;
   }
 }
-/** How high a status gathered by Atractor extraño adds up to: fire's top (IV with Combustión), the shards' deepest, or its own last level. */
-const gatherTop = (state: BattleState, id: TimedId) => id === 'quemado' ? fireTop(state) : id === 'cristalizado' ? POWDER_RULES.shards : TIMED[id].levels.length || 1;
+/** How high a status gathered by Atractor extraño adds up to: fire's top (IV with Combustión), the shards' deepest, the gas's (`GAS.top`), or its own last level. */
+const gatherTop = (state: BattleState, id: TimedId) => id === 'quemado' ? fireTop(state) : id === 'cristalizado' ? POWDER_RULES.shards : id === 'gas' ? GAS.top : TIMED[id].levels.length || 1;
 /** What can leave `c` for Atractor extraño, in TIMED's order: its `moves` statuses, but not the Mojado of the water standing under it (La crecida's). */
 export const movable = (c: Combatant) => TIMED_IDS.filter(id => TIMED[id].moves && !!c.timed?.[id] && !(id === 'mojado' && c.timed.agua));
 /**

@@ -253,8 +253,8 @@ counts them afterwards, one blow a status.
 1. A blow of the astral, 16, on its target.
 2. Then every status on the clock **that moves** (`moves` in `TIMED`, a trait of the kind of status, never of
    the foe) leaves every other foe standing, **all at once**, and reaches the target one after another, in the
-   plate's order: Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión and Bomba
-   (Gas, when Electrólisis brings it). Since everything has left before anything arrives, the plate's order
+   plate's order: Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Gas and
+   Bomba. Since everything has left before anything arrives, the plate's order
    never changes what the others are left with: the fire an Estallido on arrival lights on them stays on them,
    the same on each.
    - **The same one already there adds up**: the levels to its top (fire III, IV with Combustión; the shards
@@ -263,9 +263,13 @@ counts them afterwards, one blow a status.
    - **Two bombs**: their charge adds up to `BOMBA.top`, with the clock of the one closer to going off.
    - A Mojado that comes to a foe with La crecida's water under it runs into that water: the water's own
      Mojado lasts as long as the water.
+   - **Gas** (Electrólisis's split water) is the one dual's own status that moves: it is the water it was, and
+     water moves. It adds up to `GAS.top` (III), so three foes' gas makes one big cloud for the next fire. A
+     fire that comes to it is no blow and does not set it off; the next blow of fire does, as ever (and an
+     Estallido on arrival is fire's reaction: that one does).
 3. **What does not move**: La crecida's water and everything of it (Agua, Corriente, Hundido, Congelado, and the
-   Mojado of water standing under a foe), the cures, Virus, the duals' own (Volcán, Marea, Fulgurita, Metralla,
-   Idea fija, Seiche, Staccato) and the statuses counted in rounds (Sangrado, Mareo, Llorera).
+   Mojado of water standing under a foe), the cures, Virus, the duals' own but Gas (Volcán, Marea, Fulgurita, Metralla,
+   Idea fija, Seiche, Staccato; Corriente alterna's Alterna is no status of a foe's) and the statuses counted in rounds (Sangrado, Mareo, Llorera).
 4. **What meets reacts**, with no blow of its own, powder first as anywhere: water on a fire is Humo, fire on
    water Vapor, fire and powder Estallido (its blast on every foe, as always), water and powder Envenenado.
    The status that came is spent in it. A fire does not catch on an onion's wet layers: it stays where it was.

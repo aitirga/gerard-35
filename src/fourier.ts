@@ -171,6 +171,6 @@ const HARMONIC_COLOURS: Partial<Record<PlateMark | 'marca', string>> = {
   sangrado: '#f04a12', metralla: '#f04a12',
   envenenado: '#6fdc4a', sanacion: '#3fcf58',
   shock: '#ffe24a', cargado: '#ffe24a',
-  empolvado: '#e8c98a', cegado: '#c9c4ba',
+  empolvado: '#e8c98a', cegado: '#c9c4ba', gas: '#9fe0ee',
 };
 export const harmonicColour = (mark?: PlateMark | 'marca') => (mark && HARMONIC_COLOURS[mark]) || GOLD;

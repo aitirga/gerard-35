@@ -1105,9 +1105,11 @@ as an element landing would (Humo, Vapor, Estallido, Envenenado). By kind, never
 
 | Moves | Stays |
 | --- | --- |
-| Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba (and Gas, once Electrólisis brings it) | La crecida's (Agua, Corriente, Hundido, Congelado, and the Mojado of water standing under a foe); the cures (Sanación); Virus; the duals' own (Volcán, Marea, Fulgurita, Metralla, Idea fija, Seiche, Staccato); everything counted in rounds (Sangrado, Mareo, Llorera) |
+| Quemado, Cegado, Mojado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Bomba, and Gas (the one dual's own that moves: it is the water it was; it adds up to `GAS.top`) | La crecida's (Agua, Corriente, Hundido, Congelado, and the Mojado of water standing under a foe); the cures (Sanación); Virus; the duals' other own (Volcán, Marea, Fulgurita, Metralla, Idea fija, Seiche, Staccato); everything counted in rounds (Sangrado, Mareo, Llorera) |
 
-What moves was not put on anyone: Virus never spreads it.
+What moves was not put on anyone: Virus never spreads it. An arrival is no blow: fire that comes to a foe's gas
+does not set it off (an Estallido it causes on the way does, being fire's reaction).
+
 ### Gas (Electrólisis's split water, timed)
 
 Left by the dual **Electrólisis** (Cubo acuático + Sondeo eléctrico, 2026-11-25): the current does not
@@ -1121,6 +1123,8 @@ run through a foe's water, it **splits it**. Built (`TIMED.gas`, `GAS`, `ignite`
   **no Conducción and no Shock**. That is its price: whatever Conducción, Vapor or Bajo cero would have
   made of that water is given up.
 - **A timed status**: 20 s on the clock, no pulses. Unlit, it is gone.
+- **It moves** (§ Statuses that move): Atractor extraño gathers every foe's gas onto one, to `GAS.top`. The
+  one dual's own status that does: it is the water it was. Fire that comes with it is no blow and lights nothing.
 - **The next blow of fire on any foe that carries it sets off the gas of all** (`ignite`): any blow with
   fire, a skill's, Atacar's, a dual's or a reaction's (Foc Binari, Pirámide ígnea, Atacar · Fuego,
   Explosión, Estallido, Combustión's burst). A pulse never does (a fire burning on its own is no blow).

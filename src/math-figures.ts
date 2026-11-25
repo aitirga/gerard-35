@@ -187,6 +187,8 @@ const GATHER_LOOKS: Record<string, { kind: keyof typeof FIGURE_KINDS; colour: st
   confusion: { kind: 'atractor-mota', colour: '#4fe0ff' },
   encogido: { kind: 'atractor-mota', colour: '#9fe8ff' },
   bomba: { kind: 'atractor-chispa', colour: '#fff2a8' },
+  // Electrólisis's gas: its cloud's glass beads, the plate's pale cyan.
+  gas: { kind: 'atractor-gota', colour: ['#e2fbff', '#9fe0ee'] },
 };
 /** Freática's water (src/freatica-fx.ts), for the cube: its drops and its bubbles. */
 const WATER_KINDS = { 'agua-gota': AGUA_KINDS['agua-gota'], 'agua-burbuja': AGUA_KINDS['agua-burbuja'] };

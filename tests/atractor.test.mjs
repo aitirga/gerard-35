@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, createBattle, improve, movable, bombPower, BOMBA, COMBUSTION, FIRE_TOP, MANA_POINTS, POWDER_RULES, SKILLS, TIMED } from '../src/battle.ts';
+import { act, createBattle, improve, movable, bombPower, BOMBA, COMBUSTION, FIRE_TOP, GAS, MANA_POINTS, POWDER_RULES, SKILLS, TIMED } from '../src/battle.ts';
 import { improvedBy, improvementOf, stageOf } from '../src/ecos.ts';
 
 // Atractor extraño (docs/animas/matemagico/README.md § Atractor extraño): a blow of the astral, and the others'
@@ -70,6 +70,20 @@ test('shards add up to their deepest, poison to III', () => {
   assert.equal(s.foes[0].timed.envenenado.level, 3);
 });
 
+test('Electrólisis\'s gas moves too, adding up to GAS.top; fire that comes to it is no blow and does not set it off', () => {
+  const s = fight();
+  const gas = (level) => on(level, TIMED.gas.seconds, TIMED.gas.every);
+  s.foes[0].timed = { gas: gas(2) };
+  s.foes[1].timed = { gas: gas(2), quemado: fire(1) };
+  s.foes[2].timed = { gas: gas(1) };
+  const hp = s.foes[0].hp, e = cast(s);
+  assert.equal(s.foes[0].timed.gas.level, GAS.top);
+  assert.ok(s.foes[0].timed.quemado, 'the fire came and sits beside the gas');
+  assert.ok(!s.foes[1].timed?.gas && !s.foes[2].timed?.gas, 'the others are left without gas');
+  assert.equal(e.ignited, undefined, 'an arrival is not a blow of fire');
+  assert.equal(hp - s.foes[0].hp, e.amount, 'only the blow of the astral took PV');
+});
+
 test('two bombs add their charge up to the top, with the clock of the one closer to going off', () => {
   const s = fight();
   s.foes[0].timed = { bomba: { level: 1, left: 9, next: 12, age: 4 } };
@@ -94,7 +108,7 @@ test('what does not move: La crecida\'s water and the Mojado it makes, cures, Vi
   assert.equal(s.foes[0].timed?.mojado, undefined);
   assert.equal(e.gathered, undefined);
   // Every one that moves says so in TIMED, and nothing else does.
-  assert.deepEqual(Object.keys(TIMED).filter(id => TIMED[id].moves).sort(), ['bomba', 'cegado', 'confusion', 'cristalizado', 'empolvado', 'encogido', 'envenenado', 'mojado', 'quemado'].sort());
+  assert.deepEqual(Object.keys(TIMED).filter(id => TIMED[id].moves).sort(), ['bomba', 'cegado', 'confusion', 'cristalizado', 'empolvado', 'encogido', 'envenenado', 'gas', 'mojado', 'quemado'].sort());
 });
 
 test('arrivals react, with no blow of their own: Humo, Vapor, Estallido and Envenenado', () => {
