@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace } from './battle';
+import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
@@ -46,6 +46,7 @@ import { DUO_STAGINGS, type DuoFighter, type DuoStage } from './duo-fx';
 import { createFluidFx } from './fluid-fx';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
+import { createFilmFx } from './film-fx';
 import { spellLaunch } from './battle-sounds';
 import { cometPath } from './trails';
 
@@ -85,7 +86,7 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', ...Object.keys(FREATICA_SKILLS)]);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'superficie-minima', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', ...Object.keys(FREATICA_SKILLS)]);
 /**
  * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
  * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
@@ -419,6 +420,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const mathCast = createMathCast(app, battleRoot, effects);
   // What his skills past Foc Binari draw in the middle of that circle (src/math-figures.ts).
   const figures = createMathFigures(app, battleRoot, effects);
+  // Superficie mínima's soap film: drawn there, then held round an ally until the round ends (src/film-fx.ts).
+  const filmFx = createFilmFx({ effects, figures, cue: (id, options) => cue(id, options) });
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
   /**
@@ -1877,6 +1880,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     // Análisis Parálisis: Gerard works it out in a flash of gold; the stats rising are the rest (effect.stats).
     // ∂Q/∂t Condensador: the charge went into him with the figure (src/math-figures.ts); its look stays on him (Cargado).
     if (action.skill === 'condensador') { pulse?.(.25, .3); return; }
+    // Superficie mínima: the film settles round them (src/film-fx.ts); a soft flash of water light.
+    if (action.skill === 'superficie-minima') { pulse?.(0, .25); hit(target, ELEMENT_FLASH.agua, .55); return; }
     if (action.skill === 'analisis') { pulse?.(.1, .3); hit(actor, gold, 1.1); effects.insight(new pc.Vec3(actor.base.x, groundHeight(actor.base.x, actor.base.z) + 2.1 * actor.scale.y, actor.base.z)); return; }
     // Cardioide: a heart-shaped curve of green light under whoever it cures, and the cure rising up them.
     if (action.skill === 'cardioide') { pulse?.(0, .3); hit(target, green, 1); effects.cardioid(target.model); return; }
@@ -2187,6 +2192,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const shorts = !!e.shorted && e.shorted.why !== 'again';
       figures.cortocircuito({ centre, view, to: v3(chestOf(target)), radius: extent(target).radius, shorts, size });
     } else if (e.skill === 'condensador') figures.condensador({ centre, view, to: v3(chestOf(actor)), size });
+    else if (e.skill === 'superficie-minima') {
+      // Taken once: how big they are; where they stand, every frame (they may be thrown back by a blow).
+      const body = extent(target);
+      const id = e.target!;
+      filmFx.cast(id, { centre, facing: screenAxes(view).facing, size, body: () => {
+        if (fighters.get(id) !== target) return undefined;
+        const p = target.model.getPosition();
+        return { feet: { x: p.x, y: groundHeight(p.x, p.z), z: p.z }, height: body.height, radius: body.radius };
+      } });
+    }
     else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
     else {
       const foes = reachedBy(e).map(({ f }) => figureFoe(f));
@@ -3876,7 +3891,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -3912,6 +3927,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (state?.light) for (const foe of state.foes) if (foe.kind?.startsWith('estampado')) { const f = fighters.get(foe.id); if (f) lightShirt(f.model, shirtLit(state, foe)); }
       dualFx.update(dt);
       figures.update(dt);
+      // Superficie mínima: a film whose round is over (or whose ally fell) thins out and goes.
+      if (state) filmFx.keep(state.allies.filter(a => filmed(state!, a)).map(a => a.id), state.allies.filter(a => a.hp <= 0).map(a => a.id));
+      filmFx.update(dt);
       { const axes = screenAxes(viewDir()); stamps.update(dt, axes.right, axes.up, axes.facing); }
       if (mathCast.update(dt)) spellLaunch(effect?.element).forEach(sound => cue(sound.id, sound));
       entryTime = animate ? Math.min(ENTRY_SECONDS, entryTime + dt) : ENTRY_SECONDS;
@@ -3975,6 +3993,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const d = effect.discharge, from = fighters.get(d.from), to = fighters.get(d.target);
           if (from && to) dualFx.after(.22, () => { figures.discharge(v3(chestOf(from)), v3(chestOf(to)), viewDir()); hit(to, ELEMENT_FLASH.electrico, 1.3); statusFx.touch('electrico', d.target); shake = Math.max(shake, .4); });
         }
+        // Superficie mínima: a blow went through someone's film: it bursts and its drops fly at whoever struck.
+        if (animate) for (const f of effect.film ?? []) { const striker = fighters.get(f.target); if (striker) filmFx.burst(f.from, v3(chestOf(striker))); }
         // A blow the bit dome took whole lands on the dome (below), not on whoever it was aimed at.
         const landed = animate && effect && !domeStopped(effect) ? contactBurst(effect, actor, target) : undefined;
         // What the blow's element turned: its moment, as it lands (docs/combat.md § Reacciones entre elementos).
@@ -4450,8 +4470,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Integral impropia opens his circle towards the middle of the party, where it will lie.
         // ∂Q/∂t Condensador, aimed at himself, opens it before him.
         const ahead = () => { const v = viewDir(), d = Math.hypot(v.x, v.z) || 1; return { x: chest.x + v.x / d, y: chest.y + .3, z: chest.z + v.z / d }; };
-        const aim = effect!.skill === 'integral' ? partyMiddle() ?? chest : effect!.skill === 'condensador' ? ahead() : chest;
-        mathCast.start(hand, aim, { element: focBinari ? 'fuego' : effect!.skill === 'condensador' ? 'electrico' : effect!.element, cure: curing || effect!.skill === 'integral', ball: spelling, launch: castLaunch, zero: takeZero(actor.model, hand.getPosition()), size: state?.allies.some(a => a.id === effect!.actor && !grownUp(a.profile)) ? CHILD_CIRCLE : 1 });
+        const aim = effect!.skill === 'integral' ? partyMiddle() ?? chest : effect!.skill === 'condensador' || (effect!.skill === 'superficie-minima' && target === actor) ? ahead() : chest;
+        mathCast.start(hand, aim, { element: focBinari ? 'fuego' : effect!.skill === 'condensador' ? 'electrico' : effect!.skill === 'superficie-minima' ? 'agua' : effect!.element, cure: curing || effect!.skill === 'integral', ball: spelling, launch: castLaunch, zero: takeZero(actor.model, hand.getPosition()), size: state?.allies.some(a => a.id === effect!.actor && !grownUp(a.profile)) ? CHILD_CIRCLE : 1 });
       }
       if (focBinari && animate && actor && target && cast !== effect && t >= CAST_LAUNCH) {
         cast = effect;

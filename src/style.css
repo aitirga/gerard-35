@@ -636,6 +636,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .damage-pop[data-kind="status"][data-status="combustion"] strong { text-shadow: 3px 3px 0 #16282399, 0 0 14px #ff9a3c, 0 0 28px #ff6a1f; }
 .damage-pop[data-kind="status"][data-status="reinicio"] { --status: #8ff1ff; }
 /* Tecnópata's grade III: the bit shield on the party's plates, the swarm on a foe; the volcano on each foe under it. */
+.unit-statuses i[data-status="pelicula"], .summary-tags [data-status="pelicula"], .damage-pop[data-kind="status"][data-status="pelicula"] { --status: #6cc8f2; }
 .unit-statuses i[data-status="bits"], .summary-tags [data-status="bits"], .damage-pop[data-kind="status"][data-status="bits"] { --status: #7fe9ff; }
 .unit-statuses i[data-status="virus"], .summary-tags [data-status="virus"], .damage-pop[data-kind="status"][data-status="virus"] { --status: #9ff4ff; }
 .unit-statuses i[data-status="volcan"], .summary-tags [data-status="volcan"], .damage-pop[data-kind="status"][data-status="volcan"] { --status: #ff8a3c; }

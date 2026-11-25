@@ -24,6 +24,8 @@ export const FIGURES = {
   descarga: { contact: 1, end: 1.7 },
   cortocircuito: { contact: 1, end: 1.6 },
   condensador: { contact: 1.3, end: 1.8 },
+  // Superficie mínima: the rings drawn and parted, then flown to the ally; it settles round them at its contact (src/film-fx.ts).
+  'superficie-minima': { contact: 1.4, end: 1.85 },
 } as const satisfies Record<string, { contact: number; end: number }>;
 export type FigureSkill = keyof typeof FIGURES;
 export const isFigure = (skill?: string): skill is FigureSkill => !!skill && skill in FIGURES;

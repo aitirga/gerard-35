@@ -451,6 +451,25 @@ function chargeWorth(state: BattleState) {
   for (const foe of state.foes.filter(f => f.hp > 0)) for (const bolt of bolts) best = Math.max(best, damageOn(state, { ...bolt, target: foe.id }, foe.id));
   return best * (CONDENSADOR.scale - 1) * .6;
 }
+/**
+ * Superficie mínima: what a foe its film leaves wet is worth to `smart` (a turn Cortocircuito can take for sure, a bolt that
+ * runs on to it, the gas or the current a dual makes of it). A copy never sees the foes' turn, so `filmWorth` plays it.
+ */
+const FILM_WORTH = 14;
+/**
+ * What a soap film round `allyId` (Superficie mínima) is worth to `smart`: the foes' turn played on a copy (`threatOn`'s way)
+ * after it, so the blows it is told of (a move announced on them) count for sure: the PV its guard keeps off them, and each foe
+ * whose blow reaches them through it, FILM_WORTH, less the fire its water puts out (Humo).
+ */
+function filmWorth(after: BattleState, allyId: string, threat: Threat) {
+  const look = copy(after), ally = look.allies.find(a => a.id === allyId);
+  if (!ally) return 0;
+  const hp = ally.hp, fires = new Map(look.foes.map(f => [f.id, f.timed?.quemado?.level ?? 0]));
+  look.phase = 'enemy'; look.enemyActions = [];
+  let touched = 0;
+  for (const foe of look.foes) if (foe.hp > 0 && look.phase === 'enemy') for (const t of enemyAct(look, foe.id)?.film ?? []) touched += FILM_WORTH - (t.left === 'cegado' ? (fires.get(t.target) ?? 0) * 10 : 0);
+  return touched + Math.max(0, (threat.hp.get(allyId) ?? 0) - (hp - ally.hp));
+}
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 7;
 /** A third-year Repetidor's crust: each of the blows that crack it, since every blow after the last one lands whole. */
 const CRUST_WORTH = 25;
@@ -593,6 +612,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (after.foes.some((foe, i) => foe.shock && !before.foes[i]?.shock)) value += sum(threat) - sum(threatOn(after));
   // ∂Q/∂t Condensador: about what the charge will add to the next electric blow, or take off a foe that strikes first.
   if (choice.skill === 'condensador') value += chargeWorth(before);
+  // Superficie mínima: the guard and the water the foes' own blows will bring, the real rules on a copy.
+  if (choice.skill === 'superficie-minima' && choice.target) value += filmWorth(after, choice.target, threat);
   // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
   const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
   if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));

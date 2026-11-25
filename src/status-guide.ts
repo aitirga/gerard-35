@@ -183,6 +183,10 @@ export const GUIDES = {
     name: 'Cargado', group: 'favor', icon: 'cargado', colour: '#fff2a8', rule: CONDENSADOR,
     text: `Carga eléctrica: su siguiente golpe eléctrico hace ${CONDENSADOR.scale === 2 ? 'el doble' : `${CONDENSADOR.scale} veces más`} de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.`,
   },
+  pelicula: {
+    name: 'Película de jabón', group: 'favor', icon: 'pelicula', colour: '#6cc8f2',
+    text: 'Una película de jabón alrededor: recibe un tercio de cada golpe hasta el final de la ronda. Cada enemigo que le golpee recibe su agua, sin daño: queda mojado, y si ardía se le apaga el fuego y si estaba empolvado se envenena.',
+  },
   bits: {
     name: 'Escudo de bits', group: 'favor', icon: 'bits', colour: '#7fe9ff', rule: BITS,
     text: `Una cúpula de bits sobre el equipo: para cada golpe entero mientras le queden PV. Dura ${BITS.rounds} rondas.`,

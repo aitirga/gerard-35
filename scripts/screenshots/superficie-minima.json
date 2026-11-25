@@ -1,0 +1,194 @@
+{
+  "title": "Matemágico · Superficie mínima",
+  "description": "docs/animas/matemagico/README.md § Superficie mínima (Matemágico grows, 2026-11-25): the water line's guard. In the fight tester against three sturdy dogs that bite back, one player leading both. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Aagua%22%2C%22matemagico%3Avasos%22%2C%22matemagico%3Asuperficie-minima%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Atoma-de-tierra%22%2C%22matemagico%3Acortocircuito%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "The water line with its new branch: Cubo acuático, then Superficie mínima (1 maná), a guard"
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"superficie-minima\"]').click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "elegir-aliado",
+      "delay": 100,
+      "caption": "Superficie mínima picks an ally, himself too"
+    },
+    {
+      "eval": "(document.querySelector('.battle-target[data-target=\"aitor\"]:not([disabled])') ?? document.querySelector('.roster-target[data-target=\"aitor\"]')).click()"
+    },
+    {
+      "record": "pelicula",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Superficie mínima on Aitor: two gold rings drawn in his circle part and a soap film forms between them, a catenoid; they fly to Aitor, one to the ankles and one over the head, the film an hourglass sleeve in thin-film colours"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "shot": "pelicula-en-pie",
+      "delay": 200,
+      "caption": "The film held round Aitor until the round ends: its icon on his plate (a catenoid's profile)"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "estalla",
+      "seconds": 5.5,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "The dogs' turn: the one that bites Aitor goes through the film; it ripples and bursts like soap, its rim running back, and the drops fly at the dog: ¡Mojado!"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "shot": "mojado",
+      "delay": 200,
+      "caption": "The dog that struck through it is wet (Mojado on its plate), with no blow"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"cortocircuito\"]').click()"
+    },
+    {
+      "eval": "(document.querySelector('.battle-target[data-target=\"dog-1\"]:not([disabled])') ?? document.querySelector('.roster-target[data-target=\"dog-1\"]')).click()"
+    },
+    {
+      "record": "cortocircuito",
+      "seconds": 1.9,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "The payoff: Cortocircuito on the dog the film wet, and it loses its next turn"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[1].timed = { ...s.foes[1].timed, quemado: { level: 2, left: 10, next: 2.5 } }; delete s.foes[1].shock; })"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"superficie-minima\"]').click()"
+    },
+    {
+      "eval": "(document.querySelector('.battle-target[data-target=\"aitor\"]:not([disabled])') ?? document.querySelector('.roster-target[data-target=\"aitor\"]')).click()"
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "humo",
+      "seconds": 5.5,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "A burning dog strikes through the film: its water puts the fire out: Humo, ¡Cegado!"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"superficie-minima\"]').click()"
+    },
+    {
+      "eval": "(document.querySelector('.battle-target[data-target=\"aitor\"]:not([disabled])') ?? document.querySelector('.roster-target[data-target=\"aitor\"]')).click()"
+    },
+    {
+      "wait": 2300
+    },
+    {
+      "shot": "sin-golpe",
+      "delay": 100,
+      "caption": "A film nobody will strike: the dogs are all in Shock this round"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.shock = true; }); })"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Digit4",
+      "gap": 0
+    },
+    {
+      "record": "se-seca",
+      "seconds": 7,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "The round ends with no blow: the film thins to black film from the top, its colours going out, and the last of it comes apart in motes; the rings dim with it"
+    }
+  ]
+}
