@@ -161,3 +161,87 @@ export function writeSurface(model: pc.Entity, target: Float32Array, offset: num
   });
   return written;
 }
+
+/** One point of a model's surface that something stays on (a shard stuck in it): a mesh and which of its samples. */
+export interface SurfaceAnchor { instance: pc.MeshInstance; index: number }
+const anchorSkin: pc.Mat4[] = [];
+const anchorPoint = new pc.Vec3(), anchorNormal = new pc.Vec3();
+
+/** The meshes of `model` that can be sampled now, with their samples and their area in the world. */
+function sampled(model: pc.Entity) {
+  const meshes: { m: pc.MeshInstance; s: MeshSamples; area: number }[] = [];
+  for (const r of model.findComponents('render') as pc.RenderComponent[]) {
+    if (!r.enabled || !r.entity.enabled) continue;
+    for (const m of r.meshInstances) {
+      if (!m.visible || !m.mesh) continue;
+      const s = meshSamples(m.mesh);
+      if (!s) continue;
+      (m.skinInstance ? model : m.node).getWorldTransform().getScale(scale);
+      meshes.push({ m, s, area: s.area * Math.abs(scale.x * scale.y + scale.y * scale.z + scale.z * scale.x) / 3 });
+    }
+  }
+  return meshes;
+}
+
+/** Carries the `indices` samples of `m` to where its mesh is now, bent by its bones, calling `each` with world position and normal. */
+function carry(m: pc.MeshInstance, s: MeshSamples, indices: readonly number[], each: (k: number, position: pc.Vec3, normal: pc.Vec3) => void) {
+  const skin = m.skinInstance;
+  let world: pc.Mat4 | undefined;
+  if (skin && s.bones) {
+    const inverse = skin.skin.inverseBindPose;
+    skin.bones.forEach((bone, b) => { (anchorSkin[b] ??= new pc.Mat4()).mul2(bone.getWorldTransform(), inverse[b]); });
+  } else world = m.node.getWorldTransform();
+  indices.forEach((i, k) => {
+    point.set(s.position[i * 3], s.position[i * 3 + 1], s.position[i * 3 + 2]);
+    normal.set(s.normal[i * 3], s.normal[i * 3 + 1], s.normal[i * 3 + 2]);
+    if (world) { world.transformPoint(point, anchorPoint); world.transformVector(normal, anchorNormal); }
+    else {
+      anchorPoint.set(0, 0, 0); anchorNormal.set(0, 0, 0);
+      for (let j = 0; j < 4; j++) {
+        const w = s.weights![i * 4 + j], matrix = anchorSkin[s.bones![i * 4 + j]];
+        if (w <= 0 || !matrix) continue;
+        const d = matrix.data, x = point.x, y = point.y, z = point.z;
+        anchorPoint.x += (d[0] * x + d[4] * y + d[8] * z + d[12]) * w;
+        anchorPoint.y += (d[1] * x + d[5] * y + d[9] * z + d[13]) * w;
+        anchorPoint.z += (d[2] * x + d[6] * y + d[10] * z + d[14]) * w;
+        anchorNormal.x += (d[0] * normal.x + d[4] * normal.y + d[8] * normal.z) * w;
+        anchorNormal.y += (d[1] * normal.x + d[5] * normal.y + d[9] * normal.z) * w;
+        anchorNormal.z += (d[2] * normal.x + d[6] * normal.y + d[10] * normal.z) * w;
+      }
+    }
+    anchorNormal.normalize();
+    each(k, anchorPoint, anchorNormal);
+  });
+}
+
+/**
+ * Up to `count` points on `model`'s surface as it stands now, chosen by area, each one kept if
+ * `keep` says so (where it is, which way it faces, the points already chosen). Each stays on its
+ * mesh as the model moves (`placeAnchors`).
+ */
+export function pickAnchors(model: pc.Entity, count: number, keep: (position: pc.Vec3, normal: pc.Vec3, chosen: readonly pc.Vec3[]) => boolean, tries = count * 12): SurfaceAnchor[] {
+  const meshes = sampled(model), total = meshes.reduce((sum, e) => sum + e.area, 0);
+  if (!total) return [];
+  const out: SurfaceAnchor[] = [], chosen: pc.Vec3[] = [];
+  for (let t = 0; t < tries && out.length < count; t++) {
+    let want = Math.random() * total, e = meshes[0];
+    for (const candidate of meshes) { e = candidate; if ((want -= candidate.area) <= 0) break; }
+    const index = Math.floor(Math.random() * e.s.position.length / 3);
+    let ok = false;
+    carry(e.m, e.s, [index], (_, p, n) => { ok = keep(p, n, chosen); if (ok) chosen.push(p.clone()); });
+    if (ok) out.push({ instance: e.m, index });
+  }
+  return out;
+}
+
+/** Where each of `anchors` is now on `model`, and which way its surface faces there (false for one whose mesh is gone). */
+export function placeAnchors(anchors: readonly SurfaceAnchor[], positions: pc.Vec3[], normals: pc.Vec3[]) {
+  const found: boolean[] = anchors.map(() => false), byMesh = new Map<pc.MeshInstance, number[]>();
+  anchors.forEach((a, k) => { const list = byMesh.get(a.instance); if (list) list.push(k); else byMesh.set(a.instance, [k]); });
+  for (const [m, list] of byMesh) {
+    const s = m.mesh ? meshSamples(m.mesh) : undefined;
+    if (!s || !m.node) continue;
+    carry(m, s, list.map(k => anchors[k].index), (j, p, n) => { const k = list[j]; positions[k].copy(p); normals[k].copy(n); found[k] = true; });
+  }
+  return found;
+}

@@ -83,6 +83,7 @@ drawn for.
 | --- | --- | --- |
 | Bubble-gum pink to magenta, saturated (hue ~320–345°: `#ff6fae`, `#d94a8c`, `#ff3d8b`) | La Reina Bubbaloo | Her palace, her gum and bubbles, her minions, her tint (`bubbaloo`), the bubble that opens a mission's dungeon. A real pink thing elsewhere (a sign, a flower) is muted or shifted to red or violet. |
 | Violet (`#c9a2ff`, violet-black) | People she holds (violet eyes) and fear (Uri's tower) | Possessed eyes; fear dungeons |
+| Amethyst crystal (deep `#3a1080` to `#7434d8`, faceted and lit) | Cristalizado (Aitor 2026-11-25) | The spikes stuck in a foe and their chips (`src/shard-spikes.ts`) only: solid lit glass on a body, never a place's light, a haze or eyes, so it never reads as her violet |
 | Dark pink eyes | Animals she holds | Their eyes only |
 | Midnight-ink navy `#0f1a2c` graph paper with gold `#f3cf78` lines (a blueprint) | Matemágico | Its interface only. Navy in the world (Gerard's stripes, a place's paint) is not reserved |
 | Amber glass | The lights of the people helped | The jar at home |

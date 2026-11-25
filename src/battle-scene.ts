@@ -664,6 +664,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       else statusFx.remove(id, 'cargado');
     } else if (capacitor) statusFx.hold(id, 'cargado', 30);
     powderFx.track(id, timed?.empolvado?.left, nextMix);
+    powderFx.trackShards(id, timed?.cristalizado);
     for (const look of ['sangrado', 'mareo', 'llorera'] as const) {
       const n = statuses?.[look] ?? 0, key = `${id}:${look}`;
       if ((shownStacks.get(key) ?? 0) === n) continue;
@@ -3983,7 +3984,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // A cortina of powder: the one that stands up now, and the one this blow went through, which bursts over whoever dealt it (Rebufo).
         if (animate && effect.cortina?.raised) powderFx.telon(effect.cortina.raised, foesCentre(), effect.cortina.raised.map(() => nextMix()));
         if (animate) for (const id of effect.cortina?.broke ?? []) powderFx.romper(id, effect.cortina!.rebufo);
-        // A blow on someone full of shards knocks a few out.
+        // A blow on someone full of shards drives them in deeper.
         if (animate) effect.amplified?.forEach(a => { if (a.shards) powderFx.splinter(a.target); });
         // Punto débil spent: its mark bursts and the blow lands bigger (three times as hard).
         const spent = markSpent(effect) ? [effect.target] : effect.hits?.filter(h => h.weakSpot).map(h => h.target) ?? [];
