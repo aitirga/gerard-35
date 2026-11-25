@@ -9,8 +9,9 @@ import type { DuoStage, DuoStaging } from './types';
 /**
  * Arco voltaico (∂Q/∂t Condensador + Acecho, docs/animas/README.md § Combined skills): Acecho with the condenser's
  * charge. Its turn, Gerard draws a parabola of gold neon in front of him, its focus a bead and its directrix dashed;
- * it rises and turns in the world until its axis stands over the prey and its focus sits on its chest: an arch of
- * light over it, running down to the floor on either side. While the cat waits charged (`Combatant.stalk`), sparks
+ * it rises and turns in the world until its axis stands over the prey and its focus sits just in front of its chest
+ * (towards the camera, so the body never hides where the light meets): an arch of light over it, running down to the
+ * floor on either side. While the cat waits charged (`Combatant.stalk`), sparks
  * rise out of the floor under the arch, parallel, strike a parabolic mirror on the GPU that stands along it (a
  * `paraboloid` volume in `mirror` mode, opening down) and converge for real on the focus, their small spread drawing
  * the caustic's bright seam; the cat crouches at her place, her fur standing with static. A foe that strikes her
@@ -41,25 +42,25 @@ const KINDS: Record<string, GpuKind> = {
     shape: 'glow', blur: [.3, .9], drag: 0, gravity: 0, size: [.05, .16], sizeJitter: .4, colours: ['#ffffff', '#fff1a0', '#f3cf78'],
     intensity: [6, 3.4, 1], middle: .3, fadeIn: 0, fadeOut: .6, additive: 1, flicker: .4, core: .7,
   },
-  // Static in the cat's fur: short chains that crackle and twist.
+  // Static in the cat's fur: short chains that crackle and twist, thick enough to read at the fight's distance.
   'arco-estatica': {
-    shape: 'strand', drag: 2.5, gravity: 0, curl: 3, response: 1, follow: 34, size: [.005, .003], sizeJitter: .4,
-    colours: ['#ffffff', '#ffe45c', '#f3cf78'], intensity: [6, 3.6, 1.4], middle: .3, fadeIn: 0, fadeOut: .35, additive: 1, flicker: .6, core: .7,
+    shape: 'strand', drag: 2.5, gravity: 0, curl: 3, response: 1, follow: 34, size: [.012, .006], sizeJitter: .4,
+    colours: ['#ffffff', '#ffe45c', '#f3cf78'], intensity: [8, 5, 2], middle: .3, fadeIn: 0, fadeOut: .35, additive: 1, flicker: .6, core: .7,
   },
-  // The bolt: crisp dots that stay where they are drawn.
+  // The bolt: crisp dots that stay where they are drawn, yellow rather than white so it reads as a line, not a bloom.
   'arco-rayo': {
-    shape: 'dot', drag: 14, gravity: 0, curl: 0, response: 0, size: [.03, .012], sizeJitter: .3,
-    colours: ['#ffffff', '#fff3a0', '#ffd23a'], intensity: [9, 5, 2.2], middle: .25, fadeIn: 0, fadeOut: .5, additive: 1, flicker: .35, core: .85,
+    shape: 'dot', drag: 14, gravity: 0, curl: 0, response: 0, size: [.026, .01], sizeJitter: .3,
+    colours: ['#fff6c8', '#ffe45c', '#d9a441'], intensity: [5.5, 3.4, 1.6], middle: .25, fadeIn: 0, fadeOut: .5, additive: 1, flicker: .35, core: .85,
   },
   // Plasma shed along her flight: hot motes that hang and cool.
   'arco-plasma': {
     shape: 'glow', blur: [.2, .8], drag: 3, gravity: -.4, curl: .6, response: .4, size: [.03, .07], sizeJitter: .5,
     colours: ['#ffffff', '#ffe45c', '#d9a441'], intensity: [5, 2.6, .6], middle: .3, fadeIn: 0, fadeOut: .5, additive: 1, flicker: .3, core: .6,
   },
-  // The arch breaking: splinters of gold that spin, fall and skitter.
+  // The arch breaking: splinters of gold that spin, fall and skitter (gold, not white: on the crítico's flash they must still read as pieces).
   'arco-esquirla': {
     shape: 'shard', drag: .6, gravity: 7.5, curl: .1, response: .2, collide: true, bounce: .35, friction: .5, size: [.024, .014], sizeJitter: .6, stretch: .012, spin: 640,
-    colours: ['#fff4d6', '#f3cf78', '#b8792a'], intensity: [4, 2.6, 1.2], middle: .3, fadeIn: 0, fadeOut: .3, additive: .5, glass: .3, core: .4,
+    colours: ['#fbe6a8', '#f3cf78', '#b8792a'], intensity: [2.8, 2, 1], middle: .3, fadeIn: 0, fadeOut: .3, additive: .4, glass: .3, core: .4,
   },
 };
 const FALLBACK: Record<string, string> = { 'arco-chispa': 'spark', 'arco-foco': 'bloom', 'arco-estatica': 'crackle', 'arco-rayo': 'glyph', 'arco-plasma': 'ember', 'arco-esquirla': 'chip' };
@@ -84,47 +85,81 @@ const UP: V3 = { x: 0, y: 1, z: 0 };
 const xy = (x: number, y: number): V3 => ({ x, y, z: 0 });
 
 /**
- * The arch over a prey, from the side the cat comes from: in the vertical plane through her and it, its focus on its
- * chest and its axis straight up through it, wide enough at the floor (`reach` each side) to stand clear of it. Its
- * focal length is what makes the curve meet the floor at `reach`: `f² + h·f = reach²/4`, `h` the chest's height.
+ * The arch over a prey, from the side the cat comes from: in a vertical plane along her way to it, its axis straight
+ * up, wide enough at the floor (`reach` each side) to stand clear of it. Its focus is the prey's chest, drawn a little
+ * in front of it (`toward`, the camera's side) so the light meets where the body cannot hide it; the cat
+ * still lands on the chest. Its focal length is what makes the curve meet the floor at `reach`: `f² + h·f = reach²/4`,
+ * `h` the focus's height.
  */
 export interface ArcGeometry {
-  focus: V3; dir: V3; f: number; reach: number; height: number;
+  /** Where the arch's focus is drawn; `chest`: the prey's, where she lands. */
+  focus: V3; chest: V3; dir: V3; f: number; reach: number; height: number;
   /** Where the arch is at `x` along it (metres from its axis, towards the cat negative). */
   at(x: number): V3;
   /** The figure's frame: x along `dir`, y up, its origin on the focus. */
   frame: NeonFrame;
 }
-export function arcGeometry(from: V3, target: { chest: V3; feet: V3; radius: number; height: number }): ArcGeometry {
+export function arcGeometry(from: V3, target: { chest: V3; feet: V3; radius: number; height: number }, toward?: V3): ArcGeometry {
   let dir = { x: target.feet.x - from.x, y: 0, z: target.feet.z - from.z };
   if (Math.hypot(dir.x, dir.z) < .05) dir = { x: 1, y: 0, z: 0 };
   dir = norm(dir);
-  const h = Math.max(.35, target.chest.y - target.feet.y), reach = Math.max(1.15, target.radius + .95);
+  const out = toward && Math.hypot(toward.x, toward.z) > .05 ? norm({ x: toward.x, y: 0, z: toward.z }) : { x: 0, y: 0, z: 0 };
+  // Level with the chest, not over it: higher, a short foe's status chips would sit on the bead.
+  const focus = add(target.chest, out, target.radius * .9 + .25);
+  const h = Math.max(.35, focus.y - target.feet.y), reach = Math.max(1.15, target.radius + .95);
   const f = (-h + Math.sqrt(h * h + reach * reach)) / 2;
-  const focus = target.chest, facing = cross(dir, UP);
+  const facing = cross(dir, UP);
   return {
-    focus, dir, f, reach, height: target.height,
+    focus, chest: target.chest, dir, f, reach, height: target.height,
     at: x => add(add(focus, dir, x), UP, f - x * x / (4 * f)),
     frame: { at: focus, right: dir, up: UP, facing },
   };
+}
+/** The arch each waiting ally's cat runs, and over which prey: one source for the figure and the scene's run. */
+const arches = new Map<string, { prey: string; geo: ArcGeometry }>();
+/**
+ * The arch `holder`'s cat runs onto `prey`: the one drawn for it, or, if she goes for another (it fell), one `make`s
+ * once for both the scene and the figure, whichever asks first.
+ */
+export function arcFor(holder: string, prey: string, make: () => ArcGeometry): ArcGeometry {
+  const known = arches.get(holder);
+  if (known?.prey === prey) return known.geo;
+  const geo = make();
+  arches.set(holder, { prey, geo });
+  return geo;
 }
 /**
  * Where the cat is `t` seconds into her pounce along `g` from `rest` (on the floor): the dash to the near foot, the
  * arch to its vertex at an even pace across (a thrown body's), down the axis onto the prey's back, and home.
  * `lift`: how far over the floor; `leap`: in the air (0–1) or undefined.
  */
-export function arcRun(g: ArcGeometry, rest: V3, t: number): { at: V3; lift: number; leap?: number; crouch: number } {
-  const P = ARC_POUNCE, foot = { ...g.at(-g.reach), y: rest.y }, vertex = g.at(0);
-  // She lands on its back, under the vertex: never higher than the vertex, never lower than the focus.
-  const back = { ...g.focus, y: Math.min(vertex.y - .05, Math.max(g.focus.y, rest.y + g.height * .82)) };
-  const floorAt = (p: V3) => ({ at: { ...p, y: rest.y }, lift: Math.max(0, p.y - rest.y) });
-  if (t < P.spring) return { at: rest, lift: 0, crouch: 1 };
-  if (t < P.foot) { const u = ease((t - P.spring) / (P.foot - P.spring)); return { at: mix(rest, foot, u), lift: Math.sin(u * Math.PI) * .18, leap: u, crouch: 0 }; }
-  if (t < P.apex) { const u = (t - P.foot) / (P.apex - P.foot), p = g.at(-g.reach * (1 - u)); return { ...floorAt(p), leap: .5, crouch: 0 }; }
-  if (t < P.contact) { const u = clamp01((t - P.apex) / (P.contact - P.apex)) ** 2; return { ...floorAt(mix(vertex, back, u)), leap: .5, crouch: 0 }; }
-  if (t < P.stay) return { ...floorAt(back), crouch: 1 };
-  const u = ease((t - P.stay) / (P.home - P.stay)), p = mix(back, rest, u);
-  return { at: { ...p, y: rest.y }, lift: Math.max(0, (back.y - rest.y) * (1 - u) * (1 - u)) + Math.sin(u * Math.PI) * .35, leap: u < 1 ? u : undefined, crouch: 0 };
+export interface ArcPose { at: V3; lift: number; leap?: number; crouch: number }
+/**
+ * Where the cat is `t` seconds into her pounce along `g` from `rest` (on the floor): the dash to the near foot, the
+ * arch to its vertex at an even pace across (a thrown body's), down onto the prey's back, and home. Written into
+ * `out` (its `at` too), so a frame allocates nothing. `lift`: how far over the floor; `leap`: in the air (0–1) or undefined.
+ */
+export function arcRun(g: ArcGeometry, rest: V3, t: number, out: ArcPose = { at: { x: 0, y: 0, z: 0 }, lift: 0, crouch: 0 }): ArcPose {
+  const P = ARC_POUNCE, vertex = g.at(0);
+  // She lands on its back, on the chest under the drawn focus: never higher than the vertex, never lower than the chest.
+  const backY = Math.min(vertex.y - .05, Math.max(g.chest.y, rest.y + g.height * .82));
+  const put = (x: number, y: number, z: number, lift: number, leap: number | undefined, crouch: number) => {
+    out.at.x = x; out.at.y = y; out.at.z = z; out.lift = lift; out.leap = leap; out.crouch = crouch;
+    return out;
+  };
+  if (t < P.spring) return put(rest.x, rest.y, rest.z, 0, undefined, 1);
+  if (t < P.foot) {
+    const u = ease((t - P.spring) / (P.foot - P.spring)), foot = g.at(-g.reach);
+    return put(rest.x + (foot.x - rest.x) * u, rest.y, rest.z + (foot.z - rest.z) * u, Math.sin(u * Math.PI) * .18, u, 0);
+  }
+  if (t < P.apex) { const p = g.at(-g.reach * (1 - (t - P.foot) / (P.apex - P.foot))); return put(p.x, rest.y, p.z, Math.max(0, p.y - rest.y), .5, 0); }
+  if (t < P.contact) {
+    const u = clamp01((t - P.apex) / (P.contact - P.apex)) ** 2, y = vertex.y + (backY - vertex.y) * u;
+    return put(vertex.x + (g.chest.x - vertex.x) * u, rest.y, vertex.z + (g.chest.z - vertex.z) * u, Math.max(0, y - rest.y), .5, 0);
+  }
+  if (t < P.stay) return put(g.chest.x, rest.y, g.chest.z, Math.max(0, backY - rest.y), undefined, 1);
+  const u = ease((t - P.stay) / (P.home - P.stay));
+  return put(g.chest.x + (rest.x - g.chest.x) * u, rest.y, g.chest.z + (rest.z - g.chest.z) * u, Math.max(0, (backY - rest.y) * (1 - u) * (1 - u)) + Math.sin(u * Math.PI) * .35, u < 1 ? u : undefined, 0);
 }
 
 /** A jagged way from `a` to `b` (midpoint displacement), its kinks off the line by up to `rough` of each piece. */
@@ -152,14 +187,17 @@ function bolt(stage: DuoStage, pts: readonly V3[], o: { delay?: number; step?: n
 interface Wait {
   target: string; figure: NeonFigure; strokes: NeonStroke[]; geo: ArcGeometry;
   mirror?: GpuVolume; rain: GpuEmitter[]; knot?: GpuEmitter; radius: number;
-  charged: boolean; fur: number; gpu: unknown;
+  charged: boolean; fur: number; knotted: number; gpu: unknown;
   /** The pounce playing now: its effect, how long it has played, its trail. */
-  run?: { effect: BattleEffect; t: number; trail?: Trail; head: pc.Vec3; shed: number };
+  run?: { effect: BattleEffect; t: number; trail?: Trail; head: pc.Vec3; shed: number; rim: number };
 }
 /** Who waits (the ally whose cat crouches), and their arch. */
 const waits = new Map<string, Wait>();
 /** The jumps already shown (a foe's blow is answered once). */
 const jumped = new WeakSet<BattleEffect>();
+/** Scratch for the bursts on the cat each frame (a burst reads it at once). */
+const spot: V3 = { x: 0, y: 0, z: 0 };
+const over = (p: V3, up: number) => { spot.x = p.x; spot.y = p.y + up; spot.z = p.z; return spot; };
 
 /** The mirror along the arch: a paraboloid opening down from its vertex, its focus the arch's, within the arch's feet. */
 function raiseMirror(stage: DuoStage, w: Wait) {
@@ -167,14 +205,15 @@ function raiseMirror(stage: DuoStage, w: Wait) {
   if (!g) return;
   const flip = new pc.Quat().setFromAxisAngle(new pc.Vec3(w.geo.dir.x, 0, w.geo.dir.z), 180);
   w.mirror = g.volume({ shape: 'paraboloid', mode: 'mirror', at: w.geo.at(0), rotation: flip, size: { x: w.geo.f, y: w.geo.reach * .92, z: .03 } });
-  // Sparks out of the floor under it, straight up and a few degrees off true (so their meeting draws the caustic's
-  // seam, not one point); they die just past the focus.
-  const floor = { ...w.geo.focus, y: w.geo.focus.y - (w.geo.focus.y - stage.ground(w.geo.focus.x, w.geo.focus.z)) + .02 };
+  // Sparks out of the floor under it, straight up and a few degrees off true (a cone of about 2.5°, so their meeting
+  // draws the caustic's cusp, not one point); they die just past the focus.
+  const floor = { ...w.geo.focus, y: stage.ground(w.geo.focus.x, w.geo.focus.z) + .02 };
   const rise = 6.5, life = (w.geo.focus.y - floor.y + 2 * w.geo.f) / rise + .1;
   try {
-    // In rings round the prey, outside its body, so the rising rays and the way they bend inwards both show.
-    const rim = w.geo.reach * .9, inner = Math.min(rim * .8, w.radius + .15);
-    w.rain = [0, .5, 1].map(k => g.emitter(kindOf(stage, 'arco-chispa'), { at: floor, shape: 'ring', axis: UP, spread: inner + (rim - inner) * k, velocity: add({ x: 0, y: rise, z: 0 }, w.geo.dir, .4), speed: 0, cone: 0, life: [life * .9, life * 1.05], rate: 520, size: 1 }));
+    // In rings round the focus, the inner one well outside the body, so the rising rays and the way they bend inwards
+    // both show, in front of it.
+    const rim = w.geo.reach * .9, inner = Math.min(rim * .85, w.radius + .3);
+    w.rain = [0, .55, 1].map(k => g.emitter(kindOf(stage, 'arco-chispa'), { at: floor, shape: 'ring', axis: UP, spread: inner + (rim - inner) * k, velocity: { x: 0, y: rise, z: 0 }, speed: .15, cone: .044, life: [life * .9, life * 1.05], rate: 640, size: 1 }));
     w.knot = g.emitter(kindOf(stage, 'arco-foco'), { at: w.geo.focus, spread: .04, speed: .05, life: [.12, .2], rate: 40, size: .8, colour: C.bolt });
   } catch { /* the engine's kinds are full: the arch alone */ }
 }
@@ -221,16 +260,18 @@ export const staging: DuoStaging = {
     if (!target || !holder || !math) return;
     const old = waits.get(holder.id);
     if (old) end(old, holder.id, .1);
-    const cat = stage.cat(holder.id) ?? holder.feet, geo = arcGeometry(cat, target);
-    // Drawn small in front of Gerard, in the camera's plane, in the arch's own shape.
+    // From where she rests (not where she is this frame: she may still be settling), as the scene's run is.
     const axes = screenAxes(stage.view), small = .42;
+    const geo = arcGeometry(stage.catRest(holder.id) ?? holder.feet, target, axes.facing);
+    arches.set(holder.id, { prey: target.id, geo });
+    // Drawn small in front of Gerard, in the camera's plane, in the arch's own shape.
     const start: NeonFrame = { at: add(add(math.hand ?? math.chest, UP, .95), axes.facing, .5), right: axes.right, up: axes.up, facing: axes.facing, scale: small };
     const { figure, arch, bead, directrix, axis, strokes } = drawArch(stage, geo, start);
     stage.draw(figure, [arch], T.draw);
     stage.draw(figure, directrix, T.directrix, { delay: T.draw });
     stage.draw(figure, [...axis, bead], T.focus, { delay: T.draw + T.directrix, each: i => { if (i === axis.length) stage.cue('mark-set', { volume: .6 }); } });
     stage.cue('charge', { volume: .45 });
-    const w: Wait = { target: target.id, figure, strokes, geo, charged: true, fur: 0, gpu: stage.effects.gpu, rain: [], radius: target.radius };
+    const w: Wait = { target: target.id, figure, strokes, geo, charged: true, fur: 0, knotted: 0, gpu: stage.effects.gpu, rain: [], radius: target.radius };
     waits.set(holder.id, w);
     // It rises and turns until its axis stands over the prey and the focus sits on its chest, growing to its size.
     const goal = geo.frame, from = start.at, turn = T.settle - T.rise;
@@ -253,55 +294,64 @@ export const staging: DuoStaging = {
   },
   hold(stage, dt, state, playing) {
     if (!waits.size) return;
-    for (const [holder, w] of [...waits]) {
+    // (Deleting the entry being visited, as `end` does, is safe in a Map's own iteration.)
+    for (const [holder, w] of waits) {
       const ally = state.allies.find(a => a.id === holder);
       const running = playing?.pounceDual?.id === 'arco-voltaico' && playing.actor === holder ? playing : undefined;
-      // Another fight, or the moment lost (the wearer fell, took Papagato off), or the pounce come and gone.
+      // Another fight, or the moment lost (the wearer fell, took Papagato off, the fight ended first), or the pounce come and gone.
       if (w.gpu !== stage.effects.gpu || (!ally?.stalk && !running && !w.run)) { end(w, holder); continue; }
       if (!ally?.stalk && w.run && w.run.effect !== playing) { end(w, holder); continue; }
       // The charge jumped (a foe's blow found her): the mirror is dark from now on (`struck` drew the jump).
       // (While the blow that finds her plays, the mirror stays up until the jump is shown.)
-      const jumping = !!playing?.discharge?.arc && playing.discharge.from === holder && !jumped.has(playing);
+      const jumping = playing?.arcDischarge?.from === holder && !jumped.has(playing);
       if (ally?.stalk && ally.stalk.charged === false && w.charged && !jumping) { w.charged = false; lowerMirror(w); w.figure.glow(.5); }
-      // Her fur stands with static while she waits charged.
       const cat = stage.cat(holder);
+      // Her fur stands with static while she waits charged, and a faint knot of the charge sits on her back.
       if (cat && w.charged && !running && (w.fur -= dt) <= 0) {
         w.fur = .05;
-        burst(stage, 'arco-estatica', { at: add(cat, UP, .2), count: 6, chain: 3, spread: .13, speed: .9, life: [.1, .18], colour: Math.random() < .7 ? C.bolt : C.hot });
+        burst(stage, 'arco-estatica', { at: over(cat, .2), count: 10, chain: 3, spread: .17, speed: 1, life: [.1, .2], colour: Math.random() < .7 ? C.bolt : C.hot });
+        if (++w.knotted % 3 === 0) burst(stage, 'arco-foco', { at: over(cat, .26), count: 1, spread: .01, life: [.16, .24], size: 1.1, colour: C.bolt });
       }
       if (!running) continue;
       // The pounce: she runs the arch (the scene moves her, `arcRun`), a trail of plasma behind her.
       if (!w.run || w.run.effect !== running) {
         lowerMirror(w);
-        // Its prey fell: she goes for another, and the arch stands over that one at once (the scene works out the same one).
+        // Its prey fell: she goes for another, and the arch stands over that one at once (the same one the scene runs, `arcFor`).
         const prey = running.target ? stage.fighter(running.target) : undefined;
-        if (prey && running.target !== w.target && cat) {
+        if (prey && running.target !== w.target) {
           w.figure.fade(.15);
-          w.geo = arcGeometry(cat, prey); w.target = prey.id;
+          w.geo = arcFor(holder, prey.id, () => arcGeometry(stage.catRest(holder) ?? cat ?? prey.feet, prey, screenAxes(stage.view).facing)); w.target = prey.id;
           const fresh = drawArch(stage, w.geo, w.geo.frame);
           for (const s of fresh.strokes) s.show(0, 1);
           w.figure = fresh.figure; w.strokes = fresh.strokes;
         }
-        w.run = { effect: running, t: 0, head: new pc.Vec3(), shed: 0 };
+        w.run = { effect: running, t: 0, head: new pc.Vec3(), shed: 0, rim: 0 };
         if (cat) w.run.head.set(cat.x, cat.y + .2, cat.z);
-        w.run.trail = stage.effects.trails.follow(w.run.head, { colour: [C.hot, C.bolt], width: .1, life: .32, intensity: 3.6, additive: 1, core: .8, taper: 1.2 });
+        // Wide and bright: at the fight's distance her flight is the trail as much as her body.
+        w.run.trail = stage.effects.trails.follow(w.run.head, { colour: [C.hot, C.bolt], width: .16, life: .34, intensity: 5, additive: 1, core: .8, taper: 1.2 });
         w.figure.glow(running.pounceDual?.half ? .7 : 1.4, .4);
         stage.cue('whine', { volume: .7, pan: stage.pan(w.geo.focus) });
       }
       const run = w.run;
       run.t += dt;
       if (cat) run.head.set(cat.x, cat.y + .22, cat.z);
-      if (cat && run.t > ARC_POUNCE.foot - .05 && run.t < ARC_POUNCE.contact && (run.shed -= dt) <= 0) {
+      const flying = cat && run.t > ARC_POUNCE.foot - .05 && run.t < ARC_POUNCE.contact;
+      if (flying && (run.shed -= dt) <= 0) {
         run.shed = .016;
-        burst(stage, 'arco-plasma', { at: add(cat, UP, .2), count: 14, spread: .07, speed: .5, life: [.3, .55], colour: Math.random() < .3 ? C.white : C.bolt });
+        burst(stage, 'arco-plasma', { at: over(cat, .2), count: 14, spread: .07, speed: .5, life: [.3, .55], colour: Math.random() < .3 ? C.white : C.bolt });
+      }
+      // A gold rim of light on her head as she flies, so she reads against the arch.
+      if (flying && (run.rim -= dt) <= 0) {
+        run.rim = .03;
+        burst(stage, 'arco-foco', { at: over(cat, .3), count: 1, spread: .02, life: [.08, .12], size: 1.1, colour: C.gold });
       }
       if (run.t > ARC_POUNCE.contact + .15) run.trail?.stop();
     }
   },
   struck(stage, e) {
     // A foe's blow found the one waiting charged: the arch swings its focus onto it, and an arc leaves its vertex for it.
-    const d = e.discharge;
-    if (d?.arc && !jumped.has(e)) {
+    const d = e.arcDischarge;
+    if (d && !jumped.has(e)) {
       jumped.add(e);
       const w = waits.get(d.from), foe = stage.fighter(d.target);
       if (!w || !foe) return;
@@ -329,13 +379,18 @@ export const staging: DuoStaging = {
     if (e.pounceDual?.id !== 'arco-voltaico') return;
     const w = waits.get(e.actor), target = e.target ? stage.fighter(e.target) : undefined;
     if (!target) { if (w) end(w, e.actor); return; }
-    const top = w ? w.geo.at(0) : add(target.chest, UP, 1.2);
-    bolt(stage, jag(add(top, UP, .25), target.chest, .2, 4), { step: .002, life: .36, size: e.pounceDual.half ? 1.2 : 1.9 });
-    for (let k = 0; k < 3; k++) bolt(stage, jag(target.chest, add(target.chest, { x: rand(-1, 1), y: rand(-.6, .2), z: rand(-1, 1) }, .7), .25, 2), { delay: .03, life: .22, size: .9, colour: C.bolt });
-    burst(stage, 'arco-foco', { at: target.chest, count: 1, spread: .01, life: [.16, .22], size: e.pounceDual.half ? 2 : 3, colour: C.hot, light: { intensity: e.pounceDual.half ? 2.4 : 3.6, range: 3.5, colour: C.bolt } });
-    burst(stage, 'arco-plasma', { at: target.chest, count: e.pounceDual.half ? 90 : 200, spread: .12, speed: 3.2, life: [.3, .7], colour: C.bolt });
-    stage.hit(target.id, BOLT_FLASH, e.pounceDual.half ? 1.3 : 1.9);
-    stage.pulse(.8, .9, e.pounceDual.half ? .08 : .18); stage.punch(e.pounceDual.half ? .5 : 1);
+    // The bolt comes down the axis onto the drawn focus, in front of the body, and on into the chest.
+    const half = !!e.pounceDual.half, top = w ? w.geo.at(0) : add(target.chest, UP, 1.2), focus = w ? w.geo.focus : target.chest;
+    bolt(stage, [...jag(add(top, UP, .25), focus, .2, 4), target.chest], { step: .002, life: .36, size: half ? 1.2 : 1.9 });
+    for (let k = 0; k < 3; k++) bolt(stage, jag(focus, add(focus, { x: rand(-1, 1), y: rand(-.6, .2), z: rand(-1, 1) }, .7), .25, 2), { delay: .03, life: .22, size: .9, colour: C.bolt });
+    // The contact is already loud (the pounce's own crítico, its shake, a reaction's flash): no white-out on top of
+    // them, so the bolt and the splinters read in the very frame she lands.
+    burst(stage, 'arco-foco', { at: focus, count: 1, spread: .01, life: [.12, .16], size: half ? 1.1 : 1.5, colour: C.hot, light: { intensity: half ? 1.3 : 1.8, range: 3, colour: C.bolt } });
+    // Plasma thrown wide and late, after the frame she lands: a ball of it on the contact is only a white blur.
+    stage.fx.after(.06, () => burst(stage, 'arco-plasma', { at: focus, count: half ? 40 : 80, spread: .1, speed: 4.2, life: [.25, .55], colour: C.bolt }));
+    // The crítico already lights the prey white: a touch of the bolt's yellow over it, no more.
+    stage.hit(target.id, BOLT_FLASH, half ? .35 : .5);
+    if (!e.reaction) stage.pulse(.5, half ? .35 : .5, .04);
     stage.cue('snap', { pan: stage.pan(target.chest) }); stage.cue('zap', { delay: .03, volume: .8 });
     if (w) shatter(stage, w, e.actor);
   },

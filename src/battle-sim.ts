@@ -455,16 +455,24 @@ function chargeWorth(state: BattleState) {
 const STALK_SURE = .85;
 /**
  * What a cat waiting on its prey (Arco voltaico) is worth to `smart`: the foes' turn played out on a copy
- * (a charge that jumps to whoever strikes first, a prey that falls), then the pounce, in PV off the foes.
+ * (a charge that jumps to whoever strikes first, a prey that falls), then the pounce. Only what the dual does
+ * counts, in PV off the foes: its charge jumping (and what that bolt turned) and the pounce, not whatever else
+ * the foes' turn took off them (a bomb, a foe striking its own).
  */
 function pounceWorth(after: BattleState, holderId: string) {
   const look = copy(after);
   if (look.phase === 'player') { look.phase = 'enemy'; look.enemyActions = []; }
-  const hp = look.foes.map(f => f.hp);
-  for (const foe of look.foes) if (foe.hp > 0 && look.phase === 'enemy') enemyAct(look, foe.id);
+  let jump = 0;
+  for (const foe of look.foes) {
+    if (foe.hp <= 0 || look.phase !== 'enemy') continue;
+    const arc = enemyAct(look, foe.id)?.arcDischarge;
+    if (arc?.from === holderId) jump += arc.amount + (arc.reaction?.hits ?? []).reduce((sum, h) => sum + h.amount, 0);
+  }
   const holder = look.allies.find(a => a.id === holderId);
-  if (holder?.stalk && look.foes.some(f => f.hp > 0)) pounce(look, holder);
-  return look.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - f.hp), 0) * STALK_SURE;
+  if (!holder?.stalk || !look.foes.some(f => f.hp > 0)) return jump * STALK_SURE;
+  const hp = look.foes.map(f => f.hp);
+  pounce(look, holder);
+  return (jump + look.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - f.hp), 0)) * STALK_SURE;
 }
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 7;
 /** A third-year Repetidor's crust: each of the blows that crack it, since every blow after the last one lands whole. */

@@ -2080,10 +2080,15 @@ export interface BattleEffect {
   /** ∂Q/∂t Condensador: `stored` on whoever used it; `spent` doubling this blow. */
   capacitor?: 'stored' | 'spent';
   /**
-   * ∂Q/∂t Condensador: a foe struck the one carrying the charge, and it jumped to that foe. `arc`: the charge of a
-   * dual waiting (Arco voltaico), with what the bolt turned on that foe (`reaction`, its own PV in its hits).
+   * ∂Q/∂t Condensador: a foe struck the one carrying the charge, and it jumped to that foe.
    */
-  discharge?: { from: string; target: string; amount: number; arc?: true; reaction?: BattleEffect['reaction'] };
+  discharge?: { from: string; target: string; amount: number };
+  /**
+   * Arco voltaico: a foe struck the one waiting charged (`Combatant.stalk.charged`), and the dual's charge jumped to
+   * that foe, with what the bolt turned on it (`reaction`, its own PV in its hits). Apart from `discharge`: one blow
+   * that finds both Gerard carrying his Condensador and the one waiting makes both charges jump.
+   */
+  arcDischarge?: { from: string; target: string; amount: number; reaction?: BattleEffect['reaction'] };
   /** This foe's turn, lost to Shock: nothing else happened in it. */
   stunned?: true;
   /** El que no converge saw the party wait its water out, the first time: its figures stop for a moment (src/modelo-foes.ts). */
@@ -3043,8 +3048,8 @@ export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
   const aimedAtFoes = skillsFor(state, held).filter(s => (s.side === 'foes' || s.side === 'all-foes') && held.secondary >= s.cost && !dieUse(s.id));
   return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
 }
-/** A fight over: nothing queued or spent is left behind. */
-function endFight(state: BattleState) { delete state.queued; delete state.spent; }
+/** A fight over: nothing queued or spent is left behind, and no cat still waits on a prey (Acecho, Arco voltaico). */
+function endFight(state: BattleState) { delete state.queued; delete state.spent; for (const ally of state.allies) delete ally.stalk; }
 /**
  * After an action: the fight is won, or an ally still to act chooses, or the foes' turn comes. The
  * one who acted is through for the round (`spent`); allies may act in any order (two players choose
@@ -3103,9 +3108,9 @@ function shortCircuit(state: BattleState, target: Combatant, effect: BattleEffec
 }
 /**
  * ∂Q/∂t Condensador: a foe's blow found someone carrying the charge, and it jumps to that foe
- * (`CONDENSADOR.jump` of electric magic, with the wearer's stats).
+ * (`CONDENSADOR.jump` of electric magic, with the wearer's stats). Exported for its tests (a blow on everyone).
  */
-function discharge(state: BattleState, effect: BattleEffect) {
+export function discharge(state: BattleState, effect: BattleEffect) {
   if (effect.kind !== 'enemy') return;
   const foe = state.foes.find(f => f.id === effect.actor && f.hp > 0 && !f.part);
   if (!foe) return;
@@ -3118,9 +3123,10 @@ function discharge(state: BattleState, effect: BattleEffect) {
     state.message += ` ¡La carga de ${wearer.name} salta a ${foe.name}! −${amount} PV.`;
   }
   // A dual waiting charged (Arco voltaico): the charge jumps the same way, a bolt that turns what it finds on that foe,
-  // and the blow still to come lands at `jumped` of its power. One charge jumps a blow: his own first.
+  // and the blow still to come lands at `jumped` of its power. A blow that found Gerard's own charge as well makes both
+  // jump (his first): the foe only has to be standing still.
   const waiting = foe.hp > 0 ? state.allies.find(a => a.stalk?.charged && struck.has(a.id)) : undefined;
-  if (waiting && !effect.discharge) arcJump(state, waiting, foe, effect);
+  if (waiting) arcJump(state, waiting, foe, effect);
   if (!state.allies.every(a => a.hp <= 0) && beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
 }
 /**
@@ -3130,13 +3136,13 @@ function discharge(state: BattleState, effect: BattleEffect) {
  */
 function arcJump(state: BattleState, holder: Combatant, foe: Combatant, effect: BattleEffect) {
   holder.stalk!.charged = false;
-  const amount = hurt(state, foe, fearDamage(state, foe, magical(CONDENSADOR.jump, current(state, holder), current(state, foe)) * affinityScale(foe, 'electrico'), 'dual', 'electrico'));
+  const amount = hurt(state, foe, fearDamage(state, foe, magical(CONDENSADOR.jump, current(state, holder), current(state, foe)) * affinityScale(foe, 'electrico'), 'magic', 'electrico'));
   const d = DUALS.find(x => x.id === holder.stalk!.dual);
   state.message += ` ¡La carga de ${d?.name ?? 'su arco'} salta de ${holder.name} a ${foe.name}! −${amount} PV.`;
   // What the bolt turns, said on its own: the foe's blow is not the one that turned it.
   const bolt: BattleEffect = { kind: 'skill', actor: holder.id, target: foe.id, element: 'electrico', amount };
   react(state, holder, foe, 'electrico', bolt);
-  effect.discharge = { from: holder.id, target: foe.id, amount, arc: true, ...bolt.reaction ? { reaction: bolt.reaction } : {} };
+  effect.arcDischarge = { from: holder.id, target: foe.id, amount, ...bolt.reaction ? { reaction: bolt.reaction } : {} };
   if (bolt.shocked) effect.shocked = [...effect.shocked ?? [], ...bolt.shocked];
   if (bolt.current) effect.current = bolt.current;
   state.message += ` El golpe saldrá a la mitad.`;

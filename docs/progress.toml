@@ -784,7 +784,7 @@ file = "scripts/screenshots/duos-nuevos.json"
 # Aitor 2026-11-25 (the Matemágico expansion): Acecho with the condenser's charge, the first dual that waits on its prey.
 [[block.item]]
 title = "Dúo Arco voltaico (∂Q/∂t Condensador + Acecho): la gata espera cargada y salta por la parábola"
-note = "Reglas, prueba, aspecto (espejo parabólico en la GPU, src/duo-fx/arco-voltaico.ts) y su ensayo en «Probar un dúo». Sin objetivos de fight-sim todavía: los pone la fase de balance (aurelia-leccion-arco)."
+note = "Reglas, prueba, aspecto (espejo parabólico en la GPU, src/duo-fx/arco-voltaico.ts) y su ensayo en «Probar un dúo». Sin objetivos de fight-sim todavía: los pone la fase de balance (el par aurelia-leccion-arco, con y sin el dúo); hasta entonces sale en `just fight-sim coverage`."
 grep = "id: 'arco-voltaico'"
 in = "src/battle.ts"
 file = "scripts/screenshots/arco-voltaico.json"

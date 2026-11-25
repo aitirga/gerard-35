@@ -293,19 +293,27 @@ whoever bleeds most.
 
 **The risk of waiting.** A foe whose blow finds the one waiting first takes the charge, as Condensador's
 does: `CONDENSADOR.jump` of electric magic with the waiting one's stats, which turns what it finds on that
-foe (Plasma on its fire, Conducción…); the pounce still comes, at `jumped` (half) of its power. One charge
-jumps a blow: if Gerard carries his own Condensador and the same blow finds both, his jumps. Protecting the
-cat (a cortina, Escolta, a guard) is part of the answer.
+foe (Plasma on its fire, Conducción…); the pounce still comes, at `jumped` (half) of its power. Any blow that
+lands on whoever waits makes it jump, however softened: a cortina, Escolta or Defender take some of it off,
+not the jump. What keeps the charge is stopping whoever would strike first, or taking it down: Cortocircuito
+or Shock on it, a foe felled, a blow that misses or that a shell swallows whole. (With water about, the jump
+turns Conducción on its way, so a forced jump is not all lost.) A blow that finds both Gerard carrying his
+own Condensador and the one waiting (one on everyone) makes both charges jump, his first (`discharge`,
+`effect.arcDischarge`). A fight won before the pounce leaves nobody waiting (`endFight`).
 
 **Look.** Gerard draws a gold parabola in front of him, its focus a bead and its directrix dashed; it rises
-and turns in the world until its axis stands over the prey and its focus sits on its chest, an arch of light
-running down to the floor either side (its focal length is what makes it meet the floor there). While the
-cat waits charged, sparks rise out of the floor in rings round the prey, parallel, strike a GPU mirror along
-the arch (a `paraboloid` volume in `mirror` mode, opening down) and converge on the focus; she crouches in
-plain sight with her fur standing with static. If the charge jumps, the arch swings about its vertex until
+and turns in the world until its axis stands over the prey and its focus sits just in front of its chest
+(towards the camera, so the body never hides where the light meets; she still lands on the chest), an arch of light running down to the floor either side (its focal length is what makes it meet the
+floor there). The arch is worked out once from where the cat rests (`arcFor`), and the scene's run and the
+figure share it. While the cat waits charged, sparks rise out of the floor in rings round the focus, within
+a cone of a few degrees, strike a GPU mirror along the arch (a `paraboloid` volume in `mirror` mode, opening
+down) and converge on the focus, their spread drawing the caustic's cusp; she crouches in plain sight with
+her fur standing with static and a faint knot of the charge on her back. If the charge jumps, the arch swings about its vertex until
 its axis points at that foe, an arc leaves the vertex for it, and the mirror goes dark. The pounce: she runs
-the arch itself, her flight even across like a thrown body's, a trail of plasma behind her, drops down the
-axis onto the focus, a jagged bolt and the crítico, and the arch bursts into gold splinters. Sound: the
+the arch itself, her flight even across like a thrown body's, a wide trail of plasma behind her and a gold
+rim of light on her head, drops down the axis onto the focus, a jagged bolt and the crítico, and the arch
+bursts into gold splinters. The contact adds no white flash of its own: the crítico and any reaction already
+flash, and the bolt and the splinters have to read in that frame. Sound: the
 condenser's whine as it settles and as she springs, its snap on contact. The design said the sparks fall
 from above; with the arch opening down they rise from the floor, so the mirror sends them to the focus for
 real.

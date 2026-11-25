@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, addStatus, createBattle, dualSingle, enemyAct, improve, nextRound, stacks, takeNews, CONDENSADOR, CRIT_RULES, DUALS, TIMED } from '../src/battle.ts';
+import { act, actDual, addStatus, createBattle, discharge, dualSingle, enemyAct, improve, nextRound, stacks, takeNews, CONDENSADOR, CRIT_RULES, DUALS, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
 
 // Arco voltaico (docs/animas/README.md § Combined skills): ∂Q/∂t Condensador + Acecho. The cat waits charged on its prey
@@ -74,13 +74,13 @@ test('Arco voltaico: a foe that strikes the one waiting first takes the charge, 
   s.phase = 'enemy'; s.enemyActions = [];
   const blow = enemyAct(s, 'dog-2', 'aitor');
   assert.ok(blow.amount > 0, 'it struck the cat\'s wearer');
-  assert.equal(blow.discharge.arc, true); assert.equal(blow.discharge.from, 'aitor'); assert.equal(blow.discharge.target, 'dog-2'); assert.ok(blow.discharge.amount > 0);
-  assert.equal(blow.discharge.reaction.id, 'plasma', 'the bolt sets off the fire it finds'); assert.equal(s.foes[2].timed.quemado, undefined);
+  assert.equal(blow.discharge, undefined, 'not the condenser\'s own'); assert.equal(blow.arcDischarge.from, 'aitor'); assert.equal(blow.arcDischarge.target, 'dog-2'); assert.ok(blow.arcDischarge.amount > 0);
+  assert.equal(blow.arcDischarge.reaction.id, 'plasma', 'the bolt sets off the fire it finds'); assert.equal(s.foes[2].timed.quemado, undefined);
   assert.equal(by(s, 'aitor').stalk.charged, false, 'the moment is kept, without its charge');
   assert.match(s.message, /salta de Aitor a/);
   // A second blow on the cat finds no charge.
   s.enemyActions = [];
-  assert.equal(enemyAct(s, 'dog-1', 'aitor').discharge, undefined);
+  assert.equal(enemyAct(s, 'dog-1', 'aitor').arcDischarge, undefined);
   s.enemyActions = s.foes.map(f => f.id); nextRound(s);
   const half = takeNews(s).find(n => n.pounce);
   assert.equal(half.pounceDual.half, true); assert.equal(half.target, 'dog-0');
@@ -90,7 +90,7 @@ test('Arco voltaico: a foe that strikes the one waiting first takes the charge, 
   const whole = full();
   d.power = power * d.jumped; const halved = full(); d.power = power;
   assert.equal(half.amount, halved); assert.ok(half.amount < whole * .7);
-  assert.ok(blow.discharge.amount < CONDENSADOR.jump * 3, 'the jump is the condenser\'s');
+  assert.ok(blow.arcDischarge.amount < CONDENSADOR.jump * 3, 'the jump is the condenser\'s');
 });
 
 test('Arco voltaico turns what Atacar·Eléctrico would: Plasma on a fire, Conducción through the water', () => {
@@ -142,4 +142,43 @@ test('Arco voltaico: the prey fallen, the cat takes whoever bleeds most; its wea
   const off = pair(); actDual(off, 'arco-voltaico', 'dog-0');
   by(off, 'aitor').classId = 'matemagico'; foesDone(off); nextRound(off);
   assert.equal(takeNews(off).find(n => n.pounce), undefined);
+});
+
+test('Arco voltaico: one blow that finds both Gerard carrying his Condensador and the one waiting makes both charges jump', () => {
+  const s = pair();
+  actDual(s, 'arco-voltaico', 'dog-0');
+  by(s, 'gerard').capacitor = true;
+  s.phase = 'enemy'; s.enemyActions = [];
+  const hp = s.foes[1].hp;
+  // A blow on everyone (as La Voz's La is): it finds him and the one waiting at once.
+  const blow = { kind: 'enemy', actor: 'dog-1', target: 'gerard', amount: 5, hits: [{ target: 'aitor', amount: 5 }] };
+  discharge(s, blow);
+  assert.equal(blow.discharge.from, 'gerard'); assert.equal(blow.arcDischarge.from, 'aitor');
+  assert.equal(by(s, 'gerard').capacitor, undefined); assert.equal(by(s, 'aitor').stalk.charged, false);
+  assert.equal(s.foes[1].hp, hp - blow.discharge.amount - blow.arcDischarge.amount);
+});
+
+test('Arco voltaico: a blow that only softens on the one waiting (a guard) still makes the charge jump; one that never lands keeps it', () => {
+  const s = pair();
+  actDual(s, 'arco-voltaico', 'dog-0');
+  by(s, 'aitor').guarding = true;
+  s.phase = 'enemy'; s.enemyActions = [];
+  const blow = enemyAct(s, 'dog-1', 'aitor');
+  assert.ok(blow.amount > 0); assert.ok(blow.arcDischarge, 'a softened blow still finds her');
+  // Shock: its blow never comes, and the charge stays.
+  const t = pair();
+  actDual(t, 'arco-voltaico', 'dog-0');
+  t.foes[1].shock = true; t.phase = 'enemy'; t.enemyActions = [];
+  const lost = enemyAct(t, 'dog-1', 'aitor');
+  assert.equal(lost?.arcDischarge, undefined); assert.equal(by(t, 'aitor').stalk.charged, true);
+});
+
+test('Arco voltaico: a fight won before the pounce leaves nobody waiting', () => {
+  const s = pair();
+  actDual(s, 'arco-voltaico', 'dog-0');
+  s.foes[0].hp = 0; s.foes[2].hp = 0; s.foes[1].hp = 1;
+  s.phase = 'enemy'; s.enemyActions = [];
+  enemyAct(s, 'dog-1', 'aitor');
+  assert.equal(s.phase, 'won', 'the jump takes the last one');
+  assert.equal(by(s, 'aitor').stalk, undefined);
 });

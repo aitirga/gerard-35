@@ -328,7 +328,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   /** Each fighter's plate over the fight and where `positionTargets` last put it. */
   const plates = new Map<string, HTMLElement>(), plateAt = new WeakMap<HTMLElement, string>();
   /** A number or a word flying off a fighter. A `status` one (its id in `status`) is stamped on in its colour, above where the blow's numbers rise. */
-  function pop(id: string, text: string, kind: 'damage' | 'crit' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive' | 'lives', detail = '', status?: string, dx = 0) {
+  function pop(id: string, text: string, kind: 'damage' | 'crit' | 'heal' | 'guard' | 'stat-up' | 'stat-down' | 'status' | 'passive' | 'lives', detail = '', status?: string, dx = 0, dy = 0) {
     const at = positions.get(id);
     if (!at) return;
     const el = document.createElement('span');
@@ -338,7 +338,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     el.querySelector('strong')!.textContent = text;
     if (detail) el.querySelector('small')!.textContent = detail;
     // A passive's plate sits higher still, and stays a little longer: it is the ánima speaking, not the blow.
-    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' || kind === 'crit' || kind === 'lives' ? 8 : 26))}px, ${at.y - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
+    el.style.transform = `translate(${at.x + dx + (kind === 'passive' ? 0 : (Math.random() - .5) * (kind === 'status' || kind === 'crit' || kind === 'lives' ? 8 : 26))}px, ${at.y + dy - (kind === 'passive' ? 150 : kind === 'status' ? 96 : 18)}px) translate(-50%, -100%)`;
     get('.battle-pops').append(el);
     setTimeout(() => el.remove(), kind === 'passive' || kind === 'lives' ? 1900 : kind === 'crit' ? 1600 : kind === 'status' ? 1350 : 1100);
     return el;
@@ -2233,8 +2233,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const stamp = () => {
       const nth = new Map<string, number>();
       landed.forEach(l => {
+        // Each one after the first a row higher (a status pop is about 44 px tall), so one still rising never prints over the next.
         const k = nth.get(l.target) ?? 0; nth.set(l.target, k + 1);
-        setTimeout(() => { if (token === generation) pop(l.target, l.text, 'status', l.detail, l.id); }, (wounded ? 560 : 170) + k * 380);
+        setTimeout(() => { if (token === generation) pop(l.target, l.text, 'status', l.detail, l.id, 0, -46 * k); }, (wounded ? 560 : 170) + k * 380);
       });
     };
     let say = '';
@@ -2490,8 +2491,13 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.capacitor === 'spent' && effect.target) landed.push({ target: effect.target, id: 'cargado', text: '×2', detail: 'Suelta la carga' });
       // A foe struck whoever carried it: the charge jumps back, a beat after the blow.
       if (effect.discharge) { const d = effect.discharge; setTimeout(() => { if (token === generation) pop(d.target, `−${d.amount}`, 'damage', 'La carga salta'); }, 420); }
-      // Arco voltaico's charge jumping: what the bolt turned on that foe, a beat after it (Plasma, Conducción, Tormenta…).
-      effect.discharge?.reaction?.hits?.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', REACTION_SAID[effect.discharge!.reaction!.id] ?? '', undefined, i * 16); }, 700 + i * 80));
+      // Arco voltaico's charge jumping (after Gerard's own, if the blow found that too), then what its bolt turned on
+      // that foe, a beat after it (Plasma, Conducción, Tormenta…).
+      if (effect.arcDischarge) {
+        const d = effect.arcDischarge, later = effect.discharge ? 280 : 0;
+        setTimeout(() => { if (token === generation) pop(d.target, `−${d.amount}`, 'damage', 'La carga salta', undefined, later ? 40 : 0); }, 420 + later);
+        d.reaction?.hits?.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', REACTION_SAID[d.reaction!.id] ?? '', undefined, i * 16); }, 700 + later + i * 80));
+      }
       const boss = effect.error || effect.converged || effect.diverged ? state.foes.find(f => f.kind === 'no-converge') : undefined;
       if (boss && effect.converged) setTimeout(() => { if (token === generation) pop(boss.id, '¡Converge!', 'status', 'Sólido: recibe el doble', 'converge'); }, 420);
       else if (boss && effect.diverged) setTimeout(() => { if (token === generation) pop(boss.id, 'Diverge', 'status', `Error ${effect.error?.left ?? boss.error ?? 0}`, 'error'); }, 420);

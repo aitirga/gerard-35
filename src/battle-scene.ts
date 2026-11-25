@@ -43,7 +43,7 @@ import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, 
 import { TONES, type ToneId } from './song';
 import { takeZero } from './anima-looks';
 import { DUO_STAGINGS, type DuoFighter, type DuoStage } from './duo-fx';
-import { ARC_POUNCE, arcGeometry, arcRun } from './duo-fx/arco-voltaico';
+import { ARC_POUNCE, arcFor, arcGeometry, arcRun, type ArcPose } from './duo-fx/arco-voltaico';
 import { createFluidFx } from './fluid-fx';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
@@ -1040,7 +1040,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         return id && f ? duoFighter(id, f) : undefined;
       },
       bip: () => { for (const b of bips.values()) if (b.shown && !b.gone) return v3(b.bip.entity.getPosition()); return undefined; },
-      cat: wearer => { const haru = catsOf(wearer)?.haru.entity; return haru?.enabled ? v3(haru.getPosition()) : undefined; },
+      cat: wearer => { const haru = catsOf(wearer)?.haru.entity; if (!haru?.enabled) return undefined; const p = haru.getPosition(); catAt.x = p.x; catAt.y = p.y; catAt.z = p.z; return catAt; },
+      catRest: wearer => { const f = fighters.get(wearer); if (!f || !catsOf(wearer)) return undefined; const s = catSpots(layout, f.base).haru; return { x: s.x, y: groundHeight(s.x, s.z), z: s.z }; },
       hit: (id, rgb, strength = 1) => { const f = fighters.get(id); if (f) hit(f, new pc.Color(rgb[0], rgb[1], rgb[2]), strength * (f.rigid ? .4 : 1)); },
       shake: amount => { shake = Math.max(shake, amount); },
       pulse: (fringe, bloom, flash) => pulse?.(fringe, bloom, flash),
@@ -1961,11 +1962,18 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const pounceSpots = new WeakMap<BattleEffect, pc.Vec3>();
   /** Arco voltaico's arch for each pounce of it, from where the cat waited (src/duo-fx/arco-voltaico.ts `arcGeometry`): worked out once. */
   const arcs = new WeakMap<BattleEffect, ReturnType<typeof arcGeometry>>();
+  /** Where Haru is, handed to the duals' looks (`DuoStage.cat`): the same object each time, read at once. */
+  const catAt = { x: 0, y: 0, z: 0 };
+  /** Arco voltaico's pounce pose, written each frame (`arcRun`), and its rest spot on the floor. */
+  const arcPose: ArcPose = { at: { x: 0, y: 0, z: 0 }, lift: 0, crouch: 0 }, arcRest = { x: 0, y: 0, z: 0 };
+  /** The arch the figure drew over this prey (one source, `arcFor`), or, if she goes for another, the same one it will draw. */
   function arcOf(action: BattleEffect, rest: pc.Vec3, prey: Fighter) {
     let g = arcs.get(action);
     if (g) return g;
-    const body = extent(prey);
-    g = arcGeometry({ x: rest.x, y: groundHeight(rest.x, rest.z), z: rest.z }, { chest: v3(chestOf(prey)), feet: v3(floorUnder(prey)), radius: Math.max(.25, body.radius), height: body.height });
+    g = arcFor(action.actor, action.target ?? '', () => {
+      const body = extent(prey);
+      return arcGeometry({ x: rest.x, y: groundHeight(rest.x, rest.z), z: rest.z }, { chest: v3(chestOf(prey)), feet: v3(floorUnder(prey)), radius: Math.max(.25, body.radius), height: body.height }, screenAxes(viewDir()).facing);
+    });
     arcs.set(action, g);
     return g;
   }
@@ -2826,8 +2834,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         crouch = 1; look = target.base;
       } else if (mine && effect?.pounceDual && target) {
         // Arco voltaico's pounce: she runs the arch Gerard drew, a thrown body's flight, and drops down its axis onto the prey.
-        const g = arcOf(effect, rest, target), run = animate ? arcRun(g, { x: rest.x, y: groundHeight(rest.x, rest.z), z: rest.z }, t) : { at: v3(rest), lift: 0, crouch: 0 };
-        at = new pc.Vec3(run.at.x, 0, run.at.z); lift = run.lift; leap = 'leap' in run ? run.leap : undefined; crouch = run.crouch;
+        const g = arcOf(effect, rest, target);
+        arcRest.x = rest.x; arcRest.y = groundHeight(rest.x, rest.z); arcRest.z = rest.z;
+        const run = arcRun(g, arcRest, animate ? t : 0, arcPose);
+        at.set(run.at.x, 0, run.at.z); lift = run.lift; leap = run.leap; crouch = animate ? run.crouch : 0;
         look = !animate || t >= ARC_POUNCE.stay ? center : t < ARC_POUNCE.apex ? new pc.Vec3(target.base.x + g.dir.x * 3, 0, target.base.z + g.dir.z * 3) : target.base;
         glare = t >= ARC_POUNCE.foot && t < ARC_POUNCE.stay ? 1 : 0;
       } else if (mine && effect?.stalking && target) {
@@ -4433,7 +4443,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // The charge stays on show until the blow that lets it go lands.
         // Arco voltaico waiting charged shows the same charge on whoever waits, from the moment the arch settles.
         const arcCharged = !!unit.stalk?.charged && !(!impacted && effect?.dual?.id === 'arco-voltaico' && effect.stalker === unit.id);
-        const charged = arcCharged || (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && effect?.discharge?.from === unit.id);
+        const charged = arcCharged || (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && (effect?.discharge?.from === unit.id || effect?.arcDischarge?.from === unit.id));
         syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
           // The fire it showed can be gone already (Plasma put it out, a Gemelo felled lost everything it carried): it stays as it was until the blow lands.
           ? { ...unit.timed, quemado: shown ? { left: TIMED.quemado.seconds, next: TIMED.quemado.every, ...unit.timed?.quemado, level: shown } : undefined } : unit.timed, charged);

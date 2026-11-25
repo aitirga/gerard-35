@@ -270,7 +270,8 @@ skills):
   crouched in plain sight, charged, and as the next round starts runs the parabola Gerard drew over the
   prey and drops onto its focus: power 64, physical and electric, with the wearer's stats, a sure
   crítico that spends the wound, turns what a bolt turns and sets off Combustión. A foe that strikes the
-  wearer first takes the charge and the pounce lands at half. Details in `../matemagico/README.md` §
+  wearer first takes the charge and the pounce lands at half; softening that blow does not stop the jump,
+  stopping or felling whoever would strike does. Details in `../matemagico/README.md` §
   Arco voltaico.
 - **To look at again with the golpe crítico**: Punto débil's triple on top of a wound and a
   crítico is the biggest single number in the game; whether the triple multiplies them or replaces

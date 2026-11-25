@@ -1,6 +1,6 @@
 {
   "title": "Arco voltaico",
-  "description": "docs/animas/README.md § Combined skills: Arco voltaico (∂Q/∂t Condensador + Acecho). From the fight tester's «Probar un dúo» against three dogs: the arch drawn and set over the prey, the GPU mirror focusing sparks while the cat waits charged, the pounce along the parabola; then a dog striking the cat first: the charge jumps and the pounce lands at half. Run it with --gpu.",
+  "description": "docs/animas/README.md § Combined skills: Arco voltaico (∂Q/∂t Condensador + Acecho). From the fight tester's «Probar un dúo» against three dogs: the arch drawn and set over the prey, the GPU mirror focusing sparks while the cat waits charged, the pounce along the parabola (framed close on the prey, with a still at the arch's vertex); then a dog striking the cat first: the charge jumps and the pounce lands at half. The foes' targets are fixed (all on Gerard, then all on Aitor), and the first time they take 7 s to choose so the wait can be shot. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22arco-voltaico%22%7D"
@@ -10,7 +10,7 @@
       "timeout": 90000
     },
     {
-      "eval": "window.ui = window.gerard.battleUI; window.arc = { pounce: null, jump: null }; { const g = window.gerard.game, set = g.setBattle.bind(g); g.setBattle = (state, effect, onImpact) => { if (effect?.pounceDual) { window.arc.pounce = effect; g.app.timeScale = 0; } if (effect?.discharge?.arc) { window.arc.jump = effect; g.app.timeScale = 0; } return set(state, effect, onImpact); }; } ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); s.foes[1].shock = true; s.foes[0].timed = { ...s.foes[0].timed, mojado: { level: 1, left: 20, next: 20 } }; s.foes[2].timed = { ...s.foes[2].timed, mojado: { level: 1, left: 20, next: 20 } }; });"
+      "eval": "{ const own = window.fetch.bind(window); window.fetch = (url, options) => String(url).includes('/api/battle/enemy-turn') ? new Promise(done => setTimeout(() => done(new Response(JSON.stringify({ targets: { 'dog-0': 'gerard', 'dog-1': 'gerard', 'dog-2': 'gerard' } }), { headers: { 'Content-Type': 'application/json' } })), 7000)) : own(url, options); } window.ui = window.gerard.battleUI; window.arc = { pounce: null, jump: null }; { const g = window.gerard.game, set = g.setBattle.bind(g); g.setBattle = (state, effect, onImpact) => { if (effect?.pounceDual) { window.arc.pounce = effect; g.app.timeScale = 0; } if (effect?.arcDischarge) { window.arc.jump = effect; g.app.timeScale = 0; } return set(state, effect, onImpact); }; } ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); s.foes[0].timed = { ...s.foes[0].timed, mojado: { level: 1, left: 20, next: 20 } }; s.foes[1].timed = { ...s.foes[1].timed, mojado: { level: 1, left: 20, next: 20 } }; });"
     },
     {
       "wait": 600
@@ -59,17 +59,28 @@
       "eval": "preview.impact()"
     },
     {
+      "eval": "console.log('arco ids', JSON.stringify(window.gerard.battleUI.live.foes.map(f => [f.id, !!f.shock, Object.keys(f.timed ?? {})])), 'prey', window.gerard.battleUI.live.allies.find(a => a.stalk)?.stalk.target)"
+    },
+    {
       "shot": "arco-espera",
       "delay": 700,
       "caption": "La gata espera cargada a la vista, con el pelo erizado de estática: chispas suben del suelo bajo el arco, rebotan en el espejo parabólico de la GPU y convergen en el foco. Iconos de Acecho y Cargado."
     },
     {
-      "eval": "{ const g = window.gerard.game, p = g.fighterAt('dog-0'); g.frame({ x: p.x, y: p.y + 1, z: p.z }, 2.4); }"
+      "eval": "{ const g = window.gerard.game, a = g.fighterAt('aitor'), id = window.gerard.battleUI.live.allies.find(x => x.stalk)?.stalk.target, p = id && g.fighterAt(id); if (a && p) g.frame({ x: a.x + (p.x - a.x) * .22, y: a.y + .5, z: a.z + (p.z - a.z) * .22 }, 1.7); }"
+    },
+    {
+      "shot": "arco-gata-cargada",
+      "delay": 1400,
+      "caption": "La gata, agazapada a la vista y cargada: estática en el pelo y un nudo de la carga en el lomo."
+    },
+    {
+      "eval": "{ const g = window.gerard.game, id = window.arc.pounce?.target ?? window.gerard.battleUI.live.allies.find(a => a.stalk)?.stalk.target, p = id && g.fighterAt(id); if (p) g.frame({ x: p.x, y: p.y + .9, z: p.z }, 2.4); }"
     },
     {
       "shot": "arco-espejo",
-      "delay": 500,
-      "caption": "De cerca: las chispas suben en anillos alrededor del perro, rebotan en el espejo parabólico (invisible, a lo largo del arco) y se juntan en el foco, sobre su pecho."
+      "delay": 1400,
+      "caption": "De cerca: las chispas suben en anillos delante del perro, rebotan en el espejo parabólico (invisible, a lo largo del arco) y se juntan en el foco, delante de su pecho, dibujando la cúspide de la cáustica."
     },
     {
       "eval": "{ const g = window.gerard.game, pts = ['gerard', 'aitor', 'dog-0', 'dog-1'].map(id => g.fighterAt(id)).filter(Boolean), m = k => pts.reduce((s, p) => s + p[k], 0) / pts.length; g.frame({ x: m('x'), y: m('y') + 1, z: m('z') }, 4.2); }"
@@ -79,9 +90,26 @@
       "timeout": 60000
     },
     {
+      "eval": "{ const g = window.gerard.game, id = window.arc.pounce?.target ?? window.gerard.battleUI.live.allies.find(a => a.stalk)?.stalk.target, p = id && g.fighterAt(id); if (p) g.frame({ x: p.x, y: p.y + .9, z: p.z }, 2.4); }"
+    },
+    {
       "record": "arco-salto",
-      "caption": "Al empezar la ronda la gata corre la propia parábola, con un rastro de plasma, y cae por el eje sobre el foco: rayo, crítico y Conducción por los dos perros mojados; el arco se rompe en esquirlas de oro.",
-      "seconds": 2.2,
+      "caption": "Al empezar la ronda la gata corre la propia parábola: el rastro de plasma ancho y el borde de oro en la cabeza la siguen por el arco, hasta su vértice.",
+      "seconds": 0.8,
+      "fps": 30,
+      "tiles": 8,
+      "sheetWidth": 360,
+      "each": "window.gerard.game.app.timeScale = window.frameTime < 0.74 ? 1 : 0"
+    },
+    {
+      "shot": "arco-vertice",
+      "delay": 300,
+      "caption": "Parada en el vértice del arco (ARC_POUNCE.apex): la gata en lo alto de la parábola que dibujó Gerard, el foco delante del pecho del perro."
+    },
+    {
+      "record": "arco-caida",
+      "caption": "Cae por el eje sobre el foco: rayo, crítico y Conducción por los perros mojados; el arco se rompe en esquirlas de oro. El contacto ya no blanquea la pantalla.",
+      "seconds": 1.4,
       "fps": 30,
       "tiles": 12,
       "sheetWidth": 360,
@@ -100,7 +128,7 @@
       "timeout": 90000
     },
     {
-      "eval": "window.ui = window.gerard.battleUI; window.arc = { pounce: null, jump: null }; { const g = window.gerard.game, set = g.setBattle.bind(g); g.setBattle = (state, effect, onImpact) => { if (effect?.pounceDual) { window.arc.pounce = effect; g.app.timeScale = 0; } if (effect?.discharge?.arc) { window.arc.jump = effect; g.app.timeScale = 0; } return set(state, effect, onImpact); }; } ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); s.foes[1].timed = { ...s.foes[1].timed, quemado: { level: 2, left: 20, next: 5 } }; });"
+      "eval": "{ const own = window.fetch.bind(window); window.fetch = (url, options) => String(url).includes('/api/battle/enemy-turn') ? Promise.resolve(new Response(JSON.stringify({ targets: { 'dog-0': 'aitor', 'dog-1': 'aitor', 'dog-2': 'aitor' } }), { headers: { 'Content-Type': 'application/json' } })) : own(url, options); } window.ui = window.gerard.battleUI; window.arc = { pounce: null, jump: null }; { const g = window.gerard.game, set = g.setBattle.bind(g); g.setBattle = (state, effect, onImpact) => { if (effect?.pounceDual) { window.arc.pounce = effect; g.app.timeScale = 0; } if (effect?.arcDischarge) { window.arc.jump = effect; g.app.timeScale = 0; } return set(state, effect, onImpact); }; } ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.allies.forEach(a => { a.hp = a.maxHp = 400; }); s.foes[1].timed = { ...s.foes[1].timed, quemado: { level: 2, left: 20, next: 5 } }; });"
     },
     {
       "wait": 600
@@ -151,6 +179,9 @@
     {
       "until": "!!window.arc.pounce",
       "timeout": 60000
+    },
+    {
+      "eval": "{ const g = window.gerard.game, id = window.arc.pounce?.target ?? window.gerard.battleUI.live.allies.find(a => a.stalk)?.stalk.target, p = id && g.fighterAt(id); if (p) g.frame({ x: p.x, y: p.y + .9, z: p.z }, 2.4); }"
     },
     {
       "record": "arco-a-la-mitad",
