@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LATTICE_SHAPES, closedShape, latticeAim, latticeCell, latticeNeighbour, latticeReach, latticeShape, latticeSpacing, latticeUnshape } from '../src/lattice.ts';
+import { LATTICE_SHAPES, catenoidHeight, catenoidRadius, closedShape, latticeAim, latticeCell, latticeNeighbour, latticeReach, latticeShape, latticeSpacing, latticeUnshape, stringPulse, stringReflections } from '../src/lattice.ts';
 import { FIGHT_FX } from '../src/effects.ts';
 
 // The lattice's shape maps run on the GPU (WGSL in src/lattice.ts); these are their TypeScript twins.
@@ -115,8 +115,43 @@ test('flowing, a lattice\'s cells scroll along x and wrap round, keeping their s
   assert.ok(latticeCell(grid, 7, 1).x < latticeCell(grid, 0, 1).x, 'the last cell wraps round to the start');
 });
 
+test('a catenoid is the soap film between two rings: its rows close, its ends meet the rings, its waist the narrowest', () => {
+  const grid = [40, 21, 1], size = { x: .5, y: .9, z: .25 };
+  const at = (i, j) => latticeShape('catenoid', latticeCell(grid, i + grid[0] * j), size);
+  const radius = j => Math.hypot(at(3, j).x, at(3, j).z);
+  assert.ok(dist(at(0, 4), at(39, 4)) <= latticeReach('catenoid', grid, size) * 1.001, 'its rows close round it');
+  assert.ok(Math.abs(radius(10) - .25) < 1e-9, 'its middle row is its waist');
+  for (let j = 0; j < 10; j++) assert.ok(radius(j) > radius(j + 1) && Math.abs(radius(j) - radius(20 - j)) < 1e-9, 'narrowing to its waist, the same either side');
+  assert.ok(Math.abs(catenoidRadius(1, .5, .25) - .5) < 1e-9 && Math.abs(catenoidRadius(-1, .5, .25) - .5) < 1e-9, 'it meets both rings');
+  // Its true height: a·cosh(h/a) = R at h = a·acosh(R/a); a minimal surface, its mean curvature 0: r·r'' = 1 + r'².
+  const a = .25, h = catenoidHeight(.5, a), r = y => a * Math.cosh(y / a), e = 1e-4;
+  assert.ok(Math.abs(r(h) - .5) < 1e-9);
+  for (const y of [-.2, 0, .1, .3]) { const d1 = (r(y + e) - r(y - e)) / (2 * e), d2 = (r(y + e) - 2 * r(y) + r(y - e)) / (e * e); assert.ok(Math.abs(r(y) * d2 - 1 - d1 * d1) < 1e-3); }
+  assert.ok(closedShape('catenoid') && !closedShape('string'));
+});
+
+test('a string runs from one end to the other, its pulses flip over at each fixed end and the ends never move', () => {
+  const grid = [400, 1, 1], size = { x: 1.2, y: 0, z: 0 };
+  const first = latticeShape('string', latticeCell(grid, 0), size), last = latticeShape('string', latticeCell(grid, 399), size);
+  assert.ok(first.x < -1.19 && last.x > 1.19 && first.y === 0 && last.z === 0, 'a straight line between its two ends');
+  const L = 2.4, w = .16, from = 0;
+  // Plucked in its middle towards its far end: up on the way there, upside down on the way back.
+  const peak = (s) => { let best = 0, where = 0; for (let u = 0; u <= L; u += .005) { const y = stringPulse(u, L, from, 1, s, w); if (Math.abs(y) > Math.abs(best)) { best = y; where = u; } } return { best, where }; };
+  // 1.2 m to the far end, then 0.8 m back from it.
+  const going = peak(.6), coming = peak(2);
+  assert.ok(going.best > .95 && Math.abs(going.where - 1.8) < .02, 'up, 0.6 m on from the middle');
+  assert.ok(coming.best < -.95 && Math.abs(coming.where - 1.6) < .02, 'upside down, coming back');
+  for (const s of [0, .3, 1.2, 1.9, 3.1, 4.4]) for (const end of [0, L]) assert.ok(Math.abs(stringPulse(end, L, from, 1, s, w)) < 1e-6, 'its ends stay put');
+  const r = stringReflections(L, from, 1);
+  assert.equal(r.first, 1.2); assert.equal(r.every, L);
+  assert.equal(r.end(0), 1); assert.equal(r.end(1), -1);
+  assert.ok(Math.abs(stringReflections(L, .5, -1).first - 1.8) < 1e-9, 'from three quarters along, back to the start');
+  // Plucked towards the start, it mirrors the same.
+  for (const u of [.2, .9, 1.7]) assert.ok(Math.abs(stringPulse(u, L, .3, -1, .7, w) - stringPulse(L - u, L, -.3, 1, .7, w)) < 1e-9);
+});
+
 test('the lattice presets are fight effects', () => {
-  for (const name of ['ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb']) assert.ok(FIGHT_FX.includes(name), name);
+  for (const name of ['ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb', 'film', 'film-fade', 'string']) assert.ok(FIGHT_FX.includes(name), name);
 });
 
 test('thrown, a lattice is cut into wedges from straight behind: each side flies at the points on its side, in order', () => {

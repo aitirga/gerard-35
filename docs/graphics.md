@@ -575,9 +575,13 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
   `ball` and `crystal` (a double pyramid) pull each shell of the grid radially onto their surface,
   `ring` bends x round a circle and turns y × z into the tube's section, `column` does the same round
   its height, `shield` cuts a heraldic escutcheon out of the grid (a straight top and sides, then two
-  arcs as wide as the shield meeting in a point) and bends it out along x towards +z, and `sphere`
-  wraps x round it and runs y from its bottom to its top (a hollow shell, z its thickness). A ring and
-  a sphere close round x: their rows are loops, with no seam. Each map keeps neighbours next to each other, so `shape`, `morphTo` and `morph` (0–1)
+  arcs as wide as the shield meeting in a point) and bends it out along x towards +z, `sphere`
+  wraps x round it and runs y from its bottom to its top (a hollow shell, z its thickness), `dome`
+  is its upper half, `catenoid` is the soap film between two coaxial rings (x round it, y from one
+  ring to the other; its size the rings' radius, its half-height and its waist: r = a·cosh(k·y),
+  `catenoidRadius`, a true minimal surface at `catenoidHeight` and stretched along its axis at any
+  other) and `string` a line from one end to the other (x along it; y × z a rope's section when they
+  have more than one cell). A ring, a sphere, a dome and a catenoid close round x: their rows are loops, with no seam. Each map keeps neighbours next to each other, so `shape`, `morphTo` and `morph` (0–1)
   blend between any two without tearing. Each map also runs backwards (`latticeUnshape`): a point
   leads straight to its cell. The maps exist twice, side by side in src/lattice.ts: TypeScript
   (tested in `tests/lattice.test.mjs`) and WGSL.
@@ -589,7 +593,28 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
   that falls and drapes over the fighters (members meet their parts like any `collide` kind).
 - **Flow.** `flow` scrolls the cells along x (cells a second): round a ring they circle it, along
   anything else they stream through and start again at the other end. `wave` sends a ripple through
-  the homes.
+  the homes (a catenoid's breathes in and out from its axis; a string's trembles between its fixed
+  ends). `ripple(at, { height, length, speed, decay })` sends capillary ripples out from a point on it,
+  two at once, across its surface (out of a sphere, from a catenoid's axis, up from a string).
+- **Placed between two points.** `span(from, to)` (or `between` when it is made) puts a catenoid's
+  axis, rings on the points, or a string's length between two points, its y as near up as it can be;
+  call it every frame to keep it on moving ones (a chest, the ankles).
+- **A string's travel mode.** `travel({ toward, from, height, speed, width, decay, shine, onReflect })`
+  plucks a d'Alembert pulse at `from` (cell −1…1) towards one end: the pulse and its mirror images
+  add up (`stringPulse`), so each fixed end throws it back upside down and the ends never move; it
+  lights the string where it lifts it. It returns when it first reaches that end and every how long
+  the next reflections come (`stringReflections`), and `onReflect(end, n)` is called on the frame each
+  one does. `snap({ at, seconds, whip })` cuts it: the members by the cut break loose, and each half
+  recoils onto its own end, whipping.
+- **A soap film.** `film: true` paints its members with thin-film interference from how thick the film
+  is where each sits (back and forth along gold → white → cyan → water blue, never magenta or violet):
+  `thickness` (1 fresh), thinner up top as it `drain`s, swirling (`swirl`) with its flow and its wave;
+  below about 0.15 it is black film, which shows nothing, so lowering `thickness` to 0 is its fade-out,
+  from the top down. Its first and last rows (a catenoid's rings) keep their own colour. `rupture(at,
+  { speed, rim, shed, fling })` bursts it like soap: a hole opens there and its rim runs back at a
+  constant speed, bright and thick; each member it passes breaks loose, `shed` of them as `breakInto`
+  (the droplets: `fluido-agua`, and `throwAt` sends them at whoever struck), flung out from the hole,
+  the rest gone.
 - **Meeting other particles.** `hitBy(batch)` (the slots a `burst` returns) throws that burst at the
   lattice, up to three at once. Each bonded member looks at 24 of their particles a frame, at the
   nearest point of each one's step this frame (so nothing slips through between frames), and takes
@@ -633,7 +658,8 @@ up to 8192 members each); every field of the `GpuLattice` it returns can change 
   `strands: 'y'` joins a lattice's strands along y instead of x: a sphere's meridians.
 - **State.** Members use band E's spare channel (lattice slot + 1, negative when loose) and, while
   bonded, band D's first channel for their strain. Each lattice is a row of texels in a data
-  texture (`LATTICE_COLS` in src/lattice.ts lists them). The ring allocator never puts a burst on a
+  texture (`LATTICE_COLS` in src/lattice.ts lists them; the film, ripples, rupture, pulses and snap
+  are worked out on the CPU each frame, a few numbers a lattice, and the shapes on the GPU). The ring allocator never puts a burst on a
   living lattice's slots. Drawn as `strand`, a member ribbons to its row neighbour while both are
   bonded, so a lattice reads as threads (`thread`, `veil`).
 
@@ -651,7 +677,14 @@ until whole, takes three volleys, mends, and a last heavy volley shatters it fro
 three spheres round the target that rise as a disc from its feet and swell round it, turning,
 deflect blows from three sides, heal at once and pop: `bubble` (bands of light, its parallels, with
 glass facets between them, a lattice each), `globe` (bands both ways, parallels and meridians, and
-the glass) and `orb` (glass made of the shield's dots alone, `opacity` and `fresnel`, which instead of popping takes a last heavy volley and shatters into chips from where it lands, like the shield). `just screenshots lattice --gpu --scale 2` records each, framed
+the glass) and `orb` (glass made of the shield's dots alone, `opacity` and `fresnel`, which instead of popping takes a last heavy volley and shatters into chips from where it lands, like the shield).
+Matemágico's two (Superficie mínima, Corriente alterna): `film`, two gold rings that part from the
+chest to the ankles and over the head with a soap film (`soapfilm`) forming between them as a
+catenoid, its colours its thickness; two blows ripple it and a third bursts it, its droplets thrown
+back at the striker as water; `film-fade`, the same film left alone, draining to black film from the
+top and coming apart in motes; and `string`, a string of light (400 members, gold round a yellow
+core) drawn from one chest to the other, plucked four times harder each time, each pulse flipping over
+at the end it reaches with a flash, then snapping in the middle, each half recoiling onto its end. `just screenshots lattice --gpu --scale 2` records each, framed
 close with `game.frame` (which holds the fight camera too while set) and `game.fighterAt(id)`.
 
 `fightFx` takes a fighter's feet at their own origin when the scene's floor does not reach under the

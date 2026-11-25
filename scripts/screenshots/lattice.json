@@ -1,6 +1,6 @@
 {
   "title": "Lattices · shapes made of particles",
-  "description": "Lattices on the GPU engine (src/lattice.ts, src/fight-particles.ts): shapes whose particles hold together, each drawn to its home and to its neighbours. A wall that thrown sparks dent, hole and knock apart and that mends itself; a ball that morphs into a crystal, a ring and a column keeping its structure, shaken by pushes; a ring that streams round itself in waves; a veil of cloth that drapes over a dog; embers that assemble into a crystal that bursts; a shield shaped like an escutcheon that takes a volley and shatters; and three spheres round a dog that deflect blows from every side and pop: bands with glass between them, bands both ways, and glass dots alone, which a last volley shatters like the shield. Played on a dog in a real fight with effects.fightFx, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps.",
+  "description": "Lattices on the GPU engine (src/lattice.ts, src/fight-particles.ts): shapes whose particles hold together, each drawn to its home and to its neighbours. A wall that thrown sparks dent, hole and knock apart and that mends itself; a ball that morphs into a crystal, a ring and a column keeping its structure, shaken by pushes; a ring that streams round itself in waves; a veil of cloth that drapes over a dog; embers that assemble into a crystal that bursts; a shield shaped like an escutcheon that takes a volley and shatters; and three spheres round a dog that deflect blows from every side and pop: bands with glass between them, bands both ways, and glass dots alone, which a last volley shatters like the shield. Played on a dog in a real fight with effects.fightFx, captured at twice the pixels (--gpu --scale 2) on the game's clock at 30 fps. Matemágico's two: a soap film between two gold rings round Gerard (a catenoid painted by its thickness) that two blows ripple and a third bursts, its droplets thrown back at the striker as water; the same film left to drain to black film and come apart in motes; and a string of light between Gerard's chest and a dog's, plucked four times harder each time, each pulse flipping over at the end it reaches, then snapping in the middle.",
   "steps": [
     {
       "open": "/?story=matemagico&battle=3&allies=2"
@@ -211,6 +211,69 @@
         676
       ],
       "caption": "The orb with nothing see-through (opacity 1, fresnel 0): a solid ball of dots that hides the dogs"
+    },
+    {
+      "eval": "window.lab2 = (() => { const g = window.gerard.game; const ids = g.fighterIds(), foe = ids.filter(f => !f.party)[1].id, ally = ids.find(f => f.party).id; return { ally, foe, at(id, up, h) { g.effects.clear(); const f = g.fighterAt(id); g.frame({ x: f.x, y: f.y + up, z: f.z }, h); }, mid(up, h) { g.effects.clear(); const f = g.fighterAt(foe), a = g.fighterAt(ally); g.frame({ x: (f.x + a.x) / 2, y: (f.y + a.y) / 2 + up, z: (f.z + a.z) / 2 }, h); }, play(name, target, from) { g.effects.clear(); return g.fx(name, target, { from }); } }; })();"
+    },
+    {
+      "eval": "lab2.at(lab2.ally, 1.0, 1.4)"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab2.play('film', lab2.ally, lab2.foe)"
+    },
+    {
+      "record": "film",
+      "seconds": 4,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Film: two gold rings part from Gerard's chest to his ankles and over his head, and a soap film forms between them, a catenoid narrowing at the waist, coloured by its thickness (gold, white, cyan, water blue). Two blows send capillary ripples across it; a third bursts it: the hole's bright rim runs back across it and the droplets it sheds fly at the striker as water"
+    },
+    {
+      "eval": "lab2.at(lab2.ally, 1.0, 1.4)"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab2.play('film-fade', lab2.ally, lab2.foe)"
+    },
+    {
+      "record": "film-fade",
+      "seconds": 3.6,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "Film left alone: it drains, turns black film from the top down (its colours go out) and comes apart in a few motes with its rings"
+    },
+    {
+      "eval": "lab2.mid(1.0, 2.2)"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "eval": "lab2.play('string', lab2.foe, lab2.ally)"
+    },
+    {
+      "record": "string",
+      "seconds": 5.2,
+      "clip": [
+        240,
+        112,
+        960,
+        676
+      ],
+      "caption": "String: a string of light (400 members) drawn from Gerard's chest to the dog's. Four plucks, harder each time: a pulse runs to one end, alternately, and flips over there with a flash; then it snaps in the middle and each half recoils onto its end"
     },
     {
       "eval": "window.gerard.game.effects.clear(); window.gerard.game.frame(); document.querySelector('#battle').style.visibility = ''"
