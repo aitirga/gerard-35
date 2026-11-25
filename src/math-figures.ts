@@ -4,6 +4,7 @@ import type { Effects } from './effects';
 import type { GpuEmitter, GpuKind } from './fight-particles';
 import { AGUA_KINDS } from './freatica-fx';
 import { ensureFluidKinds } from './fluid-fx';
+import { SPELL_KINDS } from './math-cast';
 
 /**
  * The figures Matemágico draws (docs/animas/matemagico/README.md § How each skill looks, Aitor's notes
@@ -35,7 +36,70 @@ export const FIGURE_LOOKS = {
   fire: { core: '#ffe2a0', halo: '#ff6a1a', face: '#ff8a2e' },
   water: { core: '#eaf8ff', halo: '#5cc2f4', body: '#2f8fd8', surface: '#bfeaff' },
   bolt: { core: '#fffbe0', halo: '#ffe24a' },
+  /** His own gold (#f3cf78), for a figure that is only mathematics: a dual's pegs, a curve drawn from its numbers. */
+  gold: { core: '#fff4d6', halo: '#f3cf78' },
 } as const;
+
+/**
+ * A dual's own neon figure (`DuoStage.figure`, src/duo-fx/types.ts): the same tubes of light and pen
+ * as his skills' figures, drawn by a dual's look without knowing the scene. Its strokes are given in
+ * its frame: with none, in the world; with `screenAxes(view)` (src/dual-fx.ts) laid in the camera's
+ * plane (x right, y up, z towards the camera). Never pink or violet.
+ */
+export interface NeonLook { core: string; halo: string }
+/** Where a figure stands and which way it is turned: its x, y and z go along `right`, `up` and `facing` (any two make the third), `scale` times. */
+export interface NeonFrame { at: V3; right?: V3; up?: V3; facing?: V3; scale?: number }
+export interface NeonStroke {
+  /** Its points, in its figure's frame. */
+  readonly points: readonly V3[];
+  /** Shows only the stretch from `from` to `to` of it (0–1 along it): `show(0, 1)` all of it, `show(0, 0)` none. */
+  show(from: number, to: number): void;
+  /** Where the point `k` of the way along it (0–1) is in the world now. */
+  tip(k: number): V3;
+}
+export interface NeonFigure {
+  /** A stroke of light along `points` (its frame), hidden until drawn or shown; `look` gives it colours of its own, `radius` its thickness (.03). */
+  stroke(points: readonly V3[], o?: { radius?: number; look?: NeonLook }): NeonStroke;
+  /** Moves and turns it (every frame if it should travel or turn: `animate`). */
+  place(frame: NeonFrame): void;
+  /** How bright it is (1 as drawn, 0 out) and a white flash on top (0–1). */
+  glow(k: number, flash?: number): void;
+  /** Where a point of its frame is in the world now. */
+  world(p: V3): V3;
+  /** Runs `step` every frame for `seconds` on the fight's clock (`t` from 0 to `seconds`), then `done`; nothing once it is gone. */
+  animate(seconds: number, step: (t: number, dt: number) => void, done?: () => void): void;
+  /** His pen of light at `where(t)` (world) for `seconds`; none while it gives nothing. */
+  pen(seconds: number, where: (t: number) => V3 | undefined, colour?: string): void;
+  /** Dims out over `seconds`, `delay` from now, and is gone. Every figure ends with this or `destroy`. */
+  fade(seconds: number, delay?: number): void;
+  destroy(): void;
+  readonly gone: boolean;
+}
+/** How `drawNeon` (`DuoStage.draw`) draws: `delay` before it starts, `pen: false` with no pen, `colour` the pen's, `each(i)` as stroke `i` starts (a tick of the pen), `done` once all are drawn. */
+export interface NeonDraw { delay?: number; pen?: boolean; colour?: string; each?: (index: number) => void; done?: () => void }
+
+/** A circle of `radius` in its frame's x–y plane round `centre`, closed: `segments` strokes. */
+export const neonCircle = (radius: number, segments = 32, centre: V3 = { x: 0, y: 0, z: 0 }): V3[] =>
+  Array.from({ length: segments + 1 }, (_, i) => { const a = i / segments * Math.PI * 2; return { x: centre.x + Math.cos(a) * radius, y: centre.y + Math.sin(a) * radius, z: centre.z }; });
+/** A curve `at(u)`, u from 0 to 1, in `count` strokes. */
+export const neonCurve = (count: number, at: (u: number) => V3): V3[] => Array.from({ length: count + 1 }, (_, i) => at(i / count));
+/** A polyline cut into `dashes` dashes along its length, each `duty` of its share (a directrix, an asymptote): one stroke each. */
+export function neonDashes(points: readonly V3[], dashes: number, duty = .55): V3[][] {
+  const d = (a: V3, b: V3) => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+  const along = [0];
+  for (let i = 1; i < points.length; i++) along.push(along[i - 1] + d(points[i - 1], points[i]));
+  const total = along[along.length - 1] || 1;
+  const at = (s: number): V3 => {
+    let i = 1;
+    while (i < points.length - 1 && along[i] < s) i++;
+    const k = (s - along[i - 1]) / ((along[i] - along[i - 1]) || 1), a = points[i - 1], b = points[i];
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k };
+  };
+  return Array.from({ length: dashes }, (_, j) => {
+    const s0 = j / dashes * total, s1 = s0 + duty / dashes * total;
+    return Array.from({ length: 5 }, (_, i) => at(s0 + (s1 - s0) * i / 4));
+  });
+}
 
 export const FIGURE_KINDS = {
   // What a drawing comes apart into: no drag and little weight, so each mote gets where it was sent as its life ends.
@@ -170,7 +234,8 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
   function ensureKinds() {
     const g = effects.gpu;
     if (!g) return;
-    for (const [name, kind] of Object.entries({ ...FIGURE_KINDS, ...WATER_KINDS })) if (!g.get(name)) g.define(name, kind as GpuKind);
+    // The pen's tip is the thrown Atacar's own light (`spellcore`), which may not have been cast yet.
+    for (const [name, kind] of Object.entries({ ...FIGURE_KINDS, ...WATER_KINDS, ...SPELL_KINDS })) if (!g.get(name)) g.define(name, kind as GpuKind);
   }
   ensureKinds();
   const neon = new pc.ShaderMaterial({ uniqueName: 'gerard-matemagico-neon', attributes: { vertex_position: pc.SEMANTIC_POSITION, vertex_normal: pc.SEMANTIC_NORMAL }, vertexWGSL: NEON_VERTEX, fragmentWGSL: NEON });
@@ -210,18 +275,26 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     const root = new pc.Entity(name); parent.addChild(root);
     const body = new pc.Entity(`${name} · cuerpo`); root.addChild(body);
     const glowU = linear(look.halo, new Float32Array(4)), coreU = linear(look.core, new Float32Array(4));
+    /** Every pair of colours its strokes are lit with (its own, and any a stroke brings), so `glow` reaches them all. */
+    const lit: [Float32Array, Float32Array][] = [[glowU, coreU]];
     const meshes: pc.Mesh[] = [], materials: pc.Material[] = [];
-    let shine = 1;
+    let shine = 1, dead = false;
     const self = {
       root, body,
-      /** A stroke along `points` (local to `under`, the body by default), hidden until shown. */
-      stroke(points: V3[], o: { radius?: number; under?: pc.Entity } = {}): Stroke {
+      /** A stroke along `points` (local to `under`, the body by default), hidden until shown; `look` lights it in colours of its own. */
+      stroke(points: V3[], o: { radius?: number; under?: pc.Entity; look?: { core: string; halo: string } } = {}): Stroke {
         const a = tubeMesh(device, points, o.radius ?? .03, 8);
         meshes.push(a.mesh);
         const e = new pc.Entity(`${name} · trazo`);
         const instance = new pc.MeshInstance(a.mesh, neon);
         instance.cull = false;
-        instance.setParameter('uEye', eye); instance.setParameter('uGlow', glowU); instance.setParameter('uCore', coreU);
+        let glowS = glowU, coreS = coreU;
+        if (o.look) {
+          glowS = linear(o.look.halo, new Float32Array(4)); coreS = linear(o.look.core, new Float32Array(4));
+          glowS[3] = glowU[3]; coreS[3] = coreU[3];
+          lit.push([glowS, coreS]);
+        }
+        instance.setParameter('uEye', eye); instance.setParameter('uGlow', glowS); instance.setParameter('uCore', coreS);
         e.addComponent('render', { meshInstances: [instance], castShadows: false, receiveShadows: false });
         (o.under ?? body).addChild(e);
         const show = (from: number, to: number) => {
@@ -236,14 +309,15 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       /** How bright it is (1 as drawn), and a flash on top. */
       glow(k: number, flash = 0) {
         shine = k;
-        glowU[3] = 2.6 * shine * (1 + flash * 1.5); coreU[3] = flash;
+        for (const [g, c] of lit) { g[3] = 2.6 * shine * (1 + flash * 1.5); c[3] = flash; }
       },
       get shine() { return shine; },
       /** A mesh of its own with its own material (a pyramid's faces, a cube's water). */
       own(mesh: pc.Mesh | undefined, material: pc.Material) { if (mesh) meshes.push(mesh); materials.push(material); },
       /** Where a point of its body is in the world. */
       world(p: V3): V3 { const w = body.getWorldTransform().transformPoint(new pc.Vec3(p.x, p.y, p.z)); return { x: w.x, y: w.y, z: w.z }; },
-      destroy() { live.delete(self); root.destroy(); meshes.forEach(m => m.destroy()); materials.forEach(m => m.destroy()); },
+      destroy() { if (dead) return; dead = true; live.delete(self); root.destroy(); meshes.forEach(m => m.destroy()); materials.forEach(m => m.destroy()); },
+      get dead() { return dead; },
     };
     live.add(self);
     self.glow(1);
@@ -263,12 +337,18 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
   /** A flare of light that follows a point (the pen's tip), for as long as `seconds`. */
   function pen(colour: string, seconds: number, where: (t: number) => V3 | undefined, o: { rate?: number; kind?: string; size?: number } = {}) {
     const first = where(0) ?? { x: 0, y: -50, z: 0 };
+    ensureKinds();
     const tip = emit(o.kind ?? 'spellcore', { at: first, shape: 'ball', spread: .015, rate: o.rate ?? 220, speed: .12, life: [.08, .2], colour, size: o.size ?? .7 });
     if (!tip) return;
     play(seconds, t => { const p = where(t); if (p) tip.at = p; tip.rate = p ? o.rate ?? 220 : 0; }, () => stop(tip));
   }
   /** Draws strokes one after another over `seconds` (each in proportion to its length), with a pen at the tip. */
   function draw(f: Figure, strokes: Stroke[], seconds: number, colour: string, o: { pen?: boolean } = {}) {
+    drawStrokes(strokes.map(s => ({ points: s.points, show: s.show, tip: (k: number) => f.world(s.at(k)) })), seconds, colour, { pen: o.pen, gone: () => f.dead });
+  }
+  /** `draw` for any strokes that know where their tip is: `each(i)` as stroke `i` starts, `done` once all are drawn, nothing more once `gone`. */
+  function drawStrokes(strokes: readonly NeonStroke[], seconds: number, colour: string, o: { pen?: boolean; each?: (index: number) => void; done?: () => void; gone?: () => boolean } = {}) {
+    if (!strokes.length) { o.done?.(); return; }
     const lengths = strokes.map(s => s.points.slice(1).reduce((sum, p, i) => sum + len(sub(p, s.points[i])), 0)), total = lengths.reduce((a, b) => a + b, 0) || 1;
     const where = (t: number) => {
       let k = clamp01(t / seconds) * total;
@@ -278,8 +358,69 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
       }
       return { i: strokes.length - 1, k: 1 };
     };
-    play(seconds, t => { const { i, k } = where(t); strokes.forEach((s, j) => s.show(0, j < i ? 1 : j === i ? k : 0)); });
-    if (o.pen !== false) pen(colour, seconds, t => { const { i, k } = where(t); return f.world(strokes[i].at(k)); });
+    let started = -1;
+    // (`each?.(++started)` would skip the increment when there is no `each`.)
+    const reach = (i: number) => { while (started < i) { started++; o.each?.(started); } };
+    play(seconds, t => {
+      if (o.gone?.()) return;
+      const { i, k } = where(t);
+      reach(i);
+      strokes.forEach((s, j) => s.show(0, j < i ? 1 : j === i ? k : 0));
+    }, () => { if (o.gone?.()) return; reach(strokes.length - 1); strokes.forEach(s => s.show(0, 1)); o.done?.(); });
+    if (o.pen !== false) pen(colour, seconds, t => { if (o.gone?.()) return undefined; const { i, k } = where(t); return strokes[i].tip(k); });
+  }
+
+  // ——— A dual's own figures (`DuoStage.figure` and `draw`) ———
+  const ORIGIN: V3 = { x: 0, y: 0, z: 0 };
+  /** A rotation whose x, y and z go along the frame's right, up and facing (any two make the third). */
+  function frameRotation(frame: NeonFrame) {
+    const usable = (v?: V3) => v && len(v) > 1e-6 ? norm(v) : undefined;
+    const r0 = usable(frame.right), u0 = usable(frame.up);
+    let facing = usable(frame.facing) ?? (r0 && u0 ? usable(cross(r0, u0)) : undefined);
+    if (!facing && !r0 && !u0) return new pc.Quat();
+    facing ??= r0 ? usable(cross(r0, UP)) ?? { x: 0, y: 0, z: 1 } : usable(cross({ x: 1, y: 0, z: 0 }, u0!)) ?? { x: 0, y: 0, z: 1 };
+    let right = r0 ?? (u0 ? usable(cross(u0, facing)) : undefined) ?? usable(cross(UP, facing)) ?? { x: 1, y: 0, z: 0 };
+    const up = norm(cross(facing, right));
+    right = cross(up, facing);
+    const m = new pc.Mat4(), d = m.data;
+    d[0] = right.x; d[1] = right.y; d[2] = right.z; d[4] = up.x; d[5] = up.y; d[6] = up.z; d[8] = facing.x; d[9] = facing.y; d[10] = facing.z;
+    return new pc.Quat().setFromMat4(m);
+  }
+  /** A dual's figure of light (`NeonFigure`), in `look` (his gold by default), placed at `frame` (the world's origin and axes by default). */
+  function neonFigure(name: string, look: NeonLook = FIGURE_LOOKS.gold, frame: NeonFrame = { at: ORIGIN }): NeonFigure {
+    const f = figure(name, look);
+    const self: NeonFigure = {
+      stroke(points, o = {}) {
+        const s = f.stroke([...points], { radius: o.radius, look: o.look });
+        return { points: s.points, show: s.show, tip: k => f.world(s.at(k)) };
+      },
+      place(next) {
+        if (f.dead) return;
+        f.root.setPosition(next.at.x, next.at.y, next.at.z);
+        f.root.setRotation(frameRotation(next));
+        const s = next.scale ?? 1;
+        f.root.setLocalScale(s, s, s);
+      },
+      glow(k, flash = 0) { if (!f.dead) f.glow(k, flash); },
+      world: p => f.world(p),
+      animate(seconds, step, done) { play(seconds, (t, dt) => { if (!f.dead) step(t, dt); }, () => { if (!f.dead) done?.(); }); },
+      pen(seconds, where, colour) { pen(colour ?? look.core, seconds, t => f.dead ? undefined : where(t)); },
+      fade(seconds, delay = 0) {
+        after(delay, () => {
+          const from = f.shine;
+          play(seconds, t => { if (!f.dead) f.glow(from * (1 - smooth(t / seconds))); }, () => f.destroy());
+        });
+      },
+      destroy: () => f.destroy(),
+      get gone() { return f.dead; },
+    };
+    self.place(frame);
+    return self;
+  }
+  /** Draws a dual's strokes one after another over `seconds` with his pen of light (`NeonDraw`). */
+  function drawNeon(fig: NeonFigure, strokes: readonly NeonStroke[], seconds: number, o: NeonDraw = {}) {
+    const run = () => drawStrokes(strokes, seconds, o.colour ?? FIGURE_LOOKS.gold.core, { pen: o.pen, each: o.each, done: o.done, gone: () => fig.gone });
+    if (o.delay) after(o.delay, run); else run();
   }
 
   // ——— Cardioide ———
@@ -744,6 +885,8 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
 
   return {
     cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release,
+    /** A dual's own figure and its drawing (`DuoStage.figure` and `draw`, src/duo-fx/types.ts). */
+    neon: neonFigure, drawNeon,
     /** Runs the figures on, `dt` in fight seconds. */
     update(dt: number) {
       const camera = cameraEntity();

@@ -2,6 +2,7 @@ import type { BattleEffect, BattleState, ClassId, DualId } from '../battle';
 import type { DualFx, V3 } from '../dual-fx';
 import type { Effects } from '../effects';
 import type { FluidFx } from '../fluid-fx';
+import type { NeonDraw, NeonFigure, NeonFrame, NeonLook, NeonStroke } from '../math-figures';
 import type { SoundId } from '../sfx';
 
 /**
@@ -59,8 +60,20 @@ export interface DuoStage {
   pulse(fringe: number, bloom: number, flash?: number): void;
   /** A punch in of the camera: 0–1. */
   punch(amount: number): void;
-  /** A sound of the fight's own (src/sfx.ts `SoundId`). */
-  cue(id: SoundId, options?: { delay?: number }): void;
+  /** A sound of the fight's own (src/sfx.ts `SoundId`), `volume` times as loud, at `pan` from −1 (left) to 1 (right): `pan(at)` for a point. */
+  cue(id: SoundId, options?: { delay?: number; volume?: number; pan?: number }): void;
+  /** Where a point is on the screen from left (−1) to right (1), for a sound's `pan`. */
+  pan(at: V3): number;
+  /**
+   * Matemágico's neon (src/math-figures.ts `NeonFigure`): a figure of tubes of light, his gold unless
+   * `look` says, standing at `frame` (with none, its points are the world's; with `{ at, ...screenAxes(view) }`
+   * it lies in the camera's plane, x right and y up). Its strokes (`figure.stroke(points)`) are hidden
+   * until `draw` draws them or `show` shows them. It runs on the fight's clock and goes with the fight;
+   * end it with `fade` or `destroy`.
+   */
+  figure(name: string, o?: { look?: NeonLook; frame?: NeonFrame }): NeonFigure;
+  /** Draws `strokes` of `figure` one after another over `seconds`, his pen of light at the tip (`NeonDraw`: `delay`, `each(i)` as one starts, `done`). */
+  draw(figure: NeonFigure, strokes: readonly NeonStroke[], seconds: number, o?: NeonDraw): void;
   /** The ground's height under a point. */
   ground(x: number, z: number): number;
 }

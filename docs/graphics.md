@@ -1162,6 +1162,20 @@ or shrinking waits for it to play even through a dual's unlock pause (`upcoming`
 every foe get a wide lens (`duoLens`); Géiser a lens that pulls back for its column.
 `just screenshots duos-nuevos --gpu` plays the twelve.
 
+A dual with Matemágico can draw his own neon (2026-11-25, for Campana de Gauss and Arco voltaico):
+`stage.figure(name, { look?, frame? })` hands it a `NeonFigure` (src/math-figures.ts), the same tubes
+of light his skills' figures are made of, and `stage.draw(figure, strokes, seconds, { delay, each, done })`
+draws its strokes one after another with his pen of light at the tip. Its points are given in its
+frame: with none, the world's; with `{ at, ...screenAxes(stage.view) }` the camera's plane (x right,
+y up); `place({ at, up, facing, scale })` moves and turns it, every frame inside `figure.animate`
+so it can turn in the world. `neonCircle`, `neonCurve` and `neonDashes` (a dashed directrix) build
+point lists; a stroke can bring a `look` of its own. Gold (`FIGURE_LOOKS.gold`, #f3cf78) unless it
+says, never pink or violet. Everything is computed when it is cast: per frame only the reveal and
+the transform move. It runs on the fight's clock and goes with the fight; each ends with `fade` or
+`destroy`. `stage.pan(point)` gives a sound's place on the screen for `stage.cue(id, { pan })`.
+The effects lab's *Matemágico · figuras de neón* ([src/neon-lab.ts](../src/neon-lab.ts)) draws two
+studies with it, and `just screenshots neon-duos --gpu` records them.
+
 **Marea** (redone 2026-11-21 as the sea, then as a fluid, Aitor: *más espectacular, como olas de mar*;
 *más como un fluido y luego se expande*). Gerard draws the level in chalk-gold, one long line across the
 field at the height the water will reach, a small `=` over its middle. The sea draws back first: water

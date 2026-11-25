@@ -3747,6 +3747,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     fightSpeed: () => battleScene.speed,
     /** Development (the effects lab): plays a dual or a foe's ability as the fight shows it, changing nothing. */
     preview: battleScene.preview,
+    /** Development (the effects lab's neon figures, src/neon-lab.ts): what a dual's look is handed (src/duo-fx/types.ts). */
+    duoStage: battleScene.duoStage,
     /** Development (the status scenario): puts a status on a fighter at a level (0 takes it off), a reaction, and what they carry (src/status-fx.ts). */
     status: battleScene.status,
     /** A timed status pulsed on a fighter (src/battle.ts `runClock`). */
