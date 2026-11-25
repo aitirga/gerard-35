@@ -755,6 +755,12 @@ title = "Matemágico: Cortocircuito y ∂Q/∂t Condensador"
 grep = "id: 'condensador'"
 in = "src/battle.ts"
 
+# Aitor 2026-11-25 (docs/animas/matemagico/README.md § Atractor extraño): Cálculo's grade III beside Integral, 2 ecos.
+[[block.item]]
+title = "Matemágico: Atractor extraño (junta en un enemigo los estados con reloj de los demás)"
+grep = "id: 'atractor'"
+in = "src/battle.ts"
+
 # Designed 2026-11-20 (docs/animas/matemagico/README.md § Grade III): water's levels and a fourth that
 # freezes, on the shared Congelado rule (not built yet either).
 [[block.item]]

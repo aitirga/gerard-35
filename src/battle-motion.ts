@@ -24,6 +24,8 @@ export const FIGURES = {
   descarga: { contact: 1, end: 1.7 },
   cortocircuito: { contact: 1, end: 1.6 },
   condensador: { contact: 1.3, end: 1.8 },
+  // Atractor extraño: the butterfly drawn round the foe, the others' statuses streaming into it, and its collapse into the chest.
+  atractor: { contact: 2.4, end: 3.4 },
 } as const satisfies Record<string, { contact: number; end: number }>;
 export type FigureSkill = keyof typeof FIGURES;
 export const isFigure = (skill?: string): skill is FigureSkill => !!skill && skill in FIGURES;
@@ -61,11 +63,11 @@ export const DUAL_FREEZE = .12, DUAL_SLOW = .35, DUAL_BANNER = 1.0, DUAL_BANNER_
  * After a dual, the time to take it in (BEAT.dual, or BEAT.dualSeen once that dual has been seen); after a foe's ability that is not a plain blow
  * (`card`, its own picture in the scene) or a move announced a turn ahead, the time to see it (BEAT.ability).
  */
-export function holdAfter(effect: { status?: unknown; burn?: unknown; bled?: number; stats?: readonly unknown[]; boosted?: readonly unknown[]; peeled?: number; melted?: boolean; hits?: readonly { status?: unknown; bled?: number }[]; dual?: unknown; ability?: { card?: boolean }; telegraph?: unknown; reaction?: unknown }, down = false, seen = false) {
+export function holdAfter(effect: { status?: unknown; burn?: unknown; bled?: number; stats?: readonly unknown[]; boosted?: readonly unknown[]; peeled?: number; melted?: boolean; hits?: readonly { status?: unknown; bled?: number }[]; dual?: unknown; ability?: { card?: boolean }; telegraph?: unknown; reaction?: unknown; gathered?: readonly unknown[] }, down = false, seen = false) {
   let hold: number = BEAT.breath;
   if (effect.dual) hold = Math.max(hold, seen ? BEAT.dualSeen : BEAT.dual);
   if (effect.ability?.card || effect.telegraph) hold = Math.max(hold, BEAT.ability);
-  if (effect.status || effect.burn || effect.bled || effect.melted || effect.reaction || effect.hits?.some(h => h.status || h.bled)) hold = Math.max(hold, BEAT.status);
+  if (effect.status || effect.burn || effect.bled || effect.melted || effect.reaction || effect.gathered?.length || effect.hits?.some(h => h.status || h.bled)) hold = Math.max(hold, BEAT.status);
   if (effect.stats?.length || effect.boosted?.length) hold = Math.max(hold, BEAT.stats);
   if (effect.peeled) hold = Math.max(hold, BEAT.peel);
   if (down) hold = Math.max(hold, BEAT.down);

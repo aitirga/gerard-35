@@ -101,6 +101,7 @@ keeps its job: **fire piles up, water sets up, electricity cashes in**; grade II
 | Fuego | Passive · **Combustión** | 2 | — | 24 magic, fire, all | `Pasiva. El fuego puede subir a un cuarto nivel, Combustión. Un golpe físico sobre un enemigo en Combustión lo hace estallar: daño mágico de fuego medio a todos los enemigos, y el fuego de los demás sube un nivel.` | Built |
 | Fuego | Dúo mayor · **Vulcano**, with Sincopante's Ostinato | 2 | 1 + 2 | 28 magic, fire, all | `Daño mágico de fuego medio a todos los enemigos. Los quema. Durante 20 segundos, un volcán les sube el fuego un nivel cada 5 segundos.` | Built |
 | Cálculo | **Integral impropia** | 2 | 3 | 26 heal, party, then Sanación | `Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.` | Built |
+| Cálculo | **Atractor extraño** (beside Integral, past Maná +1) | 2 | 2 | 16 magic, astral, one foe | `Daño mágico no elemental leve a un enemigo. Los estados con reloj de los demás enemigos pasan a él: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.` | Built (§ Atractor extraño) |
 | Agua | Passive · **Punto de congelación** | 2 | — | — | `Pasiva. El agua puede subir hasta un nivel III y, un nivel más, congela: el enemigo no actúa hasta que el hielo se rompe o se derrite.` | Designed |
 | Eléctrico | **Resonancia** | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Designed (Aitor liked it, 2026-11-20); built with the freezing rule |
 
@@ -173,6 +174,53 @@ and arcs over the foe (many, and for a while, where it shorts). ∂Q/∂t Conden
 in his circle as Leibniz wrote it, two plates sliding in either side with arcs jumping between them,
 and it all drawing into him. The charge let go (×2): the plates flash open over the target. Jumping
 back: two strokes of lightning from him to the foe that struck. `just screenshots matemagico-electrico --gpu`.
+
+## Atractor extraño (Aitor 2026-11-25, built)
+
+Grade III of Cálculo, a branch past Maná +1 beside Integral impropia: **2 ecos** (Aitor: «baja algún eco»;
+the proposal had 3) and **2 maná**. Its verb is *juntar*: the other lines and the partners leave statuses
+on the foes, this puts them all on the one that matters. The proposal behind it: Serie de Fourier
+counts them afterwards, one blow a status.
+
+**Rules** (`gather` in `src/battle.ts`; `tests/atractor.test.mjs`):
+
+1. A blow of the astral, 16, on its target.
+2. Then every status on the clock **that moves** (`moves` in `TIMED`, a trait of the kind of status, never of
+   the foe) leaves each other foe standing, in the plate's order, for the target: Quemado, Cegado, Mojado,
+   Empolvado, Envenenado, Cristalizado, Encogido, Confusión and Bomba (Gas, when Electrólisis brings it).
+   - **The same one already there adds up**: the levels to its top (fire III, IV with Combustión; the shards
+     to `POWDER_RULES.shards`; poison III), keeping the longer clock. Three Quemado II make one Quemado IV
+     with Combustión bought (III without it), and the others are left clean.
+   - **Two bombs**: their charge adds up to `BOMBA.top`, with the clock of the one closer to going off.
+3. **What does not move**: La crecida's water and everything of it (Agua, Corriente, Hundido, Congelado, and the
+   Mojado of water standing under a foe), the cures, Virus, the duals' own (Volcán, Marea, Fulgurita, Metralla,
+   Idea fija, Seiche, Staccato) and the statuses counted in rounds (Sangrado, Mareo, Llorera).
+4. **What meets reacts**, with no blow of its own, powder first as anywhere: water on a fire is Humo, fire on
+   water Vapor, fire and powder Estallido (its blast on every foe, as always), water and powder Envenenado.
+   The status that came is spent in it. A fire does not catch on an onion's wet layers: it stays where it was.
+5. **No loop with Virus**: what came was not put on anyone, so it does not spread (nor what its reactions set
+   off), and Virus itself stays where it is. What lands on an infected target afterwards spreads as ever.
+6. With one foe, only the blow. If the blow fells its target, nothing comes.
+
+Toma de tierra counts its reactions. The question it answers: who keeps the statuses (the one that will stand
+longest; the one an Explosión, a Reinicio or a Combustión is about to cash). The bot plays it by what the
+statuses still have to give where they stand (`clockWorth` in `src/battle-sim.ts`): with three foes at
+Quemado II, one of them big, it gathers on the big one; spread evenly it prefers Pirámide ígnea. Its pair of
+`TARGETS` is still to write (the balance pass).
+
+**Look** (`atractor` in `src/math-figures.ts`, contact 2.4 s, end 3.4 s; `just screenshots atractor-extrano --gpu`):
+the pen of light leaves his circle for the foe and draws the **Lorenz butterfly** round it (σ 10, ρ 28, β 8/3,
+1 200 points worked out once by RK4, `lorenzPoints`), a gold wire standing in the picture's plane, about
+2.7 m tall, turning slowly. Gold motes are left along it as it is drawn, and every one follows the **Lorenz
+field on the GPU** (the `lorenz` law, src/fight-particles.ts), so the lobes weave themselves. Meanwhile what the
+other foes carry rises off them in its own look and flies to a lobe, where it pours in along the orbit:
+embers, drops, powder grains, ice-blue shards, grey smoke, sparks, poison green, a few thousand each.
+Neighbours drift apart and the figure holds. Fire and water that meet in it give a puff of steam. Then
+**the bifurcation**: ρ falls from 28 to 0.5 in 0.75 s while the field's rest slides into the chest, and the
+whole butterfly spirals into it, the wire shrinking with it, to a flash of white and gold. Then the number,
+*Atractor* over the target naming what it now carries, and each reaction's word (¡Humo!, ¡Vapor!,
+¡Estallido!, ¡Envenenado!). The plates change as it lands. **Sound**: a low hum that trembles as the
+attractor does and falls an octave as ρ does (`chaos-hum`), and one struck note (`struck`).
 
 ## How each skill looks (Aitor's notes on the sheet, 2026-11-21)
 
@@ -306,5 +354,5 @@ duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined 
 
 - Whether Análisis Parálisis and Cardioide keep their look, or get their own (a chalkboard of sums for
   Análisis, the cardioid drawn by hand).
-- Grade III (§ Grade III): the tree costs 33 ecos since 2026-11-24 (each dúo mayor 3, Combustión and
-  Integral impropia 3; `src/ecos.ts`). They only show after Aurelià.
+- Grade III (§ Grade III): the tree costs 35 ecos since 2026-11-25 (each dúo mayor 3, Combustión and
+  Integral impropia 3, Atractor extraño 2; `src/ecos.ts`). They only show after Aurelià.

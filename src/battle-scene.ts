@@ -1925,6 +1925,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     }
     // Matemágico's elements: their own pictures (the streams and comets left his circle in `castElement`).
     if (action.skill && ELEMENTAL.has(action.skill)) { elementBurst(action, target); return land(felt, dx / d, 0, dz / d); }
+    // Atractor extraño: the butterfly has fallen into the chest (its flash is the figure's); the foe takes it whole.
+    if (action.skill === 'atractor') { hit(target, gold, 1.5); shake = Math.max(shake, .5); pulse?.(.45, .4); gatherFx(action); return land(felt, dx / d, 0, dz / d); }
     const reach = target.party ? .15 : .6;
     // On Vertitrón's eye, the blow lands on the eye, just in front of it; on Gerard or Aitor, on the
     // middle of the body (their heads are big: higher, it reads as a blow over them).
@@ -2188,6 +2190,12 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       figures.cortocircuito({ centre, view, to: v3(chestOf(target)), radius: extent(target).radius, shorts, size });
     } else if (e.skill === 'condensador') figures.condensador({ centre, view, to: v3(chestOf(actor)), size });
     else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
+    else if (e.skill === 'atractor') {
+      // What each other foe gave it, as it gave it; fire and water that met in it steam.
+      const sources = (e.gathered ?? []).flatMap(g => { const f = fighters.get(g.from); return f ? [{ chest: v3(chestOf(f)), statuses: g.ids }] : []; });
+      const steam = !!e.gathered?.some(g => g.reactions.some(r => r.id === 'humo' || r.id === 'vapor'));
+      figures.atractor({ centre, view, chest: v3(chestOf(target)), feet: v3(floorUnder(target)), sources, steam, size });
+    }
     else {
       const foes = reachedBy(e).map(({ f }) => figureFoe(f));
       if (e.skill === 'factor-comun') figures.piramide({ centre, view, foes, size });
@@ -2351,6 +2359,19 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     if (wallFor && shield === wallFor) wallFx?.wear(1 - wallSeen / Math.max(1, wallFor.max));
     // Broken by a blow still on its way: it gives way when that blow lands.
     if (!shield && wallFor && !(effect?.bits?.broke && !impacted)) { if (wallFor.broken) wallFx?.shatter(); else wallFx?.fade(); wallFx = undefined; wallFor = undefined; }
+  }
+  /**
+   * Atractor extraño: what met in its target and reacted, one after another as it lands: smoke or steam out of it, its powder
+   * going up on everyone it reaches, or running green.
+   */
+  function gatherFx(e: BattleEffect) {
+    const id = e.target;
+    if (!id) return;
+    (e.gathered ?? []).flatMap(g => g.reactions).forEach((r, i) => dualFx.after(.12 + i * .14, () => {
+      if (r.id === 'estallido') { powderFx.ignite((r.hits ?? []).map(h => h.target)); shake = Math.max(shake, .45); }
+      else if (r.id === 'veneno') powderFx.soak([id]);
+      else if (r.id === 'humo' || r.id === 'vapor') statusFx.react(r.id, id);
+    }));
   }
   /** Virus atómico: what spread leaves its host as a stream of tiny Bips and settles on each of the others. */
   function spreadFx(e: BattleEffect) {
@@ -4400,8 +4421,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.
       const turning = effect?.reaction && !impacted ? new Set([effect.target, ...(effect.reaction.hits ?? []).map(h => h.target)]) : undefined;
+      // Atractor extraño: the others keep what they carry until it rises off them, its target until the butterfly falls into it.
+      const gathering = effect?.gathered && !impacted ? new Set([effect.target, ...effectTime < FIGURES.atractor.contact * .42 ? effect.gathered.map(g => g.from) : [], ...effect.gathered.flatMap(g => g.reactions.flatMap(r => (r.hits ?? []).map(h => h.target)))]) : undefined;
       if (state) for (const unit of [...state.allies, ...state.foes]) {
-        if (turning?.has(unit.id)) continue;
+        if (turning?.has(unit.id) || gathering?.has(unit.id)) continue;
         const shown = shownStacks.get(`${unit.id}:quemado`) ?? 0;
         if (dualBurn !== undefined && unit.id === effect?.target && unit.timed?.quemado) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: dualBurn ? { ...unit.timed.quemado, level: dualBurn } : undefined }, !!unit.capacitor); continue; }
         // The charge stays on show until the blow that lets it go lands.

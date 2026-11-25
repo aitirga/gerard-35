@@ -12,7 +12,7 @@ import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts'
 import {
   ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -505,8 +505,10 @@ function worth(before: BattleState, choice: Choice, threat: Threat, ban: readonl
 }
 /** What changed from `before` to `after` (one choice played), as `smart` values it. */
 function gain(before: BattleState, after: BattleState, choice: Choice, threat: Threat, ban: readonly Ban[]) {
-  const actor = before.allies[before.active];
+  const actor = before.allies[before.active], skillSpec = SKILLS.find(s => s.id === choice.skill), gathers = !!skillSpec && 'gathers' in skillSpec;
   let value = 0;
+  // Atractor extraño: the statuses moved, worth what they have left to give where they now stand.
+  if (gathers) value += clockWorth(after) - clockWorth(before);
   before.foes.forEach((foe, i) => {
     const now = after.foes[i];
     // Vertitrón's eye: PV off it count while its Rayo is still to come (breaking it ends the Rayo for good).
@@ -525,7 +527,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     // El Campeón's Plan set back: a step further from the Rayo total on everyone.
     if (foe.kind === 'campeon' && now.hp > 0) value += ((foe.plan ?? 0) - (now.plan ?? 0)) * PLAN_WORTH;
     value += ((now.statuses?.sangrado ?? 0) - (foe.statuses?.sangrado ?? 0)) * 3;
-    value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
+    // (A skill that gathers the statuses measures them by what they still have to give: `clockWorth`, below.)
+    if (!gathers) value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
     // hit per ally standing for each of its rounds.
     if (foe.hp > 60) for (const [id, mark] of Object.entries(now.marks ?? {})) if (!foe.marks?.[id as SkillId] && mark) value += mark.amount * MARK_HITS * after.allies.filter(a => a.hp > 0).length;
@@ -618,6 +621,23 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     if (before.foes.some(f => f.hp > 0 && f.intent?.target === actor.id && (f.intent.ability === 'expulsion' || f.intent.ability === 'atrapar'))) value += KEPT_WORTH;
   }
   return value;
+}
+/**
+ * What the statuses on the clock on the foes are still worth to `smart`, for a skill that moves them (Atractor extraño): what
+ * each fire and poison has left to give (never more than the PV its carrier has left, so one about to fall wastes it), the
+ * shards for the blows the party will land (`MARK_HITS` each), and a fire at Combustión, a blast on everyone a blow away.
+ */
+function clockWorth(state: BattleState) {
+  const up = state.foes.filter(f => f.hp > 0 && !f.part), hands = state.allies.filter(a => a.hp > 0).length;
+  return up.reduce((total, f) => {
+    const t = f.timed ?? {}, venom = t.envenenado;
+    let worth = t.quemado ? firePulses(t.quemado) * pulseDamage('quemado', t.quemado.level, f.maxHp) : 0;
+    if (venom) worth += (Math.floor(Math.max(0, venom.left - venom.next) / STATUS_TIMED.envenenado.every) + 1) * pulseDamage('envenenado', venom.level, f.maxHp);
+    worth += (t.cristalizado?.level ?? 0) * POWDER_RULES.shard * MARK_HITS * hands;
+    worth = Math.min(f.hp, worth);
+    if ((t.quemado?.level ?? 0) >= COMBUSTION.level) worth += COMBUSTION.blast * up.length * .5;
+    return total + worth;
+  }, 0);
 }
 /** Everything the foes would do to the party now, in PV. */
 const sum = (t: Threat) => [...t.hp.values()].reduce((total, hp) => total + hp, 0);

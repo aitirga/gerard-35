@@ -64,6 +64,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   // Matemágico's elements: fire forking to everyone, water rising to one level, a bolt out of the sky.
   'factor-comun': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }, { id: 'burn', delay: .08 }] },
   integral: { start: [{ id: 'think' }], impact: [{ id: 'heal' }, { id: 'clink', volume: .5, delay: .15 }] },
+  // Atractor extraño: a low hum that trembles as the attractor does and falls as ρ does, from the butterfly's first stroke to the
+  // collapse (FIGURES.atractor), and one note struck as everything lands in the foe's chest.
+  atractor: { start: [{ id: 'think' }, { id: 'chaos-hum', delay: .45 }], impact: [{ id: 'struck' }, { id: 'thump', volume: .45 }] },
   vasos: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .12 }] },
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
   // Cortocircuito: a resistor that snaps: a crack, the zap, and a dull thud as the current stays in them.
@@ -199,7 +202,9 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   if (effect.kind === 'skill' && effect.skill) {
     // Fire that does not catch (an onion's wet layers) fizzles; on the palace minion's gum it melts it too.
     if (effect.skill === 'foc-binari') return [...effect.melted ? [{ id: 'melt' as const }] : [], { id: effect.burn || effect.melted ? 'fire-hit' as const : 'fizzle' as const }, ...torn];
-    return [...SKILL_SOUNDS[effect.skill].impact, ...torn];
+    // Atractor extraño: what met in its target and reacted sounds after the note, one after another.
+    const met = (effect.gathered ?? []).flatMap(g => g.reactions).flatMap((r, i) => REACTION_SOUNDS[r.id].map(c => ({ ...c, delay: (c.delay ?? 0) + .25 + i * .12 })));
+    return [...SKILL_SOUNDS[effect.skill].impact, ...met, ...torn];
   }
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];

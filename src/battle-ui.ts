@@ -2298,6 +2298,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       unlanded = false;
       const held = new Map(owed);
       owed.clear();
+      // Atractor extraño: the fires it took off the others (and any its Estallido lit) go as it lands, not once it is over.
+      if (effect.gathered) heldFire.clear();
       // Rayo solar: the foes its beam has yet to cross keep their PV and fire on screen until it does.
       sweepOwed.forEach((amount, id) => { if (amount) owed.set(id, amount); });
       if (strikes) owed.set(effect.target!, strikes.slice(1).reduce((sum, amount) => sum + amount, 0));
@@ -2505,6 +2507,19 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.dacapo) for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'compas', text: '¡Da capo!', detail: effect.dacapo.duals.length ? 'Maná lleno · dúos de nuevo' : 'Maná lleno' });
       // A cure on the whole party (Integral, Bombeo): each one's PV back, a beat apart.
       effect.cures?.slice(1).forEach((c, i) => setTimeout(() => { if (token === generation) pop(c.target, `+${c.amount}`, 'heal', SKILLS.find(sk => sk.id === effect.skill)?.name ?? 'Integral'); }, 140 + i * 90));
+      // Atractor extraño: what came to its target, named over it; then what met there, each with its word and the PV it took.
+      if (effect.gathered && effect.target) {
+        const into = state.foes.find(f => f.id === effect.target);
+        const names = [...new Set(effect.gathered.flatMap(g => g.ids))].filter(id => into?.timed?.[id]).map(id => `${TIMED[id].name}${TIMED[id].levels.length && into!.timed![id]!.level > 1 ? ` ${roman(into!.timed![id]!.level)}` : ''}`);
+        landed.push({ target: effect.target, id: 'atractor', text: 'Atractor', detail: names.join(' · ') || 'Todo se junta' });
+        const MET = { humo: { id: 'cegado', text: '¡Humo!', detail: 'El agua apaga el fuego' }, vapor: { id: 'cegado', text: '¡Vapor!', detail: 'El agua se va en vapor' }, estallido: { id: 'quemado', text: '¡Estallido!', detail: 'El polvo arde de golpe' }, veneno: { id: 'envenenado', text: `¡${TIMED.envenenado.name}!`, detail: 'El agua corre el polvo' } } as Partial<Record<string, { id: string; text: string; detail: string }>>;
+        effect.gathered.flatMap(g => g.reactions).forEach((r, i) => setTimeout(() => {
+          if (token !== generation) return;
+          const says = MET[r.id];
+          if (says) pop(effect.target!, says.text, 'status', says.detail, says.id);
+          r.hits?.forEach((h, j) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', says?.text.replace(/[¡!]/g, '') ?? '', undefined, 58); }, 140 + j * 90));
+        }, 380 + i * 260));
+      }
       // Virus atómico: what spread, over each foe it reached.
       effect.spread?.forEach(sp => sp.to.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, '¡Contagio!', 'status', sp.statuses.join(' · '), 'virus'); }, 480 + i * 80)));
       // Escudo de bits: raised, what it stopped, and the blow that broke it.
