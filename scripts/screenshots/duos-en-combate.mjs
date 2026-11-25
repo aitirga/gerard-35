@@ -33,7 +33,8 @@ export function prepare(id) {
       const points = (id === 'sutura-de-luz' ? [target] : wide ? [...s.allies, ...s.foes].map(f => f.id) : s.foes.map(f => f.id)).map(unit => game.fighterAt(unit));
       const mean = key => points.reduce((sum, p) => sum + p[key], 0) / points.length;
       const orbital = id === 'bombardeo-orbital';
-      game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : wide ? 4.4 : 2.6);
+      // Campana de Gauss turns the fight's own camera across the row for its board: the clip keeps it.
+      if (id !== 'campana-de-gauss') game.frame({ x: mean('x'), y: mean('y') + (orbital ? 2 : 1), z: mean('z') }, orbital ? 3.25 : id === 'sutura-de-luz' ? 2.05 : wide ? 4.4 : 2.6);
       button.click();
     },
     async impact(key = id) {

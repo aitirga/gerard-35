@@ -4618,26 +4618,43 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
 }
 /**
  * Campana de Gauss (`DualSpec.bell`): `base` dice and as many more as Dados astrales would drop for whoever wears
- * Dadista (`rainCount`), never more than `most`. Each lands, on the fight's dice, on the foe before the target in
- * the row (`side`), on the one after it (`side`) or on the target (the rest); a side with nobody there falls to the
- * target. Then the target's fire is at least `top`, and that of each one beside it a die reached at least `beside`.
+ * Dadista (`rainCount`), never more than `most`. Half of them (rounded up) fall on the target and the rest, one by one,
+ * on the foe before it in the row and the one after it (the odd one by the fight's dice); a side with nobody there falls
+ * to the target. Then the target's fire is at least `top`, and that of each one beside it a die reached at least `beside`.
  */
-export const BELL = { base: 4, most: 14, side: .25, top: 3, beside: 2 };
+export const BELL = { base: 4, most: 14, top: 3, beside: 2 };
+/** Where Campana de Gauss's `count` dice fall, in the order they drop: half on `target`, the rest beside it, shuffled. */
+function bellSplit(state: BattleState, count: number, target: Combatant, before?: Combatant, after?: Combatant): Combatant[] {
+  const rest = Math.floor(count / 2), odd = rest % 2 ? roll(state) < .5 : false;
+  const left = Math.floor(rest / 2) + (odd ? 1 : 0), right = rest - left;
+  const out = [
+    ...Array.from({ length: count - rest }, () => target),
+    ...Array.from({ length: left }, () => before ?? target),
+    ...Array.from({ length: right }, () => after ?? target),
+  ];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(roll(state) * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
 /**
  * Campana de Gauss lands: each die a blow of the dual's power, magic fire with the stats of whoever brings Pirámide
- * ígnea, never a golpe crítico (the luck is in where they fall). The first on a foe in pringue melts it; on a foe
- * that sings or turns magic back it does nothing. Then the fire it shapes (`BELL`; on water it is Vapor, wet layers
- * never catch), and the Racha of whoever wears Dadista is spent.
+ * ígnea, never a golpe crítico (the luck is in how many fall). A die whose foe has already fallen goes to the first of
+ * the target and those beside it still standing. The first on a foe in pringue melts it; on a foe that sings or turns
+ * magic back it does nothing; an onion loses one layer however many reach it. Then ice takes its fire (a mark melts and
+ * that foe does not burn), and the fire it shapes (`BELL`; on water it is Vapor, wet layers never catch), and the Racha
+ * of whoever wears Dadista is spent.
  */
 function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: Combatant, roller: Combatant | undefined, effect: BattleEffect) {
-  const row = dualTargets(state, d), at = row.indexOf(target), before = row[at - 1], after = at >= 0 ? row[at + 1] : undefined;
+  const row = dualTargets(state, d), at = row.indexOf(target), before = at > 0 ? row[at - 1] : undefined, after = at >= 0 ? row[at + 1] : undefined;
   const count = Math.min(BELL.most, BELL.base + (roller ? rainCount(state, roller) : RAIN.least));
   const eaten = annulled(state, striker, 'fuego', 'magic');
   const dice: NonNullable<BattleEffect['bell']> = effect.bell = [];
-  const totals = new Map<Combatant, NonNullable<BattleEffect['hits']>[number]>();
-  for (let i = 0; i < count; i++) {
-    const r = roll(state), wanted = r < BELL.side ? before : r < 2 * BELL.side ? after : target;
-    const foe = wanted ?? target, side: -1 | 0 | 1 = foe === before ? -1 : foe === after ? 1 : 0;
+  // The target first, so whatever reads the first of the hits (an eco that repeats it) finds the foe picked.
+  const totals = new Map<Combatant, NonNullable<BattleEffect['hits']>[number]>([[target, { target: target.id, amount: 0 }]]);
+  const fallback = [target, before, after].filter((c): c is Combatant => !!c);
+  for (const wanted of bellSplit(state, count, target, before, after)) {
+    const foe = wanted.hp > 0 || eaten ? wanted : fallback.find(c => c.hp > 0);
+    if (!foe) break;
+    const side: -1 | 0 | 1 = foe === before ? -1 : foe === after ? 1 : 0;
     const hit = totals.get(foe) ?? { target: foe.id, amount: 0 };
     totals.set(foe, hit);
     let amount = 0;
@@ -4648,30 +4665,35 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
       if (weak > 1 && amount > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; hit.weakSpot = true; }
       if (amount > 0 && affinityOf(foe, 'fuego')) hit.affinity = affinityOf(foe, 'fuego');
       spendShield(state, foe, amount, effect);
-      if (foe.layers && !blocked) { hit.peeled = (hit.peeled ?? 0) + 1; if (!--foe.layers) bare(foe); }
+      if (foe.layers && !blocked && !hit.peeled) { hit.peeled = 1; if (!--foe.layers) bare(foe); }
     }
     hit.amount += amount;
     dice.push({ target: foe.id, amount, side });
   }
-  const hits = effect.hits = [...totals.values()];
+  const hits = effect.hits = [...totals.values()].filter(h => h.target === target.id || dice.some(die => die.target === h.target));
   effect.amount = hits.reduce((sum, h) => sum + h.amount, 0);
   state.message = `¡Ataque dual! ${d.name} contra ${target.name}.`;
   if (eaten) {
     effect.annulled = eaten;
     state.message += ` ${annulledText(eaten)}`;
   } else {
-    state.message += ` Caen ${count} dados de fuego: −${effect.amount} PV${hits.length > 1 ? ' entre todos' : ''}.`;
+    state.message += ` Caen ${dice.length} dados de fuego: −${effect.amount} PV${hits.length > 1 ? ' entre todos' : ''}.`;
     if (effect.melted) state.message += ' El pringue se derrite.';
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
-    // Fire finds the powder first (all of it goes up), then shapes each one's fire.
+    // Fire finds the powder first (all of it goes up), then the ice (a mark melts, and that foe does not burn), then
+    // shapes each one's fire.
     const said = state.message;
     state.message = '';
     for (const foe of totals.keys()) powder(state, striker, foe, 'fuego', effect);
     const powderSaid = state.message;
+    state.message = '';
+    chill(state, striker, effect, iceBlows({ kind: 'skill', actor: striker.id, rain: dice }, 'magic', d.power, 'fuego', true));
+    const iceSaid = state.message;
     state.message = said;
+    const melted = new Set((effect.ice ?? []).filter(i => i.melted).map(i => i.target));
     let steamed = 0;
     for (const [foe, hit] of totals) {
-      if (foe.hp <= 0 || foe.layers || !dice.some(die => die.target === foe.id && die.amount > 0)) continue;
+      if (foe.hp <= 0 || foe.layers || melted.has(foe.id) || !dice.some(die => die.target === foe.id && die.amount > 0)) continue;
       if (foe.timed?.mojado || waterOf(foe) > 0) {
         const held = waterOf(foe);
         steamed = steam(foe);
@@ -4686,10 +4708,9 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
     if (steamed) { effect.reaction ??= { id: 'vapor', level: steamed }; ground(state, striker, effect); state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`; }
     const lit = hits.filter(h => h.burn?.id === 'quemado').map(h => `${state.foes.find(f => f.id === h.target)!.name} ${roman(h.burn!.level)}`);
     if (lit.length) state.message += ` Arden: ${lit.join(', ')}.`;
-    state.message += powderSaid;
+    state.message += powderSaid + iceSaid;
     const peeled = hits.filter(h => h.peeled && !state.foes.find(f => f.id === h.target)?.layers && state.foes.find(f => f.id === h.target)!.hp > 0);
     if (peeled.length) effect.stats = peeled.map(h => ({ target: h.target, way: 'down' as const, stats: ['defensa' as const] }));
-    chill(state, striker, effect, iceBlows({ kind: 'skill', actor: striker.id, rain: dice }, 'magic', d.power, 'fuego', true));
   }
   const spent = roller ? rachaOf(roller) : 0;
   if (roller && spent) { roller.racha = 0; effect.starred = spent; state.message += ' La racha empieza de cero.'; }

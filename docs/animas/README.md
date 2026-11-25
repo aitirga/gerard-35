@@ -547,7 +547,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Papagato + Sincopante | **Staccato** | Zarpazo sangriento + Ostinato | 1 · 1 | Built (2026-11-21). An eco repeats the cut each 5 s for 20 s, a Sangrado each |
 | Colorista + Dadista | **Cadáver exquisito** | Puñado + Estrella fugaz | 1 · 3 | Built (2026-11-21). Three blows, each powdering and of a random element; with a streak of 3, all three different |
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
-| Matemágico + Dadista | **Campana de Gauss** | Pirámide ígnea + Dados astrales | node · 4 | Built (2026-11-25). 4 dice of fire and as many as Dados astrales would drop (14 at most): half on the foe picked, a quarter on each one beside it in the row; its fire to III at least, theirs to II (`BELL`). Spends the Racha |
+| Matemágico + Dadista | **Campana de Gauss** | Pirámide ígnea + Dados astrales | node · 4 | Built (2026-11-25). 4 dice of fire and as many as Dados astrales would drop (14 at most): half on the foe picked (rounded up), the rest split between the ones beside it in the row; its fire to III at least, theirs to II (`BELL`). Spends the Racha |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.

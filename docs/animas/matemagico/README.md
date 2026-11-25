@@ -285,24 +285,38 @@ die, once a fight. `Daño mágico de fuego leve a un enemigo. Caen más dados cu
 mitad sobre él y el resto sobre los enemigos de al lado. Su fuego sube al menos a nivel III y el de
 los de al lado a nivel II. Derrite el pringue. Gasta la racha.`
 
-- **Rules** (`bellFall`, `BELL` in `src/battle.ts`, tunable as `bell.rules.*`): `base` 4 dice plus the
-  Dados astrales count of whoever wears Dadista (`rainCount`, a die each 15 % of Crítico), `most` 14.
-  Each die, on the fight's dice, lands on the foe before the target in the row (`side` .25), the one
-  after it (.25) or the target; a side with nobody falls to the target. Each is 6 magic fire with the
-  Pirámide wearer's stats, never a golpe crítico; the first on a foe in pringue melts it. Then the
-  target's fire is at least III and each one beside it a die reached at least II (`kindle`: never
-  lower, the clock over); on water it is Vapor, on wet layers nothing. The Racha is spent.
+- **Rules** (`bellFall`, `bellSplit`, `BELL` in `src/battle.ts`, tunable as `bell.rules.*`): `base` 4
+  dice plus the Dados astrales count of whoever wears Dadista (`rainCount`, a die each 15 % of Crítico),
+  `most` 14. Half of them, rounded up, fall on the target; the rest go one by one to the foe before it
+  in the row and the one after it (the odd one by the fight's dice), shuffled in the order they drop; a
+  side with nobody falls to the target. A die whose foe has already fallen goes to the first of the
+  target and those beside it still standing (none: the rest are lost). Each is 6 magic fire with the
+  Pirámide wearer's stats, never a golpe crítico; the first on a foe in pringue melts it; a foe that
+  sings or turns magic back takes nothing and does not burn; an onion loses one layer however many
+  dice reach it. Then the fire meets powder (Estallido), then ice (a mark melts and that foe does not
+  burn), then the target's fire is at least III and each one beside it a die reached at least II
+  (`kindle`: never lower, the clock over); on water it is Vapor, on wet layers nothing. Fran's light
+  eats it all. The Racha is spent. The target is always first in the effect's `hits` (an eco that
+  repeats the dual finds it).
 - **The question it answers**: which foe must burn most. It is the only piece that puts a foe chosen
   straight on III; with Combustión, the next fire takes it to IV. Against the fire-resistant it is a
-  poor choice, and it shows.
-- **Look** (`src/duo-fx/campana-de-gauss.ts`): Pirámide's triangle drawn standing in the camera's
-  plane over the foes, eight rows of pegs a tick each, three glass bins under it, one over each foe;
-  Dadista's dice of cold light fall into its top and melt into balls of fire that fall through the
-  pegs on the paths the rule chose (the GPU `galton` law, the path's bits in the burst, each peg it
-  meets flashing), pale ghost balls filling the bell around them. The bins fill as a histogram of
-  liquid fire (box volumes holding a fluid), the pen draws the bell from where the dice fell, the
-  bins open and the fire pours onto each foe; the pegs go out from the bottom up. Sounds `peg`,
-  `pachinko`, `chord-swell`. Screenshots: `just screenshots campana-de-gauss --gpu`.
+  poor choice, and it shows. Fight-sim holds it to Aurelià's Atril (`aurelia-leccion-campana` and
+  `aurelia-leccion-sin-campana`, party `MAT_DAD`): with it the lesson is about a round shorter.
+- **Look** (`src/duo-fx/campana-de-gauss.ts`, contact 1.8 s, end 2.7 s): the fight's camera turns
+  round the fight (`bellTurn` in `src/battle-scene.ts`, 50° at most) so the row of foes runs across
+  the picture, and zooms onto the board. Pirámide's triangle is drawn in gold, standing in the
+  camera's plane over the foes and as wide as their row, eight rows of pegs a tick each, and under it
+  a pale glass bin straight over each foe it reaches (each over its foe's place in the picture,
+  snapped to the board's bins). Dadista's dice of cold light (small spinning facets) fall into its
+  top and melt into single balls of fire, an ember trail behind each, that fall through the pegs on
+  the paths the rule chose (the GPU `galton` law, the path's bits in the burst, each peg it meets
+  flashing) into the bin over their foe; 150 small gold ghost balls fall on paths of their own and
+  settle in the bins as gold sediment, a bead at a time, so the histogram builds as they land. The
+  bins fill with liquid fire (box volumes holding a fluid), the pen draws the bell from where the dice
+  fell, the bins open at 1.35 s and the fire pours out of each as a sheet onto its foe; the pegs go
+  out from the bottom up. If a light eats the fire, the balls still fall but the bins only smoke:
+  nothing pours, nothing shakes. Sounds `peg`, `pachinko`, `chord-swell`. Screenshots:
+  `just screenshots campana-de-gauss --gpu` (three dogs, four, and Aurelià with El Atril).
 
 ## Implementation
 

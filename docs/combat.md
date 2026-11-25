@@ -669,7 +669,7 @@ el golpe bajo él y el turno del grupo ya sin él.
 ## Ataques duales
 
 Cada jugador elige una habilidad del ánima que lleva. Algunas parejas se convierten en una sola
-acción que consume los dos turnos. Estos son los primeros del catálogo de `DUALS`; la lista entera de parejas está en
+acción que consume los dos turnos. Estos son algunos del catálogo de `DUALS`; la lista entera de parejas está en
 `docs/animas/README.md` § Combined skills.
 
 | Dúo | Habilidades | Momento que lo decide |

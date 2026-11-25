@@ -1027,11 +1027,37 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const denseFx: typeof dualFx = Object.assign(Object.create(dualFx) as typeof dualFx, {
     burst: (kind: string, o: Parameters<typeof dualFx.burst>[1]) => dualFx.burst(kind, o.count >= 8 ? { ...o, count: Math.round(o.count * DUO_DENSITY) } : o),
   });
+  /** Who a dual's `hits` reach, worked out once an effect (read every frame while it is coming or in flight). */
+  const hitSets = new WeakMap<BattleEffect, Set<string>>();
+  const hitSet = (e: BattleEffect) => { let set = hitSets.get(e); if (!set) hitSets.set(e, set = new Set((e.hits ?? []).map(h => h.target))); return set; };
+  /**
+   * Campana de Gauss: how far (degrees, as `lens.yaw`) the camera turns round the fight so the row of foes it
+   * reaches runs across the picture, its bins each over its own foe (never more than 50°). Once an effect.
+   */
+  const bellTurns = new WeakMap<BattleEffect, number>();
+  function bellTurn(e: BattleEffect) {
+    let turn = bellTurns.get(e);
+    if (turn !== undefined) return turn;
+    const at = (e.hits ?? []).map(h => fighters.get(h.target)).filter((f): f is Fighter => !!f).map(f => chestOf(f));
+    let d = { x: 0, z: 0 }, far = 0;
+    for (const a of at) for (const b of at) { const n = Math.hypot(b.x - a.x, b.z - a.z); if (n > far) { far = n; d = { x: b.x - a.x, z: b.z - a.z }; } }
+    const v = viewDir(), across = d.x * v.z - d.z * v.x, along = d.x * v.x + d.z * v.z;
+    // The smaller of the two turns that put the row square to the view: tan(turn) = −along / across.
+    turn = far < .3 ? 0 : Math.atan2(-along, across) * pc.math.RAD_TO_DEG;
+    if (turn > 90) turn -= 180; else if (turn < -90) turn += 180;
+    bellTurns.set(e, turn = Math.max(-50, Math.min(50, turn)));
+    return turn;
+  }
+  /** The fight's camera direction, turned `degrees` round the fight as the game turns it for `lens.yaw`. */
+  function turned(view: V3, degrees: number): V3 {
+    const a = degrees * pc.math.DEG_TO_RAD, c = Math.cos(a), s = Math.sin(a);
+    return { x: view.x * c + view.z * s, y: view.y, z: view.z * c - view.x * s };
+  }
   /** What the newer duals' own looks (src/duo-fx) are handed: the fight as points, and the scene's few levers. */
   function duoStage(e?: BattleEffect): DuoStage {
     const standing = (party: boolean) => [...fighters.entries()].filter(([, f]) => f.party === party && f.hp > 0 && !f.part && !f.unborn).map(([id, f]) => duoFighter(id, f));
     return {
-      fx: denseFx, fluid: fluidFx, effects, view: viewDir(),
+      fx: denseFx, fluid: fluidFx, effects, view: e?.dual?.id === 'campana-de-gauss' ? turned(viewDir(), bellTurn(e)) : viewDir(),
       fighter: id => { const f = fighters.get(id); return f ? duoFighter(id, f) : undefined; },
       foes: () => standing(false), party: () => standing(true),
       wearer: anima => {
@@ -1177,9 +1203,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     } else if (id === 'campana-de-gauss') {
       // Campana de Gauss: its board stands in the air over the foes. Wide and lifted to take it in whole while the dice fall
       // through it, then down onto the foes as the fire pours out of its bins.
-      const centre = foes.length ? mid(foes) : target?.base ?? anchor;
-      if (t < contact - .25) Object.assign(lensWant, { yaw: 0, pitch: 6, zoom: .26, ...look(target?.base ?? centre, .8), y: 1.7 });
-      else Object.assign(lensWant, { yaw: 0, pitch: -4, zoom: .16, ...look(target?.base ?? centre, .7), y: .5 });
+      // It turns round the fight so their row runs across the picture, its bins each over its own foe.
+      const centre = foes.length ? mid(foes) : target?.base ?? anchor, yaw = bellTurn(e);
+      if (t < contact - .3) Object.assign(lensWant, { yaw, pitch: 6, zoom: .3, ...look(target?.base ?? centre, .85), y: 2.4 });
+      else Object.assign(lensWant, { yaw, pitch: -4, zoom: .16, ...look(target?.base ?? centre, .7), y: .9 });
       foes.slice(0, 3).forEach(f => keep(f)); pair.forEach(f => keep(f));
       spotWant = t < contact + .3 ? .7 : 0;
     } else if (e.dual && e.dual.id in DUO_STAGINGS && new Set((e.hits ?? []).map(h => h.target)).size > 1) {
@@ -4407,7 +4434,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // A dual's fire on every foe it reaches waits for its contact (Campana de Gauss's dice are still falling through the pegs),
       // and while its banner is up before it plays (`upcoming`): the rules have already lit it.
       const coming = upcoming?.dual ? upcoming : effect?.dual && !impacted ? effect : undefined;
-      const dualAhead = coming?.hits && animate ? new Set(coming.hits.map(h => h.target)) : undefined;
+      const dualAhead = coming?.hits && animate ? hitSet(coming) : undefined;
       // A dual that sets fire claw by claw (Zarpazos de fuego): the fire rises with each one that lands.
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.

@@ -35,7 +35,8 @@ test('Campana de Gauss: half the dice on the foe picked, the rest beside it; its
   assert.equal(e.bell.length, count, 'base dice and the Dados astrales count');
   assert.ok(e.bell.every(die => die.amount > 0));
   const centre = e.bell.filter(die => die.target === 'dog-1').length;
-  assert.ok(centre >= count / 4, 'about half on the foe picked');
+  assert.equal(centre, Math.ceil(count / 2), 'half on the foe picked, rounded up');
+  assert.equal(e.hits[0].target, 'dog-1', 'the foe picked comes first in its hits');
   for (const die of e.bell) assert.equal(die.side, die.target === 'dog-0' ? -1 : die.target === 'dog-2' ? 1 : 0);
   assert.equal(s.foes[1].timed.quemado.level, 3);
   for (const foe of [s.foes[0], s.foes[2]]) {
@@ -94,4 +95,86 @@ test('Campana de Gauss: water goes up in Vapor instead of burning, the pringue m
   held.foes[1].timed = { agua: { level: 2, left: CRECIDA.mark, next: CRECIDA.mark }, mojado: { level: 1, left: 20, next: 20 } };
   actDual(held, 'campana-de-gauss', 'dog-1');
   assert.equal(waterOf(held.foes[1]), 1, 'water held under it loses a mark');
+});
+
+test('Campana de Gauss: on every seed the foe picked takes at least half the dice and burns at III', () => {
+  for (let seed = 1; seed <= 200; seed++) {
+    const s = pair(3, seed);
+    by(s, 'aitor').racha = seed % 9;
+    const e = actDual(s, 'campana-de-gauss', 'dog-1');
+    const mine = e.bell.filter(die => die.target === 'dog-1').length;
+    assert.ok(mine >= e.bell.length / 2, `seed ${seed}: ${mine} of ${e.bell.length}`);
+    const left = e.bell.filter(die => die.target === 'dog-0').length, right = e.bell.filter(die => die.target === 'dog-2').length;
+    assert.ok(Math.abs(left - right) <= 1, `seed ${seed}: ${left} / ${right}, the rest split evenly`);
+    assert.equal(s.foes[1].timed.quemado.level, 3, `seed ${seed}`);
+  }
+});
+
+test('Campana de Gauss: once the foe picked falls, its dice go to those beside it, and none land on the fallen', () => {
+  const s = pair(3, 5);
+  s.foes[1].hp = 5;
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.equal(s.foes[1].hp, 0);
+  const onFallen = e.bell.filter(die => die.target === 'dog-1');
+  assert.equal(onFallen.length, 1, 'one die is enough');
+  assert.ok(e.bell.length > 3 && e.bell.every(die => die.target === 'dog-1' || die.amount > 0), 'every other die still hurts');
+  assert.equal(e.bell.length, expected(pair(3, 5)), 'none of its half is wasted');
+  for (const die of e.bell) assert.equal(die.side, die.target === 'dog-0' ? -1 : die.target === 'dog-2' ? 1 : 0);
+  const alone = pair(1);
+  alone.foes[0].hp = 5;
+  const lone = actDual(alone, 'campana-de-gauss', 'dog-0');
+  assert.equal(lone.bell.length, 1, 'nobody left to fall on');
+});
+
+test('Campana de Gauss in Fran\'s orange light: nothing lands or burns, and the Racha is still spent', () => {
+  const s = pair();
+  s.light = { t: 15 };
+  by(s, 'aitor').racha = 3;
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.equal(e.annulled, 'naranja');
+  assert.equal(e.amount, 0);
+  assert.ok(s.foes.every(f => f.hp === 999 && !f.timed?.quemado));
+  assert.equal(by(s, 'aitor').racha, 0);
+  assert.ok(e.starred > 0);
+});
+
+test('Campana de Gauss on ice melts a mark and that foe does not burn, nor is it said to', () => {
+  const s = pair(3, 3);
+  s.foes[0].timed = { congelado: { level: 3, left: 3 * CRECIDA.ice, next: TIMED.congelado.every } };
+  s.foes[0].cracks = 0; s.cold = { used: true, by: 'aitor' };
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.ok(e.bell.some(die => die.target === 'dog-0'));
+  assert.equal(s.foes[0].timed.quemado, undefined, 'the ice puts it out');
+  assert.equal(s.foes[0].timed.congelado.level, 2, 'a mark melts');
+  assert.ok(e.ice.some(i => i.target === 'dog-0' && i.melted));
+  assert.equal(e.hits.find(h => h.target === 'dog-0').burn, undefined);
+  assert.equal(s.foes[1].timed.quemado.level, 3);
+});
+
+test('Campana de Gauss sets powder off first (Estallido), and the foe picked still ends at III', () => {
+  const s = pair();
+  s.foes[1].timed = { empolvado: { level: 1, left: 20, next: 20 } };
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.equal(e.reaction.id, 'estallido');
+  assert.equal(s.foes[1].timed.empolvado, undefined);
+  assert.equal(s.foes[1].timed.quemado.level, 3);
+});
+
+test('Campana de Gauss does nothing to a foe that turns magic back, and lights no fire on it', () => {
+  const s = pair();
+  s.foes[0].kind = 'cristalino';
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  const mirror = e.bell.filter(die => die.target === 'dog-0');
+  assert.ok(mirror.length > 0 && mirror.every(die => die.amount === 0));
+  assert.equal(s.foes[0].hp, 999);
+  assert.equal(s.foes[0].timed?.quemado, undefined);
+});
+
+test('Campana de Gauss peels one layer off each onion it reaches, however many dice fall on it', () => {
+  const s = pair();
+  s.foes.forEach(f => { f.layers = 5; });
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.equal(s.foes[1].layers, 4);
+  for (const foe of [s.foes[0], s.foes[2]]) assert.equal(foe.layers, e.bell.some(die => die.target === foe.id) ? 4 : 5, foe.id);
+  assert.equal(s.foes[1].timed?.quemado, undefined, 'wet layers never catch');
 });

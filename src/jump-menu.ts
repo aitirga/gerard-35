@@ -136,10 +136,13 @@ const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id =
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
 export function validFight(value: unknown): FightSetup {
   const v: Partial<FightSetup> = value && typeof value === 'object' ? value as Partial<FightSetup> : DEFAULT_FIGHT;
+  const fights = ['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as const;
   if (isDualTrial(v.trial)) {
     const { gerard, aitor, encounter, improved } = DUAL_TRIALS[v.trial];
+    // A trial may be played against another fight than its own (a boss and its parts: how the dual reaches them).
+    const against = fights.find(e => e === v.encounter && e !== 'possessed' && e !== 'palace-minion');
     return { ...DEFAULT_FIGHT, adult: true, wear: { gerard, aitor }, animas: [gerard, aitor],
-      encounter, improved: [...improved], free: false, trial: v.trial,
+      encounter: against ?? encounter, improved: [...improved], free: false, trial: v.trial,
       // A dual on more foes (or fewer) than the tester's three: how it reaches them.
       foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes };
   }
@@ -151,7 +154,7 @@ export function validFight(value: unknown): FightSetup {
   const wear = { gerard, aitor: aitor === gerard ? undefined : aitor };
   const adult = v.adult === true;
   // The palace minion is chapter 1's fight: the boys, always together.
-  const encounter = (['dogs', 'possessed', 'palace-minion', 'palace-guards', 'night-guard', ...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as const).find(e => e === v.encounter) ?? 'dogs';
+  const encounter = fights.find(e => e === v.encounter) ?? 'dogs';
   const tower = ([...TOWER_FIGHTS, ...UNI_FIGHTS, ...CAMPING_FIGHTS, ...CUERDAS_FIGHTS, ...CASTLE_FIGHTS, ...MODELO_FIGHTS, ...LUCA_FIGHTS] as readonly string[]).includes(encounter);
   return {
     adult, partner: encounter === 'palace-minion' ? true : v.partner !== false,
