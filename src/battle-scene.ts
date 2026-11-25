@@ -641,6 +641,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     fighters: () => [...fighters].filter(([, f]) => !f.part && f.model.enabled && (f.party || f.hp > 0)).map(([id, f]) => ({ id, party: f.party })),
     at: id => { const p = fighters.get(id)?.model.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     model: id => fighters.get(id)?.model,
+    settled: () => entryTime >= ENTRY_SECONDS,
   });
   /** The middle of the foes standing: the side a cortina faces. */
   const foesCentre = () => {
@@ -1055,6 +1056,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (!cam || !width) return 0;
         const s = cam.worldToScreen(new pc.Vec3(at.x, at.y, at.z));
         return Math.max(-1, Math.min(1, s.x / width * 2 - 1));
+      },
+      clear: at => {
+        const cam = app.systems.camera?.cameras[0], canvas = app.graphicsDevice.canvas as HTMLCanvasElement, box = canvas.getBoundingClientRect();
+        if (!cam || !box.width) return true;
+        const s = cam.worldToScreen(new pc.Vec3(at.x, at.y, at.z)), x = box.left + s.x * box.width / app.graphicsDevice.clientRect.width, y = box.top + s.y * box.height / app.graphicsDevice.clientRect.height;
+        if (s.z < 0 || x < box.left || x > box.right || y < box.top || y > box.bottom) return false;
+        const pad = 12;
+        return ![...document.querySelectorAll<HTMLElement>('#battle .battle-dock:not([hidden]), #battle .party-roster')].some(el => {
+          const r = el.getBoundingClientRect();
+          return r.width && x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad;
+        });
       },
       figure: (name, o) => figures.neon(name, o?.look, o?.frame),
       draw: (figure, strokes, seconds, o) => figures.drawNeon(figure, strokes, seconds, o),
@@ -3731,7 +3743,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
      * The action about to play, while a pause holds it (a dual's unlock, a foe's move named): the rules
      * have already raised its dome or shrunk its foe, which must wait for it to land.
      */
-    upcoming(next: BattleEffect) { upcoming = next; },
+    // Freática's cells hold what they show until it lands too (a dual's unlock stops time before it reaches the scene).
+    upcoming(next: BattleEffect) { upcoming = next; freatica.pending(next); },
     /**
      * How fast the fight runs now, every slow motion together (the banner's and the choreography's
      * own, Punto débil's aim): the fight screen's clock (statuses, Quemado's pulses) follows it.
@@ -4154,6 +4167,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           if (k === 0) {
             impacted = true;
             worldFx(effect!, actor, target, animate);
+            // The newer duals' lasting looks answer it too (Zarpazos de fuego setting off Electrólisis's gas).
+            if (animate) duoStruck(effect!, target);
             for (const change of effect!.stats ?? []) {
               cue(change.way === 'down' ? 'stat-down' : 'stat-up', { delay: STAT_AFTER_BLOW });
               if (animate) showStatChange(change.target, change.way, STAT_AFTER_BLOW);
@@ -4519,7 +4534,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // A dual that sets fire claw by claw (Zarpazos de fuego): the fire rises with each one that lands.
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.
-      const turning = effect?.reaction && !impacted ? new Set([effect.target, ...(effect.reaction.hits ?? []).map(h => h.target)]) : undefined;
+      // So does the fire Electrólisis's gas leaves going up (`ignited`): nobody burns from it before the blow that lights it lands.
+      const turning = (effect?.reaction || effect?.ignited) && !impacted ? new Set([effect.target, ...(effect.reaction?.hits ?? []).map(h => h.target), ...(effect.ignited?.hits ?? []).map(h => h.target)]) : undefined;
       // Atractor extraño: the others keep what they carry until it rises off them, its target until the butterfly falls into it.
       const gathering = effect?.gathered && !impacted ? gatheringNow(effect) : undefined;
       if (state) for (const unit of [...state.allies, ...state.foes]) {

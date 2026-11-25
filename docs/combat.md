@@ -693,7 +693,8 @@ el golpe bajo él y el turno del grupo ya sin él.
 ## Ataques duales
 
 Cada jugador elige una habilidad del ánima que lleva. Algunas parejas se convierten en una sola
-acción que consume los dos turnos. El catálogo de `DUALS` incluye siete dúos.
+acción que consume los dos turnos. El catálogo entero de `DUALS` está en docs/animas/README.md §
+Combined skills; aquí, algunos y el momento que los decide.
 
 | Dúo | Habilidades | Momento que lo decide |
 | --- | --- | --- |
@@ -704,6 +705,7 @@ acción que consume los dos turnos. El catálogo de `DUALS` incluye siete dúos.
 | Relevo de sangre | Zarpa en la llaga + Estrella fugaz | Un remate traslada el Sangrado al rival con más PV. Dadista paga con un dado. |
 | Bombardeo orbital | Explosión + Ostinato | La siguiente ronda abre con tres salvas sobre todos y Cegado durante 20 segundos (`ORBITAL_BLIND`). |
 | Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
+| Electrólisis | Cubo acuático + Sondeo eléctrico | El agua de todos se vuelve Gas (sin Conducción): quién trae el fuego, y cuándo, dentro de los 20 s. |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno

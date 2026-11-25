@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark } from './battle';
+import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -85,6 +85,7 @@ const lightText = (state: BattleState, light: keyof typeof LIGHTS) => `Luz ${LIG
 const DUAL_LEFT: Partial<Record<TimedId, string>> = {
   marea: 'El agua sube en todos a la vez', fulgurita: 'Las esquirlas cuentan juntas', metralla: 'La herida no se gasta',
   'idea-fija': 'Golpea a los suyos cada 5 s', seiche: 'Golpea y sostiene el agua', staccato: 'Corta de nuevo cada 5 s',
+  gas: 'Su agua, separada',
 };
 /** A stat up or down in words: «Defensa +4», or «Defensa ▼» for an onion's broken defence, which has no number. */
 const shiftText = (shift: StatShift) => `${statNames([shift.stat])} ${shift.amount ? `${shift.way === 'up' ? '+' : '−'}${shift.amount}` : shift.way === 'up' ? '▲' : '▼'}`;
@@ -2552,7 +2553,21 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.bits?.mended && effect.target) landed.push({ target: effect.target, id: 'bits', text: `Cúpula +${effect.bits.mended}`, detail: 'Se recompone' });
       // Vulcano: the volcano under each of them.
       // The newer duals: what each leaves, named over whoever carries it.
-      if (effect.left) for (const id of effect.left.targets) landed.push({ target: id, id: effect.left.id, text: `¡${TIMED[effect.left.id].name}!`, detail: DUAL_LEFT[effect.left.id] ?? `${TIMED[effect.left.id].seconds} s` });
+      if (effect.left) for (const id of effect.left.targets) {
+        // Electrólisis's gas says its level: the water it was made of.
+        const level = effect.gas?.find(g => g.target === id)?.level;
+        landed.push({ target: id, id: effect.left.id, text: `¡${TIMED[effect.left.id].name}${level ? ` ${roman(level)}` : ''}!`, detail: DUAL_LEFT[effect.left.id] ?? `${TIMED[effect.left.id].seconds} s` });
+      }
+      // The gas goes up: its name over the one the fire found, then each blast as the front reaches it, and the fire it leaves.
+      if (effect.ignited) {
+        const g = effect.ignited;
+        landed.push({ target: g.from, id: 'gas', text: '¡El gas estalla!', detail: g.hits.length === 1 ? 'Estalla en uno' : `Estalla en ${g.hits.length}` });
+        g.hits.forEach((h, i) => setTimeout(() => { if (token === generation) pop(h.target, `−${h.amount}`, 'damage', `Gas ${roman(h.level)}`, undefined, 58); }, 260 + i * IGNITION_GAP * 1000));
+        // A fire the blow itself already said (Foc Binari's Quemado on the one it struck) is not said twice.
+        const told = new Set([...effect.burn?.id === 'quemado' && effect.target ? [effect.target] : [], ...effect.reaction?.burns?.map(b => b.target) ?? [], ...(effect.hits ?? []).filter(h => h.burn?.id === 'quemado').map(h => h.target)]);
+        g.burns.filter(b => !told.has(b.target)).forEach((b, i) => setTimeout(() => { if (token === generation) { const says = fireSays(b.target, 'quemado', b.level); pop(b.target, says.text, 'status', says.detail || 'El gas lo prende', says.id); } }, 520 + i * IGNITION_GAP * 1000));
+        g.steamed?.forEach((id, i) => setTimeout(() => { if (token === generation) pop(id, `¡${TIMED.cegado.name}!`, 'status', 'El agua se va en vapor', 'cegado'); }, 520 + i * 80));
+      }
       if (effect.vapour) for (const id of effect.vapour) landed.push({ target: id, id: 'cegado', text: 'Vapor', detail: TIMED.cegado.name });
       if (effect.mirrored) landed.push({ target: effect.mirrored.target, id: 'bits', text: `Caleidoscopio −${effect.mirrored.amount}`, detail: 'Devuelve el golpe' });
       if (effect.fooled) landed.push({ target: effect.fooled, id: 'confusion', text: '¡Trampantojo!', detail: `${TIMED.confusion.name} · 20 s` });

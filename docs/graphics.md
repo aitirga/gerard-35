@@ -1280,6 +1280,23 @@ from under it, one jet per mark spent in time with the numbers, white and teal w
 root, its drops falling and settling. A low sheet of steam rolls out to every foe it blinds and hangs
 over each, dripping; while they stay blinded, a wisp curls off each now and then.
 
+**Electrólisis.** Gerard plants two electrodes at the ends of the foes' line, bars of gold neon drawn
+by his pen with a plate at each foot, a − over the left and a + over the right, each pushed back from the
+line until all of it (plate, bar and sign) stands clear of the party's panels (`DuoStage.clear`); each foe's water lights
+cyan from inside. Freática's bolt runs from − to +, a jagged yellow line jumping from foe to foe. At
+contact each cell fills with a body of the fight's fluid (`electro-agua`, held by a `contain` box) that
+thins and sinks with the cell's own `drain`, and two streams of bubbles rise through it, two of
+hydrogen (cyan-white) on the cathode's side for one of oxygen (pale gold) on the anode's: the `bubble`
+rule lifts them fast in the packed fluid, slowly out of it. They gather over each foe into a cloud of
+glass beads with a soft haze (`electro-gas`, `electro-bruma`, boids cohesion), as big as its Gas, which
+the hold keeps breathing with a few puffs a second, over where the foe's body is now (a lunge takes its cloud
+with it). When a blow says `ignited` (`struck`, a dual's strike included: Zarpazos de fuego lights it with its
+first claw), each cloud in
+the rule's order (`IGNITION_GAP` apart) gets a point of fire swept across it with `gpu.ignite`, and the
+gas's `ignite` rule carries the front through it (`electro-llama`); a dry crack, a small fireball, a ring
+of pressure on the floor, and a drizzle of `fluido-agua` after. Nobody shows the fire the gas leaves
+before the blow that lights it lands.
+
 **A escala.** Bip frames the foe in a square sight (four cyan corners, a dimension line with ten ticks,
 a scan sweeping down) while Freática runs its tape to it and stands a staff gauge marked I, II, III, a
 teal waterline at the water's level. Bip's ray goes in through a train of shrinking sights; the frame,

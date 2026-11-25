@@ -885,6 +885,8 @@ try {
         if (setup.trial === 'sutura-de-luz') s.allies.find(a => a.id === 'gerard')!.hp = 15;
         // Water already under a foe for the duals that play with it, and a wound for the ones that keep it.
         if (setup.trial === 'marea' || setup.trial === 'geiser') stageWater(s, setup.trial === 'geiser' ? 3 : 1);
+        // Electrólisis: one, two and three marks, so each gas is as big as the water it was.
+        if (setup.trial === 'electrolisis') stageWater(s, [1, 2, 3]);
         if (setup.trial === 'metralla') s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
         if (setup.trial === 'relevo-de-sangre') {
           s.foes[0].hp = 7;

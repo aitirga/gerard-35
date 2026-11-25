@@ -691,7 +691,8 @@ export const WEAK_SPOT = 3;
  */
 export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color' | 'sobrecalentamiento' | 'vulcano'
   | 'marea' | 'fulgurita' | 'suceso-seguro' | 'metralla' | 'idea-fija' | 'caleidoscopio'
-  | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo';
+  | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo'
+  | 'electrolisis';
 export interface DualSpec {
   id: DualId; name: string;
   parts: readonly [SkillId, SkillId];
@@ -765,6 +766,10 @@ export const DUALS: DualSpec[] = [
   { id: 'cadaver-exquisito', name: 'Cadáver exquisito', parts: ['punado', 'estrella-fugaz'], side: 'foes', kind: 'physical', power: 12, strikes: 3, description: 'Daño físico leve a un enemigo. Golpea tres veces. Cada golpe lo empolva y lleva un elemento al azar. Con racha 3 o más, los tres son distintos.' },
   // Trampantojo: a painted figure on the screen. Whoever goes through it no longer knows whose side it is on.
   { id: 'trampantojo', name: 'Trampantojo', parts: ['confusion', 'cortina'], side: 'allies', kind: 'guard', power: 0, description: 'Protege a un aliado con una cortina de polvo que reduce a la mitad el siguiente daño que reciba. El enemigo que la rompa queda confundido durante 20 segundos.' },
+  // Matemágico's duals with the ánimas he had none with (docs/animas/README.md § Combined skills).
+  // Electrólisis (Cubo acuático + Sondeo eléctrico): the current splits each foe's water into gas instead of running through
+  // it (no Conducción, no Shock); the next fire on any of them sets off the gas of all (`GAS`, `ignite`).
+  { id: 'electrolisis', name: 'Electrólisis', parts: ['vasos', 'sondeo'], side: 'all-foes', kind: 'magic', element: 'electrico', power: 18, leaves: 'gas', description: 'Daño mágico eléctrico leve a todos los enemigos. Convierte su agua en gas durante 20 segundos, más fuerte cuanta más agua tenían. El siguiente golpe de fuego sobre uno hace estallar el gas de todos.' },
 ];
 /** The dual two skills make, in either order. */
 export const dualOf = (a: SkillId, b: SkillId) => DUALS.find(d => (d.parts[0] === a && d.parts[1] === b) || (d.parts[0] === b && d.parts[1] === a));
@@ -811,8 +816,8 @@ export const ELEMENTS: Record<Element, { name: string; colour: string }> = {
 };
 export const ELEMENT_ORDER = Object.keys(ELEMENTS) as Element[];
 export type TimedId = 'quemado' | 'cegado' | 'sanacion' | 'confusion' | 'encogido' | 'mojado' | 'empolvado' | 'envenenado' | 'cristalizado' | 'volcan' | 'virus' | 'bomba' | DualTimedId | WaterId;
-/** What the newer duals leave on a foe: Marea's joined cells, Fulgurita's shared shards, Metralla's open wounds, and the ecos of Idea fija, Seiche and Staccato. */
-export type DualTimedId = 'marea' | 'fulgurita' | 'metralla' | 'idea-fija' | 'seiche' | 'staccato';
+/** What the newer duals leave on a foe: Marea's joined cells, Fulgurita's shared shards, Metralla's open wounds, the ecos of Idea fija, Seiche and Staccato, and Electrólisis's gas. */
+export type DualTimedId = 'marea' | 'fulgurita' | 'metralla' | 'idea-fija' | 'seiche' | 'staccato' | 'gas';
 /** La crecida's states (`CRECIDA`): the water under a foe, its current, the foe sunk in it, and the water frozen round it. */
 export type WaterId = 'agua' | 'corriente' | 'hundido' | 'congelado';
 export const WATER_IDS: readonly WaterId[] = ['agua', 'corriente', 'hundido', 'congelado'];
@@ -867,6 +872,9 @@ export const TIMED: Record<TimedId, TimedSpec> = {
   'idea-fija': { name: 'Idea fija', seconds: 20, every: 5, levels: [1], flat: 0, share: 0, cap: 0 },
   seiche: { name: 'Seiche', seconds: 20, every: 5, levels: [1], flat: 7, share: 0, cap: 0 },
   staccato: { name: 'Staccato', seconds: 20, every: 5, levels: [1], flat: 5, share: 0, cap: 0 },
+  // Gas (Electrólisis): the foe's water split. It never pulses; its level is the water it was made of (1–3), and the next fire
+  // blow on any foe that carries it sets off the gas of every one (`ignite`, `GAS`).
+  gas: { name: 'Gas', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Virus (Virus atómico): it hurts nobody; what lands on its carrier spreads to the other foes (`spread`).
   virus: { name: 'Virus', seconds: 20, every: 20, levels: [], flat: 0, share: 0, cap: 0 },
   // Bomba (Bomba remota, BOMBA): it never pulses; it counts how long it has been on (`Timed.age`) and goes off when its time is up (`runClock`).
@@ -1188,6 +1196,11 @@ export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1
 const met: { target: string; blow: 'physical' | 'magic'; affinity: Affinity }[] = [];
 /** What the poison and the shards added to the blows of the action being resolved; `amplify` hands it to its effect. */
 const dug: { target: string; venom?: true; shards?: number }[] = [];
+/**
+ * The foes a blow of fire landed on in the action being resolved (never a pulse: they do not come through here); `ignite`
+ * reads them as the action ends and lights the gas Electrólisis left, once.
+ */
+const lit: string[] = [];
 /** The blows of this action that landed on someone poisoned or full of shards: who, and what the shards added. */
 function amplify(effect: BattleEffect) {
   if (met.length) effect.kinds = met.splice(0).filter((k, i, all) => all.findIndex(x => x.target === k.target) === i);
@@ -1974,6 +1987,13 @@ export interface BattleEffect {
   extended?: { statuses: TimedId[]; seconds: number };
   /** Combustión burst on `target` (a physical blow found its fire at IV): the fire blast on each foe, and the fires it raised. */
   combustion?: { target: string; hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; steamed?: string[] };
+  /** Electrólisis: the gas it left on each foe, at the level of the water it was made of. */
+  gas?: { target: string; level: number }[];
+  /**
+   * A fire on a foe with gas (`ignite`): the gas of every foe went up, in order, from the one the fire found (`from`). Each
+   * one's blast by the level of its gas, the fire it left, and who was wet and steamed instead.
+   */
+  ignited?: { from: string; hits: { target: string; amount: number; level: number }[]; burns: { target: string; level: number }[]; steamed?: string[] };
   /** Reinicio and Rayo de energía: the clocks they started over on each foe. */
   restarted?: { target: string; statuses: TimedId[] }[];
   /** Escudo de bits raised (its PV), or what it took in this action and whether it broke. */
@@ -3012,6 +3032,7 @@ function fearDamage(state: BattleState, target: Combatant, damage: number, blow:
   if (hard && (blow === 'physical' || (blow === 'dual' && hard === 'weak'))) out *= ELEMENT_RULES[hard];
   // Magic off glass does nothing at all (Lo Cristalino).
   if (out <= 0) return 0;
+  if (element === 'fuego') lit.push(target.id);
   if (blow !== 'dual') { const kind = blowAffinity(target, blow); if (kind) met.push({ target: target.id, blow, affinity: kind }); }
   // Envenenado: the blow lands harder. Cristalizado: the shards dig in, a level deeper with each blow (`POWDER_RULES`).
   const venom = target.timed?.envenenado, glass = target.timed?.cristalizado;
@@ -3513,6 +3534,57 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
   state.message += ` ¡Combustión! ${target.name} estalla: ${hits.map(h => `−${h.amount}`).join(', ')} PV. El fuego salta a los demás.`;
   if (actor === owner) ground(state, owner, effect);
 }
+/**
+ * Electrólisis's gas (docs/animas/README.md § Gas): what its blast is at average stats, a level of gas at a time, and the
+ * most levels a foe can carry (`top`, as many as La crecida's marks; `TIMED.gas.levels` is empty, so anything that merges
+ * gas honours this instead of the generic cap). Tunable (`just fight-sim`, book `gas`).
+ */
+export const GAS = { blast: 12, top: 3 };
+/** How the fight shows the gas going up (`ignite`): the front reaches each foe's cloud this many seconds after the last. */
+export const IGNITION_GAP = .3;
+/** The gas Electrólisis leaves on a foe: its level (the water it was made of), 0 if none. */
+export const gasOf = (c: Pick<Combatant, 'timed'>) => c.timed?.gas?.level ?? 0;
+/**
+ * A blow of fire landed on a foe that carries gas in the action just resolved (`lit`, from `fearDamage` and the duals of
+ * fire; a pulse never comes through there): the gas of every foe goes up, one after another, in the order they stand.
+ * Each takes magic fire damage of `GAS.blast` a level of its own gas with the Magia of whoever lit it (a weakness or a
+ * resistance to fire counts), melts its pringue, burns at least at level I (wet, it steams instead; an onion's wet layers
+ * never catch) and loses the gas; a foe still powdered sets off Estallido. With every foe that had gas fallen, nothing
+ * goes up. Said in `effect.ignited`; Toma de tierra counts it as a reaction of whoever lit it.
+ */
+function ignite(state: BattleState, effect: BattleEffect) {
+  const struck = lit.splice(0).map(id => state.foes.find(f => f.id === id)).find(f => f?.timed?.gas);
+  if (!struck) return;
+  const actor = state.allies.find(a => a.id === effect.actor) ?? state.allies.find(a => a.hp > 0);
+  // From the foe the fire found outwards, one after another, as the front runs from cloud to cloud.
+  const from = state.foes.indexOf(struck), gassed = state.foes.filter(f => f.timed?.gas).sort((a, b) => Math.abs(state.foes.indexOf(a) - from) - Math.abs(state.foes.indexOf(b) - from));
+  const hits: { target: string; amount: number; level: number }[] = [], burns: { target: string; level: number }[] = [], steamed: string[] = [];
+  for (const foe of gassed) {
+    const level = gasOf(foe);
+    delete foe.timed!.gas;
+    if (foe.hp <= 0) continue;
+    const stats = actor ? current(state, actor) : current(state, foe);
+    const amount = hurt(state, foe, fearDamage(state, foe, magical(GAS.blast * level, stats, current(state, foe)) * affinityScale(foe, 'fuego'), 'magic', 'fuego'));
+    // Fire: it melts the pringue, as any fire does.
+    if (foe.shell) { foe.shell = false; effect.melted = true; }
+    hits.push({ target: foe.id, amount, level });
+    if (foe.hp <= 0 || foe.layers) continue;
+    if (foe.timed?.mojado) { steam(foe); steamed.push(foe.id); continue; }
+    const fire = kindle(foe, 'quemado', 1);
+    if (actor) bank(state, actor, foe, effect);
+    burns.push({ target: foe.id, level: fire.level });
+  }
+  lit.length = 0;
+  // Every foe with gas had fallen (the fire that found it among them): nothing went up.
+  if (!hits.length) return;
+  effect.ignited = { from: struck.id, hits, burns, ...steamed.length ? { steamed } : {} };
+  state.message += ` ¡El gas estalla! ${hits.map(h => `−${h.amount}`).join(', ')} PV.`;
+  // Fire on powder: a foe still powdered that the blast found sets off Estallido (`powder`), once for all.
+  const dusted = actor && hits.map(h => state.foes.find(f => f.id === h.target)!).find(f => f.timed?.empolvado);
+  if (actor && dusted) powder(state, actor, dusted, 'fuego', effect);
+  lit.length = 0;
+  if (actor) ground(state, actor, effect);
+}
 /** Bomba remota on `foe`: a new bomb, or the one on it started over, keeping what it has grown. `age`: born already grown (Enjambre). */
 function plantBomb(foe: Combatant, age = 0) {
   const on = foe.timed?.bomba;
@@ -3739,24 +3811,27 @@ function freeze(state: BattleState, actor: Combatant, effect: BattleEffect) {
 }
 /**
  * Development (the fight tester's «Agua»): every foe standing has `marks` of water now (0: dry), held by whoever wears
- * Freática (the active fighter otherwise). A frozen one thaws first. Returns whether it fits this fight.
+ * Freática (the active fighter otherwise); a list gives each foe its own, in order (the last for the rest). A frozen one
+ * thaws first. Returns whether it fits this fight.
  */
-export function stageWater(state: BattleState, marks: number) {
+export function stageWater(state: BattleState, marks: number | readonly number[]) {
   if (state.phase !== 'player' && state.phase !== 'enemy') return false;
   const holder = state.allies.find(a => a.hp > 0 && a.classId === 'freatica') ?? state.allies[state.active];
   const effect: BattleEffect = { kind: 'skill', actor: holder.id };
-  for (const foe of state.foes.filter(f => f.hp > 0)) {
+  const list = typeof marks === 'number' ? [marks] : marks.length ? marks : [0];
+  state.foes.filter(f => f.hp > 0).forEach((foe, i) => {
+    const n = list[Math.min(i, list.length - 1)];
     thaw(foe); dry(foe);
-    if (marks > 0) raiseWater(state, holder, foe, effect, marks);
-  }
-  state.message = marks > 0 ? `Depuración: agua ${roman(marks)} bajo cada enemigo.` : 'Depuración: sin agua.';
+    if (n > 0) raiseWater(state, holder, foe, effect, n);
+  });
+  state.message = list.length > 1 ? `Depuración: agua ${list.map(n => n > 0 ? roman(n) : '—').join(', ')}.` : list[0] > 0 ? `Depuración: agua ${roman(list[0])} bajo cada enemigo.` : 'Depuración: sin agua.';
   return true;
 }
 export function act(state: BattleState, action: BattleAction, targetId?: string, skill?: SkillId, die?: number): BattleEffect | undefined {
   if (state.phase !== 'player') return;
   const actor = state.allies[state.active];
   if (!actor || actor.hp <= 0) return;
-  dug.length = 0; met.length = 0; screenTook.length = 0; livesTook.length = 0;
+  dug.length = 0; met.length = 0; lit.length = 0; screenTook.length = 0; livesTook.length = 0;
   // Tirar dado: the die spent decides the move, its face's own (`FACE_SKILLS`); a blank repeats the last face spent.
   let cast: number | undefined, paid: number | undefined;
   const streak = rachaOf(actor);
@@ -4456,7 +4531,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
   livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
-  amplify(effect); checkEye(state, effect);
+  ignite(state, effect); amplify(effect); checkEye(state, effect);
   if (fallen(state)) return effect;
   settle(state);
   return effect;
@@ -4567,6 +4642,8 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   const d = DUALS.find(x => x.id === id), a = state.allies[state.active], b = dualPartner(state);
   if (state.phase !== 'player' || !d || !a || !b || dualBlock(state, d, a, b)) return;
   const halves = halvesOf(d, a, b)!, cost = dualCost(d), targets = dualTargets(state, d);
+  // Nothing an earlier action noted may light this one's gas (`ignite`).
+  lit.length = 0;
   const target = targets.find(f => f.id === targetId) ?? targets[0];
   if (d.side === 'allies' && targetId && target.id !== targetId) return;
   const roller = [a, b].find(wearer => wearer.classId === DICED);
@@ -4648,7 +4725,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     holder.charge = { dual: d.id, striker: striker.id };
     effect.charging = holder.id; delete effect.target;
     state.message = `¡Ataque dual! ${d.name}: ${holder.name} se carga. Saldrá al empezar la siguiente ronda.`;
-    amplify(effect); checkEye(state, effect);
+    ignite(state, effect); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
   }
@@ -4658,9 +4735,22 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     const standing = state.foes.filter(f => f.hp > 0);
     let steamed = 0;
     effect.hits = standing.map(foe => {
+      // Electrólisis: the water each one carries, before anything turns it (`waterGas`).
+      const held = d.id === 'electrolisis' ? waterGas(foe) : 0;
       const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * affinityScale(foe, elementOf(d)), 'dual'));
+      if (amount > 0 && elementOf(d) === 'fuego') lit.push(foe.id);
       if (melts && foe.shell) foe.shell = false;
       const hit: NonNullable<BattleEffect['hits']>[number] = { target: foe.id, amount, ...amount > 0 && affinityOf(foe, elementOf(d)) ? { affinity: affinityOf(foe, elementOf(d)) } : {} };
+      // Electrólisis: the water splits into gas, as much as there was; it does not conduct (no Conducción, no Shock).
+      if (d.id === 'electrolisis') {
+        if (!held || foe.hp <= 0) return hit;
+        const marks = waterOf(foe);
+        dry(foe);
+        if (marks) (effect.water ??= []).push({ target: foe.id, from: marks, to: 0 });
+        foe.timed = { ...foe.timed, gas: { level: held, left: TIMED.gas.seconds, next: TIMED.gas.every } };
+        (effect.gas ??= []).push({ target: foe.id, level: held });
+        return hit;
+      }
       if (foe.hp <= 0 || foe.layers) return hit;
       if (d.burn && foe.timed?.mojado) { steamed = steam(foe); return { ...hit, burn: { id: 'cegado' as const, level: steamed }, smoked: true as const }; }
       if (d.burn) {
@@ -4690,12 +4780,13 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     if (d.id === 'fulgurita') { powderTurned(state, 'cristal', effect); state.message += ' El polvo y la arena se funden en vidrio: sus esquirlas cuentan juntas.'; }
     if (d.id === 'metralla') state.message += ' Las esquirlas se quedan en las heridas: no se cierran.';
     if (d.id === 'seiche') state.message += ' Un eco se queda meciendo el agua.';
+    if (d.id === 'electrolisis') state.message += effect.gas?.length ? ` Su agua se separa en gas: ${effect.gas.map(g => `${TIMED.gas.name} ${roman(g.level)}`).join(', ')}.` : ' No tienen agua que separar.';
     if (steamed) effect.reaction = { id: 'vapor', level: steamed };
     effect.amount = effect.hits[0]?.amount;
     state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
     if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
     chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
-    spread(state, effect); amplify(effect); checkEye(state, effect);
+    spread(state, effect); ignite(state, effect); amplify(effect); checkEye(state, effect);
     settle(state);
     return effect;
   }
@@ -4721,6 +4812,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
       const crit = critical(state, striker, target, sure && i === 0);
       const dealt = hurt(state, target, fearDamage(state, target, dualBlow(d, current(state, striker), current(state, target)) * (scale + (crit ? CRIT_RULES.bonus : 0)) * weak * affinityScale(target, elementOf(d)), 'dual'));
       strikes.push(dealt); crits.push(crit && dealt > 0);
+      if (dealt > 0 && elementOf(d) === 'fuego') lit.push(target.id);
       // Cadáver exquisito: the handful powders, and the element it carried finds that powder at once.
       if (drawn[i] && dealt > 0) { kindle(target, 'empolvado', 1); powder(state, striker, target, drawn[i], effect); (effect.drawn ??= []).push(drawn[i]); }
       if (dealt > 0 && affinityOf(target, elementOf(d))) effect.affinity = affinityOf(target, elementOf(d));
@@ -4783,7 +4875,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     }
     chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   }
-  amplify(effect); checkEye(state, effect);
+  ignite(state, effect); amplify(effect); checkEye(state, effect);
   settle(state);
   return effect;
 }
@@ -4791,6 +4883,11 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
 export const SCALE_SECONDS = 20;
 /** Idea fija: the base power of the blow its carrier lands on one of its own each beat, with its own Fuerza (Control remoto's). */
 export const IDEA_FIJA = 34;
+/**
+ * The water Electrólisis finds on `c`, as the level of the gas it makes: the marks of its water (La crecida), or 1 if it is
+ * only Mojado. A frozen foe has no water (its ice is not split), nor does one that has fallen.
+ */
+export const waterGas = (c: Combatant) => c.hp <= 0 || frozenOf(c) ? 0 : Math.min(GAS.top, waterOf(c) || (c.timed?.mojado ? 1 : 0));
 /** A timed status a dual leaves on `c`, from its whole time. */
 function lay(c: Combatant, id: TimedId) {
   c.timed = { ...c.timed, [id]: { level: 1, left: TIMED[id].seconds, next: TIMED[id].every } };
@@ -4815,6 +4912,7 @@ function kindle(c: Combatant, id: TimedId, level: number): Timed {
 function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital', caster: Combatant, origin: string) {
   const d = DUALS.find(spec => spec.id === id)!;
   const effect: BattleEffect = { actor: caster.id, kind: 'skill', detonation: id, target: origin, element: d.element, hits: [] };
+  lit.length = 0;
   const blocked = annulled(state, caster, d.element, 'magic');
   if (blocked) effect.annulled = blocked;
   for (const foe of state.foes.filter(f => f.hp > 0)) {
@@ -4834,7 +4932,7 @@ function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital',
     effect.hits!.push({ target: foe.id, amount });
   }
   if (!blocked && d.element) for (const foe of state.foes) powder(state, caster, foe, d.element, effect);
-  amplify(effect); checkEye(state, effect);
+  ignite(state, effect); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
   return d.name;
 }
@@ -4854,6 +4952,7 @@ function ignitePaint(state: BattleState, host: Combatant) {
 function release(state: BattleState, holder: Combatant) {
   const charge = holder.charge!;
   delete holder.charge;
+  lit.length = 0;
   const d = DUALS.find(x => x.id === charge.dual), striker = state.allies.find(a => a.id === charge.striker) ?? holder;
   if (!d || holder.hp <= 0) return;
   if (d.id === 'bombardeo-orbital') return blast(state, d.id, striker, state.foes.find(f => f.hp > 0)?.id ?? holder.id);
@@ -4872,6 +4971,7 @@ function release(state: BattleState, holder: Combatant) {
     const weak = weakScale(state, foe);
     const found = affinityOf(foe, elementOf(d));
     const amount = hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak * affinityScale(foe, elementOf(d)), 'dual'));
+    if (amount > 0 && elementOf(d) === 'fuego') lit.push(foe.id);
     const spends = weak > 1 && amount > 0;
     if (spends) { delete foe.weakSpot; effect.weakSpot = 'spent'; }
     spendShield(state, foe, amount, effect);
@@ -4887,7 +4987,7 @@ function release(state: BattleState, holder: Combatant) {
   effect.target = effect.hits[0]?.target; effect.amount = effect.hits[0]?.amount;
   chill(state, striker, effect, iceBlows(effect, d.kind, d.power, elementOf(d), !!d.strikes));
   const said = `¡${d.name}! ${holder.name} barre a todos: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.${effect.hits.some(h => h.burn) ? ` ¡${TIMED[d.burn!].name} ${roman(d.burnLevel ?? 1)}!` : ''}`;
-  amplify(effect); checkEye(state, effect);
+  ignite(state, effect); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
   return said;
 }
@@ -4904,7 +5004,7 @@ function pounce(state: BattleState, holder: Combatant) {
   const standing = state.foes.filter(f => f.hp > 0);
   const target = standing.find(f => f.id === stalk.target) ?? [...standing].sort((a, b) => stacks(b, 'sangrado') - stacks(a, 'sangrado'))[0];
   if (holder.hp <= 0 || holder.classId !== ability.class || !target) return;
-  dug.length = 0; met.length = 0; screenTook.length = 0;
+  dug.length = 0; met.length = 0; lit.length = 0; screenTook.length = 0;
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true };
   let said: string;
   const light = annulled(state, holder, undefined, 'physical');
@@ -4930,7 +5030,7 @@ function pounce(state: BattleState, holder: Combatant) {
     if (effect.amount > 0) combust(state, holder, target, effect);
     chill(state, holder, effect, iceBlows(effect, 'physical', ability.power));
   }
-  spread(state, effect); amplify(effect); checkEye(state, effect);
+  spread(state, effect); ignite(state, effect); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
   return said;
 }
@@ -5102,7 +5202,7 @@ function confusedAct(state: BattleState, actor: Combatant): BattleEffect {
   state.message = victim === actor ? `${actor.name}, confundido, se golpea a sí mismo. −${amount} PV.` : `${actor.name}, confundido, golpea a ${victim.name}. −${amount} PV.`;
   const effect: BattleEffect = { actor: actor.id, kind: 'enemy', target: victim.id, amount, confused: true };
   if (amount > 0) combust(state, actor, victim, effect);
-  amplify(effect); checkEye(state, effect);
+  ignite(state, effect); amplify(effect); checkEye(state, effect);
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   return effect;
 }

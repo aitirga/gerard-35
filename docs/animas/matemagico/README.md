@@ -459,6 +459,23 @@ hard. Both are physical, so the blow uses Papagato's wearer's Fuerza; the fire m
 too. Details in `../papagato/README.md` § Duals. The burning shield (*Cortina de fuego*, Foc Binari +
 Yuki se esconde) is an idea for later.
 
+### With Freática: Electrólisis (2026-11-25, built)
+
+| Dual | Matemágico + Freática | Levels | Maná | Description |
+| --- | --- | --- | --- | --- |
+| **Electrólisis** | **Cubo acuático** + Sondeo eléctrico | node · 2 | 2 + 1 | `Daño mágico eléctrico leve a todos los enemigos. Convierte su agua en gas durante 20 segundos, más fuerte cuanta más agua tenían. El siguiente golpe de fuego sobre uno hace estallar el gas de todos.` |
+
+The current splits each foe's water into Gas at its level instead of running through it (no
+Conducción, no Shock); the next fire blow on any of them sets off the gas of all, 12 a level of
+magic fire each and Quemado I (`../README.md` § Gas). What it asks: who brings the fire and when,
+inside the 20 s, and giving up what that water would have been (Conducción, Vapor, Bajo cero). Its
+look: Gerard plants two electrodes of gold neon at the ends of the foes' line, a − and a +; Freática's
+bolt runs from one to the other through every foe; the water boils into bubbles, two of hydrogen
+(cyan-white) for one of oxygen (pale gold), rising fast through a body of the fight's fluid in each
+cell while the water sinks; the bubbles gather into a cloud of glass beads over each foe
+(`src/duo-fx/electrolisis.ts`). In the fight tester: «Probar un dúo» → Electrólisis (water I, II and III
+under three dogs).
+
 ## Implementation
 
 Built: `matemagico` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`, `SKILLS` (`foc-binari`, with

@@ -291,6 +291,11 @@ choice between keeping it under, widening the water to the others and spending i
 
 **Built (2026-11-21):** *Marea* (dúo mayor, Vasos comunicantes + Recarga), *Géiser* (Foc Binari + Recarga), *A escala* (Rayo encogedor + Recarga) and *Seiche* (Recarga + Ostinato); `../README.md` § Combined skills.
 
+**Built (2026-11-25):** *Electrólisis* (Cubo acuático + Sondeo eléctrico): Sondeo's bolt splits every
+foe's water into Gas at its level (§ Gas in `../README.md`), with no Conducción; the next fire on any of
+them sets off the gas of all. The water is spent, so it asks the pair to choose between keeping it
+(Conducción, Bajo cero) and turning it into a blast for whoever brings the fire.
+
 Hooks, for the duals still to choose:
 
 - **Standing water under a foe**: a partner's electric half charges it and every other foe's

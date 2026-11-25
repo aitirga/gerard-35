@@ -22,6 +22,8 @@ export const FREATICA_SKILLS: Record<string, { contact: number; end: number }> =
 };
 /** Seconds between the water hammer's blows as the fight shows their numbers, one after another. */
 export const HAMMER_GAP = .3;
+/** Seconds Electrólisis takes to split a cell's water, from its contact (src/duo-fx/electrolisis.ts: as long as its bubbles boil). */
+export const ELECTROLYSIS_DRAIN = 1.2;
 /** Seconds the cells are left to an action's own look before the state is followed again. */
 const SETTLE = 1.4;
 
@@ -70,6 +72,8 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
         f.cast.bajoCero(); all.forEach(id => at(id, 1));
         break;
     }
+    // Electrólisis: the water does not keep the current, it splits; each cell sinks to nothing while its bubbles go up.
+    if (effect.dual?.id === 'electrolisis') for (const w of effect.water ?? []) { cell(w.target)?.drain(ELECTROLYSIS_DRAIN); at(w.target, ELECTROLYSIS_DRAIN + .3); }
     // A bolt from anyone else (Atacar · Eléctrico, Descarga): the water it ran through keeps the current.
     if (effect.skill !== 'sondeo') for (const id of effect.current?.targets ?? []) if (!touched.has(id)) { cell(id)?.bolt(effect.current!.seconds); at(id, .6); }
     // Fire on water: its top mark goes up as steam (Vapor), and the cloud stays while they are blinded.
@@ -98,6 +102,9 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
     // An action that never landed on screen (the fight cut short) lets the cells go after a while.
     if (waiting && time - waitedSince > 4) waiting = false;
     if (!state || waiting) return;
+    // Water a fight starts with (the tester's trials): the cells wait for the foes to stand where they fight, or they would
+    // be placed round where the foes were walking in.
+    if (scene.settled && !scene.settled()) return;
     const f = ready();
     if (!f) return;
     const up = standing();

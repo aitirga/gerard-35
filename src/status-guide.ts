@@ -10,7 +10,7 @@
  * A card's version (`guideVersion`) is its words and the numbers it is built from (`rule`): when a
  * commit changes either, the card shows again the next time its status does.
  */
-import { BITS, BLEED_BONUS, BOMBA, CEGADO, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
+import { BITS, BLEED_BONUS, BOMBA, CEGADO, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, GAS, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
 import type { IconId } from './status-icons.ts';
 
 /** Where a card stands in «Cómo jugar»: what weighs on whoever carries it, what helps them, and the fight's own signs. */
@@ -153,6 +153,10 @@ export const GUIDES = {
   staccato: {
     name: TIMED.staccato.name, group: 'contra', icon: 'staccato', colour: '#8fe3c4', rule: TIMED.staccato,
     text: `Un eco cortante: cada ${TIMED.staccato.every} segundos le vuelve a cortar. ${lasts('staccato')}`,
+  },
+  gas: {
+    name: TIMED.gas.name, group: 'contra', icon: 'gas', colour: '#9fe0ee', rule: [TIMED.gas, GAS],
+    text: `Su agua, separada en gas: de nivel I a III, según el agua que tenía. No hace daño por sí solo. Un golpe de fuego sobre cualquiera que lo lleve hace estallar el gas de todos: daño de fuego según su nivel, y quedan quemados. ${lasts('gas')}`,
   },
   mecha: {
     name: 'Mecha encendida', group: 'contra', icon: 'mecha', colour: '#ffb054',

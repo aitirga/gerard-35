@@ -489,6 +489,8 @@ export interface AguaScene {
   model(id: string): pc.Entity | undefined;
   /** Where the other foes stand, each with a cell of its own: this one stops halfway to theirs (`createFreaticaField`). */
   neighbours?(): V3[];
+  /** Whether the foes stand where they will fight (not still walking in): a cell is placed round a foe only then. */
+  settled?(): boolean;
 }
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 
@@ -870,6 +872,16 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       marks--; clock = AGUA.mark; u.ticks[3] = level;
       stopBubbles();
       move(full(marks), .6, 0, () => { if (!marks) show(false); });
+      return true;
+    },
+    /**
+     * Electrólisis: the current splits the water and it is gone, every mark of it, sinking over `seconds` while it goes
+     * (the bubbles it gives off are the dual's own, src/duo-fx/electrolisis.ts).
+     */
+    drain(seconds = 1.2) {
+      if (!on || !marks || frozen || breaking) return false;
+      marks = 0; current = 0; clock = AGUA.mark; u.ticks[3] = level; stopBubbles();
+      move(0, seconds, 0, () => { if (!marks) show(false); });
       return true;
     },
     /** Electricity: the water keeps the current for `seconds`, pulsing every two. */
