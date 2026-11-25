@@ -240,6 +240,7 @@ Zarpa en la llaga instead: 29, +240 %, +50 % = **113** for 2 maná.
 ## What it offers a dual
 
 **Built (2026-11-21):** *Metralla* (dúo mayor, Explosión + Zarpazo sangriento) and *Staccato* (Zarpazo sangriento + Ostinato); `../README.md` § Combined skills.
+**Built (2026-11-25):** *Arco voltaico* (∂Q/∂t Condensador + Acecho), below.
 
 The duals are designed after every ánima is (`../README.md` § Order of work). What Papagato
 brings to a pair, for then:
@@ -258,12 +259,20 @@ skills):
 | --- | --- | --- | --- | --- |
 | **Zarpazos de fuego** | Foc Binari + **Zarpazos** | 1 · 2 | 1 + 2 | `Daño físico de fuego leve a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
 | **Punto débil** | Ángulo exacto + **Zarpazo sangriento** | node · 1 | 1 + 1 | `Daño físico leve a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Arco voltaico** | ∂Q/∂t Condensador + **Acecho** | node · 6 | 1 + 2 | `Daño físico eléctrico muy alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro. Si un enemigo golpea antes a quien espera, la carga salta a ese enemigo y el golpe sale a la mitad.` |
 
 - **Zarpazos de fuego**: Gerard draws a circle of digits round the foe and Haru strikes it eight
   times (power 8 a claw), a layer off each. Each claw that lands on a foe with no layers left flips
   a coin: three times in four it lights its fire or raises it.
 - **Punto débil**: one clean blow (power 20) that leaves the mark *Punto débil*: the next action
   that hurts the foe lands three times as hard and spends it.
+- **Arco voltaico**: Acecho with the condenser's charge. Haru does not go into the dark: she waits
+  crouched in plain sight, charged, and as the next round starts runs the parabola Gerard drew over the
+  prey and drops onto its focus: power 64, physical and electric, with the wearer's stats, a sure
+  crítico that spends the wound, turns what a bolt turns and sets off Combustión. A foe that strikes the
+  wearer first takes the charge and the pounce lands at half; softening that blow does not stop the jump,
+  stopping or felling whoever would strike does. Details in `../matemagico/README.md` §
+  Arco voltaico.
 - **To look at again with the golpe crítico**: Punto débil's triple on top of a wound and a
   crítico is the biggest single number in the game; whether the triple multiplies them or replaces
   them is a balance question.

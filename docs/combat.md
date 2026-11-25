@@ -793,6 +793,17 @@ noticia que la pantalla muestra en cuanto cierra la ronda): barre a todos los en
 de quien trae la mitad de su tipo y les deja Quemado II como mínimo. Si quien lo guarda cae antes,
 se pierde.
 
+**Al acecho** (`DualSpec.stalk`, Arco voltaico: ∂Q/∂t Condensador + Acecho). Su turno no cae nada: quien
+trae Acecho espera sobre la presa, cargado (`Combatant.stalk`), y al empezar la ronda siguiente, antes de
+que nadie elija, salta (`pounce`): un golpe físico y eléctrico a la vez, crítico seguro, que gasta la
+herida, hace reaccionar lo que haría Atacar·Eléctrico y hace estallar Combustión. Si un enemigo le golpea
+antes, la carga salta a ese enemigo (`CONDENSADOR.jump`, con sus reacciones) y el golpe sale a la mitad
+(`jumped`): cualquier golpe que le llegue, por suavizado que venga (cortina, Escolta, Defender); lo que guarda
+la carga es parar o tumbar a quien iba a golpear antes (Cortocircuito, Shock) o un golpe que no llega. Si un
+mismo golpe encuentra a Gerard con su Condensador y a quien espera, saltan las dos cargas. Si cae su presa, va
+a la que más sangra; si cae quien espera o se quita Papagato, se pierde; si el combate acaba antes, nadie
+espera.
+
 **Cómo se ven los dúos de otras ánimas** (`DUO`, `BLAST`, `startDuo` en `src/battle-scene.ts`; sus
 dibujos en `src/dual-fx.ts`). Cada uno mezcla el aspecto de sus dos ánimas, y no solo el dorado de
 Matemágico: los colores son los suyos (`SUTURE`, `RELAY`, `ORBIT`, `PAINT`), nunca el rosa de la Reina

@@ -11,7 +11,7 @@ import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
@@ -528,6 +528,29 @@ function filmWorth(after: BattleState, allyId: string) {
   }
   return worth;
 }
+/** How sure `smart` is that a pounce comes (its wearer may fall, or take Papagato off). */
+const STALK_SURE = .85;
+/**
+ * What a cat waiting on its prey (Arco voltaico) is worth to `smart`: the foes' turn played out on a copy
+ * (a charge that jumps to whoever strikes first, a prey that falls), then the pounce. Only what the dual does
+ * counts, in PV off the foes: its charge jumping (and what that bolt turned) and the pounce, not whatever else
+ * the foes' turn took off them (a bomb, a foe striking its own).
+ */
+function pounceWorth(after: BattleState, holderId: string) {
+  const look = copy(after);
+  if (look.phase === 'player') { look.phase = 'enemy'; look.enemyActions = []; }
+  let jump = 0;
+  for (const foe of look.foes) {
+    if (foe.hp <= 0 || look.phase !== 'enemy') continue;
+    const arc = enemyAct(look, foe.id)?.arcDischarge;
+    if (arc?.from === holderId) jump += arc.amount + (arc.reaction?.hits ?? []).reduce((sum, h) => sum + h.amount, 0);
+  }
+  const holder = look.allies.find(a => a.id === holderId);
+  if (!holder?.stalk || !look.foes.some(f => f.hp > 0)) return jump * STALK_SURE;
+  const hp = look.foes.map(f => f.hp);
+  pounce(look, holder);
+  return (jump + look.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - f.hp), 0)) * STALK_SURE;
+}
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 7;
 /** A third-year Repetidor's crust: each of the blows that crack it, since every blow after the last one lands whole. */
 const CRUST_WORTH = 25;
@@ -677,6 +700,9 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   if (choice.skill === 'condensador') value += chargeWorth(before);
   // Superficie mínima: the water the foes' own blows will bring, the real rules on a copy.
   if (choice.skill === 'superficie-minima' && choice.target) value += filmWorth(after, choice.target);
+  // A dual that crouches (Arco voltaico): nothing lands now, the pounce as the next round starts. Acecho alone is still
+  // worth nothing to `smart` (the fights were balanced with it so: valued, it opens on El Montón and teaches it the pounce).
+  after.allies.forEach((ally, i) => { if (ally.stalk?.dual && !before.allies[i]?.stalk) value += pounceWorth(after, ally.id); });
   // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
   const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
   if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));

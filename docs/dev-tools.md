@@ -159,7 +159,7 @@ level-up.
 
 ## Combate
 
-El selector **Combate → Probar un dúo** abre Sutura de luz, Relevo de sangre, Bombardeo orbital o Reserva de color con sus dos ánimas equipadas y sus habilidades aprendidas. En el menú del combate, elige **Dual** y el objetivo. Sutura empieza con Gerard herido y Relevo con un enemigo que sangra y está a punto de caer. Cada ensayo se puede abrir con `?story=got-wrapper&solo=1&fight={"trial":"sutura-de-luz"}`, sustituyendo el identificador; `"foes"` (1–4) cambia cuántos perros hay y `"encounter"` lo juega contra otro combate del probador, por ejemplo un jefe con sus partes (`{"trial":"campana-de-gauss","encounter":"aurelia"}`). La galería se genera con `just screenshots duos-en-combate --gpu`.
+El selector **Combate → Probar un dúo** abre Sutura de luz, Relevo de sangre, Bombardeo orbital o Reserva de color con sus dos ánimas equipadas y sus habilidades aprendidas. En el menú del combate, elige **Dual** y el objetivo. Sutura empieza con Gerard herido y Relevo con un enemigo que sangra y está a punto de caer. Cada ensayo se puede abrir con `?story=got-wrapper&solo=1&fight={"trial":"sutura-de-luz"}`, sustituyendo el identificador; `"foes"` (1–4) cambia cuántos perros hay y `"encounter"` lo juega contra otro combate del probador, por ejemplo un jefe con sus partes (`{"trial":"campana-de-gauss","encounter":"aurelia"}`). La galería se genera con `just screenshots duos-en-combate --gpu`. Arco voltaico (`{"trial":"arco-voltaico"}`) abre con la línea eléctrica de Matemágico comprada hasta ∂Q/∂t Condensador y Papagato a nivel 7; `just screenshots arco-voltaico --gpu` lo juega entero: el arco, la espera cargada, el salto, y la carga que salta cuando un perro muerde antes a Aitor.
 
 The fight tester. Choose:
 

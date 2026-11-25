@@ -455,6 +455,7 @@ Combined skills):
 | --- | --- | --- | --- | --- |
 | **Zarpazos de fuego** | **Foc Binari** + Zarpazos | 1 · 2 | 1 + 2 | `Daño físico de fuego leve a un enemigo. Golpea ocho veces. Cada golpe puede quemarlo o subir su fuego.` |
 | **Punto débil** | **Ángulo exacto** + Zarpazo sangriento | 2 · 1 | 1 + 1 | `Daño físico leve a un enemigo. El siguiente ataque que reciba hace el triple de daño.` |
+| **Arco voltaico** | **∂Q/∂t Condensador** + Acecho | node · 6 | 1 + 2 | `Daño físico eléctrico muy alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro. Si un enemigo golpea antes a quien espera, la carga salta a ese enemigo y el golpe sale a la mitad.` |
 
 Gerard draws the figure and Haru strikes it: eight claws round a circle of digits from `000` to
 `111`, each one that lands on a foe without layers flipping a coin for fire; or a protractor and a
@@ -540,6 +541,44 @@ to the pole it is for, flips over there and a bolt falls on it, brighter and a t
 (`string-1`…`string-4`). After the last the string snaps in the middle and each half whips back onto
 its pole, coming apart. The camera turns so the string crosses the picture as it is drawn, clear of
 scenery and of the commands on the left (`alternaShot`, `docs/graphics.md`).
+### Arco voltaico (built 2026-11-25)
+
+Acecho with the condenser's charge (`DualSpec.stalk`, `pounce` in `src/battle.ts`; its look in
+`src/duo-fx/arco-voltaico.ts`). Its turn nothing lands: whoever brings Acecho waits on the prey, charged
+(`Combatant.stalk.charged`, the Acecho icon and the Cargado one on their plate). As the next round starts,
+before anyone chooses, the cat lands: **64, physical and electric at once, with the cat's wearer's stats**, a
+sure golpe crítico. Being physical it spends the wound (+20 % a stack, Olor a sangre from five) and sets off
+Combustión; being electric it turns what Atacar·Eléctrico turns, in the same order (the powder first, then
+Plasma on a fire, Tormenta through smoke, Conducción through water), so on a bare Quemado IV Plasma takes
+the fire, and on powder over it the shards set and the blow bursts it. If its prey fell, the cat takes
+whoever bleeds most.
+
+**The risk of waiting.** A foe whose blow finds the one waiting first takes the charge, as Condensador's
+does: `CONDENSADOR.jump` of electric magic with the waiting one's stats, which turns what it finds on that
+foe (Plasma on its fire, Conducción…); the pounce still comes, at `jumped` (half) of its power. Any blow that
+lands on whoever waits makes it jump, however softened: a cortina, Escolta or Defender take some of it off,
+not the jump. What keeps the charge is stopping whoever would strike first, or taking it down: Cortocircuito
+or Shock on it, a foe felled, a blow that misses or that a shell swallows whole. (With water about, the jump
+turns Conducción on its way, so a forced jump is not all lost.) A blow that finds both Gerard carrying his
+own Condensador and the one waiting (one on everyone) makes both charges jump, his first (`discharge`,
+`effect.arcDischarge`). A fight won before the pounce leaves nobody waiting (`endFight`).
+
+**Look.** Gerard draws a gold parabola in front of him, its focus a bead and its directrix dashed; it rises
+and turns in the world until its axis stands over the prey and its focus sits just in front of its chest
+(towards the camera, so the body never hides where the light meets; she still lands on the chest), an arch of light running down to the floor either side (its focal length is what makes it meet the
+floor there). The arch is worked out once from where the cat rests (`arcFor`), and the scene's run and the
+figure share it. While the cat waits charged, sparks rise out of the floor in rings round the focus, within
+a cone of a few degrees, strike a GPU mirror along the arch (a `paraboloid` volume in `mirror` mode, opening
+down) and converge on the focus, their spread drawing the caustic's cusp; she crouches in plain sight with
+her fur standing with static and a faint knot of the charge on her back. If the charge jumps, the arch swings about its vertex until
+its axis points at that foe, an arc leaves the vertex for it, and the mirror goes dark. The pounce: she runs
+the arch itself, her flight even across like a thrown body's, a wide trail of plasma behind her and a gold
+rim of light on her head, drops down the axis onto the focus, a jagged bolt and the crítico, and the arch
+bursts into gold splinters. The contact adds no white flash of its own: the crítico and any reaction already
+flash, and the bolt and the splinters have to read in that frame. Sound: the
+condenser's whine as it settles and as she springs, its snap on contact. The design said the sparks fall
+from above; with the arch opening down they rise from the floor, so the mirror sends them to the focus for
+real.
 
 ## Implementation
 

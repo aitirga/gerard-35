@@ -692,7 +692,7 @@ export const WEAK_SPOT = 3;
 export type DualId = 'zarpazos-de-fuego' | 'punto-debil' | 'rayo-solar' | 'sutura-de-luz' | 'relevo-de-sangre' | 'bombardeo-orbital' | 'reserva-de-color' | 'sobrecalentamiento' | 'vulcano'
   | 'marea' | 'fulgurita' | 'suceso-seguro' | 'metralla' | 'idea-fija' | 'caleidoscopio'
   | 'geiser' | 'a-escala' | 'seiche' | 'staccato' | 'cadaver-exquisito' | 'trampantojo'
-  | 'electrolisis' | 'campana-de-gauss' | 'corriente-alterna';
+  | 'electrolisis' | 'campana-de-gauss' | 'corriente-alterna' | 'arco-voltaico';
 export interface DualSpec {
   id: DualId; name: string;
   parts: readonly [SkillId, SkillId];
@@ -727,6 +727,15 @@ export interface DualSpec {
    * target and the rest on the foes beside it in the row, and shape their fire (`BELL`, `bellFall`).
    */
   bell?: boolean;
+  /**
+   * It goes off as Acecho does (Arco voltaico): its turn whoever brings the half that crouches (`stalk` in
+   * SKILLS) waits on its target (`Combatant.stalk`), and lands as the next round starts, before anyone
+   * chooses (`pounce`), a golpe crítico for sure, with its own power and element. A half of kind `charge`
+   * keeps it charged: a foe that strikes the one waiting first takes the charge (`CONDENSADOR.jump` of
+   * electric magic, and what it turns), and the blow lands at `jumped` of its power.
+   */
+  stalk?: boolean;
+  jumped?: number;
   description: string; abstract?: boolean;
 }
 export const DUALS: DualSpec[] = [
@@ -781,6 +790,9 @@ export const DUALS: DualSpec[] = [
   // Corriente alterna (Matemágico's Cortocircuito, Sincopante's Crescendo): the current goes to and fro between two foes on a
   // fixed beat, each time harder, and every beat is a bolt for the reactions (`ALTERNA`, `runCircuits`, `electricBeat`).
   { id: 'corriente-alterna', name: 'Corriente alterna', parts: ['cortocircuito', 'crescendo'], side: 'foes', kind: 'magic', element: 'electrico', power: 14, leaves: 'alterna', description: 'Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. Durante 20 segundos, la corriente va y viene entre él y el enemigo de al lado: cada 5 segundos golpea a uno de los dos, más fuerte cada vez. Cada golpe provoca las reacciones de la electricidad y gasta el estado con el que reacciona.' },
+  // Arco voltaico (Matemágico + Papagato): Acecho with the condenser's charge. The cat waits charged on its prey, and as
+  // the next round starts runs the parabola Gerard drew onto its focus: one blow that is physical and electric at once.
+  { id: 'arco-voltaico', name: 'Arco voltaico', parts: ['condensador', 'acecho'], side: 'foes', kind: 'physical', element: 'electrico', power: 64, stalk: true, jumped: .5, description: 'Daño físico eléctrico muy alto a un enemigo. Se carga un turno y sale al empezar el siguiente. Golpe crítico seguro. Si un enemigo golpea antes a quien espera, la carga salta a ese enemigo y el golpe sale a la mitad.' },
 ];
 /** The dual two skills make, in either order. */
 export const dualOf = (a: SkillId, b: SkillId) => DUALS.find(d => (d.parts[0] === a && d.parts[1] === b) || (d.parts[0] === b && d.parts[1] === a));
@@ -1461,8 +1473,11 @@ export interface Combatant {
   virusSeen?: { timed: Partial<Record<TimedId, Timed>>; statuses: Partial<Record<StatusId, number>> };
   fuse?: string; // The caster whose fire is in the paint.
   charge?: { dual: DualId; striker: string };
-  /** Acecho: Haru crouched for this wearer, the foe she waits on; she lands as the next round starts (`pounce`). */
-  stalk?: { target: string };
+  /**
+   * Acecho: Haru crouched for this wearer, the foe she waits on; she lands as the next round starts (`pounce`).
+   * A dual that crouches (`DualSpec.stalk`, Arco voltaico) says which, and whether it still holds its charge.
+   */
+  stalk?: { target: string; dual?: DualId; charged?: boolean };
   /** Pedal (Sincopante, level 6): they hold on, and their ecos' clocks stand still until they act again. */
   pedal?: true;
   /** Siete vidas: Yuki among the party, the same ward on every ally it covers, until a blow that would kill one of them (`LivesWard`). */
@@ -2000,6 +2015,10 @@ export interface BattleEffect {
   stalking?: string;
   /** Acecho landing as the round starts (news, `takeNews`): Haru's pounce on `target`. */
   pounce?: true;
+  /** Who crouches, when it is not the actor (a dual that crouches: whoever brings Acecho waits). */
+  stalker?: string;
+  /** A dual's pounce (Arco voltaico, `DualSpec.stalk`): which, and `half` when a foe struck first and its charge jumped. */
+  pounceDual?: { id: DualId; name: string; half?: true };
   /** Siete vidas: the allies Yuki's ward now covers. */
   ward?: string[];
   /** Sincopante: the eco this action called (Ostinato, Bordón, Acompañamiento), and the oldest one it replaced, if three were up. */
@@ -2181,13 +2200,21 @@ export interface BattleEffect {
   shorted?: { target: string; why: 'mojado' | 'anuncio' | 'again'; move?: string };
   /** ∂Q/∂t Condensador: `stored` on whoever used it; `spent` doubling this blow. */
   capacitor?: 'stored' | 'spent';
-  /** ∂Q/∂t Condensador: a foe struck the one carrying the charge, and it jumped to that foe. */
+  /**
+   * ∂Q/∂t Condensador: a foe struck the one carrying the charge, and it jumped to that foe.
+   */
   discharge?: { from: string; target: string; amount: number };
   /**
    * Superficie mínima: this foe's blow reached someone under a soap film (`from`), which burst and threw its water on the foe
    * (`target`): what the water left on it, by water's rules (Mojado; Cegado, its fire put out as Humo; Envenenado, its powder run).
    */
   film?: { from: string; target: string; left: 'mojado' | 'cegado' | 'envenenado' }[];
+  /**
+   * Arco voltaico: a foe struck the one waiting charged (`Combatant.stalk.charged`), and the dual's charge jumped to
+   * that foe, with what the bolt turned on it (`reaction`, its own PV in its hits). Apart from `discharge`: one blow
+   * that finds both Gerard carrying his Condensador and the one waiting makes both charges jump.
+   */
+  arcDischarge?: { from: string; target: string; amount: number; reaction?: BattleEffect['reaction'] };
   /** This foe's turn, lost to Shock: nothing else happened in it. */
   stunned?: true;
   /** El que no converge saw the party wait its water out, the first time: its figures stop for a moment (src/modelo-foes.ts). */
@@ -2431,7 +2458,8 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
   put(c.converged, 'converge');
   put(reactionIn(c), 'reaccion');
   put(c.shock, 'shock');
-  put(c.capacitor, 'cargado');
+  // ∂Q/∂t Condensador's charge, or Arco voltaico's on whoever waits with it: one icon.
+  put(c.capacitor || c.stalk?.charged, 'cargado');
   put(state && filmed(state, c), 'pelicula');
   put(state && rachaOf(c), 'racha');
   put(state && meteorOf(c), 'meteoro');
@@ -3196,8 +3224,8 @@ export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
   const aimedAtFoes = skillsFor(state, held).filter(s => (s.side === 'foes' || s.side === 'all-foes') && held.secondary >= s.cost && !dieUse(s.id));
   return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
 }
-/** A fight over: nothing queued or spent is left behind. */
-function endFight(state: BattleState) { delete state.queued; delete state.spent; }
+/** A fight over: nothing queued or spent is left behind, and no cat still waits on a prey (Acecho, Arco voltaico). */
+function endFight(state: BattleState) { delete state.queued; delete state.spent; for (const ally of state.allies) delete ally.stalk; }
 /**
  * After an action: the fight is won, or an ally still to act chooses, or the foes' turn comes. The
  * one who acted is through for the round (`spent`); allies may act in any order (two players choose
@@ -3288,20 +3316,44 @@ function filmTouch(state: BattleState, effect: BattleEffect) {
 }
 /**
  * ∂Q/∂t Condensador: a foe's blow found someone carrying the charge, and it jumps to that foe
- * (`CONDENSADOR.jump` of electric magic, with the wearer's stats).
+ * (`CONDENSADOR.jump` of electric magic, with the wearer's stats). Exported for its tests (a blow on everyone).
  */
-function discharge(state: BattleState, effect: BattleEffect) {
+export function discharge(state: BattleState, effect: BattleEffect) {
   if (effect.kind !== 'enemy') return;
   const foe = state.foes.find(f => f.id === effect.actor && f.hp > 0 && !f.part);
   if (!foe) return;
   const struck = struckBy(effect);
   const wearer = state.allies.find(a => a.capacitor && struck.has(a.id));
-  if (!wearer) return;
-  delete wearer.capacitor;
-  const amount = hurt(state, foe, fearDamage(state, foe, magical(CONDENSADOR.jump, current(state, wearer), current(state, foe)) * affinityScale(foe, 'electrico'), 'magic', 'electrico'));
-  effect.discharge = { from: wearer.id, target: foe.id, amount };
-  state.message += ` ¡La carga de ${wearer.name} salta a ${foe.name}! −${amount} PV.`;
+  if (wearer) {
+    delete wearer.capacitor;
+    const amount = hurt(state, foe, fearDamage(state, foe, magical(CONDENSADOR.jump, current(state, wearer), current(state, foe)) * affinityScale(foe, 'electrico'), 'magic', 'electrico'));
+    effect.discharge = { from: wearer.id, target: foe.id, amount };
+    state.message += ` ¡La carga de ${wearer.name} salta a ${foe.name}! −${amount} PV.`;
+  }
+  // A dual waiting charged (Arco voltaico): the charge jumps the same way, a bolt that turns what it finds on that foe,
+  // and the blow still to come lands at `jumped` of its power. A blow that found Gerard's own charge as well makes both
+  // jump (his first): the foe only has to be standing still.
+  const waiting = foe.hp > 0 ? state.allies.find(a => a.stalk?.charged && struck.has(a.id)) : undefined;
+  if (waiting) arcJump(state, waiting, foe, effect);
   if (!state.allies.every(a => a.hp <= 0) && beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
+}
+/**
+ * Arco voltaico's charge jumps from `holder`, waiting on its prey, to the `foe` whose blow found them first:
+ * `CONDENSADOR.jump` of electric magic with the holder's stats, and what a bolt turns on it (Plasma, Conducción,
+ * Tormenta, the powder) as Atacar·Eléctrico's would. The pounce keeps its moment, without its charge.
+ */
+function arcJump(state: BattleState, holder: Combatant, foe: Combatant, effect: BattleEffect) {
+  holder.stalk!.charged = false;
+  const amount = hurt(state, foe, fearDamage(state, foe, magical(CONDENSADOR.jump, current(state, holder), current(state, foe)) * affinityScale(foe, 'electrico'), 'magic', 'electrico'));
+  const d = DUALS.find(x => x.id === holder.stalk!.dual);
+  state.message += ` ¡La carga de ${d?.name ?? 'su arco'} salta de ${holder.name} a ${foe.name}! −${amount} PV.`;
+  // What the bolt turns, said on its own: the foe's blow is not the one that turned it.
+  const bolt: BattleEffect = { kind: 'skill', actor: holder.id, target: foe.id, element: 'electrico', amount };
+  react(state, holder, foe, 'electrico', bolt);
+  effect.arcDischarge = { from: holder.id, target: foe.id, amount, ...bolt.reaction ? { reaction: bolt.reaction } : {} };
+  if (bolt.shocked) effect.shocked = [...effect.shocked ?? [], ...bolt.shocked];
+  if (bolt.current) effect.current = bolt.current;
+  state.message += ` El golpe saldrá a la mitad.`;
 }
 /**
  * `element` has landed on `target`, who carries powder (`POWDER_RULES`): it explodes, runs as poison
@@ -4801,6 +4853,18 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     settle(state);
     return effect;
   }
+  if (d.stalk) {
+    // Its turn nothing lands: whoever brings the half that crouches waits on the target, charged if a half is a charge,
+    // and lands as the next round starts (`pounce`).
+    const holder = parts.findIndex(p => 'stalk' in p) === 1 ? b : a;
+    const charged = parts.some(p => p.kind === 'charge');
+    holder.stalk = { target: target.id, dual: d.id, ...charged ? { charged } : {} };
+    effect.stalking = target.id; effect.stalker = holder.id;
+    state.message = `¡Ataque dual! ${d.name}: ${holder.name} espera${charged ? ' cargado' : ''} sobre ${target.name}. Saltará al empezar la siguiente ronda.`;
+    amplify(effect); checkEye(state, effect);
+    settle(state);
+    return effect;
+  }
   if (d.charge) {
     // Its turn it only charges up: whoever brings its first half holds it, and it goes off as the next round starts.
     const holder = halves[0] === d.parts[0] ? a : b;
@@ -5295,38 +5359,49 @@ function release(state: BattleState, holder: Combatant) {
  * stats, a golpe crítico for sure, that spends the foe's wound (it adds none). Its wearer fallen, or
  * out of Papagato by now: the moment is lost and nothing happens. Kept as news (`takeNews`).
  */
-function pounce(state: BattleState, holder: Combatant) {
+export function pounce(state: BattleState, holder: Combatant) {
   const stalk = holder.stalk!;
   delete holder.stalk;
   const ability = SKILLS.find(s => s.id === 'acecho')!;
+  // A dual that crouched (Arco voltaico): its own power and element, at `jumped` of it once its charge has jumped.
+  const d = stalk.dual ? DUALS.find(x => x.id === stalk.dual) : undefined, element = d ? elementOf(d) : undefined;
+  const half = !!d && stalk.charged === false, power = d ? d.power * (half ? d.jumped ?? 1 : 1) : ability.power, name = d?.name ?? ability.name;
   const standing = state.foes.filter(f => f.hp > 0);
   const target = standing.find(f => f.id === stalk.target) ?? [...standing].sort((a, b) => stacks(b, 'sangrado') - stacks(a, 'sangrado'))[0];
   if (holder.hp <= 0 || holder.classId !== ability.class || !target) return;
   dug.length = 0; met.length = 0; lit.length = 0; screenTook.length = 0;
-  const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true };
+  const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true, ...d ? { pounceDual: { id: d.id, name: d.name, ...half ? { half } : {} }, ...element ? { element } : {} } : {} };
   let said: string;
-  const light = annulled(state, holder, undefined, 'physical');
-  if (light) { effect.amount = 0; effect.annulled = light; said = `¡${ability.name}! ${annulledText(light)}`; }
-  else if (target.shell) { effect.amount = 0; effect.swallowed = true; said = `¡${ability.name}! El chicle de ${target.name} se lo traga.`; }
-  else if (singing(state, target)) { effect.amount = 0; effect.sung = true; said = `¡${ability.name}! Atraviesa a ${target.name} mientras canta.`; }
+  const light = annulled(state, holder, element, 'physical');
+  // A bolt melts the gum no more than a claw does: only fire does.
+  if (light) { effect.amount = 0; effect.annulled = light; said = `¡${name}! ${annulledText(light)}`; }
+  else if (target.shell) { effect.amount = 0; effect.swallowed = true; said = `¡${name}! El chicle de ${target.name} se lo traga.`; }
+  else if (singing(state, target)) { effect.amount = 0; effect.sung = true; said = `¡${name}! Atraviesa a ${target.name} mientras canta.`; }
   else {
     const layered = target.layers ?? 0, { bled, scale } = wound(target, true, 'acecho'), weak = weakScale(state, target), chord = chordScale(state, holder, target);
     // For sure, whatever the foe has: spending a wound of five or more still says Olor a sangre, and wakes Siete vidas.
     sureCrit(state, bled, effect);
     effect.crit = true;
-    effect.amount = hurt(state, target, fearDamage(state, target, strike(state, holder, target, ability) * (scale + CRIT_RULES.bonus) * weak * chord * affinityScale(target, undefined), 'physical'));
+    // A dual is every kind of blow against a foe's kind-based rules (the better dish, whole through Transparente).
+    effect.amount = hurt(state, target, fearDamage(state, target, strike(state, holder, target, ability, power) * (scale + CRIT_RULES.bonus) * weak * chord * affinityScale(target, element), d ? 'dual' : 'physical', element));
     if (target.layers && !--target.layers) bare(target);
     if (bled) { closeWound(target); effect.bled = bled; }
+    if (effect.amount > 0 && element && affinityOf(target, element)) effect.affinity = affinityOf(target, element);
     landed(state, holder, target, effect.amount, chord, effect);
     const spent = weak > 1 && effect.amount > 0;
     if (spent) { delete target.weakSpot; effect.weakSpot = 'spent'; }
     spendShield(state, target, effect.amount, effect);
     const peeled = layered - (target.layers ?? 0);
     if (peeled) { effect.peeled = peeled; if (!target.layers && target.hp > 0) effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }]; }
-    said = `¡${ability.name}! Cae sobre ${target.name}: −${effect.amount} PV.${spent ? ' ¡Punto débil!' : ''}${bled ? ` La herida se abre: +${Math.round((scale - 1) * 100)} %.` : ''} ¡Golpe crítico!`;
-    iterate(state, target, undefined, effect);
+    said = `¡${name}! Cae sobre ${target.name}${half ? ', sin su carga' : ''}: −${effect.amount} PV.${spent ? ' ¡Punto débil!' : ''}${bled ? ` La herida se abre: +${Math.round((scale - 1) * 100)} %.` : ''} ¡Golpe crítico!`;
+    iterate(state, target, element, effect);
+    // Physical and electric at once: what the bolt turns (as Atacar·Eléctrico's), then what the blow sets off (Combustión).
+    const before = state.message;
+    state.message = '';
+    if (element) react(state, holder, target, element, effect);
     if (effect.amount > 0) combust(state, holder, target, effect);
-    chill(state, holder, effect, iceBlows(effect, 'physical', ability.power));
+    said += state.message; state.message = before;
+    chill(state, holder, effect, iceBlows(effect, 'physical', power, element));
   }
   spread(state, effect); ignite(state, effect); amplify(effect); checkEye(state, effect);
   (state.news ??= []).push(effect);
