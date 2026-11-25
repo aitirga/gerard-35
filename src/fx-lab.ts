@@ -42,6 +42,11 @@ const ATTACKS: Record<FightFx, { name: string; element?: Element; ally?: boolean
   bubble: { name: 'Burbuja', ally: true },
   globe: { name: 'Globo terráqueo', ally: true },
   orb: { name: 'Orbe', ally: true },
+  // Matemágico's lattices for Superficie mínima and Corriente alterna: a soap film between two rings
+  // round an ally (struck and bursting, or draining to black), and a string between the two picked.
+  film: { name: 'Película de jabón', ally: true },
+  'film-fade': { name: 'Película que se seca', ally: true },
+  string: { name: 'Cuerda pulsada' },
   // Matemágico's own: its streams land a moment later, so no element hit on top (Fuerza 1 or more catches).
   binari: { name: 'Foc Binari' },
 };

@@ -5,7 +5,8 @@ import { cometPath, createTrails, type CometOptions } from './trails.ts';
 import { createFlames, type Flame, type Shell } from './flames.ts';
 import { createReflections, glassMaterial, glassMesh, type ReflectionProbe } from './reflections.ts';
 import { MAX_VOLUMES, canSimulate, createFightParticles, type GpuEmitter, type GpuField, type GpuKind, type GpuLattice, type GpuVolume } from './fight-particles.ts';
-import type { LatticeShape } from './lattice.ts';
+import { catenoidRadius, type LatticeShape } from './lattice.ts';
+import { ensureFluidKinds } from './fluid-fx.ts';
 import { playStatChange, STAT_LOOKS, STAT_MOTE_KINDS, type StatWay } from './stat-fx.ts';
 import { createDisintegrations, type DisintegrateOptions, type Disintegration } from './disintegrate.ts';
 
@@ -287,6 +288,13 @@ export const FIGHT_KINDS = {
     drag: 2.4, gravity: 0, curl: .3, response: 1, size: [.032, .012], sizeJitter: .5, stretch: .045, shape: 'streak',
     colours: ['#ffffff', '#9ff0ff', '#22b4dc'], intensity: [7, 4.5, 2.4], middle: .3, fadeIn: .04, fadeOut: .35, additive: 1, flicker: .2,
   },
+  // A soap film's members (a lattice with the `film` look, src/lattice.ts): soft see-through glows,
+  // weightless, close enough together to read as one sheet; the film's thickness paints them.
+  soapfilm: {
+    blur: .5,
+    drag: .3, gravity: 0, curl: .05, response: 1, size: [.034, .03], sizeJitter: .15, shape: 'glow',
+    colours: ['#ffffff', '#ffffff', '#ffffff'], intensity: [1.3, 1.2, .8], middle: .5, fadeIn: .1, fadeOut: .25, additive: .95, opacity: .6, core: 0,
+  },
   // What a lattice breaks into: sharp chips that spin, glance off bodies and fade.
   chip: {
     drag: .4, gravity: 9, curl: .1, response: .3, collide: true, bounce: .4, friction: .35, size: [.032, .02], sizeJitter: .5, stretch: .02, spin: 540, shape: 'shard',
@@ -306,7 +314,7 @@ export const FIGHT_KINDS = {
   },
 } satisfies Record<string, GpuKind>;
 /** The fight effects to explore and give to skills (`effects.fightFx`, `window.gerard.game.fx`). */
-export const FIGHT_FX = ['shatter', 'arc', 'vortex', 'swarm', 'goo', 'heal', 'fireworks', 'needles', 'prison', 'orbit', 'gather', 'meteor', 'fireflies', 'ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb', 'binari'] as const;
+export const FIGHT_FX = ['shatter', 'arc', 'vortex', 'swarm', 'goo', 'heal', 'fireworks', 'needles', 'prison', 'orbit', 'gather', 'meteor', 'fireflies', 'ward', 'morph', 'current', 'veil', 'forge', 'shield', 'bubble', 'globe', 'orb', 'film', 'film-fade', 'string', 'binari'] as const;
 export type FightFx = typeof FIGHT_FX[number];
 /**
  * What each level of fire throws off a fighter in a fight, off their own parts: embers, crackle, smoke
@@ -1584,7 +1592,7 @@ export function createEffects(app: pc.Application) {
           // keeping its neighbours; a push shakes it like jelly, and it springs back.
           const colour = o.colour ?? '#ffd76a', at = { x: feet.x, y: feet.y + body.height + .8, z: feet.z };
           const shapes: LatticeShape[] = ['ball', 'crystal', 'ring', 'column', 'ball'];
-          const sizes: Record<LatticeShape, [number, number, number]> = { ball: [.4, .4, .4], crystal: [.3, .55, .3], ring: [.48, .09, .13], column: [.18, .55, .18], box: [.35, .35, .35], shield: [.35, .45, .1], sphere: [.42, .42, .02], dome: [.42, .42, .02] };
+          const sizes: Record<LatticeShape, [number, number, number]> = { ball: [.4, .4, .4], crystal: [.3, .55, .3], ring: [.48, .09, .13], column: [.18, .55, .18], box: [.35, .35, .35], shield: [.35, .45, .1], sphere: [.42, .42, .02], dome: [.42, .42, .02], catenoid: [.4, .45, .2], string: [.6, .02, .02] };
           const blob = gpu.lattice('node', {
             grid: [14, 14, 14], size: { x: .4, y: .4, z: .4 }, shape: 'ball', at, life: 8, hold: .4, colour, scale: .8,
             rigidity: 70, bonds: 200, damping: 5, viscosity: 1.5, glow: 1.2, light: { intensity: 2, range: 2.4, colour },
@@ -1767,6 +1775,101 @@ export function createEffects(app: pc.Application) {
               layer.dissolve = span(t, breaks, breaks + .25);
             }
           } }));
+          break;
+        }
+        case 'film':
+        case 'film-fade': {
+          // Two gold rings drawn at their chest part to their ankles and over their head, and a soap film
+          // forms between them, a catenoid narrowing at the waist, its colours those of its thickness.
+          // `film`: blows from whoever strikes ripple it, and a last one bursts it: its rim runs back
+          // from where it landed and the droplets it sheds fly at the striker as water. `film-fade`: it
+          // drains, turns black film from the top and comes apart in motes.
+          ensureFluidKinds(gpu);
+          const ring = body.radius + .32, low = feet.y + .08, high = feet.y + body.height + .22, waist = ring * .55;
+          const mid = { x: feet.x, y: feet.y + body.height * .55, z: feet.z };
+          const film = gpu.lattice('soapfilm', {
+            grid: [104, 60, 1], size: { x: ring, y: .02, z: ring }, shape: 'catenoid', at: mid, life: 7, hold: .4, colour: '#f3cf78',
+            rigidity: 220, bonds: 150, damping: 8, viscosity: 2, glow: .6, rim: 1.5, hitRadius: .09, transfer: .35, bounce: .2,
+            film: true, thickness: 0, drain: .55, swirl: .7, fresnel: .55, flow: 1.2, wave: { height: .008, length: .45, speed: .5 },
+            between: [{ x: mid.x, y: mid.y - .02, z: mid.z }, { x: mid.x, y: mid.y + .02, z: mid.z }],
+            light: { intensity: 1.2, range: 2.4, colour: '#bfeee8' },
+          });
+          // Where a blow from the striker lands on it, at height y.
+          const landing = (y: number) => {
+            const t = Math.min(1, Math.max(-1, (y - (low + high) / 2) / ((high - low) / 2)));
+            const r = catenoidRadius(t, ring, waist);
+            return { x: feet.x - onward.x * r, y, z: feet.z - onward.z * r };
+          };
+          const blow = (left: number, y: number, count: number, heavy = false) => later.push({ left, then: () => {
+            if (!film.alive) return;
+            const at = landing(y), dx = at.x - from.x, dy = at.y - from.y, dz = at.z - from.z, d = Math.hypot(dx, dy, dz) || 1, speed = 12;
+            const batch = gpu.burst('spark', { at: from, count: n(count), spread: .05, velocity: { x: dx / d * speed, y: dy / d * speed, z: dz / d * speed }, speed: .8, cone: .1, life: [.5, .8] });
+            film.hitBy(batch);
+            later.push({ left: d / speed, then: () => {
+              if (!film.alive) return;
+              if (!heavy) { film.ripple(at, { height: .035, length: .13, speed: 1.3, decay: .8 }); glint(at, '#bfeee8', 1.2, 1.6, .2); return; }
+              // It bursts where the blow lands: the droplets fly back at the striker as water.
+              film.breakInto = 'fluido-agua';
+              film.rupture(at, { speed: 2.4, rim: .06, shed: .4, fling: 1.6 });
+              film.throwAt([{ at: { x: from.x, y: from.y, z: from.z }, radius: .3 }], { speed: 7, steer: 5, arc: .25, blast: 1.5 });
+              glint(at, '#dff8ff', 2.2, 2.4, .3);
+            } });
+          } });
+          if (name === 'film') { blow(1.3, mid.y + .1, 18); blow(1.9, mid.y - .35, 18); blow(2.6, mid.y + .05, 40, true); }
+          lattices.push({ lattice: film, age: 0, seconds: name === 'film' ? 4 : 3.6, step: t => {
+            const open = span(t, .2, 1);
+            film.span({ x: feet.x, y: mid.y + (low - mid.y) * open - .02 * (1 - open), z: feet.z }, { x: feet.x, y: mid.y + (high - mid.y) * open + .02 * (1 - open), z: feet.z });
+            film.size.z = ring + (waist - ring) * open;
+            film.thickness = name === 'film' ? span(t, .35, 1.1) : span(t, .35, 1.1) * (1 - span(t, 1.7, 2.8));
+            if (name === 'film-fade') {
+              film.drain = .55 + .45 * span(t, 1.5, 2.6);
+              // What is left comes apart in a few motes, its rings with them.
+              if (t > 2.7) { film.breakInto = 'mote'; film.shed = .06; film.dissolve = span(t, 2.7, 3.4); }
+            }
+          } });
+          break;
+        }
+        case 'string': {
+          // A string of light drawn tight from the striker's chest to theirs, gold round a yellow core.
+          // It is plucked four times, each time harder: a pulse runs to one end, alternately, and flips
+          // over there with a flash; then it snaps in the middle and each half recoils onto its end.
+          const a = { x: from.x, y: from.y, z: from.z }, b = chest;
+          const make = (kind: string, colour: string, scale: number) => gpu.lattice(kind, {
+            grid: [400, 1, 1], size: { x: .01, y: 0, z: 0 }, shape: 'string', life: 7, hold: .4, colour, scale,
+            rigidity: 600, bonds: 200, damping: 12, viscosity: 2, glow: .4, rim: 1, breakInto: 'spark',
+            wave: { height: .004, length: .35, speed: 2.4 }, between: [a, { x: a.x + (b.x - a.x) * .01, y: a.y + (b.y - a.y) * .01, z: a.z + (b.z - a.z) * .01 }],
+          });
+          const body_ = make('thread', '#e3a43a', 1.5), core = make('thread', '#fff09a', .6);
+          const strings = [body_, core];
+          const plucks = [.9, 1.8, 2.7, 3.6], heights = [.07, .1, .13, .16];
+          let snapAt = Infinity, snapped = false;
+          plucks.forEach((left, i) => later.push({ left, then: () => {
+            if (!body_.alive) return;
+            const toward = (i % 2 === 0 ? 1 : -1) as 1 | -1;
+            let first = 0;
+            strings.forEach((s, k) => {
+              const timing = s.travel({ toward, height: heights[i], speed: 3.2, width: .16, decay: .9, shine: 2.5, onReflect: k ? undefined : (end, nth) => {
+                if (nth > 0) return;
+                const at = end > 0 ? b : a;
+                gpu.burst('spark', { at, count: n(40 + 20 * i), spread: .05, speed: 3 + i, life: [.25, .5] });
+                glint(at, '#fff1b0', 2 + i, 2.6, .25);
+              } });
+              first = timing.reachesEnd;
+            });
+            if (i === plucks.length - 1) snapAt = left + first + .25;
+          } }));
+          lattices.push({ lattice: body_, age: 0, seconds: 5.2, step: t => {
+            const reach = span(t, 0, .5);
+            const end = { x: a.x + (b.x - a.x) * reach, y: a.y + (b.y - a.y) * reach, z: a.z + (b.z - a.z) * reach };
+            for (const s of strings) { s.span(a, end); s.wave.height = .004 + .008 * span(t, .9, 3.6); }
+            if (t > snapAt && !snapped) {
+              snapped = true;
+              strings.forEach(s => s.snap({ at: 0, seconds: .45, whip: .12 }));
+              glint({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 }, '#fff1b0', 2.5, 2.6, .3);
+            }
+            if (t > snapAt + .55) strings.forEach(s => { s.breakInto = 'mote'; s.dissolve = span(t, snapAt + .55, snapAt + 1.1); });
+          } });
+          lattices.push({ lattice: core, age: 0, seconds: 5.2, step: () => {} });
           break;
         }
       }

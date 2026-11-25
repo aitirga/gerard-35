@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { SURFACE_SAMPLES, writeSurface } from './surface-samples.ts';
-import { HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, packColour, MAX_AIMS, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeSpacing, latticeWgsl, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
+import { FILM_COL, HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, MAX_PULSES, MAX_RIPPLES, RIPPLE_COL, RUPTURE_COL, SNAP_COL, TRAVEL_COL, packColour, MAX_AIMS, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeRippleWgsl, latticeSpacing, latticeWgsl, stringReflections, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
 
 /**
  * A general particle engine on the GPU, for fights (docs/graphics.md, "Fight particles on the GPU").
@@ -327,6 +327,18 @@ export interface GpuLattice {
    * more and wider the higher), laid out by `crackSeed`.
    */
   tint: string; tintAmount: number; cracks: number; crackSeed: number;
+  /**
+   * A soap film's look (a `catenoid`'s, or any sheet's): each member takes the colour of thin-film
+   * interference from how thick the film is there, gold → white → cyan → water blue and back, never
+   * magenta or violet. `thickness` (0–1, 1 a fresh film) thins it all: below about 0.15 it turns black
+   * film, which shows nothing, so lowering it to 0 is its fade-out (from the top, where it is thinnest).
+   * `drain` (0–1) is how much thinner its top is than its bottom (gravity), `swirl` (0–1) how much it
+   * swirls, turning with its `flow` and its `wave`. Its first and last rows (a catenoid's rings) keep
+   * the lattice's own colour, bigger.
+   */
+  film: boolean; thickness: number; drain: number; swirl: number;
+  /** What it sheds when it breaks (a film's members, but its rings, or anything that `rupture`s): this share (0–1) as `breakInto`, the rest gone. */
+  shed: number;
   /** Its members' slots. */
   readonly members: GpuBatch;
   readonly alive: boolean;
@@ -341,16 +353,56 @@ export interface GpuLattice {
   throwAt(points: readonly { at: Vec3Like; radius: number }[], o?: { speed?: number; steer?: number; arc?: number; blast?: number }): void;
   /** A burst thrown at it: its particles meet its members (up to three bursts, the newest kept). */
   hitBy(batch: GpuBatch | undefined): void;
+  /**
+   * Places it between two points: a `catenoid`'s axis (its y) runs from `from` to `to`, its rings on
+   * them; a `string`'s length (its x) from `from` (cell −1, its start) to `to` (cell 1, its end), its y
+   * kept as near up as it can. Its half-size along that axis becomes half the distance. Call it every
+   * frame to keep it on moving points (a chest, a pair of ankles).
+   */
+  span(from: Vec3Like, to: Vec3Like): void;
+  /**
+   * Capillary ripples from `at` (a world point on it, where a blow lands): rings that run out across its
+   * surface at `speed` m/s, `length` m apart, `height` m high, dying away over `decay` s. Two at once;
+   * a third replaces the oldest. Any shape; across its surface's facing (out of a sphere, from a
+   * catenoid's axis, up from a string).
+   */
+  ripple(at: Vec3Like, o?: { height?: number; length?: number; speed?: number; decay?: number }): void;
+  /**
+   * It bursts like a soap film: a hole opens at `at` (a world point on it) and its rim runs back at
+   * `speed` m/s, the same all the way, bright and thick (`rim` m wide) as it rolls up the film. Each
+   * member the rim passes breaks loose: `shed` (0–1, sets the lattice's own) of them as `breakInto` (the
+   * droplets: set it, e.g. 'fluido-agua', and `throwAt` the attacker to send them there), flung out
+   * from the hole at up to `fling` m/s; the rest are gone. Returns how long until the rim has crossed all of it (s).
+   */
+  rupture(at: Vec3Like, o?: { speed?: number; rim?: number; shed?: number; fling?: number }): number;
+  /**
+   * A string's travel mode: a d'Alembert pulse plucked at `from` (cell −1…1, its middle by default)
+   * runs towards the end `toward` (1 its end, −1 its start) at `speed` m/s, `height` m high and `width`
+   * m wide, and each fixed end throws it back upside down; it dies away over `decay` s, lighting the
+   * string up to `shine` times brighter where it lifts it (all its pulses share the last width and shine given). Two run at once;
+   * a third replaces the oldest. `onReflect(end, n)` is called on the frame its `n`th reflection
+   * (0 the first) reaches `end`. Returns when that first reflection comes (`reachesEnd`, s from now)
+   * and every how long the next ones do (`every`, s), at its length now.
+   */
+  travel(o: { toward: 1 | -1; from?: number; height?: number; speed?: number; width?: number; decay?: number; shine?: number; onReflect?: (end: 1 | -1, n: number) => void }): { reachesEnd: number; every: number };
+  /**
+   * A string snaps at `at` (cell −1…1, its middle by default): the members by the cut break loose (as
+   * `breakInto`), its pulses stop, and each half recoils onto its own end over `seconds`, whipping
+   * `whip` m. Remove it after.
+   */
+  snap(o?: { at?: number; seconds?: number; whip?: number }): void;
   /** Gone: its members are free, and age out as their kind. */
   remove(): void;
 }
 
 /** How to make a lattice: its grid, shape and size, where, and how its members live; any `GpuLattice` field too. */
-export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rotation' | 'grid' | 'size' | 'members' | 'alive' | 'push' | 'hitBy' | 'throwAt' | 'remove' | 'wave'>> {
+export interface GpuLatticeOptions extends Partial<Omit<GpuLattice, 'at' | 'rotation' | 'grid' | 'size' | 'members' | 'alive' | 'push' | 'hitBy' | 'throwAt' | 'remove' | 'wave' | 'span' | 'ripple' | 'rupture' | 'travel' | 'snap'>> {
   grid: readonly [number, number, number];
   size: Vec3Like;
   at?: Vec3Like; rotation?: pc.Quat;
   wave?: Partial<GpuLattice['wave']>;
+  /** For a `string` or a `catenoid`: placed between these two points (`span`). */
+  between?: [Vec3Like, Vec3Like];
   /** Each member's life (s) and the share of it it holds at while bonded: once loose it ages on through the rest. */
   life?: number; hold?: number;
   /** Members' size (× the kind's) and their tint. */
@@ -843,6 +895,9 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       // thrown at it or pushes it moves them; the springs are capped so no frame overshoots.
       var strain = 0.0;
       if (ml >= 0) {
+        // A catenoid's or a string's strands reach as far as its cells are apart now (it may be made
+        // folded up and opened, or drawn out from one end).
+        if (bonded && dominant(ml) > 7.5) { chainPos = -lat(ml, 19).z * 1.6; }
         let g9 = lat(ml, 9); let g10 = lat(ml, 10); let g13 = lat(ml, 13); let g14 = lat(ml, 14);
         let home = homeOf(ml, mo);
         let homeVel = lat(ml, 12).xyz + cross(g13.xyz, home - vec3f(lat(ml, 0).w, lat(ml, 1).w, lat(ml, 2).w));
@@ -1079,10 +1134,27 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
           member = 0.0; link = -1.0; chainPos = 0.0;
           if (k9.y > -0.5) { kind = k9.y; age = 0.0; life = lifeOf(kind, seed); } else { age = life; }
         } else if (bonded) {
-          // A bond stretched past its toughness snaps, or the lattice dissolves under it: it breaks loose.
-          if ((g10.x > 0.0 && strain > g10.x) || dissolving) { member = -member; link = -1.0; if (g10.y > -0.5) { kind = g10.y; age = 0.0; life = lifeOf(kind, seed); } }
-          // How strained it is, and on a shield's rim how much brighter its outline is, for its glow.
-          else { release = select(strain, strain / g10.x, g10.x > 0.0) * lat(ml, 11).w + select(0.0, lat(ml, 19).w, onRim(ml, mo)); }
+          // A bond stretched past its toughness snaps, or the lattice dissolves under it, or a string
+          // snaps by it: it breaks loose.
+          let burst = rupturedAt(ml, pos);
+          if ((g10.x > 0.0 && strain > g10.x) || dissolving || snappedAt(ml, mo) || burst) {
+            member = -member; link = -1.0;
+            let f1 = lat(ml, ${FILM_COL + 1});
+            let r = id * 13u + frame;
+            // A film bursts: its rim runs past it, flinging it out from the hole.
+            if (burst) {
+              let away = pos - lWorld(ml, lat(ml, ${RUPTURE_COL}).xyz);
+              vel += (away / max(length(away), 1e-4) + unitVec(rnd(r, 44u), rnd(r, 45u)) * 0.35) * f1.w * (0.5 + 0.5 * rnd(r, 46u));
+            }
+            // A film (but its rings) or what bursts sheds a share of itself as its breakInto (droplets,
+            // motes), and the rest is gone; anything else breaks into it whole.
+            if (burst || (lat(ml, ${FILM_COL}).x > 0.5 && !onRim(ml, mo))) {
+              if (rnd(r, 47u) < f1.z && g10.y > -0.5) { kind = g10.y; age = 0.0; life = lifeOf(kind, seed); } else { age = life; }
+            } else if (g10.y > -0.5) { kind = g10.y; age = 0.0; life = lifeOf(kind, seed); }
+          }
+          // How strained it is, on a shield's rim how much brighter its outline is, and how far a
+          // string's pulse lifts it, for its glow.
+          else { release = select(strain, strain / g10.x, g10.x > 0.0) * lat(ml, 11).w + select(0.0, lat(ml, 19).w, onRim(ml, mo)) + travelGlow(ml, mo) * lat(ml, ${TRAVEL_COL + MAX_PULSES}).y; }
         } else if (g10.z > 0.0 && !dissolving && length(homeOf(ml, mo) - pos) < lat(ml, 19).x * 0.4) {
           // Home again: it bonds, as the lattice's own kind.
           member = -member; kind = g10.w; life = lat(ml, 19).y; age = life * g15.w; part = 0.0;
@@ -1132,6 +1204,17 @@ varying vAge: vec3f;
 fn st(band: i32, index: i32) -> vec4f { return textureLoad(uState, vec2i(index % ${W}, index / ${W} + band * ${H}), 0); }
 fn kin(k: i32, c: i32) -> vec4f { return textureLoad(uKinds, vec2i(c, k), 0); }
 fn fmodf(x: f32, y: f32) -> f32 { return x - y * floor(x / y); }
+fn lat(l: i32, c: i32) -> vec4f { return textureLoad(uLattices, vec2i(c, l), 0); }
+${latticeRippleWgsl}
+// Thin-film interference, as this game paints it: from how thick a film is (0–1 fresh), back and forth
+// along gold → white → cyan → water blue, never through magenta or violet.
+fn filmRamp(h: f32) -> vec3f {
+  let t = 1.0 - abs(fract(h * 1.35) * 2.0 - 1.0);
+  let gold = vec3f(1.0, 0.6, 0.1); let white = vec3f(1.0, 0.95, 0.78); let cyan = vec3f(0.12, 0.88, 0.78); let blue = vec3f(0.03, 0.26, 0.9);
+  if (t < 0.22) { return mix(gold, white, t / 0.22); }
+  if (t < 0.55) { return mix(white, cyan, (t - 0.22) / 0.33); }
+  return mix(cyan, blue, (t - 0.55) / 0.45);
+}
 fn crackMix(x: u32) -> u32 { let v = x * 747796405u + 2891336453u; let w = ((v >> ((v >> 28u) + 4u)) ^ v) * 277803737u; return (w >> 22u) ^ w; }
 // A hash of two whole numbers and a salt, 0…1 (integer, so the GPU gives the same as anywhere).
 fn crackHash(a: f32, b: f32, salt: u32) -> f32 {
@@ -1205,7 +1288,14 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
       let g6 = textureLoad(uLattices, vec2i(6, l), 0);
       if (g6.y > 0.5 && abs(g6.x - E.z) < 0.5) {
         let g20 = textureLoad(uLattices, vec2i(20, l), 0); let g21 = textureLoad(uLattices, vec2i(21, l), 0);
-        let facing = abs(dot(normalize(A.xyz - g20.xyz + vec3f(0.0, 1e-5, 0.0)), back));
+        let form = textureLoad(uLattices, vec2i(7, l), 0).y;
+        var facingDir = A.xyz - g20.xyz + vec3f(0.0, 1e-5, 0.0);
+        if (form > 7.5 && form < 8.5) {
+          // A catenoid's surface faces out from its axis.
+          let axis = normalize(vec3f(textureLoad(uLattices, vec2i(0, l), 0).y, textureLoad(uLattices, vec2i(1, l), 0).y, textureLoad(uLattices, vec2i(2, l), 0).y));
+          facingDir = facingDir - axis * dot(facingDir, axis) + vec3f(0.0, 1e-5, 0.0);
+        }
+        let facing = abs(dot(normalize(facingDir), back));
         alpha *= g20.w * mix(1.0, 0.08 + 0.92 * pow(1.0 - facing, 1.5), g21.x);
         // Its look: the colour its members turn to (as bright as they were), and its cracks.
         let look = textureLoad(uLattices, vec2i(${LOOK_COL}, l), 0);
@@ -1214,15 +1304,48 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
           let to = vec3f(f32((packed >> 16u) & 255u), f32((packed >> 8u) & 255u), f32(packed & 255u)) / 255.0;
           colour = mix(colour, to * max(max(colour.r, colour.g), max(colour.b, 0.05)) / max(max(to.r, to.g), max(to.b, 0.05)), look.y);
         }
+        // A soap film: thin-film colour from how thick it is where the member sits, thinner up top as it
+        // drains and swirling; black film (nothing) where it is thinnest. Its first and last rows (a
+        // catenoid's rings) keep their own colour, bigger.
+        let film = textureLoad(uLattices, vec2i(${FILM_COL}, l), 0);
+        let film1 = textureLoad(uLattices, vec2i(${FILM_COL + 1}, l), 0);
+        if (film.x > 0.5 && E.w > 0.5) {
+          let mo = fmodf(f32(i) - E.z + ${N}.0, ${N}.0);
+          let ii = fmodf(floor(mo + 0.5), g6.z); let jj = fmodf(floor((mo + 0.5) / g6.z), g6.w);
+          let cx = (ii + 0.5) / g6.z; let cy = (jj + 0.5) / g6.w;
+          if (g6.w > 1.5 && (jj < 0.5 || jj > g6.w - 1.5)) { size *= 1.6; colour *= 1.5; }
+          else {
+            let a = cx * 6.2831853; let t = film1.x; let phase = textureLoad(uLattices, vec2i(11, l), 0).z;
+            let swirl = 0.5 * sin(a * 2.0 + cy * 5.0 + t * 0.9 + phase) + 0.35 * sin(a * 3.0 - cy * 7.0 - t * 1.3) + 0.15 * sin(a + cy * 11.0 + t * 0.6 + phase * 0.5);
+            // A ripple running across it thickens and thins it as it goes: rings of colour.
+            let q3 = lat(l, 3); let q4 = lat(l, 4); let q5 = lat(l, 5);
+            let ownAt = vec3f(dot(q3.xyz, A.xyz) + q3.w, dot(q4.xyz, A.xyz) + q4.w, dot(q5.xyz, A.xyz) + q5.w);
+            let wave = rippleOf(l, ownAt) / max(lat(l, ${RIPPLE_COL + MAX_RIPPLES}).x, 1e-4);
+            let h = film.y * max(0.0, 1.0 + film.z * (0.5 - cy) * 1.7) * (1.0 + film.w * 0.35 * swirl) * (1.0 + 0.8 * wave);
+            colour = filmRamp(h) * max(max(colour.r, colour.g), max(colour.b, 0.05));
+            alpha *= smoothstep(0.03, 0.16, h);
+          }
+        }
+        // Bursting: the rim of the hole, running back, is bright and thick.
+        let rup = textureLoad(uLattices, vec2i(${RUPTURE_COL}, l), 0);
+        if (rup.w > 0.0 && E.w > 0.5) {
+          let r3 = textureLoad(uLattices, vec2i(3, l), 0); let r4 = textureLoad(uLattices, vec2i(4, l), 0); let r5 = textureLoad(uLattices, vec2i(5, l), 0);
+          let own = vec3f(dot(r3.xyz, A.xyz) + r3.w, dot(r4.xyz, A.xyz) + r4.w, dot(r5.xyz, A.xyz) + r5.w);
+          let band = 1.0 - smoothstep(0.0, max(film1.y, 1e-3), length(own - rup.xyz) - rup.w);
+          colour = mix(colour, vec3f(2.4, 2.9, 3.0), band * 0.75);
+          alpha = mix(alpha, 1.0, band);
+          size *= 1.0 + band * 1.3;
+        }
         if (look.z > 0.001) {
           // Where on it the member is, from where it stands in the lattice's own space (0…1 each way):
           // round and up a sphere or a dome, across and up anything else.
           let w3 = textureLoad(uLattices, vec2i(3, l), 0); let w4 = textureLoad(uLattices, vec2i(4, l), 0); let w5 = textureLoad(uLattices, vec2i(5, l), 0);
           let own = vec3f(dot(w3.xyz, A.xyz) + w3.w, dot(w4.xyz, A.xyz) + w4.w, dot(w5.xyz, A.xyz) + w5.w);
           let half = max(textureLoad(uLattices, vec2i(8, l), 0).xyz, vec3f(1e-4));
-          let form = textureLoad(uLattices, vec2i(7, l), 0).y;
           var cell = own.xy / half.xy * 0.5 + 0.5;
-          if (form > 5.5) {
+          if (form > 7.5 && form < 8.5) { cell = vec2f(fract(atan2(own.z, own.x) / 6.2831853 + 1.0), own.y / half.y * 0.5 + 0.5); }
+          else if (form > 8.5) { cell = vec2f(own.x / half.x * 0.5 + 0.5, 0.5); }
+          else if (form > 5.5) {
             let u = vec3f(own.x / half.x, own.y / half.y, own.z / half.x);
             let up = acos(clamp(u.y / max(length(u), 1e-5), -1.0, 1.0)) / select(1.5707963, 0.78539816, form > 6.5);
             cell = vec2f(fract(atan2(u.z, u.x) / 6.2831853 + 1.0), clamp(1.0 - up * 0.5, 0.0, 1.0));
@@ -1837,6 +1960,12 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     slot: number; kind: number; life: number; hold: number; flowAt: number; phase: number; last: pc.Vec3; lastTurn: pc.Quat; pending?: { at: Vec3Like; radius: number; strength: number }; origin: pc.Vec3; hitters: GpuBatch[]; glowGroup?: LightGroup; dead: boolean;
     /** Thrown (`throwAt`): the points sorted round it from straight behind, the way they lie, and how its members fly. */
     aim?: { points: { at: Vec3Like; radius: number }[]; facing: number; speed: number; steer: number; arc: number; blast: number };
+    /** A film's clock (s); its ripples (in its own space), its rupture, a string's pulses and its snap. */
+    clock: number;
+    ripples: { at: pc.Vec3; age: number }[]; rippleLook: { height: number; length: number; speed: number; decay: number };
+    burst?: { at: pc.Vec3; age: number; speed: number; rim: number; fling: number };
+    pulses: { from: number; toward: 1 | -1; travelled: number; height: number; age: number; speed: number; decay: number; reflected: number; onReflect?: (end: 1 | -1, n: number) => void }[]; pulseWidth: number; pulseShine: number;
+    snapped?: { at: number; age: number; seconds: number; whip: number };
   }
   const lattices: LatticeState[] = [];
   /** Motion laws in their slots (§ `law`), and the points lit this frame (`ignite`). */
@@ -1936,6 +2065,35 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       out.set([aim?.facing ?? 0, aim?.arc ?? 0, 0, 0], o + 92);
       aim?.points.forEach((p, i) => out.set([p.at.x, p.at.y, p.at.z, p.radius], o + 96 + i * 4));
       out.set([packColour(tint(l.tint)), Math.min(1, Math.max(0, l.tintAmount)), Math.min(1, Math.max(0, l.cracks)), l.crackSeed], o + LOOK_COL * 4);
+      // A film, its ripples and its rupture; a string's pulses and its snap.
+      l.clock += dt;
+      const burst = l.burst;
+      if (burst) burst.age += dt;
+      out.set([l.film ? 1 : 0, Math.max(0, l.thickness), Math.min(1, Math.max(0, l.drain)), Math.min(1, Math.max(0, l.swirl))], o + FILM_COL * 4);
+      out.set([l.clock, burst?.rim ?? 0, Math.min(1, Math.max(0, l.shed)), burst?.fling ?? 0], o + (FILM_COL + 1) * 4);
+      for (let i = l.ripples.length - 1; i >= 0; i--) { l.ripples[i].age += dt; if (l.ripples[i].age > l.rippleLook.decay * 6) l.ripples.splice(i, 1); }
+      for (let i = 0; i < MAX_RIPPLES; i++) { const r = l.ripples[i]; out.set(r ? [r.at.x, r.at.y, r.at.z, r.age] : [0, 0, 0, -1], o + (RIPPLE_COL + i) * 4); }
+      const look = l.rippleLook;
+      out.set([l.ripples.length ? look.height : 0, look.length, look.speed, look.decay], o + (RIPPLE_COL + MAX_RIPPLES) * 4);
+      out.set(burst ? [burst.at.x, burst.at.y, burst.at.z, burst.age * burst.speed] : [0, 0, 0, -1], o + RUPTURE_COL * 4);
+      const length = 2 * l.size.x;
+      for (let i = l.pulses.length - 1; i >= 0; i--) {
+        const p = l.pulses[i];
+        p.age += dt; p.travelled += p.speed * dt;
+        // Each reflection as it comes (at the string's length now).
+        const r = stringReflections(length, p.from, p.toward);
+        while (p.travelled >= r.first + p.reflected * r.every) { const n = p.reflected++; p.onReflect?.(r.end(n) as 1 | -1, n); }
+        if (p.height * Math.exp(-p.age / p.decay) < Math.abs(p.height) * .01) l.pulses.splice(i, 1);
+      }
+      for (let i = 0; i < MAX_PULSES; i++) {
+        const p = l.pulses[i];
+        out.set(p ? [p.from, p.toward, p.travelled, p.height * Math.exp(-p.age / p.decay)] : [0, 1, 0, 0], o + (TRAVEL_COL + i) * 4);
+      }
+      out.set([l.pulseWidth, l.pulseShine, 0, 0], o + (TRAVEL_COL + MAX_PULSES) * 4);
+      const snap = l.snapped;
+      if (snap) snap.age += dt;
+      const recoil = snap ? 1 - (1 - Math.min(1, snap.age / snap.seconds)) ** 3 : 0;
+      out.set(snap ? [snap.at, recoil, snap.whip, 1] : [0, 0, 0, 0], o + SNAP_COL * 4);
     }));
   }
   function makeLattice(kind: string, o: GpuLatticeOptions): GpuLattice {
@@ -1950,14 +2108,16 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     const at = new pc.Vec3(o.at?.x ?? 0, o.at?.y ?? 0, o.at?.z ?? 0), rotation = o.rotation?.clone() ?? new pc.Quat();
     if (o.follow) { at.copy(o.follow.getPosition()); rotation.copy(o.follow.getRotation()); }
     const life = o.life ?? 6, member = slot + 1;
-    const { light, from, life: _life, hold, scale, colour, at: _at, rotation: _rotation, size, grid: _grid, wave, ...fields } = o;
+    const { light, from, life: _life, hold, scale, colour, at: _at, rotation: _rotation, size, grid: _grid, wave, between, ...fields } = o;
     const l: LatticeState = {
       shape: 'box', morph: 0, rigidity: 120, bonds: 300, damping: 6, viscosity: 1, toughness: 0, reform: 0, flow: 0, glow: .6, rim: 0, opacity: 1, fresnel: 0, strands: 'x',
       hitRadius: .08, transfer: .5, bounce: .3, dissolve: 0, dissolveFrom: 'random', tint: '#ffffff', tintAmount: 0, cracks: 0, crackSeed: Math.floor(Math.random() * 100000),
+      film: false, thickness: 1, drain: .6, swirl: .5, shed: .35,
       ...fields, morphTo: o.morphTo ?? o.shape ?? 'box', wave: { height: 0, length: 1, speed: 0, ...wave },
       at, rotation, grid, size: new pc.Vec3(size.x, size.y, size.z),
       slot, kind: k, life, hold: Math.min(.95, Math.max(.05, hold ?? .4)), flowAt: 0, phase: 0, last: at.clone(), lastTurn: rotation.clone(),
       origin: at.clone(), hitters: [], dead: false, members: { start: 0, count: 0 },
+      clock: 0, ripples: [], rippleLook: { height: .03, length: .12, speed: 1.4, decay: .7 }, pulses: [], pulseWidth: .16, pulseShine: 1.5,
       get alive() { return !l.dead; },
       push(where, radius, strength) { l.pending = { at: { x: where.x, y: where.y, z: where.z }, radius, strength }; },
       hitBy(batch) { if (!batch) return; l.hitters.push(batch); if (l.hitters.length > 3) l.hitters.shift(); },
@@ -1972,6 +2132,51 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         const sorted = [...kept].sort((a, b) => off(a.at) - off(b.at)).map(p => ({ at: { x: p.at.x, y: p.at.y, z: p.at.z }, radius: p.radius }));
         l.aim = { points: sorted, facing, speed: o.speed ?? 9, steer: o.steer ?? 7, arc: o.arc ?? .3, blast: o.blast ?? 4 };
       },
+      span(a, b) {
+        const d = new pc.Vec3(b.x - a.x, b.y - a.y, b.z - a.z), half = d.length() / 2;
+        l.at.set((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+        if (half < 1e-5) return;
+        d.mulScalar(1 / (2 * half));
+        if (l.shape === 'string' || l.morphTo === 'string') {
+          // x along it, y as near up as it can be (or along z when it stands upright).
+          const up = Math.abs(d.y) > .99 ? new pc.Vec3(0, 0, 1) : new pc.Vec3(0, 1, 0);
+          const z = new pc.Vec3().cross(d, up).normalize(), y = new pc.Vec3().cross(z, d).normalize();
+          l.rotation.setFromMat4(new pc.Mat4().set([d.x, d.y, d.z, 0, y.x, y.y, y.z, 0, z.x, z.y, z.z, 0, 0, 0, 0, 1]));
+          l.size.x = half;
+        } else {
+          // y along it.
+          const side = Math.abs(d.x) > .99 ? new pc.Vec3(0, 0, 1) : new pc.Vec3(1, 0, 0);
+          const z = new pc.Vec3().cross(side, d).normalize(), x = new pc.Vec3().cross(d, z).normalize();
+          l.rotation.setFromMat4(new pc.Mat4().set([x.x, x.y, x.z, 0, d.x, d.y, d.z, 0, z.x, z.y, z.z, 0, 0, 0, 0, 1]));
+          l.size.y = half;
+        }
+      },
+      ripple(where, o = {}) {
+        const local = toOwn(where);
+        l.ripples.unshift({ at: local, age: 0 });
+        l.ripples.length = Math.min(l.ripples.length, MAX_RIPPLES);
+        Object.assign(l.rippleLook, Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)));
+      },
+      rupture(where, o = {}) {
+        const speed = o.speed ?? 2.2;
+        if (o.shed !== undefined) l.shed = o.shed;
+        l.burst = { at: toOwn(where), age: 0, speed, rim: o.rim ?? .05, fling: o.fling ?? 1.5 };
+        // Far enough to cross any of it from anywhere on it.
+        return 2 * Math.hypot(l.size.x, l.size.y, l.size.z) / speed;
+      },
+      travel(o) {
+        const from = Math.min(1, Math.max(-1, o.from ?? 0)), speed = o.speed ?? 3, length = 2 * l.size.x;
+        if (o.width !== undefined) l.pulseWidth = o.width;
+        if (o.shine !== undefined) l.pulseShine = o.shine;
+        l.pulses.unshift({ from, toward: o.toward, travelled: 0, height: o.height ?? .1, age: 0, speed, decay: o.decay ?? 1.2, reflected: 0, onReflect: o.onReflect });
+        l.pulses.length = Math.min(l.pulses.length, MAX_PULSES);
+        const r = stringReflections(length, from, o.toward);
+        return { reachesEnd: r.first / speed, every: r.every / speed };
+      },
+      snap(o = {}) {
+        l.snapped = { at: Math.min(.95, Math.max(-.95, o.at ?? 0)), age: 0, seconds: o.seconds ?? .45, whip: o.whip ?? .12 };
+        l.pulses.length = 0;
+      },
       remove() {
         if (l.dead) return;
         l.dead = true;
@@ -1980,6 +2185,13 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
         if (l.glowGroup) l.glowGroup.until = time + l.life * (1 - l.hold) + .5;
       },
     };
+    /** A world point in its own space, as it stands now. */
+    function toOwn(where: Vec3Like) {
+      const own = new pc.Vec3(where.x - l.at.x, where.y - l.at.y, where.z - l.at.z);
+      return new pc.Quat().copy(l.rotation).invert().transformVector(own, own);
+    }
+    // Placed between two points from the start: it was never anywhere else, so it neither moved nor turned to get there.
+    if (between) { l.span(between[0], between[1]); l.last.copy(l.at); l.lastTurn.copy(l.rotation); l.origin.copy(l.at); }
     lattices.push(l);
     // Its slots are held from now on, so no burst lands on them.
     const batch = queue(kind, {
