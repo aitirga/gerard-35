@@ -194,3 +194,12 @@ test('its circles are never pink nor violet (the Queen\'s and fear\'s), not even
   }
   assert.equal(harmonicColour('confusion'), '#f3cf78');
 });
+
+test('Corriente alterna\'s Alterna shows on the plate but is not counted: a circuit, not a status', () => {
+  const s = fight();
+  s.foes[0].timed = { alterna: timed(), quemado: timed() };
+  assert.deepEqual(plateMarks(s, s.foes[0]).sort(), ['alterna', 'quemado']);
+  assert.deepEqual(plateCount(s, s.foes[0]), ['quemado']);
+  const e = cast(s);
+  assert.equal(strikesOf(e), 2); assert.deepEqual(e.harmonics, ['quemado']);
+});

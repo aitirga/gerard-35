@@ -134,6 +134,8 @@ const DUAL_TRIALS = {
   electrolisis: { gerard: 'matemagico', aitor: 'freatica', encounter: 'dogs', improved: ['matemagico:agua', 'matemagico:vasos', 'matemagico:fuego', 'matemagico:factor-comun'] },
   // Campana de Gauss: Pirámide ígnea bought, three dogs in a row (or `encounter`: 'aurelia' for El Atril).
   'campana-de-gauss': { gerard: 'matemagico', aitor: 'dadaista', encounter: 'dogs', improved: ['matemagico:fuego', 'matemagico:factor-comun'] },
+  // Corriente alterna: the electric line to Cortocircuito bought, three dogs in a row.
+  'corriente-alterna': { gerard: 'matemagico', aitor: 'sincopante', encounter: 'dogs', improved: ['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */

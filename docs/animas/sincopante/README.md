@@ -298,6 +298,12 @@ and Dados astrales about 140 at random.
 
 **Built (2026-11-21):** *Idea fija* (dúo mayor, Confusión + Ostinato), *Seiche* (Recarga + Ostinato) and *Staccato* (Zarpazo sangriento + Ostinato); `../README.md` § Combined skills.
 
+**Built (2026-11-25):** *Corriente alterna* (Matemágico's Cortocircuito + **Crescendo**), the first dual
+of Crescendo: Cortocircuito's blow, then a circuit between two foes that strikes one of them every
+5 s, in turn and harder each time (8, 11, 14, 17), each beat a bolt for the reactions
+(`../README.md` § Alterna; `../matemagico/README.md` § Duals). Crescendo only has a target with ecos
+sounding, so the dual turns up when Marta is already playing them.
+
 The duals are designed after every ánima is ([`../README.md`](../README.md) § Order of work). What
 Sincopante brings to a pair:
 

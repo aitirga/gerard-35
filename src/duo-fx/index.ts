@@ -13,6 +13,7 @@ import { staging as cadaverExquisito } from './cadaver-exquisito';
 import { staging as trampantojo } from './trampantojo';
 import { staging as electrolisis } from './electrolisis';
 import { staging as campanaDeGauss } from './campana-de-gauss';
+import { staging as corrienteAlterna } from './corriente-alterna';
 
 /** The newer duals' own looks, each in its file (src/duo-fx/types.ts). One not here plays the shared staging. */
 export const DUO_STAGINGS: DuoStagings = {
@@ -30,5 +31,6 @@ export const DUO_STAGINGS: DuoStagings = {
   'trampantojo': trampantojo,
   'electrolisis': electrolisis,
   'campana-de-gauss': campanaDeGauss,
+  'corriente-alterna': corrienteAlterna,
 };
 export type { DuoFighter, DuoStage, DuoStaging } from './types';

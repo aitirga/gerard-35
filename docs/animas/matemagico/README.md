@@ -518,6 +518,28 @@ los de al lado a nivel II. Derrite el pringue. Gasta la racha.`
   out from the bottom up. If a light eats the fire, the balls still fall but the bins only smoke:
   nothing pours, nothing shakes. Sounds `peg`, `pachinko`, `chord-swell`. Screenshots:
   `just screenshots campana-de-gauss --gpu` (three dogs, four, and Aurelià with El Atril).
+### With Sincopante: Corriente alterna (Aitor 2026-11-25, built)
+
+| Dual | Matemágico + Sincopante | Levels | Maná | Description |
+| --- | --- | --- | --- | --- |
+| **Corriente alterna** | **Cortocircuito** + Crescendo | node · 2 | 2 + 1 | `Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. Durante 20 segundos, la corriente va y viene entre él y el enemigo de al lado: cada 5 segundos golpea a uno de los dos, más fuerte cada vez. Cada golpe provoca las reacciones de la electricidad y gasta el estado con el que reacciona.` |
+
+Cortocircuito's blow (14, its Shock rule and its `shorted` as always), then a circuit for 20 s
+between the target and the next foe in the row: a beat every 5 s, the other pole first and then in
+turn, 8, 11, 14 and 17, each a bolt for the reactions that, like any bolt, spends what it turns
+(`../README.md` § Alterna). It is Vulcano's mirror: Vulcano piles fire up on the clock, this cashes
+in on it. The question it answers is *what to prepare, and on whom*: the party feeds the pole whose
+beat is coming (Cubo, Capilaridad, a blinding, a fire, powder). Crescendo can only be chosen with ecos
+sounding, so it turns up when Marta plays her ecos; nothing announces it.
+
+**How it looks** (`src/duo-fx/corriente-alterna.ts`): Gerard's dial opens in yellow and a resistor
+is drawn in it, while a comet of nácar from Sincopante's wearer writes a crescendo hairpin (<) over
+the poles; a string of light draws tight between them from its middle out; the resistor flies to the
+target and snaps across its chest. On each beat the string is plucked at its far end, the pulse runs
+to the pole it is for, flips over there and a bolt falls on it, brighter and a tone higher each time
+(`string-1`…`string-4`). After the last the string snaps in the middle and each half whips back onto
+its pole, coming apart. The camera turns so the string crosses the picture as it is drawn, clear of
+scenery and of the commands on the left (`alternaShot`, `docs/graphics.md`).
 
 ## Implementation
 

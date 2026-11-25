@@ -10,7 +10,7 @@
  * A card's version (`guideVersion`) is its words and the numbers it is built from (`rule`): when a
  * commit changes either, the card shows again the next time its status does.
  */
-import { BITS, BLEED_BONUS, BOMBA, CEGADO, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, GAS, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
+import { ALTERNA, BITS, BLEED_BONUS, BOMBA, CEGADO, COMBUSTION, CONDENSADOR, CORTINA, CRECIDA, ELEMENT_RULES, FIRE_TOP, GAS, POWDER_RULES, RACHA, REACTION_RULES, STATUSES, TIMED, WEAK_SPOT, type TimedId } from './battle.ts';
 import type { IconId } from './status-icons.ts';
 
 /** Where a card stands in «Cómo jugar»: what weighs on whoever carries it, what helps them, and the fight's own signs. */
@@ -157,6 +157,10 @@ export const GUIDES = {
   gas: {
     name: TIMED.gas.name, group: 'contra', icon: 'gas', colour: '#9fe0ee', rule: [TIMED.gas, GAS],
     text: `Su agua, separada en gas: de nivel I a III, según el agua que tenía. No hace daño por sí solo. Un golpe de fuego sobre cualquiera que lo lleve hace estallar el gas de todos: daño de fuego según su nivel, y quedan quemados. ${lasts('gas')}`,
+  },
+  alterna: {
+    name: TIMED.alterna.name, group: 'contra', icon: 'alterna', colour: '#ffe45c', rule: [TIMED.alterna, ALTERNA],
+    text: `Una corriente va y viene entre dos enemigos: cada ${TIMED.alterna.every} segundos golpea a uno de los dos, por turnos y más fuerte cada vez. Cada golpe es eléctrico para las reacciones y gasta el estado con el que reacciona. ${lasts('alterna')}`,
   },
   mecha: {
     name: 'Mecha encendida', group: 'contra', icon: 'mecha', colour: '#ffb054',

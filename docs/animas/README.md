@@ -550,6 +550,7 @@ skills of two ánimas, each chosen by whoever wears it, become one action. The f
 | Tecnópata + Colorista | **Trampantojo** | Confusión + Cortina | node · 2 | Built (2026-11-21). A curtain on an ally; the foe that breaks it is Confundido 20 s |
 | Matemágico + Freática | **Electrólisis** | Cubo acuático + Sondeo eléctrico | node · 2 | Built (2026-11-25). Every foe's water split into Gas at its level (§ Gas), with no Conducción; the next fire on any of them sets off the gas of all |
 | Matemágico + Dadista | **Campana de Gauss** | Pirámide ígnea + Dados astrales | node · 4 | Built (2026-11-25). 4 dice of fire and as many as Dados astrales would drop (14 at most): half on the foe picked (rounded up), the rest split between the ones beside it in the row; its fire to III at least, theirs to II (`BELL`). Spends the Racha |
+| Matemágico + Sincopante | **Corriente alterna** | Cortocircuito + Crescendo | node · 2 | Built (2026-11-25). Cortocircuito's blow, then for 20 s a circuit between the foe and the next in the row: a beat every 5 s on each in turn, harder each time, that sets off electricity's reactions and spends what it reacted with (§ Alterna) |
 | Noísta + Papagato | _name open_ | — | — | On hold with Noísta. A "¡NO!" that makes Haru jump: breaks the pringue and cashes in Sangrado |
 
 The pair table lives here; each ánima's folder lists the duals it is part of and links back.
@@ -1171,6 +1172,47 @@ churning slowly, grains falling from its foot onto the floor. Its icon on the al
 small curtain. A blow goes through it: the screen is torn open where the blow passes and the
 whole of it is thrown forward over whoever dealt it (a puff, as a handful's), and the number
 comes out with *Cortina −50 %*.
+
+### Alterna (Corriente alterna's circuit, timed)
+
+Built 2026-11-25 (`ALTERNA`, `Circuit`, `runCircuits` and `electricBeat` in `src/battle.ts`;
+`tests/corriente-alterna.test.mjs`). The dual *Corriente alterna* (Cortocircuito + Crescendo) wires
+its target to **the next foe standing in the row** (the one before it if it is the last; the same
+foe twice if it stands alone). Both poles carry **Alterna** for **20 s**, its clock on their plates.
+
+- **Every 5 s a beat strikes one pole, in a fixed order**: the other pole first, then the target, and
+  so on. Nothing by chance: what comes next can be read.
+- **A crescendo**: 8, 11, 14 and 17 of electric magic, with the Magia of whoever brought Cortocircuito
+  (even if they have fallen since: the current is already in the foes). Like any pulse it is never a
+  golpe crítico. Every number is in one book, `alterna.rules` for `just fight-sim --tune`: `first`,
+  `step`, `beats` (how many) and `every` (the interval; the circuit lasts `beats × every`).
+- **It is the only pulse that reacts.** Each beat is a bolt for the reactions (`react`): on someone
+  wet, **Conducción**; burning, **Plasma**; blinded, **Tormenta**; powdered, **Cristalizado**. Like any
+  bolt it spends what it turns, so no beat feeds the next: what makes it pay is wetting, burning,
+  blinding or powdering the pole whose beat is coming. Water held under a foe (§ Agua contenida) keeps
+  its Mojado, as against any bolt. Toma de tierra gives its sender a maná for it, once a round as
+  always, while the sender stands. What a reaction sets off besides (Fin de fiesta waking, Remolino's
+  cortina, La crecida's Corriente) shows as it would on a blow. A beat on a boss's part or a boss
+  tells the fight at once, as any pulse does (Vertitrón's eye going out, Lo Cristalino cracking, La Voz
+  falling).
+- **A pole that falls** leaves the beats that remain to the other; with both down it is over. A blow
+  that fells its own target leaves the circuit to the other pole alone, which takes the first beat.
+- **Each circuit keeps its own clock.** A clock started over (Reinicio, Rayo de energía) on a pole
+  gives every circuit on it a whole circuit's time again from where it is, and Telemetría a few
+  seconds more; past its fourth beat it beats on at its loudest. A second Corriente alterna (Da capo
+  gives it back) that shares a pole never stretches the first: the plate shows the longer clock.
+- **It is a circuit, not a status on the foe.** It never spreads with Virus atómico; and what gathers
+  or counts a foe's statuses (Atractor extraño, Serie de Fourier) leaves it out.
+- **Balance** (`just fight-sim`): `directo-alterna` and `directo-sin-alterna` in `TARGETS`, with the
+  party `MAT_SINC`. On Lo Directo, alone and weak to electricity, the four beats all land on it and the
+  fight is a round and a half shorter than with the halves apart. The bot values the beats to come with
+  `circuitWorth`, by what each foe really lets in (nothing off Lo Cristalino's glass).
+
+**How it shows** (`src/duo-fx/corriente-alterna.ts`): a string of light between the poles' chests (a
+`string` lattice, a yellow core in a gold body) trembles more each beat; a little before each, a pulse
+runs along it towards the pole the beat is for, flips over at that end, and a bolt falls on that foe.
+After the last beat the string snaps in the middle and each half recoils onto its pole. The icon: a
+sine between two dots, in yellow.
 
 ### How long a clock status lasts (proposal, 2026-11-14)
 

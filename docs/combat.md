@@ -693,8 +693,8 @@ el golpe bajo él y el turno del grupo ya sin él.
 ## Ataques duales
 
 Cada jugador elige una habilidad del ánima que lleva. Algunas parejas se convierten en una sola
-acción que consume los dos turnos. El catálogo entero de `DUALS` está en docs/animas/README.md §
-Combined skills; aquí, algunos y el momento que los decide.
+acción que consume los dos turnos. El catálogo de `DUALS` los reúne todos (la tabla de parejas está en
+`docs/animas/README.md` § Combined skills); aquí, los primeros y los que tienen una regla propia.
 
 | Dúo | Habilidades | Momento que lo decide |
 | --- | --- | --- |
@@ -707,6 +707,7 @@ Combined skills; aquí, algunos y el momento que los decide.
 | Reserva de color | Foc Binari + Puñado | El blanco lleva la mecha. Estalla sobre todos cuando acaba su turno o cuando cae. |
 | Electrólisis | Cubo acuático + Sondeo eléctrico | El agua de todos se vuelve Gas (sin Conducción): quién trae el fuego, y cuándo, dentro de los 20 s. |
 | Campana de Gauss | Pirámide ígnea + Dados astrales | Qué enemigo tiene que arder más: la mitad de los dados de fuego caen sobre él y lo dejan al menos en Quemado III; los de al lado, en II. Dadista paga con un dado y gasta la racha. |
+| Corriente alterna | Cortocircuito + Crescendo | La corriente va y viene 20 s entre el blanco y el de al lado: un latido cada 5 s, por turnos y más fuerte cada vez. Cada latido es un rayo para las reacciones de la electricidad y, como cualquier rayo, gasta lo que convierte: el único pulso que reacciona (`electricBeat`). |
 
 **Cuándo puede ocurrir** (`dualBlock`, por orden): las dos mitades aprendidas (`level`), ese dual
 sin usar aún en este combate (`used`: cada uno sale **una vez por combate**, `usedDuals`), cada uno

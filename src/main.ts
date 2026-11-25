@@ -30,7 +30,7 @@ import { isTicketStation, remember } from './tickets';
 import { createDayLog, sendLog } from './day-log';
 import { STATION_PLACES, entranceId } from './transit';
 import { cityMarkers } from './map-markers';
-import { ANIMA_NAMES, CLASS_STATS, ESCAPE, canWear, dazzle, kitOf, manaMax, palaceGuards, stageWater, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
+import { ANIMA_NAMES, CLASS_STATS, ECOS, ESCAPE, TIMED, canWear, dazzle, kitOf, manaMax, palaceGuards, stageWater, type BattleState, type ClassId, type EscapeMode, type PartySlot } from './battle';
 import { ANIMA_IDS, animaGrowth, type AnimaId } from './animas';
 import { flagsAt, missionJump, missionNow, spotAt, type MissionPart, type Spot } from './story-points';
 import { createJumpMenu, validFight, type FightHelp, type FightSetup } from './jump-menu';
@@ -448,7 +448,7 @@ try {
       seen: () => guidesSeen,
       mark: (id, version) => { guidesSeen = { ...guidesSeen, [id]: version }; keepGuides(); storyChanged(); },
     } : undefined,
-    pulse: (id, status, by) => game.statusPulse(id, status, by),
+    pulse: (id, status, by, beat) => game.statusPulse(id, status, by, beat),
     ecos: news => game.ecoNews(news),
     // A fall wakes Gerard up at home in chapter 2's castle, and on the Meridiana at night (late, docs/chapter-2.md
     // § Night and the way home: stepping back would leave the pupil that caught him touching him, and the fight again);
@@ -888,6 +888,14 @@ try {
         // Electrólisis: one, two and three marks, so each gas is as big as the water it was.
         if (setup.trial === 'electrolisis') stageWater(s, [1, 2, 3]);
         if (setup.trial === 'metralla') s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
+        // Corriente alterna: an Ostinato eco already sounding (Crescendo has something to raise), the last foe wet (aimed at, its
+        // blow shorts, and its second beat runs through the water) and the one before it, its other pole, burning (the first beat is Plasma).
+        if (setup.trial === 'corriente-alterna') {
+          const last = s.foes[s.foes.length - 1], before = s.foes[s.foes.length - 2];
+          s.ecos = [{ id: 1, kind: 'ostinato', owner: 'aitor', target: last.id, grade: 0, left: ECOS.life }]; s.ecoSerial = 1; s.compas = 0;
+          last.timed = { ...last.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+          if (before) before.timed = { ...before.timed, quemado: { level: 2, left: TIMED.quemado.seconds, next: TIMED.quemado.every } };
+        }
         if (setup.trial === 'relevo-de-sangre') {
           s.foes[0].hp = 7;
           s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
