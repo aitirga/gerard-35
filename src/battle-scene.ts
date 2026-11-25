@@ -1174,6 +1174,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       else Object.assign(lensWant, { yaw: 0, pitch: -6, zoom: 0, ...look(mid([...party, ...foes]), .5), y: 0 });
       party.slice(0, 2).forEach(f => keep(f, 1.8)); foes.slice(0, 2).forEach(f => keep(f));
       spotWant = t < plan.burst ? .7 : 0;
+    } else if (id === 'campana-de-gauss') {
+      // Campana de Gauss: its board stands in the air over the foes. Wide and lifted to take it in whole while the dice fall
+      // through it, then down onto the foes as the fire pours out of its bins.
+      const centre = foes.length ? mid(foes) : target?.base ?? anchor;
+      if (t < contact - .25) Object.assign(lensWant, { yaw: 0, pitch: 6, zoom: .26, ...look(target?.base ?? centre, .8), y: 1.7 });
+      else Object.assign(lensWant, { yaw: 0, pitch: -4, zoom: .16, ...look(target?.base ?? centre, .7), y: .5 });
+      foes.slice(0, 3).forEach(f => keep(f)); pair.forEach(f => keep(f));
+      spotWant = t < contact + .3 ? .7 : 0;
     } else if (e.dual && e.dual.id in DUO_STAGINGS && new Set((e.hits ?? []).map(h => h.target)).size > 1) {
       // A newer dual over every foe (Marea, Fulgurita, Metralla, Seiche): wide, over all of them, a little lower as it lands.
       if (t < contact * .6) Object.assign(lensWant, { yaw: 0, pitch: -4, zoom: 0, ...look(mid([...pair, ...foes]), .5), y: .2 });
@@ -4396,6 +4404,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const inFlight = casting && (!impacted || blows < claws) ? effect?.target : fireWaits;
       // Rayo solar's fire waits on each foe for its beam to cross them.
       const sweepAhead = effect?.release && animate ? solarAhead(effect) : undefined;
+      // A dual's fire on every foe it reaches waits for its contact (Campana de Gauss's dice are still falling through the pegs),
+      // and while its banner is up before it plays (`upcoming`): the rules have already lit it.
+      const coming = upcoming?.dual ? upcoming : effect?.dual && !impacted ? effect : undefined;
+      const dualAhead = coming?.hits && animate ? new Set(coming.hits.map(h => h.target)) : undefined;
       // A dual that sets fire claw by claw (Zarpazos de fuego): the fire rises with each one that lands.
       const dualBurn = dual && dualPlan && effect?.burns && blows < claws ? Math.max(dualPlan.burnBefore, ...effect.burns.slice(0, blows)) : undefined;
       // An element's reaction settled but not landed: whoever it turns still shows what they carried.
@@ -4406,7 +4418,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (dualBurn !== undefined && unit.id === effect?.target && unit.timed?.quemado) { syncStatuses(unit.id, unit.statuses, { ...unit.timed, quemado: dualBurn ? { ...unit.timed.quemado, level: dualBurn } : undefined }, !!unit.capacitor); continue; }
         // The charge stays on show until the blow that lets it go lands.
         const charged = (!!unit.capacitor && !(!impacted && effect?.actor === unit.id && effect.capacitor === 'stored')) || (!impacted && effect?.actor === unit.id && effect.capacitor === 'spent') || (!impacted && effect?.discharge?.from === unit.id);
-        syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
+        syncStatuses(unit.id, unit.statuses, (unit.id === inFlight || !!sweepAhead?.has(unit.id) || !!dualAhead?.has(unit.id)) && unit.timed?.quemado?.level !== shown
           // The fire it showed can be gone already (Plasma put it out, a Gemelo felled lost everything it carried): it stays as it was until the blow lands.
           ? { ...unit.timed, quemado: shown ? { left: TIMED.quemado.seconds, next: TIMED.quemado.every, ...unit.timed?.quemado, level: shown } : undefined } : unit.timed, charged);
       }

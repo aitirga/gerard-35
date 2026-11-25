@@ -129,6 +129,8 @@ const DUAL_TRIALS = {
   staccato: { gerard: 'papagato', aitor: 'sincopante', encounter: 'dogs', improved: [] },
   'cadaver-exquisito': { gerard: 'prismatico', aitor: 'dadaista', encounter: 'dogs', improved: [] },
   trampantojo: { gerard: 'prismatico', aitor: 'tecnopata', encounter: 'dogs', improved: ['tecnopata:confusion'] },
+  // Matemágico's duals with the friends' ánimas he had none with (docs/animas/matemagico/README.md § Dúos).
+  'campana-de-gauss': { gerard: 'matemagico', aitor: 'dadaista', encounter: 'dogs', improved: ['matemagico:fuego', 'matemagico:factor-comun'] },
 } as const;
 const isDualTrial = (id: unknown): id is keyof typeof DUAL_TRIALS => typeof id === 'string' && Object.hasOwn(DUAL_TRIALS, id);
 /** Whatever was stored or passed in a URL, as a setup the tester can start. */
@@ -137,7 +139,9 @@ export function validFight(value: unknown): FightSetup {
   if (isDualTrial(v.trial)) {
     const { gerard, aitor, encounter, improved } = DUAL_TRIALS[v.trial];
     return { ...DEFAULT_FIGHT, adult: true, wear: { gerard, aitor }, animas: [gerard, aitor],
-      encounter, improved: [...improved], free: false, trial: v.trial };
+      encounter, improved: [...improved], free: false, trial: v.trial,
+      // A dual on more foes (or fewer) than the tester's three: how it reaches them.
+      foes: Number.isInteger(v.foes) ? Math.max(1, Math.min(4, v.foes!)) : DEFAULT_FIGHT.foes };
   }
   const isClass = (id: unknown): id is ClassId => typeof id === 'string' && (CLASS_IDS as string[]).includes(id);
   const animas = Array.isArray(v.animas) ? CLASS_IDS.filter(id => v.animas!.includes(id)) : DEFAULT_FIGHT.animas;

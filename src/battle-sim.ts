@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
-  ANIMA_NAMES, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
@@ -52,6 +52,8 @@ export const MISSION_PARTY = 'gerard:papagato+aitor:-';
 export const DUO = 'gerard:matemagico+aitor:papagato';
 /** Gerard on Matemágico and Aitor on his own ánima: two of magic, the party the campsite's magos ask a question of. */
 export const TECH = 'gerard:matemagico+aitor:tecnopata';
+/** Gerard on Matemágico and Aitor on Dadista: the pair whose dual is Campana de Gauss. */
+export const MAT_DAD = 'gerard:matemagico+aitor:dadaista';
 /**
  * The party as it goes into the castle's last two stages, with two of the friends' ánimas each beside their own (`extraSlots`):
  * what Dirección and the Queen are held to, since the base pair never wears them. `FULL` carries Freática, Prismático and
@@ -261,6 +263,8 @@ const BOOKS = {
   // The golpe crítico: how much harder it lands (`bonus`) and how much of each one's Crítico counts (`chance`: 0 turns chance crits off).
   crit: { rules: CRIT_RULES },
   powder: { rules: POWDER_RULES },
+  // Campana de Gauss: how many dice of fire, how they share out, and the fire they leave (battle.ts `BELL`).
+  bell: { rules: BELL },
   crecida: { rules: CRECIDA },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },

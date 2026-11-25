@@ -275,6 +275,10 @@ that hurts nobody. At level 3, as built, it is the same without turns 3's doubli
 
 **Built (2026-11-21):** *Suceso seguro* (dúo mayor, Análisis + Ases en dúo) and *Cadáver exquisito* (Puñado + Estrella fugaz); `../README.md` § Combined skills.
 
+**Built (2026-11-25):** *Campana de Gauss* (Matemágico's Pirámide ígnea + **Dados astrales**): the
+rain's count plus four, as dice of fire, half on the foe picked and the rest on the ones beside it;
+its fire to III, theirs to II, and the Racha spent (`../matemagico/README.md` § Campana de Gauss).
+
 Relevo de sangre pairs Estrella fugaz with Papagato’s Zarpa en la llaga. Other pairings to explore:
 
 - **Luck for two** (Ases en dúo) and **a Racha** to spend on a partner's blow.

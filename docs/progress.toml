@@ -781,6 +781,11 @@ note = "Hechos con sus reglas, su nodo en el bote, su prueba y su aspecto propio
 title = "Dúos nuevos: Géiser, A escala, Seiche, Staccato, Cadáver exquisito y Trampantojo"
 file = "scripts/screenshots/duos-nuevos.json"
 
+# Aitor 2026-11-25 (docs/animas/matemagico/README.md § Campana de Gauss): Pirámide ígnea + Dados astrales.
+[[block.item]]
+title = "Dúo Campana de Gauss: Matemágico y Dadista (tablero de Galton en la GPU)"
+file = "scripts/screenshots/campana-de-gauss.json"
+
 # Built 2026-11-21 (docs/animas/README.md § The jar as one sky): every constellation open at once,
 # the dúos mayores as gold stars between them (the normal duals are not in the sky, Aitor).
 [[block.item]]

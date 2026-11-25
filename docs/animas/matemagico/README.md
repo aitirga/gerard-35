@@ -278,6 +278,32 @@ hard. Both are physical, so the blow uses Papagato's wearer's Fuerza; the fire m
 too. Details in `../papagato/README.md` § Duals. The burning shield (*Cortina de fuego*, Foc Binari +
 Yuki se esconde) is an idea for later.
 
+### Campana de Gauss (with Dadista, built 2026-11-25)
+
+**Campana de Gauss** = **Pirámide ígnea** + Dados astrales (Dadista, level 4): 2 maná + 1 maná and a
+die, once a fight. `Daño mágico de fuego leve a un enemigo. Caen más dados cuanto más Crítico, la
+mitad sobre él y el resto sobre los enemigos de al lado. Su fuego sube al menos a nivel III y el de
+los de al lado a nivel II. Derrite el pringue. Gasta la racha.`
+
+- **Rules** (`bellFall`, `BELL` in `src/battle.ts`, tunable as `bell.rules.*`): `base` 4 dice plus the
+  Dados astrales count of whoever wears Dadista (`rainCount`, a die each 15 % of Crítico), `most` 14.
+  Each die, on the fight's dice, lands on the foe before the target in the row (`side` .25), the one
+  after it (.25) or the target; a side with nobody falls to the target. Each is 6 magic fire with the
+  Pirámide wearer's stats, never a golpe crítico; the first on a foe in pringue melts it. Then the
+  target's fire is at least III and each one beside it a die reached at least II (`kindle`: never
+  lower, the clock over); on water it is Vapor, on wet layers nothing. The Racha is spent.
+- **The question it answers**: which foe must burn most. It is the only piece that puts a foe chosen
+  straight on III; with Combustión, the next fire takes it to IV. Against the fire-resistant it is a
+  poor choice, and it shows.
+- **Look** (`src/duo-fx/campana-de-gauss.ts`): Pirámide's triangle drawn standing in the camera's
+  plane over the foes, eight rows of pegs a tick each, three glass bins under it, one over each foe;
+  Dadista's dice of cold light fall into its top and melt into balls of fire that fall through the
+  pegs on the paths the rule chose (the GPU `galton` law, the path's bits in the burst, each peg it
+  meets flashing), pale ghost balls filling the bell around them. The bins fill as a histogram of
+  liquid fire (box volumes holding a fluid), the pen draws the bell from where the dice fell, the
+  bins open and the fire pours onto each foe; the pegs go out from the bottom up. Sounds `peg`,
+  `pachinko`, `chord-swell`. Screenshots: `just screenshots campana-de-gauss --gpu`.
+
 ## Implementation
 
 Built: `matemagico` in `ClassId`, `ANIMA_NAMES`, `CLASS_STATS`, `SKILLS` (`foc-binari`, with

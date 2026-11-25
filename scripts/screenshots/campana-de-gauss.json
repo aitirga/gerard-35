@@ -1,0 +1,111 @@
+{
+  "title": "Campana de Gauss: dúo de Matemágico y Dadista",
+  "description": "docs/animas/matemagico/README.md § Dúos. From the fight tester's «Probar un dúo»: Pirámide ígnea + Dados astrales on the middle dog of three. The board of pegs in the camera's plane, the dice of light melting into balls of fire that fall on their paths into three bins, the bell drawn from where they fell, and the fire pouring onto each foe. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22campana-de-gauss%22%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('campana-de-gauss'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"campana-de-gauss\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"campana-de-gauss\"]').click()"
+    },
+    {
+      "eval": "preview.confirm(1)"
+    },
+    {
+      "eval": "(() => { const g = window.gerard.game, s = window.gerard.battleUI.live, ps = s.foes.map(f => g.fighterAt(f.id)); const m = k => ps.reduce((a, p) => a + p[k], 0) / ps.length; g.frame({ x: m('x'), y: m('y') + 2.4, z: m('z') }, 4.6); })()"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "campana",
+      "caption": "Campana de Gauss (Pirámide ígnea + Dados astrales) sobre el perro del medio: el tablero de clavos, los dados de luz que se funden en fuego y caen por sus caminos, las cubetas, la campana y el fuego que cae sobre los tres.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 400
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "campana-despues",
+      "delay": 1100,
+      "caption": "Después: el del medio en Quemado III y los de al lado en Quemado II."
+    },
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22campana-de-gauss%22%2C%22foes%22%3A4%7D"
+    },
+    {
+      "until": "document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && !document.querySelector('#battle[data-entering]')",
+      "timeout": 90000
+    },
+    {
+      "eval": "import('/scripts/screenshots/duos-en-combate.mjs').then(m => { window.preview = m.prepare('campana-de-gauss'); })"
+    },
+    {
+      "until": "!!document.querySelector('[data-dual=\"campana-de-gauss\"]:not([aria-disabled])')",
+      "timeout": 90000
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"campana-de-gauss\"]').click()"
+    },
+    {
+      "eval": "document.querySelector(`.battle-target[data-target=\"${window.gerard.battleUI.live.foes[2].id}\"]:not(:disabled)`).click()"
+    },
+    {
+      "until": "!!document.querySelector('.dual-banner[data-reveal]') || preview.began()",
+      "timeout": 30000
+    },
+    {
+      "wait": 900
+    },
+    {
+      "press": "Enter",
+      "gap": 300
+    },
+    {
+      "until": "preview.began()",
+      "timeout": 30000
+    },
+    {
+      "record": "campana-cuatro",
+      "caption": "Con cuatro perros y la cámara del propio combate, sobre el tercero: la mitad de los dados sobre él y el resto en los de al lado; el cuarto no recibe nada.",
+      "seconds": 3.2,
+      "fps": 20,
+      "tiles": 16,
+      "sheetWidth": 400
+    },
+    {
+      "eval": "preview.impact()"
+    },
+    {
+      "shot": "campana-cuatro-despues",
+      "delay": 1100,
+      "caption": "Después, con cuatro: Quemado III en el elegido, Quemado II en sus vecinos, nada en el del extremo."
+    }
+  ]
+}
