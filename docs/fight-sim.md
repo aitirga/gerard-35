@@ -158,6 +158,27 @@ ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after t
 always had them: whichever the ecos do not reach goes unbought, and one not built yet is skipped.
 Whether the third year should buy them ahead of the passives is still Aitor's call. Each copy rolls its own dice, so a bot never sees the real fight's next coin.
 
+### Confusión
+
+`smart` was balanced, every target of the campaign with it, without weighing what Confusión does: a foe
+confused comes out of the choice with nothing a copy can show yet (its blow on its own comes in the foes'
+turn), so the bot cast it almost never. `confusionWorth` (2026-11-26) can weigh it: the foes' coming
+turn played on a copy, what it would no longer do to the party and what it would take off the foes
+themselves. Only where a target asks for it (`confusion: true`): on for every target, five move
+(`ausente-bien` and `encarnados-bien`, Gerard switching to Tecnópata to confuse, end in draws or long;
+`aurelia-con-una` 73 % against at most 35 %; `camping-negra-la-ultima-bien` keeps 61 % PV against at most
+60 %; `directo-sin-alterna` 12.3 rounds against 13–16). Confusión is worth more than the campaign was
+balanced for; whether that is to be retuned is Aitor's to decide.
+
+Where Sugestión (Tecnópata's Mente passive) sends a confused foe's blow is weighed always: the foes' coming
+turn with the mark where a choice leaves it (`state.aimed`), against where it was, or against the blow at
+random as the mean of it sent to each of the others in turn (no die of its own, so every turn played there
+throws the same dice: no noise in the difference). Run.events counts each confused foe's blow
+(`confundido`), each one Sugestión sent (`sugestion`, Idea fija's beats too) and each Combustión, set off
+by the party (`combustion`) or by a confused foe (`combustion-confundido`). Its pair is
+`trio-tercero-sugestion` / `trio-tercero-sin-sugestion`: a player's piece, not the room's answer
+(docs/animas/tecnopata/README.md § Sugestión).
+
 Not simulated: chapter 1's boys and the palace minion's scripted beat.
 
 ## Duals

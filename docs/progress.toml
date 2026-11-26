@@ -761,6 +761,20 @@ note = "La pareja de PLAN.md es gemelos-tercero-enjambre frente a gemelos-tercer
 grep = "(?s)\\A(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')"
 in = "src/battle-sim.ts"
 
+# PLAN.md step 3 (docs/plans/definitivas/), built 2026-11-26 (docs/animas/tecnopata/README.md § Sugestión).
+[[block.item]]
+title = "Tecnópata: la pasiva Sugestión (línea Mente)"
+priority = "animas"
+note = "Hecho: un nodo de 1 eco tras Control remoto. Con Tecnópata puesta, el golpe de un enemigo confundido y cada latido de Idea fija van al último enemigo al que apuntó un aliado; ese enemigo lleva un icono cian mientras hay alguien confundido. Su pareja (trio-tercero-sugestion / trio-tercero-sin-sugestion, en alumnos-3b) la sujeta como pieza de jugador, no como respuesta: 9.2 rondas frente a 9.9, las dos al 80 %. Falta su aspecto (el hilo cian del confundido al apuntado)."
+grep = "'tecnopata', 'mente', 'sugestion'"
+in = "src/ecos.ts"
+
+# Planned in docs/plans/definitivas/propuesta-pasivas-y-definitivas.md § 3 (Aspecto); not built yet.
+[[block.item]]
+title = "Sugestión: el hilo cian del confundido al apuntado"
+priority = "animas"
+note = "Un hilo de luz cian que parpadea como mala señal, de la cabeza del confundido al enemigo apuntado; el confundido gira siguiendo el hilo y pega, y el hilo se rompe en motas en la GPU. Nunca violeta: la confusión no es posesión. Hoy se ve el icono en la placa, el aviso «Sugestión · Pasiva» y el golpe."
+
 [[block.item]]
 title = "El bote: árboles de Matemágico y Tecnópata"
 used = "TREE_ANIMAS"

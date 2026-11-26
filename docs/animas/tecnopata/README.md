@@ -75,6 +75,7 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 | Bip · III | Reinicio | 3 | 14 magic, all | `Daño mágico no elemental leve a todos los enemigos. Sus estados con reloj vuelven a empezar.` | Built (the bomb keeps what it grew) |
 | Mente | Confusión | 2 | — | *Abstract*: `Ondas mentales confunden a un enemigo durante 30 segundos: golpea a los suyos.` | Built |
 | Mente | Control remoto | 2 | 34, the foe's own | *Abstract*: `Bip toma el mando de un enemigo: golpea con fuerza a uno de los suyos y olvida lo que iba a hacer.` | Built |
+| Mente | **Sugestión** (passive) | 1 | — | `Pasiva. Un enemigo confundido golpea al último enemigo al que ha apuntado un aliado, en vez de a uno al azar. Idea fija también golpea a ese enemigo.` | Built 2026-11-26 (§ Sugestión) |
 | Mente · III | Virus atómico | 2 | 14 magic | `Daño mágico no elemental leve a un enemigo. Durante 20 segundos, cada estado que reciba se contagia a los demás enemigos.` | Built (a bomb it receives spreads) |
 | Taller | **Escolta** | 1 | ⅓ of each blow | `Protege a un aliado durante 2 rondas. Bip le pega una bomba remota a quien le golpee.` | Built; its own look to do |
 | Taller | Nanitos (passive) | — | — | `Pasiva. Rayo de sanación quita además un efecto de estado dañino a quien cura.` | Built |
@@ -90,6 +91,40 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
   plants bombs while doing it. Rayo de sanación and Nanitos keep him able.
 - Largest single blow: a bomb at its top, 50 at average stats, on every foe at once with Virus or
   Enjambre.
+
+### Sugestión (built 2026-11-26)
+
+The Mente line's first passive (PLAN.md step 3, docs/plans/definitivas/), a node of 1 eco after Control
+remoto, beside Virus atómico, in the jar's first stage (`passiveNode('tecnopata', 'mente', 'sugestion', …)`).
+
+- **Rule.** While someone standing wears Tecnópata with the node (the whole party's, as Combustión), a
+  confused foe's blow (Confusión, or the foe that broke Trampantojo's cortina: `confusedAct`) and each beat of
+  Idea fija go to the foe an ally's last action aimed at alone (`state.aimed`, `suggested`): Atacar, a skill or
+  a dual on one foe; a blow on everyone, a pulse, a cure or a guard leaves the mark where it was. Aimed at the
+  confused one itself, it strikes itself; so confusing a foe aims at it, and it hits itself until someone aims
+  elsewhere. With nobody aimed at, the foe aimed at down, or a part (Vertitrón's eye) aimed at, the blow goes as
+  without it (at random; Idea fija, at the strongest). Control remoto still strikes the strongest. It spends no
+  Sangrado or Punto débil.
+- **What it asks.** Who confirms last matters each round there is a confused foe: the last single-target choice
+  decides whose PV the shove takes, whether it sets off a Combustión, or whether it lands before a foe acts.
+- **Read in the fight.** On the foe aimed at, while some foe is confused or carries Idea fija, a quiet
+  continuous icon in Tecnópata's cyan: two fine lines converging on a point (`sugestion` in
+  `src/status-icons.ts`; its card in the combat guide, «Señales del combate»). Serie de Fourier does not count
+  it (it is the party's aim, not something on the foe). When it sends a blow, «Sugestión · Pasiva» over whoever
+  brings it, and the message names the pair («El Empollón, confundido, golpea a El Repetidor»).
+- **Not built yet:** the proposal's look (a cyan thread flickering from the confused one's head to the foe
+  aimed at, breaking into GPU motes). It shows today as the icon, the pop and the blow.
+- **In the simulator.** `smart` weighs where Sugestión sends a confused foe's blow (`confusionWorth` in
+  `src/battle-sim.ts`): the foes' coming turn played with the mark where the choice leaves it, against where it
+  was (or the random blow, as the mean over the others). It did not weigh Confusión itself: valued for its
+  coming turn, five targets move (docs/fight-sim.md § Confusión), so it is read only where a target asks for it
+  (`confusion: true`). The pair, in Empollón, Repetidor y Chivata of the third year (`alumnos-3b`, the
+  room where confusing the Empollón is part of the answer), Gerard on Matemágico and Aitor on Tecnópata: with
+  Sugestión 80 % won in 9.2 rounds with 56 % PV, without it 80 % in 9.9 with 53 % (200 runs, 2026-11-26).
+  `trio-tercero-sugestion` / `trio-tercero-sin-sugestion`. **It is a player's piece, not a room's answer:**
+  no fight found turns on it (castle floors 1–3, the mission fights with Tecnópata; Combustión never reaches
+  IV in the bot's hands to be the shove's target). One redirected shove (`CONFUSED_BLOW`) a round is small.
+  Idea fija's beats are steered by the rule, but the bot does not weigh them (they come on the clock).
 
 ### Definitiva: Enjambre (built)
 

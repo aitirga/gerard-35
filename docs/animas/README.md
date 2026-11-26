@@ -184,7 +184,7 @@ So at the end the party holds most of it, but not all, and re-does the split bef
 | Line | 1 eco | 2 ecos |
 | --- | --- | --- |
 | **Bip** | Explosión | Passive · *Telemetría*: Bip's Atacar gives 3 s more to whatever runs on its target's clock |
-| **Mente** | Confusión | *Control remoto*: a foe hits one of its own, now, and forgets its plan |
+| **Mente** | Confusión | *Control remoto*: a foe hits one of its own, now, and forgets its plan; beside Virus atómico, Passive · *Sugestión* (1 eco, 2026-11-26): a confused foe's blow and Idea fija's beats go to the foe an ally last aimed at alone |
 | **Taller** | Rayo encogedor | Passive · *Nanitos*: Sanación on an ally also takes one clock status off them |
 | — | | Maná +1 |
 
@@ -205,7 +205,7 @@ level. The fight tester's *Ecos de luz* chips and `"improved"` in a `?fight=` li
 
 **A passive that does something says so in the fight**: a plate *PASIVA · name* over whoever
 has it, in their ánima's colour, with a sound (`BattleEffect.passives`, `pop` kind `passive` in
-`src/battle-ui.ts`). The five built:
+`src/battle-ui.ts`). The ones built at the jar:
 
 | Passive | Ánima | What it does (as built) |
 | --- | --- | --- |
@@ -214,6 +214,7 @@ has it, in their ánima's colour, with a sound (`BattleEffect.passives`, `pop` k
 | **Toma de tierra** | Matemágico | A reaction he sets off gives him 1 maná back, once a round, if his pool is not full |
 | **Telemetría** | Tecnópata | Bip's Atacar gives 3 s more to every clock status on its target (`TELEMETRIA`) |
 | **Nanitos** | Tecnópata | Rayo de sanación also takes one harmful clock status off whoever it cures |
+| **Sugestión** | Tecnópata | A confused foe (Confusión, Trampantojo) strikes the foe an ally's last action aimed at alone, itself if that is who, instead of one at random; each beat of Idea fija too. None aimed at, or down: as without it. The foe aimed at carries a quiet cyan icon while someone is confused (tecnopata/README.md § Sugestión) |
 
 *Control remoto* as built: Bip takes a foe, which at once hits the strongest of its own standing
 (itself if alone; power 34, with its own Fuerza) and forgets what it had announced. `abstract`.
@@ -340,7 +341,7 @@ need one from the start** (Aitor 2026-11-20): a passive is something it grows in
 | Where it comes from | Ánimas | Example |
 | --- | --- | --- |
 | **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Colorista's *Remolino* (built), Freática's *Nivel de base* |
-| **A node at the jar** (2 ecos) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* |
+| **A node at the jar** (1 eco) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* and *Sugestión* |
 
 A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it
 holds only while the ánima is being worn by someone standing: switching away turns it off. When
@@ -364,8 +365,8 @@ an **eco de luz**, to put into the ánimas at the **jar in the flat's living roo
   `src/levels.ts`, read from the level's flag: up to 10). 55 at most. Every node of the jar costs
   **one eco**, the definitivas two, and the big moves more (Aitor, 2026-11-24: the jar some 25 %
   dearer): a **dúo mayor three**, grade III **three** for its big ones (Combustión, Integral
-  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico, Atractor extraño). 82 for the whole
-  jar, 78 while Matemágico's and Dadaísta's definitivas sleep (78 and 74 before the Matemágico expansion's three nodes,
+  impropia, Escudo de bits) and **two** for the rest (Reinicio, Virus atómico, Atractor extraño). 83 for the whole
+  jar, 79 while Matemágico's and Dadaísta's definitivas sleep (82 and 78 before Sugestión, 2026-11-26; 78 and 74 before the Matemágico expansion's three nodes,
   Atractor extraño, Serie de Fourier and Superficie mínima; 56 and 52 before the jar got dearer): the 55 there are buy
   some 70 % of it. Measured in ten whole games before the friends' second eco
   (2026-11-22): `pensando` 32 to 36 at the end, `corredor` 29 to 34; with it, ten more each. La
