@@ -213,7 +213,7 @@ the castle).
 
 How it shows: when the third thing happens, *Definitiva · despierta* comes up over the wearer and
 an icon stays on their plate (asleep it shows n/3). Used, it is **the dust explosion** (Aitor
-2026-11-25), 3.3 s (`FIESTA` in `src/powder-fx.ts`):
+2026-11-25), 3.9 s (`FIESTA` in `src/powder-fx.ts`):
 
 1. **0–0.3 s**: the bags on the wearer's belt torn open, one after another round the waist.
 2. **0.3–0.9 s**: a handful at each foe, and every handful drawn into one matte cloud over them
@@ -222,8 +222,9 @@ an icon stays on their plate (asleep it shows n/3). Used, it is **the dust explo
    `src/deflagrate.ts`, the same front as Electrólisis's gas): the cloud catches particle by
    particle and each foe goes up as it reaches them (flash, fireball, ring, scorch). The numbers land.
 4. **1.5 s**: what burnt falls back as a heavy rain of wet pigment, which turns green on them: poison.
-5. **2.1 s**: an arc jumps from the wearer to the first foe and on from foe to foe; the shards come
-   out of the powder where it reaches, the last well before the end.
+5. **2.1 s**: an arc jumps from the wearer to the first foe and on from foe to foe; the powder
+   sets into crystal spikes where it reaches (`src/shard-spikes.ts`), which take about a second to
+   form and drive in: with five foes the last are in at about 3.7 s, just before the end.
 6. **After**: a stain of every colour of the palette on the floor where each foe stood, for the
    rest of the fight.
 

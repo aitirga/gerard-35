@@ -154,9 +154,9 @@ for (let i = 0; i < SHARD_SETS; i++) POWDER_KINDS[`shardling-${i}`] = POWDER_KIN
  * Fin de fiesta (docs/animas/prismatico/README.md § Fin de fiesta), in seconds: `bags` the belt's bags torn open, `cloud` the
  * handfuls gathered over the foes, `contact` the front of fire through the cloud (the numbers land then); and from contact,
  * `rain` the burnt cloud falling, `soak` the green, `spark` the arc from foe to foe (each foe's spikes `hop` after the last),
- * `end` when it is over. The spikes take the last of it: the arc reaches the last foe well before the end.
+ * `end` when it is over. The spikes take the last of it: a foe's take about a second to form and drive in (src/shard-spikes.ts `T`), so with five foes the last are in just before the end.
  */
-export const FIESTA = { bags: .3, cloud: .35, contact: .9, front: .12, rain: .6, soak: .95, spark: 1.2, hop: .14, end: 2.4 };
+export const FIESTA = { bags: .3, cloud: .35, contact: .9, front: .12, rain: .6, soak: .95, spark: 1.2, hop: .14, end: 3 };
 /** Traca: seconds between two of its puffs. */
 export const TRACA_GAP = .12;
 /**
