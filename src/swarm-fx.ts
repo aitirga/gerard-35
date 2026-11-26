@@ -24,8 +24,8 @@ export const SWARM = {
   margin: 1.4, disc: .45,
   /** Pairs of steps a second while it grows and while it stays, and the most a frame (a slow frame grows it slower). */
   growRate: 150, stayRate: 60, most: 4,
-  /** Seconds it takes to fade once the bombs have gone, and the most it waits for them. */
-  fade: .6, longest: 40,
+  /** Seconds it takes to fade once the bombs have gone (however long they tick: a Rayo de energía or Telemetría keeps them, and it, going). */
+  fade: .6,
   /** Its colours (sRGB). */
   cyan: '#4fe0ff', white: '#effcff', graphite: '#2a3138', red: '#ff3b30',
 } as const;
@@ -165,7 +165,7 @@ export function createSwarmFx(app: pc.AppBase, effects: Effects) {
       made.look[1] = since >= 0 && since < SWARM.pulseFor ? since / SWARM.pulseFor * .75 : -1;
       made.look[2] = beat;
       made.look[3] = 1 / PHYSARUM.size;
-      if ((fading !== undefined && fading >= SWARM.fade) || time > SWARM.longest) api.clear();
+      if (fading !== undefined && fading >= SWARM.fade) api.clear();
     },
     /** Gone at once (the fight is over). */
     clear() { on = false; if (made) made.sheet.enabled = false; },
