@@ -14,7 +14,7 @@ import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
-  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, COUP, PASSIVES, stacks,
+  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, COUP, PASSIVES, stacks, HORAS_EXTRA, affords, overtime, tired, bodies,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -420,7 +420,7 @@ export function legalChoices(state: BattleState, setup: Pick<Setup, 'ban'>, swap
     if (wear !== worn) wearAnima(look, wear!);
     const actor = look.allies[look.active];
     for (const skill of skillsFor(look, actor)) {
-      if (setup.ban?.includes(skill.id) || actor.secondary < skill.cost) continue;
+      if (setup.ban?.includes(skill.id) || !affords(look, actor, skill.cost)) continue;
       const targets = validTargets(look, 'skill', skill.id);
       if (!targets.length) continue;
       const wearing = wear === worn ? {} : { wear };
@@ -894,15 +894,42 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   // A guard put on one ally (Superficie mínima, Escolta, Corchete): what holding on would be worth to them, as Defender's.
   const guarded = skill?.kind === 'guard' && skill.side === 'allies' ? before.allies.find(a => a.id === choice.target) : undefined;
   if (guarded) value += guardWorth(threat, guarded);
-  value -= manaOf(choice) * 2.5;
+  // Horas extra: none of its actions spends maná.
+  if (!overtime(before, actor)) value -= manaOf(choice) * 2.5;
+  // Horas extra cast: the actions it gives against the round Agotado costs (`overtimeWorth`).
+  if (choice.skill === 'horas-extra') value += overtimeWorth(before, after, ban);
   if (choice.action === 'defend') {
     // Defender only gathers maná into an ánima worn: wearing none, there is nothing to gather. With one
     // ánima each (the dual party) it is the only way maná comes back, so each point counts.
-    value += guardWorth(threat, actor) + (actor.classId ? Math.max(0, Math.min(DEFEND_CHARGE, actor.maxSecondary - actor.secondary)) * MANA_WORTH : 0) + (threat.mareo.get(actor.id) ?? 0) * 3;
+    value += guardWorth(threat, actor) + (actor.classId && !tired(before, actor) ? Math.max(0, Math.min(DEFEND_CHARGE, actor.maxSecondary - actor.secondary)) * MANA_WORTH : 0) + (threat.mareo.get(actor.id) ?? 0) * 3;
     // The castle: whoever holds on is not put out of the room (Aurelià's Expulsión) nor caught (the Queen's hand).
     if (before.foes.some(f => f.hp > 0 && f.intent?.target === actor.id && (f.intent.ability === 'expulsion' || f.intent.ability === 'atrapar'))) value += KEPT_WORTH;
   }
   return value;
+}
+/**
+ * Horas extra, as `smart` values casting it (`before` the cast, `after` it): the `HORAS_EXTRA.actions` actions it gives, each
+ * the best one there is then with no maná to pay (played on a copy one after another, as `decide` would choose them, no dual
+ * nor definitiva among them), less what the round Agotado takes from a turn of theirs: their best choice now against the
+ * best of Atacar and Defender, for each of `HORAS_EXTRA.spent` rounds. The turn the cast takes is the one it is chosen over.
+ */
+function overtimeWorth(before: BattleState, after: BattleState, ban: readonly Ban[]) {
+  const look = copy(after), who = look.allies[look.active];
+  let total = 0;
+  for (let i = 0; i < HORAS_EXTRA.actions && look.phase === 'player' && overtime(look, look.allies[look.active]); i++) {
+    const options = legalChoices(look, { ban: [...ban] }, true, false), threat = threatOn(look);
+    if (!options.length) break;
+    const [choice, value] = best(options, c => worth(look, c, threat, ban));
+    total += Math.max(0, value);
+    apply(look, choice);
+  }
+  // The round after: a turn with only Atacar and Defender, against one with all of it (measured now, on the fight as it is).
+  const free = copy(before), threat = threatOn(free);
+  free.unbound = false;
+  const all = legalChoices(free, { ban: [...ban, 'horas-extra'] }, true, false).filter(c => c.skill !== 'horas-extra');
+  const plain = all.filter(c => c.action === 'attack' || c.action === 'defend');
+  const lost = all.length && plain.length ? Math.max(0, best(all, c => worth(free, c, threat, ban))[1] - best(plain, c => worth(free, c, threat, ban))[1]) : 0;
+  return who ? total - lost * HORAS_EXTRA.spent : 0;
 }
 /**
  * What the statuses on the clock on the foes are still worth to `smart`, for a skill that moves them (Atractor extraño): what
@@ -956,6 +983,8 @@ function nearness(state: BattleState, c: Combatant, gone = 0, swarm = swarmAtSta
   // Enjambre, where waking it is worth the turns: the bomb it will go off with, not the one it is now (its age when its
   // clock runs out, `bombPower(age + left)`), so a clock started over (Rayo de energía, Reinicio) is a step nearer and a
   // bomb set off short (Explosión) a step back. Short of going off it is never awake: the last tenth is the bang.
+  // Horas extra: each foe standing's fire on its way to III, its share of the whole (so Foc Binari from I to II is a step too).
+  if (asleep?.skill === 'horas-extra') { const up = bodies(state); return asleep.used || !up.length ? undefined : { skill: asleep.skill, at: Math.min(.99, up.reduce((sum, f) => sum + Math.min(HORAS_EXTRA.wake, f.timed?.quemado?.level ?? 0), 0) / (HORAS_EXTRA.wake * up.length)) }; }
   if (asleep?.skill === 'enjambre' && swarm) return asleep.used ? undefined : { skill: asleep.skill, at: SWARM_AHEAD * Math.min(1, ripest(state) / BOMBA.top) };
   return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, Math.min(have, asleep.need) / steps) } : undefined;
 }
@@ -1001,16 +1030,18 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     const swarm = swarmAtStake(before), from = nearness(before, was, 0, swarm), to = nearness(after, ally, from?.skill === 'fin-de-fiesta' ? dustedOut(before, after) : 0, swarm);
     // A definitiva the bot may not use is nothing to wake. Not Enjambre: ripening a bomb pays on its own where it is pushed
     // (`swarmAtStake`), so with it banned the bot plays the same way and only the cast is out of reach (`direccion-sin-enjambre`).
-    if (from && ban.includes(from.skill) && !(from.skill === 'enjambre' && swarm)) return;
-    // Siete vidas, Fin de fiesta, Enjambre and Un golpe de dados: their own worth only in a boss's fight (`wakeAtStake`); elsewhere
+    // Nor Horas extra: a fire raised on every foe pays on its own (Foc Binari, Pirámide ígnea), so with it banned the bot
+    // plays the same way and only the cast is out of reach (`vertigo-sin-horas-extra`).
+    if (from && ban.includes(from.skill) && !(from.skill === 'enjambre' && swarm) && from.skill !== 'horas-extra') return;
+    // Siete vidas, Fin de fiesta, Enjambre, Un golpe de dados and Horas extra: their own worth only in a boss's fight (`wakeAtStake`); elsewhere
     // `WAKE_WORTH`, as any other. There a wound spent short throws its steps away (the condition is a wound kept and cut to five,
     // then spent), and so does powder spent on a reaction already seen, or all of it on one, and a Racha spent before the
     // Crítico reaches 100 % (Dados astrales, the Campana: Un golpe de dados stays awake once woken, so only before). A wound or powder that went with its foe is no
     // step back (a kill is a kill): the powder of each foe that fell counts as still there (`dustedOut`), the rest's does not.
-    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta' || from?.skill === 'un-golpe-de-dados') && !wakeAtStake(before) || from?.skill === 'enjambre' && !swarm ? 0 : 1;
+    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta' || from?.skill === 'un-golpe-de-dados' || from?.skill === 'horas-extra') && !wakeAtStake(before) || from?.skill === 'enjambre' && !swarm ? 0 : 1;
     if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && (from.skill === 'fin-de-fiesta' || from.skill === 'enjambre' || from.skill === 'un-golpe-de-dados') && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * (to.skill === 'enjambre' ? SWARM_SHARE : to.skill === 'un-golpe-de-dados' ? COUP_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = (to.skill === 'enjambre' ? SWARM_SHARE : to.skill === 'un-golpe-de-dados' ? COUP_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
+    if (from && to && (from.skill === 'fin-de-fiesta' || from.skill === 'enjambre' || from.skill === 'un-golpe-de-dados' || from.skill === 'horas-extra') && to.skill === from.skill && to.at < from.at && !(to.skill === 'horas-extra' && before.foes.some((f, k) => f.hp > 0 && after.foes[k].hp <= 0))) worth -= (from.at - to.at) * shareOf(to.skill) * ultiWorth(before, i, to.skill) * stake;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = shareOf(to.skill) * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
   });
   return worth;
 }
@@ -1039,15 +1070,27 @@ const SWARM_SHARE = 2.5;
  * so most of it is Ases en dúo's and not the definitiva's. At 1 the same push without the cast is 10.2–10.7: the gap is the cast's.
  */
 const COUP_SHARE = 1;
+/**
+ * Horas extra's share, in place of `ULTI_SHARE` (only where `wakeAtStake`): its way is a fire raised on every foe standing to
+ * III at once and held there (Foc Binari on one, Pirámide ígnea to even the rest, Rescoldo's 15 s to keep them), turns that
+ * burn on their own too. Measured 2026-11-26 at Vertitrón (`vertigo-con-horas-extra`, 100 fights, seed 35): at .5 it wakes in
+ * 24 % of fights and he falls in 11.6 rounds; at 1, 81 % and 7.6; at 2, 92 % and 7.0. At 1 the same push without the cast
+ * (banned, played the same: `vertigo-sin-horas-extra`) takes 11.8: the gap is the cast's.
+ */
+const OVERTIME_SHARE = 1;
+/** The share of a definitiva's worth that waking it is to `smart` (`wakeWorth`). */
+const shareOf = (skill: SkillId) => skill === 'enjambre' ? SWARM_SHARE : skill === 'un-golpe-de-dados' ? COUP_SHARE : skill === 'horas-extra' ? OVERTIME_SHARE : ULTI_SHARE;
 let ultiWorths = new WeakMap<BattleState, Map<string, number>>();
 function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
   const known = ultiWorths.get(before) ?? new Map<string, number>(), key = `${wearer}:${skill}`;
   if (known.has(key)) return known.get(key)!;
   let value = 0;
   const spec = SKILLS.find(s => s.id === skill), foe = before.foes.find(f => f.hp > 0);
-  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas' || skill === 'enjambre' || skill === 'un-golpe-de-dados') && spec && foe) {
+  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas' || skill === 'enjambre' || skill === 'un-golpe-de-dados' || skill === 'horas-extra') && spec && foe) {
     const look = copy(before);
-    look.unbound = true; look.phase = 'player'; look.active = wearer;
+    // Horas extra is played awake, not unbound: its three actions are measured with the fight's own limits.
+    if (skill === 'horas-extra') look.overtime = { woke: true }; else look.unbound = true;
+    look.phase = 'player'; look.active = wearer;
     delete look.spent; delete look.queued;
     const after = copy(look), choice: Choice = { action: 'skill', skill, target: foe.id };
     if (apply(after, choice)) value = Math.max(0, gain(look, after, choice, threatOn(look), []));
@@ -1910,6 +1953,17 @@ export const TARGETS: readonly Target[] = [
   // rounds against 4.7–4.8, Aitor kept on Dadista, 150 fights, seeds 35 and 7).
   { id: 'reina-con-golpe-de-dados', fight: 'reina', party: MAT_DAD, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'dadaista:definitiva'], policy: 'smart', win: [0, 0], happens: { toma: [7.9, 9.4], 'despierta:un-golpe-de-dados': [.6, 1] }, why: 'Con Aitor en Dadista y Un golpe de dados en el tarro: guardar la Racha y Ases en dúo llevan su Crítico al 100 % y la despiertan; un dado de luz crítico sobre ella y cada mano, y la mano llena hasta seis, la llevan a su décimo, y a tomar a Aitor, dos rondas antes.' },
   { id: 'reina-sin-golpe-de-dados', fight: 'reina', party: MAT_DAD, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'dadaista:definitiva'], policy: 'smart', ban: ['un-golpe-de-dados'], win: [0, 0], happens: { toma: [10, 11.6], 'despierta:un-golpe-de-dados': [0, .1] }, why: 'Sin Un golpe de dados, la Racha se gasta en Dados astrales según viene: la Reina llega a su décimo dos rondas más tarde.' },
+  // Horas extra (Matemágico's definitiva), held at Vertitrón (Aitor, 2026-11-26: in a long boss fight; a boss with a part, its
+  // eye, where only the body counts). At the Queen it was tried first and does not hold (measured 2026-11-26, 100 fights, seed
+  // 35, Matemágico and Tecnópata on the third floor): she takes Aitor at 6.2 rounds with it, 6.3 with the same push and no
+  // cast, since her stages hold any burst back (the bubble) whatever came before; at Dirección the three directivas fall
+  // before their fires are at III together. The party is the third floor's with Matemágico and Tecnópata and the definitiva
+  // bought on top. The bot raises the fire on him to III and holds it (`OVERTIME_SHARE`; Rescoldo's 15 s are what keep it
+  // from going out between turns), then casts it: three actions with no maná. Its counterpart is the same play with the cast
+  // banned (the push stays, `wakeWorth`), and Rescoldo out shows what the passive is there for: the fire goes out first.
+  { id: 'vertigo-con-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', win: [.95, 1], roundsWon: [6.5, 8.7], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Con Gerard en Matemágico y Horas extra en el tarro: Foc Binari sobre Vertitrón hasta Quemado III (el ojo no cuenta) la despierta, y Rescoldo la sostiene; tres acciones sin maná, lo caro y lo que remata, lo tiran cuatro rondas antes.' },
+  { id: 'vertigo-sin-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['horas-extra'], win: [.95, 1], roundsWon: [10.7, 13], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Jugando igual, con el fuego en III y Horas extra despierta pero sin lanzarla, Vertitrón aguanta cuatro rondas más.' },
+  { id: 'vertigo-horas-extra-sin-rescoldo', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['rescoldo'], win: [.9, 1], happens: { 'despierta:horas-extra': [0, .15] }, why: 'Sin Rescoldo el fuego se apaga entre turno y turno antes de llegar a III: Horas extra casi nunca despierta.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry

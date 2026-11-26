@@ -22,7 +22,7 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   assert.deepEqual(TREE_ANIMAS, ['matemagico', 'tecnopata']);
   assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'element').map(i => `${i.anima}:${i.element}`), ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico']);
   for (const anima of ['matemagico', 'papagato', 'tecnopata']) assert.equal(IMPROVEMENTS.filter(i => i.anima === anima && i.kind === 'mana').length, 1, anima);
-  assert.ok(IMPROVEMENTS.some(i => i.anima === 'matemagico' && i.kind === 'ulti' && i.veiled), 'matemagico');
+  assert.equal(IMPROVEMENTS.find(i => i.id === 'matemagico:definitiva').skill, 'horas-extra', 'Matemágico\'s Horas extra, the last one built');
   assert.deepEqual(IMPROVEMENTS.filter(i => i.anima === 'papagato').map(i => i.id), ['papagato:mana-1', 'papagato:definitiva'], 'a shared ánima: its skills come by level');
   for (const item of IMPROVEMENTS.filter(i => i.kind === 'ulti')) assert.equal(item.cost, 2, `${item.id}: a definitiva costs 2 ecos (Aitor, 2026-11-20)`);
   // Every skill marked `node` is a node of its ánima's tree, and only those; each line is a chain.
@@ -49,7 +49,7 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   const coup = IMPROVEMENTS.find(i => i.id === 'dadaista:definitiva');
   assert.equal(coup.veiled, undefined); assert.equal(coup.skill, 'un-golpe-de-dados'); assert.equal(coup.name, 'Un golpe de dados');
   assert.deepEqual(improvedBy(['dadaista:definitiva']).skills, ['un-golpe-de-dados']);
-  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['papagato', 'tecnopata', 'dadaista', 'sincopante', 'prismatico', 'freatica']);
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['matemagico', 'papagato', 'tecnopata', 'dadaista', 'sincopante', 'prismatico', 'freatica']);
   for (const item of IMPROVEMENTS) {
     if (item.skill) assert.equal(SKILLS.find(s => s.id === item.skill).class, item.anima, item.id);
     if (item.passive) assert.equal(PASSIVES[item.passive].anima, item.anima, item.id);
@@ -59,15 +59,15 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   // Every node is one eco but the definitivas (2), the dúos mayores (3) and grade III (3 the big ones, 2
   // Reinicio, Virus atómico, Atractor extraño and Resonancia): Aitor, 2026-11-24, the jar some 25 % dearer, so some three quarters
   // of it (83 ecos while one definitiva sleeps, 55 to win) can be had by the game's end.
-  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 39); // Fourier and Superficie mínima 1, Atractor extraño 2 (2026-11-25), Resonancia 2 (2026-11-26)
+  assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 41); // Horas extra 2, Fourier and Superficie mínima 1, Atractor extraño 2 (2026-11-25), Resonancia 2 (2026-11-26)
   assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 28); // Escolta where Rayo encogedor was, Rayo encogedor at Taller's end, Enjambre (2) and Sugestión (1, 2026-11-26)
-  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 83);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 85);
   for (const item of IMPROVEMENTS.filter(i => i.kind === 'dual')) assert.equal(item.cost, 3, `${item.id}: a dúo mayor costs 3 ecos`);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {
   assert.deepEqual(withinEcos(['matemagico:vasos', 'matemagico:agua', 'matemagico:vasos'], 5), ['matemagico:agua', 'matemagico:vasos']);
   assert.deepEqual(withinEcos(['papagato:mana-1', 'matemagico:agua', 'tecnopata:explosion'], 2), ['papagato:mana-1', 'matemagico:agua']);
-  assert.deepEqual(withinEcos(['papagato:mana-2', 'papagato:pasiva', 'matemagico:definitiva'], 9), [], 'what the jar no longer has, or keeps asleep, is not there');
+  assert.deepEqual(withinEcos(['papagato:mana-2', 'papagato:pasiva', 'matemagico:qed'], 9), [], 'what the jar no longer has is not there');
   assert.deepEqual(without(['matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'matemagico:fuego'], 'matemagico:agua'), ['matemagico:fuego'], 'a node goes with everything after it on its line');
   assert.equal(costOf(['papagato:mana-1', 'matemagico:agua']), 2);
   assert.deepEqual(improvedBy(['papagato:mana-1', 'matemagico:agua', 'matemagico:vasos', 'matemagico:capilaridad', 'tecnopata:explosion']),

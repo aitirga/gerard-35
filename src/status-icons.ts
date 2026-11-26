@@ -1,7 +1,7 @@
 import type { StatusId, TimedId } from './battle.ts';
 
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado' | 'pelicula' | 'sugestion';
+export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado' | 'pelicula' | 'sugestion' | 'horas-extra' | 'agotado';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 /** A definitiva: three puffs going up at once (awake, or asleep and dimmer). */
 const DEFINITIVA_SVG = '<circle cx="8" cy="4.2" r="2.6"/><circle cx="3.6" cy="9" r="2.2"/><circle cx="12.4" cy="9" r="2.2"/><path d="M8 8v6.6M5.4 14.6h5.200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
@@ -18,6 +18,10 @@ export const STATUS_ICONS: Record<IconId, string> = {
   reaccion: '<circle cx="8" cy="8" r="2.1" fill="currentColor"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(-35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/>',
   // Sugestión: two fine lines converging on a point, where the confused one's blow is sent.
   sugestion: '<path d="M1.4 3.2 11.6 8M1.4 12.8 11.6 8" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><circle cx="13.2" cy="8" r="1.6"/>',
+  // Horas extra: the ring of ones and zeros melted into one band of gold, seen a little from above, its actions left in the corner.
+  'horas-extra': '<ellipse cx="8" cy="8" rx="6.6" ry="3.4" fill="none" stroke="currentColor" stroke-width="2.4"/><ellipse cx="8" cy="7.2" rx="4.6" ry="1.7" fill="none" stroke="currentColor" stroke-width=".8" opacity=".55"/>',
+  // Agotado (Horas extra paid): a pencil worn down to its eraser, a stub of wood and lead behind the ferrule.
+  agotado: '<rect x="1" y="5.4" width="4" height="5.2" rx="1.4"/><path d="M5.6 5.4h1.6v5.2H5.6z" opacity=".65"/><path d="M7.8 5.4h2.2L13.4 8 10 10.6H7.8z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M12.2 7.1 13.4 8l-1.2.9z"/>',
   // Shock: a bolt.
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.

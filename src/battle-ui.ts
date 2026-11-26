@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse } from './battle';
+import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -446,6 +446,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       case 'bits': return { id: 'bits', name: `Escudo de bits: ${c.bits!.hp} PV, para cada golpe entero`, mark: String(c.bits!.hp), timed: false, lasts: rounds(Math.max(1, c.bits!.until - (state?.round ?? 0) + 1)) };
       case 'mecha': return { id: 'quemado', guide: 'mecha', name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' };
       // Sugestión: where a confused foe's blow, and Idea fija's next beat, would go.
+      // Horas extra: the actions it still has, none spending maná; then Agotado for the round after.
+      case 'horas-extra': { const left = state!.extra!.left; return { id: 'horas-extra', name: `Horas extra: ${left === 1 ? 'una acción más' : `${left} acciones más`} sin gastar maná`, mark: String(left), timed: false, lasts: 'hasta acabarlas' }; }
+      case 'agotado': return { id: 'agotado', name: 'Agotado: solo puede atacar o defender, y defender no le da maná', mark: '', timed: false, lasts: 'esta ronda' };
       case 'sugestion': return { id: 'sugestion', name: 'Sugestión: el golpe de un enemigo confundido, y el de Idea fija, va a este enemigo', mark: '', timed: false, lasts: 'hasta que un aliado apunte a otro' };
       case 'punto-debil': return { id: 'punto-debil', name: 'Punto débil: el siguiente golpe hace el triple', mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weakSpotRounds(state!, c)) };
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
@@ -1149,7 +1152,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   interface Job { player: PlayerId; ally: string; command: Command; skill?: SkillId; die?: number; dual?: DualId; target?: string; text: string; at?: number }
   const pending: Job[] = [];
   /** Whether `ally` can still choose this round: standing, not through yet, nothing confirmed waiting to go off. */
-  const canAct = (ally: Combatant | undefined) => !!state && !!ally && state.phase === 'player' && ally.hp > 0 && !state.spent?.includes(ally.id) && !pending.some(j => j.ally === ally.id) && !callbacks.waiting(ally.id);
+  // Horas extra: while its actions last, only whoever uses it chooses.
+  const canAct = (ally: Combatant | undefined) => !!state && !!ally && state.phase === 'player' && ally.hp > 0 && !state.spent?.includes(ally.id) && !pending.some(j => j.ally === ally.id) && !callbacks.waiting(ally.id) && (!state.extra || state.extra.id === ally.id);
   /** Whether the menu being worked on is shut now: split, its fighter cannot choose; alone, something is playing. */
   const locked = () => !state || (split() ? !canAct(allyOf(ctx)) : busy);
   function withPlayer<T>(p: PlayerId, run: () => T, keepTurn = false): T {
@@ -1609,7 +1613,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const s = state!, m = queueMenu!;
     if (m.level === 'root') return [{ id: 'attack', label: attackName(owner) }, { id: 'skill', label: 'Habilidad', off: !skillsFor(s, owner).length }, { id: 'defend', label: 'Defender' }];
     if (m.level === 'skill') return skillsFor(s, owner).filter(skill => !('free' in skill)).map(skill => {
-      const affordable = owner.secondary >= skill.cost, available = validTargets(s, 'skill', skill.id).length > 0;
+      const affordable = affords(s, owner, skill.cost), available = validTargets(s, 'skill', skill.id).length > 0;
       return { id: skill.id, label: skill.name, detail: !affordable ? 'Sin maná' : available ? costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo', off: !affordable || !available };
     });
     return (m.action === 'attack' ? validTargets(s, 'attack') : validTargets(s, 'skill', m.skill)).map(c => ({ id: c.id, label: escapeHtml(c.name) }));
@@ -1680,6 +1684,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       level: () => { const missing = dual.parts.map(skillOf).find(x => (s.levels?.[x.class] ?? 1) < ('level' in x ? x.level : 1)); return missing ? `Falta ${missing.name} (nivel ${'level' in missing ? missing.level : 1})` : 'Falta nivel'; },
       used: () => 'Ya usado en este combate',
       acted: () => partner ? `${partner.name} ya ha actuado` : 'Sin compañero',
+      tired: () => s.extra ? 'Horas extra: sin dúos' : 'Agotado',
       down: () => `${partner?.name ?? 'Tu compañero'} no puede luchar`,
       target: () => 'Sin objetivo',
       wear: () => {
@@ -2052,14 +2057,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     get('.skill-flyout .battle-kicker').textContent = `HABILIDADES · ${actor.name.toUpperCase()}${actor.classId ? ` · ${animaOf(actor.classId, grownUp(actor.profile)).name.toUpperCase()}` : ''}`;
     // Unaffordable skills stay focusable so their details can still be read.
     get('.skill-list').innerHTML = skillsFor(state, actor).map((skill, i) => {
-      const affordable = actor.secondary >= skill.cost;
+      const affordable = affords(state!, actor, skill.cost);
       // Agitar is not an action: it costs nothing and reaches nobody, and what it has is uses.
       const free = 'free' in skill, uses = free ? shakesLeft(state!, actor) : 0;
       const available = free ? uses > 0 && diceOf(state!, actor).length > 0 : validTargets(state!, 'skill', skill.id).length > 0;
       const reason = free ? !uses ? 'Usado' : available ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados'
-        : !affordable ? 'Sin maná' : available ? 'ulti' in skill ? 'Definitiva' : costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
+        : !affordable ? 'Sin maná' : available ? 'ulti' in skill ? 'Definitiva' : overtime(state!, actor) && skill.cost ? 'Horas extra' : costPips(skill.cost) : skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo';
       return `<button type="button" data-skill="${skill.id}" data-class="${skill.class}" ${!affordable || !available ? 'aria-disabled="true"' : ''} style="--i:${i}"><span class="skill-key">${i + 1}</span><span class="skill-name"><strong>${skill.name}</strong><small>${free ? 'Tu mano' : 'rain' in skill || 'volley' in skill ? 'Enemigos al azar' : 'hunt' in skill ? 'Quienes sangran' : 'hammer' in skill || 'freezes' in skill ? 'Quienes tienen agua' : 'raise' in skill ? 'Los ecos' : 'capo' in skill ? 'Los dúos y el maná' : ('screen' in skill || 'accompany' in skill || skill.kind === 'guard') && skill.side === 'allies' ? 'Un aliado' : TARGETS[skill.side]}</small></span><small class="skill-cost">${reason}</small></button>`;
-    }).join('') + sleepingUlti(actor, skillsFor(state, actor).length) || '<p class="skill-empty">Sin habilidades con esta ánima.</p>';
+    }).join('') + sleepingUlti(actor, skillsFor(state, actor).length) || (tired(state, actor) ? '<p class="skill-empty">Agotado: solo puede atacar o defender.</p>' : '<p class="skill-empty">Sin habilidades con esta ánima.</p>');
     fitSkills();
   }
   /** The definitiva of the ánima `actor` wears, bought and asleep: a greyed row at the foot of the list, with how near it is to waking. */
@@ -2282,7 +2287,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   function beginTargeting(skill?: SkillId) {
     if (!state || locked() || !selected) return;
     if (skill && 'free' in SKILLS.find(s => s.id === skill)!) { shakeHand(); return; }
-    if (skill && (state.allies[state.active].secondary < SKILLS.find(s => s.id === skill)!.cost || !validTargets(state, 'skill', skill, dieUse(skill) ? selectedDie : undefined).length)) return;
+    if (skill && (!affords(state, state.allies[state.active], SKILLS.find(s => s.id === skill)!.cost) || !validTargets(state, 'skill', skill, dieUse(skill) ? selectedDie : undefined).length)) return;
     showDetails(false);
     // Dadista: first the die it spends, then whom. A hand of one has nothing to pick.
     if (skill && dieUse(skill) && selectedDie === undefined) {
@@ -2480,6 +2485,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       // Estrella fugaz spent the Racha for dice: said over whoever threw it, a beat after the blow.
       if (effect.starred) setTimeout(() => { if (token === generation) pop(effect.actor, `Racha −${effect.starred}`, 'status', effect.rain ? `${effect.rain.length} dados de luz` : effect.dealt?.length ? effect.dealt.length === 1 ? '+1 dado' : `+${effect.dealt.length} dados` : '', 'racha'); }, 420);
+      // Horas extra: each of its actions counted over whoever acts, and Agotado once the last is done.
+      if (effect.overtime?.step) { const { step, of } = effect.overtime, by = effect.actor; setTimeout(() => { if (token !== generation) return; pop(by, `${step}/${of}`, 'status', step === of ? 'Agotado' : 'Horas extra', step === of ? 'agotado' : 'horas-extra'); }, 300); }
       // Un golpe de dados filled the hand: said over whoever threw it, as the dice come back.
       if (effect.skill === 'un-golpe-de-dados' && effect.dealt?.length) { const dealt = effect.dealt.length; setTimeout(() => { if (token === generation) pop(effect.actor, dealt === 1 ? '+1 dado' : `+${dealt} dados`, 'status', 'Mano de seis', 'racha'); }, 700); }
       // The meteor grew: said over whoever threw it, so the list's new row is no surprise.

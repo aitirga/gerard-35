@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type TimedPulse, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed, warded } from './battle';
+import { HORAS_EXTRA, tired, BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type TimedPulse, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed, warded } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
@@ -43,7 +43,7 @@ import { createFreaticaFight, FREATICA_SKILLS, HAMMER_GAP } from './freatica-fig
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
 import { CUERDAS_COLOURS, DUAL_COLOURS, FEAR_COLOURS, createDualFx, screenAxes, type V3 } from './dual-fx';
 import { TONES, type ToneId } from './song';
-import { takeZero } from './anima-looks';
+import { ringMode, takeZero } from './anima-looks';
 import { DUO_STAGINGS, type DuoFighter, type DuoStage } from './duo-fx';
 import { ARC_POUNCE, arcFor, arcGeometry, arcRun, type ArcPose } from './duo-fx/arco-voltaico';
 import { createFluidFx } from './fluid-fx';
@@ -51,6 +51,7 @@ import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
 import { createFilmFx } from './film-fx';
 import { createLivesFx } from './lives-fx';
+import { OVERTIME_LOOK, createOvertimeFx } from './overtime-fx';
 import { COUP_LOOK, collageAt, coupFall } from './coup-fx';
 import type { GpuLattice } from './fight-particles';
 import { spellLaunch } from './battle-sounds';
@@ -92,7 +93,7 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'superficie-minima', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', 'un-golpe-de-dados', ...Object.keys(FREATICA_SKILLS)]);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'superficie-minima', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', 'un-golpe-de-dados', 'horas-extra', ...Object.keys(FREATICA_SKILLS)]);
 /**
  * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
  * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
@@ -438,6 +439,34 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const filmFx = createFilmFx({ effects, figures, cue: (id, options) => cue(id, options) });
   /** Siete vidas' own look: Yuki's silhouettes at the party's feet, and the killing blow played back (src/lives-fx.ts). */
   const livesFx = createLivesFx(effects);
+  // Horas extra (src/overtime-fx.ts): its frozen copies of Gerard, the action they were frozen for, and when each ally's
+  // Agotado began (its ring comes back digit by digit over it).
+  const overtimeFx = createOvertimeFx(effects), overtimeFrozen = new WeakSet<BattleEffect>(), tiredSince = new Map<string, number>();
+  let overtimeAshed: BattleEffect | undefined;
+  /**
+   * Horas extra each frame: a copy frozen as each of its actions starts, the copies to ash once the last is through, and
+   * the ring of whoever uses it: melting into its band on the cast, overheating with each action, cold at the feet while
+   * Agotado and coming back digit by digit.
+   */
+  function overtimeStep(dt: number, t: number, contact: number, animate: boolean) {
+    const mine = effect?.overtime, actor = effect ? fighters.get(effect.actor) : undefined;
+    if (mine && mine.step > 0 && actor && !overtimeFrozen.has(effect!)) { overtimeFrozen.add(effect!); if (animate) overtimeFx.freeze(actor.model); }
+    if (mine && mine.step === mine.of && overtimeAshed !== effect && (!animate || t >= contact + .45)) { overtimeAshed = effect; overtimeFx.ash(); if (animate) cue('horas-ceniza'); }
+    overtimeFx.update(dt);
+    if (!state) return;
+    for (const ally of state.allies) {
+      const f = fighters.get(ally.id);
+      if (!f || ally.classId !== 'matemagico') { if (f) ringMode(f.model, undefined); continue; }
+      const playing = mine && effect!.actor === ally.id ? mine : undefined, left = state.extra?.id === ally.id ? state.extra.left : undefined;
+      if (playing && playing.step === 0) ringMode(f.model, { band: { melt: animate ? Math.min(1, t / OVERTIME_LOOK.melt) : 1, heat: 0 } });
+      else if (left !== undefined) ringMode(f.model, { band: { melt: 1, heat: (HORAS_EXTRA.actions - left) / HORAS_EXTRA.actions } });
+      else if (playing && overtimeAshed !== effect) ringMode(f.model, { band: { melt: 1, heat: 1 } });
+      else if (tired(state, ally)) {
+        if (!tiredSince.has(ally.id)) tiredSince.set(ally.id, time);
+        ringMode(f.model, { cold: { back: Math.min(.9, (time - tiredSince.get(ally.id)!) / 14) } });
+      } else { tiredSince.delete(ally.id); ringMode(f.model, undefined); }
+    }
+  }
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
   /**
@@ -4359,7 +4388,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []); if (cold) { cold = 0; setCold?.(0); }
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { coupClear(); night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
+      if (!next) { coupClear(); night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); overtimeFx.clear(); overtimeAshed = undefined; tiredSince.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -4437,7 +4466,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.dacapo ? DA_CAPO.contact : effect?.skill === 'un-golpe-de-dados' ? COUP_LOOK.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.dacapo ? DA_CAPO.contact : effect?.skill === 'un-golpe-de-dados' ? COUP_LOOK.contact : effect?.skill === 'horas-extra' ? OVERTIME_LOOK.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
       // Freática's skills start their look on the cells at once (Recarga's tape, Riada's wave): the numbers come at their contact.
       if (effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' && state) freatica.play(effect, state);
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
@@ -4943,6 +4972,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && actor && skyOf(effect)) skyStep(effect, actor, target, t, animate);
       if (effect && actor && effect.skill === 'un-golpe-de-dados') coupStep(effect, actor, t, animate);
       else if (coup) coupClear();
+      overtimeStep(dt, t, contact, animate);
       // The astral's night: the place goes dark and blue while a skill from the sky runs (less for
       // Estrella fugaz, which is one star), and each landing lights it up for a moment.
       {
@@ -5050,7 +5080,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.dacapo ? DA_CAPO.end : effect.skill === 'un-golpe-de-dados' ? COUP_LOOK.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.dacapo ? DA_CAPO.end : effect.skill === 'un-golpe-de-dados' ? COUP_LOOK.end : effect.skill === 'horas-extra' ? OVERTIME_LOOK.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

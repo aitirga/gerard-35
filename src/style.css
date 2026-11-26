@@ -2259,6 +2259,13 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="cristalizado"], .summary-tags [data-status="cristalizado"], .damage-pop[data-kind="status"][data-status="cristalizado"] { --status: #bfd0ea; }
 .unit-statuses i[data-status="cortina"], .summary-tags [data-status="cortina"], .damage-pop[data-kind="status"][data-status="cortina"] { --status: #dcc388; }
 .unit-statuses i[data-status="definitiva"], .summary-tags [data-status="definitiva"] { --status: #f0e4c8; }
+/* Horas extra (docs/animas/matemagico/README.md § Definitiva): its band in Matemágico's gold while its actions last; then
+   Agotado, the pencil worn to its eraser, in the band's dirty orange once it has overheated, breathing slowly. */
+.unit-statuses i[data-status="horas-extra"], .summary-tags [data-status="horas-extra"], .damage-pop[data-kind="status"][data-status="horas-extra"] { --status: #f3cf78; }
+.unit-statuses i[data-status="agotado"], .summary-tags [data-status="agotado"], .damage-pop[data-kind="status"][data-status="agotado"] { --status: #c9925e; }
+.unit-statuses i[data-status="agotado"] { animation: tired-breathe 3.2s ease-in-out infinite; }
+@keyframes tired-breathe { 0%, 100% { opacity: .62; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .unit-statuses i[data-status="agotado"] { animation: none; } }
 /* The same definitiva asleep (bought, still to wake): its colour faded, its corner how near it is. */
 .unit-statuses i[data-status="dormida"], .summary-tags [data-status="dormida"] { --status: #8f887a; }
 .skill-list button[data-asleep] .skill-cost { font-variant-numeric: tabular-nums; }

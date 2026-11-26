@@ -5,7 +5,7 @@ import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, grown, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
-import { castleAffinity, castleBlow, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { castleAffinity, castleBlow, castleProp, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
@@ -127,6 +127,12 @@ export const SKILLS = [
   // does; on a foe frozen in Bajo cero's ice (Congelado) it rings the ice at its own note and the ice breaks at once
   // (`shatters`), its break blow as if cracked through (`chill`), where any other bolt does nothing to it.
   { id: 'resonancia', name: 'Resonancia', cost: 2, side: 'foes', power: 38, kind: 'magic', element: 'electrico', shatters: true, node: true, description: 'Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.', class: 'matemagico' },
+  // Horas extra (Matemágico's definitiva, docs/animas/matemagico/README.md § Definitiva, Aitor 2026-11-25): bought at the jar,
+  // it wakes once every foe standing is at Quemado III or more at once (a boss's body only, never its parts) while someone
+  // standing wears Matemágico (`wakeOvertime`). Whoever uses it acts HORAS_EXTRA.actions times in a row, no maná spent
+  // (`state.extra`), no dual nor definitiva among them, changing ánima between them if they like; then they are Agotado
+  // for HORAS_EXTRA.spent round: only Atacar (with its element) or Defender, which gathers no maná (`tired`).
+  { id: 'horas-extra', name: 'Horas extra', cost: 0, side: 'party', power: 0, kind: 'overtime', overtime: true, ulti: true, node: true, abstract: true, class: 'matemagico', description: 'Quien la usa actúa tres veces seguidas sin gastar maná. Después queda agotado: durante una ronda solo puede atacar o defender.' },
   { id: 'condensador', name: '∂Q/∂t Condensador', cost: 1, side: 'party', power: 0, kind: 'charge', node: true, description: 'Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.', class: 'matemagico' },
   // Papagato's skills are Haru's and Yuki's: the wearer only asks (docs/animas/papagato/). Haru cuts
   // (`bleed`: Sangrado stacks, which pile up) and the party cashes the wound in with a blow that adds none.
@@ -1280,18 +1286,36 @@ export const COUP = { wake: 100, hand: 6 };
 /** Whether Un golpe de dados is awake in this fight: bought, its wearer's Crítico has reached COUP.wake while Dadista was worn (`wakeCoup`), and not used yet. It stays awake once the Racha is spent. */
 export const coupReady = (state: BattleState) => skillKnown('un-golpe-de-dados', state.levels, state.improved)
   && (state.unbound || (!!state.coup?.woke && !state.coup.used));
+/**
+ * Horas extra (docs/animas/matemagico/README.md § Definitiva): it wakes once every foe standing is at Quemado `wake` or more
+ * at once (a boss's body only: `bodies`). Whoever uses it acts `actions` times in a row with no maná (`state.extra`), then is
+ * Agotado for `spent` rounds (`tired`). Tunable (`just fight-sim`, book `overtime`).
+ */
+export const HORAS_EXTRA = { wake: 3, actions: 3, spent: 1 };
+/** The foes that count for Horas extra: standing, and a body, never a part of one (Vertitrón's eye, the Queen's hands and bubble, Aurelià's lectern, Fran's lamps). */
+export const bodies = (state: BattleState) => state.foes.filter(f => f.hp > 0 && !f.part && !castleProp(f));
+/** Whether Horas extra is awake in this fight: bought, every foe standing has been at Quemado III at once while Matemágico was worn (`wakeOvertime`), and not used yet. */
+export const overtimeReady = (state: BattleState) => skillKnown('horas-extra', state.levels, state.improved)
+  && (state.unbound || (!!state.overtime?.woke && !state.overtime.used));
+/** Whether `c` is acting their Horas extra now: the turn stays theirs, and nothing they do spends maná. */
+export const overtime = (state: BattleState, c: Combatant | undefined) => !!c && state.extra?.id === c.id && state.extra.left > 0;
+/** Whether `c` is Agotado (Horas extra paid): only Atacar or Defender, and Defender gathers no maná. */
+export const tired = (state: BattleState, c: Combatant) => c.hp > 0 && (c.tired ?? 0) >= state.round;
+/** Whether `c` can pay `cost` now: their maná, or anything while their Horas extra lasts. */
+export const affords = (state: BattleState, c: Combatant, cost: number) => overtime(state, c) || c.secondary >= cost;
 /** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
-export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : skill === 'un-golpe-de-dados' ? coupReady(state) : false;
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : skill === 'un-golpe-de-dados' ? coupReady(state) : skill === 'horas-extra' ? overtimeReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whether the definitiva `skill` has gone off in this fight already. */
 const ultiUsed = (state: BattleState, skill: SkillId) => !!(skill === 'fin-de-fiesta' ? state.finale?.used : skill === 'siete-vidas' ? state.lives?.used
-  : skill === 'da-capo' ? state.dacapo?.used : skill === 'bajo-cero' ? state.cold?.used : skill === 'enjambre' ? state.swarm?.used : skill === 'un-golpe-de-dados' ? state.coup?.used : false);
+  : skill === 'da-capo' ? state.dacapo?.used : skill === 'bajo-cero' ? state.cold?.used : skill === 'enjambre' ? state.swarm?.used : skill === 'un-golpe-de-dados' ? state.coup?.used : skill === 'horas-extra' ? state.overtime?.used : false);
 /**
  * The definitiva of the ánima `c` wears, bought but still asleep in this fight, and how near it is to
  * waking (`have` of `need`), measured as its own condition measures it: the powder's turns seen
  * (Fin de fiesta), the deepest wound on a foe (Siete vidas), the most water on a foe (Bajo cero),
- * the ecos up at once (Da capo), the ripest bomb's power (Enjambre), the wearer's Crítico (Un golpe de dados). `used`: it went off already.
+ * the ecos up at once (Da capo), the ripest bomb's power (Enjambre), the wearer's Crítico (Un golpe de dados), the foes
+ * standing at Quemado III of those standing (Horas extra, bodies only). `used`: it went off already.
  */
 export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId; name: string; have: number; need: number; used?: true } | undefined {
   const spec = SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId);
@@ -1307,6 +1331,7 @@ export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId
     case 'da-capo': return { ...base, have: Math.min(ECOS.most, state.ecos?.length ?? 0), need: ECOS.most };
     case 'enjambre': return { ...base, have: Math.round(most(foes.map(f => f.timed?.bomba ? bombPower(f.timed.bomba.age ?? 0) : 0))), need: BOMBA.top };
     case 'un-golpe-de-dados': return { ...base, have: Math.min(COUP.wake, Math.round(ownCrit(state, c))), need: COUP.wake };
+    case 'horas-extra': { const up = bodies(state); return { ...base, have: up.filter(f => (f.timed?.quemado?.level ?? 0) >= HORAS_EXTRA.wake).length, need: up.length }; }
     default: return undefined;
   }
 }
@@ -1496,6 +1521,8 @@ export interface Combatant {
   grounded?: number;
   /** The round Objeto encontrado last dealt this fighter a die past the hand's cap. */
   found?: number;
+  /** Horas extra paid: Agotado up to the end of this round (`tired`). */
+  tired?: number;
   /** Escolta: Bip stands by this ally until the end of round `until`, sent by `by` (who must keep wearing Tecnópata, standing). */
   escort?: { until: number; by: string };
   /** Timed statuses on the fighter (TIMED), running on the fight's clock. */
@@ -1742,6 +1769,13 @@ export interface BattleState {
   swarm?: { woke?: true; used?: true };
   /** Un golpe de dados (Dadista's definitiva): woken by its wearer's Crítico reaching COUP.wake (`wakeCoup`); used. */
   coup?: { woke?: true; used?: true };
+  /** Horas extra (Matemágico's definitiva): woken by every foe standing at Quemado III at once while Matemágico was worn (`wakeOvertime`); used. */
+  overtime?: { woke?: true; used?: true };
+  /**
+   * Horas extra going on: `id` acts again, `left` more actions, each spending no maná (`free`). The turn stays theirs
+   * (`settle`) until it runs out; then they are Agotado (`tired`).
+   */
+  extra?: { id: string; left: number; free: boolean };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -1916,9 +1950,11 @@ export function switchAnima(state: BattleState, step: -1 | 1): ClassId | undefin
 const wornAnimas = (slots: PartySlot[]) => [...new Set(slots.flatMap(s => s.classId ? [s.classId] : []))];
 /** The skills `actor` can use: their ánima's, as far as it has grown. */
 export function skillsFor(state: BattleState, actor: Combatant) {
+  // Agotado (Horas extra paid): only Atacar and Defender, which are no skills of the list.
+  if (tired(state, actor)) return [];
   // A die's faces are not skills of the list: Tirar dado reaches them (`FACE_SKILLS`).
   // …and the meteor is one row: the size it comes in now.
-  const known = SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)) && (!('ulti' in skill) || ultiReady(state, skill.id)));
+  const known = SKILLS.filter(skill => actor.classId === skill.class && !('face' in skill) && learned(state, skill.id) && (!('meteor' in skill) || skill.meteor === meteorOf(actor)) && (!('ulti' in skill) || (ultiReady(state, skill.id) && !state.extra)));
   // An awake definitiva heads the list: it is there for one use, and not below the fold.
   return [...known.filter(skill => 'ulti' in skill), ...known.filter(skill => !('ulti' in skill))];
 }
@@ -2143,6 +2179,8 @@ export interface BattleEffect {
   finale?: { hits: { target: string; amount: number }[]; burns: { target: string; level: number }[]; poisoned: { target: string; level: number }[]; crystallised: string[] };
   /** A definitiva woke with this action: the powder has now been all three things. */
   awoken?: SkillId;
+  /** Horas extra: its cast (`step` 0), or which of its actions this was (`step` of `of`), none spending maná. */
+  overtime?: { step: number; of: number };
   /** Telemetría: the timed statuses Bip's Atacar made last longer on its target, and by how many seconds. */
   extended?: { statuses: TimedId[]; seconds: number };
   /** Combustión burst on `target` (a physical blow found its fire at IV): the fire blast on each foe, and the fires it raised. */
@@ -2517,7 +2555,7 @@ function fallen(state: BattleState) {
  * disagree. Agua and Mojado are one icon (the water's), fire at IV is Combustión's, a Mecha encendida is fire's icon and
  * Sutura de luz the cure's. `shown` is what the fight's screen holds back until a blow lands (a fire, the PV).
  */
-export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | 'sugestion' | StatusId | TimedId;
+export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | 'sugestion' | 'horas-extra' | 'agotado' | StatusId | TimedId;
 export function plateMarks(state: BattleState | undefined, c: Combatant, shown: { timed?: Combatant['timed']; hp?: number } = {}): PlateMark[] {
   if ((shown.hp ?? c.hp) <= 0) return [];
   const timed = shown.timed ?? c.timed ?? {}, ally = !!state?.allies.includes(c), marks: PlateMark[] = [];
@@ -2538,6 +2576,9 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
   put(state && cortinaRounds(state, c), 'cortina');
   put(state && awakeUlti(state, c), 'definitiva');
   put(ally && ultiProgress(state!, c), 'dormida');
+  // Horas extra: the actions it has left on whoever uses it, then Agotado for the round after.
+  put(state && overtime(state, c), 'horas-extra');
+  put(state && tired(state, c), 'agotado');
   put(state && ecosOf(state, c).length, 'compas');
   put(c.stalk, 'acecho');
   put(warded(c), 'siete-vidas');
@@ -3092,6 +3133,8 @@ export function validTargets(state: BattleState, action: BattleAction, skill: Sk
   // Sincopante's: Crescendo raises the wearer's ecos, so with none up it has nothing to do; Acompañamiento goes with
   // anyone standing; Da capo reaches the party.
   if (ability.kind === 'eco') return 'raise' in ability && !ecosOf(state, state.allies[state.active]).length ? [] : state.allies.filter(a => a.hp > 0);
+  // Horas extra: the one who uses it.
+  if ('overtime' in ability) { const self = state.allies[state.active]; return self && self.hp > 0 ? [self] : []; }
   // ∂Q/∂t Condensador: the one who uses it, unless they carry a charge already.
   if (ability.kind === 'charge') { const self = state.allies[state.active]; return self && self.hp > 0 && !self.capacitor ? [self] : []; }
   // Corchete: anyone standing who is not protected already.
@@ -3344,7 +3387,7 @@ export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
   return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
 }
 /** A fight over: nothing queued or spent is left behind, and no cat still waits on a prey (Acecho, Arco voltaico). */
-function endFight(state: BattleState) { delete state.queued; delete state.spent; delete state.aimed; for (const ally of state.allies) delete ally.stalk; }
+function endFight(state: BattleState) { delete state.queued; delete state.spent; delete state.aimed; delete state.extra; for (const ally of state.allies) delete ally.stalk; }
 /**
  * After an action: the fight is won, or an ally still to act chooses, or the foes' turn comes. The
  * one who acted is through for the round (`spent`); allies may act in any order (two players choose
@@ -3353,6 +3396,12 @@ function endFight(state: BattleState) { delete state.queued; delete state.spent;
 function settle(state: BattleState) {
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); return; }
   const actor = state.allies[state.active];
+  // Horas extra: the turn stays with whoever uses it while it has actions left; spent (or fallen), they are Agotado.
+  if (state.extra && actor?.id === state.extra.id) {
+    if (actor.hp > 0 && state.extra.left > 0) return;
+    delete state.extra;
+    if (actor.hp > 0) actor.tired = state.round + HORAS_EXTRA.spent;
+  }
   if (actor && !state.spent?.includes(actor.id)) (state.spent ??= []).push(actor.id);
   const next = state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id));
   if (next >= 0) state.active = next;
@@ -4161,16 +4210,22 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   const everyone = action === 'skill' && ability?.side === 'all-foes';
   let target = party ? undefined : everyone ? targets[0] : targets.find(f => f.id === targetId);
   if ((action === 'attack' || action === 'skill') && !target && !(party && targets.length)) return;
-  if (action === 'skill' && (!ability || actor.secondary < ability.cost || (cast === undefined && !skillsFor(state, actor).includes(ability)))) return;
+  if (action === 'skill' && (!ability || !affords(state, actor, ability.cost) || (cast === undefined && !skillsFor(state, actor).includes(ability)))) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
+  // Horas extra: one of its actions, and what the ánima worn holds now, to give back whatever it spends (`refund`).
+  const extra = overtime(state, actor) ? state.extra! : undefined;
+  const purse = extra ? { classId: actor.classId, secondary: actor.secondary, dice: actor.dice && [...actor.dice] } : undefined;
+  if (extra) { extra.left--; effect.overtime = { step: HORAS_EXTRA.actions - extra.left, of: HORAS_EXTRA.actions }; }
   // A definitiva goes off once, whatever comes of it (Fran's light may eat it).
   if (action === 'skill' && ability && 'coup' in ability) (state.coup ??= {}).used = true;
+  if (action === 'skill' && ability && 'overtime' in ability) (state.overtime ??= {}).used = true;
   if (cast !== undefined) spendDie(actor, diceOf(state, actor), cast, effect);
   else if (paid !== undefined) {
     // The die chosen first, then as many more as the skill costs: the ones worth least.
     spendDie(actor, diceOf(state, actor), paid, effect, false);
     const first = effect.die!, more: DieFace[] = [];
-    for (let i = 1; i < ability!.cost; i++) { spendDie(actor, diceOf(state, actor), spareDie(state), effect, false); more.push(effect.die!.face); }
+    // (Horas extra lets a short hand pay: it spends what there is, and gets it back after.)
+    for (let i = 1; i < ability!.cost && spareDie(state) >= 0; i++) { spendDie(actor, diceOf(state, actor), spareDie(state), effect, false); more.push(effect.die!.face); }
     effect.die = first;
     if (more.length) effect.paid = more;
   }
@@ -4202,7 +4257,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action === 'defend') {
     actor.guarding = true;
     // Holding still gathers maná back into the ánima worn.
-    effect.charged = capped(actor, DEFEND_CHARGE);
+    // Agotado (Horas extra paid): holding still gathers nothing.
+    effect.charged = capped(actor, tired(state, actor) ? 0 : DEFEND_CHARGE);
     actor.secondary += effect.charged;
     // Dadista's maná comes as dice, rolled in view.
     if (actor.classId === DICED && effect.charged) effect.dealt = diceOf(state, actor).slice(-effect.charged);
@@ -4213,6 +4269,12 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       actor.pedal = true; note(effect, 'pedal', actor);
       state.message += ' Pedal: sus ecos siguen sonando sin gastar su tiempo.';
     }
+  } else if (party && ability && 'overtime' in ability) {
+    // Horas extra: the turn stays theirs for HORAS_EXTRA.actions actions more, none spending maná (`settle`, `refund`).
+    effect.skill = skill; effect.target = actor.id;
+    state.extra = { id: actor.id, left: HORAS_EXTRA.actions, free: true };
+    effect.overtime = { step: 0, of: HORAS_EXTRA.actions };
+    state.message = `${actor.name} usa ${ability.name}. Va a actuar ${HORAS_EXTRA.actions === 3 ? 'tres' : HORAS_EXTRA.actions} veces seguidas sin gastar maná.`;
   } else if (party && ability && ability.kind === 'charge') {
     // ∂Q/∂t Condensador: the charge stays on them until their next electric blow, or a foe's blow on them.
     spendSecondary(actor, ability.cost); effect.skill = skill; effect.target = actor.id;
@@ -4861,10 +4923,34 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
   ignite(state, effect); amplify(effect); checkEye(state, effect);
-  wakeCoup(state, effect);
+  wakeCoup(state, effect); wakeOvertime(state, effect);
+  if (purse) refund(actor, purse);
   if (fallen(state)) return effect;
   settle(state);
   return effect;
+}
+/**
+ * Horas extra: one of its actions spent no maná. Whatever the ánima worn when it began holds less now (a skill's cost, the
+ * dice of a Tirar dado or an Estrella fugaz) is given back as it was; what it gathered (Defender, Toma de tierra) stays.
+ */
+function refund(actor: Combatant, purse: { classId?: ClassId; secondary: number; dice?: DieFace[] }) {
+  if (actor.classId !== purse.classId || actor.secondary >= purse.secondary) return;
+  actor.secondary = purse.secondary;
+  if (purse.dice) actor.dice = [...purse.dice];
+}
+/**
+ * Horas extra wakes (`overtimeReady`) once every foe standing is at Quemado HORAS_EXTRA.wake or more at once (`bodies`: a
+ * boss's parts do not count) while someone standing wears Matemágico, with the definitiva bought; the action (or the
+ * clock's pulse) that got there says so (`awoken`). A foe falling never breaks it: only those standing count.
+ */
+function wakeOvertime(state: BattleState, effect?: { awoken?: SkillId }) {
+  if (state.overtime?.woke || state.unbound || !skillKnown('horas-extra', state.levels, state.improved)) return false;
+  if (!state.allies.some(a => a.hp > 0 && a.classId === 'matemagico')) return false;
+  const up = bodies(state);
+  if (!up.length || !up.every(f => (f.timed?.quemado?.level ?? 0) >= HORAS_EXTRA.wake)) return false;
+  (state.overtime ??= {}).woke = true;
+  if (effect) effect.awoken ??= 'horas-extra';
+  return true;
 }
 /** Whether `skill` is known: a node of a tree is bought at the jar (`improved`); the rest come with the ánima's level. */
 export function skillKnown(skill: SkillId, levels: Partial<Record<ClassId, number>> | undefined, improved: Improved | undefined) {
@@ -4882,7 +4968,7 @@ function halvesOf(d: DualSpec, a: Combatant, b: Combatant): [SkillId, SkillId] |
   if (a.classId === owner(y) && b.classId === owner(x)) return [y, x];
 }
 /** Why a dual cannot happen now (`DualBlock`), or nothing when it can. */
-export type DualBlock = 'level' | 'used' | 'wear' | 'down' | 'acted' | 'mana' | 'target';
+export type DualBlock = 'level' | 'used' | 'wear' | 'down' | 'acted' | 'mana' | 'target' | 'tired';
 /**
  * What stops `d` between `a` (the active fighter) and `b`: a half not learned yet, `d` already
  * played this fight (once each), someone not wearing the ánima of their half, `b` fallen, `b`
@@ -4912,6 +4998,8 @@ export function dualBlock(state: BattleState, d: DualSpec, a: Combatant, b?: Com
   const halves = halvesOf(d, a, b);
   if (!halves) return 'wear';
   if (state.phase !== 'player' || state.allies[state.active] !== a || a === b || state.spent?.includes(a.id) || state.spent?.includes(b.id)) return 'acted';
+  // Horas extra: none of its actions is a dual, and an Agotado one only attacks or holds on.
+  if (state.extra || tired(state, a) || tired(state, b)) return 'tired';
   const cost = dualCost(d);
   if (!state.unbound && (a.secondary < cost[halves[0]]! || b.secondary < cost[halves[1]]!)) return 'mana';
   if (!dualTargets(state, d).length) return 'target';
@@ -4925,6 +5013,8 @@ export function dualPartner(state: BattleState): Combatant | undefined {
 export function takeTurn(state: BattleState, allyId: string): boolean {
   const index = state.allies.findIndex(a => a.id === allyId), ally = state.allies[index];
   if (state.phase !== 'player' || !ally || ally.hp <= 0 || state.spent?.includes(ally.id)) return false;
+  // Horas extra: nobody else takes the turn while its actions last.
+  if (state.extra && state.extra.id !== ally.id) return false;
   state.active = index;
   return true;
 }
@@ -4958,7 +5048,7 @@ export function dualOptions(state: BattleState, swaps = false): { dual: DualSpec
 export function actDual(state: BattleState, id: DualId, targetId?: string, die?: number): BattleEffect | undefined {
   const effect = dualAct(state, id, targetId, die);
   // Un golpe de dados counts the Crítico a dual leaves (Ases en dúo's ×2 from Suceso seguro, the Racha its die adds).
-  if (effect) wakeCoup(state, effect);
+  if (effect) { wakeCoup(state, effect); wakeOvertime(state, effect); }
   if (!effect?.dual) return effect;
   // A dual is an action like any other for Sincopante: an eco at either one's side repeats it once, a wearer of it in
   // the off-beat makes theirs sound again, and Pedal ends for both.
@@ -5668,7 +5758,7 @@ export function queue(state: BattleState, allyId: string, choice: Queued | null)
   if (!choice) { if (state.queued) delete state.queued[ally.id]; return true; }
   if (choice.action === 'skill') {
     const ability = SKILLS.find(s => s.id === choice.skill);
-    if (!ability || !skillsFor(state, ally).includes(ability) || ally.secondary < ability.cost) return false;
+    if (!ability || !skillsFor(state, ally).includes(ability) || !affords(state, ally, ability.cost)) return false;
     const targets = validTargets(state, 'skill', ability.id);
     if (!targets.length || (aimed(ability.id) && !targets.some(t => t.id === choice.target))) return false;
   } else if (choice.action === 'attack') {
@@ -5757,7 +5847,7 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
   // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
   if (effect) holdWater(state, effect); else holdWater(state);
-  if (effect) { missSay(state, effect, state.foes.find(f => f.id === id)); cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; missTook.length = 0; }
+  if (effect) { missSay(state, effect, state.foes.find(f => f.id === id)); cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); wakeOvertime(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; missTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);
@@ -7379,6 +7469,8 @@ export function nextRound(state: BattleState): StatusTick[] {
   // A part (Vertitrón's eye) takes no turn, so the round never waits for it.
   if (state.phase !== 'enemy' || state.foes.some(f => f.hp > 0 && !f.part && !castleIdle(f) && !state.enemyActions.includes(f.id))) return [];
   const ticks: StatusTick[] = [];
+  // Horas extra never runs past its round.
+  delete state.extra;
   for (const c of [...state.foes, ...state.allies]) {
     if (!c.statuses) continue;
     const foeSide = state.foes.includes(c);
@@ -7522,10 +7614,14 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
   }
   if (!pulses.length && !sung && !lapped && !echoed) return pulses;
   holdWater(state);
+  // Horas extra: a volcano's beat raised the last fire to III, or the one foe short of it fell to a pulse.
+  if (pulses.length && wakeOvertime(state)) pulses[pulses.length - 1].awoken ??= 'horas-extra';
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
   else if (state.allies.every(a => a.hp === 0)) { state.phase = 'lost'; state.message = 'Todo se vuelve rosa… y luego negro.'; endFight(state); }
   // Whoever was choosing fell to the song (an Eco): the turn passes to the next one standing, or to the foes.
   else if (state.phase === 'player' && (state.allies[state.active]?.hp ?? 0) <= 0) {
+    // Their Horas extra, if it was theirs, ends with them.
+    if (state.extra?.id === state.allies[state.active]?.id) delete state.extra;
     const next = state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id) && state.allies.indexOf(a) > state.active);
     if (next >= 0) state.active = next; else { state.phase = 'enemy'; delete state.queued; }
   }

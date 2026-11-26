@@ -113,6 +113,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   meteorito: { start: [{ id: 'cast-soft', volume: .6 }], impact: [{ id: 'thump' }, { id: 'mana', volume: .7 }] },
   meteoro: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'slam' }, { id: 'thump', delay: .04 }, { id: 'mana', volume: .7 }] },
   asteroide: { start: [{ id: 'charge', volume: .8 }, { id: 'roar', volume: .3, delay: .2 }], impact: [{ id: 'slam' }, { id: 'crack', delay: .05 }, { id: 'thump', delay: .1 }, { id: 'mana', delay: .2 }] },
+  // Horas extra (src/overtime-fx.ts OVERTIME_LOOK): the ring spinning up into its band of gold, the hum rising; its actions
+  // sound as themselves.
+  'horas-extra': { start: [{ id: 'horas-banda' }], impact: [{ id: 'stat-up', volume: .6 }] },
   // Un golpe de dados (src/coup-fx.ts COUP_LOOK, from its start): the night rising, the picture torn into strips, three dice of
   // glass knocking as they fall; at the contact the slam, the golpe crítico, the glass of the six dice and the hand filling.
   'un-golpe-de-dados': { start: [{ id: 'rise', volume: .6 }, { id: 'rasgado', delay: .42 }, { id: 'clink', volume: .6, delay: 1.5 }, { id: 'clink', volume: .5, delay: 1.68 }, { id: 'clink', volume: .45, delay: 1.86 }], impact: [{ id: 'slam' }, { id: 'crit', delay: .03 }, { id: 'glass-tick', delay: .3 }, { id: 'glass-tick', delay: .38 }, { id: 'glass-tick', delay: .46 }, { id: 'mana', delay: .5 }] },

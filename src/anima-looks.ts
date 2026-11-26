@@ -71,7 +71,17 @@ function ear(head: pc.Entity, side: number, colour: string) {
 
 interface Tail { kind: 'tail'; segments: pc.Entity[]; bend: number[] }
 /** `grown`: how far each digit has grown back (1 whole, 0 gone); `coming`: which of them are on their way back. */
-interface Ring { kind: 'ring'; root: pc.Entity; digits: pc.Entity[]; grown: number[]; coming: boolean[] }
+interface Ring {
+  kind: 'ring'; root: pc.Entity; digits: pc.Entity[]; grown: number[]; coming: boolean[];
+  /** Horas extra (`ringMode`): what the ring is doing for it now, and its band of gold, made the first time it is needed. */
+  mode?: RingMode; band?: { entity: pc.Entity; material: pc.StandardMaterial }; spin: number; shown: number; drop: number;
+}
+/**
+ * Horas extra on Matemágico's ring (docs/animas/matemagico/README.md § Definitiva): `band`, the digits spinning faster and faster
+ * until they melt into one band of gold (`melt` 0–1), and `heat` 0–1 overheating it, gold to white to a dirty orange; `cold`,
+ * the ring stopped at the wearer's feet as cold zeros, `back` 0–1 of its digits gone back up to the waist, one by one.
+ */
+export type RingMode = { band: { melt: number; heat: number } } | { cold: { back: number } };
 interface Blink { kind: 'blink'; tip: pc.Entity }
 /** Nothing of it moves on its own. */
 interface Still { kind: 'still' }
@@ -119,7 +129,30 @@ function digit(parent: pc.Entity, one: boolean) {
 function matemagico(body: pc.Entity): Look {
   const root = pivot(body, [0, RING.y, 0], [RING.tilt, 0, 0]);
   const digits = [...RING.digits].map(d => digit(root, d === '1'));
-  return { root, time: Math.random() * 10, motion: { kind: 'ring', root, digits, grown: digits.map(() => 1), coming: digits.map(() => false) } };
+  return { root, time: Math.random() * 10, motion: { kind: 'ring', root, digits, grown: digits.map(() => 1), coming: digits.map(() => false), spin: 0, shown: 0, drop: 0 } };
+}
+/** The ring's gold, its white-hot and its dirty orange (never violet nor pink). */
+const BAND_HEAT = [[.953, .812, .471], [1, .97, .9], [.85, .45, .2]] as const;
+/** Ash grey for the cold zeros at his feet. */
+const COLD = '#8d8a84';
+/** Puts `model`'s ring in Horas extra's `mode`, or back to itself (`undefined`). Nothing without a ring. */
+export function ringMode(model: pc.Entity, mode: RingMode | undefined) {
+  for (const look of looks) {
+    const ring = look.motion;
+    if (ring.kind !== 'ring' || !look.root.isDescendantOf(model)) continue;
+    ring.mode = mode;
+    if (mode && 'band' in mode && !ring.band) {
+      const material = new pc.StandardMaterial(); material.name = NAME;
+      material.diffuse.set(0, 0, 0); material.useLighting = false; material.blendType = pc.BLEND_ADDITIVEALPHA; material.depthWrite = false;
+      material.emissive.set(...BAND_HEAT[0]); material.emissiveIntensity = 1.4; material.opacity = 0; material.update();
+      ring.band = { entity: part(ring.root, 'torus', material, [0, 0, 0], [RING.radius * 2, .05, RING.radius * 2], [0, 0, 0], false), material };
+    }
+  }
+}
+const cold = () => glow(COLD, .7, .5), gold = () => glow();
+/** Swaps a digit's light (gold, or the cold zeros' grey). */
+function paint(digit: pc.Entity, material: pc.Material) {
+  for (const node of digit.find(n => !!(n as pc.Entity).render) as pc.Entity[]) for (const mi of node.render!.meshInstances) if (mi.material !== material) mi.material = material;
 }
 /** How long a new zero takes to come out in the ring. */
 const REGROW = .55;
@@ -285,11 +318,32 @@ function tick(dt: number) {
       // The antenna's tip blinks: on most of the time, off for a beat.
       motion.tip.enabled = still || (t * 1.3) % 1 < .8;
     } else {
-      // The ring turns slowly; each digit rides it, bobbing, and faces whoever is looking.
-      const n = motion.digits.length;
+      // The ring turns slowly; each digit rides it, bobbing, and faces whoever is looking. Horas extra (`ringMode`) spins
+      // it up into its band, or leaves it cold at the feet and brings its digits back up one by one.
+      const n = motion.digits.length, mode = motion.mode;
+      const melt = mode && 'band' in mode ? mode.band.melt : 0, back = mode && 'cold' in mode ? mode.cold.back : 1;
+      motion.spin += dt * (.7 + melt * melt * 22) * (mode && 'cold' in mode ? .15 : 1);
+      motion.shown += ((melt > 0 ? 1 : 0) - motion.shown) * Math.min(1, dt * 10);
+      // Down at the feet while cold; back up as the last digit returns.
+      const down = mode && 'cold' in mode && back < 1 ? 1 : 0;
+      motion.drop += (down - motion.drop) * Math.min(1, dt * (down ? 5 : 2.5));
+      motion.root.setLocalPosition(0, RING.y - motion.drop * (RING.y - .06), 0);
+      if (motion.band) {
+        const { entity, material } = motion.band, heat = mode && 'band' in mode ? mode.band.heat : 0;
+        const k = Math.min(1, heat * 2), [a, b] = heat < .5 ? [BAND_HEAT[0], BAND_HEAT[1]] : [BAND_HEAT[1], BAND_HEAT[2]], u = heat < .5 ? k : heat * 2 - 1;
+        material.emissive.set(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u);
+        material.opacity = Math.max(0, Math.min(1, (melt - .45) / .4)) * motion.shown; material.update();
+        entity.enabled = material.opacity > .01;
+        entity.setLocalEulerAngles(0, motion.spin * 57.3, 0);
+      }
       motion.digits.forEach((d, i) => {
-        const a = t * .7 + i * Math.PI * 2 / n;
-        d.setLocalPosition(Math.cos(a) * RING.radius, Math.sin(t * 2.1 + i * 1.3) * .05, Math.sin(a) * RING.radius);
+        const a = motion.spin + i * Math.PI * 2 / n;
+        const home = i / n < back || !(mode && 'cold' in mode);
+        d.setLocalPosition(Math.cos(a) * RING.radius, (mode && 'cold' in mode ? 0 : Math.sin(t * 2.1 + i * 1.3) * .05), Math.sin(a) * RING.radius);
+        paint(d, mode && 'cold' in mode && !home ? cold() : gold());
+        // Melting into the band, the digits thin out as the band comes up.
+        if (melt > 0 && !motion.coming[i]) { const s = Math.max(.001, 1 - Math.max(0, (melt - .4) / .5)); d.setLocalScale(s, s, s); }
+        else if (!melt && !motion.coming[i] && motion.grown[i] >= 1) d.setLocalScale(1, 1, 1);
         d.setRotation(camera);
         // A new zero comes out in the place of one that left, with a little overshoot.
         if (motion.coming[i]) {
