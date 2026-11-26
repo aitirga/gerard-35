@@ -2425,9 +2425,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       }
       time += dt; frame++;
       const { parts, count } = writeParts();
-      // Clouds of points (`points`): a row each, the first MAX_CLOUDS bursts of the frame; past them, a ball at `at`.
+      // Clouds of points (`points`): a row each, the first MAX_CLOUDS bursts of the frame; past them, a ball at `at`. Only a
+      // frame that spawns on one uploads the texture (128 KB); a spawn reads only the row it was given.
       const clouds = new Map<GpuBurst, number>();
-      fill(cloudTex, out => batches.forEach(b => {
+      if (batches.some(b => b.o.shape === 'points' && b.o.points?.length)) fill(cloudTex, out => batches.forEach(b => {
         if (b.o.shape !== 'points' || !b.o.points?.length || clouds.size >= MAX_CLOUDS) return;
         const row = clouds.size, points = b.o.points.slice(0, MAX_CLOUD_POINTS);
         clouds.set(b.o, row);
@@ -2473,7 +2474,8 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       // Batches played back: on the same clock as the step (a paused frame moves none of them).
       const step = Math.min(dt, 1 / 20);
       if (step > 0) for (const r of rewinds) r.elapsed += step;
-      fill(rewindTex, out => rewinds.forEach((r, i) => { out.set([r.start, r.count, r.elapsed, r.seconds], i * 8); out.set([r.into, 0, 0, 0], i * 8 + 4); }));
+      // Only while one plays (the step reads the first `extra[3]` rows alone).
+      if (rewinds.length) fill(rewindTex, out => rewinds.forEach((r, i) => { out.set([r.start, r.count, r.elapsed, r.seconds], i * 8); out.set([r.into, 0, 0, 0], i * 8 + 4); }));
       extra[3] = rewinds.length;
       uniforms.rewinds.setValue(rewindTex);
       // Told once they are past their time (the step turns them into what they become), they are done.

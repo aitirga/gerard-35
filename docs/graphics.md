@@ -622,8 +622,13 @@ that can catch seven reads; a bubble eight. The kinds without them pay nothing.
   `after` seconds, back through G to F over `seconds`, the second leg shorter so the tape speeds up, its age
   going back with it (its colours run backwards); there it becomes `into` and leaves its batch, so it is
   played back once. Siete vidas' killing blow: the blood flung out of whoever it saves runs back into the
-  wound and turns into Yuki's white thread. Costs: every particle reads two more texels a step and the
-  rewinding ones a row of the rewind texture each; nothing else.
+  wound and turns into Yuki's white thread. Costs: each band is a row block of the full-screen step and
+  every fragment runs the whole step to write its band, so going from five bands to seven is about 40 % more
+  of the step's fragments every frame and state textures 40 % larger (two 512 × 1 792 RGBA32F, 14 MB each),
+  whether anything rewinds or not; each fragment also reads the two new texels, and the rewinding ones a
+  row of the rewind texture. On the CPU, the cloud texture (1 024 × 8 RGBA32F, 128 KB) and the rewind one
+  are only written and uploaded on a frame that spawns on a cloud or has a batch playing back. `just perf`
+  on Siete vidas' fight in the tester (three dogs, at rest), 2026-11-26: 3.0 ms of CPU a frame, 683 draws.
 
 ## Lattices (`src/lattice.ts`)
 
