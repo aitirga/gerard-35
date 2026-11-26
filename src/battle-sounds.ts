@@ -113,6 +113,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   meteorito: { start: [{ id: 'cast-soft', volume: .6 }], impact: [{ id: 'thump' }, { id: 'mana', volume: .7 }] },
   meteoro: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'slam' }, { id: 'thump', delay: .04 }, { id: 'mana', volume: .7 }] },
   asteroide: { start: [{ id: 'charge', volume: .8 }, { id: 'roar', volume: .3, delay: .2 }], impact: [{ id: 'slam' }, { id: 'crack', delay: .05 }, { id: 'thump', delay: .1 }, { id: 'mana', delay: .2 }] },
+  // Un golpe de dados (src/coup-fx.ts COUP_LOOK, from its start): the night rising, the picture torn into strips, three dice of
+  // glass knocking as they fall; at the contact the slam, the golpe crítico, the glass of the six dice and the hand filling.
+  'un-golpe-de-dados': { start: [{ id: 'rise', volume: .6 }, { id: 'rasgado', delay: .42 }, { id: 'clink', volume: .6, delay: 1.5 }, { id: 'clink', volume: .5, delay: 1.68 }, { id: 'clink', volume: .45, delay: 1.86 }], impact: [{ id: 'slam' }, { id: 'crit', delay: .03 }, { id: 'glass-tick', delay: .3 }, { id: 'glass-tick', delay: .38 }, { id: 'glass-tick', delay: .46 }, { id: 'mana', delay: .5 }] },
 };
 const ELEMENT_SOUNDS: Record<Element, Cue> = { agua: { id: 'splash', volume: .5 }, fuego: { id: 'fire-hit', volume: .45 }, electrico: { id: 'zap', volume: .6 } };
 const REACTION_SOUNDS: Record<ElementReaction, Cue[]> = { humo: [{ id: 'fizzle', delay: .04 }], cauterizado: [{ id: 'burn', delay: .04 }], tormenta: [{ id: 'zap', delay: .05 }, { id: 'zap', delay: .13 }], vapor: [{ id: 'fizzle', delay: .04 }], conduccion: [{ id: 'zap', delay: .05 }, { id: 'zap', volume: .7, delay: .14 }], plasma: [{ id: 'zap', delay: .04 }, { id: 'fire-hit', delay: .1 }, { id: 'burn', delay: .2 }], estallido: [{ id: 'fire-hit', delay: .04 }, { id: 'burn', delay: .16 }], veneno: [{ id: 'fizzle', delay: .04 }], cristal: [{ id: 'zap', delay: .05 }] };

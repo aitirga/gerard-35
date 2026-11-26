@@ -220,6 +220,10 @@ export const SKILLS = [
   { id: 'meteorito', name: 'Meteorito', cost: 1, side: 'foes', power: 30, kind: 'magic', die: 'paid', meteor: 0, level: 7, description: 'Daño mágico no elemental medio a un enemigo. Usado otra vez en el turno siguiente, es Meteoro.', class: 'dadaista' },
   { id: 'meteoro', name: 'Meteoro', cost: 2, side: 'foes', power: 48, kind: 'magic', die: 'paid', meteor: 1, level: 7, description: 'Daño mágico no elemental alto a un enemigo. Usado otra vez en el turno siguiente, es Asteroide.', class: 'dadaista' },
   { id: 'asteroide', name: 'Asteroide', cost: 3, side: 'all-foes', power: 80, kind: 'magic', die: 'paid', meteor: 2, level: 7, description: 'Daño mágico no elemental muy alto a todos los enemigos.', class: 'dadaista' },
+  // Un golpe de dados (Dadista's definitiva, docs/animas/dadaista/README.md § Definitiva): bought at the jar, it wakes once
+  // its wearer's Crítico reaches COUP.wake (Racha and Ases en dúo's ×2 counted) and stays awake (`coupReady`). One die
+  // of light on every foe, each a sure golpe crítico; it spends no die and no Racha, and fills the hand up to six (`pastCap`).
+  { id: 'un-golpe-de-dados', name: 'Un golpe de dados', cost: 0, side: 'all-foes', power: 40, kind: 'magic', coup: true, ulti: true, node: true, class: 'dadaista', description: 'Daño mágico no elemental alto a todos los enemigos. Golpe crítico seguro. Llena la mano hasta seis dados.' },
 ] as const;
 /**
  * Maná (docs/combat.md § Maná): what skills spend, shown as circles. Every ánima has its own, for
@@ -1267,18 +1271,27 @@ export const coldReady = (state: BattleState) => skillKnown('bajo-cero', state.l
 /** Whether Enjambre is awake in this fight: bought, a Bomba remota has gone off at its top while Tecnópata was worn (`blowBomb`), and not used yet. */
 export const swarmReady = (state: BattleState) => skillKnown('enjambre', state.levels, state.improved)
   && (state.unbound || (!!state.swarm?.woke && !state.swarm.used));
+/**
+ * Un golpe de dados: Crítico `wake` (%) on its wearer wakes it, the Racha and Ases en dúo's ×2 counted (`ownCrit`, whoever the
+ * blow is for: never Olor a sangre's, which is the foe's). Each die of light is `power` of magic of no element, a sure golpe
+ * crítico, and the hand is filled up to `hand` (`pastCap`). Tunable (`just fight-sim`, book `coup`).
+ */
+export const COUP = { wake: 100, hand: 6 };
+/** Whether Un golpe de dados is awake in this fight: bought, its wearer's Crítico has reached COUP.wake while Dadista was worn (`wakeCoup`), and not used yet. It stays awake once the Racha is spent. */
+export const coupReady = (state: BattleState) => skillKnown('un-golpe-de-dados', state.levels, state.improved)
+  && (state.unbound || (!!state.coup?.woke && !state.coup.used));
 /** Whether the definitiva `skill` is awake in this fight (each wakes by its own condition). */
-export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : false;
+export const ultiReady = (state: BattleState, skill: SkillId) => skill === 'fin-de-fiesta' ? finaleReady(state) : skill === 'siete-vidas' ? livesReady(state) : skill === 'da-capo' ? capoReady(state) : skill === 'bajo-cero' ? coldReady(state) : skill === 'enjambre' ? swarmReady(state) : skill === 'un-golpe-de-dados' ? coupReady(state) : false;
 /** The definitiva awake for `c`, if the ánima they wear has one and it is awake now. */
 export const awakeUlti = (state: BattleState, c: Combatant) => SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId && ultiReady(state, skill.id));
 /** Whether the definitiva `skill` has gone off in this fight already. */
 const ultiUsed = (state: BattleState, skill: SkillId) => !!(skill === 'fin-de-fiesta' ? state.finale?.used : skill === 'siete-vidas' ? state.lives?.used
-  : skill === 'da-capo' ? state.dacapo?.used : skill === 'bajo-cero' ? state.cold?.used : skill === 'enjambre' ? state.swarm?.used : false);
+  : skill === 'da-capo' ? state.dacapo?.used : skill === 'bajo-cero' ? state.cold?.used : skill === 'enjambre' ? state.swarm?.used : skill === 'un-golpe-de-dados' ? state.coup?.used : false);
 /**
  * The definitiva of the ánima `c` wears, bought but still asleep in this fight, and how near it is to
  * waking (`have` of `need`), measured as its own condition measures it: the powder's turns seen
  * (Fin de fiesta), the deepest wound on a foe (Siete vidas), the most water on a foe (Bajo cero),
- * the ecos up at once (Da capo), the ripest bomb's power (Enjambre). `used`: it went off already.
+ * the ecos up at once (Da capo), the ripest bomb's power (Enjambre), the wearer's Crítico (Un golpe de dados). `used`: it went off already.
  */
 export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId; name: string; have: number; need: number; used?: true } | undefined {
   const spec = SKILLS.find(skill => 'ulti' in skill && skill.class === c.classId);
@@ -1293,6 +1306,7 @@ export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId
     case 'bajo-cero': return { ...base, have: most(foes.map(waterOf)), need: CRECIDA.marks };
     case 'da-capo': return { ...base, have: Math.min(ECOS.most, state.ecos?.length ?? 0), need: ECOS.most };
     case 'enjambre': return { ...base, have: Math.round(most(foes.map(f => f.timed?.bomba ? bombPower(f.timed.bomba.age ?? 0) : 0))), need: BOMBA.top };
+    case 'un-golpe-de-dados': return { ...base, have: Math.min(COUP.wake, Math.round(ownCrit(state, c))), need: COUP.wake };
     default: return undefined;
   }
 }
@@ -1726,6 +1740,8 @@ export interface BattleState {
   cold?: { woke?: true; used?: true; by?: string };
   /** Enjambre (Tecnópata's definitiva): woken by a Bomba remota going off at its top while Tecnópata was worn; used. */
   swarm?: { woke?: true; used?: true };
+  /** Un golpe de dados (Dadista's definitiva): woken by its wearer's Crítico reaching COUP.wake (`wakeCoup`); used. */
+  coup?: { woke?: true; used?: true };
   /**
    * Development (the picker's *Sin límites*): skills have no limit of use. A cure reaches anyone
    * standing, a boost or a mark can go again while it runs (it starts over), and a dual goes off as
@@ -3168,6 +3184,18 @@ export function critChance(state: BattleState, actor: Combatant, target: Combata
 function ownCrit(state: BattleState, actor: Combatant, extra = 0) {
   return (current(state, actor).critico + rachaOf(actor) * RACHA.crit + extra) * (boostRounds(state, 'ases-en-duo') ? 2 : 1);
 }
+/**
+ * Un golpe de dados wakes (`coupReady`) once someone standing who wears Dadista has Crítico COUP.wake or more (`ownCrit`: the
+ * Racha and Ases en dúo's ×2 counted), with the definitiva bought; the action that got them there says so (`awoken`). Called
+ * once each action of the party is done (`act`, `actDual`): a die spent, Ases en dúo, Suceso seguro. Spending the Racha
+ * after does not put it back to sleep.
+ */
+function wakeCoup(state: BattleState, effect: BattleEffect) {
+  if (state.coup?.woke || state.unbound || !skillKnown('un-golpe-de-dados', state.levels, state.improved)) return;
+  if (!state.allies.some(a => a.hp > 0 && a.classId === DICED && ownCrit(state, a) >= COUP.wake)) return;
+  (state.coup ??= {}).woke = true;
+  effect.awoken ??= 'un-golpe-de-dados';
+}
 /** The crítico's own dice: a stream apart from `roll`, so a fight's other rolls never move because a blow was or was not one. */
 function luck(state: BattleState) {
   let a = state.luck ?? ((state.seed ?? Math.floor(Math.random() * 2 ** 32)) ^ 0x9E3779B9) >>> 0;
@@ -4135,6 +4163,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if ((action === 'attack' || action === 'skill') && !target && !(party && targets.length)) return;
   if (action === 'skill' && (!ability || actor.secondary < ability.cost || (cast === undefined && !skillsFor(state, actor).includes(ability)))) return;
   const effect: BattleEffect = { actor: actor.id, kind: action };
+  // A definitiva goes off once, whatever comes of it (Fran's light may eat it).
+  if (action === 'skill' && ability && 'coup' in ability) (state.coup ??= {}).used = true;
   if (cast !== undefined) spendDie(actor, diceOf(state, actor), cast, effect);
   else if (paid !== undefined) {
     // The die chosen first, then as many more as the skill costs: the ones worth least.
@@ -4346,6 +4376,27 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     effect.annulled = light; effect.amount = 0;
     effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
     state.message = `${actor.name} usa ${ability!.name}. ${annulledText(light)}`;
+  } else if (everyone && 'coup' in ability!) {
+    // Un golpe de dados: one die of light on every foe standing, each a sure golpe crítico. It spends a foe's mark, and a shell, a
+    // song or a mirror still stops it. No die and no Racha go on it, and the hand is filled up to six (`pastCap`).
+    effect.skill = skill; effect.target = target!.id;
+    effect.hits = targets.filter(foe => foe.hp > 0).map(foe => {
+      const weak = weakScale(state, foe), blocked = foe.shell || singing(state, foe) || reflects(foe);
+      const crit = !blocked && critical(state, actor, foe, true);
+      const amount = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, strike(state, actor, foe, ability) * (1 + (crit ? CRIT_RULES.bonus : 0)) * weak * affinityScale(foe, undefined), 'magic'));
+      const marked = weak > 1 && amount > 0;
+      if (marked) { delete foe.weakSpot; effect.weakSpot = 'spent'; }
+      if (crit && amount > 0) effect.crit = true;
+      spendShield(state, foe, amount, effect);
+      if (foe.layers && !blocked && !--foe.layers) bare(foe);
+      return { target: foe.id, amount, ...crit && amount > 0 ? { crit: true as const } : {}, ...marked ? { weakSpot: true as const } : {} };
+    });
+    effect.amount = effect.hits.reduce((sum, h) => sum + h.amount, 0);
+    const dealt = pastCap(state, actor, COUP.hand, COUP.hand);
+    if (dealt.length) effect.dealt = dealt;
+    state.message = `${actor.name} usa ${ability!.name}. Un dado de luz sobre cada enemigo: −${effect.amount} PV entre todos.${effect.crit ? ' ¡Golpe crítico!' : ''}`;
+    if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    state.message += dealt.length ? ` La mano se llena: ${dealt.length === 1 ? 'un dado más' : `${dealt.length} dados más`}.` : ' La mano ya estaba llena.';
   } else if (everyone && 'rain' in ability!) {
     // Dados astrales: the luck, cashed. Each die of light picks a foe still standing on the fight's dice;
     // none rolls for a golpe crítico (the luck is in how many fall), and only the first on a foe spends its mark.
@@ -4810,6 +4861,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   livesSay(state, effect);
   spread(state, effect); wallSay(state, effect);
   ignite(state, effect); amplify(effect); checkEye(state, effect);
+  wakeCoup(state, effect);
   if (fallen(state)) return effect;
   settle(state);
   return effect;
@@ -4905,6 +4957,8 @@ export function dualOptions(state: BattleState, swaps = false): { dual: DualSpec
  */
 export function actDual(state: BattleState, id: DualId, targetId?: string, die?: number): BattleEffect | undefined {
   const effect = dualAct(state, id, targetId, die);
+  // Un golpe de dados counts the Crítico a dual leaves (Ases en dúo's ×2 from Suceso seguro, the Racha its die adds).
+  if (effect) wakeCoup(state, effect);
   if (!effect?.dual) return effect;
   // A dual is an action like any other for Sincopante: an eco at either one's side repeats it once, a wearer of it in
   // the off-beat makes theirs sound again, and Pedal ends for both.

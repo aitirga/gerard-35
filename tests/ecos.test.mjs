@@ -45,7 +45,11 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   // Freática's Bajo cero, the third.
   const cold = IMPROVEMENTS.find(i => i.id === 'freatica:definitiva');
   assert.equal(cold.veiled, undefined); assert.equal(cold.skill, 'bajo-cero'); assert.equal(cold.name, 'Bajo cero');
-  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['papagato', 'tecnopata', 'sincopante', 'prismatico', 'freatica']);
+  // Dadista's Un golpe de dados.
+  const coup = IMPROVEMENTS.find(i => i.id === 'dadaista:definitiva');
+  assert.equal(coup.veiled, undefined); assert.equal(coup.skill, 'un-golpe-de-dados'); assert.equal(coup.name, 'Un golpe de dados');
+  assert.deepEqual(improvedBy(['dadaista:definitiva']).skills, ['un-golpe-de-dados']);
+  assert.deepEqual(IMPROVEMENTS.filter(i => i.kind === 'ulti' && !i.veiled).map(i => i.anima), ['papagato', 'tecnopata', 'dadaista', 'sincopante', 'prismatico', 'freatica']);
   for (const item of IMPROVEMENTS) {
     if (item.skill) assert.equal(SKILLS.find(s => s.id === item.skill).class, item.anima, item.id);
     if (item.passive) assert.equal(PASSIVES[item.passive].anima, item.anima, item.id);
@@ -54,10 +58,10 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   }
   // Every node is one eco but the definitivas (2), the dúos mayores (3) and grade III (3 the big ones, 2
   // Reinicio, Virus atómico, Atractor extraño and Resonancia): Aitor, 2026-11-24, the jar some 25 % dearer, so some three quarters
-  // of it (81 ecos while two definitivas sleep, 55 to win) can be had by the game's end.
+  // of it (83 ecos while one definitiva sleeps, 55 to win) can be had by the game's end.
   assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'matemagico' && !i.veiled).map(i => i.id)), 39); // Fourier and Superficie mínima 1, Atractor extraño 2 (2026-11-25), Resonancia 2 (2026-11-26)
   assert.equal(costOf(IMPROVEMENTS.filter(i => i.anima === 'tecnopata' && !i.veiled).map(i => i.id)), 28); // Escolta where Rayo encogedor was, Rayo encogedor at Taller's end, Enjambre (2) and Sugestión (1, 2026-11-26)
-  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 81);
+  assert.equal(costOf(IMPROVEMENTS.filter(i => !i.veiled).map(i => i.id)), 83);
   for (const item of IMPROVEMENTS.filter(i => i.kind === 'dual')) assert.equal(item.cost, 3, `${item.id}: a dúo mayor costs 3 ecos`);
 });
 test('what stands: in order, within the ecos, and what needs something goes with it', () => {

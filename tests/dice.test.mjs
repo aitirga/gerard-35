@@ -417,3 +417,99 @@ test('a passive banned in the simulator is out of the fight, levels and stats as
   // A ban of a skill is not a passive: it leaves every passive in.
   assert.equal(createFight({ ...setup, ban: ['duals'] }, () => .5).without, undefined);
 });
+
+// Un golpe de dados (docs/animas/dadaista/README.md § Definitiva): wakes at Crítico 100 %, stays awake, fills the hand to six.
+import { COUP, coupReady, ultiProgress, ultiReady, awakeUlti, actDual } from '../src/battle.ts';
+const coup = (level = 5, foes = 2) => {
+  const s = createBattle(1, foes, false, 'dadaista'); s.seed = 7; s.levels = { dadaista: level };
+  improve(s, { skills: ['un-golpe-de-dados'] });
+  for (const foe of s.foes) foe.hp = foe.maxHp = 9999;
+  return s;
+};
+/** The Racha that leaves `g` just short of `wake` % once `more` dice are spent (with Ases en dúo, `times` 2). */
+const shortOf = (s, g, more, times = 1) => { const base = critChance(s, g, s.foes[0]) / times - rachaOf(g) * RACHA.crit; return Math.max(0, Math.ceil((COUP.wake / times - base) / RACHA.crit) - more); };
+
+test('Un golpe de dados wakes the moment its wearer\'s Crítico reaches 100 %, and the sleeping row counts it', () => {
+  assert.deepEqual(COUP, { wake: 100, hand: 6 });
+  const spec = SKILLS.find(x => x.id === 'un-golpe-de-dados');
+  assert.equal(spec.class, 'dadaista'); assert.equal(spec.power, 40); assert.equal(spec.kind, 'magic'); assert.equal(spec.cost, 0);
+  const s = coup(), g = gerard(s);
+  g.dice = ['mano', 'mano', 'mano', 'mano']; g.secondary = 4;
+  g.racha = shortOf(s, g, 1);
+  assert.ok(critChance(s, g, s.foes[0]) < COUP.wake);
+  assert.equal(coupReady(s), false);
+  const asleep = ultiProgress(s, g);
+  assert.equal(asleep.skill, 'un-golpe-de-dados'); assert.equal(asleep.need, COUP.wake); assert.equal(asleep.have, critChance(s, g, s.foes[0]));
+  const blow = act(s, 'skill', 'dog-0', 'tirar-dado', 0);
+  assert.ok(critChance(s, g, s.foes[0]) >= COUP.wake);
+  assert.equal(blow.awoken, 'un-golpe-de-dados'); assert.ok(coupReady(s)); assert.ok(ultiReady(s, 'un-golpe-de-dados'));
+  assert.equal(awakeUlti(s, g).id, 'un-golpe-de-dados'); assert.equal(ultiProgress(s, g), undefined);
+  s.phase = 'player'; s.active = 0;
+  assert.equal(skillsFor(s, g)[0].id, 'un-golpe-de-dados', 'an awake definitiva heads the list');
+});
+
+test('Un golpe de dados does not wake unbought, nor short of 100 %', () => {
+  const s = createBattle(1, 1, false, 'dadaista'); s.levels = { dadaista: 5 };
+  const g = gerard(s); g.dice = ['mano', 'mano']; g.secondary = 2; g.racha = 20;
+  assert.equal(act(s, 'skill', 'dog-0', 'tirar-dado', 0).awoken, undefined);
+  assert.equal(coupReady(s), false);
+  const short = coup(), h = gerard(short); h.dice = ['mano', 'mano']; h.secondary = 2; h.racha = shortOf(short, h, 2);
+  assert.equal(act(short, 'skill', 'dog-0', 'tirar-dado', 0).awoken, undefined); assert.equal(coupReady(short), false);
+});
+
+test('Ases en dúo\'s ×2 counts: it wakes on half the Racha, and stays awake once Dados astrales spends it', () => {
+  const s = coup(), g = gerard(s);
+  g.dice = ['mano', 'blanco', 'corchete', 'ojo']; g.secondary = 4;
+  g.racha = shortOf(s, g, 2, 2);
+  assert.ok(critChance(s, g, s.foes[0]) + 2 * RACHA.crit < COUP.wake, 'without the ×2 it would not');
+  const aces = act(s, 'skill', undefined, 'ases-en-duo', 2);
+  assert.equal(aces.awoken, 'un-golpe-de-dados'); assert.ok(coupReady(s));
+  s.phase = 'player'; s.active = 0;
+  const rain = act(s, 'skill', undefined, 'dados-astrales', 0);
+  assert.ok(rain.starred > 0); assert.equal(rachaOf(g), 0);
+  assert.ok(coupReady(s), 'the Racha spent, it is still awake');
+});
+
+test('Un golpe de dados: a sure golpe crítico on every foe, no die and no Racha spent, the hand filled to six, once a fight', () => {
+  for (const [level, cap] of [[3, MANA_POINTS], [4, MANA_POINTS + 1]]) {
+    const s = coup(level, 3), g = gerard(s);
+    s.coup = { woke: true };
+    assert.equal(g.maxSecondary, cap);
+    g.dice = ['ojo']; g.secondary = 1; g.racha = 4;
+    const before = s.foes.map(f => f.hp);
+    const effect = act(s, 'skill', undefined, 'un-golpe-de-dados');
+    assert.equal(effect.skill, 'un-golpe-de-dados'); assert.equal(effect.die, undefined, 'no die spent');
+    assert.equal(effect.hits.length, 3); assert.ok(effect.hits.every(h => h.crit && h.amount > 0)); assert.equal(effect.crit, true);
+    assert.deepEqual(s.foes.map((f, i) => before[i] - f.hp), effect.hits.map(h => h.amount));
+    assert.equal(rachaOf(g), 4, 'the Racha stays'); assert.equal(effect.racha, undefined);
+    assert.equal(g.secondary, COUP.hand, `the hand at six past a cap of ${cap}`); assert.equal(diceOf(s, g).length, COUP.hand);
+    assert.deepEqual(effect.dealt, diceOf(s, g).slice(1)); assert.equal(diceOf(s, g)[0], 'ojo', 'the dice held stay');
+    assert.equal(coupReady(s), false, 'once a fight'); assert.equal(ultiProgress(s, g).used, true);
+    s.phase = 'player'; s.active = 0;
+    assert.ok(!skillsFor(s, g).some(x => x.id === 'un-golpe-de-dados'));
+  }
+  // A sure crítico even with no luck at all, harder than the same die without it.
+  const s = coup(5, 1), g = gerard(s); s.coup = { woke: true }; g.racha = 0;
+  const amount = act(s, 'skill', undefined, 'un-golpe-de-dados').amount;
+  assert.ok(amount > 40, `${amount}`);
+});
+
+test('Un golpe de dados puts the meteor back, and a dual\'s Crítico wakes it too', () => {
+  const s = coup(7, 2), g = gerard(s); s.coup = { woke: true }; g.meteor = 2;
+  assert.equal(meteorOf(g), 2);
+  act(s, 'skill', undefined, 'un-golpe-de-dados');
+  assert.equal(meteorOf(g), 0, 'anything else puts the meteor back');
+  // Suceso seguro (Análisis + Ases en dúo) doubles the party's Crítico: the dual itself wakes it.
+  const d = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'dadaista' }], 1, false, undefined, ['matemagico', 'dadaista']);
+  d.levels = { dadaista: 7 };
+  const nodes = improvedBy(['matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'matemagico:integral', 'matemagico:suceso-seguro']);
+  improve(d, { ...nodes, skills: [...nodes.skills ?? [], 'un-golpe-de-dados'] });
+  d.foes[0].hp = d.foes[0].maxHp = 9999; d.phase = 'player'; d.active = 0;
+  for (const x of d.allies) x.secondary = x.maxSecondary;
+  const a = d.allies[1];
+  a.racha = shortOf(d, a, 1, 2);
+  assert.ok(critChance(d, a, d.foes[0]) + RACHA.crit < COUP.wake);
+  const effect = actDual(d, 'suceso-seguro');
+  assert.equal(effect.dual.id, 'suceso-seguro');
+  assert.equal(effect.awoken, 'un-golpe-de-dados'); assert.ok(coupReady(d));
+});

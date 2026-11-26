@@ -29,7 +29,10 @@ test('grade III comes into the sky after Aurelià, with whatever hangs from it; 
   assert.ok(inSky(fiesta, 1) && asleep(fiesta, 1) && asleep(fiesta, 2), 'a definitiva is a place kept, asleep');
   assert.ok(!asleep(fiesta, 3), 'Fin de fiesta wakes with Dirección');
   assert.ok(!asleep(improvementOf('papagato:definitiva'), 3), 'Siete vidas wakes with Dirección too');
-  assert.ok(asleep(improvementOf('dadaista:definitiva'), 3), 'one whose move is not built sleeps on');
+  assert.ok(!asleep(improvementOf('dadaista:definitiva'), 3), 'Un golpe de dados wakes with Dirección too');
+  // One whose move is not built (`veiled`) sleeps on, whichever that is now: a place kept, never bought.
+  for (const item of IMPROVEMENTS.filter(i => i.kind === 'ulti' && i.veiled)) assert.ok(asleep(item, 3), `${item.id}: its move is not built, it sleeps on`);
+  assert.ok(asleep({ ...improvementOf('dadaista:definitiva'), veiled: true }, 3), 'veiled, even a built one would');
   assert.deepEqual(withinEcos(FIRE, 20, 1), FIRE.slice(0, 3), 'before Aurelià the fire line ends at Rescoldo');
   assert.deepEqual(withinEcos(FIRE, 20, 2), FIRE);
   assert.deepEqual(withinEcos(['prismatico:definitiva'], 5, 2), []);

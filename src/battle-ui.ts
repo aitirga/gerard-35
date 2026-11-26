@@ -388,8 +388,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const fireSays = (target: string, id: TimedId, level: number) => id === 'quemado' && level >= COMBUSTION.level
     ? { target, id: 'combustion', text: '¡Combustión!', detail: 'Un golpe físico la hace estallar' }
     : { target, id: id as string, text: `¡${TIMED[id].name}${level > 1 ? ` ${roman(level)}` : ''}!`, detail: level > 1 ? 'El fuego sube' : '' };
-  /** A definitiva's progress as its corner says it: a bomb's power as a share of its top, the rest as counts. */
-  const ultiMark = (p: { skill: SkillId; have: number; need: number }) => p.skill === 'enjambre' ? `${Math.round(100 * p.have / p.need)}%` : `${p.have}/${p.need}`;
+  /** A definitiva's progress as its corner says it: a bomb's power as a share of its top, the wearer's Crítico as it reads on the plate, the rest as counts. */
+  const ultiMark = (p: { skill: SkillId; have: number; need: number }) => p.skill === 'enjambre' || p.skill === 'un-golpe-de-dados' ? `${Math.round(100 * p.have / p.need)}%` : `${p.have}/${p.need}`;
   /** A definitiva woke: said over whoever wears it, and its command is in their list from now on. */
   function ultiAwoke(id: SkillId) {
     const skill = SKILLS.find(sk => sk.id === id)!, wearer = state?.allies.find(a => a.hp > 0 && a.classId === skill.class);
@@ -2480,6 +2480,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.cancelled === 'calderon') pop(effect.kind === 'enemy' ? effect.actor : effect.target ?? effect.actor, effect.kind === 'enemy' ? 'Sin aire' : '¡Calderón roto!', 'status', effect.kind === 'enemy' ? 'Pierde el turno' : 'Acorde', 'sin-aire');
       // Estrella fugaz spent the Racha for dice: said over whoever threw it, a beat after the blow.
       if (effect.starred) setTimeout(() => { if (token === generation) pop(effect.actor, `Racha −${effect.starred}`, 'status', effect.rain ? `${effect.rain.length} dados de luz` : effect.dealt?.length ? effect.dealt.length === 1 ? '+1 dado' : `+${effect.dealt.length} dados` : '', 'racha'); }, 420);
+      // Un golpe de dados filled the hand: said over whoever threw it, as the dice come back.
+      if (effect.skill === 'un-golpe-de-dados' && effect.dealt?.length) { const dealt = effect.dealt.length; setTimeout(() => { if (token === generation) pop(effect.actor, dealt === 1 ? '+1 dado' : `+${dealt} dados`, 'status', 'Mano de seis', 'racha'); }, 700); }
       // The meteor grew: said over whoever threw it, so the list's new row is no surprise.
       if (effect.meteor) { const next = SKILLS.find(s => 'meteor' in s && s.meteor === effect.meteor)!; setTimeout(() => { if (token === generation) pop(effect.actor, next.name, 'status', 'En tu siguiente turno', 'racha'); }, effect.starred ? 900 : 420); }
       if (effect.kind === 'defend') pop(effect.actor, 'En guardia', 'guard', effect.charged ? `Maná +${effect.charged}` : '');

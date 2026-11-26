@@ -339,6 +339,12 @@ export const SOUNDS = {
   click: { synth: (c, out, at, p) => { noise(c, out, at, { cutoff: 3800 * p, to: 2400, type: 'bandpass', q: 3, length: .02, gain: .4 }); tone(c, out, at, { type: 'triangle', from: 1900 * p, to: 1500 * p, length: .03, gain: .05 }); noise(c, out, at + .045, { cutoff: 2600 * p, to: 1800, type: 'bandpass', q: 3, length: .015, gain: .18 }); return .07; }, jitter: 80, gap: .06, voices: 3 },
   timbre: { synth: (c, out, at, p) => { const ring = 1.7; for (let t = 0; t < ring; t += .045) { const fade = 1 - t / ring * .5; tone(c, out, at + t, { type: 'triangle', from: 1180 * p, length: .09, gain: .05 * fade }); tone(c, out, at + t, { from: 2950 * p, length: .06, gain: .022 * fade }); noise(c, out, at + t, { cutoff: 4200 * p, to: 3000, type: 'bandpass', q: 6, length: .02, gain: .07 * fade }); } tone(c, out, at + ring, { from: 1180 * p, length: 1.1, gain: .05 }); tone(c, out, at + ring, { from: 2950 * p, length: .8, gain: .02 }); return ring + 1.1; }, jitter: 15, gap: 1.5, voices: 1 },
   stamp: { synth: (c, out, at, p) => { tone(c, out, at, { from: 160 * p, to: 70 * p, length: .16, gain: .6 }); noise(c, out, at, { cutoff: 1600, to: 300, length: .14, gain: .45 }); noise(c, out, at + .01, { cutoff: 5000 * p, to: 2500, type: 'bandpass', q: 1.2, length: .05, gain: .22 }); return .2; }, jitter: 50, gap: .2, voices: 1 },
+  // Un golpe de dados (docs/animas/dadaista/README.md § Definitiva): the picture torn into strips, paper ripping along its fibres.
+  rasgado: { synth: (c, out, at, p) => {
+    for (let t = 0, k = 0; t < .38; t += .018, k++) noise(c, out, at + t, { cutoff: (2400 + (k * 977) % 2600) * p, to: 1200, type: 'bandpass', q: 2.5, length: .03, gain: .14 + (k * 37 % 9) * .01 });
+    noise(c, out, at, { cutoff: 900 * p, to: 400, attack: .04, length: .4, gain: .08 });
+    return .42;
+  }, jitter: 60, gap: .3, voices: 1 },
   // Enjambre (docs/animas/tecnopata/README.md § Sound): Bip coming apart into a swarm, a dense buzz of tiny motors that
   // rises and spreads; the network finding its way on the floor, data chirps that run out and branch; and the clocks
   // starting over, a tape wound back (a falling then rising sweep under a flutter).
