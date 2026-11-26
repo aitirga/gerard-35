@@ -143,14 +143,13 @@ export const BUILDS: Record<string, readonly string[]> = {
   nada: [],
   // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
   mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:escolta', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
-    // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the definitivas, the passives, the second rungs and grade III.
-    // The definitivas are all seven, before the passives so the third year has every one built to hold its pair of targets to (2026-11-26); one whose
-    // move is not built yet is a place kept, veiled, and `withinEcos` skips it until it is. With the third year's 34 ecos the two last maná go unbought;
-    // each definitiva built from here takes two more ecos off the passives at its end.
+    // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the passives, the second rungs, grade III and the definitivas,
+    // all seven (2026-11-26), last as before: whichever the ecos do not reach goes unbought (`withinEcos`), and one whose move is not built yet is a
+    // place kept, veiled. Putting them ahead of the passives would change what the third year carries; that is Aitor's to decide, not done here.
     // Not Superficie mínima (2026-11-25): bought here, smart plays it twice a castle room and the third-year rooms drop (`elementos` buys it).
-    'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez',
-    'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva', 'tecnopata:definitiva', 'dadaista:definitiva', 'matemagico:definitiva',
-    'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1'],
+    'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez', 'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos',
+    'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1', 'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva',
+    'tecnopata:definitiva', 'dadaista:definitiva', 'matemagico:definitiva'],
   // Everything into the elements: Atacar's three, then what lays and cashes them.
   elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:superficie-minima', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
   // Skills and maná, no element.
@@ -1016,10 +1015,15 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
   const think = setup.think ?? 3, maxRounds = setup.maxRounds ?? 60;
   const run: Run = { outcome: 'draw', rounds: 0, hpLeft: 0, kos: 0, used: {}, damage: {}, duals: 0, events: {}, moves: {}, biggest: 0, seconds: 0 };
   // The fight's own clock, counted: how long it lasts at the table (thinking, blows, foes' turns).
-  const tick = (seconds: number) => { run.seconds += seconds; runClock(state, seconds); };
+  // What the clock did out of anyone's action is counted as an action's would be (`clockNews`): a bomb going off on its own
+  // can wake Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from.
+  const tick = (seconds: number) => { run.seconds += seconds; clockNews(runClock(state, seconds)); };
   const over = () => state.phase === 'won' || state.phase === 'lost';
   const hadOnion = state.foes.some(f => isOnion(f.kind));
   const count = (key: string) => { run.events[key] = (run.events[key] ?? 0) + 1; };
+  const clockNews = (news: readonly { saved?: unknown; awoken?: string }[]) => {
+    for (const item of news) { if (item.awoken) count(`despierta:${item.awoken}`); if (item.saved) count('siete-vidas'); }
+  };
   const note = (effect?: BattleEffect) => {
     if (!effect) return;
     if (effect.kind === 'enemy' && effect.ability) {
@@ -1056,7 +1060,11 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     takeNews(state).forEach(note);
     // Sincopante's ecos: each note one sounded, and each chord (three at once).
-    for (const news of takeEcoNews(state)) if (news.kind !== 'out') count(news.kind === 'pulse' ? (news.accent ? 'eco-contratiempo' : 'eco') : 'acorde-de-ecos');
+    for (const news of takeEcoNews(state)) {
+      if (news.kind !== 'out') count(news.kind === 'pulse' ? (news.accent ? 'eco-contratiempo' : 'eco') : 'acorde-de-ecos');
+      // Da capo wakes only on the ecos' chord (`runEcos`), never on an action.
+      if (news.kind === 'chord' && news.awoken) count('despierta:da-capo');
+    }
     // La Voz's song: each note she sang is a move of hers (the bestiary lists them), what it set off, and her Crescendos and parts.
     for (const news of takeSongNews(state)) {
       if (news.kind === 'nota') {
@@ -1138,7 +1146,7 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
         if ((moved || foe.kind !== 'voz') && state.phase === 'enemy') tick(ACTION_SECONDS);
         watch();
       }
-      if (state.phase === 'enemy') nextRound(state);
+      if (state.phase === 'enemy') clockNews(nextRound(state));
       watch();
     } else break;
   }

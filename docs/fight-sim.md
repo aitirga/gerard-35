@@ -144,8 +144,11 @@ break); a die past the hand's cap (`HAND_WORTH`, for the hand up to six); and a 
 brought nearer to waking by its own condition (`wakeWorth`: 15 for the whole way, on the square of how
 near, so the last step weighs most; at 30 on a straight line it opened El Montón with Zarpazos to wake
 Siete vidas). Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
-(`siete-vidas`), for a pair's `happens`. `BUILDS.mixto` buys all seven definitivas before the passives
-(one not built yet is skipped), so the third year can hold each pair. Each copy rolls its own dice, so a bot never sees the real fight's next coin.
+(`siete-vidas`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
+its own wakes Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from) or the
+ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after the passives, as it
+always had them: whichever the ecos do not reach goes unbought, and one not built yet is skipped.
+Whether the third year should buy them ahead of the passives is still Aitor's call. Each copy rolls its own dice, so a bot never sees the real fight's next coin.
 
 Not simulated: chapter 1's boys and the palace minion's scripted beat.
 
