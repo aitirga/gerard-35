@@ -264,6 +264,41 @@ test('Each blow of Serie de Fourier cracks the ice once, as a flurry\'s strikes 
   assert.deepEqual(e.ice, [{ target: a.id, cracks: a.cracks, added: a.cracks }]);
 });
 
+/** A frozen foe in a battle of two foes worn by `classes`, the party's maná full: its ice at three marks, fresh. */
+function frozenPair(classes, levels, nodes) {
+  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: classes[0] }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: classes[1] }], 2, false, undefined, [...classes, 'freatica']);
+  s.levels = levels;
+  improve(s, improvedBy(nodes));
+  s.foes.forEach(f => { f.hp = f.maxHp = 4000; });
+  for (const f of s.foes) { f.timed = { congelado: { level: 3, left: 60, next: 60 } }; f.cracks = 0; }
+  s.cold = { used: true, by: 'aitor' };
+  s.phase = 'player'; s.active = 0;
+  for (const ally of s.allies) ally.secondary = ally.maxSecondary;
+  return s;
+}
+
+test('Corriente alterna neither cracks nor melts the ice: its blow and its beats are electricity', () => {
+  const s = frozenPair(['matemagico', 'sincopante'], { sincopante: 7 }, ['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito']);
+  const [a, b] = s.foes;
+  const e = actDual(s, 'corriente-alterna', a.id);
+  assert.ok(e.amount > 0, 'the blow lands, at a quarter');
+  assert.equal(a.cracks, 0); assert.equal(a.timed.congelado.left, 60); assert.equal(e.ice, undefined);
+  // Its four beats, one every 5 s: the ice only melts on its clock, and nothing cracks it.
+  s.phase = 'player';
+  const beats = runClock(s, TIMED.alterna.every * 4 + .01).filter(p => p.status === 'alterna');
+  assert.equal(beats.length, 4);
+  for (const foe of [a, b]) { assert.equal(foe.cracks, 0, foe.id); assert.ok(Math.abs(foe.timed.congelado.left - (60 - TIMED.alterna.every * 4 - .01)) < 1e-6, foe.id); }
+});
+
+test('Arco voltaico counts as two cracks: physical with electricity, and a hard blow', () => {
+  const s = frozenPair(['matemagico', 'papagato'], { papagato: 7 }, ['matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito', 'matemagico:condensador']);
+  const a = s.foes[0];
+  actDual(s, 'arco-voltaico', a.id);
+  s.phase = 'enemy'; s.enemyActions = s.foes.map(f => f.id); nextRound(s);
+  assert.equal(a.cracks, 2);
+  assert.ok(frozenOf(a), 'two of eight: it holds');
+});
+
 test('The fight tester sets the water at will', () => {
   const s = fight(1);
   assert.ok(stageWater(s, 2));
