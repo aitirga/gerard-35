@@ -49,11 +49,15 @@
     {
       "shot": "puerta-de-dia",
       "delay": 2500,
-      "caption": "At the choir's door by day: the shutter rolled up, the room under it, «Ensayar con el coro» offered like anything within reach"
+      "caption": "At the choir's door by day: the shutter rolled up, the room under it, «Entrar al local del coro» offered like anything within reach"
     },
     {
       "press": "KeyE"
     },
+    { "until": "window.gerard.story.inside === 'coro'" },
+    { "teleport": "coro", "cell": [7, 9], "settle": 1400 },
+    { "until": "document.querySelector('#interact:not([hidden])')?.dataset.interaction === 'coro-ensayar'" },
+    { "press": "KeyE" },
     {
       "shot": "ensayo",
       "delay": 900,

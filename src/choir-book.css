@@ -1,0 +1,34 @@
+#choir-book {
+  --ink: #302d25; --brass: #886134; --red: #813b30; --rule: #bfb095;
+  box-sizing: border-box; width: min(760px, 88vw); max-height: 88vh; padding: 9px 10px 11px; margin: auto;
+  color: var(--ink); border: 1px solid #667369; border-radius: 8px 11px 11px 8px;
+  background: repeating-linear-gradient(92deg, #30473e 0 2px, #2b413a 2px 4px);
+  box-shadow: 0 16px 64px #090a08a6, 0 2px 0 #192b26; pointer-events: auto;
+  font: 15px/1.3 Georgia, 'Times New Roman', serif; text-align: left;
+}
+#choir-book::backdrop { background: #17191370; }
+.score-spread { display: grid; grid-template-columns: 1fr 1fr; box-shadow: 0 2px 0 #bbae95, 0 4px 0 #ddcfb7; }
+.score-leaf { padding: clamp(18px, 2.7vh, 32px) clamp(18px, 2.2vw, 34px); display: flex; flex-direction: column; }
+.score-left { background: linear-gradient(90deg,#f5ecda 0%,#f2e8d4 88%,#e8ddc5 95%,#ccbea4 99.8%); border-radius: 2px 0 0 3px; }
+.score-right { background: linear-gradient(90deg,#d3c5aa 0%,#eee4d0 6%,#f5eddb 19%,#f3ead7 98%,#e5d7bf); border-radius: 0 4px 4px 0; }
+.score-imprint, .score-leaf h3, .score-playing, .score-right footer { font-family: system-ui,sans-serif; }
+.score-imprint { display: flex; align-items:center; gap:9px; color:#4e6255; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.15em; }
+.score-imprint i { position:relative; display:block; width:10px; height:15px; margin:0 2px 6px; border:2px solid currentColor; border-top:0; border-radius:0 0 7px 7px; }
+.score-imprint i::after { content:''; position:absolute; top:100%; left:calc(50% - 1px); width:2px; height:8px; background:currentColor; }
+#choir-book h2 { color:#343b30; margin:25px 0 22px; font: normal clamp(34px,4.8vh,50px)/.98 Georgia,serif; letter-spacing:-.055em; text-transform:none; }
+#choir-book h2 em { color:var(--red); font-weight:normal; }
+#choir-book h3 { display:flex; gap:12px; align-items:center; margin:0 0 6px; color:var(--brass); font-size:10px; letter-spacing:.17em; text-transform:uppercase; }
+.score-leaf h3::after { content:''; height:3px; flex:1; border-block:1px solid var(--rule); }
+.score-right section + section { margin-top:18px; }
+#choir-book .score-song { display:flex; gap:12px; align-items:center; width:100%; padding:8px 7px; border:0; border-bottom:1px solid #9a88603b; border-radius:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; font: 17px/1.14 Georgia,serif; }
+#choir-book button:focus-visible { outline:2px solid #8e4937; outline-offset:-2px; }
+#choir-book .score-song:hover, #choir-book .score-song:focus { background:#ab8b5930; }
+#choir-book .score-song[aria-pressed=true] { background:#3c5d4e; color:#fff7e3; }
+.score-song i { width:10px; height:12px; flex:none; display:grid; place-items:center; }
+.score-song i::before { content:''; width:6px; height:6px; border:1px solid #aa9876; border-radius:50%; }
+.score-song:focus i::before, .score-song:hover i::before { border:0; background:currentColor; clip-path:polygon(0 0, 100% 50%, 0 100%); width:8px; height:10px; border-radius:0; }
+.score-song[aria-pressed=true] i::before { border:0; border-radius:0; width:9px; height:9px; background:currentColor; clip-path:none; }
+.score-playing { margin-top:auto; padding:18px 0 0; font-size:12px; color:#375647; font-weight:600; }
+.score-right footer { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:auto; padding-top:16px; color:#665946; font-size:11px; }
+#choir-book .score-close { background:none; border:1px solid var(--rule); border-radius:3px; padding:5px 8px; color:var(--ink); font:inherit; cursor:pointer; }
+#choir-book kbd { color: #4b493e; background: #e8ddc6; border-color: #ab9b7f; font: 600 11px/18px system-ui, sans-serif; }

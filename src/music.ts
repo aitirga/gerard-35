@@ -1,3 +1,4 @@
+import { VOZ_RECORDING } from './song.ts';
 import type { GameAudio } from './audio';
 import { createHaunt, type Haunt } from './haunt.ts';
 
@@ -53,6 +54,8 @@ export const TRACKS = {
   // from 104 samples in (at 48 kHz) to 59 before 200 s, where the two waveforms meet (a step of .0014
   // against .02 between neighbouring samples there), 2 ms short of the 75 bars.
   'mazmorra-3': { src: 'music/song-mazmorra-3.m4a', marks: { start: 0, loop: 0.002167, end: 199.998771 }, loop: ['loop', 'end'], bpm: 90, beatsPerBar: 4, downbeat: 'start' },
+  // The choir book plays this recording straight through. The mission syncs it with La Voz's clock.
+  voz: { src: VOZ_RECORDING.src, marks: { start: 0 } },
   // Marta's mission (docs/quests/marta.md § The way in): «Izana dena geroa», recorded by her, as it
   // comes out at the piano in Alegia the first time. 21 s, played once, never looped.
   izana: { src: 'music/marta-izana.m4a', marks: { start: 0 } },
@@ -264,7 +267,7 @@ export function createMusic(audio: GameAudio) {
     source.onended = () => { gain.disconnect(); if (current === voice) current = undefined; else if (current?.handoff === voice) current.handoff = undefined; };
     source.start(at, offset);
     if (fade > 0) ramp(gain.gain, 1, at, fade);
-    if (track.cycle) queue(voice, track.cycle, at);
+    if (track.cycle && loops) queue(voice, track.cycle, at);
     if (track.vamp && loops) plan(voice);
     return voice;
   }
@@ -320,7 +323,7 @@ export function createMusic(audio: GameAudio) {
     if (!(element.duration > 0)) await new Promise((resolve, reject) => { element.onloadedmetadata = resolve; element.onerror = () => reject(element.error); });
     return element;
   }
-  function stream(id: TrackId, element: HTMLAudioElement, offset: number, at: number, fade: number, level = 1) {
+  function stream(id: TrackId, element: HTMLAudioElement, offset: number, at: number, fade: number, level = 1, once = false) {
     const { context } = audio.buses!;
     const gain = context.createGain();
     gain.gain.value = fade > 0 ? 0 : 1;
@@ -329,7 +332,11 @@ export function createMusic(audio: GameAudio) {
     element.currentTime = offset;
     const voice: Voice = { track: id, element, media, gain, startedAt: at, offset };
     // Near the end of the file, come back in somewhere else (or from the top), so the take plays on for as long as you stay.
-    element.ontimeupdate = () => {
+    if (once) element.onended = () => {
+      media.disconnect(); gain.disconnect();
+      if (current === voice) current = undefined;
+    };
+    else element.ontimeupdate = () => {
       if (current !== voice || element.duration - element.currentTime > TAKE_FADE) return;
       element.ontimeupdate = null;
       void Promise.all([open(id), loudnessOf(id)]).then(([next, map]) => {
@@ -340,7 +347,10 @@ export function createMusic(audio: GameAudio) {
         release(voice, now, TAKE_FADE);
       }).catch(error => console.warn('No se pudo cargar la música', error));
     };
-    void element.play().catch(error => console.warn('No se pudo reproducir la música', error));
+    void element.play().catch(error => {
+      console.warn('No se pudo reproducir la música', error);
+      if (once && current === voice) { release(voice, context.currentTime, 0); current = undefined; }
+    });
     ramp(gain.gain, level, at, fade);
     if (level !== 1) gain.gain.setValueCurveAtTime(fadeCurve(level, 1), at + Math.max(0, fade) + .01, SETTLE);
     return voice;
@@ -397,7 +407,7 @@ export function createMusic(audio: GameAudio) {
      * Starts a song from a mark, a second or a `random` point, crossfading over `fade` seconds from
      * whatever plays. The same song keeps playing unless `restart`.
      */
-    async play(id: TrackId, { from = 'start', fade = .5, restart = false }: { from?: string | number; fade?: number; restart?: boolean } = {}) {
+    async play(id: TrackId, { from = 'start', fade = .5, restart = false, once = false }: { from?: string | number; fade?: number; restart?: boolean; once?: boolean } = {}) {
       if (current?.track === id && !restart) return;
       const token = ++generation;
       const track: Track = TRACKS[id];
@@ -410,7 +420,7 @@ export function createMusic(audio: GameAudio) {
       // A cycled song always opens with its first version, and a vamping one from the top.
       const { offset, level } = from === 'random' && (track.cycle || track.vamp) ? { offset: 0, level: 1 }
         : from === 'random' ? comeIn(source.duration, map, map && previous?.track === id ? loudnessNow(previous, map) : undefined) : { offset: markTime(track, from), level: 1 };
-      current = source instanceof AudioBuffer ? start(id, source, offset, at, fade) : stream(id, source, offset, at, fade, level);
+      current = source instanceof AudioBuffer ? start(id, source, offset, at, fade, !once) : stream(id, source, offset, at, fade, level, once);
       if (previous) release(previous, at, Math.max(fade, .03));
       follow(id, Math.max(fade, 1));
     },

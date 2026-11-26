@@ -90,7 +90,7 @@ export function furnishCoro(r: RoomKit) {
   box('Piano de pared', walnut, px, 9.5, 0, .64, 1.28, 1.5);
   box('Teclado', ivory, px + .38, 9.5, .72, .2, .04, 1.36);
   for (let i = 0; i < 20; i++) if (i % 7 !== 2 && i % 7 !== 6) box('Tecla negra', ebony, px + .34, 8.88 + i * .066, .76, .1, .02, .03);
-  box('Tapa', walnut, px + .38, 9.5, .76, .22, .02, 1.4).render!.castShadows = false;
+  box('Tapa abierta', walnut, px + .29, 9.5, .78, .035, .22, 1.4).render!.castShadows = false;
   for (let i = 0; i < 3; i++) box('Partituras', paper, px - .05 + i * .02, 9.2 + i * .25, 1.28 + i * .01, .26, .01, .34).setEulerAngles(0, jitter(i) * 20, 0);
   box('Banqueta', walnut, px + .85, 9.5, .44, .36, .06, .8);
   for (const [ox, oz] of [[-.14, -.34], [.14, -.34], [-.14, .34], [.14, .34]]) box('Pata de la banqueta', black, px + .85 + ox, 9.5 + oz, 0, .03, .44, .03);

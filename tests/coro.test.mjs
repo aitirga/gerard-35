@@ -35,6 +35,14 @@ import { ENVIRONMENTS } from '../src/environments.ts';
 import { canWalk } from '../src/movement.ts';
 import { CHOIR_GROUPS, CHOIR_PEOPLE, LINES_CORO, PLACES_CORO } from '../src/friends/coro.ts';
 
+test('the choir book covers the soundtrack, including Marta’s separate recording and both piano arrangements', async () => {
+  const { REPERTOIRE } = await import('../src/choir-repertoire.ts');
+  const { TRACKS } = await import('../src/music.ts');
+  const { VOZ_RECORDING } = await import('../src/song.ts');
+  assert.deepEqual(Object.keys(REPERTOIRE).sort(), Object.keys(TRACKS).filter(id => id !== 'reina').sort());
+  assert.equal(TRACKS.voz.src, VOZ_RECORDING.src);
+});
+
 const sleep = story => {
   if (!story.night) { story.handle({ type: 'interact', id: 'meridiana-bed' }); story.handle({ type: 'evening', what: 'cama' }); }
   story.handle({ type: 'interact', id: 'meridiana-bed' });
@@ -54,6 +62,19 @@ test('by day the shutter is up and the avenue door goes into the room; at night 
   assert.deepEqual(gone[0], { kind: 'travel', environment: 'meridiana-calle', cell: { x: 104, z: 42 } }, 'out under the shutter');
   assert.ok(story.night);
   assert.deepEqual(story.handle({ type: 'interact', id: 'meridiana-coro' }).map(e => e.kind), ['dialogue'], 'at night, only the shutter');
+});
+
+test('the upright reopens the score book without spending the afternoon', () => {
+  const story = new Story(flagsAt('tv-news'));
+  const piano = ENVIRONMENTS.coro.interactions.find(i => i.id === 'coro-piano');
+  assert.ok(canWalk(piano.cell, ENVIRONMENTS.coro.grid));
+  const before = { ...story.clock };
+  for (let i = 0; i < 2; i++) {
+    const effects = story.handle({ type: 'interact', id: piano.id });
+    assert.deepEqual(effects, [{ kind: 'choir-book' }]);
+  }
+  assert.deepEqual(story.clock, before);
+  assert.equal(story.boost, undefined);
 });
 
 test('everyone a mission saved is at the choir from the morning after, and no longer at their own place', () => {

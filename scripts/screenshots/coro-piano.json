@@ -1,0 +1,150 @@
+{
+  "title": "El cuaderno de partituras del Coro",
+  "description": "El repertorio del piano en A cop de diapasó: doce piezas, dos páginas. Prueba de selección con teclado, ratón y mando, escucha en el local y ensayo desde el atril. Ejecutar con --chrome --gpu.",
+  "steps": [
+    {
+      "open": "/?story=coro-luca&solo=1"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "teleport": "meridiana-calle",
+      "cell": [
+        104,
+        43
+      ]
+    },
+    {
+      "until": "document.querySelector('#interact:not([hidden])')?.dataset.interaction === 'meridiana-coro'"
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "window.gerard.story.inside === 'coro' && window.gerard.music.playing === 'home'"
+    },
+    {
+      "teleport": "coro",
+      "cell": [
+        3,
+        9
+      ],
+      "settle": 1200
+    },
+    {
+      "until": "document.querySelector('#interact:not([hidden])')?.dataset.interaction === 'coro-piano'"
+    },
+    {
+      "shot": "banqueta",
+      "caption": "Al acercarse a la banqueta aparece «Tocar el piano»."
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#choir-book[open]') && document.activeElement?.dataset.song === 'intro-piano'"
+    },
+    {
+      "shot": "partituras",
+      "caption": "El cuaderno en el piano del Coro. Las doce piezas están disponibles desde el primer día."
+    },
+    {
+      "press": "Enter"
+    },
+    {
+      "until": "window.gerard.music.playing === 'intro-piano'"
+    },
+    {
+      "eval": "window.fakePad = i => ({ id: 'Xbox Wireless Controller', index: i, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }); window.fakePads = [fakePad(0)]; navigator.getGamepads = () => window.fakePads; window.frames = n => new Promise(done => { const tick = () => n-- > 0 ? requestAnimationFrame(tick) : done(); tick(); }); window.tap = async (pad, button) => { window.fakePads[pad].buttons[button].pressed = true; await frames(4); window.fakePads[pad].buttons[button].pressed = false; await frames(4); };"
+    },
+    { "eval": "window.frames(15)" },
+    {
+      "eval": "window.tap(0, 13)"
+    },
+    {
+      "until": "document.activeElement.dataset.song === 'izana'"
+    },
+    {
+      "eval": "window.tap(0, 0)"
+    },
+    {
+      "until": "window.gerard.music.playing === 'izana' && document.documentElement.dataset.input === 'gamepad'"
+    },
+    {
+      "shot": "marta",
+      "caption": "Con el mando: Izana dena geroa, de Marta, suena mientras el cuaderno sigue abierto."
+    },
+    {
+      "eval": "window.tap(0, 1)"
+    },
+    {
+      "until": "!document.querySelector('#choir-book[open]') && window.gerard.music.playing === 'izana'"
+    },
+    {
+      "until": "window.gerard.music.playing === 'home'",
+      "timeout": 45000
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "document.querySelector('#choir-book[open]')"
+    },
+    {
+      "eval": "(async () => { const entries = [...document.querySelectorAll('#choir-book [data-song]')]; if (entries.length !== 12 || entries.some(b => b.dataset.song === 'reina')) throw Error('Repertorio incorrecto'); for (const btn of entries) { btn.click(); const end = performance.now()+20000; while (window.gerard.music.playing !== btn.dataset.song || !document.querySelector('.score-playing').textContent.startsWith('Sonando')) { if (performance.now()>end) throw Error('No suena '+btn.dataset.song); await new Promise(r=>setTimeout(r,100)); } } })()"
+    },
+    {
+      "eval": "document.querySelector('#choir-book [data-song=\"mazmorra-3\"]').click()"
+    },
+    {
+      "until": "window.gerard.music.playing === 'home' && !document.querySelector('#choir-book [aria-pressed=true]')"
+    },
+    {
+      "press": "Escape"
+    },
+    {
+      "until": "!document.querySelector('dialog[open]')"
+    },
+    {
+      "teleport": "coro",
+      "cell": [
+        7,
+        9
+      ],
+      "settle": 1200
+    },
+    {
+      "until": "document.querySelector('#interact:not([hidden])')?.dataset.interaction === 'coro-ensayar'"
+    },
+    {
+      "shot": "atril",
+      "caption": "El atril permite empezar el ensayo y pasar la tarde."
+    },
+    {
+      "press": "KeyE"
+    },
+    {
+      "until": "window.gerard.music.playing === 'intro-piano' && window.gerard.music.position() > 2 && window.gerard.dialogue.open"
+    },
+    {
+      "shot": "ensayo",
+      "caption": "El piano da la entrada mientras Aitor prepara la voz de los bajos."
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "window.gerard.story.inside === 'meridiana-calle' && window.gerard.story.night && window.gerard.music.playing === 'mazmorra-2'",
+      "timeout": 40000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "meridiana",
+      "delay": 1500,
+      "caption": "Al terminar el ensayo baja la persiana y suena la Meridiana de noche."
+    }
+  ]
+}

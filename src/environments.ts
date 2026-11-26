@@ -596,7 +596,7 @@ export const CORO = house({
   interactions: [
     { id: 'coro-salida', cell: { x: 7, z: 11 }, label: 'Salir a la Meridiana', to: { environment: 'meridiana-calle', cell: { x: 104, z: 42 } } },
     { id: 'coro-neon', cell: { x: 7, z: 2 }, label: 'Mirar el neón', lines: ['El diapasón del logo, en neón de verdad. Lo primero que colgamos, antes que las sillas.', 'Zumba un poco. En los silencios se oye.'] },
-    { id: 'coro-piano', cell: { x: 3, z: 9 }, label: 'Mirar el piano', lines: ['Un piano de pared que nos dejó un vecino. Le falta el fa sostenido de abajo.', 'Encima, partituras con lápiz de cinco ensayos distintos.'] },
+    { id: 'coro-piano', cell: { x: 3, z: 9 }, label: 'Tocar el piano', hint: 'Tocar el piano', anchor: { x: 1.8, z: 9.5, y: 1.2 } },
   ],
 });
 /** Where Bernat sits in El Nucli's back room: the round table's west chair, his back to the cartons and the curtain in sight. His mission puts him here. */

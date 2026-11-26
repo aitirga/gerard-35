@@ -354,6 +354,7 @@ test('an afternoon on the sofa, cooking, at the gym or with the choir brings the
     const here = story.interactions(place).find(i => i.id === id);
     assert.ok(here && canWalk(here.cell, ENVIRONMENTS[place].grid), `${what} is there to walk up to`);
     const going = story.handle({ type: 'interact', id });
+    if (what === 'coro') assert.deepEqual(going.shift(), { kind: 'song', track: 'intro-piano' });
     assert.deepEqual(going.map(e => e.kind), ['dialogue', 'evening'], what);
     assert.equal(going[1].what, what);
     const gone = story.handle({ type: 'evening', what });

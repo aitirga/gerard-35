@@ -9,6 +9,8 @@ import { DAY_END, DAY_START, NIGHT, boostOf, dayForStage, stage } from './days';
 import { createDialogueBanner } from './dialogue';
 import { createBattleUI } from './battle-ui';
 import { improvedBy } from './ecos';
+import { createChoirBook } from './choir-book';
+import type { ChoirTrack } from './choir-repertoire';
 import { createJarUI } from './jar-ui';
 import { createParcelasUI } from './parcelas-ui';
 import { createCandadoUI } from './candado-ui';
@@ -152,16 +154,22 @@ function songHere(id: EnvironmentId): TrackId | undefined {
 }
 /** `just dev-music` plays its own song, which a place's song must not cover. */
 const devSong = import.meta.env.DEV && new URLSearchParams(location.search).has('music');
+// While the local piano is loading or playing, rescoring the same room must leave it alone.
+let choirPiano: { id: ChoirTrack; started: boolean } | undefined;
 function scorePlace(id: EnvironmentId) {
+  if (choirPiano && id !== 'coro') {
+    choirPiano = undefined;
+    music.stop({ fade: .6 });
+  }
   place = id;
-  if (battlePhase || devSong || titleOpen || finale) return;
+  if (battlePhase || devSong || titleOpen || finale || choirPiano) return;
   // Marta's song is only Las cuerdas' (its clock is the mazes', `onCuerdasSong`): anywhere else it fades.
   if (id !== CUERDAS_PLACE) vozSong.stop(1.5);
   // A boss room's song comes in from its top, quicker than a place's.
   const room = inBossRoom(), song = songHere(id);
   music.haunt(castleHaunt(story));
   // A streamed take can only start after the first key or click.
-  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale) void music.play(song, room ? { from: 'start', fade: 2 } : { from: 'random', fade: 4 }); });
+  if (song) void audio.unlocked.then(() => { if (place === id && !battlePhase && !titleOpen && !finale && !choirPiano) void music.play(song, room ? { from: 'start', fade: 2 } : { from: 'random', fade: 4 }); });
   else if (music.playing && [...Object.values(PLACE_SONGS), BOSS_ROOM_SONG, CITY_DAY, CITY_NIGHT].includes(music.playing)) music.stop({ fade: 2 });
 }
 /**
@@ -558,8 +566,8 @@ try {
     else if (effect.kind === 'gate') await game.popGate();
     // The story takes them somewhere else: under its own dark or snow if there is one, through a fade if not.
     else if (effect.kind === 'travel') { if (storyUI.covered) game.setEnvironment(effect.environment, effect.cell); else await game.travel(effect.environment, effect.cell); }
-    // A recording that comes out in the scene (Marta's at the piano) starts at once, and the place's
-    // song fades out under it; once it has played, the place's own song comes back.
+    else if (effect.kind === 'choir-book') pianoBook.open();
+    else if (effect.kind === 'song' && effect.track === 'intro-piano') void playChoirTrack(effect.track);
     else if (effect.kind === 'song') void audio.unlocked.then(async () => {
       music.stop({ fade: 1.5 });
       await music.play(effect.track, { restart: true, fade: 0 });
@@ -938,6 +946,31 @@ try {
       aitor: keep('aitor', testing ? kitOf(slot('aitor'), animas) : story.kitOf('aitor')),
     });
   }
+  const pianoBook = createChoirBook(hud, {
+    choose: id => {
+      if (choirPiano?.id === id) {
+        choirPiano = undefined;
+        music.stop({ fade: .3 });
+        pianoBook.update();
+        if (place) scorePlace(place);
+      } else void playChoirTrack(id);
+    },
+    pauseWorld: open => game.setPaused(open || storyPaused || menuOpen() || !!exploration.active),
+  });
+  async function playChoirTrack(id: ChoirTrack) {
+    if (place !== 'coro' || battlePhase || finale || titleOpen) return;
+    const take = { id, started: false };
+    choirPiano = take;
+    pianoBook.update({ id, state: 'loading' });
+    await audio.unlocked;
+    if (choirPiano !== take) return;
+    music.stop({ fade: .35 });
+    await music.play(id, { from: id === 'intro-piano' ? 'piano' : 'start', restart: true, fade: .15, once: true });
+    if (choirPiano !== take) return;
+    take.started = music.playing === id;
+    pianoBook.update({ id, state: take.started ? 'playing' : 'error' });
+    if (!take.started) { choirPiano = undefined; if (place) scorePlace(place); }
+  }
   const game = await createGame(canvas, {
     onEncounter: (withPartner, foes, options) => {
       // Development: `?combates=no` lets nothing start a fight (the script's photos, just guion-fotos).
@@ -987,6 +1020,7 @@ try {
     },
     onLocation: (id, cell) => {
       here = cell;
+      if (currentLocation === 'coro' && id !== 'coro') { pianoBook.close(); pianoBook.update(); }
       currentLocation = id;
       story.stand(id, cell);
       dayLog.enter(id);
@@ -1074,9 +1108,19 @@ try {
   };
   // The song a place asks for changes as Gerard walks into a boss room or out of it, and as night falls.
   let songNow: TrackId | undefined;
-  const songTimer = setInterval(() => { const song = place && songHere(place); if (song === songNow) return; songNow = song; if (place) scorePlace(place); }, 500);
+  const songTimer = setInterval(() => {
+    if (choirPiano?.started && music.playing !== choirPiano.id) {
+      choirPiano = undefined;
+      pianoBook.update();
+      if (place && !music.playing) scorePlace(place);
+    }
+    const song = place && songHere(place);
+    if (song === songNow) return;
+    songNow = song;
+    if (place) scorePlace(place);
+  }, 500);
   const controllerContext = (player: PlayerId = 1) => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContextOf(player)
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : pianoBook.isOpen ? 'choir-book' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -1089,7 +1133,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || pianoBook.isOpen || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     retry: { able: () => battleUI.retriable, run: () => battleUI.retry() },
     lights: section => mountHomeLightsPage(section, homeLights),
@@ -1114,6 +1158,7 @@ try {
       if (travelUI.open) { if (action !== 'overview' && action !== 'character' && action !== 'prev' && action !== 'next') travelUI.control(action); return; }
       if (lampPicker.isOpen) { if (action !== 'overview' && action !== 'character') lampPicker.control(action); return; }
       if (portalUI.isOpen) { if (action !== 'overview' && action !== 'character') portalUI.control(action); return; }
+      if (pianoBook.isOpen) { pianoBook.control(action); return; }
       if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action, player === 2 ? 2 : 1); return; }
       if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
       if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }
@@ -1243,7 +1288,7 @@ try {
     // Handle for scripted browser checks, e.g. teleporting to a story beat; `dialogue` lets the script's photos (just guion-fotos) put a line on screen.
     Object.assign(window, { gerard: { game, story, battleUI, artilugio, credits, exploration, control, controlChanged, storyEvent, travelUI, jarUI, homeLights, audio, music, sfx, vozSong, title, dialogue } });
   }
-  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); clearInterval(songTimer); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
+  if (import.meta.hot) import.meta.hot.dispose(() => { title.destroy(); jumpMenu.destroy(); stopGlyphs(); stopMenuSounds(); music.stop({ fade: 0 }); audio.destroy(); clearInterval(moodTimer); clearInterval(songTimer); pianoBook.destroy(); lampPicker.destroy(); jarUI.destroy(); parcelasUI.destroy(); candadoUI.destroy(); homeLights.release(); travelUI.destroy(); controller.destroy(); exploration.destroy(); artilugio.destroy(); battleUI.destroy(); storyUI.destroy(); game.app.destroy(); });
 } catch (error) {
   console.error('No se pudo crear la escena', error);
   document.querySelector<HTMLElement>('#error')!.hidden = false;

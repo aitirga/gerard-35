@@ -50,8 +50,8 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
 
 - **A rehearsal is an afternoon** (decided with Aitor 2026-11-20, built: `meridiana-coro` in
   `src/story.ts`, `EVENINGS.coro` in `src/days.ts`; docs/chapter-2.md § Spending the afternoon):
-  from the news on, *Ensayar con el coro* at its door on the avenue (`PLACES_2.choir`, 80 cells
-  from home's portal) spends the afternoon, brings the night at once and leaves **Afinados** (Magia
+  from the news on, the avenue door (`PLACES_2.choir`, 80 cells from home's portal) leads to the
+  room. *Ensayar con el coro* at the director's stand spends the afternoon, brings the night at once and leaves **Afinados** (Magia
   up a little for the whole party, that night and the next day). The first rehearsal is where they
   learn Emilie is missing (`clue-emilie`). Coming out it is night, and the way home is a real walk
   with the castle's pupils out. **Its front is built** (2026-11-21, `src/landmarks/local-coro.ts`,
@@ -103,6 +103,11 @@ Discarded: the whole choir as one mission (a second musical mission after Marta'
   (or each person who comes back) takes it a phrase further, stumbling at first. Progress heard,
   never counted. A cutscene, not a minigame: no timing, nothing scored (Marta's mission owns
   timing).
+  The upright opens a score book with the game's soundtrack, including both piano arrangements and
+  Marta's recordings. The final battle track stays exclusive to its fight. Choosing a piece costs
+  no time. It plays once and stays audible after closing the book. The director's stand plays
+  Aitor's opening recording (`intro-piano`) and starts the afternoon as usual. The room ambience returns when the piece ends, and the avenue takes over on leaving.
+  Progressive phrases and recorded choir voices are still open.
 - **By voices** (round 3: maybe, Aitor will say whether there is time): four rows of chairs,
   sopranos, contraltos, tenores, bajos; each person helped sits in their voice and that voice
   joins the song. **Without it**, the song grows by phrases alone, and the room fills with

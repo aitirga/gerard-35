@@ -238,8 +238,9 @@ export type StoryEffect =
    * next story beat waits so the shout is seen first (Vertitrón's fight after Uri calls for it).
    */
   | { kind: 'shout'; speaker: 'uri'; text: string; beat?: number }
-  /** A recording plays once over what follows, without stopping the game (src/music.ts `TRACKS`): Marta's «Izana dena geroa» at the piano. */
-  | { kind: 'song'; track: 'izana' }
+  /** Aitor's opening piece in the choir room, or Marta's recording on the way into Las cuerdas. */
+  | { kind: 'song'; track: 'izana' | 'intro-piano' }
+  | { kind: 'choir-book' }
   /** The last scene (docs/castle-bosses.md): she is on the floor, and Gerard's dock has two commands (src/endings.ts). Answered with an `ending` event. */
   | { kind: 'ending' }
   /** What the choice does, told over black before the Monday after. */
@@ -1386,7 +1387,9 @@ export class Story {
   private spendAfternoon(what: EveningId): StoryEffect[] {
     const say = (dialogue: Dialogue): StoryEffect => ({ kind: 'dialogue', dialogue });
     if (this.night) return [say(LINES_2.afternoon[what].night)];
-    return [say(LINES_2.afternoon[what].going), { kind: 'evening', what }];
+    const going = say(LINES_2.afternoon[what].going);
+    const evening: StoryEffect = { kind: 'evening', what };
+    return what === 'coro' ? [{ kind: 'song', track: 'intro-piano' }, going, evening] : [going, evening];
   }
   /** Under the dark: it is night, what the afternoon leaves is the party's until the day after tomorrow's morning, and they say so coming out. */
   private afternoonGone(what: EveningId): StoryEffect[] {
@@ -2050,6 +2053,8 @@ export class Story {
         if (!this.adult) return [];
         if (this.night) return [say(LINES_2.afternoon.coro.night)];
         return [{ kind: 'travel', environment: CORO_PLACE, cell: { ...PLACES_CORO.spawn } }];
+      case 'coro-piano':
+        return [{ kind: 'choir-book' }];
       case 'coro-ensayar':
         return this.adult ? this.spendAfternoon('coro') : [];
       case 'meridiana-piano':

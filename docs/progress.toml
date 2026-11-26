@@ -291,6 +291,11 @@ title = "El coro por dentro: el local tras la persiana, con el atril de Aitor pa
 file = "src/coro-scenery.ts"
 
 [[block.item]]
+title = "El cuaderno del piano permite escuchar el repertorio del coro"
+grep = "createChoirBook\\(hud"
+in = "src/main.ts"
+
+[[block.item]]
 title = "Los salvados de cada misión van al coro la mañana siguiente y se quedan allí"
 grep = "'coro-luca'"
 in = "src/story.ts"
