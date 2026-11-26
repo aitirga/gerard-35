@@ -3472,7 +3472,7 @@ function react(state: BattleState, actor: Combatant, target: Combatant, element:
     }
     if (struck) shock(state, target, effect);
   }
-  if (effect.reaction) ground(state, actor, effect);
+  if (effect.reaction) reacted(state, actor, effect);
 }
 /** Vapor from a blow of fire on someone wet (`react`, or a skill that burns, which finds the water before it can light). */
 function vapour(state: BattleState, target: Combatant, effect: BattleEffect) {
@@ -3506,7 +3506,15 @@ const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.c
 function note(effect: BattleEffect, id: PassiveId, who: Combatant) {
   if (!effect.passives?.some(p => p.id === id)) effect.passives = [...effect.passives ?? [], { id, name: PASSIVES[id].name, who: who.id }];
 }
-/** Toma de tierra: a reaction its wearer set off gives a maná back, once a round. */
+/**
+ * A reaction between elements has happened in the action being resolved, and `actor` set it off (`effect.reaction`, an
+ * Estallido, a Combustión, the gas going up, what Atractor extraño brought): the one place that hears of it. Whatever answers
+ * a reaction hangs from here (Toma de tierra; Objeto encontrado to come), so a new way of reacting only has to call it.
+ */
+function reacted(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  ground(state, actor, effect);
+}
+/** Toma de tierra: a reaction its wearer set off gives a maná back, once a round (`reacted`). */
 function ground(state: BattleState, actor: Combatant, effect: BattleEffect) {
   if (actor.hp <= 0 || !passive(state, actor, 'toma-de-tierra') || actor.grounded === state.round || actor.secondary >= actor.maxSecondary) return;
   actor.grounded = state.round; actor.secondary++;
@@ -3594,7 +3602,7 @@ function gather(state: BattleState, actor: Combatant, target: Combatant, effect:
   effect.gathered = came;
   const names = [...new Set(came.flatMap(c => c.ids))].filter(id => target.timed?.[id]).map(id => `${TIMED[id].name}${TIMED[id].levels.length && target.timed![id]!.level > 1 ? ` ${roman(target.timed![id]!.level)}` : ''}`);
   state.message += names.length ? ` Los estados de los demás caen en ${target.name}: ${names.join(', ')}.` : ` Lo de los demás cae en ${target.name}.`;
-  if (came.some(c => c.reactions.length)) ground(state, actor, effect);
+  if (came.some(c => c.reactions.length)) reacted(state, actor, effect);
   // Nothing of it was put on anyone: Virus does not spread what came, nor what it set off.
   for (const f of state.foes) if (f.virusSeen) f.virusSeen = seen(f);
 }
@@ -3663,7 +3671,7 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
   effect.combustion = { target: target.id, hits, burns, ...steamed.length ? { steamed } : {} };
   note(effect, 'combustion', owner);
   state.message += ` ¡Combustión! ${target.name} estalla: ${hits.map(h => `−${h.amount}`).join(', ')} PV. El fuego salta a los demás.`;
-  if (actor === owner) ground(state, owner, effect);
+  if (actor === owner) reacted(state, owner, effect);
 }
 /**
  * Electrólisis's gas (docs/animas/README.md § Gas): what its blast is at average stats, a level of gas at a time, and the
@@ -3717,7 +3725,7 @@ function ignite(state: BattleState, effect: BattleEffect, by?: Combatant) {
   const dusted = actor && hits.map(h => state.foes.find(f => f.id === h.target)!).find(f => f.timed?.empolvado);
   if (actor && dusted) powder(state, actor, dusted, 'fuego', effect);
   lit.length = 0;
-  if (actor) ground(state, actor, effect);
+  if (actor) reacted(state, actor, effect);
 }
 /** Bomba remota on `foe`: a new bomb, or the one on it started over, keeping what it has grown. `age`: born already grown (Enjambre). */
 function plantBomb(foe: Combatant, age = 0) {
@@ -4398,7 +4406,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const landing = elementOf(ability), powdered = new Set<string>();
     state.message = '';
     if (landing) for (const foe of targets) if (powder(state, actor, foe, landing, effect)) powdered.add(foe.id);
-    if (powdered.size) ground(state, actor, effect);
+    if (powdered.size) reacted(state, actor, effect);
     const powderSaid = state.message;
     // A blow that powders (Polvareda): whoever it took PV from and still stands is Empolvado.
     if ('powders' in ability!) for (const foe of targets) if (foe.hp > 0 && hitOf(foe).amount > 0) { kindle(foe, 'empolvado', 1); hitOf(foe).burn = { id: 'empolvado', level: 1 }; }
@@ -4411,7 +4419,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         if (foe.timed?.quemado) { const level = smoke(foe); smoked = Math.max(smoked, level); Object.assign(hitOf(foe), { burn: { id: 'cegado', level }, smoked: true }); }
         else if ('wets' in ability!) { foe.timed = { ...foe.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } }; hitOf(foe).burn = { id: 'mojado', level: 1 }; }
       }
-      if (smoked) { if (!effect.reaction) effect.reaction = { id: 'humo', level: smoked }; ground(state, actor, effect); }
+      if (smoked) { if (!effect.reaction) effect.reaction = { id: 'humo', level: smoked }; reacted(state, actor, effect); }
       // La crecida: water on each one's water starts its clock over; Riada raises every foe's a mark.
       for (const foe of targets.filter(f => f.hp > 0)) {
         refill(foe);
@@ -4427,7 +4435,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
         effect.water = [...effect.water ?? [], { target: foe.id, from: held, to: held - 1 }];
         Object.assign(hitOf(foe), { burn: { id: 'cegado', level: 1 }, smoked: true });
       }
-      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
+      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; reacted(state, actor, effect); }
     }
     // Factor común: the highest fire among them is everyone's (wet layers never catch; on water it is Vapor).
     if ('evens' in ability!) {
@@ -4441,7 +4449,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
           hitOf(foe).burn = { id: 'quemado', level: top };
         }
       }
-      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; ground(state, actor, effect); }
+      if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; reacted(state, actor, effect); }
     }
     // Reinicio: the clocks on every foe start over.
     if ('restart' in ability!) effect.restarted = targets.filter(f => f.hp > 0).map(foe => ({ target: foe.id, statuses: restartClocks(state, foe) })).filter(r => r.statuses.length);
@@ -4563,7 +4571,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
       if (action === 'skill' && ability && 'burn' in ability && target.timed?.empolvado) react(state, actor, target, 'fuego', effect);
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.layers) state.message += ' Las capas, húmedas, no prenden.';
       // On someone wet the fire finds the water first: Vapor, and it does not catch (a skill's fire never cauterizes a wound: Atacar's does).
-      else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) { vapour(state, target, effect); ground(state, actor, effect); }
+      else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0 && target.timed?.mojado) { vapour(state, target, effect); reacted(state, actor, effect); }
       else if (action === 'skill' && ability && 'burn' in ability && target.hp > 0) {
         const fire = inflict(target, ability.burn, fireTop(state));
         bank(state, actor, target, effect);
@@ -4930,7 +4938,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     if (d.id === 'metralla') state.message += ' Las esquirlas se quedan en las heridas: no se cierran.';
     if (d.id === 'seiche') state.message += ' Un eco se queda meciendo el agua.';
     if (d.id === 'electrolisis') state.message += effect.gas?.length ? ` Su agua se separa en gas: ${effect.gas.map(g => `${TIMED.gas.name} ${roman(g.level)}`).join(', ')}.` : ' No tienen agua que separar.';
-    if (steamed) effect.reaction = { id: 'vapor', level: steamed };
+    if (steamed) { effect.reaction = { id: 'vapor', level: steamed }; reacted(state, striker, effect); }
     effect.amount = effect.hits[0]?.amount;
     state.message += ` Todos reciben: ${effect.hits.map(h => `−${h.amount}`).join(', ')} PV.`;
     if (d.volcano) state.message += ' Un volcán se levanta entre ellos: cada 5 segundos les sube el fuego.';
@@ -4993,6 +5001,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
       if (marks) lowerWater(target, marks, effect);
       effect.vapour = state.foes.filter(f => f.hp > 0 && !f.part).map(f => { blind(f); return f.id; });
       effect.reaction = { id: 'vapor', level: 1 };
+      reacted(state, striker, effect);
     }
     if (id === 'a-escala' && target.hp > 0) {
       target.timed = { ...target.timed, encogido: { level: 1, left: SCALE_SECONDS, next: SCALE_SECONDS } };
@@ -5130,7 +5139,7 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
       bank(state, striker, foe, effect);
       hit.burn = { id: 'quemado', level: fire.level };
     }
-    if (steamed) { effect.reaction ??= { id: 'vapor', level: steamed }; ground(state, striker, effect); state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`; }
+    if (steamed) { effect.reaction ??= { id: 'vapor', level: steamed }; reacted(state, striker, effect); state.message += ` ¡El agua se va en vapor! ¡${TIMED.cegado.name}!`; }
     const lit = hits.filter(h => h.burn?.id === 'quemado').map(h => `${state.foes.find(f => f.id === h.target)!.name} ${roman(h.burn!.level)}`);
     if (lit.length) state.message += ` Arden: ${lit.join(', ')}.`;
     state.message += powderSaid + iceSaid;
