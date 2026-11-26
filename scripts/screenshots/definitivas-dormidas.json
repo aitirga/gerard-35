@@ -79,6 +79,52 @@
       "shot": "bajo-cero-lista",
       "delay": 500,
       "caption": "Con dos marcas de agua en un perro: Bajo cero «Dormida · 2/3»"
+    },
+    {
+      "open": "/?story=papagato-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.defend = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "shot": "enjambre-placa",
+      "delay": 600,
+      "caption": "Enjambre comprada y dormida: el icono apagado sobre la placa de Aitor, con lo que lleva (0 %: ninguna bomba)"
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[1].timed = { ...s.foes[1].timed, bomba: { level: 1, left: 8, next: 12, age: 12 } }; })"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "press": "ArrowDown",
+      "times": 8,
+      "gap": 150
+    },
+    {
+      "shot": "enjambre-lista",
+      "delay": 500,
+      "caption": "Con una bomba de 12 s en un perro: Enjambre «Dormida · 56 %», lo que ha crecido la más cargada hacia su máximo"
     }
   ]
 }
