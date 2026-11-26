@@ -445,6 +445,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       case 'siete-vidas': return { id: 'siete-vidas', name: 'Siete vidas: el próximo golpe que fuera a tumbar a alguien del equipo lo cura', mark: '', timed: false, lasts: 'hasta ese golpe' };
       case 'bits': return { id: 'bits', name: `Escudo de bits: ${c.bits!.hp} PV, para cada golpe entero`, mark: String(c.bits!.hp), timed: false, lasts: rounds(Math.max(1, c.bits!.until - (state?.round ?? 0) + 1)) };
       case 'mecha': return { id: 'quemado', guide: 'mecha', name: 'Mecha encendida', mark: '!', timed: false, lasts: 'hasta actuar o caer' };
+      // Sugestión: where a confused foe's blow, and Idea fija's next beat, would go.
+      case 'sugestion': return { id: 'sugestion', name: 'Sugestión: el golpe de un enemigo confundido, y el de Idea fija, va a este enemigo', mark: '', timed: false, lasts: 'hasta que un aliado apunte a otro' };
       case 'punto-debil': return { id: 'punto-debil', name: 'Punto débil: el siguiente golpe hace el triple', mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weakSpotRounds(state!, c)) };
       // Fire at its fourth level is Combustión: its own icon and name (a physical blow sets it off).
       case 'combustion': { const on = shown.quemado!; return { id: 'combustion', name: 'Combustión: un golpe físico la hace estallar', mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` }; }
@@ -847,6 +849,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
       if (p.status === 'alterna') beatSays(p);
+      // A beat of Idea fija Sugestión sent: the passive's name over whoever brings it.
+      else if (p.passives?.length) { const when = generation; p.passives.forEach((n, i) => setTimeout(() => { if (when !== generation) return; pop(n.who, n.name, 'passive', 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour); callbacks.sound('mark-set'); }, 700 + i * 260)); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
     }

@@ -141,6 +141,8 @@ const TECNOPATA: Improvement[] = [
   dualNode('tecnopata', 'bip', 'metralla', 'papagato', 'reinicio'),
   skillNode('tecnopata', 'mente', 'confusion', 1),
   skillNode('tecnopata', 'mente', 'control-remoto', 1, 'confusion'),
+  // The Mente line's first passive (docs/animas/tecnopata/README.md § Sugestión), beside Virus atómico.
+  passiveNode('tecnopata', 'mente', 'sugestion', 1, 'control-remoto', 'Pasiva. Un enemigo confundido golpea al último enemigo al que ha apuntado un aliado, en vez de a uno al azar. Idea fija también golpea a ese enemigo.'),
   gradeIII(skillNode('tecnopata', 'mente', 'virus', 2, 'control-remoto')),
   dualNode('tecnopata', 'mente', 'idea-fija', 'sincopante', 'virus'),
   // Taller is Bip as a protector since 2026-11-21: Escolta heads it where Rayo encogedor was (docs/animas/tecnopata/README.md).

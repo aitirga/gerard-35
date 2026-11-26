@@ -639,6 +639,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .unit-statuses i[data-status="pelicula"], .summary-tags [data-status="pelicula"], .damage-pop[data-kind="status"][data-status="pelicula"] { --status: #6cc8f2; }
 /* Tecnópata's grade III: the bit shield on the party's plates, the swarm on a foe; the volcano on each foe under it. */
 .unit-statuses i[data-status="bits"], .summary-tags [data-status="bits"], .damage-pop[data-kind="status"][data-status="bits"] { --status: #7fe9ff; }
+/* Sugestión: whom the confused one would strike, in Tecnópata's cyan; quiet, it is a state, not a call. */
+.unit-statuses i[data-status="sugestion"], .summary-tags [data-status="sugestion"] { --status: #4fe0ff; }
 .unit-statuses i[data-status="virus"], .summary-tags [data-status="virus"], .damage-pop[data-kind="status"][data-status="virus"] { --status: #9ff4ff; }
 .unit-statuses i[data-status="volcan"], .summary-tags [data-status="volcan"], .damage-pop[data-kind="status"][data-status="volcan"] { --status: #ff8a3c; }
 /* A dúo mayor's banner: the same card, its kicker gold and burning. */

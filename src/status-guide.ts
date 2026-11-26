@@ -232,6 +232,10 @@ export const GUIDES = {
     text: 'Tiene atributos por encima de lo normal: la marca ▲ dice cuáles (FUE Fuerza, MAG Magia, DEF Defensa, ESP Espíritu, CRÍ Crítico). El resumen del combate dice cuánto, por qué y hasta cuándo.',
   },
   // ——— Señales del combate: what a plate tells about a foe ———
+  sugestion: {
+    name: 'Sugestión', group: 'combate', icon: 'sugestion', colour: '#4fe0ff',
+    text: 'El último enemigo al que ha apuntado un aliado: el golpe de un enemigo confundido, y cada latido de Idea fija, va a él.',
+  },
   anuncio: {
     name: 'Movimiento anunciado', group: 'combate', icon: 'anuncio', colour: '#c9a8ff',
     text: 'El enemigo ha dicho lo que va a hacer en su siguiente turno, y a quién. Sale sobre su placa hasta que lo hace.',

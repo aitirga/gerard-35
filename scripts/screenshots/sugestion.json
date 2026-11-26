@@ -1,0 +1,58 @@
+{
+  "title": "Sugestión: el confundido golpea al apuntado",
+  "description": "docs/animas/tecnopata/README.md § Sugestión. Fight tester, three dogs, Tecnópata with Confusión, Control remoto and Sugestión; the first dog confused and the third aimed at by hand. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=got-wrapper&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Acontrol-remoto%22%2C%22tecnopata%3Asugestion%22%2C%22tecnopata%3Aescolta%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 600; }); s.foes[0].timed = { ...s.foes[0].timed, confusion: { level: 1, left: 30, next: 30 } }; s.aimed = s.foes[2].id; });"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "shot": "placa",
+      "delay": 200,
+      "caption": "The first dog is confused (?) and the third carries Sugestión's mark: two fine cyan lines converging on a point, on the foe the party last aimed at"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.aimed = s.foes[2].id; })"
+    },
+    {
+      "press": "Digit4",
+      "gap": 400
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.aimed = s.foes[2].id; })"
+    },
+    {
+      "press": "Digit4",
+      "gap": 200
+    },
+    {
+      "record": "golpe",
+      "seconds": 7,
+      "fps": 20,
+      "tiles": 12,
+      "caption": "Both hold on; in the foes' turn the confused dog strikes the third (the one marked), not one at random: «Sugestión · Pasiva» over Aitor in cyan, and the message names the pair"
+    },
+    {
+      "shot": "despues",
+      "delay": 200,
+      "caption": "After the foes' turn: the third dog took the confused one's blow"
+    }
+  ]
+}

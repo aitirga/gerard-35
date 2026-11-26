@@ -1,7 +1,7 @@
 import type { StatusId, TimedId } from './battle.ts';
 
 /** What a fighter's plate shows as an icon: their statuses, and Punto débil (a dual's mark: the next blow lands WEAK_SPOT times). */
-export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado' | 'pelicula';
+export type IconId = StatusId | TimedId | 'compas' | 'punto-debil' | 'cancion' | 'shock' | 'cargado' | 'converge' | 'reaccion' | 'luz' | 'racha' | 'meteoro' | 'combustion' | 'bits' | 'cortina' | 'definitiva' | 'dormida' | 'acecho' | 'siete-vidas' | 'encarnado' | 'enfado' | 'pelicula' | 'sugestion';
 /** Each status's icon over whoever carries it (SVG on a 16 × 16 box, drawn in its colour). */
 /** A definitiva: three puffs going up at once (awake, or asleep and dimmer). */
 const DEFINITIVA_SVG = '<circle cx="8" cy="4.2" r="2.6"/><circle cx="3.6" cy="9" r="2.2"/><circle cx="12.4" cy="9" r="2.2"/><path d="M8 8v6.6M5.4 14.6h5.200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
@@ -16,6 +16,8 @@ export const STATUS_ICONS: Record<IconId, string> = {
   converge: '<path d="M1.2 8c1.3-5.6 2.6-5.6 3.6 0s2-2.6 2.8 0 1.2 0 1.6 0h5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
   // El Átomo's Reacción coming: a nucleus and two crossed orbits.
   reaccion: '<circle cx="8" cy="8" r="2.1" fill="currentColor"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="8" cy="8" rx="6.6" ry="2.6" transform="rotate(-35 8 8)" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  // Sugestión: two fine lines converging on a point, where the confused one's blow is sent.
+  sugestion: '<path d="M1.4 3.2 11.6 8M1.4 12.8 11.6 8" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><circle cx="13.2" cy="8" r="1.6"/>',
   // Shock: a bolt.
   shock: '<path d="M9.6 1 3.4 9.1h3.5L5.9 15l6.7-8.7H8.9z" fill="currentColor"/>',
   // ∂Q/∂t Condensador: a capacitor's two plates, with their leads.

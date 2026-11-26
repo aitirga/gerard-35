@@ -239,7 +239,7 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal' | 'nivel-de-base';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'sugestion' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal' | 'nivel-de-base';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
@@ -251,6 +251,9 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   nanitos: { name: 'Nanitos', anima: 'tecnopata' },
   // The Taller line's end: the dome a cure patches can be filled past its PV, up to BITS.redundancia times (`raiseBits`).
   redundancia: { name: 'Redundancia', anima: 'tecnopata' },
+  // The Mente line's first (docs/animas/tecnopata/README.md § Sugestión): while Tecnópata is worn by someone standing, a confused
+  // foe's blow and each beat of Idea fija go to the foe an ally last aimed at alone (`state.aimed`, `suggested`). Reaches the whole party.
+  sugestion: { name: 'Sugestión', anima: 'tecnopata' },
   // Not a node of the jar: it comes with a level of its ánima (`level`, SCENT) and reaches the whole party.
   // Dadista's node at the jar: Agitar a second time in a fight (`shakesLeft`).
   'otra-vez': { name: 'Otra vez', anima: 'dadaista' },
@@ -1688,6 +1691,11 @@ export interface BattleState {
   spent?: string[];
   /** Duals already played this fight: each one goes off once a fight (`dualBlock` 'used'). */
   usedDuals?: DualId[];
+  /**
+   * The foe the last ally action aimed at one foe went for (Atacar, a skill or a dual on one; never one on everyone, nor a pulse):
+   * where Sugestión sends a confused foe's blow and Idea fija's beats (`suggested`).
+   */
+  aimed?: string;
   /** The foe A escala last shrank, whose Encogido goes out if the dual is played again (`retake`). */
   scaled?: string;
   /** What the powder has been in this fight while Colorista was worn (`POWDER_TURNS`), and whether Fin de fiesta went off already. */
@@ -2476,7 +2484,7 @@ function fallen(state: BattleState) {
  * disagree. Agua and Mojado are one icon (the water's), fire at IV is Combustión's, a Mecha encendida is fire's icon and
  * Sutura de luz the cure's. `shown` is what the fight's screen holds back until a blow lands (a fire, the PV).
  */
-export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | StatusId | TimedId;
+export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | 'sugestion' | StatusId | TimedId;
 export function plateMarks(state: BattleState | undefined, c: Combatant, shown: { timed?: Combatant['timed']; hp?: number } = {}): PlateMark[] {
   if ((shown.hp ?? c.hp) <= 0) return [];
   const timed = shown.timed ?? c.timed ?? {}, ally = !!state?.allies.includes(c), marks: PlateMark[] = [];
@@ -2503,6 +2511,8 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
   put(c.bits && !c.bits.broken && c.bits.hp > 0, 'bits');
   put(c.fuse, 'mecha');
   put(state && weakSpotRounds(state, c), 'punto-debil');
+  // Sugestión: the foe a confused one's blow, or Idea fija's next beat, would go to, while there is one to send.
+  put(state && suggested(state) === c && state.foes.some(f => f.hp > 0 && (f.timed?.confusion || f.timed?.['idea-fija'])), 'sugestion');
   for (const [id, n] of Object.entries(c.statuses ?? {}) as [StatusId, number][]) put(n, id);
   for (const [id, on] of Object.entries(timed) as [TimedId, Timed | undefined][]) {
     if (on && !(id === 'mojado' && timed.agua)) marks.push(id === 'quemado' && on.level >= COMBUSTION.level ? 'combustion' : id);
@@ -2515,7 +2525,7 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
  * alterna's Alterna is shown but not counted: it is a circuit between two foes, not a status on either (docs/animas/README.md § Alterna).
  */
 export const plateCount = (state: BattleState, c: Combatant): (PlateMark | 'marca')[] =>
-  [...plateMarks(state, c).filter(m => m !== 'alterna'), ...Object.values(c.marks ?? {}).some(m => m && m.until >= state.round) ? ['marca' as const] : []];
+  [...plateMarks(state, c).filter(m => m !== 'alterna' && m !== 'sugestion'), ...Object.values(c.marks ?? {}).some(m => m && m.until >= state.round) ? ['marca' as const] : []];
 /** Rounds a Punto débil on `c` still lasts, this one included (0: none). */
 export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !== undefined && c.weakSpot >= state.round && c.hp > 0 ? c.weakSpot - state.round + 1 : 0;
 /**
@@ -3263,7 +3273,7 @@ export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
   return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
 }
 /** A fight over: nothing queued or spent is left behind, and no cat still waits on a prey (Acecho, Arco voltaico). */
-function endFight(state: BattleState) { delete state.queued; delete state.spent; for (const ally of state.allies) delete ally.stalk; }
+function endFight(state: BattleState) { delete state.queued; delete state.spent; delete state.aimed; for (const ally of state.allies) delete ally.stalk; }
 /**
  * After an action: the fight is won, or an ally still to act chooses, or the foes' turn comes. The
  * one who acted is through for the round (`spent`); allies may act in any order (two players choose
@@ -3695,6 +3705,18 @@ function carry(scratch: BattleEffect, effect: BattleEffect) {
   if (scratch.awoken) effect.awoken = scratch.awoken;
 }
 /** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
+/** Who brings Sugestión to the fight: whoever stands wearing Tecnópata, once it is bought. */
+const suggester = (state: BattleState) => state.improved?.passives?.includes('sugestion') ? state.allies.find(a => a.hp > 0 && a.classId === 'tecnopata') : undefined;
+/**
+ * Sugestión (docs/animas/tecnopata/README.md § Sugestión): the foe a confused one's blow, or a beat of Idea fija, goes to,
+ * the one an ally last aimed at alone (`state.aimed`), itself if that is who; none (and the blow goes as without it) if
+ * nobody brings the passive, nobody has aimed, or that foe has fallen or is a part.
+ */
+export function suggested(state: BattleState): Combatant | undefined {
+  if (!suggester(state)) return;
+  const foe = state.foes.find(f => f.id === state.aimed);
+  return foe && foe.hp > 0 && !foe.part ? foe : undefined;
+}
 const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
 /** How high fire can climb in this fight: Combustión (IV) while its passive is in it, Quemado III otherwise. */
 export const fireTop = (state: BattleState) => combustor(state) ? COMBUSTION.level : FIRE_TOP;
@@ -4067,6 +4089,8 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (guard && aimedAt) { target = guard; effect.interposed = aimedAt.id; }
   if (action === 'escape' && cornered(state)) return;
   if (action !== 'escape') took(state, actor);
+  // One foe chosen (not everyone, not a side of the party's): Sugestión's mark moves to it.
+  if (aimedAt && !everyone && state.foes.includes(aimedAt)) state.aimed = aimedAt.id;
   // Pedal holds the ecos' clocks only until their wearer acts again (Defender again sets it again).
   delete actor.pedal;
   // La Voz's song does not wait for rounds: a guard held against it lasts until that fighter acts again.
@@ -4861,6 +4885,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   (state.usedDuals ??= []).push(d.id);
   if (state.queued) delete state.queued[b.id];
   retake(state, d);
+  if (d.side === 'foes' && state.foes.includes(target)) state.aimed = target.id;
   const parts = halves.map(h => SKILLS.find(s => s.id === h)!);
   const striker = [a, b][Math.max(0, parts.findIndex(p => p.kind === d.kind))];
   const effect: BattleEffect = { actor: a.id, kind: 'skill', target: target.id, dual: { id: d.id, name: d.name, parts: [...halves], actors: [a.id, b.id], spent: { [a.id]: cost[halves[0]]!, [b.id]: cost[halves[1]]! } } };
@@ -5680,11 +5705,12 @@ export const CONFUSED_BLOW = 12;
 function confusedAct(state: BattleState, actor: Combatant): BattleEffect {
   state.enemyActions.push(actor.id);
   delete actor.intent;
-  const others = state.foes.filter(f => f !== actor && f.hp > 0 && !f.part);
-  const victim = others.length ? others[Math.floor(roll(state) * others.length)] : actor;
+  const others = state.foes.filter(f => f !== actor && f.hp > 0 && !f.part), told = suggested(state);
+  const victim = told ?? (others.length ? others[Math.floor(roll(state) * others.length)] : actor);
   const amount = misses(state, actor, victim) ? 0 : hurt(state, victim, fearDamage(state, victim, physical(CONFUSED_BLOW, current(state, actor), current(state, victim)), 'physical'));
   state.message = victim === actor ? `${actor.name}, confundido, se golpea a sí mismo. −${amount} PV.` : `${actor.name}, confundido, golpea a ${victim.name}. −${amount} PV.`;
   const effect: BattleEffect = { actor: actor.id, kind: 'enemy', target: victim.id, amount, confused: true };
+  if (told) note(effect, 'sugestion', suggester(state)!);
   if (amount > 0) combust(state, actor, victim, effect);
   ignite(state, effect); amplify(effect); checkEye(state, effect);
   if (beaten(state)) { state.phase = 'won'; state.message = winMessage(state); endFight(state); }
@@ -7346,10 +7372,11 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       const amount = pulseDamage(id, on.level, c.maxHp);
       // Idea fija: the eco in its head sounds, and it strikes the strongest of its own standing (itself if alone), as under Control remoto.
       if (id === 'idea-fija') {
-        const others = state.foes.filter(f => f !== c && f.hp > 0 && !f.part);
-        const victim = others.length ? others.reduce((most, f) => f.hp > most.hp ? f : most) : c;
+        // Sugestión sends it to the foe the party last aimed at instead.
+        const others = state.foes.filter(f => f !== c && f.hp > 0 && !f.part), told = suggested(state);
+        const victim = told ?? (others.length ? others.reduce((most, f) => f.hp > most.hp ? f : most) : c);
         const dealt = hurt(state, victim, fearDamage(state, victim, physical(IDEA_FIJA, current(state, c), current(state, victim)), 'physical'));
-        pulses.push({ target: victim.id, status: id, level: on.level, amount: dealt, by: c.id });
+        pulses.push({ target: victim.id, status: id, level: on.level, amount: dealt, by: c.id, ...told ? { passives: [{ id: 'sugestion' as const, name: PASSIVES.sugestion.name, who: suggester(state)!.id }] } : {} });
         continue;
       }
       // A cure's pulse (Sanación) gives PV back, never past the most.
