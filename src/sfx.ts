@@ -262,6 +262,16 @@ export const SOUNDS = {
   think: { synth: (c, out, at, p) => { [880, 1175, 988, 1319].forEach((from, i) => tone(c, out, at + i * .075, { type: 'triangle', from: from * p, length: .06, gain: .09 })); return .36; }, jitter: 25, gap: .2, voices: 1 },
   'cast-soft': { synth: (c, out, at, p) => { tone(c, out, at, { from: 330 * p, to: 660 * p, attack: .2, length: .34, gain: .12 }); tone(c, out, at + .04, { from: 495 * p, to: 990 * p, attack: .2, length: .32, gain: .06 }); return .38; }, jitter: 25, gap: .2, voices: 1 },
   // Haru and Yuki: a miaow as they go, a claw as it lands, a deeper one into a wound.
+  // Siete vidas saving someone (src/lives-fx.ts): the blow played backwards (its thump and grit swelling up and cut off),
+  // then Yuki's low purr, then a rising cure.
+  'siete-vidas-salva': { synth: (c, out, at, p) => {
+    tone(c, out, at, { from: 46 * p, to: 150 * p, attack: .26, length: .28, gain: .45 });
+    noise(c, out, at, { cutoff: 260, to: 2600, attack: .24, length: .26, gain: .3 });
+    tone(c, out, at + .3, { type: 'triangle', from: 52 * p, to: 48 * p, attack: .08, hold: .45, length: .75, gain: .16 });
+    for (let i = 0; i < 16; i++) noise(c, out, at + .3 + i * .045, { cutoff: 200 * p, to: 90, length: .04, gain: .2 });
+    [660, 880, 1320, 1760].forEach((from, i) => tone(c, out, at + .62 + i * .07, { from: from * p, length: .3, gain: .1 }));
+    return 1.2;
+  }, gap: .3, voices: 1 },
   meow: { synth: (c, out, at, p) => { meow(c, out, at, { pitch: 520 * p, length: .34, gain: .75 }); return .36; }, jitter: 110, gap: .2, voices: 2 },
   'meow-soft': { synth: (c, out, at, p) => { meow(c, out, at, { pitch: 690 * p, length: .24, gain: .5 }); return .26; }, jitter: 90, gap: .15, voices: 2 },
   claw: { synth: (c, out, at, p) => { noise(c, out, at, { cutoff: 5200 * p, to: 1800 * p, type: 'bandpass', q: 1.2, length: .07, gain: .46 }); tone(c, out, at, { type: 'triangle', from: 1900 * p, to: 900 * p, length: .035, gain: .05 }); return .09; }, jitter: 160, voices: 6 },

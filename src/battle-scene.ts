@@ -1,6 +1,6 @@
 import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
-import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type TimedPulse, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed } from './battle';
+import { BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type TimedPulse, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed, warded } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
 import { CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
@@ -49,6 +49,7 @@ import { createFluidFx } from './fluid-fx';
 import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
 import { createFilmFx } from './film-fx';
+import { createLivesFx } from './lives-fx';
 import { spellLaunch } from './battle-sounds';
 import { cometPath } from './trails';
 
@@ -426,6 +427,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const fourierFigures = new WeakMap<BattleEffect, ReturnType<typeof figures.fourier>>();
   // Superficie mínima's soap film: drawn there, then held round an ally until the round ends (src/film-fx.ts).
   const filmFx = createFilmFx({ effects, figures, cue: (id, options) => cue(id, options) });
+  /** Siete vidas' own look: Yuki's silhouettes at the party's feet, and the killing blow played back (src/lives-fx.ts). */
+  const livesFx = createLivesFx(effects);
   /** The thrown Atacar already started (src/math-cast.ts). */
   let spelled: BattleEffect | undefined;
   /**
@@ -1898,6 +1901,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     shine(id, f, dt);
   }
   const floorUnder = (f: Fighter) => new pc.Vec3(f.base.x, groundHeight(f.base.x, f.base.z), f.base.z);
+  /** Where one of the party stands now, for what stays at their feet (Yuki's silhouettes); nothing once they are down. */
+  const livesFeet = (id: string) => { const f = fighters.get(id); return f && f.hp > 0 ? v3(floorUnder(f)) : undefined; };
   /** Cegado: a blinded foe's blow that missed whoever it was aimed at (`BattleEffect.missed`). */
   const whiffed = (action?: BattleEffect) => !!action && action.kind === 'enemy' && !!action.target && !!action.missed?.includes(action.target);
   /** Which side a blinded foe swings wide on: fixed for each foe, not the same for all of them. */
@@ -2182,6 +2187,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const f = fighters.get(action.lives!.target);
     if (!f) return;
     const chest = chestOf(f), feet = floorUnder(f);
+    // The blow lands and is played back into them, Yuki's thread rising off the wound; her silhouette leaps in front.
+    const from = fighters.get(action.actor)?.base, dx = from ? f.base.x - from.x : 0, dz = from ? f.base.z - from.z : 1, d = Math.hypot(dx, dz) || 1;
+    livesFx.save(action.lives!.target, v3(chest), { x: dx / d, z: dz / d }, livesFeet);
     hit(f, green, 2.2);
     effects.heal(feet);
     dualFx.ring(v3(chest), viewDir(), .45, '#f6f0e2', { count: 110, outward: 3.4, life: .5, size: 1.7, light: 2.5 });
@@ -2190,7 +2198,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     clock.hold = Math.max(clock.hold, CRIT.stop * 1.6);
     critOf = action; critGrey = 1; critHeld = CRIT.stop * 1.6; critKeep = [f];
     zoom.x = Math.max(zoom.x, CRIT.punch);
-    cue('heal');
+    cue('siete-vidas-salva');
   }
   /** Where something of Dadista's lands on `f`: just in front of them, facing the camera, as big as they stand. */
   function spotOf(f: Fighter, side = 1): FaceSpot {
@@ -4154,7 +4162,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
+      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -4194,6 +4202,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // will burst waits for it, even if that blow is what brings its ally down (the state is already past it).
       if (state && filmFx.active) filmFx.keep(state.allies.filter(a => filmed(state!, a)).map(a => a.id), state.allies.filter(a => a.hp <= 0).map(a => a.id), animate && !impacted ? effect?.film?.map(f => f.from) : undefined);
       filmFx.update(dt);
+      // Siete vidas: Yuki's silhouettes breathe while her ward holds (a save playing now handles them as it lands).
+      livesFx.update(dt, !!state?.allies.some(warded) || !!(effect?.lives && animate && !impacted), livesFeet);
       { const axes = screenAxes(viewDir()); stamps.update(dt, axes.right, axes.up, axes.facing); }
       if (mathCast.update(dt)) spellLaunch(effect?.element).forEach(sound => cue(sound.id, sound));
       entryTime = animate ? Math.min(ENTRY_SECONDS, entryTime + dt) : ENTRY_SECONDS;
@@ -4386,6 +4396,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const f = fighters.get(effect.ward[wardSeen.shown]);
           if (!f) continue;
           dualFx.ring(v3(floorUnder(f)), { x: 0, y: 1, z: 0 }, .55, '#f6f0e2', { count: 60, around: 1.2, life: .95, size: 1.4 });
+          // Where she sat she leaves her silhouette, which stays with them while the ward holds.
+          const yuki = catsOf(effect.actor)?.yuki;
+          if (yuki?.entity.enabled) livesFx.leave(effect.ward[wardSeen.shown], yuki.entity, v3(floorUnder(f)));
           hit(f, white, .45); cue('clink');
         }
       }

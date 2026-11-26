@@ -1,0 +1,111 @@
+{
+  "title": "Siete vidas: siluetas y rebobinado",
+  "description": "La definitiva de Papagato con su aspecto propio (docs/animas/papagato/README.md § Definitiva): Yuki deja su silueta de partículas a los pies de cada uno, que respira mientras dura la custodia, y al salvar a alguien la pelea rebobina el golpe mortal (la banda rewind del motor de partículas). Combate de prueba a nivel 7 con Siete vidas comprada; necesita --gpu.",
+  "steps": [
+    {
+      "open": "/?story=papagato-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Afalse%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22papagato%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = () => document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click(); window.defend = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); window.fresh = () => ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); s.allies.forEach(a => { a.hp = a.maxHp; }); }); window.fresh();"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh(); ui.tweak(s => { s.foes[0].statuses = { sangrado: 5 }; s.foes[0].cutRound = s.round; });"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('llaga')"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "record": "siete-vidas-despierta",
+      "seconds": 2.8,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Gastar una herida de cinco con Olor a sangre es crítico seguro, y despierta la definitiva: «Siete vidas · Definitiva · despierta» sobre Gerard"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh()"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "definitiva-en-la-lista",
+      "delay": 400,
+      "caption": "Despierta, Siete vidas encabeza la lista: una vez en el combate, sin maná"
+    },
+    {
+      "record": "siete-vidas",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 15,
+      "each": "window.frame === 0 && window.skill('siete-vidas')",
+      "caption": "Siete vidas: Haru pasa por cada enemigo y los deja sangrando; Yuki recorre el equipo y, donde se sienta a los pies de cada uno, deja su silueta: unos 300 puntos blancos sobre su propia superficie"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "record": "custodia-respira",
+      "seconds": 3.4,
+      "fps": 20,
+      "tiles": 12,
+      "caption": "Mientras dura la custodia, las siluetas de Yuki respiran a los pies de cada uno: cada respiración, una nube nueva sobre los mismos puntos que sube y se va con un filo verde"
+    },
+    {
+      "shot": "custodia",
+      "delay": 700,
+      "caption": "La cabeza de gato en la placa de cada uno y la silueta de Yuki a sus pies mientras dura: el próximo golpe que fuera a tumbar a alguien del equipo lo cura"
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.find(a => a.id === 'gerard').hp = 1; })"
+    },
+    {
+      "record": "siete-vidas-salva",
+      "seconds": 7,
+      "fps": 30,
+      "tiles": 24,
+      "each": "window.frame === 0 && window.defend()",
+      "caption": "Gerard a 1 PV: el golpe que lo tumbaría cae, su sangre sale despedida y la pelea la rebobina: vuelve a la herida y se convierte en el hilo blanco de Yuki que sube. Su silueta salta delante y estalla en motas verdes; las demás se deshacen. El número rojo se da la vuelta en una cura verde"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "salvado",
+      "delay": 600,
+      "caption": "Gerard sigue en pie, con lo que le iban a quitar de más; la custodia se ha gastado para todo el equipo"
+    }
+  ]
+}

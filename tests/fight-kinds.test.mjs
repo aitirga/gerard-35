@@ -8,10 +8,11 @@ import { DISINTEGRATE_KINDS } from '../src/disintegrate.ts';
 import { DICE_KINDS } from '../src/dice-fx.ts';
 import { POWDER_KINDS } from '../src/powder-fx.ts';
 import { AGUA_KINDS } from '../src/freatica-fx.ts';
+import { LIVES_KINDS } from '../src/lives-fx.ts';
 
 // Every table the fight's GPU particles register (src/fight-particles.ts `define`). They share one
 // namespace: a name in two tables keeps only the first look, and one too many stops the fight.
-const TABLES = { FIGHT_KINDS, DUAL_KINDS, STATUS_KINDS, DISINTEGRATE_KINDS, DICE_KINDS, POWDER_KINDS, AGUA_KINDS };
+const TABLES = { FIGHT_KINDS, DUAL_KINDS, STATUS_KINDS, DISINTEGRATE_KINDS, DICE_KINDS, POWDER_KINDS, AGUA_KINDS, LIVES_KINDS };
 
 test('no two particle tables define the same kind', () => {
   const owner = new Map();
