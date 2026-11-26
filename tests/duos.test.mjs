@@ -409,3 +409,44 @@ test('two players agree on one fighter only when a dual goes to one (dualSingle)
   // On every foe, or on the whole party: nobody to agree on.
   for (const id of ['rayo-solar', 'bombardeo-orbital', 'sobrecalentamiento', 'vulcano', 'marea', 'metralla', 'seiche', 'suceso-seguro', 'caleidoscopio', 'electrolisis']) assert.ok(!single.includes(id), id);
 });
+
+// A dual of many hits, whatever its kind, spends a wound with its first hit on each foe alone (Aitor 2026-11-25,
+// `multiHit`; docs/animas/papagato/README.md § Definitiva): that hit lands the bonus, the rest as they would without it.
+test('Zarpazos de fuego, Cadáver exquisito and Géiser spend a wound with their first blow alone', () => {
+  // (Cadáver exquisito's elements are the fight's dice, and what each finds changes its number: only its first is compared.)
+  for (const [id, g, a, setUp] of [['zarpazos-de-fuego', 'matemagico', 'papagato'], ['cadaver-exquisito', 'prismatico', 'dadaista'], ['geiser', 'matemagico', 'freatica', s => { s.foes[1].timed = water(3); }]]) {
+    const plain = pair(g, a), cut = pair(g, a);
+    setUp?.(plain); setUp?.(cut);
+    cut.foes[1].statuses = { ...cut.foes[1].statuses, sangrado: 3 };
+    const p = actDual(plain, id, 'dog-1'), c = actDual(cut, id, 'dog-1');
+    assert.ok(p && c, id);
+    assert.equal(c.bled, 3, `${id}: it spends the wound`); assert.equal(cut.foes[1].statuses.sangrado, undefined, id);
+    assert.ok(c.strikes[0] > p.strikes[0], `${id}: the first blow lands harder`);
+    if (id !== 'cadaver-exquisito') assert.deepEqual(c.strikes.slice(1), p.strikes.slice(1), `${id}: the rest land plain`);
+  }
+});
+
+test('Bombardeo orbital spends each foe\'s wound with its first strike on it', () => {
+  const nodes = ['tecnopata:explosion'];
+  const run = wounded => {
+    const s = pair('tecnopata', 'sincopante', nodes);
+    if (wounded) s.foes[2].statuses = { ...s.foes[2].statuses, sangrado: 4 };
+    assert.ok(actDual(s, 'bombardeo-orbital', 'dog-0'), 'Explosión and Ostinato bring it');
+    foesTurn(s); s.foes.forEach(f => enemyAct(s, f.id)); nextRound(s);
+    return { s, blast: s.news.find(e => e.detonation === 'bombardeo-orbital') };
+  };
+  const plain = run(false), cut = run(true);
+  const on = (r, id) => r.blast.hits.find(h => h.target === id);
+  // (The round's end bled it a stack first.)
+  assert.equal(on(cut, 'dog-2').bled, 3); assert.equal(cut.s.foes[2].statuses.sangrado, undefined);
+  assert.ok(on(cut, 'dog-2').amount > on(plain, 'dog-2').amount);
+  assert.equal(on(cut, 'dog-0').bled, undefined, 'a foe that did not bleed spends nothing');
+});
+
+test('a dual of many hits spends no wound on a foe its blow cannot reach (La Voz singing)', () => {
+  const s = pair('matemagico', 'papagato');
+  s.song = { t: .3 }; s.foes[1].kind = 'voz';
+  s.foes[1].statuses = { ...s.foes[1].statuses, sangrado: 5 };
+  const e = actDual(s, 'zarpazos-de-fuego', 'dog-1');
+  assert.equal(e.amount, 0); assert.equal(e.bled, undefined); assert.equal(s.foes[1].statuses.sangrado, 5);
+});

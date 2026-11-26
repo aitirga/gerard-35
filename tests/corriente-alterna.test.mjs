@@ -242,7 +242,7 @@ test('a wound is spent by the first hit of the dual on each pole alone: the blow
   s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
   s.foes[1].statuses = { ...s.foes[1].statuses, sangrado: 2 };
   const e = actDual(s, 'corriente-alterna', 'dog-0');
-  assert.equal(e.bled, 3, 'the blow spends its target\'s wound, as a dual counts as every kind');
+  assert.equal(e.bled, 3, 'the blow, the first of its hits on its target, spends the wound');
   assert.equal(s.foes[0].statuses.sangrado, undefined);
   s.phase = 'player';
   const first = beat(s, true)[0];
@@ -253,4 +253,16 @@ test('a wound is spent by the first hit of the dual on each pole alone: the blow
   const later = [beat(s)[0], beat(s)[0]];
   assert.ok(later.every(p => p.bled === undefined));
   assert.equal(s.foes[0].statuses.sangrado, 4); assert.equal(s.foes[1].statuses.sangrado, 4);
+});
+
+test('a beat La Voz\'s song swallows spends no wound: the first that reaches the pole does', () => {
+  const s = pair();
+  s.foes[1].statuses = { ...s.foes[1].statuses, sangrado: 5 };
+  actDual(s, 'corriente-alterna', 'dog-0');
+  s.phase = 'player';
+  // dog-1 is all voice for the first beat, as La Voz is while a note sounds.
+  s.foes[1].kind = 'voz'; s.song = { t: .3 };
+  const swallowed = runClock(s, TIMED.alterna.every + .01).filter(p => p.status === 'alterna' && p.target === 'dog-1');
+  assert.ok(swallowed.length && swallowed.every(p => p.amount === 0 && p.bled === undefined && !p.awoken));
+  assert.equal(s.foes[1].statuses.sangrado, 5, 'the wound is still there');
 });

@@ -1381,7 +1381,7 @@ export interface TimedPulse { target: string; status: TimedId; level: number; am
    */
   reaction?: { id: ElementReaction; level?: number; hits?: { target: string; amount: number }[]; targets?: string[] };
   shocked?: string[]; mana?: string;
-  /** The wound its first hit on `target` spent (`MULTI_WOUND`), and whether that made it the sure crítico of Olor a sangre. */
+  /** The wound its first hit on `target` spent (`multiHit`), and whether that made it the sure crítico of Olor a sangre. */
   bled?: number; crit?: true;
   /** …and what the reaction set off besides: La crecida's Corriente, the cortina Remolino raised, the passives that spoke. */
   current?: BattleEffect['current']; cortina?: string[]; passives?: BattleEffect['passives'] }
@@ -3047,11 +3047,13 @@ function wound(target: Combatant, physicalBlow: boolean, skill?: SkillId) {
   return { bled, scale: woundScale(bled, skill) };
 }
 /**
- * The duals of many hits whatever their kind (Campana de Gauss's dice, Corriente alterna's blow and beats): as a dual counts as
- * every kind, they spend a wound, but only with their first hit on each foe, as Cacería's claws and Traca's puffs do. That hit
- * lands the wound's bonus, and at five stacks the sure crítico of Olor a sangre that wakes Siete vidas; the rest land plain.
+ * A dual of many hits, whatever its kind (docs/animas/papagato/README.md § What it offers a dual): Campana de Gauss's dice,
+ * Corriente alterna's blow and beats, Géiser's blows, the claws of Zarpazos de fuego and Cadáver exquisito, Bombardeo orbital's
+ * three. It spends a wound, but only with its first hit on each foe, as Cacería's claws and Traca's puffs do: that hit lands
+ * the wound's bonus, and at five stacks the sure crítico of Olor a sangre that wakes Siete vidas; the rest land plain. A dual
+ * of one blow spends it only if it is physical, as any blow. A hit that cannot reach (La Voz singing) spends nothing.
  */
-export const MULTI_WOUND: ReadonlySet<string> = new Set(['campana-de-gauss', 'corriente-alterna']);
+export const multiHit = (d: Pick<DualSpec, 'id' | 'strikes' | 'bell'>) => (d.strikes ?? 1) > 1 || !!d.bell || d.id === 'geiser' || d.id === 'corriente-alterna';
 /** A physical blow has spent the wound on `target`: its stacks go, unless Metralla holds it open. */
 function closeWound(target: Combatant) {
   if (!target.timed?.metralla) delete target.statuses!.sangrado;
@@ -4984,10 +4986,11 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   } else {
     if (melts && target.shell) { target.shell = false; effect.melted = true; state.message += ' El pringue se derrite.'; }
     const layered = target.layers ?? 0, strikes: number[] = [], coins: (0 | 1)[] = [], burns: number[] = [];
-    // A dual that cuts piles its own stacks on the wound and spends none (Staccato); every claw of a physical flurry carries
-    // it, as a flurry's do (Zarpazos de fuego). Corriente alterna's blow is the first of its hits on its target: it spends
-    // the wound there, as its first beat on the other pole does there (`MULTI_WOUND`).
-    const { bled, scale } = wound(target, (d.kind === 'physical' || MULTI_WOUND.has(id)) && !d.bleed, id === 'relevo-de-sangre' ? 'llaga' : undefined), weak = weakScale(state, target), chance = d.burnChance ?? 1;
+    // A dual that cuts piles its own stacks on the wound and spends none (Staccato). One of many hits spends it with its
+    // first alone, whatever its kind (`multiHit`): Zarpazos de fuego's first claw, Géiser's first blow; Corriente alterna's
+    // blow is the first of its hits on its target, as its first beat on the other pole is there.
+    const several = multiHit(d), reached = !singing(state, target);
+    const { bled, scale } = wound(target, (several ? reached : d.kind === 'physical') && !d.bleed, id === 'relevo-de-sangre' ? 'llaga' : undefined), weak = weakScale(state, target), chance = d.burnChance ?? 1;
     // Géiser: a blow for each mark of the water under it, all of it spent. Cadáver exquisito: three elements nobody chose.
     const marks = id === 'geiser' ? waterOf(target) : 0, blows = id === 'geiser' ? Math.max(1, marks) : d.strikes ?? 1;
     const drawn: Element[] = id === 'cadaver-exquisito' ? exquisite(state, blows, streak) : [];
@@ -4995,7 +4998,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     const sure = sureCrit(state, bled, effect), crits: boolean[] = [];
     for (let i = 0; i < blows && target.hp > 0; i++) {
       const crit = critical(state, striker, target, sure && i === 0);
-      const dealt = hurt(state, target, fearDamage(state, target, dualBlow(d, current(state, striker), current(state, target)) * (scale + (crit ? CRIT_RULES.bonus : 0)) * weak * affinityScale(target, elementOf(d)), 'dual'));
+      const dealt = hurt(state, target, fearDamage(state, target, dualBlow(d, current(state, striker), current(state, target)) * ((several && i ? 1 : scale) + (crit ? CRIT_RULES.bonus : 0)) * weak * affinityScale(target, elementOf(d)), 'dual'));
       strikes.push(dealt); crits.push(crit && dealt > 0);
       if (dealt > 0 && elementOf(d) === 'fuego') lit.push(target.id);
       // Cadáver exquisito: the handful powders, and the element it carried finds that powder at once.
@@ -5113,7 +5116,7 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
     if (foe.hp > 0 && !eaten) {
       if (foe.shell) { foe.shell = false; effect.melted = true; }
       const blocked = singing(state, foe) || reflects(foe), weak = weakScale(state, foe);
-      // The first die on each foe spends its wound (`MULTI_WOUND`): its bonus, and at five the sure crítico; the rest, plain.
+      // The first die on each foe spends its wound (`multiHit`): its bonus, and at five the sure crítico; the rest, plain.
       const first = !blocked && !opened.has(foe);
       if (!blocked) opened.add(foe);
       const { bled, scale } = first ? wound(foe, true) : { bled: 0, scale: 1 }, sure = bled > 0 && sureCrit(state, bled, effect);
@@ -5192,7 +5195,7 @@ export const waterGas = (c: Combatant) => c.hp <= 0 || frozenOf(c) ? 0 : Math.mi
  * on that pole (`stretchCircuits`), and the pole's `TIMED.alterna` only shows the longest of them on the plate (`showPoles`).
  */
 export interface Circuit { poles: [string, string]; by: string; beat: number; left: number; next: number;
-  /** The poles its hits have reached already: only the first hit on each spends a wound (`MULTI_WOUND`). The blow is the first on its target. */
+  /** The poles its hits have reached already: only the first hit on each spends a wound (`multiHit`). The blow is the first on its target. */
   opened?: string[] }
 /**
  * Corriente alterna wires `target` to the next foe standing in the row (the one before if it is the last; itself if it
@@ -5249,8 +5252,9 @@ function stretchCircuits(state: BattleState, foe: Combatant, how: 'restart' | nu
 function electricBeat(state: BattleState, sender: Combatant, victim: Combatant, power: number, level: number, from: Combatant, circuit?: Circuit): TimedPulse {
   const said = state.message;
   const effect: BattleEffect = { actor: sender.id, kind: 'skill', target: victim.id, amount: 0 };
-  // The circuit's first hit on this pole spends its wound (`MULTI_WOUND`); every other beat lands plain.
-  const first = !!circuit && !(circuit.opened ??= []).includes(victim.id);
+  // The circuit's first hit on this pole spends its wound (`multiHit`); every other beat lands plain. One La Voz's song
+  // swallows does not reach her, and spends nothing.
+  const first = !!circuit && !singing(state, victim) && !(circuit.opened ??= []).includes(victim.id);
   if (first) circuit!.opened!.push(victim.id);
   const { bled, scale } = first ? wound(victim, true) : { bled: 0, scale: 1 }, sure = bled > 0 && sureCrit(state, bled, effect);
   const amount = effect.amount = hurt(state, victim, fearDamage(state, victim, magical(power, current(state, sender), current(state, victim)) * (scale + (sure ? CRIT_RULES.bonus : 0)) * affinityScale(victim, 'electrico'), 'magic', 'electrico'));
@@ -5324,12 +5328,18 @@ function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital',
   const blocked = annulled(state, caster, d.element, 'magic');
   if (blocked) effect.annulled = blocked;
   for (const foe of state.foes.filter(f => f.hp > 0)) {
-    let amount = 0;
+    let amount = 0, bled = 0, crit = false;
     for (let i = 0; !blocked && foe.hp > 0 && i < (d.strikes ?? 1); i++) {
       if (foe.shell && d.element !== 'fuego') break;
       if (foe.shell) { foe.shell = false; effect.melted = true; }
-      const raw = dualBlow(d, current(state, caster), current(state, foe)) * affinityScale(foe, d.element) * weakScale(state, foe);
-      amount += hurt(state, foe, fearDamage(state, foe, raw, 'dual', d.element));
+      // Bombardeo orbital's first strike on each foe spends its wound (`multiHit`); the other two land plain.
+      const opens = i === 0 && multiHit(d) && !singing(state, foe), spent = opens ? wound(foe, true) : { bled: 0, scale: 1 };
+      const sure = spent.bled > 0 && sureCrit(state, spent.bled, effect);
+      const raw = dualBlow(d, current(state, caster), current(state, foe)) * (spent.scale + (sure ? CRIT_RULES.bonus : 0)) * affinityScale(foe, d.element) * weakScale(state, foe);
+      const dealt = hurt(state, foe, fearDamage(state, foe, raw, 'dual', d.element));
+      amount += dealt;
+      if (spent.bled) { closeWound(foe); bled = spent.bled; }
+      if (sure && dealt > 0) { crit = true; effect.crit = true; }
       if (foe.layers && !--foe.layers) bare(foe);
     }
     if (amount && foe.weakSpot) delete foe.weakSpot;
@@ -5337,7 +5347,7 @@ function blast(state: BattleState, id: 'reserva-de-color' | 'bombardeo-orbital',
     if (id === 'bombardeo-orbital' && amount && foe.hp) {
       blind(foe, ORBITAL_BLIND);
     }
-    effect.hits!.push({ target: foe.id, amount });
+    effect.hits!.push({ target: foe.id, amount, ...bled ? { bled } : {}, ...crit ? { crit: true as const } : {} });
   }
   if (!blocked && d.element) for (const foe of state.foes) powder(state, caster, foe, d.element, effect);
   ignite(state, effect); amplify(effect); checkEye(state, effect);

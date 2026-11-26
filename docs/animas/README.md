@@ -682,7 +682,9 @@ second ánima.
   (`BLEED_BONUS`, `woundScale` in `src/battle.ts`). Magic leaves the wound alone. A skill that adds
   Sangrado spends the old stacks first, then adds its own. *Zarpa en la llaga* opens it twice as far
   (+40% a stack, `deep`). The fight says so in red over the numbers (*+60% · Sangrado*), the blow
-  flares red and tears (`bleed`), and the next actor waits to let it be read.
+  flares red and tears (`bleed`), and the next actor waits to let it be read. A **dual of many hits**,
+  whatever its kind, spends it with its first hit on each foe alone (Aitor 2026-11-25, `multiHit`;
+  `papagato/README.md` § Definitiva).
 - Open to other ánimas: anything sharp, cutting or nagging can add stacks; anything else can
   feed off them.
 - **Cuts pile up** (decided by Aitor 2026-11-20, built; it replaces *A skill that adds Sangrado

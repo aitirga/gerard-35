@@ -227,10 +227,12 @@ cats do something.
   their silhouette leaps in front of them and bursts into green motes, and the others come apart. Its sound is
   the blow played backwards, a low purr and a rising cure (`siete-vidas-salva`). Screenshots:
   `just screenshots siete-vidas --gpu`.
-- **Multi-hit duals** (Aitor 2026-11-25): Campana de Gauss's dice and Corriente alterna's blow and beats spend a
-  wound only with their first hit on each foe, as Cacería does (`MULTI_WOUND`): that hit lands the wound's bonus,
-  and at five the sure crítico that wakes Siete vidas; the rest land plain. A physical flurry (Zarpazos de fuego)
-  keeps the wound on every claw, as a flurry's do.
+- **Multi-hit duals** (Aitor 2026-11-25): a dual of many hits, whatever its kind, spends a wound only with its
+  first hit on each foe, as Cacería does (`multiHit` in `src/battle.ts`): Campana de Gauss's dice, Corriente
+  alterna's blow and beats, Géiser's blows, the claws of Zarpazos de fuego and Cadáver exquisito, Bombardeo
+  orbital's three strikes. That hit lands the wound's bonus, and at five the sure crítico that wakes Siete vidas;
+  the rest land plain. A hit La Voz's song swallows spends nothing. A dual of one blow spends it only if it is
+  physical, as any blow.
 - **In `just fight-sim`** (2026-11-26): the bot values the ward (`LIVES_WORTH` for each ally the next blow would
   bring down, `LIVES_IDLE` otherwise) and, in a boss's fight only, waking it: a wound cut towards five and the
   blow that spends it each a step of it, a wound spent short a step back, the whole worth what casting it would
@@ -266,7 +268,8 @@ The duals are designed after every ánima is (`../README.md` § Order of work). 
 brings to a pair, for then:
 
 - **A wound to spend**: a partner's skill that hits hard once gets the wound's bonus and the
-  crítico. A dual counts as every kind, so it always spends.
+  crítico. A physical dual spends it, and a dual of many hits of any kind does, with its first hit on
+  each foe (§ Definitiva, Multi-hit duals); a magic dual of one blow does not.
 - **A flurry** (Zarpazos): many small blows that carry whatever the partner adds to each (fire, a
   status, a peel).
 - **A blow that waits** (Acecho), for a partner that charges.
