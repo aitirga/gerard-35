@@ -1,0 +1,73 @@
+{
+  "title": "Dadista · Objeto encontrado",
+  "description": "Dadista's level 6 (docs/animas/dadaista/README.md § The hand's size): with Aitor's hand of dice full, Gerard's fire on a wet dog makes Vapor, a reaction, and Objeto encontrado deals Aitor a die past the top; the tray shows it with the astral's bluish-white rim. Then a hand of six, and Defender, which takes none of it off. Fight tester, Gerard in Matemágico, Aitor in Dadista at level 6, three sturdy wet dogs. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=dadaista-6&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22dadaista%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22dadaista%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Afalse%2C%22immune%22%3Atrue%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22dadaista%3Amana-1%22%5D%7D"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id; ui.tweak(s => s.foes.forEach(f => { f.hp = f.maxHp = 900; }));"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.timed = { ...f.timed, mojado: { level: 1, left: 20, next: 20 } }; }); const a = s.allies.find(x => x.id === 'aitor'); a.dice = ['mano', 'ojo', 'tijeras', 'corchete', 'mano']; a.secondary = a.maxSecondary; s.allies.find(x => x.id === 'gerard').element = 'fuego'; });"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "shot": "mano-llena",
+      "delay": 300,
+      "caption": "Aitor's hand at its top: five dice (level 4 and the jar's Maná +1). The dogs are wet"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "objeto-encontrado",
+      "seconds": 2.6,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Gerard's fire on a wet dog: ¡Vapor!, a reaction. Over Aitor, «Objeto encontrado · Pasiva · +1 dado», and a sixth die in his tray"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "shot": "sexto-dado",
+      "delay": 300,
+      "caption": "The sixth die, past the top, with the astral's bluish-white rim; the plate's pips show it too"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "wait": 1600
+    },
+    {
+      "shot": "defender-con-seis",
+      "delay": 300,
+      "caption": "Defender with a hand of six: no maná comes and no die goes; the six stay"
+    }
+  ]
+}

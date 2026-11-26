@@ -658,6 +658,28 @@ title = "Dadista: Meteorito, Meteoro y Asteroide (nivel 7)"
 grep = "meteorito"
 in = "src/battle.ts"
 
+# PLAN.md step 4 (docs/plans/definitivas/), built 2026-11-26 (docs/animas/dadaista/README.md § The hand's size).
+[[block.item]]
+title = "Dadista: la mano hasta seis"
+priority = "animas"
+note = "Hecho: HAND.most = 6 y pastCap, solo para Objeto encontrado y Un golpe de dados. Defender, el descanso, Estrella fugaz, Da capo e improve nunca quitan los dados por encima del tope; la bandeja los enseña con un borde blanco azulado."
+grep = "export const HAND = \\{ most: 6 \\}"
+in = "src/battle.ts"
+
+# PLAN.md step 4, built 2026-11-26 (docs/animas/dadaista/README.md § Skills per level, level 6).
+[[block.item]]
+title = "Dadista: la pasiva Objeto encontrado (nivel 6)"
+priority = "animas"
+note = "Hecho: con la mano llena, una reacción sobre un enemigo (la ponga quien la ponga) da a quien lleva Dadista un dado de más, una vez por ronda, hasta seis; cuelga del gancho reacted(). El bot guarda la mano en su tope mientras un compañero puede reaccionar (FOUND_ODDS). Su pareja (mano-encontrada / mano-sin-encontrar, en alumnos-2a) la sujeta como pieza de jugador, no como respuesta: salta 0,25 veces por combate y la sala sale igual (95 % frente a 95 %). Falta su aspecto (el dado de hueso que sale de la reacción, un emisor found en la GPU) y su sonido."
+grep = "'objeto-encontrado': \\{ name: 'Objeto encontrado', anima: 'dadaista', level: 6"
+in = "src/battle.ts"
+
+# Planned in docs/plans/definitivas/propuesta-pasivas-y-definitivas.md § 2 (Aspecto); not built yet.
+[[block.item]]
+title = "Objeto encontrado: el dado de hueso que sale de la reacción"
+priority = "animas"
+note = "De los restos de la reacción sale despedido un dado pequeño de hueso mate con filo astral, hace un arco hasta quien la lleva y cae en la mano rodando, con unas motas detrás: un emisor found en la GPU que reutiliza la malla del dado, nunca rosa ni violeta, y el clic bajo de un dado que rueda. Hoy se ven «Objeto encontrado · Pasiva · +1 dado» y el sexto dado en la bandeja."
+
 # Designed (docs/animas/dadaista/README.md § Definitiva: Un golpe de dados): the hand filled to six.
 [[block.item]]
 title = "Dadista: la definitiva Un golpe de dados"

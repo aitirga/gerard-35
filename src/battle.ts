@@ -243,7 +243,7 @@ export interface Improved {
  * Telemetría: Bip's Atacar gives TELEMETRIA seconds more to what runs out on its target. Nanitos:
  * Rayo de sanación also takes one harmful status off whoever it cures.
  */
-export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'sugestion' | 'olor-a-sangre' | 'otra-vez' | 'remolino' | 'a-contratiempo' | 'pedal' | 'nivel-de-base';
+export type PassiveId = 'rescoldo' | 'capilaridad' | 'toma-de-tierra' | 'combustion' | 'telemetria' | 'nanitos' | 'redundancia' | 'sugestion' | 'olor-a-sangre' | 'otra-vez' | 'objeto-encontrado' | 'remolino' | 'a-contratiempo' | 'pedal' | 'nivel-de-base';
 export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?: number; description?: string }> = {
   rescoldo: { name: 'Rescoldo', anima: 'matemagico' },
   capilaridad: { name: 'Capilaridad', anima: 'matemagico' },
@@ -261,6 +261,8 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   // Not a node of the jar: it comes with a level of its ánima (`level`, SCENT) and reaches the whole party.
   // Dadista's node at the jar: Agitar a second time in a fight (`shakesLeft`).
   'otra-vez': { name: 'Otra vez', anima: 'dadaista' },
+  // Dadista's, with its level 6 (`foundOf`, FOUND): a reaction on a foe while the hand is full deals its wearer a die past the cap.
+  'objeto-encontrado': { name: 'Objeto encontrado', anima: 'dadaista', level: 6, description: 'Pasiva. Si la mano está llena y un enemigo reacciona, quien la lleva recibe un dado de más, una vez por ronda. La mano puede llegar así hasta seis.' },
   // Colorista's, with its level 5 (`remolinoOf`): each time a foe's powder turns into something, a cortina stands in front of its wearer.
   remolino: { name: 'Remolino', anima: 'prismatico', level: 5, description: 'Cuando el polvo de un enemigo reacciona, se levanta una cortina ante quien la lleva.' },
   'olor-a-sangre': { name: 'Olor a sangre', anima: 'papagato', level: 5, description: 'Los golpes a un enemigo que sangra tienen un 20 % más de Crítico. Gastar una herida de cinco cargas o más es siempre un golpe crítico.' },
@@ -974,7 +976,7 @@ const ecoScale = (state: BattleState, e: Eco) => (e.grade ? ECOS.raise : 1) * (e
  * dice it started with, never to six (Aitor, 2026-11-25); a hand or a pool already past that (the hand up to six) is
  * kept, never cut.
  */
-function fromTheTop(state: BattleState, ally: Combatant) {
+export function fromTheTop(state: BattleState, ally: Combatant) {
   ally.secondary = Math.max(ally.secondary, ally.maxSecondary);
   for (const [id, held] of Object.entries(ally.mana ?? {}) as [ClassId, number][]) if (held <= manaMax(state.improved, id, state.levels)) delete ally.mana![id];
   if (ally.mana && !Object.keys(ally.mana).length) delete ally.mana;
@@ -1476,6 +1478,8 @@ export interface Combatant {
   statuses?: Partial<Record<StatusId, number>>;
   /** The round Toma de tierra last gave this fighter a maná back. */
   grounded?: number;
+  /** The round Objeto encontrado last dealt this fighter a die past the hand's cap. */
+  found?: number;
   /** Escolta: Bip stands by this ally until the end of round `until`, sent by `by` (who must keep wearing Tecnópata, standing). */
   escort?: { until: number; by: string };
   /** Timed statuses on the fighter (TIMED), running on the fight's clock. */
@@ -2206,6 +2210,8 @@ export interface BattleEffect {
   passives?: { id: PassiveId; name: string; who: string }[];
   /** Maná a passive gave back to the actor (Toma de tierra). */
   mana?: number;
+  /** Objeto encontrado: the die past the cap a reaction dealt to `who`. */
+  found?: { who: string; dealt: DieFace[] };
   /** Control remoto: the foe `target` turned on, and the PV it took from it. */
   controlled?: { victim: string; amount: number };
   /** Caleidoscopio: the dome of mirrors gave back what it stopped to whoever struck it, and powdered them. */
@@ -2539,6 +2545,32 @@ export const weakSpotRounds = (state: BattleState, c: Combatant) => c.weakSpot !
  */
 export const DICED: ClassId = 'dadaista';
 /**
+ * The hand up to six (docs/animas/dadaista/README.md § The hand's size). Its cap is the ánima's maná (`maxSecondary`), and
+ * Defender, a round's rest and every other source of dice stop there. Only Un golpe de dados and Objeto encontrado deal
+ * past it (`pastCap`), up to `most`; and nothing ever takes a die off for being past the cap: Defender, the rest,
+ * Estrella fugaz, Da capo and `improve` leave a hand of six as it is.
+ */
+export const HAND = { most: 6 };
+/**
+ * Objeto encontrado (Dadista, level 6): while the hand is full, a reaction on a foe, whoever set it off, deals its wearer a
+ * die past the cap, `perRound` a round, up to `top` (`found`).
+ */
+export const FOUND = { level: 6, perRound: 1, top: 6 };
+/** Who brings Objeto encontrado to the fight: someone standing wearing Dadista with its level 6 (or Sin límites). */
+export const foundOf = (state: BattleState) => (state.levels?.dadaista ?? 1) >= FOUND.level || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === DICED) : undefined;
+/**
+ * Up to `count` dice past the hand's cap for `c`, who wears Dadista, never more than `top` (at most HAND.most): the faces
+ * dealt (a normal deal: the Comodín at its odds). Only the two sources of the hand up to six call it.
+ */
+export function pastCap(state: BattleState, c: Combatant, count: number, top = HAND.most) {
+  if (c.classId !== DICED || c.hp <= 0) return [];
+  const got = Math.max(0, Math.min(count, Math.min(top, HAND.most) - c.secondary));
+  c.secondary += got;
+  return got ? diceOf(state, c).slice(-got) : [];
+}
+/** Maná `n` brings back to `c` up to the cap of their ánima, never below what they hold: a hand past the cap keeps its dice. */
+const capped = (c: Combatant, n: number) => Math.max(0, adjustResource({ current: c.secondary, max: c.maxSecondary }, n).amount);
+/**
  * What a face can show. Blanco does nothing of its own: it repeats the last face spent (`lastFace`).
  * The Comodín is not a face of the die but a die of its own (black lacquer, a vermilion star).
  */
@@ -2568,7 +2600,7 @@ function dealDie(state: BattleState, c: Combatant): DieFace {
  */
 export function diceOf(state: BattleState, c: Combatant): DieFace[] {
   if (!state.allies.includes(c) || (c.classId !== DICED && !kitIn(state, c).includes(DICED))) return [];
-  const most = manaMax(state.improved, DICED, state.levels), count = c.classId === DICED ? c.secondary : Math.min(most, c.mana?.[DICED] ?? most);
+  const most = manaMax(state.improved, DICED, state.levels), count = c.classId === DICED ? c.secondary : Math.min(HAND.most, c.mana?.[DICED] ?? most);
   const hand = c.dice ??= [];
   while (hand.length < count) hand.push(dealDie(state, c));
   hand.length = Math.min(hand.length, count);
@@ -2660,7 +2692,7 @@ function spendDie(actor: Combatant, hand: DieFace[], at: number, effect: BattleE
 }
 /** The action is validated before payment, just as it is in the generic command resolver. */
 function spendSecondary(actor: Combatant, cost: number) {
-  actor.secondary = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, -cost).resource.current;
+  actor.secondary = Math.max(0, actor.secondary - Math.max(0, cost));
 }
 function fighter(slot: PartySlot, unlocked: readonly ClassId[] = []): Combatant {
   const stats = grown(withBonus(PROFILES[slot.profile], slot.classId ? CLASS_STATS[slot.classId] : undefined), slot.grown);
@@ -2679,7 +2711,7 @@ function swapMana(state: BattleState, actor: Combatant, to: ClassId | undefined)
 function restReserves(state: BattleState, actor: Combatant) {
   if (!wearsAnimas(actor)) return;
   const pools = actor.mana ??= {};
-  for (const id of kitIn(state, actor)) if (id !== actor.classId) { const most = manaMax(state.improved, id, state.levels); pools[id] = Math.min(most, (pools[id] ?? most) + REST_CHARGE); }
+  for (const id of kitIn(state, actor)) if (id !== actor.classId) { const most = manaMax(state.improved, id, state.levels); const held = pools[id] ?? most; pools[id] = Math.max(held, Math.min(most, held + REST_CHARGE)); }
 }
 function foe(id: string, name: string, kind: FoeKind, hp?: number): Combatant {
   const stats = { ...PROFILES[kind], ...(hp ? { pv: hp } : {}) };
@@ -2691,7 +2723,7 @@ export function improve(state: BattleState, improved: Improved | undefined) {
   for (const ally of state.allies) {
     if (!wearsAnimas(ally)) continue;
     ally.maxSecondary = manaMax(improved, ally.classId, state.levels);
-    if (ally.classId) ally.secondary = ally.maxSecondary;
+    if (ally.classId) ally.secondary = Math.max(ally.secondary, ally.maxSecondary);
     // The levels come in here too: whoever wears an ánima starts as large as its level makes them (`LEVEL_GROWTH`).
     const whole = ally.hp >= ally.maxHp;
     ally.stats = statsWith(state, ally, ally.classId); ally.maxHp = ally.stats.pv; if (whole) ally.hp = ally.maxHp;
@@ -3577,6 +3609,21 @@ function reacted(state: BattleState, actor: Combatant, effect: BattleEffect) {
   if (seen.has(actor.id)) return;
   seen.add(actor.id); heard.set(effect, seen);
   ground(state, actor, effect);
+  found(state, effect);
+}
+/**
+ * Objeto encontrado: a reaction while its wearer's hand is full deals them a die past the cap, once a round, up to FOUND.top
+ * (`reacted`). Below the cap it gives nothing: it is only for going past it.
+ */
+function found(state: BattleState, effect: BattleEffect) {
+  const wearer = foundOf(state);
+  if (!wearer || wearer.found === state.round || wearer.secondary < wearer.maxSecondary) return;
+  const dealt = pastCap(state, wearer, FOUND.perRound, FOUND.top);
+  if (!dealt.length) return;
+  wearer.found = state.round;
+  effect.found = { who: wearer.id, dealt };
+  note(effect, 'objeto-encontrado', wearer);
+  state.message += ` Objeto encontrado: ${wearer.name} recibe un dado de más.`;
 }
 /** Toma de tierra: a reaction its wearer set off gives a maná back, once a round (`reacted`). */
 function ground(state: BattleState, actor: Combatant, effect: BattleEffect) {
@@ -3727,7 +3774,8 @@ export const fireTop = (state: BattleState) => combustor(state) ? COMBUSTION.lev
 /**
  * A physical blow has landed on `target`, by whoever (an ally, a confused foe): if its fire is at
  * Combustión it bursts (COMBUSTION). Never from a pulse, a reaction or magic, so a burst never sets
- * off another. Say it in `effect.combustion`; Toma de tierra counts it as a reaction of its wearer's.
+ * off another. Say it in `effect.combustion`; it is a reaction (`reacted`): Objeto encontrado hears it whoever struck,
+ * Toma de tierra only from its wearer's own blow.
  */
 function combust(state: BattleState, actor: Combatant, target: Combatant, effect: BattleEffect) {
   const fire = target.timed?.quemado, owner = combustor(state);
@@ -3747,7 +3795,7 @@ function combust(state: BattleState, actor: Combatant, target: Combatant, effect
   effect.combustion = { target: target.id, hits, burns, ...steamed.length ? { steamed } : {} };
   note(effect, 'combustion', owner);
   state.message += ` ¡Combustión! ${target.name} estalla: ${hits.map(h => `−${h.amount}`).join(', ')} PV. El fuego salta a los demás.`;
-  if (actor === owner) reacted(state, owner, effect);
+  reacted(state, actor, effect);
 }
 /**
  * Electrólisis's gas (docs/animas/README.md § Gas): what its blast is at average stats, a level of gas at a time, and the
@@ -4117,7 +4165,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   if (action === 'defend') {
     actor.guarding = true;
     // Holding still gathers maná back into the ánima worn.
-    effect.charged = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, DEFEND_CHARGE).amount;
+    effect.charged = capped(actor, DEFEND_CHARGE);
     actor.secondary += effect.charged;
     // Dadista's maná comes as dice, rolled in view.
     if (actor.classId === DICED && effect.charged) effect.dealt = diceOf(state, actor).slice(-effect.charged);
@@ -4728,7 +4776,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   // Estrella fugaz: with Racha enough it spends it and deals dice, as far as the hand has room, whatever became of the blow.
   if (action === 'skill' && ability && 'star' in ability && rachaOf(actor) >= RACHA.star) {
     actor.racha! -= RACHA.star; effect.starred = RACHA.star;
-    const got = adjustResource({ current: actor.secondary, max: actor.maxSecondary }, RACHA.deal).amount;
+    const got = capped(actor, RACHA.deal);
     actor.secondary += got;
     if (got) effect.dealt = diceOf(state, actor).slice(-got);
     state.message += got ? ` La racha se gasta: ${got === 1 ? 'un dado más' : `${got} dados más`}.` : ' La racha se gasta, pero la mano está llena.';

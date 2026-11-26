@@ -29,7 +29,7 @@ test('the jar\'s list: a tree for each own ánima, one more maná for a shared o
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.skill ? [i.skill] : []).sort(), SKILLS.filter(s => s.node).map(s => s.id).sort());
   // A passive is a node too, unless it comes with a level of its ánima (Olor a sangre, Papagato's).
   assert.deepEqual(IMPROVEMENTS.flatMap(i => i.passive ? [i.passive] : []).sort(), Object.keys(PASSIVES).filter(id => !PASSIVES[id].level).sort());
-  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level).sort(), ['a-contratiempo', 'nivel-de-base', 'olor-a-sangre', 'pedal', 'remolino']);
+  assert.deepEqual(Object.keys(PASSIVES).filter(id => PASSIVES[id].level).sort(), ['a-contratiempo', 'nivel-de-base', 'objeto-encontrado', 'olor-a-sangre', 'pedal', 'remolino']);
   // A definitiva whose move is built is awake: it is that skill, bought here (Colorista's Fin de fiesta, the first).
   const fiesta = IMPROVEMENTS.find(i => i.id === 'prismatico:definitiva');
   assert.equal(fiesta.veiled, undefined); assert.equal(fiesta.skill, 'fin-de-fiesta'); assert.equal(fiesta.name, 'Fin de fiesta');

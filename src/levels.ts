@@ -37,10 +37,10 @@ export const LEVELLED: readonly ClassId[] = ['papagato', 'dadaista', 'prismatico
  */
 export const LIGHT_LEVELS: readonly number[] = [5, 7];
 /**
- * Levels that teach nothing yet, on purpose: Dadista's 6 is empty since Estrella fugaz moved to 3,
- * and is not filled out of habit (docs/animas/dadaista/README.md § Skills per level).
+ * Levels that teach nothing yet, on purpose, named so the checks let them be. None today: Dadista's 6,
+ * empty since Estrella fugaz moved to 3, gives Objeto encontrado (docs/animas/dadaista/README.md § Skills per level).
  */
-export const EMPTY_LEVELS: Partial<Record<ClassId, readonly number[]>> = { dadaista: [6] };
+export const EMPTY_LEVELS: Partial<Record<ClassId, readonly number[]>> = {};
 /**
  * What each foe is worth when it is beaten. Roughly how long it takes to bring down: some seven packs
  * of cebollitas (20 to 30 EXP each), or El Cebollón and five packs, teach Papagato Zarpazos.

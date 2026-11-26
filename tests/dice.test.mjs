@@ -319,3 +319,90 @@ test('the meteor is one skill that grows when it is used turn after turn, and an
   assert.equal(act(s, 'attack', foe.id).meteor, 0); again();
   assert.deepEqual(listed(), ['meteorito']);
 });
+
+// The hand up to six (docs/animas/dadaista/README.md § The hand's size) and Objeto encontrado, Dadista's level 6.
+import { HAND, FOUND, foundOf, pastCap, PASSIVES, TIMED, fromTheTop, changeAnima } from '../src/battle.ts';
+import { improvedBy } from '../src/ecos.ts';
+const PAIR = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'dadaista' }];
+const wet = () => ({ mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } });
+/** Gerard with fire and Aitor in Dadista at `level`, against three sturdy wet dogs; Aitor's hand full. */
+function found(level = 6) {
+  const s = createBattle(PAIR, 3, false, undefined, ['matemagico', 'dadaista']); s.seed = 11; s.levels = { dadaista: level };
+  improve(s, improvedBy(['matemagico:fuego']));
+  s.foes.forEach(f => { f.hp = f.maxHp = 999; f.timed = wet(); });
+  return s;
+}
+const ally = (s, id) => s.allies.find(a => a.id === id);
+/** Gerard sets fire to a wet dog: Vapor, a reaction. */
+const steam = (s, target = 'dog-0') => { s.phase = 'player'; s.active = 0; delete s.spent; delete s.queued; ally(s, 'gerard').element = 'fuego'; return act(s, 'attack', target); };
+
+test('Objeto encontrado: with the hand full, a partner\'s reaction deals its wearer a die past the cap, once a round', () => {
+  assert.equal(PASSIVES['objeto-encontrado'].anima, 'dadaista'); assert.equal(PASSIVES['objeto-encontrado'].level, FOUND.level);
+  assert.deepEqual(FOUND, { level: 6, perRound: 1, top: 6 }); assert.equal(HAND.most, 6);
+  const s = found(), a = ally(s, 'aitor'), cap = a.maxSecondary;
+  assert.equal(foundOf(s), a); assert.equal(a.secondary, cap);
+  const first = steam(s);
+  assert.equal(first.reaction.id, 'vapor');
+  assert.equal(a.secondary, cap + 1, 'a die past the cap'); assert.equal(diceOf(s, a).length, cap + 1);
+  assert.deepEqual(first.found, { who: 'aitor', dealt: diceOf(s, a).slice(-1) });
+  assert.ok(first.passives.some(p => p.id === 'objeto-encontrado' && p.who === 'aitor'));
+  const second = steam(s, 'dog-1');
+  assert.equal(second.reaction.id, 'vapor'); assert.equal(second.found, undefined, 'once a round'); assert.equal(a.secondary, cap + 1);
+  // Next round, again, and never past six.
+  s.round++; steam(s, 'dog-2'); assert.equal(a.secondary, Math.min(HAND.most, cap + 2));
+  a.secondary = HAND.most; s.round++; s.foes[0].timed = wet();
+  assert.equal(steam(s).found, undefined, 'six is the most'); assert.equal(a.secondary, HAND.most); assert.equal(diceOf(s, a).length, HAND.most);
+});
+
+test('Objeto encontrado gives nothing below the cap, below level 6, or to someone not wearing Dadista', () => {
+  const half = found(); ally(half, 'aitor').secondary = 2;
+  assert.equal(steam(half).found, undefined, 'a hand not full'); assert.equal(ally(half, 'aitor').secondary, 2);
+  const early = found(5);
+  assert.equal(foundOf(early), undefined); assert.equal(steam(early).found, undefined); assert.equal(ally(early, 'aitor').secondary, ally(early, 'aitor').maxSecondary);
+  const fallen = found(); ally(fallen, 'aitor').hp = 0;
+  assert.equal(steam(fallen).found, undefined, 'standing');
+  // No reaction, no die: a plain fire on a dry dog.
+  const dry = found(); dry.foes[0].timed = {};
+  assert.equal(steam(dry).found, undefined);
+});
+
+test('the die it deals is a normal deal: a dual calls the Comodín on it as on any die', () => {
+  let comodines = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const s = found(); s.seed = seed; const a = ally(s, 'aitor'); diceOf(s, a); a.comodinDue = true;
+    const effect = steam(s);
+    assert.equal(a.comodinDue, undefined, 'the call is spent on that die');
+    if (effect.found.dealt[0] === 'comodin') comodines++;
+  }
+  assert.ok(comodines > 200 * .1 && comodines < 200 * .32, `about one in five: ${comodines}`);
+});
+
+test('the hand up to six: only its two sources go past the cap, and nothing takes the dice past it off', () => {
+  const s = found(), a = ally(s, 'aitor'), cap = a.maxSecondary;
+  // Defender, a round's rest and Estrella fugaz stop at the cap.
+  a.secondary = cap - 1; s.phase = 'player'; s.active = 1; delete s.spent;
+  assert.equal(act(s, 'defend').charged, 1); assert.equal(a.secondary, cap, 'Defender fills to the cap, not past it');
+  // Past the cap: Defender keeps the six.
+  assert.deepEqual(pastCap(s, a, 9), diceOf(s, a).slice(cap)); assert.equal(a.secondary, HAND.most, 'pastCap stops at six');
+  s.phase = 'player'; s.active = 1; delete s.spent;
+  const held = act(s, 'defend');
+  assert.equal(held.charged, 0); assert.equal(a.secondary, HAND.most, 'Defender never takes a die off'); assert.equal(diceOf(s, a).length, HAND.most);
+  // Estrella fugaz with Racha: pays its die, and deals nothing past the cap, but trims nothing either.
+  a.racha = RACHA.star; s.phase = 'player'; s.active = 1; delete s.spent;
+  const star = act(s, 'skill', 'dog-0', 'estrella-fugaz', 0);
+  assert.equal(star.starred, RACHA.star); assert.equal(a.secondary, HAND.most - 1, 'its own die only');
+  // Resting (the ánima taken off, and a round's rest on it), then back on: the hand comes back as it was.
+  a.secondary = HAND.most; const six = [...diceOf(s, a)];
+  s.phase = 'player'; s.active = 1; delete s.spent;
+  assert.ok(changeAnima(s, 'aitor', null));
+  assert.equal(a.mana.dadaista, HAND.most); assert.deepEqual(diceOf(s, a), six, 'resting, the six are still there');
+  act(s, 'defend'); assert.equal(a.mana.dadaista, HAND.most, 'the rest never cuts them');
+  s.phase = 'player'; s.active = 1; delete s.spent;
+  assert.ok(changeAnima(s, 'aitor', 'dadaista')); assert.equal(a.secondary, HAND.most); assert.deepEqual(diceOf(s, a), six);
+  // Da capo and improve: never cut.
+  a.secondary = HAND.most; fromTheTop(s, a); assert.equal(a.secondary, HAND.most);
+  improve(s, s.improved); assert.equal(a.secondary, HAND.most);
+  // Nothing else passes the cap: pastCap on someone not in Dadista does nothing.
+  const g = ally(s, 'gerard'), before = g.secondary;
+  assert.deepEqual(pastCap(s, g, 2), []); assert.equal(g.secondary, before);
+});

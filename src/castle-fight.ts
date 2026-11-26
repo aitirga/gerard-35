@@ -7,7 +7,7 @@
  *
  * Preliminary (2026-11-19): the dynamics, with first-guess numbers (src/castle.ts `CASTLE`).
  */
-import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, STATUSES, TIMED, addStatus, affinityName, elementOf, inflict, roman, stacks, woundScale,
+import { DUALS, ELEMENTS, ELEMENT_ORDER, FOE_ABILITIES, SKILLS, STATUSES, TIMED, addStatus, fromTheTop, affinityName, elementOf, inflict, roman, stacks, woundScale,
   type Affinity, type AffinityKey, type BattleEffect, type BattleState, type ClassId, type Combatant, type Element, type FoeAbilityId, type PartySlot, type StatusId, type TimedId , blindMiss } from './battle.ts';
 import { magical, physical, type Stats } from './stats.ts';
 import { type HeldMove, AURELIA_PHASES, CASTLE, closestToFalling, CASTLE_FIGHTS, CASTLE_NAMES, DIRECTIVAS, GUM, GUM_ORDER, HANDS, MELODY, MONTON_FORMS, REINA_PHASES, STRONG, UNDOES, gumOf, isCastle, yearOf,
@@ -1077,7 +1077,7 @@ export function castleNote(state: BattleState, note: number): { right: boolean; 
   f.freed = true; m.stage = 'libre'; delete m.stunned;
   for (const a of state.allies) {
     if (a.castle?.held === 'reina') { delete a.castle.held; state.spent = state.spent?.filter(x => x !== a.id); }
-    if (a.hp > 0) { a.secondary = a.maxSecondary; a.mana = {}; }
+    if (a.hp > 0) fromTheTop(state, a);
   }
   if (state.phase === 'player' && !alive(state.allies[state.active])) state.active = Math.max(0, state.allies.findIndex(a => a.hp > 0 && !state.spent?.includes(a.id)));
   state.message = 'Las seis. La canción entra entera, y el hilo de chicle se rompe. Aitor parpadea: es él.';

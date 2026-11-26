@@ -850,7 +850,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
       if (p.status === 'alterna') beatSays(p);
       // A beat of Idea fija Sugestión sent: the passive's name over whoever brings it.
-      else if (p.passives?.length) { const when = generation; p.passives.forEach((n, i) => setTimeout(() => { if (when !== generation) return; pop(n.who, n.name, 'passive', 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour); callbacks.sound('mark-set'); }, 700 + i * 260)); }
+      else if (p.passives?.length) { const when = generation; p.passives.forEach((n, i) => setTimeout(() => { if (when !== generation) return; pop(n.who, n.name, 'passive', n.id === 'objeto-encontrado' ? 'Pasiva · +1 dado' : 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour); callbacks.sound('mark-set'); }, 700 + i * 260)); }
       // Its clock flashes as the notch it reached hurts.
       root.querySelectorAll<HTMLElement>(`[data-target="${p.target}"] .status-icon[data-status="${p.status}"], [data-unit="${p.target}"] .status-icon[data-status="${p.status}"]`).forEach(icon => { icon.classList.remove('is-pulsing'); void icon.offsetWidth; icon.classList.add('is-pulsing'); });
     }
@@ -876,7 +876,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     for (const id of p.shocked ?? []) later(after(id), () => pop(id, '¡Shock!', 'status', 'Pierde su siguiente turno', 'shock'));
     for (const id of p.cortina ?? []) later(400, () => pop(id, 'Cortina', 'status', 'El siguiente golpe, a la mitad', 'cortina'));
     p.passives?.forEach((n, i) => later(700 + i * 260, () => {
-      pop(n.who, n.name, 'passive', p.mana && n.id === 'toma-de-tierra' ? 'Pasiva · Maná +1' : 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour);
+      pop(n.who, n.name, 'passive', p.mana && n.id === 'toma-de-tierra' ? 'Pasiva · Maná +1' : n.id === 'objeto-encontrado' ? 'Pasiva · +1 dado' : 'Pasiva')?.style.setProperty('--anima', CLASSES[PASSIVES[n.id].anima].colour);
       callbacks.sound('mark-set');
     }));
     if (p.awoken) { const awoken = p.awoken; later(900, () => ultiAwoke(awoken)); }
@@ -1357,7 +1357,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       card.toggleAttribute('data-hers', hers.includes(c));
       if (plate) fill(plate.querySelector('.enemy-health')!, shownHp(c) / c.maxHp);
       const platePips = plate?.querySelector<HTMLElement>('.plate-pips');
-      if (platePips && platePips.childElementCount !== c.maxSecondary) platePips.innerHTML = '<i data-pip="full"></i>'.repeat(c.maxSecondary);
+      const platePipCount = Math.max(c.maxSecondary, shownMana(c));
+      if (platePips && platePips.childElementCount !== platePipCount) platePips.innerHTML = Array.from({ length: platePipCount }, (_, i) => `<i data-pip="full"${i >= c.maxSecondary ? ' data-over' : ''}></i>`).join('');
       platePips?.toggleAttribute('hidden', !animaMax(c));
       platePips?.toggleAttribute('data-dice', c.classId === DICED);
       plate?.querySelectorAll<HTMLElement>('.plate-pips i').forEach((pip, i) => { pip.dataset.pip = i < shownMana(c) ? 'full' : 'spent'; });
@@ -2693,7 +2694,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // A passive that did something: its name on a plate over whoever has it, in their ánima's colour.
       effect.passives?.forEach((p, i) => setTimeout(() => {
         if (token !== generation) return;
-        const el = pop(p.who, p.name, 'passive', effect.mana && p.id === 'toma-de-tierra' ? `Pasiva · Maná +${effect.mana}` : 'Pasiva');
+        const el = pop(p.who, p.name, 'passive', effect.mana && p.id === 'toma-de-tierra' ? `Pasiva · Maná +${effect.mana}` : p.id === 'objeto-encontrado' ? 'Pasiva · +1 dado' : 'Pasiva');
         el?.style.setProperty('--anima', CLASSES[PASSIVES[p.id].anima].colour);
         callbacks.sound('mark-set');
       }, 380 + i * 260));

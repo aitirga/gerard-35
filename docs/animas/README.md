@@ -340,7 +340,7 @@ need one from the start** (Aitor 2026-11-20): a passive is something it grows in
 
 | Where it comes from | Ánimas | Example |
 | --- | --- | --- |
-| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Colorista's *Remolino* (built), Freática's *Nivel de base* |
+| **A level** (3, 5 or 6) | Shared ones | Papagato's *Olor a sangre* (level 5), Sincopante's *A contratiempo*, Colorista's *Remolino* (built), Freática's *Nivel de base*, Dadista's *Objeto encontrado* (level 6: a reaction with the hand full deals a die past the top, up to six) |
 | **A node at the jar** (1 eco) | Own ones | Matemágico's *Rescoldo*, Tecnópata's *Nanitos* and *Sugestión* |
 
 A passive can reach the whole party (*Olor a sangre*: anyone's blow on a foe that bleeds), and then it

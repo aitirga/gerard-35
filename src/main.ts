@@ -911,7 +911,7 @@ try {
   function applyHelp(state: BattleState) {
     state.unbound = help.unbound || undefined; state.sureCrits = help.crit || undefined; state.sureOffbeat = help.offbeat || undefined;
     for (const ally of state.allies) {
-      if (help.free || help.unbound) ally.secondary = ally.maxSecondary;
+      if (help.free || help.unbound) ally.secondary = Math.max(ally.secondary, ally.maxSecondary);
       if (help.unbound) for (const id of Object.keys(ally.mana ?? {}) as ClassId[]) ally.mana![id] = manaMax(state.improved, id, state.levels);
       if (help.immune && ally.hp > 0) ally.hp = ally.maxHp;
     }

@@ -2,9 +2,10 @@
 
 Status: playable to level 7 (its dice as maná, Tirar dado and its five faces, the Comodín, the
 *Racha* and its counter, Agitar and its node at the jar, Estrella fugaz, Maná +1, Dados astrales,
-Ases en dúo, Meteorito → Meteoro → Asteroide, its look and interface). Designed whole 2026-11-20
-round Aitor's direction of that day (dice, luck and the astral) and built the same day. Still a
-design: the definitiva *Un golpe de dados*, a partner giving maná, the hand past its top, level 6 · Comes from: the
+Ases en dúo, Meteorito → Meteoro → Asteroide, its look and interface; since 2026-11-26 the hand
+up to six and Objeto encontrado at level 6). Designed whole 2026-11-20 round Aitor's direction of
+that day (dice, luck and the astral) and built the same day. Still a design: the definitiva *Un
+golpe de dados*, a partner giving maná · Comes from: the
 university friends' mission, [`docs/quests/universidad.md`](../../quests/universidad.md)
 
 What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
@@ -30,6 +31,7 @@ guesses ([`../README.md`](../README.md) § Order of work). The folder and the co
 | 2026-11-20 | Damage descriptions say **the kind, then the element, then how strong** (`AGENTS.md`) |
 | 2026-11-20 | **The Racha is there from level 1 and is a rule of the whole ánima**, not a passive learned later, and **its count shows**. **Agitar uses it too**, and **Estrella fugaz is a skill and works with it**. How each does is a proposal, built (§ Racha) |
 | 2026-11-20 | **The stats**: Fuerza +2, Magia +2, Crítico +10 %, Defensa −1. And: start building |
+| 2026-11-25 | **Level 6 is Objeto encontrado** (Plagio parked). **The hand goes up to six only for Un golpe de dados and Objeto encontrado**: not a general rule; every other source of dice stops at the top, and Defender or the rest never take the dice past it off |
 
 ## Identity
 
@@ -121,10 +123,16 @@ A die has six faces (`DIE_FACES`): two hands and one each of the others. All cos
 
 - **Its top** is the ánima's maná: 3, 4 from level 4, 5 with the jar's Maná +1. Defender and a
   round's rest never fill it past that.
-- **Six is the most it ever holds** (proposal, not built): dice that luck deals (Estrella fugaz,
-  the definitiva) and maná a partner gives go past the top, up to six. Six is what the three
-  meteors cost, and no hand gets there by waiting. **Built today: nothing passes the top**, so
-  Estrella fugaz's two dice are only as many as fit (§ Open).
+- **Six is the most it ever holds** (Aitor 2026-11-25; built 2026-11-26, `HAND.most`). Only two
+  things deal past the top: **Objeto encontrado** (one die a round, below) and the definitiva
+  *Un golpe de dados* (the hand filled to six; not built yet). Six is what the three meteors
+  cost, and no hand gets there by waiting.
+- **Nothing takes the dice past the top off.** Defender and a round's rest still fill only to
+  the top, and with a hand past it they give nothing and take nothing; Estrella fugaz deals only
+  as many as fit under the top; Da capo brings the hand back to the dice it started with, never
+  to six, and never cuts one past it; taking Dadista off keeps the hand as it was, resting.
+- **In the tray** a die past the top is the same die with the astral's bluish-white rim
+  (`data-over` on the pip, the plate's pips too). There is no number.
 
 ### Racha (the ánima's rule, from level 1; built)
 
@@ -189,7 +197,7 @@ Cost is in dice. A skill that is not Tirar dado takes dice of any face: the play
 | 4 | **Maná +1** | — | 3 → 4 dice | — | Decided (Aitor 2026-11-20) |
 | 4 | **Dados astrales** | 1 die, and the Racha | 16 a die of light; one for each 15 % of Crítico, two at least | `Daño mágico no elemental leve a enemigos al azar. Caen más dados cuanto más Crítico. Gasta la racha.` | Aitor's (2026-11-20), at this level for now; the numbers a proposal |
 | 5 | **Ases en dúo** | 2 dice | Crítico ×2, three rounds | `Sube Crítico de todo el equipo durante 3 rondas.` | Aitor's (2026-11-20); the numbers a proposal |
-| 6 | _Nothing yet_ | | | | Estrella fugaz moved to 3; not filled out of habit |
+| 6 | Passive · **Objeto encontrado** | — | One die past the top a round, up to six | `Pasiva. Si la mano está llena y un enemigo reacciona, quien la lleva recibe un dado de más, una vez por ronda. La mano puede llegar así hasta seis.` | Aitor's (2026-11-25); built 2026-11-26 |
 | 7 | **Meteorito** | 1 die | 30 | `Daño mágico no elemental medio a un enemigo. Usado otra vez en el turno siguiente, es Meteoro.` | Aitor's (2026-11-20); the numbers a proposal |
 | 7 | · then **Meteoro** | 2 dice | 48 | `Daño mágico no elemental alto a un enemigo. Usado otra vez en el turno siguiente, es Asteroide.` | Aitor's; the numbers a proposal |
 | 7 | · then **Asteroide** | 3 dice | 80 | `Daño mágico no elemental muy alto a todos los enemigos.` | Aitor's; the numbers a proposal |
@@ -217,6 +225,17 @@ Cost is in dice. A skill that is not Tirar dado takes dice of any face: the play
   Any other action, or the Asteroide landing, puts it back to Meteorito. The three cost six dice
   over three turns in a row, with no Defender between them, and a hand tops at five: **the third
   is never there by waiting.** § The three meteors.
+- **Objeto encontrado** (Aitor 2026-11-25; built) makes the choice *spend or keep*. It only
+  pays with the hand at its top or past it, so it is never a refill: a reaction on a foe, set
+  off by whoever (the partner's Vapor, an Estallido, a Combustión, Atractor's arrivals, the gas
+  going up, Superficie mínima's film on a foe's own blow), deals its wearer a die past the top,
+  once a round (`FOUND = { level: 6, perRound: 1, top: 6 }`, `foundOf`, `found`). The die is a
+  normal deal, so a dual's call on the Comodín lands on it. Its wearer has to be standing in
+  Dadista. It hangs from `reacted()`, the one hook every reaction goes through. Over the wearer:
+  *Objeto encontrado · Pasiva · +1 dado*, in Dadista's colour. With it, a hand of six can throw
+  a die every round and get it back from the partner's reaction, instead of emptying and
+  Defending: the pair plays at reacting on purpose (*this round I set fire to the wet one, keep
+  your hand*).
 - **Atacar** stays plain, as with every ánima. It keeps the Racha and adds nothing to it; it
   breaks a meteor.
 - `AGENTS.md`'s targets have no `a enemigos al azar`: to add when Dados astrales is built.
@@ -231,7 +250,8 @@ skill, or a lot of it has been gathered*):
 | Way | How it goes | Dice in the hand |
 | --- | --- | --- |
 | **A partner gives maná** | Full hand of five. Meteorito, Meteoro; before the third turn the partner gives one maná | 5 → 4 → 2 → 3 → 0 |
-| **Luck** | Racha 2 or more and a full hand of five: Estrella fugaz gives two dice for one, past the top (not built: § The hand's size). Then the three | 5 → 6 → 5 → 3 → 0 |
+| **Found** | A full hand of five and a partner's reaction: Objeto encontrado deals the sixth. Then the three | 5 → 6 → 5 → 3 → 0 |
+| **Luck** | Racha 2 or more: Estrella fugaz gives two dice for one, as far as the top (it never passes it: § The hand's size), so it only refills a hand on the way | 4 → 5 → … |
 | **The definitiva** | *Un golpe de dados* fills the hand to six | 6 → 5 → 3 → 0 |
 
 With a top of four (no Maná +1 from the jar) it takes two of those: two dice from the partner,
@@ -420,6 +440,14 @@ astral, its bluish white, is what the second round brings.
   beat and ricochets, and the astral lands as a four-point flare.
 - Reached from the fight tester and the picker (`dadaista-2` to `dadaista-7`). In the story it is
   worn once `anima-universidad` is set.
+- **The hand up to six and Objeto encontrado** (2026-11-26): `HAND`, `pastCap` (the one way past
+  the top, for the two sources), `FOUND`, `foundOf`, `found` (from `reacted`), `Combatant.found`,
+  `BattleEffect.found`; Defender, Estrella fugaz, the rest, `improve`, Da capo and the castle's
+  refill never cut a hand past the top. The passive's level in `PASSIVES` (so `EMPTY_LEVELS` is
+  empty). The tray and the plate draw the dice past the top (`src/vitals.ts`, `data-over`). The
+  simulator: `handWorth` counts a die past the top, `foundHold` (`FOUND_ODDS`) keeps the hand at
+  its top while a partner can react, the event `objeto-encontrado` and the book `found`. Tests in
+  `tests/dice.test.mjs`; its sheet, `scripts/screenshots/dadaista-encontrado.json`.
 
 **To put right in what is built**:
 
@@ -436,12 +464,30 @@ Ases en dúo or reaches the Asteroide, so it cannot value them.
 
 **To build**:
 
-1. The hand past its top, to six (today nothing passes the top, so the Asteroide needs dice
-   dealt on the way: Estrella fugaz, or a hand refilled by Defender before starting).
 5. The definitiva, when definitivas are built; a partner's skill that gives maná.
 6. The simulator: faces as things to ban, `worth` for the bracket, the eye and the Racha.
 
 ## For the balance, later
+
+**Objeto encontrado** (`just fight-sim`, 2026-11-26, `smart`, 200 fights, seed 35). Its pair,
+`mano-encontrada` / `mano-sin-encontrar`, is the second floor's Chivata room (`alumnos-2a`) with
+Gerard in Matemágico or Freática and Aitor in Dadista only, Dadista at 6 against 5:
+
+| | Wins | Rounds won | PV left | Objeto encontrado a fight |
+| --- | --- | --- | --- | --- |
+| Dadista 6 (with it) | 95 % | 4.43 | 53 % | 0.25 |
+| Dadista 5 (without) | 95 % | 4.44 | 54 % | 0 |
+
+- **It decides no room, and the pair says so**: it holds the passive as a piece of the player
+  (it fires, and the room comes out the same), as Sugestión's does, not as a room's answer.
+- **Why so seldom**: the bot sets few reactions off (under one a fight with Matemágico alone,
+  about two with Colorista or Freática beside it) and the fights of the second floor last three
+  to five rounds. The most it fired in any room of the second or third floor was 0.77 a fight
+  (`alumnos-3b`, Gerard Matemágico/Colorista), with no change in wins or rounds.
+- **The bot**: `handWorth` counts the die past the top (`HAND_WORTH`), and `foundHold` keeps a
+  hand at its top while a partner can react (`FOUND_ODDS` of a die). Without that, the wearer
+  had always thrown a die before the reaction came, and it fired 0 to 0.07 times a fight.
+- `just fight-sim levers` reaches it through the book `found` (`found.rules.perRound`, `top`).
 
 `just fight-sim` on 2026-11-20, once levels 2 and 3 were built (`smart`, Gerard Dadista 3 + Aitor
 Matemágico 2, 120 fights each):
@@ -501,17 +547,17 @@ The same day, before (`smart`, Papagato 3, Dadista level 1, its old stats):
 2. **Agitar's place.** Built as a row of the skill list. The 2026-11-15 decision was a fixed
    command with its own button. Recommended: its own button once it is clear the row is too
    hidden; the rule is the same either way.
-3. **The hand to six** past its top, for dice from luck or from a partner. Not built: today
-   Estrella fugaz deals only what fits. Recommended: build it with Maná +1 and the meteors, which
-   are what need it.
+3. **The hand to six**: decided and built (2026-11-25/26) for Objeto encontrado and Un golpe de
+   dados only. Estrella fugaz still deals only what fits under the top.
 4. **Who gives maná to whom.** No skill does today. Recommended: one in each own ánima, since
    the partner always has theirs: a node in Tecnópata's Taller line (Bip passes charge to an
    ally) and one in Matemágico's Cálculo line, each designed in its folder. Until then the
    meteors are reached by Estrella fugaz or the definitiva.
 5. **Ases en dúo reaches both of them** (read from *en dúo*), three rounds, any two dice. Its
    *other modifiers* are left out for now; the natural one is the Comodín's odds.
-6. **Level 6** is empty since Estrella fugaz went to 3. Recommended: leave it until the meteors
-   are played; a level may give nothing new.
+6. **Level 6**: Objeto encontrado (Aitor 2026-11-25). Its look is still to make: the small die
+   of matte bone with an astral edge thrown out of what the reaction left, arcing into the hand
+   (an emitter `found` on the GPU, never pink or violet), and a low click of a die rolling.
 
 ## How it got here
 

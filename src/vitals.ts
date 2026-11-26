@@ -24,8 +24,11 @@ export function portrait(profile: ProfileId, name: string, scarf?: string) {
 
 /** A gentle S-curve: PV. */
 const WAVE = 'M2 10C40 1 78 19 120 10S200 1 238 10';
-/** The maná circles: lit while they last, a hollow ring once spent. */
-const pips = (value: number, max: number) => Array.from({ length: max }, (_, i) => `<i data-pip="${i < value ? 'full' : 'spent'}"></i>`).join('');
+/**
+ * The maná circles: lit while they last, a hollow ring once spent. A hand past its cap (Dadista's up to six, `HAND`) shows
+ * the dice past it as circles of their own, `data-over`, with a lighter rim; they go when they are spent.
+ */
+const pips = (value: number, max: number) => Array.from({ length: Math.max(max, value) }, (_, i) => `<i data-pip="${i < value ? 'full' : 'spent'}"${i >= max ? ' data-over' : ''}></i>`).join('');
 /** `anima` is the worn ánima's name, `colour` its colour and `scarf` its scarf (classes.ts), if any. */
 export interface Vitals { id: string; name: string; profile: ProfileId; hp: number; maxHp: number; sec: number; maxSec: number; anima?: string; colour?: string; scarf?: string }
 export function vitalsPlate(v: Vitals) {
@@ -58,7 +61,7 @@ export function setVitals(plate: Element, hp: number, maxHp: number, sec: number
   anima.hidden = !maxSec;
   anima.setAttribute('aria-valuenow', String(sec)); anima.setAttribute('aria-valuemax', String(maxSec));
   const row = anima.querySelector('.vitals-pips')!;
-  if (row.children.length !== maxSec) row.innerHTML = pips(sec, maxSec);
+  if (row.children.length !== Math.max(maxSec, sec)) row.innerHTML = pips(sec, maxSec);
   [...row.children].forEach((pip, i) => {
     const next = i < sec ? 'full' : 'spent', el = pip as HTMLElement;
     // Dadista's maná is dice: each point it holds shows its face (`diceOf`), and a face that changes turns over.

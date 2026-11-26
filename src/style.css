@@ -2595,6 +2595,8 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .vitals.has-dice .vitals-pips { gap: 6px; align-items: center; }
 .vitals.has-dice .vitals-pips i { width: 21px; height: 21px; border-radius: 5px; }
 .vitals.has-dice .vitals-pips i[data-pip="spent"] { background: none; box-shadow: inset 0 0 0 1.5px #efe6cf40; transform: scale(.8); }
+/* A die past the hand's cap (the hand up to six: Objeto encontrado, Un golpe de dados): the same die, with the astral's bluish-white rim. */
+.vitals.has-dice .vitals-pips i[data-over][data-face] { box-shadow: inset 0 0 0 1.5px #e4edff, 0 0 8px #cfe0ffb3, 0 1px 3px #000a; }
 /* Never quite still: each die rocks a little at its own pace, as the ones floating by its wearer do. */
 .vitals.has-dice .vitals-pips i[data-face] { animation: die-sway var(--sway, 3.4s) ease-in-out infinite; }
 .vitals.has-dice .vitals-pips i:nth-child(2n) { --sway: 4.3s; }
@@ -2608,6 +2610,7 @@ kbd { display: inline-block; box-sizing: border-box; min-width: 21px; padding: 0
 .chip-mana[data-dice] i { border-radius: 1px; }
 .battle-target .plate-pips[data-dice] i { border-radius: 1px; background: #efe6cf; box-shadow: 0 0 4px #efe6cfaa; }
 .battle-target .plate-pips[data-dice] i[data-pip="spent"] { background: transparent; box-shadow: inset 0 0 0 1px #efe6cf88; }
+.battle-target .plate-pips[data-dice] i[data-over][data-pip="full"] { box-shadow: 0 0 0 1px #e4edff, 0 0 5px #cfe0ffcc; }
 /* Picking the die a skill spends: the sheet is the hand. */
 .skill-list[data-dice] .die-face { flex: none; width: 34px; height: 34px; }
 .skill-list[data-dice] button { padding-block: 7px; }
