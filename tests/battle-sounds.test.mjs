@@ -126,3 +126,12 @@ test('a golpe crítico is heard as the blow lands, once for a flurry (the scene 
   // A flurry whose first claw was not the critical one leaves it to the claw that is.
   assert.ok(!impactSounds({ kind: 'skill', actor: 'gerard', skill: 'zarpazos', target: 'f1', amount: 30, crit: true, crits: [false, true, false, false] }).some(c => c.id === 'crit'));
 });
+
+test('Fin de fiesta cracks like glass once for each foe, as its shards come out', () => {
+  for (const n of [1, 2, 4]) {
+    const hits = Array.from({ length: n }, (_, i) => ({ target: `foe-${i}`, amount: 10 }));
+    const ticks = impactSounds({ kind: 'skill', skill: 'fin-de-fiesta', actor: 'aitor', hits }).filter(c => c.id === 'glass-tick');
+    assert.equal(ticks.length, n, `${n} foes`);
+    assert.ok(ticks.every((c, i) => !i || c.delay > ticks[i - 1].delay), 'one after another');
+  }
+});

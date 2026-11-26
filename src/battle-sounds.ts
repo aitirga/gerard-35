@@ -1,6 +1,7 @@
 import { isCastle } from './castle.ts';
 import { isOnion, type BattleEffect, type BattleState, type Element, type ElementReaction, type FoeKind, type SkillId } from './battle.ts';
 import type { SoundId } from './sfx.ts';
+import { FIESTA } from './powder-fx.ts';
 
 /**
  * What a fight sounds like (docs/audio.md § Effects), all in one table: which sound goes with each
@@ -30,7 +31,7 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   traca: { impact: [{ id: 'hit', volume: .5 }] },
   // Fin de fiesta (src/powder-fx.ts FIESTA, from contact): the bags torn open, the cloud going up, the rain of burnt pigment,
   // its green, the arc and a crack of glass for each foe's shards.
-  'fin-de-fiesta': { start: [{ id: 'gust', volume: .5 }], impact: [{ id: 'whump' }, { id: 'fire-hit', volume: .5, delay: .06 }, { id: 'rain-hiss', delay: .6 }, { id: 'splash', volume: .5, delay: .95 }, { id: 'zap', volume: .7, delay: 1.1 }, { id: 'glass-tick', delay: 1.2 }, { id: 'glass-tick', delay: 1.34 }, { id: 'glass-tick', delay: 1.48 }] },
+  'fin-de-fiesta': { start: [{ id: 'gust', volume: .5 }], impact: [{ id: 'whump' }, { id: 'fire-hit', volume: .5, delay: .06 }, { id: 'rain-hiss', delay: .6 }, { id: 'splash', volume: .5, delay: .95 }, { id: 'zap', volume: .7, delay: 1.1 }] },
   // Freática's water is low and close, heard as under water: a mark rising is a swell, not a splash; the current a
   // bolt that sinks into it; the water hammer a pipe's knock, once a mark (the rest from the scene); the ice a crack and a sink.
   recarga: { start: [{ id: 'cast-soft', volume: .5 }], impact: [{ id: 'rise', volume: .55 }, { id: 'splash', volume: .35, delay: .3 }] },
@@ -211,7 +212,9 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
     if (effect.skill === 'foc-binari') return [...effect.melted ? [{ id: 'melt' as const }] : [], { id: effect.burn || effect.melted ? 'fire-hit' as const : 'fizzle' as const }, ...torn];
     // Atractor extraño: what met in its target and reacted sounds after the note, one after another.
     const met = (effect.gathered ?? []).flatMap(g => g.reactions).flatMap((r, i) => REACTION_SOUNDS[r.id].map(c => ({ ...c, delay: (c.delay ?? 0) + .25 + i * .12 })));
-    return [...SKILL_SOUNDS[effect.skill].impact, ...met, ...torn];
+    // Fin de fiesta: a crack of glass for each foe as its shards come out of the powder (src/powder-fx.ts `fiesta`).
+    const shards: Cue[] = effect.skill === 'fin-de-fiesta' ? (effect.hits ?? []).map((_, i) => ({ id: 'glass-tick', delay: FIESTA.spark + i * FIESTA.hop })) : [];
+    return [...SKILL_SOUNDS[effect.skill].impact, ...shards, ...met, ...torn];
   }
   // A mago charging its Bombona: the gas hisses out. El Campeón in plain clothes pulling itself together.
   if (effect.kind === 'enemy' && effect.telegraph?.id === 'bombona') return [{ id: 'fizzle' }];
