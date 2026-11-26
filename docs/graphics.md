@@ -655,6 +655,29 @@ temperature (0 undercooled, 1 the melting point), when it froze and how much the
 - **Cost**: GPU, trivial (256² texels, some 38 steps a frame at 120 Hz). CPU, one pass with that many
   dispatches: about 0.1 ms a frame (146 dispatches measured at 0.1–0.3 ms, 2026-11-26).
 
+## Physarum on the GPU (`src/physarum.ts`, built 2026-11-26)
+
+Enjambre's network (docs/animas/tecnopata/README.md § Look; staged by `src/swarm-fx.ts`) is a slime mould's
+transport network after J. Jones (Artificial Life 16, 2010): agents that smell the trail ahead with three
+sensors, turn towards the strongest, step and deposit; the trail spreads and fades. Fed at a few points, they
+gather into a network that joins them and thins, where few go, to close to the shortest tree between them.
+
+- **Agents**: 65 536 in a storage buffer (`var<storage, read_write> agents: array<vec4f>`: position in texels,
+  heading), one compute thread each. A cast's first step places them in a disc round where the swarm lands, each
+  heading out from its middle (in the kernel, from a hash: nothing uploaded).
+- **Deposits**: a buffer of 512² `atomic<u32>` counters, one `atomicAdd` an agent a step. The trail step reads
+  and clears each with `atomicExchange`, so nothing else has to clear it.
+- **Trail**: two 512² RGBA16F storage textures ping-ponged (x the trail, y the food). A step blurs 3 × 3, fades
+  (`PHYSARUM.decay`), adds the deposits and holds the food (the landing and every foe's feet, `uFoodN`) at
+  `PHYSARUM.food`, so the network keeps hold of them. Jones's numbers are in `PHYSARUM`.
+- **Steps**: a pair of steps (agents and trail, both ways) is one compute pass, since a `pc.Compute`'s uniforms
+  are read when it is dispatched; 150 pairs a second while it grows, 60 while it stays, at most four a frame.
+- **Drawn** as one quad on the floor reading the trail: a graphite edge round each vein so it reads on any floor,
+  cyan veins turning white where most agents go, a white pulse running out from the landing (`uSwarmLook.y`)
+  and a red beat with the bombs (`uSwarmLook.z`).
+- **Cost**: GPU, small for this card (64 k threads and 256 k texels a step). CPU: the whole fight frame went from
+  2.05 ms to 3.2 ms with the network, three bombs and their fires on screen (`--perf`, 2026-11-26).
+
 ## Lattices (`src/lattice.ts`)
 
 A lattice is a shape made of fight particles that holds together: solid and stable, it bends when

@@ -96,7 +96,7 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
 | | |
 | --- | --- |
 | **Wakes in a fight when** | A Bomba remota goes off at its top (50) while Aitor wears Tecnópata |
-| **Then** | Once in that fight, for the turn and no maná |
+| **Then** | Once in that fight, for the turn and no maná. Every foe standing gets a bomb already at its top, and every clock on those foes starts over; the party's clocks (a Sanación) are not the swarm's (Aitor 2026-11-25). No blow, no number |
 | **In the game** | *Abstract*: `Bip se deshace en un enjambre: le pega a cada enemigo una bomba remota que ya está al máximo. Sus estados con reloj vuelven a empezar.` |
 
 ### What a round looks like (one foe A, one B; a turn about every 4 s, first guess)
@@ -129,8 +129,18 @@ off as usual, with his Magia; Escolta ends; he cannot plant or stretch until he 
   of cyan rings flares up round them, and two thin rings of light keep turning under them, Bip's tether crackling to
   them now and then. A blow on them meets a cyan shield where it lands, and Bip throws a bomb onto whoever struck.
   Escolta can be put on someone who is Defending (it lasts two rounds), never on someone Bip already stands by.
-- **Enjambre**: Bip rises over the foes trembling and comes apart into a swarm of little Bips that splits over every
-  foe, each stream sticking a bomb on.
+- **Enjambre** (built 2026-11-26, Aitor 2026-11-25: «red de rastro»; `src/swarm-fx.ts`, `src/physarum.ts`,
+  `just screenshots enjambre --gpu`): Bip rises over the foes trembling and cracks open (0.5 s); it is gone, a swarm of
+  nanites pouring down onto the floor among them (0.8 s). There the swarm grows as a slime mould does: a Physarum
+  network (64 k agents and their trail, compute in WGSL) that reaches every foe's feet, holds on and thins to the paths
+  that join them (to 1.4 s). Nanites run up each body in closing rings and, at 1.6 s, the bombs close on every chest
+  one after another, each with its clank, already at their top («Bomba al máximo»; no number). A white pulse runs out
+  along the network as the clocks start over (1.9 s, a rewind), and Bip forms again at home out of nanites coming back
+  from it (2.4–3.2 s). Bip is undone only for this launch, at no cost. The network **stays**, beating red each time the
+  bombs flash, until the last of them has gone off; then it fades. Cyan, white and graphite, red only in its beat.
+  Sounds: the swarm's buzz, the network's data chirps, a clink a foe, one beep from all the bombs, the rewind.
+  Measured 2026-11-26 (`--perf`, this machine): the whole frame's CPU 3.2 ms with the network, three bombs and three
+  fires on screen, against 2.05 ms after they have gone.
 
 ### What it offers a dual
 
@@ -144,6 +154,15 @@ With its stats `just fight-sim check` has 7 of 170 off (2026-11-21), mostly part
 winning a little easier or longer: magos-con-magia, directo-con-tecnopata, campeon-bien,
 carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 0.7 of what it will
 take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
+
+**Enjambre has no pair of targets yet (2026-11-26, waits on Aitor).** PLAN.md's pair is
+`gemelos-tercero-enjambre` against `gemelos-tercero-sin-enjambre`, and the room cannot hold it as the wake
+stands: Gemelos de tercero lasts about six rounds, 40–55 s on the simulator's clock, and a bomb needs 27 s on
+one foe and two restarts to go off at its top. The bot opens with Explosión (which sets bombs off early) and
+plants a bomb 0.06 times a fight: Enjambre wakes in 0 % of them. Pushing the bot to ripen a bomb (a worth on
+the bomb it will go off with, a step back for setting one off short) wakes it in 1–2 % and costs the room
+(71 % won → 19–45 %). At the Queen, with Aitor only on Tecnópata, the same push wakes it in 72 % of fights
+and the party falls sooner (14.8 rounds against 15.4). To decide: another room, or a wake that comes sooner.
 
 ### Open (Aitor's)
 

@@ -738,6 +738,29 @@ note = "Una bomba en el enemigo que crece con el tiempo de su reloj (Bomba remot
 grep = "id: 'bomba-remota'"
 in = "src/battle.ts"
 
+# Aitor 2026-11-21, rules settled 2026-11-25 (docs/plans/definitivas/PLAN.md 2.4): only the foes' clocks start over, no blow.
+[[block.item]]
+title = "Tecnópata: la definitiva Enjambre"
+priority = "animas"
+note = "Hecho: se compra en el bote y despierta cuando una Bomba remota estalla al máximo con Tecnópata puesta. Pega a cada enemigo en pie una bomba ya al máximo y les vuelve a empezar los relojes (solo los de los enemigos: los del equipo siguen). Sin golpe ni número: «Bomba al máximo» sobre cada uno."
+grep = "id: 'enjambre'"
+in = "src/battle.ts"
+
+# Built 2026-11-26 (docs/animas/tecnopata/README.md § Look, Aitor 2026-11-25: «red de rastro»; docs/graphics.md § Physarum).
+[[block.item]]
+title = "Enjambre: la red de Bips"
+priority = "animas"
+note = "Hecho: Bip se deshace sobre los enemigos solo durante el lanzamiento (unos 3 s); su enjambre cae al suelo y crece allí como un Physarum (64 k agentes y su rastro en compute WGSL, src/physarum.ts) que agarra a cada enemigo y adelgaza; los nanitos suben por cada cuerpo y cierran la bomba; un pulso blanco recorre la red y Bip se rehace en casa. La red se queda latiendo en rojo con las bombas hasta que estallan. Sonidos swarm-buzz, data-chirp y rewind. just screenshots enjambre --gpu."
+grep = "physarum"
+in = "src/swarm-fx.ts"
+
+[[block.item]]
+title = "Enjambre: su pareja de objetivos"
+priority = "animas"
+note = "La pareja de PLAN.md es gemelos-tercero-enjambre frente a gemelos-tercero-sin-enjambre, y espera a Aitor: los Gemelos de tercero no pueden sujetarla tal como es. La sala dura unas seis rondas, 40–55 s del reloj del simulador, y una bomba necesita 27 s puesta y dos reinicios para estallar al máximo; el bot abre con Explosión (que hace estallar las bombas pronto) y Bomba remota sale 0.06 veces por combate. Despierta en el 0 % de los combates; empujando al bot a madurar una bomba despierta en el 1–2 % y la sala pasa del 71 % al 19–45 % de victorias (medido el 2026-11-26). En la Reina, con Aitor solo en Tecnópata, ese empuje la despierta en el 72 % pero el equipo cae antes (14.8 rondas frente a 15.4). Falta decidir: otra sala, o que despierte antes."
+grep = "(?s)\\A(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')"
+in = "src/battle-sim.ts"
+
 [[block.item]]
 title = "El bote: árboles de Matemágico y Tecnópata"
 used = "TREE_ANIMAS"
