@@ -250,7 +250,7 @@
       "record": "fin-de-fiesta",
       "seconds": 5.2,
       "each": "if (frame === 4) window.powderLab.act('fiesta')",
-      "caption": "Fin de fiesta, the definitiva: a handful on every foe and its three exits one after the other: the blast, a second puff and the water, a third and the spark that leaves them in shards",
+      "caption": "Fin de fiesta, the definitiva: the dust explosion. The bags torn open, one matte cloud over the foes, a front of fire through it, a heavy green rain, an arc from foe to foe and the crystal spikes",
       "clip": [
         150,
         110,

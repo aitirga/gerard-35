@@ -256,7 +256,7 @@
       "fps": 30,
       "tiles": 12,
       "each": "window.frame === 0 && window.skill('fin-de-fiesta')",
-      "caption": "Definitiva · Fin de fiesta: tres puñados sobre cada enemigo y cada uno sale a la vez. Estalla, envenena y cristaliza"
+      "caption": "Definitiva · Fin de fiesta: la explosión de polvo. Una nube sobre los enemigos, el frente de fuego que la cruza, la lluvia verde y el arco que los deja cristalizados"
     },
     {
       "until": "window.turn && window.turn('gerard')",

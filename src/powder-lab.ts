@@ -26,7 +26,7 @@ const BUTTONS: [string, string, string][] = [
   ['romper', 'Romper', 'El golpe del enemigo elegido rompe una cortina: le cae encima y lo deja empolvado'],
   ['rociada', 'Rociada', 'Un abanico de agua fina sobre todos: a quien lleva polvo se le corre y lo envenena'],
   ['traca', 'Traca', 'Cinco puffs pequeños sobre enemigos al azar, y los deja cubiertos'],
-  ['fiesta', 'Fin de fiesta', 'La definitiva: un puñado para cada uno y sus tres salidas, una tras otra'],
+  ['fiesta', 'Fin de fiesta', 'La definitiva: la explosión de polvo, la lluvia verde y el arco que cristaliza'],
   ['color', 'Color', 'Gris (primera vuelta) o mezclas apagadas (segunda)'],
   ['quitar', 'Quitar polvo', 'Sin polvo ni estados'],
 ];
