@@ -125,6 +125,46 @@
       "shot": "enjambre-lista",
       "delay": 500,
       "caption": "Con una bomba de 12 s en un perro: Enjambre «Dormida · 56 %», lo que ha crecido la más cargada hacia su máximo"
+    },
+    {
+      "open": "/?story=dadaista-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22dadaista%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 400; delete f.statuses; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.racha = 6; })"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "golpe-de-dados-placa",
+      "delay": 600,
+      "caption": "Un golpe de dados comprada y dormida: el icono apagado sobre la placa de Gerard, con su Crítico hacia el 100 % (Racha 6)"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "document.querySelector('.skill-list [data-skill=\"un-golpe-de-dados\"]')?.scrollIntoView({ block: 'end' })"
+    },
+    {
+      "shot": "golpe-de-dados-lista",
+      "delay": 500,
+      "caption": "Al pie de la lista, Un golpe de dados en gris: «Dormida · 75 %», el Crítico de Gerard hacia el 100 % (Dadista lleva la lista con las flechas en sus dados, así que se baja hasta ella)"
     }
   ]
 }

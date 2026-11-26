@@ -51,6 +51,8 @@ import { CURE_COLOUR, createMathCast, spellColour } from './math-cast';
 import { FIGURES, createMathFigures, isFigure, type FigureFoe, type FigureSkill } from './math-figures';
 import { createFilmFx } from './film-fx';
 import { createLivesFx } from './lives-fx';
+import { COUP_LOOK, collageAt, coupFall } from './coup-fx';
+import type { GpuLattice } from './fight-particles';
 import { spellLaunch } from './battle-sounds';
 import { cometPath } from './trails';
 
@@ -90,7 +92,7 @@ const rainGap = (drops: number) => Math.min(.22, 2 / Math.max(1, drops));
 /** How long after a blow its fighter's stats show going up or down. */
 const STAT_AFTER_BLOW = .2;
 /** Skills that stay where the wearer stands and reach their own side: no run-up, the hand goes up. */
-const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'superficie-minima', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', ...Object.keys(FREATICA_SKILLS)]);
+const SUPPORT = new Set(['analisis', 'cardioide', 'ronroneo', 'integral', 'condensador', 'superficie-minima', 'cortina', 'telon', 'rociada', 'polvareda', 'traca', 'fin-de-fiesta', 'ostinato', 'bordon', 'crescendo', 'acompanamiento', 'tutti', 'da-capo', 'un-golpe-de-dados', ...Object.keys(FREATICA_SKILLS)]);
 /**
  * Colorista's skills thrown from where the wearer stands (src/powder-fx.ts): when each lands, and how
  * long the action is given to play. Fin de fiesta's handfuls are in the air before its contact (`powderStart`).
@@ -415,6 +417,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let setNight: ((amount: number, lift?: number) => void) | undefined, night = 0, nightLift = 0, shownNight = 0;
   /** Bajo cero's cold grade (post.setDark: blue and grey), 0–1. */
   let setCold: ((amount: number) => void) | undefined, cold = 0;
+  /** Where Un golpe de dados' collage goes (post.collage): how torn the picture is, how much of it shows, the time and its seed. */
+  let setCollage: ((torn: number, shown: number, time?: number, seed?: number) => void) | undefined;
   /** When Bajo cero's ice next ticks while a foe stands frozen (s). */
   let iceTickIn = 0;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
@@ -557,6 +561,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const face = (from: pc.Vec3, to: pc.Vec3) => Math.atan2(to.x - from.x, to.z - from.z) * 180 / Math.PI;
   const ELEMENT_FLASH = { agua: new pc.Color(.45, .8, 1), fuego: new pc.Color(1, .55, .18), electrico: new pc.Color(1, .92, .4) };
   const astral = new pc.Color(.75, .88, 1);
+  /** The pool of light a die of Un golpe de dados leaves on the floor: the astral's white. */
+  const ASTRAL_POOL = '#dcefff';
   const white = new pc.Color(1, .96, .86), gold = new pc.Color(1, .82, .4), flame = new pc.Color(1, .55, .18), green = new pc.Color(.5, 1, .45);
   const statDown = new pc.Color(1, .16, .12), statUp = new pc.Color(.3, .72, 1);
   /** Bip's rays on whoever they reach: Tecnópata's cyan. */
@@ -2022,7 +2028,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const struck = action.hits ? action.hits.flatMap(h => { const f = h.crit ? fighters.get(h.target) : undefined; return f ? [f] : []; }) : target ? [target] : [];
     const towards = struck[0] ?? target, cx = towards ? towards.base.x - actor.base.x : 0, cz = towards ? towards.base.z - actor.base.z : 0, cd = Math.hypot(cx, cz) || 1;
     const crit = action.crit && action.crits?.[0] !== false && struck.length ? critBeat(action, struck, actor, { x: cx / cd, z: cz / cd }) : undefined;
-    // Dadista's skills from the sky land their own way (`skyStep` brings them down).
+    // Dadista's skills from the sky land their own way (`skyStep` brings them down), and its definitiva too (`coupStep`).
+    if (action.skill === 'un-golpe-de-dados') return coupBurst(action, actor);
     if (skyOf(action)) return skyBurst(action, actor, target);
     if (!target) { hit(actor, gold, .55); effects.emit('star', new pc.Vec3(actor.base.x, 1.3, actor.base.z), 8, .35); return; }
     // Análisis Parálisis: Gerard works it out in a flash of gold; the stats rising are the rest (effect.stats).
@@ -2303,6 +2310,101 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     const landed = land(felt, dx / d, -.4, dz / d);
     // The fight stops a quarter of a second under the Asteroide.
     return stage === 2 ? { ...landed, stop: Math.max(landed.stop, .25) } : landed;
+  }
+  /**
+   * Un golpe de dados (src/coup-fx.ts): what this action has put up so far. One great die of light for each foe it reaches, a
+   * glass lattice of the `box` shape falling on it; whether the ink is drawn, the dice are falling and the hand got its six.
+   */
+  let coup: { effect: BattleEffect; dice: { id: string; die?: GpuLattice; turn: pc.Vec3 }[]; inked?: true; fell?: true; back?: true } | undefined;
+  const COUP_COLOURS = { glass: '#e6f3ff', ink: DICE_COLOURS.ink, star: '#ff3b1f' } as const;
+  /** Un golpe de dados put away: its dice gone, the collage off. */
+  function coupClear() {
+    if (!coup) return;
+    for (const d of coup.dice) d.die?.remove();
+    coup = undefined;
+    setCollage?.(0, 0);
+  }
+  /** Where the die of light over `f` is at `t`: from high above to their chest, turning as it comes. */
+  function coupAt(f: Fighter, t: number) {
+    const chest = chestOf(f), u = coupFall(t);
+    return new pc.Vec3(chest.x, chest.y + (1 - u) * COUP_LOOK.height, chest.z);
+  }
+  /** Un golpe de dados, each frame of its action: the collage, the ink, the dice falling, and after the contact what is left. */
+  function coupStep(action: BattleEffect, actor: Fighter, t: number, animate: boolean) {
+    if (coup?.effect !== action) { coupClear(); coup = { effect: action, dice: (action.hits ?? []).map(h => ({ id: h.target, turn: new pc.Vec3(Math.random() * 360, Math.random() * 360, Math.random() * 360) })) }; }
+    const { torn, shown } = collageAt(t);
+    setCollage?.(torn, animate ? shown : 0, time, action.hits?.length ? action.hits[0].amount % 97 : 7);
+    if (!animate) return;
+    const foes = coup.dice.flatMap(d => { const f = fighters.get(d.id); return f ? [{ d, f }] : []; });
+    // The night comes down and the hand's dice go up: stars off the wearer's head.
+    if (t < COUP_LOOK.rise && Math.random() < .6) effects.emit('astral', v3(over([actor])), 2, .25);
+    // A constellation of red ink, foe to foe, a star at each.
+    if (!coup.inked && t >= COUP_LOOK.ink[0]) {
+      coup.inked = true;
+      const span = COUP_LOOK.ink[1] - COUP_LOOK.ink[0], points = foes.map(({ f }) => v3(chestOf(f)));
+      points.forEach((at, i) => dualFx.after(span * i / Math.max(1, points.length), () => {
+        dualFx.ring(at, viewDir(), .18, COUP_COLOURS.ink, { count: 40, outward: .6, life: .9, size: 1.3, kind: 'twinkle' });
+        effects.emit('astral', at, 6, .12);
+        const next = points[i + 1];
+        if (next) dualFx.line(at, next, COUP_COLOURS.ink, { count: 60, life: 1.1, size: 1.6 });
+      }));
+    }
+    // The dice of light: one glass box over each, coming down faster and faster, turning.
+    const gpu = effects.gpu && effects.gpu.active ? effects.gpu : undefined;
+    if (!coup.fell && t >= COUP_LOOK.fall) {
+      coup.fell = true;
+      for (const { d, f } of foes) {
+        const size = .34 * Math.max(.8, f.scale.y);
+        d.die = gpu?.lattice('pane', {
+          grid: [7, 7, 7], size: { x: size, y: size, z: size }, shape: 'box', at: v3(coupAt(f, t)), life: 6, hold: .4, colour: COUP_COLOURS.glass, scale: .9,
+          rigidity: 260, bonds: 420, damping: 9, viscosity: 2, toughness: 0, glow: 1.5, rim: 3, fresnel: .7, opacity: .9,
+          light: { intensity: 2.2, range: 3, colour: COUP_COLOURS.glass },
+        });
+      }
+    }
+    for (const { d, f } of foes) {
+      if (!d.die?.alive) continue;
+      const at = coupAt(f, t);
+      d.die.at.copy(at);
+      d.die.rotation.setFromEulerAngles(d.turn.x + t * 220, d.turn.y + t * 160, d.turn.z);
+      // What it sheds on its way down: stars behind it.
+      if (t < COUP_LOOK.contact && Math.random() < .7) effects.emit('astral', v3(at), 2, .2);
+      // Past the contact it comes apart into the star's light.
+      if (t >= COUP_LOOK.contact) { d.die.breakInto = 'twinkle'; d.die.dissolveFrom = 'outside'; d.die.dissolve = clamp01((t - COUP_LOOK.contact) / .35); }
+    }
+    // Six dice of glass back to the hand, in arcs from where theirs fell.
+    if (!coup.back && t >= COUP_LOOK.glue[0] + .15) {
+      coup.back = true;
+      const hand = v3(over([actor])), dealt = Math.max(1, action.dealt?.length ?? 0), steps = 14;
+      for (let k = 0; k < dealt; k++) {
+        const from = foes[k % Math.max(1, foes.length)]?.f, start = from ? v3(chestOf(from)) : hand, lift = 1.2 + k * .3;
+        for (let i = 0; i < steps; i++) dualFx.after(k * .06 + i * .03, () => {
+          const u = i / (steps - 1), at = { x: start.x + (hand.x - start.x) * u, y: start.y + (hand.y - start.y) * u + Math.sin(u * Math.PI) * lift, z: start.z + (hand.z - start.z) * u };
+          effects.emit('astral', at, i === steps - 1 ? 8 : 2, i === steps - 1 ? .16 : .05);
+        });
+      }
+    }
+  }
+  /** Un golpe de dados landing: each die bursts into the Comodín's star on its foe, its light pools on the floor, and the fight stops a moment. */
+  function coupBurst(action: BattleEffect, actor: Fighter) {
+    const list = (action.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [f] : []; });
+    for (const f of list) {
+      const spot = spotOf(f);
+      stamps.stamp('comodin', spot.centre, spot.size * 1.7, { roll: (Math.random() - .5) * 18, start: 2.4, slam: .07, hold: .5, out: .3, fall: .15, spin: 40 });
+      diceFx.skyLand(spot, 1.5);
+      dualFx.ring({ ...spot.feet, y: spot.feet.y + .06 }, { x: 0, y: 1, z: 0 }, spot.radius + .15, COUP_COLOURS.star, { count: 120, outward: 5, life: .5, size: 1.7 });
+      dualFx.ring({ ...spot.feet, y: spot.feet.y + .05 }, { x: 0, y: 1, z: 0 }, spot.radius + .4, ASTRAL_POOL, { count: 90, outward: .8, life: 1.6, size: 1.5, kind: 'mote' });
+      hit(f, astral, 1.6);
+    }
+    nightLift = Math.max(nightLift, 1); pulse?.(.45, 1, .3);
+    shake = Math.max(shake, .5); zoom.x = Math.max(zoom.x, HIT.punch.size * 2);
+    const first = list[0];
+    if (!first) return;
+    const unit = state && state.foes.find(u => u.id === action.hits?.[0]?.target);
+    const felt: Blow = { share: unit ? (action.hits?.[0]?.amount ?? 0) / unit.maxHp : 0, skill: true, guarded: false, ko: first.hp <= 0, beat: state?.phase === 'beat' };
+    const dx = first.base.x - actor.base.x, dz = first.base.z - actor.base.z, d = Math.hypot(dx, dz) || 1;
+    const landed = land(felt, dx / d, -.4, dz / d);
+    return { ...landed, stop: Math.max(landed.stop, COUP_LOOK.stop) };
   }
   /**
    * The meteor that has grown stays up there: a rock of light turning slowly over its wearer's head,
@@ -4030,6 +4132,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     setNight(next: (amount: number, lift?: number) => void) { setNight = next; },
     /** Where Bajo cero's cold grade goes (post.setDark): 0 the scene's own look, 1 blue and grey. */
     setCold(next: (amount: number) => void) { setCold = next; },
+    /** Where Un golpe de dados' collage goes (post.collage). */
+    setCollage(next: (torn: number, shown: number, time?: number, seed?: number) => void) { setCollage = next; },
     /** Where the moments only the picture knows go to sound (a claw landing, a layer off, a fall). */
     setCue(next: typeof cue) { cue = next; },
     /** Haru and Yuki already with the party, if any: this fight uses them instead of bringing its own. It gives them back when it ends. */
@@ -4255,7 +4359,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []); if (cold) { cold = 0; setCold?.(0); }
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
-      if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
+      if (!next) { coupClear(); night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
       else {
         // A foe called in mid-fight (La Voz's second voice) takes a place beside whoever called it, a step towards
         // the party, and waits there unseen until the call lands (`unborn`).
@@ -4333,7 +4437,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.dacapo ? DA_CAPO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.dacapo ? DA_CAPO.contact : effect?.skill === 'un-golpe-de-dados' ? COUP_LOOK.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
       // Freática's skills start their look on the cells at once (Recarga's tape, Riada's wave): the numbers come at their contact.
       if (effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' && state) freatica.play(effect, state);
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
@@ -4837,6 +4941,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       updateDice(dt, t, animate, target);
       if (animate) holdTells(dt, t);
       if (effect && actor && skyOf(effect)) skyStep(effect, actor, target, t, animate);
+      if (effect && actor && effect.skill === 'un-golpe-de-dados') coupStep(effect, actor, t, animate);
+      else if (coup) coupClear();
       // The astral's night: the place goes dark and blue while a skill from the sky runs (less for
       // Estrella fugaz, which is one star), and each landing lights it up for a moment.
       {
@@ -4844,7 +4950,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Relevo de sangre's star comes down in the astral's night too, and Bombardeo orbital's ecos and salvos glow in a dimmer one.
         const relayNight = !!effect && animate && effect.dual?.id === 'relevo-de-sangre' && t > .05 && t < duoEnd(effect) - .3 ? .5 : 0;
         const orbitNight = !!effect && animate && (effect.dual?.id === 'bombardeo-orbital' || effect.detonation === 'bombardeo-orbital') && t > .05 && t < duoEnd(effect) - .35 ? .45 : 0;
-        const want = fromSky ? (t > .1 && t < diceEnd(effect!) - .35 ? .9 : 0) : oneStar ? (t > .1 && t < diceContact(effect!) + .3 ? .55 : 0) : Math.max(relayNight, orbitNight);
+        const coupNight = !!effect && animate && effect.skill === 'un-golpe-de-dados' && t > .05 && t < COUP_LOOK.end - .3 ? .9 : 0;
+        const want = coupNight ? coupNight : fromSky ? (t > .1 && t < diceEnd(effect!) - .35 ? .9 : 0) : oneStar ? (t > .1 && t < diceContact(effect!) + .3 ? .55 : 0) : Math.max(relayNight, orbitNight);
         night += (want - night) * (1 - Math.exp(-dt * (want > night ? 8 : 4.5)));
         nightLift *= Math.exp(-dt / .2);
         if (night < .004 && !want) night = 0;
@@ -4943,7 +5050,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.dacapo ? DA_CAPO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.dacapo ? DA_CAPO.end : effect.skill === 'un-golpe-de-dados' ? COUP_LOOK.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

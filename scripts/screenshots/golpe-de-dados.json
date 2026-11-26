@@ -1,0 +1,63 @@
+{
+  "title": "Un golpe de dados · el collage",
+  "description": "La definitiva de Dadista con su aspecto propio (src/coup-fx.ts, el pase collage de src/post.ts): con el Crítico al 100 % despierta; la noche baja, la imagen se rasga en tiras de papel marfil con versos de Mallarmé en español, un cielo de estrellas y una regla roja detrás; una constelación de tinta une a los enemigos, un gran dado de luz (retícula box) cae sobre cada uno y estalla en la estrella del Comodín; la mano vuelve llena hasta seis y las tiras se pegan. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=dadaista-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22dadaista%22%2C%22aitor%22%3A%22matemagico%22%7D%2C%22animas%22%3A%5B%22dadaista%22%2C%22matemagico%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22dadaista%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.errors = []; addEventListener('error', e => window.errors.push(String(e.message))); ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 900; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const g = s.allies.find(a => a.id === 'gerard'); g.dice = ['mano', 'ojo']; g.secondary = 2; g.racha = 4; s.coup = { woke: true }; })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "Digit2",
+      "gap": 600
+    },
+    {
+      "shot": "despierta",
+      "delay": 300,
+      "caption": "Un golpe de dados despierta al frente de la lista de Gerard: sin maná, una vez en el combate; la mano tiene dos dados"
+    },
+    {
+      "eval": "window.skill('un-golpe-de-dados')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "golpe-de-dados",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Un golpe de dados: baja la noche; la imagen se rasga en tiras de papel marfil, algo torcidas y separadas, con versos de «Un golpe de dados» en el margen, estrellas y una regla roja detrás; una constelación de tinta roja une a los perros; un dado de luz de cristal cae girando sobre cada uno; al llegar, la estrella del Comodín, un charco de luz y la pausa de un golpe crítico; seis dados vuelven a la mano y las tiras se pegan"
+    },
+    {
+      "shot": "mano-de-seis",
+      "delay": 600,
+      "caption": "Después: la mano de Gerard con seis dados (los de más con el borde blanco azulado), la Racha intacta y «+4 dados · Mano de seis»"
+    },
+    {
+      "eval": "if (window.errors.length) throw new Error(window.errors.join('; '))"
+    }
+  ]
+}

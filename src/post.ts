@@ -211,6 +211,93 @@ ${Array.from({ length: LENSES }, (_, i) => `      { let b = lensBend(uv, uniform
         result = bent * (1.0 - lensDark) + vec3f(1.0, 0.52, 0.42) * lensRing * 1.6;
       }
     }`;
+/**
+ * Un golpe de dados' collage (docs/animas/dadaista/README.md § Definitiva): the picture torn into strips of ivory paper, a few
+ * degrees askew and slid apart, with a sky of stars behind them in the gaps and a red rule across, as a page of Mallarmé's
+ * poem. Each strip carries a line of its words (`COLLAGE_WORDS`, drawn once into `uCollageWords`) along its top margin.
+ * `uCollage` = (how far it is torn, 0–1; how much of it shows, 0–1; the time; its seed). Torn back to a little and faded
+ * out is the strips glued back, a touch crooked. The strips show the scene through the same grade, tone map and vignette.
+ */
+export const COLLAGE_WORDS = [
+  'UN GOLPE DE DADOS', 'JAMÁS', 'AUNQUE LANZADO EN CIRCUNSTANCIAS ETERNAS', 'DESDE EL FONDO DE UN NAUFRAGIO', 'ABOLIRÁ EL AZAR',
+  'NADA HABRÁ TENIDO LUGAR SINO EL LUGAR', 'EXCEPTO QUIZÁ UNA CONSTELACIÓN', 'TODO PENSAMIENTO EMITE UN GOLPE DE DADOS',
+] as const;
+const COLLAGE_DECLARATIONS = `
+uniform uCollage: vec4f;
+uniform uCollageAspect: f32;
+var uCollageWords: texture_2d<f32>;
+var uCollageWordsSampler: sampler;
+fn clHash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(41.3, 289.1))) * 15731.743); }
+fn clNoise(x: f32, row: f32) -> f32 {
+  let i = floor(x);
+  let f = fract(x);
+  let u = f * f * (3.0 - 2.0 * f);
+  return mix(clHash(vec2f(i, row)), clHash(vec2f(i + 1.0, row)), u);
+}
+// The torn fibre along an edge: coarse waves and fine teeth.
+fn clTear(x: f32, row: f32) -> f32 { return clNoise(x * 18.0, row) * 0.6 + clNoise(x * 95.0, row + 13.0) * 0.4; }
+fn clScene(at: vec2f) -> vec3f { return textureSampleLevel(sceneTexture, sceneTextureSampler, clamp(at, vec2f(0.0), vec2f(1.0)), 0.0).rgb; }`;
+const COLLAGE = `
+    if (uniform.uCollage.y > 0.001) {
+      let clTorn = uniform.uCollage.x;
+      let clShown = uniform.uCollage.y;
+      let clTime = uniform.uCollage.z;
+      let clSeed = uniform.uCollage.w;
+      let clAspect = uniform.uCollageAspect;
+      let clCount = 5.0 + floor(clHash(vec2f(clSeed, 1.7)) * 3.0);
+      // The strips run across, leaning a little; which one this pixel is in, and where in it (0 its top, 1 its bottom).
+      let clLean = (clHash(vec2f(clSeed, 4.1)) - 0.5) * 0.16;
+      let clRun = uv.y + (uv.x - 0.5) * clLean;
+      let clRow = clamp(floor(clRun * clCount), 0.0, clCount - 1.0);
+      let clIn = clRun * clCount - clRow;
+      // Its torn edges, its own slide and turn, and the gap that opens round it.
+      let clTopEdge = clTear(uv.x * clAspect, clRow + clSeed) * 0.09;
+      let clBottomEdge = 1.0 - clTear(uv.x * clAspect, clRow + 1.0 + clSeed) * 0.09;
+      let clGap = clTorn * 0.12;
+      let clSlide = vec2f((clHash(vec2f(clRow, clSeed + 2.0)) - 0.5) * 0.2, (clHash(vec2f(clRow, clSeed + 5.0)) - 0.5) * 0.018) * clTorn;
+      let clTurn = (clHash(vec2f(clRow, clSeed + 9.0)) - 0.5) * 0.09 * clTorn;
+      let clMiddle = vec2f(0.5, (clRow + 0.5) / clCount);
+      let clRel = (uv - clMiddle) * vec2f(clAspect, 1.0);
+      let clCos = cos(clTurn);
+      let clSin = sin(clTurn);
+      let clTurned = vec2f(clRel.x * clCos - clRel.y * clSin, clRel.x * clSin + clRel.y * clCos) / vec2f(clAspect, 1.0) + clMiddle - clSlide;
+      var clSeen = clScene(clTurned);
+      #ifdef GRADING
+        clSeen = applyGrading(clSeen);
+      #endif
+      clSeen = toneMap(max(vec3f(0.0), clSeen));
+      #ifdef COLOR_LUT
+        clSeen = applyColorLUT(clSeen);
+      #endif
+      #ifdef VIGNETTE
+        clSeen = applyVignette(clSeen, uv);
+      #endif
+      // Paper: ivory where the tear runs, a margin along its top with its line of the poem, and the picture inside.
+      let clTopIn = clIn - clTopEdge - clGap;
+      let clBottomIn = clBottomEdge - clGap - clIn;
+      let clOnStrip = step(0.0, clTopIn) * step(0.0, clBottomIn);
+      let clFibre = 0.025 + clTear(uv.x * clAspect * 3.0, clRow + 7.0) * 0.03;
+      let clPaper = 1.0 - smoothstep(clFibre * 0.6, clFibre, min(clTopIn, clBottomIn));
+      let ivory = vec3f(0.86, 0.79, 0.64);
+      let clMargin = step(clTopIn, 0.16) * clOnStrip;
+      // Its words: a row of the texture for this strip, along the margin, slid as the strip is.
+      let clWordUv = vec2f(fract((uv.x - clSlide.x) * 0.9 + clHash(vec2f(clRow, clSeed + 11.0))), (clRow % 8.0 + clamp((clTopIn - 0.02) / 0.12, 0.0, 1.0)) / 8.0);
+      let clInk = textureSampleLevel(uCollageWords, uCollageWordsSampler, clWordUv, 0.0).a * clMargin * step(0.02, clTopIn);
+      var clStrip = mix(clSeen, ivory, max(clPaper, clMargin * 0.92));
+      clStrip = mix(clStrip, vec3f(0.035, 0.03, 0.028), clInk);
+      // Behind: a night sky of stars, and a red rule across it all.
+      let clCell = floor(uv * vec2f(clAspect, 1.0) * 140.0);
+      let clStar = step(0.985, clHash(clCell + clSeed)) * (0.6 + 0.4 * sin(clTime * 3.0 + clHash(clCell) * 40.0));
+      var clSky = vec3f(0.006, 0.012, 0.04) + vec3f(0.9, 0.95, 1.1) * clStar * 1.4;
+      let clRuleX = 0.5 + (clHash(vec2f(clSeed, 21.0)) - 0.5) * 0.5 + (uv.y - 0.5) * 0.05;
+      let clRule = (1.0 - smoothstep(0.0012, 0.0024, abs(uv.x - clRuleX))) * clTorn;
+      // The rule bright enough that the astral's night keeps its red (src/post.ts SPOT keeps what shines).
+      let clRed = vec3f(2.4, 0.42, 0.22);
+      clSky = mix(clSky, clRed, clRule);
+      clStrip = mix(clStrip, clRed, clRule * (1.0 - step(0.16, clTopIn)) * clOnStrip);
+      let clMade = mix(clSky, clStrip, clOnStrip);
+      result = mix(result, clMade, clShown);
+    }`;
 const SPOTS = 4;
 const SPOT_DECLARATIONS = `
 uniform uSpotOn: f32;
@@ -246,8 +333,8 @@ const SPOT = `
 
 export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
   const chunks = pc.ShaderChunks.get(app.graphicsDevice, pc.SHADERLANGUAGE_WGSL);
-  chunks.set('composeDeclarationsPS', DIFFUSION_DECLARATIONS + SPOT_DECLARATIONS + LENS_DECLARATIONS);
-  chunks.set('composeMainEndPS', LENS + DIFFUSION + SPOT + DITHER);
+  chunks.set('composeDeclarationsPS', DIFFUSION_DECLARATIONS + SPOT_DECLARATIONS + LENS_DECLARATIONS + COLLAGE_DECLARATIONS);
+  chunks.set('composeMainEndPS', LENS + COLLAGE + DIFFUSION + SPOT + DITHER);
   const scope = app.graphicsDevice.scope;
   const diffusionId = scope.resolve('uDiffusion'), diffusionSeedId = scope.resolve('uDiffusionSeed'), snapshotOnId = scope.resolve('uSnapshotOn'), snapshotId = scope.resolve('uSnapshot');
   diffusionId.setValue(0); diffusionSeedId.setValue(0); snapshotOnId.setValue(0);
@@ -297,9 +384,34 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
     });
   }
   app.on('prerender', placeLenses);
+  // --- Un golpe de dados' collage: its words drawn once into a texture, eight lines of the poem, one a row ---
+  const collageId = scope.resolve('uCollage'), collageAspectId = scope.resolve('uCollageAspect'), collageWordsId = scope.resolve('uCollageWords'), collageValue = new Float32Array(4);
+  collageId.setValue(collageValue); collageAspectId.setValue(1);
+  let collageWords: pc.Texture | undefined;
+  function wordsTexture() {
+    if (collageWords) return collageWords;
+    const canvas = document.createElement('canvas'), rows = COLLAGE_WORDS.length, width = 2048, rowHeight = 64;
+    canvas.width = width; canvas.height = rows * rowHeight;
+    const ink = canvas.getContext('2d')!;
+    ink.clearRect(0, 0, canvas.width, canvas.height); ink.fillStyle = '#000'; ink.textBaseline = 'middle';
+    // As on Mallarmé's page: the line set in capitals of different sizes, spread along the strip with room between.
+    COLLAGE_WORDS.forEach((line, row) => {
+      const words = line.split(' '), sizes = [40, 26, 32, 22];
+      let x = 24 + (row * 173) % 300;
+      words.forEach((word, i) => {
+        const size = sizes[(row + i) % sizes.length];
+        ink.font = `${(row + i) % 3 === 0 ? 'italic ' : ''}${size}px Didot, 'Bodoni 72', Georgia, serif`;
+        ink.fillText(word, x, row * rowHeight + rowHeight * .55);
+        x += ink.measureText(word).width + 26 + ((row * 7 + i * 13) % 5) * 22;
+      });
+    });
+    collageWords = new pc.Texture(app.graphicsDevice, { name: 'Palabras del collage', width: canvas.width, height: canvas.height, format: pc.PIXELFORMAT_RGBA8, mipmaps: false, minFilter: pc.FILTER_LINEAR, magFilter: pc.FILTER_LINEAR, addressU: pc.ADDRESS_REPEAT, addressV: pc.ADDRESS_CLAMP_TO_EDGE });
+    collageWords.setSource(canvas);
+    return collageWords;
+  }
   // The picture kept for the glass (`snapshot`): a copy of the scene's colour before the compose pass, sized to it.
   const blank = new pc.Texture(app.graphicsDevice, { name: 'Sin instantánea', width: 1, height: 1, format: pc.PIXELFORMAT_RGBA8, mipmaps: false });
-  snapshotId.setValue(blank);
+  snapshotId.setValue(blank); collageWordsId.setValue(blank);
   let kept: { texture: pc.Texture; target: pc.RenderTarget } | undefined;
   const frame = new pc.CameraFrame(app, camera);
   frame.rendering.samples = LOOK.samples;
@@ -378,6 +490,20 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
      */
     lens(points: readonly { x: number; y: number; z: number; radius: number; strength: number }[]) { lenses = points.slice(0, LENSES); },
     /**
+     * Un golpe de dados' collage: the picture torn into strips `torn` (0–1) apart, `shown` (0–1) of it over the picture, `time`
+     * for its stars, `seed` for how it tears. `shown` 0 turns it off.
+     */
+    collage(torn: number, shown: number, time = 0, seed = 0) {
+      const on = frame.enabled && shown > .001;
+      if (on) {
+        collageWordsId.setValue(wordsTexture());
+        const { width, height } = app.graphicsDevice.clientRect;
+        collageAspectId.setValue(Math.max(1, width) / Math.max(1, height));
+      }
+      collageValue[0] = Math.max(0, Math.min(1, torn)); collageValue[1] = on ? Math.min(1, shown) : 0; collageValue[2] = time % 1000; collageValue[3] = seed % 97;
+      collageId.setValue(collageValue);
+    },
+    /**
      * Keeps the picture as it is now for the glass (`diffuse`): call it before the scene changes
      * under it. False if there is nothing to keep (the pass is off).
      */
@@ -437,7 +563,7 @@ export function createPost(app: pc.AppBase, camera: pc.CameraComponent) {
      */
     glass(on: boolean) { if (frame.rendering.sceneColorMap === on) return; frame.rendering.sceneColorMap = on; frame.update(); },
     get enabled() { return frame.enabled; },
-    destroy() { app.off('update', fadeHit); app.off('prerender', placeSpots); grading.destroy(); frame.destroy(); kept?.target.destroy(); kept?.texture.destroy(); blank.destroy(); },
+    destroy() { app.off('update', fadeHit); app.off('prerender', placeSpots); grading.destroy(); frame.destroy(); kept?.target.destroy(); kept?.texture.destroy(); blank.destroy(); collageWords?.destroy(); },
   };
 }
 

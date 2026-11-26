@@ -277,6 +277,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   battleScene.setPulse(post.pulse);
   battleScene.setNight(post.night);
   battleScene.setCold(post.setDark);
+  battleScene.setCollage(post.collage);
   battleScene.setSpot(post.spotlight);
   battleScene.setLens(post.lens);
   battleScene.setEcoPost(post);
