@@ -273,6 +273,8 @@ export const PASSIVES: Record<PassiveId, { name: string; anima: ClassId; level?:
   'nivel-de-base': { name: 'Nivel de base', anima: 'freatica', level: 5, description: 'Mientras lleves esta ánima, el agua de un enemigo no baja sola de la primera marca.' },
 };
 export const RESCOLDO = 15, TELEMETRIA = 3;
+/** Whether a passive is in play at all in this fight: every passive's rule asks it first (`BattleState.without`). */
+const kept = (state: BattleState, id: PassiveId) => !state.without?.includes(id);
 /**
  * Bomba remota (docs/animas/tecnopata/README.md § Bomba remota): a bomb of Bip's on a foe, `seconds` on its clock. It goes off
  * when its time is up with magic of no element of power `base` plus `perSecond` for every second it has been on, `top` at
@@ -966,9 +968,9 @@ export const ecoMuffled = (state: BattleState, e: Eco) => state.allies.find(a =>
 /** Whether now is the off-beat: half a second either side of the middle of the compás. */
 export const offbeat = (state: BattleState) => !!state.ecos?.length && state.compas !== undefined && (!!state.sureOffbeat || Math.abs(state.compas - ECOS.beat / 2) <= ECOS.offbeat);
 /** A contratiempo, with Sincopante's level 3, on whoever wears it now. */
-export const contratiempoOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && ((state.levels?.sincopante ?? 1) >= PASSIVES['a-contratiempo'].level! || !!state.unbound);
+export const contratiempoOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && kept(state, 'a-contratiempo') && ((state.levels?.sincopante ?? 1) >= PASSIVES['a-contratiempo'].level! || !!state.unbound);
 /** Pedal, with Sincopante's level 6, on whoever wears it now. */
-export const pedalOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && ((state.levels?.sincopante ?? 1) >= PASSIVES.pedal.level! || !!state.unbound);
+export const pedalOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && kept(state, 'pedal') && ((state.levels?.sincopante ?? 1) >= PASSIVES.pedal.level! || !!state.unbound);
 /** How strong an eco's note is: its grade, and half while muffled. */
 const ecoScale = (state: BattleState, e: Eco) => (e.grade ? ECOS.raise : 1) * (ecoMuffled(state, e) ? ECOS.muffled : 1);
 /**
@@ -1295,7 +1297,7 @@ export function ultiProgress(state: BattleState, c: Combatant): { skill: SkillId
   }
 }
 /** Whoever wears Colorista with Remolino learned, standing. */
-export const remolinoOf = (state: BattleState) => (state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
+export const remolinoOf = (state: BattleState) => kept(state, 'remolino') && ((state.levels?.prismatico ?? 1) >= PASSIVES.remolino.level! || state.unbound) ? state.allies.find(a => a.hp > 0 && a.classId === 'prismatico') : undefined;
 /** The blows of the action being resolved that found a foe weak to their kind, or resisting it (`blowAffinity`); `amplify` hands them to its effect. */
 const met: { target: string; blow: 'physical' | 'magic'; affinity: Affinity }[] = [];
 /** What the poison and the shards added to the blows of the action being resolved; `amplify` hands it to its effect. */
@@ -1730,6 +1732,11 @@ export interface BattleState {
    * often as wanted, maná or not.
    */
   unbound?: boolean;
+  /**
+   * Passives this fight runs without, whatever the levels and the jar say (`kept`): only the fight simulator sets it, to measure
+   * what one is worth with nothing else changed (`Ban`, e.g. Objeto encontrado's pair). The game never does.
+   */
+  without?: PassiveId[];
   /** Development (the fight tester's «Crítico seguro»): every blow of the party is a golpe crítico. */
   sureCrits?: boolean;
   /** Suceso seguro: every blow of the party is a golpe crítico up to the end of this round. */
@@ -2557,7 +2564,7 @@ export const HAND = { most: 6 };
  */
 export const FOUND = { level: 6, perRound: 1, top: 6 };
 /** Who brings Objeto encontrado to the fight: someone standing wearing Dadista with its level 6 (or Sin límites). */
-export const foundOf = (state: BattleState) => (state.levels?.dadaista ?? 1) >= FOUND.level || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === DICED) : undefined;
+export const foundOf = (state: BattleState) => kept(state, 'objeto-encontrado') && ((state.levels?.dadaista ?? 1) >= FOUND.level || state.unbound) ? state.allies.find(a => a.hp > 0 && a.classId === DICED) : undefined;
 /**
  * Up to `count` dice past the hand's cap for `c`, who wears Dadista, never more than `top` (at most HAND.most): the faces
  * dealt (a normal deal: the Comodín at its odds). Only the two sources of the hand up to six call it.
@@ -3151,7 +3158,7 @@ export const CRIT_RULES = { bonus: .5, chance: 1 };
  */
 export const SCENT = { level: 5, crit: 20, sure: 5 };
 /** Who gives the fight Olor a sangre now: someone standing who wears a Papagato grown enough. */
-export const scentOf = (state: BattleState) => (state.levels?.papagato ?? 1) >= SCENT.level || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'papagato') : undefined;
+export const scentOf = (state: BattleState) => kept(state, 'olor-a-sangre') && ((state.levels?.papagato ?? 1) >= SCENT.level || state.unbound) ? state.allies.find(a => a.hp > 0 && a.classId === 'papagato') : undefined;
 /** The chance, in percent, that a blow of `actor`'s on `target` is a golpe crítico. Foes have none. */
 export function critChance(state: BattleState, actor: Combatant, target: Combatant) {
   if (!state.allies.includes(actor)) return 0;
@@ -3589,7 +3596,7 @@ function steam(c: Combatant) {
   return 1;
 }
 /** Whether `actor` wears the ánima of the passive `id` and has it. */
-const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.classId === PASSIVES[id].anima && !!state.improved?.passives?.includes(id);
+const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.classId === PASSIVES[id].anima && !!state.improved?.passives?.includes(id) && kept(state, id);
 /** A passive did something: the fight shows it over whoever has it. */
 function note(effect: BattleEffect, id: PassiveId, who: Combatant) {
   if (!effect.passives?.some(p => p.id === id)) effect.passives = [...effect.passives ?? [], { id, name: PASSIVES[id].name, who: who.id }];
@@ -3601,7 +3608,7 @@ const heard = new WeakMap<BattleEffect, Set<string>>();
  * of it. Every way of reacting calls it: `react` (an element landing), `powder` (Estallido, Envenenado, Cristalizado, from
  * whatever turned the powder: a blow, a skill, a dual, Superficie mínima, Fin de fiesta), Vapor from a skill or a dual,
  * Combustión, the gas going up (`ignite`) and what Atractor extraño brought (`gather`). Whatever answers a reaction hangs
- * from here (Toma de tierra; Objeto encontrado to come), so a new way of reacting only has to call it. However many
+ * from here (Toma de tierra, Objeto encontrado), so a new way of reacting only has to call it. However many
  * reactions one action sets off, each actor is heard once.
  */
 function reacted(state: BattleState, actor: Combatant, effect: BattleEffect) {
@@ -3756,7 +3763,7 @@ function carry(scratch: BattleEffect, effect: BattleEffect) {
   if (scratch.awoken) effect.awoken = scratch.awoken;
 }
 /** Who brings Sugestión to the fight: whoever stands wearing Tecnópata, once it is bought. */
-const suggester = (state: BattleState) => state.improved?.passives?.includes('sugestion') ? state.allies.find(a => a.hp > 0 && a.classId === 'tecnopata') : undefined;
+const suggester = (state: BattleState) => state.improved?.passives?.includes('sugestion') && kept(state, 'sugestion') ? state.allies.find(a => a.hp > 0 && a.classId === 'tecnopata') : undefined;
 /**
  * Sugestión (docs/animas/tecnopata/README.md § Sugestión): the foe a confused one's blow, or a beat of Idea fija, goes to,
  * the one an ally last aimed at alone (`state.aimed`), itself if that is who; none (and the blow goes as without it) if
@@ -3768,7 +3775,7 @@ export function suggested(state: BattleState): Combatant | undefined {
   return foe && foe.hp > 0 && !foe.part ? foe : undefined;
 }
 /** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
-const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
+const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') && kept(state, 'combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
 /** How high fire can climb in this fight: Combustión (IV) while its passive is in it, Quemado III otherwise. */
 export const fireTop = (state: BattleState) => combustor(state) ? COMBUSTION.level : FIRE_TOP;
 /**
@@ -3902,7 +3909,7 @@ export const waterOf = (c: Pick<Combatant, 'timed'>) => c.timed?.agua?.level ?? 
 /** Whether `c` stands in Bajo cero's ice. */
 export const frozenOf = (c: Pick<Combatant, 'timed'>) => !!c.timed?.congelado;
 /** Who brings Nivel de base: someone standing who wears a Freática grown enough. */
-export const baseOf = (state: BattleState) => (state.levels?.freatica ?? 1) >= PASSIVES['nivel-de-base'].level! || state.unbound ? state.allies.find(a => a.hp > 0 && a.classId === 'freatica') : undefined;
+export const baseOf = (state: BattleState) => kept(state, 'nivel-de-base') && ((state.levels?.freatica ?? 1) >= PASSIVES['nivel-de-base'].level! || state.unbound) ? state.allies.find(a => a.hp > 0 && a.classId === 'freatica') : undefined;
 /** The break's blow at average stats with `left` marks of ice still there (Aitor: huge at the start, less as it melts, still a lot). */
 export const iceBreakPower = (left: number) => CRECIDA.breakLow + (CRECIDA.breakTop - CRECIDA.breakLow) * Math.min(1, Math.max(0, left) / CRECIDA.marks);
 /** A foe's water gone: no Mojado, no current, not sunk. */

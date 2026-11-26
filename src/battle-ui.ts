@@ -1072,7 +1072,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   }
   /**
    * Each ánima's maná on its pill, as little circles: the one worn spends it, the others keep theirs
-   * and get some back while they rest (`REST_CHARGE`). Three to a row, so six fit in two.
+   * and get some back while they rest (`REST_CHARGE`). Three to a row, so six fit in two. Dadista's dice past its cap (the hand
+   * up to six) get a circle of their own, `data-over`, with the lighter rim of the vitals and the plate; it goes when spent.
    */
   function chipMana(button: HTMLButtonElement, owner: Combatant, id: ClassId) {
     const most = manaMax(state?.improved, id, state?.levels), left = id === owner.classId ? shownMana(owner) : owner.mana?.[id] ?? most;
@@ -1080,7 +1081,11 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!box) return;
     box.hidden = !most;
     box.toggleAttribute('data-dice', id === DICED);
-    if (box.childElementCount !== most) { box.innerHTML = '<i></i>'.repeat(most); box.style.setProperty('--columns', String(Math.min(3, most))); }
+    const count = Math.max(most, left);
+    if (box.childElementCount !== count) {
+      box.innerHTML = Array.from({ length: count }, (_, i) => `<i${i >= most ? ' data-over' : ''}></i>`).join('');
+      box.style.setProperty('--columns', String(Math.min(3, count)));
+    }
     box.querySelectorAll('i').forEach((pip, i) => {
       const next = i < left ? 'full' : 'spent';
       // A circle filling or emptying since the last redraw pops or fades, as on the vitals plate.

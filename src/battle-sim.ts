@@ -14,8 +14,8 @@ import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
-  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
+  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, PASSIVES, stacks,
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
@@ -90,8 +90,8 @@ export interface Setup {
   policy: Policy;
   /**
    * Skills the bot may not use, to measure how much one decides ("and without Zarpazos?"): a skill
-   * also bans every dual it is half of, a dual id bans that dual, `duals` bans them all, and `defend`
-   * never holds on.
+   * also bans every dual it is half of, a dual id bans that dual, `duals` bans them all, `defend`
+   * never holds on, and a passive's id plays the fight without that passive (levels and stats as they are).
    */
   ban?: Ban[];
   /**
@@ -250,7 +250,8 @@ export function storyJobs(points: StoryPoint[], policies: Policy[], options: { f
 export function storyRows(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string; runs?: number; seed?: number; tuning?: Tuning } = {}) {
   return storyJobs(points, policies, options).map(({ setup, ...job }) => ({ ...job, row: simulate(setup, options.runs ?? 200, options.seed ?? 35, options.tuning ?? {}) }));
 }
-export type Ban = SkillId | DualId | 'duals' | 'defend';
+/** A passive's id in a ban takes it out of the fight (`BattleState.without`): what it is worth with nothing else changed. */
+export type Ban = SkillId | DualId | PassiveId | 'duals' | 'defend';
 /** A turn: `dual` is the active fighter and the next one together (both turns, both halves of maná). */
 export interface Choice { wear?: ClassId; action: BattleAction | 'dual'; target?: string; skill?: SkillId; dual?: DualId; element?: Element }
 /** Whether `ban` keeps a dual out: all of them, that one, or one of its halves. */
@@ -389,6 +390,8 @@ export function createFight(setup: Setup, random: () => number = Math.random): B
   // An open mission's foes keep up with the other missions' ánimas behind it, as in the game (`FOE_GROWTH`).
   growFoes(state, gatheredFor(kind, setup.friends));
   state.levels = { ...setup.levels };
+  const without = (setup.ban ?? []).filter((id): id is PassiveId => id in PASSIVES);
+  if (without.length) state.without = without;
   improve(state, improvedBy(setup.exact ? setup.improved ?? [] : nodesFor(setup.levels, setup.improved)));
   // The fight's own dice (Zarpazos de fuego's coins) come from the same seed.
   state.seed = Math.floor(random() * 2 ** 32) >>> 0;
@@ -504,7 +507,7 @@ const HAND_WORTH = MANA_WORTH + 3;
 /**
  * Objeto encontrado (FOUND): a hand at its cap or past it is where a partner's reaction finds a die more. A choice of the
  * wearer's that takes the hand from there to below the cap gives up that die, `FOUND_ODDS` of `HAND_WORTH`, while
- * someone else standing can set a reaction off (`REACTING`: `foundHold`). So the wearer plays one die a
+ * someone else standing can set a reaction off (`REACTING`) on a foe that carries what it turns (`foundHold`). So the wearer plays one die a
  * round from a hand of six and the partner's reaction deals it back, instead of emptying the hand and Defending.
  */
 const FOUND_ODDS = .5;
@@ -1014,12 +1017,18 @@ function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
   known.set(key, value); ultiWorths.set(before, known);
   return value;
 }
-/** What a choice of Objeto encontrado's wearer gives up by taking a hand at its cap or past it below the cap (`FOUND_ODDS`). */
+/** A foe standing with something on it an element or a blow turns into a reaction: water, fire, powder, gas, a wound. */
+const reactable = (f: Combatant) => f.hp > 0 && (!!f.timed?.mojado || !!f.timed?.quemado || !!f.timed?.empolvado || !!f.timed?.gas || stacks(f, 'sangrado') > 0);
+/**
+ * What a choice of Objeto encontrado's wearer gives up by taking a hand at its cap or past it below the cap (`FOUND_ODDS`):
+ * only while a partner can set a reaction off and a foe already carries what it would turn (`reactable`). Elsewhere a full
+ * hand waits for nothing, and spending it costs no die.
+ */
 function foundHold(before: BattleState, after: BattleState) {
   const wearer = foundOf(before), i = wearer ? before.allies.indexOf(wearer) : -1;
   if (!wearer || before.allies[before.active] !== wearer || wearer.secondary < wearer.maxSecondary || after.allies[i].secondary >= wearer.maxSecondary) return 0;
   const reacts = before.allies.some(a => a !== wearer && a.hp > 0 && kitIn(before, a).some(id => REACTING.includes(id)));
-  return reacts ? FOUND_ODDS * HAND_WORTH : 0;
+  return reacts && before.foes.some(reactable) ? FOUND_ODDS * HAND_WORTH : 0;
 }
 /** Dice past the hand's cap one choice dealt to whoever wears Dadista (`HAND_WORTH`): what the hand holds over the most it held, and over its cap. */
 function handWorth(before: BattleState, after: BattleState) {
@@ -1558,14 +1567,14 @@ const ALTERNA_AT = {
   improved: [...MARTA_LAST.improved ?? [], 'matemagico:toma-de-tierra', 'matemagico:cortocircuito'],
 };
 /**
- * Arco voltaico's targets: the castle's second floor, where Papagato reaches Acecho (level 6), with the electric line
- * bought up to ∂Q/∂t Condensador.
- */
-/**
  * Objeto encontrado's pair: the second floor, where Dadista reaches its level 6, with Gerard able to wet (Freática) and set
  * fire to the wet (Matemágico), and Aitor in Dadista only, so the reactions find his hand.
  */
 const FOUND_PARTY = 'gerard:matemagico/freatica+aitor:dadaista', FOUND_AT = { ...FLOOR_2, animas: ['matemagico', 'freatica', 'dadaista'] as ClassId[] };
+/**
+ * Arco voltaico's targets: the castle's second floor, where Papagato reaches Acecho (level 6), with the electric line
+ * bought up to ∂Q/∂t Condensador.
+ */
 const ARC_AT = { ...FLOOR_2, improved: [...FLOOR_2.improved ?? [], 'matemagico:cortocircuito', 'matemagico:condensador'] };
 /**
  * Atractor extraño's targets: the second floor with the fire line that feeds it and nothing else of the jar (Pirámide
@@ -1744,8 +1753,8 @@ export const TARGETS: readonly Target[] = [
   // ranges over all seven, a little wider), not a split: what tells them apart is that Sugestión sends blows (`happens`).
   { id: 'trio-tercero-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:sugestion'], confusion: true, policy: 'smart', win: [.66, .9], roundsWon: [8.7, 9.9], happens: { sugestion: [.8, 2.5] }, why: 'Con Sugestión, el confundido golpea a quien apunta el equipo (a sí mismo si se le acaba de confundir): la sala sale igual, algo más corta, y no siempre se nota. Es una pieza del jugador, no la respuesta de la sala.' },
   { id: 'trio-tercero-sin-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, confusion: true, policy: 'smart', win: [.66, .9], roundsWon: [9.4, 10.5], happens: { sugestion: [0, 0] }, why: 'Sin Sugestión, el confundido golpea a uno de los suyos al azar: se gana igual, algo más largo. No es una sala que se pierda sin ella.' },
-  { id: 'mano-encontrada', fight: 'alumnos-2a', party: FOUND_PARTY, ...FOUND_AT, policy: 'smart', win: [.88, 1], roundsWon: [4, 4.9], happens: { 'objeto-encontrado': [.12, .45] }, why: 'Con Objeto encontrado (Dadista 6), la reacción de Gerard con la mano de Aitor llena le da un sexto dado: pasa una vez cada cuatro combates, y la sala sale igual. Es una pieza del jugador, no la respuesta de la sala.' },
-  { id: 'mano-sin-encontrar', fight: 'alumnos-2a', party: FOUND_PARTY, ...FOUND_AT, levels: { ...FOUND_AT.levels, dadaista: 5 }, policy: 'smart', win: [.88, 1], roundsWon: [4, 4.9], happens: { 'objeto-encontrado': [0, 0] }, why: 'Sin Objeto encontrado (Dadista 5), la mano nunca pasa de su tope: la sala se gana igual. No es una sala que se pierda sin ella.' },
+  { id: 'mano-encontrada', fight: 'alumnos-2a', party: FOUND_PARTY, ...FOUND_AT, policy: 'smart', win: [.88, 1], roundsWon: [4, 4.9], happens: { 'objeto-encontrado': [.12, .45] }, why: 'Con Objeto encontrado (Dadista 6), la reacción de Gerard con la mano de Aitor llena le da un sexto dado: pasa una vez cada cuatro combates, y la sala sale igual. Es una pieza del jugador, no la respuesta de la sala: el par solo dice que el dado llega (que llega bien lo dicen los tests de dice).' },
+  { id: 'mano-sin-encontrar', fight: 'alumnos-2a', party: FOUND_PARTY, ...FOUND_AT, policy: 'smart', ban: ['objeto-encontrado'], win: [.88, 1], roundsWon: [4, 4.9], happens: { 'objeto-encontrado': [0, 0] }, why: 'Sin Objeto encontrado (Dadista 6, la pasiva fuera y nada más), la mano nunca pasa de su tope: la sala se gana igual. No es una sala que se pierda sin ella.' },
   { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe, o mientras está mojado: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado. Cada relleno cede a lo que lo deshace.' },
   { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
   { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },

@@ -471,22 +471,29 @@ Ases en dúo or reaches the Asteroide, so it cannot value them.
 
 **Objeto encontrado** (`just fight-sim`, 2026-11-26, `smart`, 200 fights, seed 35). Its pair,
 `mano-encontrada` / `mano-sin-encontrar`, is the second floor's Chivata room (`alumnos-2a`) with
-Gerard in Matemágico or Freática and Aitor in Dadista only, Dadista at 6 against 5:
+Gerard in Matemágico or Freática and Aitor in Dadista only, Dadista at 6 both times; the side without
+bans the passive (`ban: ['objeto-encontrado']`, `BattleState.without`), so nothing else differs
+(numbers of 2026-11-26, after the review):
 
 | | Wins | Rounds won | PV left | Objeto encontrado a fight |
 | --- | --- | --- | --- | --- |
-| Dadista 6 (with it) | 95 % | 4.43 | 53 % | 0.25 |
-| Dadista 5 (without) | 95 % | 4.44 | 54 % | 0 |
+| Dadista 6, with it | 95 % | 4.46 | 54 % | 0.27 |
+| Dadista 6, passive banned | 95 % | 4.44 | 54 % | 0 |
 
 - **It decides no room, and the pair says so**: it holds the passive as a piece of the player
-  (it fires, and the room comes out the same), as Sugestión's does, not as a room's answer.
+  (it fires, and the room comes out the same), as Sugestión's does, not as a room's answer. So
+  the pair cannot tell a worthless die from a good one: its `happens` window only says the die
+  is dealt; that it is dealt right (once a round, past the cap, up to six, a normal deal) is
+  held by tests/dice.test.mjs. No fight at Dadista 6 turns on it yet.
 - **Why so seldom**: the bot sets few reactions off (under one a fight with Matemágico alone,
   about two with Colorista or Freática beside it) and the fights of the second floor last three
   to five rounds. The most it fired in any room of the second or third floor was 0.77 a fight
   (`alumnos-3b`, Gerard Matemágico/Colorista), with no change in wins or rounds.
 - **The bot**: `handWorth` counts the die past the top (`HAND_WORTH`), and `foundHold` keeps a
-  hand at its top while a partner can react (`FOUND_ODDS` of a die). Without that, the wearer
-  had always thrown a die before the reaction came, and it fired 0 to 0.07 times a fight.
+  hand at its top while a partner can react and a foe already carries what a reaction turns
+  (water, fire, powder, gas, a wound: `reactable`), `FOUND_ODDS` of a die. Without that, the
+  wearer had always thrown a die before the reaction came, and it fired 0 to 0.07 times a fight;
+  the `happens` window leans on this rule, as a player who knows the passive would.
 - `just fight-sim levers` reaches it through the book `found` (`found.rules.perRound`, `top`).
 
 `just fight-sim` on 2026-11-20, once levels 2 and 3 were built (`smart`, Gerard Dadista 3 + Aitor

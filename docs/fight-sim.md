@@ -200,6 +200,9 @@ wearing nothing) cannot. Nobody hands an ánima over in a fight, so there is no 
   partner's thinking overlapped the first one's.
 - `--ban duals` bans them all, `--ban punto-debil` one, and banning a skill bans every dual it is
   half of (`--ban zarpazos` also takes Zarpazos de fuego away).
+- A passive's id plays the fight without that passive and nothing else changed (levels and stats
+  as they are: `BattleState.without`, asked by every passive's rule through `kept`):
+  `--ban objeto-encontrado`.
 
 ## Targets
 

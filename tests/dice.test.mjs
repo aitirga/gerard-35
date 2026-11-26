@@ -406,3 +406,14 @@ test('the hand up to six: only its two sources go past the cap, and nothing take
   const g = ally(s, 'gerard'), before = g.secondary;
   assert.deepEqual(pastCap(s, g, 2), []); assert.equal(g.secondary, before);
 });
+
+test('a passive banned in the simulator is out of the fight, levels and stats as they are', async () => {
+  const { createFight } = await import('../src/battle-sim.ts');
+  const setup = { fight: 'alumnos-2a', party: 'gerard:matemagico/freatica+aitor:dadaista', policy: 'smart', levels: { dadaista: 6 }, animas: ['matemagico', 'freatica', 'dadaista'] };
+  const kept = createFight(setup, () => .5), banned = createFight({ ...setup, ban: ['objeto-encontrado'] }, () => .5);
+  assert.ok(foundOf(kept)); assert.equal(foundOf(banned), undefined);
+  assert.deepEqual(banned.without, ['objeto-encontrado']); assert.equal(kept.without, undefined);
+  assert.deepEqual(banned.allies.map(a => [a.maxHp, a.maxSecondary]), kept.allies.map(a => [a.maxHp, a.maxSecondary]));
+  // A ban of a skill is not a passive: it leaves every passive in.
+  assert.equal(createFight({ ...setup, ban: ['duals'] }, () => .5).without, undefined);
+});
