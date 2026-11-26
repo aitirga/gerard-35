@@ -496,7 +496,8 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       foes.forEach(({ id, f }, i) => {
         const at = FIESTA.contact + FIESTA.spark + i * FIESTA.hop, prev = i ? foes[i - 1].f.chest : a.chest;
         after(at - FIESTA.hop * .8, () => { for (let k = 0; k <= 8; k++) g.burst('fiestaarc', { at: { x: prev.x + (f.chest.x - prev.x) * k / 8 + (Math.random() - .5) * .12, y: prev.y + (f.chest.y - prev.y) * k / 8 + (Math.random() - .5) * .18, z: prev.z + (f.chest.z - prev.z) * k / 8 }, count: 10, spread: .04, speed: .3, life: [.12, .25] }); });
-        after(at, () => api.crystallise([id]));
+        // Each keeps its powder as it sets (one coat for the whole sweep, not one each), and the last takes it off them all.
+        after(at, () => { api.crystallise([id], 20, true); if (i === foes.length - 1) take(foes.map(o => o.id)); });
       });
       // What is left: a stain of every colour on the floor where each stood.
       after(FIESTA.contact + FIESTA.rain + .5, () => foes.forEach(({ f }) => {
