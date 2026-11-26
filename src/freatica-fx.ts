@@ -233,7 +233,10 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   let net = aCaustic(p * 2.4 + n.xz * 3.0, t * 0.8);
   let wall = min(uniform.uCell.x - abs(p.x), uniform.uCell.y - abs(p.y));
   let rim = lg(wall, 0.02);
-  let show = uniform.uWater.z * (1.0 - uniform.uSlab.z) * smoothstep(0.0, 0.04, uniform.uWater.x) * (1.0 - uniform.uCast.y);
+  // A Riada caught by Bajo cero (\`crest\` in the cell): frozen, the surface is gone into the blocks but for the wave's crest,
+  // which stays standing over them as a lip of ice, white and pale cyan.
+  let lip = uniform.uCast.y * uniform.uWater.z * smoothstep(0.015, 0.08, aWave(p.y));
+  let show = max(uniform.uWater.z * (1.0 - uniform.uSlab.z) * smoothstep(0.0, 0.04, uniform.uWater.x) * (1.0 - uniform.uCast.y), lip);
   let body = aBody(uniform.uWater.x * 0.55) * (0.75 + 0.5 * n.y) + aFoam * 0.1 * net;
   let alpha = (0.1 + 0.3 * fres) * show;
   // The wave's crest, white, and the foam it leaves behind it.
@@ -243,6 +246,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   // The current: arcs skating over it, and the whole of it flickering with each pulse.
   light += aSpark * uniform.uElec.x * (aArcs(p, t) * 1.7 + 0.06) + mix(aSpark, vec3f(1.0), 0.25) * uniform.uElec.y * (0.3 + 0.5 * net);
   light += vec3f(1.0) * uniform.uElec.z * 0.9 + aFoam * uniform.uCast.x * 0.75;
+  light += vec3f(0.875, 0.973, 1.0) * lip * (0.25 + 0.9 * fres + 1.4 * spec) + vec3f(0.749, 0.937, 0.965) * lip * 0.2 * mesh;
   output.color = aOut(body, alpha, light * show);
   return output;
 }`;
@@ -586,6 +590,10 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   // ——— The state ———
   let time = 0, on = false, marks = 0, level = 0, clock: number = AGUA.mark, rate = 1, moving = false, grey = false;
   let current = 0, pulseIn = 0, flash = 0, steamFlash = 0, breaking = false, hammer = 0, frozen = false, ice = 0, iceLeft = 0, breath = 0;
+  /** Riada's wave still crossing the cell (`riada`), and that wave caught by Bajo cero and held at its crest while the ice lasts. */
+  let waveOut = false, crest = false;
+  /** The wave the ice held lets go: the surface is flat again. */
+  const letCrestGo = () => { crest = false; u.cast[3] = 0; };
   /**
    * In a fight the clocks are the fight's, not the cell's (src/freatica-fight.ts): the top mark's seconds left, the current's,
    * and the marks of ice left. While driven the surface sinks to them and the cell never drops a mark by itself: the fight
@@ -790,7 +798,10 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
             velocity: { x: fwd.x * v, y: .4 + .9 * k, z: fwd.z * v }, speed: .2, life: [1.6, 2.1], colour: k < .35 ? AGUA.blue : k < .8 ? AGUA.green : AGUA.foam,
           });
         }
+        waveOut = true;
         tween(1.05, k => {
+          // Caught by Bajo cero (`bajoCero`): the crest stays where it froze.
+          if (crest) return;
           const z = -reach + 2 * reach * k;
           u.cast[2] = z; u.cast[3] = Math.min(1, Math.sin(Math.PI * k) * 2.2) * 1.2;
           for (const f of foes()) {
@@ -799,7 +810,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
             const body = bodyOf(f.model, f.p);
             gpu()?.burst('agua-gota', { at: { x: f.p.x, y: centre.y + level, z: f.p.z }, count: 60, spread: body.radius, velocity: { x: fwd.x * 1.6, y: 0, z: fwd.z * 1.6 }, speed: .9, up: 2.2, life: [.4, .8], size: 1.1 });
           }
-        }, () => { u.cast[3] = 0; });
+        }, () => { waveOut = false; if (!crest) u.cast[3] = 0; });
       });
       return true;
     },
@@ -826,6 +837,12 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
       hammer = 1; current = 0; stopBubbles();
       after(.12, () => {
         frozen = true; clock = AGUA.mark; level = full(marks); iceLeft = marks; breath = 0; u.ticks[3] = 0;
+        // A Riada still crossing the cell freezes in mid-crest: its white lip of ice stands across the cell until the ice goes.
+        if (waveOut && u.cast[3] > 0) {
+          crest = true;
+          const z = u.cast[2], at = (x: number) => world(x, level + .12, z);
+          gpu()?.burst('agua-frio', { at: at(-half.w), to: at(half.w), shape: 'line', count: Math.round(half.w * 2 * 40), spread: .08, speed: .15, up: .3, life: [1, 2] });
+        }
         const them = foes();
         blocks.forEach((b, i) => {
           const f = them[i];
@@ -842,7 +859,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
   };
   const alive = () => blocks.filter(b => b.e.enabled && b.foe);
   /** The ice is gone, and with it the water it was. */
-  function thawed() { frozen = false; iceLeft = 0; u.ticks[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } marks = 0; level = 0; show(false); }
+  function thawed() { letCrestGo(); frozen = false; iceLeft = 0; u.ticks[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } marks = 0; level = 0; show(false); }
 
   const api = {
     /** The water rises `n` marks (three at most), the cell drawing itself in first if it is not there. */
@@ -863,7 +880,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     /** Straight to `n` marks, with no rising (for a still picture). */
     set(n: number) {
       if (!on) { if (!place()) return false; show(true); aim(); }
-      tweens.length = 0; moving = false; breaking = false; frozen = false; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; }
+      tweens.length = 0; moving = false; breaking = false; frozen = false; waveOut = false; letCrestGo(); for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; }
       marks = Math.max(0, Math.min(3, n)); level = full(marks); clock = AGUA.mark; u.water[2] = 1; u.water[3] = 0; u.slab[2] = 0; u.ticks[3] = 0;
       if (!marks) show(false); else sink();
       return true;
@@ -955,7 +972,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     /** Whoever held it has fallen: the edges go out and the water runs out over the floor. */
     break() {
       if (!on || breaking) return false;
-      breaking = true; stopBubbles(); current = 0; if (frozen) { frozen = false; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } }
+      breaking = true; stopBubbles(); current = 0; if (frozen) { frozen = false; letCrestGo(); for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } }
       const from = level;
       splash(50, 1.6);
       const g = gpu();
@@ -977,7 +994,7 @@ export function createFreaticaFx(app: pc.AppBase, effects: Effects, scene: AguaS
     get current() { return current; },
     get on() { return on; },
     /** Nothing left: no cell, no water, no steam. */
-    clear() { tweens.length = 0; moving = false; breaking = false; marks = 0; level = 0; current = 0; flash = 0; steamFlash = 0; cloudLeft = 0; hammer = 0; frozen = false; ice = 0; iceLeft = 0; u.cast[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } show(false); },
+    clear() { tweens.length = 0; moving = false; breaking = false; waveOut = false; crest = false; marks = 0; level = 0; current = 0; flash = 0; steamFlash = 0; cloudLeft = 0; hammer = 0; frozen = false; ice = 0; iceLeft = 0; u.cast[3] = 0; for (const b of blocks) { b.e.enabled = b.soak.enabled = false; b.foe = ''; } show(false); },
     destroy() {
       api.clear(); app.off('update', update);
       root.destroy(); gauge.destroy(); lamp.destroy(); cube.destroy();

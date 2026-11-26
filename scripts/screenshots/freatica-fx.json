@@ -363,6 +363,35 @@
       ]
     },
     {
+      "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(1, window.freaticaLab.fx.foes()[1])"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "record": "ola-congelada",
+      "seconds": 3.4,
+      "each": "if (frame === 4) window.freaticaLab.fx.cast.riada(); if (frame === 27) window.freaticaLab.fx.cast.bajoCero()",
+      "caption": "A Riada still crossing the cells when Bajo cero lands: the wave freezes in mid-crest, a white lip of ice standing across each cell, and stays there until its ice melts or breaks",
+      "clip": [
+        860,
+        130,
+        560,
+        560
+      ]
+    },
+    {
+      "shot": "ola-congelada",
+      "delay": 300,
+      "caption": "The wave held at its crest in the ice",
+      "clip": [
+        860,
+        130,
+        560,
+        560
+      ]
+    },
+    {
       "eval": "window.freaticaLab.fx.clear(); window.freaticaLab.fx.set(3, window.freaticaLab.fx.foes()[0]); window.freaticaLab.fx.set(2, window.freaticaLab.fx.foes()[1]); window.freaticaLab.fx.bolt(window.freaticaLab.fx.foes()[0])"
     },
     {
