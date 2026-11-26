@@ -491,6 +491,8 @@ export interface AguaScene {
   neighbours?(): V3[];
   /** Whether the foes stand where they will fight (not still walking in): a cell is placed round a foe only then. */
   settled?(): boolean;
+  /** The floor's height at a place (Bajo cero's frost is laid on it). */
+  ground?(x: number, z: number): number;
 }
 interface Tween { t0: number; dur: number; step(k: number): void; end?(): void }
 

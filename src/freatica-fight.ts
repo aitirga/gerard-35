@@ -1,6 +1,7 @@
 import type * as pc from 'playcanvas';
 import { CRECIDA, waterOf, type BattleEffect, type BattleState } from './battle.ts';
-import type { Effects } from './effects.ts';
+import { bodyOf, type Effects } from './effects.ts';
+import { createFrostFx, FROST } from './frost-fx.ts';
 import { AGUA, createFreaticaField, type AguaScene, type FreaticaField } from './freatica-fx.ts';
 
 /**
@@ -12,13 +13,15 @@ import { AGUA, createFreaticaField, type AguaScene, type FreaticaField } from '.
  *   (`drive`), so the surface sinks with the fight's own clock and a mark drains when the fight's does.
  * - **Each action** plays the look of what it did, once (`play`): a skill's own cast (Recarga's tape, Sondeo's bolt,
  *   Bombeo, Riada's wave, the water hammer, Bajo cero), a bolt from anyone that charges the water, fire's steam, the
- *   ice's cracks, a flame's melt and the break, the cells breaking when whoever held them falls.
+ *   ice's cracks, a flame's melt and the break, the cells breaking when whoever held them falls. Bajo cero has its own
+ *   moment first (src/frost-fx.ts): the probe drops, frost grows over the floor to every cell, and the cells lock as the
+ *   rule lands (`FROST.lock`).
  * - While an action is on its way (chosen, not yet landed) the cells keep what they showed, so they change as it lands.
  */
 /** When each of Freática's skills lands (its numbers) after it starts, and how long the fight gives it to play. */
 export const FREATICA_SKILLS: Record<string, { contact: number; end: number }> = {
   recarga: { contact: .45, end: 1.25 }, sondeo: { contact: .15, end: 1 }, bombeo: { contact: .35, end: 1.3 },
-  riada: { contact: .65, end: 1.8 }, 'golpe-de-ariete': { contact: .3, end: 1.6 }, 'bajo-cero': { contact: .2, end: 1.5 },
+  riada: { contact: .65, end: 1.8 }, 'golpe-de-ariete': { contact: .3, end: 1.6 }, 'bajo-cero': { contact: FROST.lock, end: FROST.end },
 };
 /** Seconds between the water hammer's blows as the fight shows their numbers, one after another. */
 export const HAMMER_GAP = .3;
@@ -32,6 +35,9 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
   /** The cells made so far (one a foe, made the first time it has water), and until when each is left to an action's look. */
   const made = new Set<string>(), busy = new Map<string, number>();
   const played = new WeakSet<BattleEffect>();
+  /** Bajo cero's moment, and what waits for a time of it (the cells locking). */
+  const frost = createFrostFx(app, effects);
+  const later: { at: number; run: () => void }[] = [];
   // The first round of the ánima: grey edges and gauge over the same water (docs/animas/freatica/README.md § First and second round).
   const ready = () => { if (!field && effects.gpu) { field = createFreaticaField(app, effects, scene); field.setGrey(true); } return field; };
   let waitedSince = 0;
@@ -68,9 +74,16 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
       case 'golpe-de-ariete':
         f.cast.ariete(); all.forEach(id => at(id, 1.8));
         break;
-      case 'bajo-cero':
-        f.cast.bajoCero(); all.forEach(id => at(id, 1));
+      case 'bajo-cero': {
+        // The probe drops and the frost runs to every foe it freezes; their cells lock as the rule lands (`FROST.lock`,
+        // the cell's own flash coming .12 s after it is told). Without the GPU's moment, they lock at once.
+        const caster = scene.at(effect.actor), model = scene.model(effect.actor);
+        const cells = (effect.frozen ?? []).flatMap(fz => { const p = scene.at(fz.target), m = scene.model(fz.target); return p && m ? [{ at: p, half: bodyOf(m, p).radius + .3 }] : []; });
+        const shown = !!caster && !!model && frost.start({ caster, height: bodyOf(model, caster).height, cells, ground: scene.ground });
+        if (shown) later.push({ at: time + FROST.lock - .12, run: () => f.cast.bajoCero() }); else f.cast.bajoCero();
+        all.forEach(id => at(id, shown ? FROST.lock + .4 : 1));
         break;
+      }
     }
     // Electrólisis: the water does not keep the current, it splits; each cell sinks to nothing while its bubbles go up.
     if (effect.dual?.id === 'electrolisis') for (const w of effect.water ?? []) { cell(w.target)?.drain(ELECTROLYSIS_DRAIN); at(w.target, ELECTROLYSIS_DRAIN + .3); }
@@ -99,6 +112,8 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
   /** Once a frame: every foe's cell follows its water and ice. */
   function sync(state: BattleState | undefined, dt: number) {
     time += dt;
+    frost.update(dt);
+    for (const item of later.filter(l => l.at <= time)) { later.splice(later.indexOf(item), 1); item.run(); }
     // An action that never landed on screen (the fight cut short) lets the cells go after a while.
     if (waiting && time - waitedSince > 4) waiting = false;
     if (!state || waiting) return;
@@ -141,8 +156,8 @@ export function createFreaticaFight(app: pc.AppBase, effects: Effects, scene: Ag
     play,
     sync,
     /** The fight is over: no cell, no water, no ice. */
-    clear() { field?.clear(); made.clear(); busy.clear(); waiting = false; held = false; },
-    destroy() { field?.destroy(); field = undefined; made.clear(); busy.clear(); },
+    clear() { field?.clear(); frost.clear(); later.length = 0; made.clear(); busy.clear(); waiting = false; held = false; },
+    destroy() { field?.destroy(); field = undefined; frost.destroy(); later.length = 0; made.clear(); busy.clear(); },
   };
 }
 export type FreaticaFight = ReturnType<typeof createFreaticaFight>;

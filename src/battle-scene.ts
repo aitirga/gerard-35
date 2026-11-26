@@ -412,6 +412,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let real = 0, animating = true;
   let pulse: ((fringe: number, bloom: number, flash?: number) => void) | undefined;
   let setNight: ((amount: number, lift?: number) => void) | undefined, night = 0, nightLift = 0, shownNight = 0;
+  /** Bajo cero's cold grade (post.setDark: blue and grey), 0–1. */
+  let setCold: ((amount: number) => void) | undefined, cold = 0;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
   /** Fire, lava, smoke and water as fluids (src/fluid-fx.ts), on the fight's clock. */
@@ -646,6 +648,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     at: id => { const p = fighters.get(id)?.model.getPosition(); return p && { x: p.x, y: p.y, z: p.z }; },
     model: id => fighters.get(id)?.model,
     settled: () => entryTime >= ENTRY_SECONDS,
+    ground: groundHeight,
   });
   /** The middle of the foes standing: the side a cortina faces. */
   const foesCentre = () => {
@@ -2199,6 +2202,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     critOf = action; critGrey = 1; critHeld = CRIT.stop * 1.6; critKeep = [f];
     zoom.x = Math.max(zoom.x, CRIT.punch);
     cue('siete-vidas-salva');
+  }
+  /**
+   * Bajo cero's cells locking (docs/animas/freatica/README.md § Definitiva): a hit-stop of 0.2 s, a punch in, a white
+   * bloom and the picture gone cold, coming back in steps (a few looks, not one a frame: each costs the grade a new table).
+   */
+  function coldBeat() {
+    clock.hold = Math.max(clock.hold, .2);
+    zoom.x = Math.max(zoom.x, CRIT.punch * 1.2); shake = Math.max(shake, .3);
+    pulse?.(.25, 1, .35);
+    cold = .5; setCold?.(cold);
+    [.45, .9, 1.4, 1.9].forEach((t, i) => dualFx.after(t, () => { if (cold > 0) { cold = [.35, .2, .08, 0][i]; setCold?.(cold); } }));
   }
   /** Where something of Dadista's lands on `f`: just in front of them, facing the camera, as big as they stand. */
   function spotOf(f: Fighter, side = 1): FaceSpot {
@@ -3944,6 +3958,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     setPulse(next: (fringe: number, bloom: number, flash?: number) => void) { pulse = next; },
     /** Where the astral's night goes (post.night): how dark and blue the picture is, and how lit up for a moment. */
     setNight(next: (amount: number, lift?: number) => void) { setNight = next; },
+    /** Where Bajo cero's cold grade goes (post.setDark): 0 the scene's own look, 1 blue and grey. */
+    setCold(next: (amount: number) => void) { setCold = next; },
     /** Where the moments only the picture knows go to sound (a claw landing, a layer off, a fall). */
     setCue(next: typeof cue) { cue = next; },
     /** Haru and Yuki already with the party, if any: this fight uses them instead of bringing its own. It gives them back when it ends. */
@@ -4166,7 +4182,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!next) {
         dualFx.clear(); powderFx.clear(); ecoFx?.clear(); freatica.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
-        dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []);
+        dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []); if (cold) { cold = 0; setCold?.(0); }
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
       }
       if (!next) { night = nightLift = shownNight = 0; setNight?.(0, 0); stamps.clear(); rocks.clear(); sky = undefined; mathCast.clear(); figures.clear(); filmFx.clear(); livesFx.clear(); borrowed = undefined; peels.clear(); arrows.clear(); motes.clear(); cats.forEach(pair => { pair.haru.destroy(); pair.yuki.destroy(); }); cats.clear(); bips.forEach(b => { b.bip.destroy(); b.chest.destroy(); }); bips.clear(); bombs.forEach(b => b.bomb.destroy()); bombs.clear(); holes.length = 0; setLens?.([]); escorts.forEach(e => { e.ring.destroy(); e.inner.destroy(); e.mat.destroy(); }); escorts.clear(); dice.forEach(d => { d.hand.forEach(die => die.entity.destroy()); d.thrown?.die.entity.destroy(); }); dice.clear(); aimedDie = undefined; statusFx.clear(); shownStacks.clear(); fighters.forEach(f => { if (!f.part) f.model.destroy(); f.freed?.node.destroy(); f.materials.forEach(m => m.destroy()); }); fighters.clear(); if (mass) { mass.model.destroy(); mass.materials.forEach(m => m.destroy()); mass = undefined; } aimedBy[1] = aimedBy[2] = aimer[1] = aimer[2] = undefined; effects.clear(); }
@@ -4263,6 +4279,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (animate) tecnoLanded(effect);
         // What the blow did to Freática's water and ice (a bolt, steam, a crack, the break), as it lands.
         if (state) freatica.play(effect, state);
+        // Bajo cero's cells lock (src/frost-fx.ts): the fight stops on it and the picture goes cold.
+        if (animate && effect.skill === 'bajo-cero') coldBeat();
         // Without motion Rayo solar reaches everyone at once.
         if (effect.release && !animate) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);
         worldFx(effect, actor, target, animate);

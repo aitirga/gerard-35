@@ -630,6 +630,31 @@ that can catch seven reads; a bubble eight. The kinds without them pay nothing.
   are only written and uploaded on a frame that spawns on a cloud or has a batch playing back. `just perf`
   on Siete vidas' fight in the tester (three dogs, at rest), 2026-11-26: 3.0 ms of CPU a frame, 683 draws.
 
+## A phase field on the GPU (`src/frost-fx.ts`, built 2026-11-26)
+
+Bajo cero's frost (docs/animas/freatica/README.md § Definitiva) is the game's first compute shader: a
+Kobayashi phase field (R. Kobayashi 1993, the classic model of dendritic crystal growth) on two 256 × 256
+RGBA16F storage textures, ping-ponged by `pc.Compute` (WGSL, its uniforms and textures reflected by the
+engine: `uniform` lines and `var` resources, as in a material). A texel is the phase (0 water, 1 ice), the
+temperature (0 undercooled, 1 the melting point), when it froze and how much the front forced it.
+
+- **One step** reads a 5 × 5 stencil: the interface's width turns with the gradient's angle six times round
+  (ice is six-fold), aimed at the cell each lane runs to; the double well is tilted by the undercooling,
+  and the latent heat each texel lets go as it freezes warms its neighbours, which is what slows the tips
+  and makes them branch. Out of the lanes to the cells it melts back, so the frost goes where the water is.
+- **Steps a frame**: `FROST.rate` a second (4 400), all of a frame's in one compute pass (`computeDispatch`
+  with the two directions repeated), at most `FROST.most`. A cast's first frame starts the field over in
+  the kernel (`uProbe.z`); the probe's crystal is held for a moment, and two more nucleate on each lane on
+  the way, briefly, so a seed never becomes a forced heat sink.
+- **A trap found building it**: `atan2(0, 0)` is not defined in WGSL and Metal returns NaN, which turned
+  every flat texel (the inside of a crystal, a seed) back to water and sank the temperature to −60; the
+  angle is taken only where the gradient is not zero (`tests/frost.test.mjs` holds the guard).
+- **Drawn** as one quad on the floor (`FROST_FRAGMENT`) that reads the field back: the crystals' own edges
+  bright (the ferns read by their outline), the fresh ice glinting, a twinkle on a few texels, white and
+  pale cyan only, laid at the floor's height under the caster and the foes (the scene's `groundHeight`).
+- **Cost**: GPU, trivial (256² texels, some 38 steps a frame at 120 Hz). CPU, one pass with that many
+  dispatches: about 0.1 ms a frame (146 dispatches measured at 0.1–0.3 ms, 2026-11-26).
+
 ## Lattices (`src/lattice.ts`)
 
 A lattice is a shape made of fight particles that holds together: solid and stable, it bends when

@@ -276,6 +276,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   const battleScene = createBattleScene(app, player, id => id === 'aitor' ? mates.aitor.entity : player, (x, z) => pocket?.contains(x, z) ? pocket.floorAt() : scenery.groundHeight(x, z), effects);
   battleScene.setPulse(post.pulse);
   battleScene.setNight(post.night);
+  battleScene.setCold(post.setDark);
   battleScene.setSpot(post.spotlight);
   battleScene.setLens(post.lens);
   battleScene.setEcoPost(post);
