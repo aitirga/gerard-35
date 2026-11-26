@@ -156,8 +156,12 @@ carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 
 take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
 
 **Enjambre has no pair of targets yet (2026-11-26, waits on Aitor).** PLAN.md's pair is
-`gemelos-tercero-enjambre` against `gemelos-tercero-sin-enjambre`, and the room cannot hold it as the wake
-stands: Gemelos de tercero lasts about six rounds, 40–55 s on the simulator's clock, and a bomb needs 27 s on
+`gemelos-tercero-enjambre` against `gemelos-tercero-sin-enjambre`, and the room cannot hold it as it stands.
+First, the plan's setup never has it: at `castillo-3` the mixto build's ecos run out before
+`tecnopata:definitiva` (second to last in `BUILDS.mixto`), so Enjambre is not known there and cannot wake at all;
+the pair would need `improved: [...FLOOR_3.improved, 'tecnopata:definitiva']` (or another build or story point).
+With it bought the rows do not move either (smart 74 % in 6.6 rounds, casual 29 %, the same with Enjambre banned;
+measured 2026-11-26), because of the wake: Gemelos de tercero lasts about six rounds, 40–55 s on the simulator's clock, and a bomb needs 27 s on
 one foe and two restarts to go off at its top. The bot opens with Explosión (which sets bombs off early) and
 plants a bomb 0.06 times a fight: Enjambre wakes in 0 % of them. Pushing the bot to ripen a bomb (a worth on
 the bomb it will go off with, a step back for setting one off short) wakes it in 1–2 % and costs the room
