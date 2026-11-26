@@ -238,7 +238,12 @@ just fight-sim story                                   # every open mission, fir
 just fight-sim story --at marta:first,marta:last --build elementos --fight cuerdas-directo,voz
 just fight-sim story --at marta:universidad --policy smart
 just fight-sim story --at castillo-3 --level papagato=7/dadaista=7 --party gerard:matemagico/papagato+aitor:tecnopata/dadaista
+just fight-sim story --at castillo-3 --build mixto --fight alumnos-3c,reina --party gerard:matemagico+aitor:prismatico --policy smart --ban none,fin-de-fiesta
 ```
+
+`--ban` plays each fight once per ban (`none`: nothing), as a pair with and without would. A fight's
+variant (`alumnos-3c:encarnados`) is played where its fight is, and one in no stretch (`reina`) at every
+point given. `--json` has each row's events (`despierta:<id>`, a definitiva woken).
 
 | A point has | From |
 | --- | --- |

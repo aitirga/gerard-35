@@ -230,10 +230,12 @@ export function storyPoint(at: string, build = 'mixto', levels?: Partial<Record<
 }
 export interface StoryJob { at: string; build: string; ecos: number; spent: number; setup: Setup }
 /** Every fight of `points`' stretches (or `fights`), as each point's party meets it, with each bot: what to play. */
-export function storyJobs(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string } = {}): StoryJob[] {
-  return points.flatMap(point => (options.fights?.filter(f => stretchOf(f) === point.mission) ?? STRETCHES[point.mission].fights).flatMap(fight => policies.map(policy => ({
+export function storyJobs(points: StoryPoint[], policies: Policy[], options: { fights?: string[]; party?: string; ban?: Ban[] } = {}): StoryJob[] {
+  // A fight's variant (`alumnos-3c:encarnados`) is played where its fight is; one in no stretch (the Queen), at every point.
+  const at = (fight: string, point: StoryPoint) => [point.mission, undefined].includes(stretchOf(fight.split(':')[0]));
+  return points.flatMap(point => (options.fights?.filter(f => at(f, point)) ?? STRETCHES[point.mission].fights).flatMap(fight => policies.map(policy => ({
     at: point.at, build: point.build, ecos: point.ecos, spent: costOf(point.setup.improved ?? []),
-    setup: { fight, party: options.party ?? DUO, policy, ...point.setup },
+    setup: { fight, party: options.party ?? DUO, policy, ...point.setup, ...options.ban?.length ? { ban: options.ban } : {} },
   }))));
 }
 /** `storyJobs`, played here and now. */

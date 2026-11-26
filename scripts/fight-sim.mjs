@@ -60,6 +60,7 @@ Opciones de story (listas separadas por comas):
   --fight a,b        Solo estos combates (por defecto, todos los de cada misión)
   --party p          El equipo de partida (${DUO}); las ánimas, amigos, ecos y nivel los pone el punto
   --policy p,q       Por defecto casual,smart
+  --ban a,b          Prohíbe una habilidad o un dual, como en run (none: nada): una fila por cada uno
 
 Opciones de run (cada una acepta una lista separada por comas: se prueban todas las combinaciones):
   --fight a,b        Combates (por defecto, las tres cebollas: crias-1,cebolla,cebollon)
@@ -245,11 +246,12 @@ async function command(options, play) {
     return 0;
   } else if (options.command === 'story') {
     const tuning = tunings(options.tune)[0], points = pointsFrom(options, tuning);
-    const jobs = storyJobs(points, options.policies ?? ['casual', 'smart'], { fights: options.fights, party: options.parties?.[0] });
+    const jobs = (options.bans ?? ['none']).map(listOf).flatMap(ban => storyJobs(points, options.policies ?? ['casual', 'smart'], { fights: options.fights, party: options.parties?.[0], ban }));
     const played = await play(jobs.map(j => job(j.setup, tuning))), rows = jobs.map((j, i) => ({ ...j, row: played[i] }));
     report = { version: SIM_VERSION, ...shared, points, rows: rows.map(r => ({ ...r.row, at: r.at, build: r.build, ecos: r.ecos })) };
-    say(`${cell('combate', 20)}${cell('punto', 22)}${cell('ecos', 10)}${cell('gasto', 11)}${cell('bot', 8)}gana   PV al ganar  rondas`);
-    for (const r of rows) say(`${cell(r.row.fight, 20)}${cell(r.at, 22)}${cell(`${r.spent}/${r.ecos}`, 10)}${cell(r.build, 11)}${cell(r.row.policy, 8)}${percent(r.row.win)}  ${cell(r.row.hpLeftWon === null ? '–' : `${Math.round(r.row.hpLeftWon * 100)} %`, 11)}  ${r.row.roundsWon ?? '–'}`);
+    const bot = rows.some(r => r.row.ban.length) ? 28 : 8;
+    say(`${cell('combate', 24)}${cell('punto', 22)}${cell('ecos', 10)}${cell('gasto', 11)}${cell('bot', bot)}gana   PV al ganar  rondas`);
+    for (const r of rows) say(`${cell(r.row.fight, 24)}${cell(r.at, 22)}${cell(`${r.spent}/${r.ecos}`, 10)}${cell(r.build, 11)}${cell(r.row.policy + (r.row.ban.length ? ` sin ${r.row.ban.join('/')}` : ''), bot)}${percent(r.row.win)}  ${cell(r.row.hpLeftWon === null ? '–' : `${Math.round(r.row.hpLeftWon * 100)} %`, 11)}  ${r.row.roundsWon ?? '–'}`);
     for (const point of points) say(`\n${point.at} · ${point.build}: amigos ${point.setup.friends.join(', ') || 'ninguno'}; ${levelWords(point.setup.levels)}; ${point.ecos} ecos en ${point.setup.improved.join(', ') || 'nada'}`);
   } else if (options.command === 'levers') {
     const base = tunings(options.tune)[0], goals = goalsFrom(options, base);
