@@ -146,9 +146,12 @@ near, so the last step weighs most; at 30 on a straight line it opened El Montó
 Siete vidas). Siete vidas has its own (2026-11-26): only in a boss's fight (`isBoss`), where a wound can
 be cut to five and spent before its foe falls and killing blows come, the bot measures what casting it
 would do plus a life (`LIVES_LIFE`, twice the party's mean PV) and counts a sixth of that for each stack
-of the deepest wound and for the blow that spends it, and takes it back for a wound spent short (without
-it the Queen's fight woke it in no fight; with it everywhere the castle's rooms lost to the turns spent
-cutting, `gemelos-tercero-bien` 88 % → 70 %). A definitiva banned is nothing to wake. Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
+of the deepest wound and for the blow that spends it, and takes it back for a wound spent short (not for
+one that went with its foe: a kill is a kill). Without it the Queen's fight woke it in no fight; with it
+everywhere the castle's rooms lost to the turns spent cutting, `gemelos-tercero-bien` 88 % → 70 %. It still
+costs the boss fights it does not decide a little (`delegada-bien` 98 % → 94 %, `reina-toma-a-aitor` falls
+1.3 rounds sooner, `reina-con-artilugio` wins 1.3 rounds later), and narrower gates lose Siete vidas' own
+fight; the numbers are at `livesAtStake`. A definitiva banned is nothing to wake. Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
 (`siete-vidas`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
 its own wakes Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from) or the
 ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after the passives, as it

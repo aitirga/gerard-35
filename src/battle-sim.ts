@@ -855,8 +855,17 @@ function nearness(state: BattleState, c: Combatant) {
  * or a floor of the castle, and the Queen), which stands the rounds a wound needs to be cut to five and spent, and turns
  * into the killing blows its ward is for. In a room of the castle the foes fall before the wound is deep, and the turns
  * spent cutting it lose the room (`gemelos-tercero-bien` 88 % → 70 %, `monton-bien` 90 % → 63 %, measured 2026-11-26).
+ * It costs the boss fights it does not decide a little, as turns go into the wound and not into each one's answer
+ * (measured 2026-11-26, 200 fights, against the same bot with it off): `delegada-bien` wins 98 % → 94 % and in 6.0 rounds
+ * instead of 4.8, `reina-toma-a-aitor` falls at 19.2 rounds instead of 20.5, `reina-con-el-duo` at 15.7 instead of 16.3,
+ * `reina-con-artilugio` wins in 5.8 rounds instead of 4.5; `reina-con-siete-vidas` holds 13.2 rounds instead of 11.1.
+ * Narrower gates were tried and each lost Siete vidas' fight (it needs the wound cut from the first rounds): only from
+ * the third round, only once someone is under half or three quarters of their PV, only on the wearer's own turn; so was
+ * dropping the step back, which also cost `delegada-bien` a third of its wins.
  */
 const livesAtStake = (state: BattleState) => isBoss(state);
+/** Whether a foe that bled before the choice fell with it (its wound gone with it, not spent short). */
+const bledOut = (before: BattleState, after: BattleState) => before.foes.some(f => f.hp > 0 && (f.statuses?.sangrado ?? 0) > 0 && (after.foes.find(g => g.id === f.id)?.hp ?? 0) <= 0);
 /** What one choice brought the party's sleeping definitivas nearer to waking (`WAKE_WORTH`), for whoever wears each, standing. */
 function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] = []) {
   let worth = 0;
@@ -867,9 +876,9 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     // A definitiva the bot may not use is nothing to wake.
     if (from && ban.includes(from.skill)) return;
     // Siete vidas: only in a boss's fight (`livesAtStake`); there a wound spent short throws its steps away (the condition is
-    // a wound kept and cut to five, then spent).
+    // a wound kept and cut to five, then spent). One that went with the foe that bled is no step back: a kill is a kill.
     const lives = from?.skill === 'siete-vidas' && !livesAtStake(before) ? 0 : 1;
-    if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * lives;
+    if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * lives;
     if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * lives; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
   });
   return worth;
