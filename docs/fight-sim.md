@@ -457,7 +457,7 @@ fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own)
 definitiva's pair in a long boss fight (2026-11-26), and four are held: *Siete vidas* (`reina-con-siete-vidas`,
 `reina-sin-custodia`), *Bajo cero* (`reina-con-bajo-cero`, `reina-sin-bajo-cero`), *Fin de fiesta*
 (`reina-con-fin-de-fiesta`, `reina-sin-fin-de-fiesta`: the Queen at her tenth a round and a half sooner, `toma`) and
-*Enjambre* (`direccion-con-enjambre`, `direccion-sin-enjambre`: Dirección won with 40 % of PV against 23 %). *Da capo*
+*Enjambre* (`direccion-con-enjambre`, `direccion-sin-enjambre`: Dirección won in 8.3 rounds with 40 % of PV against 9.5 with 35 %, the counterpart playing the same way and only not casting it). *Da capo*
 is held by none: at the Queen its chord comes after she has taken Aitor, and at Dirección and Aurelià it does not come
 (docs/animas/sincopante/README.md § Its targets). Two are still to build (Matemágico's *Horas extra*, Dadista's
 *Un golpe de dados*); 14 of the 25 duals are made by no target; 195 of 958 numbers are read by none (the ice's break

@@ -200,7 +200,8 @@ Matemágico and Aitor on Tecnópata (`TECH`), with the third floor's party and `
 (`mixto` does not reach it at `castillo-3`). Dirección is met before the definitivas open, so the pair says what the
 team is with it, not a stretch of the story.
 
-To get there the bot had to learn the way (`src/battle-sim.ts`, only where `wakeAtStake`, a boss's fight):
+To get there the bot had to learn the way (`src/battle-sim.ts`, only where `swarmAtStake`: a boss's fight with more than
+one foe standing, the Queen's hands and bubble not counted):
 - Enjambre's nearness is the bomb it **will** go off with (`bombPower(age + left)`), not the one it is now, so a clock
   started over (Rayo de energía) is a step nearer and a bomb set off short (Explosión) a step back; short of going off
   it is at most nine tenths of the way (`SWARM_AHEAD`).
@@ -210,16 +211,22 @@ To get there the bot had to learn the way (`src/battle-sim.ts`, only where `wake
 - Its share of that is `SWARM_SHARE` (2.5) in place of `ULTI_SHARE` (.5): the way is a bomb and two Rayos de energía,
   all of Aitor's maná at the start, while Explosión on three foes is worth more than the bomb at once and sets it off
   short. At .5 to 1.75 the bot never keeps a bomb (0–1 % woken); at 2, 66 %; at 2.5, 79 %; from 3, 80–82 %, losing a
-  few more fights to the turns the bomb takes. No other target buys Enjambre, so none moves with it.
+  few more fights to the turns the bomb takes.
+- Against one foe the push costs more than the bang, so it stays off there: pushed at the Queen's first fight too, with
+  this pair's party, the party fell in 14.9 and 15.8 rounds; gated, in 17.6, as with Enjambre not bought (17.5).
 
-| Seed (200 fights) | With it | Without it (`ban: ['enjambre']`) | Woken |
-| --- | --- | --- | --- |
-| 35 | 86 %, 8.3 rounds, 40 % PV | 89 %, 8.5 rounds, 23 % PV | 79 % |
-| 7 | 88 %, 8.3 rounds, 40 % PV | 89 %, 8.5 rounds, 23 % PV | 82 % |
-| 99 | 88 %, 8.3 rounds, 42 % PV | 90 %, 8.4 rounds, 24 % PV | 82 % |
+The ripening pays on its own, so the counterpart keeps it: with `ban: ['enjambre']` the bot plays the same way, the bomb
+ripens and wakes Enjambre as often, and only the cast is out of reach. The gap between the two rows is the cast.
 
-What decides it is the cast, not the chase: with the same push and Enjambre itself kept out of reach the party wins 77 %
-with 26 % PV (measured with `castillo-2`'s party and a share of 2, where it wins 84 % with 36 % cast and 85 % with 22 % banned).
+| Seed (200 fights) | With it | Same play, not cast (`ban: ['enjambre']`) | Not bought (Explosión on the three) | Woken |
+| --- | --- | --- | --- | --- |
+| 35 | 86 %, 8.3 rounds, 40 % PV | 81 %, 9.5 rounds, 36 % PV | 89 %, 8.5 rounds, 23 % PV | 79 % |
+| 7 | 88 %, 8.3 rounds, 40 % PV | 84 %, 9.4 rounds, 35 % PV | 89 %, 8.5 rounds, 23 % PV | 82 % |
+| 99 | 88 %, 8.3 rounds, 42 % PV | 86 %, 9.6 rounds, 34 % PV | 90 %, 8.4 rounds, 24 % PV | 82 % |
+
+The cast is worth more than a round and five or six points of PV; most of the PV against Explosión spent as it comes is
+the bomb kept on one foe and Rayo de sanación played with the turns it frees (0.8 a fight against 0.1). The targets hold
+the round (8.3 against 9.5) and the PV (38 % or more against 37.5 % or less).
 
 Where it was tried first and cannot hold: the Gemelos de tercero last about six rounds, 40–55 s on the simulator's
 clock, and a bomb needs 27 s on one foe and two restarts to go off at its top (0 % woken; pushed, 1–2 % and the room

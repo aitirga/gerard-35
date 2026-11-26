@@ -779,7 +779,7 @@ in = "src/swarm-fx.ts"
 [[block.item]]
 title = "Enjambre: su pareja de objetivos"
 priority = "animas"
-note = "Hecha en Dirección (Aitor, 2026-11-26: cada pareja de definitiva en un jefe largo): direccion-con-enjambre frente a direccion-sin-enjambre, con el equipo del tercer curso y Enjambre comprada encima (TECH, Aitor en Tecnópata). El bot guarda una bomba en una de las tres y le reinicia el reloj dos veces (SWARM_SHARE, y Enjambre valorada por los PV de sus bombas); al estallar al máximo despierta Enjambre (79–82 %), y una bomba al máximo en cada una deja al equipo con el 40–42 % de PV frente al 23–24 % sin ella, ganando igual (86–88 % frente a 89–90 %). Medido el 2026-11-26, semillas 35, 7 y 99. Dirección llega antes de que se abran las definitivas: es lo que vale con ellas, no un tramo de la historia."
+note = "Hecha en Dirección (Aitor, 2026-11-26: cada pareja de definitiva en un jefe largo): direccion-con-enjambre frente a direccion-sin-enjambre, con el equipo del tercer curso y Enjambre comprada encima (TECH, Aitor en Tecnópata). El bot guarda una bomba en una de las tres y le reinicia el reloj dos veces (SWARM_SHARE, solo con más de un enemigo en pie, y Enjambre valorada por los PV de sus bombas); al estallar al máximo despierta Enjambre (79–82 %). La «sin» juega igual (el veto deja el empuje) y solo no la lanza, así que la diferencia es el lanzamiento: 8.3 rondas y 40–42 % de PV frente a 9.4–9.6 rondas y 34–36 %. Medido el 2026-11-26, semillas 35, 7 y 99. Dirección llega antes de que se abran las definitivas: es lo que vale con ellas, no un tramo de la historia."
 grep = "(?s)\\A(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')"
 in = "src/battle-sim.ts"
 
@@ -1098,7 +1098,7 @@ in = "src/freatica-fight.ts"
 [[block.item]]
 title = "Bajo cero sujeto por un objetivo"
 priority = "animas"
-note = "La pareja de PLAN.md es delegada-bajo-cero-bien frente a delegada-bajo-cero-sin-ella, y espera a Aitor: la Delegada de tercero no puede sujetarla tal como es (cualquier equipo gana su sala en cuatro o cinco rondas, antes de que el agua de nadie llegue a la tercera marca; Bajo cero se lanza en el 0–3 % de sus combates, medido el 2026-11-26). Hecha ya la guarda, reina-con-bajo-cero (la Reina sigue pasando por cada fase y se lleva a Aitor, suyo), con su contraria reina-sin-bajo-cero: 22.1 rondas frente a 15.9. Aitor decidió el 2026-11-26 que cada pareja de definitiva vive en un jefe largo: esta de la Reina es la suya. Ningún objetivo rompe el hielo todavía."
+note = "Su pareja vive en la primera de la Reina, como decidió Aitor el 2026-11-26 (cada pareja de definitiva en un jefe largo): reina-con-bajo-cero, la guarda (la Reina sigue pasando por cada fase y se lleva a Aitor, suyo), frente a reina-sin-bajo-cero: 22.1 rondas frente a 15.9. La de PLAN.md, en la Delegada de tercero, no podía sujetarse: cualquier equipo gana su sala en cuatro o cinco rondas, antes de que el agua de nadie llegue a la tercera marca (Bajo cero se lanza en el 0–3 % de sus combates, medido el 2026-11-26). Ningún objetivo rompe el hielo todavía."
 grep = "(?s)\\A(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')"
 in = "src/battle-sim.ts"
 
