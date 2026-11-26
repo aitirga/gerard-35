@@ -24,6 +24,8 @@ import { POWDER_COLOURS } from './powder-fx';
  *   between the party, and green light jetting from both its ends to each of them.
  * - **Punto eléctrico** (`descarga`): a point of charge in front of him, which rises, crackling,
  *   and falls on its foe as lightning: several jagged, branching strikes and arcs that run on.
+ * - **Resonancia** (`resonancia`): t·sin(ωt), a wave driven at its own note, swelling inside its horn of an
+ *   envelope; it rings, flies at the foe, and a ring of six lobes round it takes up the note until it bursts.
  * - **Atractor extraño** (`atractor`): the pen draws the Lorenz butterfly round the foe; the other foes'
  *   statuses rise off them in their own looks and stream into it, where the GPU makes every mote follow the
  *   Lorenz field; then ρ falls below one and the whole of it spirals into the foe's chest.
@@ -999,6 +1001,64 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
     });
   }
 
+  // ——— Resonancia ———
+  /**
+   * An oscillator driven at its own frequency: x(t) = t·sin(ωt), drawn in his circle left to right, the
+   * wave growing inside its envelope ±t (two dashed lines opening like a horn). Drawn, it rings: it shivers
+   * up and down, harder and harder, and flies at the foe still ringing. At its contact a bolt goes from it
+   * into the chest, and round the foe a ring of light takes up the note, a standing wave of six lobes
+   * (r = R(1 + ε·cos 6θ·cos ωt)) whose ε grows until it bursts into sparks and a ring on the floor.
+   * On a frozen foe that is the note the ice breaks at (the break itself is Bajo cero's cell, src/freatica-fight.ts).
+   */
+  function resonancia(o: { centre: V3; view: V3; to: V3; feet: V3; radius?: number; breaks?: boolean; size?: number }) {
+    const f = figure('Resonancia', FIGURE_LOOKS.bolt), W = .5 * (o.size ?? 1), A = .24 * (o.size ?? 1), turns = 6;
+    const { right, up, facing } = face(f, o.centre, o.view);
+    const x = (u: number) => -W + 2 * W * u;
+    const wave = sample(120, u => xy(x(u), A * u * Math.sin(u * turns * Math.PI * 2)));
+    const envelope = [1, -1].flatMap(side => neonDashes(sample(8, u => xy(x(u), side * A * u)), 6, .5));
+    const axis = segment(xy(-W - .05, 0), xy(W + .08, 0), 8);
+    const strokes = [f.stroke(axis, { radius: .008 }), ...envelope.map(d => f.stroke(d, { radius: .009 })), f.stroke(wave, { radius: .02 })];
+    const DRAW = .42, HUM = .22, FLY = .2, RING = .42;
+    draw(f, strokes, DRAW, FIGURE_LOOKS.bolt.core);
+    const start = lifted(o.centre, o.view), r = Math.max(.35, o.radius ?? .5), goal = add(o.to, facing, r * .7 + .2);
+    const g = gpu();
+    let nextArc = 0;
+    play(DRAW + HUM + FLY, t => {
+      const k = smooth((t - DRAW) / (HUM + FLY) * 1.4 - .4), fly = smooth((t - DRAW - HUM) / FLY);
+      // It rings: the wave swells and flips faster as it is driven, and so do the arcs off its crests.
+      const drive = clamp01((t - DRAW) / (HUM + FLY));
+      f.body.setLocalScale(1, 1 + drive * 1.1 * Math.sin(t * (40 + 50 * drive)), 1);
+      const at = mix(start, goal, fly);
+      f.root.setPosition(at.x, at.y + Math.sin(fly * Math.PI) * .3, at.z);
+      const grow = 1 + .3 * fly; f.root.setLocalScale(grow, grow, grow);
+      f.glow(1, t > DRAW ? .2 + .5 * k * Math.abs(Math.sin(t * 45)) : 0);
+      if (g && t > DRAW && t >= nextArc) {
+        nextArc = t + .04 - .02 * drive;
+        const u = .55 + Math.random() * .45, side = Math.random() < .5 ? 1 : -1;
+        g.burst('arc', { at: f.world(xy(x(u), side * A * u)), to: f.world(xy(x(u) + (Math.random() - .5) * .1, -side * A * u * .6)), shape: 'line', count: 2 * 7, chain: 7, speed: .4, life: [.04, .09], colour: '#fff2a8' });
+      }
+    }, () => f.destroy());
+    after(DRAW + HUM + FLY, () => {
+      if (!g) return;
+      const from = goal, side = norm(cross(norm(sub(o.to, from)), facing));
+      lightning(from, o.to, { side, depth: facing, lit: .9, rough: .35, forks: 2, down: false });
+      after(.05, () => lightning(from, o.to, { side, depth: facing, lit: .6, rough: .35, forks: 1, down: false }));
+      g.burst('bloom', { at: o.to, count: 1, spread: .03, life: [.12, .2], colour: FIGURE_LOOKS.bolt.core, size: 1.1, light: { intensity: 6, range: 6, colour: FIGURE_LOOKS.bolt.halo } });
+      // The ring takes up the note: six lobes standing round the foe in the screen's plane, swelling until it bursts.
+      const R = r * 1.05, lobes = 6, pieces = 36;
+      play(RING, t => {
+        const eps = .05 + .3 * easeIn(t / RING), phase = Math.cos(t * 70), lit = .6 + .9 * (t / RING);
+        const point = (i: number) => { const a = i / pieces * Math.PI * 2, rr = R * (1 + eps * Math.cos(lobes * a) * phase); return add(add(o.to, right, Math.cos(a) * rr), up, Math.sin(a) * rr); };
+        for (let i = 0; i < pieces; i++) g.burst('glyph', { at: point(i), to: point(i + 1), shape: 'line', count: 3, life: [.03, .05], colour: i % 2 ? FIGURE_LOOKS.bolt.core : FIGURE_LOOKS.bolt.halo, size: 2.4 * lit });
+      }, () => {
+        g.burst('spark', { at: o.to, count: o.breaks ? 160 : 100, spread: R * .9, speed: 4.4, up: 1.6, life: [.3, .7], colour: '#fff2a8' });
+        g.burst('bipzap', { at: o.to, count: 50, spread: R * .6, speed: 3.2, life: [.2, .5], colour: FIGURE_LOOKS.bolt.halo });
+        g.burst('bloom', { at: o.to, count: 1, spread: .05, life: [.14, .22], colour: FIGURE_LOOKS.bolt.core, size: o.breaks ? 1.8 : 1.2, light: { intensity: o.breaks ? 9 : 5, range: 7, colour: o.breaks ? '#dff6ff' : FIGURE_LOOKS.bolt.halo } });
+        g.burst('floorring', { at: { x: o.feet.x, y: o.feet.y + .05, z: o.feet.z }, count: 1, life: [.3, .45], colour: FIGURE_LOOKS.bolt.halo, size: 1.7 });
+      });
+    });
+  }
+
   // ——— Serie de Fourier ———
   /**
    * The foe's own silhouette, as the camera sees it (its real surface, src/surface-samples.ts, laid flat and traced
@@ -1301,7 +1361,7 @@ export function createMathFigures(app: pc.AppBase, parent: pc.Entity, effects: E
 
   return {
     atractor,
-    cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release, fourier,
+    cardioide, piramide, cubo, integral, punto, cortocircuito, condensador, discharge, release, fourier, resonancia,
     /** A dual's own figure and its drawing (`DuoStage.figure` and `draw`, src/duo-fx/types.ts). */
     neon: neonFigure, drawNeon,
     /** Runs the figures on, `dt` in fight seconds. */

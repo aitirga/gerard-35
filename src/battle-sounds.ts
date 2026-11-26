@@ -78,6 +78,8 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   // collapse (FIGURES.atractor), and one note struck as everything lands in the foe's chest.
   atractor: { start: [{ id: 'think' }, { id: 'chaos-hum', delay: .45 }], impact: [{ id: 'struck' }, { id: 'thump', volume: .45 }] },
   vasos: { start: [{ id: 'cast-soft' }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .12 }] },
+  // Resonancia: a charge that rises as the wave is driven, the bolt, and a struck note that rings on (the ice's own break sounds from it).
+  resonancia: { start: [{ id: 'think' }, { id: 'charge', volume: .5, delay: .4 }], impact: [{ id: 'zap' }, { id: 'struck', volume: .8, delay: .03 }, { id: 'clink', volume: .5, delay: .38 }, { id: 'crack', volume: .5, delay: .42 }] },
   descarga: { start: [{ id: 'charge', volume: .5 }], impact: [{ id: 'zap' }, { id: 'crack', volume: .6 }, { id: 'hit', volume: .4, delay: .03 }] },
   // Cortocircuito: a resistor that snaps: a crack, the zap, and a dull thud as the current stays in them.
   cortocircuito: { start: [{ id: 'think' }], impact: [{ id: 'crack' }, { id: 'zap', delay: .04 }, { id: 'thump', volume: .5, delay: .08 }] },

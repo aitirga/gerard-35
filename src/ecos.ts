@@ -120,6 +120,8 @@ const MATEMAGICO: Improvement[] = [
   // Aitor 2026-11-21: past Toma de tierra, the current that stays in one foe and the charge he stores.
   skillNode('matemagico', 'electrico', 'cortocircuito', 1, 'toma-de-tierra'),
   skillNode('matemagico', 'electrico', 'condensador', 1, 'cortocircuito'),
+  // Resonancia (grade III, Aitor 2026-11-25: 2 ecos), the electric line's top, past Condensador beside Fulgurita: the bolt that breaks the ice.
+  gradeIII(skillNode('matemagico', 'electrico', 'resonancia', 2, 'condensador')),
   dualNode('matemagico', 'electrico', 'fulgurita', 'prismatico', 'condensador'),
   skillNode('matemagico', 'calculo', 'angulo', 1),
   skillNode('matemagico', 'calculo', 'analisis', 1, 'angulo'),

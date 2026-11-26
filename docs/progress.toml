@@ -823,13 +823,22 @@ file = "src/film-fx.ts"
 note = "La protección de la línea de Agua: quien golpea al aliado bajo la película queda mojado. Su par en fight-sim: campeon-pelicula y campeon-pelicula-sin."
 
 # Designed 2026-11-20 (docs/animas/matemagico/README.md § Grade III): water's levels and a fourth that
-# freezes, on the shared Congelado rule (not built yet either).
+# freezes, on the shared Congelado rule (Bajo cero's, built).
 [[block.item]]
-title = "Matemágico: Punto de congelación y Resonancia (niveles de agua, el cuarto congela, el rayo lo rompe)"
+title = "Matemágico: Punto de congelación (niveles de agua, el cuarto congela)"
 priority = "animas"
-note = "Grado III de agua y de eléctrico (matemagico/README § Grade III). Usan la regla Congelado, la misma que Bajo cero: hacer antes esa regla."
+note = "Grado III de agua (matemagico/README § Grade III), sobre la regla Congelado de Bajo cero."
 grep = "'punto-de-congelacion'"
 in = "src/battle.ts"
+
+# Built 2026-11-26 (PLAN.md § 3; docs/animas/matemagico/README.md § Grade III): the electric line's top, 2 ecos past
+# Condensador; on a foe in Bajo cero's ice it breaks the ice at once. Its figure: t·sin(ωt) and the ring of six lobes.
+[[block.item]]
+title = "Matemágico: Resonancia (el rayo que rompe el hielo)"
+grep = "id: 'resonancia'"
+in = "src/battle.ts"
+file = "tests/resonancia.test.mjs"
+note = "Hecha con su regla, su nodo, su figura y su prueba. Sin pareja en fight-sim: el bot casi nunca llega a tener hielo con ella en la mano (ver docs/fight-sim.md § Resonancia)."
 
 # Proposal 2026-11-20 (docs/animas/README.md § Dúos mayores): strong duals unlocked by the castle and a
 # node at the jar; Vulcano first, as Foc Binari + Ostinato.

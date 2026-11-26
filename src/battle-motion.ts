@@ -30,6 +30,8 @@ export const FIGURES = {
   descarga: { contact: 1, end: 1.7 },
   cortocircuito: { contact: 1, end: 1.6 },
   condensador: { contact: 1.3, end: 1.8 },
+  // Resonancia: t·sin(ωt) drawn and ringing (.42 + .22), its flight (.2), the bolt; then the ring round the foe swells and bursts (.42).
+  resonancia: { contact: 1.24, end: 1.95 },
   // Serie de Fourier: its circles turn out the foe's outline, which goes onto it; then a strike a circle (FOURIER_GAP apart).
   fourier: { contact: 1.6, end: 2.3 },
   // Atractor extraño: the butterfly drawn round the foe, the others' statuses streaming into it, and its collapse into the chest.

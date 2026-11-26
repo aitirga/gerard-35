@@ -1230,6 +1230,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     // Bajo cero: the foes it froze (`congela`, one a foe) and each ice cracked through (`hielo-roto`).
     for (const _ of effect.frozen ?? []) count('congela');
     for (const ice of effect.ice ?? []) if (ice.broke !== undefined) count('hielo-roto');
+    // Resonancia ringing an ice apart at once (`resuena`).
+    if (effect.skill === 'resonancia' && effect.ice?.some(i => i.broke !== undefined)) count('resuena');
     // Serie de Fourier: each blow past its first, one for each thing on the foe's plate (`armonico`).
     for (const _ of effect.harmonics ?? []) count('armonico');
     // A pounce lands as the round starts, out of anyone's turn: its PV are the action's that crouched (Acecho, or Arco voltaico).

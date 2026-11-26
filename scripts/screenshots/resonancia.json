@@ -1,0 +1,105 @@
+{
+  "title": "Resonancia · el rayo que rompe el hielo",
+  "description": "Matemágico, grado III eléctrico (docs/animas/matemagico/README.md § Resonancia): su figura, t·sin(ωt) y el anillo de seis lóbulos (src/math-figures.ts), primero sobre un perro sin hielo y luego sobre uno congelado por Bajo cero, que rompe de golpe. En el probador contra tres perros. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=freatica-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22freatica%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%2C%22freatica%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22matemagico%3Adescarga%22%2C%22matemagico%3Atoma-de-tierra%22%2C%22matemagico%3Acortocircuito%22%2C%22matemagico%3Acondensador%22%2C%22matemagico%3Aresonancia%22%2C%22freatica%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 900; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.st && window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "habilidades",
+      "delay": 300,
+      "caption": "Resonancia en la lista de Matemágico, tras ∂Q/∂t Condensador: 2 de maná, «Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.»"
+    },
+    {
+      "eval": "window.skill('resonancia')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "rayo",
+      "seconds": 2.0,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Resonancia sobre un perro sin hielo: x(t) = t·sin(ωt) dibujada en su círculo dentro de su envolvente ±t; vibra cada vez más fuerte, vuela al perro, un rayo al pecho y un anillo de seis lóbulos que toma la nota hasta reventar"
+    },
+    {
+      "until": "window.st && window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { window.st = s; s.water = { by: 'aitor' }; s.cold = { woke: true }; [3, 2, 0].forEach((n, i) => { const f = s.foes[i]; if (!f) return; const t = { ...f.timed }; delete t.agua; delete t.mojado; delete t.corriente; delete t.hundido; if (n) t.agua = { level: n, left: 20, next: 20 }; f.timed = t; }); })"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('bajo-cero')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "shot": "congelados",
+      "delay": 300,
+      "caption": "Bajo cero: dos perros congelados, cada uno en su bloque"
+    },
+    {
+      "until": "window.st && window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('resonancia')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "rompe-el-hielo",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Resonancia sobre el hielo fresco: el rayo entra a un cuarto y el anillo de seis lóbulos lo hace reventar de golpe, sin grietas antes: «¡Roto!» con el golpe de agua de la rotura"
+    },
+    {
+      "shot": "despues",
+      "delay": 500,
+      "caption": "Después: el primer perro libre, sin hielo; el segundo sigue congelado"
+    }
+  ]
+}

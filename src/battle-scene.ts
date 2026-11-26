@@ -2357,7 +2357,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     return land(felt, dx / d, 0, dz / d);
   }
   /** Matemágico's skills of the elements (docs/animas/README.md § The jar): drawn in his circle as figures (src/math-figures.ts). */
-  const ELEMENTAL: ReadonlySet<string> = new Set(['factor-comun', 'vasos', 'descarga', 'cortocircuito']);
+  const ELEMENTAL: ReadonlySet<string> = new Set(['factor-comun', 'vasos', 'descarga', 'cortocircuito', 'resonancia']);
   const MAGMA = '#ff5a1f', MAGMA_HOT = '#ffd27a', BOLT = '#ffe45c';
   /** Who a skill on everyone reached, with what it did to each. */
   const reachedBy = (e: BattleEffect) => (e.hits ?? []).flatMap(h => { const f = fighters.get(h.target); return f ? [{ f, h }] : []; });
@@ -2387,7 +2387,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // A circle a strike: the dial gold, then the colour of each thing on its plate it counted.
       const colours = [GOLD, ...(e.harmonics ?? []).map(harmonicColour)];
       fourierFigures.set(e, figures.fourier({ centre, view, model: target.model, chest: v3(chestOf(target)), floor: floorUnder(target).y, radius: extent(target).radius, colours, size }));
-    } else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
+    } else if (e.skill === 'resonancia') figures.resonancia({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius, breaks: !!e.ice?.some(i => i.broke !== undefined), size });
+    else if (e.skill === 'descarga') figures.punto({ centre, view, to: v3(chestOf(target)), feet: v3(floorUnder(target)), radius: extent(target).radius });
     else if (e.skill === 'atractor') {
       // What each other foe gave it, as it gave it; fire and water that met in it steam.
       const sources = (e.gathered ?? []).flatMap(g => { const f = fighters.get(g.from); return f ? [{ chest: v3(chestOf(f)), statuses: g.ids }] : []; });
@@ -2427,6 +2428,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const shorts = !!e.shorted && e.shorted.why !== 'again';
       statusFx.touch('electrico', e.target!);
       hit(target, ELEMENT_FLASH.electrico, shorts ? 1.5 : 1); shake = Math.max(shake, shorts ? .5 : .3); pulse?.(shorts ? .55 : .3, .3);
+      return;
+    }
+    if (e.skill === 'resonancia') {
+      // The bolt is the figure's; here its flash on the foe, harder where it rang the ice apart.
+      const breaks = !!e.ice?.some(i => i.broke !== undefined);
+      statusFx.touch('electrico', e.target!);
+      hit(target, ELEMENT_FLASH.electrico, breaks ? 1.7 : 1.3); shake = Math.max(shake, breaks ? .7 : .45); pulse?.(breaks ? .7 : .45, .35);
       return;
     }
     if (e.skill === 'descarga') {

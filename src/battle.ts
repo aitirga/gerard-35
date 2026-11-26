@@ -123,6 +123,10 @@ export const SKILLS = [
   { id: 'cortocircuito', name: 'Cortocircuito', cost: 2, side: 'foes', power: 14, kind: 'magic', element: 'electrico', short: true, node: true, description: 'Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. No se repite hasta que vuelva a actuar.', class: 'matemagico' },
   // ∂Q/∂t Condensador: Gerard stores charge (`Combatant.capacitor`). His next electric blow lands `CONDENSADOR.scale`
   // times; a foe that strikes him first gets it instead, `CONDENSADOR.jump` of electric magic.
+  // Resonancia (Eléctrico, grade III): a bolt tuned to the ice. On anything it is a hard bolt and reacts as electricity
+  // does; on a foe frozen in Bajo cero's ice (Congelado) it rings the ice at its own note and the ice breaks at once
+  // (`shatters`), its break blow as if cracked through (`chill`), where any other bolt does nothing to it.
+  { id: 'resonancia', name: 'Resonancia', cost: 2, side: 'foes', power: 38, kind: 'magic', element: 'electrico', shatters: true, node: true, description: 'Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.', class: 'matemagico' },
   { id: 'condensador', name: '∂Q/∂t Condensador', cost: 1, side: 'party', power: 0, kind: 'charge', node: true, description: 'Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.', class: 'matemagico' },
   // Papagato's skills are Haru's and Yuki's: the wearer only asks (docs/animas/papagato/). Haru cuts
   // (`bleed`: Sangrado stacks, which pile up) and the party cashes the wound in with a blow that adds none.
@@ -3966,23 +3970,24 @@ function holdWater(state: BattleState, effect?: BattleEffect) {
   if (state.phase !== 'lost') state.message += ' Las celdas se rompen: el agua corre por el suelo y moja a todos.';
 }
 /** A blow from outside on a frozen foe: how many strikes reached it, each worth `weight` of the ice's blows, and of what kind. */
-interface IceBlow { target: string; strikes: number; weight: number; magic: boolean; element?: Element }
+interface IceBlow { target: string; strikes: number; weight: number; magic: boolean; element?: Element; shatter?: boolean }
 /**
  * The blows of an action on each foe, as the ice counts them: a flurry's strikes (`flurry`, a rain, a volley, the claws, the
  * hammer) one each; any other blow one, or two when it is hard (power `CRECIDA.hard` or more). Only blows that reached.
  */
-function iceBlows(effect: BattleEffect, kind: string | undefined, power: number, element?: Element, flurry = false): IceBlow[] {
+function iceBlows(effect: BattleEffect, kind: string | undefined, power: number, element?: Element, flurry = false, shatter = false): IceBlow[] {
   const counts = new Map<string, number>(), add = (id: string | undefined, n: number) => { if (id && n > 0) counts.set(id, (counts.get(id) ?? 0) + n); };
   const seq = effect.rain ?? effect.volley ?? effect.hunt ?? effect.hammer;
   if (seq?.length) for (const s of seq) add(s.amount > 0 ? s.target : undefined, 1);
   else if (effect.hits?.length) for (const h of effect.hits) add(h.amount > 0 ? h.target : undefined, 1);
   else if (effect.amount) add(effect.target, flurry && effect.strikes ? effect.strikes.filter(n => n > 0).length : 1);
   const weight = seq?.length || flurry ? 1 : power >= CRECIDA.hard ? 2 : 1;
-  return [...counts].map(([target, strikes]) => ({ target, strikes, weight, magic: kind === 'magic', element }));
+  return [...counts].map(([target, strikes]) => ({ target, strikes, weight, magic: kind === 'magic', element, ...shatter ? { shatter } : {} }));
 }
 /**
  * Bajo cero's ice takes the blows of an action (`iceBlows`). A flame melts a mark of it at once, with its steam (Cegado at
- * the ice's level), and cracks nothing; electricity does nothing to it; any other blow cracks it. Cracked through, it
+ * the ice's level), and cracks nothing; electricity does nothing to it, but Resonancia (`shatters`) breaks it at once; any
+ * other blow cracks it. Cracked through, it
  * breaks: the foe takes magic water damage by the ice still there, with the Magia of whoever froze it (a blow: a weakness
  * to water counts, never a golpe crítico), and is free.
  */
@@ -3990,7 +3995,7 @@ function chill(state: BattleState, actor: Combatant, effect: BattleEffect, blows
   for (const b of blows) {
     const foe = state.foes.find(f => f.id === b.target), ice = foe?.timed?.congelado;
     if (!foe || !ice || foe.hp <= 0) continue;
-    if (b.magic && b.element === 'electrico') continue;
+    if (b.magic && b.element === 'electrico' && !b.shatter) continue;
     if (b.magic && b.element === 'fuego') {
       ice.left -= CRECIDA.ice;
       blind(foe);
@@ -4000,7 +4005,7 @@ function chill(state: BattleState, actor: Combatant, effect: BattleEffect, blows
       state.message += ` El fuego derrite una marca de hielo: ¡${TIMED.cegado.name}!`;
       continue;
     }
-    const added = b.strikes * b.weight;
+    const added = b.shatter ? CRECIDA.blows - (foe.cracks ?? 0) : b.strikes * b.weight;
     foe.cracks = Math.min(CRECIDA.blows, (foe.cracks ?? 0) + added);
     if (foe.cracks < CRECIDA.blows) { (effect.ice ??= []).push({ target: foe.id, cracks: foe.cracks, added }); continue; }
     const left = ice.left / CRECIDA.ice;
@@ -4743,7 +4748,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
   accompany(state, actor, effect); offbeatNotes(state, actor, effect);
   // Bajo cero's ice takes the blows that reached it, and whoever held the water may have fallen (reflected magic).
   if (action === 'attack' || (action === 'skill' && ability && ability.kind !== 'heal' && !('freezes' in ability))) {
-    chill(state, actor, effect, iceBlows(effect, action === 'attack' ? 'physical' : ability!.kind, action === 'attack' ? 18 : ability!.power, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'skill' && !!ability && ('strikes' in ability || 'harmonics' in ability)));
+    chill(state, actor, effect, iceBlows(effect, action === 'attack' ? 'physical' : ability!.kind, action === 'attack' ? 18 : ability!.power, action === 'attack' ? attackElement(state, actor) : elementOf(ability), action === 'skill' && !!ability && ('strikes' in ability || 'harmonics' in ability), action === 'skill' && !!ability && 'shatters' in ability));
   }
   holdWater(state, effect);
   cortinaSay(state, effect, target && state.foes.includes(target) ? target : undefined);
