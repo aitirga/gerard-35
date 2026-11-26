@@ -291,7 +291,7 @@ export const CASTLE_FIGHTS: Record<RoomEncounter, readonly PupilKind[]> = {
   'alumnos-3a': ['chivata', 'chivata', 'repetidor'],
   'alumnos-3b': ['empollon', 'repetidor', 'chivata'],
   'alumnos-3c': ['gemelo', 'gemelo', 'empollon'],
-  // El Montón with La Chivata: whatever it was shown comes back, and her mark doubles it.
+  // El Montón with La Chivata: whatever it was shown comes back, and her mark makes it 2.5 times as hard.
   'alumnos-3d': ['monton', 'chivata'],
   'delegada-3': ['delegada', 'gemelo', 'gemelo'],
 };
