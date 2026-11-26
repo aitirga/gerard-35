@@ -845,19 +845,21 @@ function powderWorth(before: BattleState, after: BattleState, i: number) {
 /** Whether someone standing in the party can turn a foe's powder with an Atacar of an element. */
 const turnsPowder = (state: BattleState) => state.allies.some(a => a.hp > 0 && elementsFor(state, a).length > 0);
 /** How near `c`'s definitiva is to waking now, 0 to 1 (1: awake), and which; nothing if none is bought, or it went off already. */
-function nearness(state: BattleState, c: Combatant) {
+function nearness(state: BattleState, c: Combatant, gone = 0) {
   const awake = awakeUlti(state, c);
   if (awake) return { skill: awake.id, at: 1 };
   const asleep = ultiProgress(state, c);
   // Siete vidas: the wound cut to five is not yet the definitiva; the blow that spends it is the last step (`LIVES_STEPS`).
   const steps = asleep?.skill === 'siete-vidas' ? asleep.need + LIVES_STEPS : asleep?.need ?? 0;
-  // Fin de fiesta: powder on a foe standing is a share of a reaction still to see (`DUST_STEP`), one for each foe up to
-  // the reactions it still waits for, so the blow that turns all of it into one (a fire on everyone) is a step back.
-  const have = asleep?.skill === 'fin-de-fiesta' ? asleep.have + DUST_STEP * Math.min(asleep.need - asleep.have, dusted(state)) : asleep?.have ?? 0;
+  // Fin de fiesta, where waking it is worth the turns (`wakeAtStake`): powder on a foe standing is a share of a reaction
+  // still to see (`DUST_STEP`), one for each foe up to the reactions it still waits for, so the blow that turns all of it
+  // into one (a fire on everyone) is a step back. `gone`: powdered foes that fell with the choice, counted as if still there.
+  const dust = asleep?.skill === 'fin-de-fiesta' && wakeAtStake(state) ? DUST_STEP * Math.min(asleep.need - asleep.have, dusted(state) + gone) : 0;
+  const have = (asleep?.have ?? 0) + dust;
   return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, Math.min(have, asleep.need) / steps) } : undefined;
 }
 /**
- * Where waking Siete vidas is worth the turns it takes (`wakeWorth`): a boss's fight (`isBoss`: the ones that close a mission
+ * Where waking Siete vidas or Fin de fiesta is worth the turns it takes (`wakeWorth`): a boss's fight (`isBoss`: the ones that close a mission
  * or a floor of the castle, and the Queen), which stands the rounds a wound needs to be cut to five and spent, and turns
  * into the killing blows its ward is for. In a room of the castle the foes fall before the wound is deep, and the turns
  * spent cutting it lose the room (`gemelos-tercero-bien` 88 % → 70 %, `monton-bien` 90 % → 63 %, measured 2026-11-26).
@@ -869,11 +871,11 @@ function nearness(state: BattleState, c: Combatant) {
  * the third round, only once someone is under half or three quarters of their PV, only on the wearer's own turn; so was
  * dropping the step back, which also cost `delegada-bien` a third of its wins.
  */
-const livesAtStake = (state: BattleState) => isBoss(state);
+const wakeAtStake = (state: BattleState) => isBoss(state);
 /** Foes standing with powder on them, for Fin de fiesta's nearness. */
 const dusted = (state: BattleState) => state.foes.filter(f => f.hp > 0 && f.timed?.empolvado).length;
-/** Whether a foe with powder on it before the choice fell with it (its powder gone with it, not spent). */
-const dustedOut = (before: BattleState, after: BattleState) => before.foes.some(f => f.hp > 0 && f.timed?.empolvado && (after.foes.find(g => g.id === f.id)?.hp ?? 0) <= 0);
+/** Foes with powder on them before the choice that fell with it: their powder went with them, not spent. */
+const dustedOut = (before: BattleState, after: BattleState) => before.foes.filter(f => f.hp > 0 && f.timed?.empolvado && (after.foes.find(g => g.id === f.id)?.hp ?? 0) <= 0).length;
 /** Whether a foe that bled before the choice fell with it (its wound gone with it, not spent short). */
 const bledOut = (before: BattleState, after: BattleState) => before.foes.some(f => f.hp > 0 && (f.statuses?.sangrado ?? 0) > 0 && (after.foes.find(g => g.id === f.id)?.hp ?? 0) <= 0);
 /** What one choice brought the party's sleeping definitivas nearer to waking (`WAKE_WORTH`), for whoever wears each, standing. */
@@ -882,17 +884,17 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
   after.allies.forEach((ally, i) => {
     const was = before.allies[i];
     if (!was || ally.hp <= 0 || ally.classId !== was.classId) return;
-    const from = nearness(before, was), to = nearness(after, ally);
+    const from = nearness(before, was), to = nearness(after, ally, from?.skill === 'fin-de-fiesta' ? dustedOut(before, after) : 0);
     // A definitiva the bot may not use is nothing to wake.
     if (from && ban.includes(from.skill)) return;
-    // Siete vidas: only in a boss's fight (`livesAtStake`); there a wound spent short throws its steps away (the condition is
-    // a wound kept and cut to five, then spent). One that went with the foe that bled is no step back: a kill is a kill.
-    const lives = from?.skill === 'siete-vidas' && !livesAtStake(before) ? 0 : 1;
-    if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * lives;
-    // Fin de fiesta: powder spent on a reaction already seen (or on one, from many foes) is a step back too; one that went
-    // with the foe it was on is not.
-    if (from && to && from.skill === 'fin-de-fiesta' && to.skill === from.skill && to.at < from.at && !dustedOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill);
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * lives; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
+    // Siete vidas and Fin de fiesta: their own worth only in a boss's fight (`wakeAtStake`); elsewhere `WAKE_WORTH`, as any
+    // other. There a wound spent short throws its steps away (the condition is a wound kept and cut to five, then spent), and
+    // so does powder spent on a reaction already seen, or all of it on one. A wound or powder that went with its foe is no
+    // step back (a kill is a kill): the powder of each foe that fell counts as still there (`dustedOut`), the rest's does not.
+    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta') && !wakeAtStake(before) ? 0 : 1;
+    if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
+    if (from && to && from.skill === 'fin-de-fiesta' && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
   });
   return worth;
 }

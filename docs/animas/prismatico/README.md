@@ -236,29 +236,48 @@ his definitiva is *Horas extra* now ([`../README.md`](../README.md) § Definitiv
 
 **In fight-sim:** the bot values powder laid where someone can turn it (`DUST_WORTH`), the poison and
 shards it turns into (`POISON_WORTH`, `SHARD_WORTH`), and each reaction not yet seen as a third of
-what Fin de fiesta would do now (`ultiWorth`). While it sleeps, powder on a foe counts as half of a
-reaction still to see, one foe for each reaction missing (`nearness`, `DUST_STEP`), and spending it on
-a reaction already seen, or all of it on one (a fire on every powdered foe), is a step back
-(`wakeWorth`); so the bot turns one foe with a spark and another with water before the fire, and a
-banned Fin de fiesta is nothing to prepare.
+what Fin de fiesta would do now (`ultiWorth`). Only in a boss's fight (`wakeAtStake`, the same gate as
+Siete vidas), powder on a foe also counts as half of a reaction still to see, one foe for each reaction
+missing (`nearness`, `DUST_STEP`), and powder spent on a reaction already seen, or all of it on one (a
+fire on every powdered foe), is a step back (`wakeWorth`); the powder of a foe that fell with the blow
+went with it and is not counted spent. Elsewhere it wakes as any other definitiva (`WAKE_WORTH`), and a
+banned Fin de fiesta is nothing to prepare. Without that gate the chase was the bot's main reason to
+play the powder well in the castle's rooms, so banning the definitiva played the room worse though it
+never woke (2026-11-26, the table's setup): `alumnos-3c` with it 98 % in 3.96 rounds, without it 94 % in 5.16 (as Encarnados 91 %
+against 71 %), a gap Fin de fiesta did not cause. Gated, both play the same. What that gap measured is
+that powder alone is worth too little to the bot (`DUST_WORTH`): with the chase it opened Polvareda
+0.93 times a fight, without it 0.54. Raising it is its own change, to decide with Aitor.
 
-Its pair of targets is **not held**, and cannot be in the Gemelos de tercero (measured 2026-11-26,
-smart, `castillo-3`, Gerard on Matemágico and Aitor on Colorista, 200 fights):
+Its pair of targets is **not held**, and cannot be in the Gemelos de tercero. Measured 2026-11-26, 300
+fights (the Queen 200), seed 35, with the party the story brings to the third floor (`castillo-3`, the
+ecos spent on `mixto`, so every definitiva is bought):
+
+```sh
+just fight-sim story --at castillo-3 --build mixto --fight alumnos-3c,alumnos-3c:encarnados,reina \
+  --party gerard:matemagico+aitor:prismatico --policy smart --ban none,fin-de-fiesta --runs 300 --json
+```
+
+| Fight | With it | Without it (`--ban fin-de-fiesta`) | Wakes | Used |
+| --- | --- | --- | --- | --- |
+| `alumnos-3c` | 94 %, 5.17 rounds, 53 % PV | 94 %, 5.16 rounds, 53 % PV | 0 % | 0 |
+| `alumnos-3c:encarnados` | 71 %, 5.86 rounds, 51 % PV | 71 %, 5.86 rounds, 51 % PV | 1 % | 0.01 |
+| `reina` (lost by design) | falls in 13.6 rounds | falls in 14.9 rounds | 78 % | 0.74 |
+
 - The condition needs two lays of powder and three turns of it, fire last or alone: the earliest it
-  wakes is Gerard's fourth turn. The room's own answer (Polvareda, then one fire on everyone) has
-  both twins down in the second round and the room over in 3.2: it wakes in 1 % of fights.
-- Awake from the first turn (an upper bound nobody can play) it changes nothing either: 3.10
-  rounds and 62 % of PV left against 3.22 and 58 % without it. It is weaker than Traca: 95 PV a
-  use against 125 (`just fight-sim skills --anima prismatico`).
-- As Encarnados (`alumnos-3c:encarnados`) the bot wakes it in 47 % of fights, but by then only the
-  Empollón is left and the room ends that turn: used in 3 %, won in 4.8 rounds against 4.3 without
-  chasing it.
-- The Queen (`reina`) is the only fight where it wakes and goes off (82 %, 0.8 uses a fight), and it
-  does not hold them longer: they fall in 13.6 rounds with it and 14.9 without, and in 15.0 with it
-  awake from the first turn.
+  wakes is Gerard's fourth turn, and the room is over before then.
+- Stronger is not the answer there: with the Estallido doubled (`--tune powder.rules.blast=44`, which
+  doubles every fire on powder, not only Fin de fiesta's) the room plays 96 % in 4.36 rounds with it
+  and without it alike, and as Encarnados 77 % in 5.42 against 5.47: it still does not wake. It is
+  weaker than Traca where it is used: 59 PV a use against 100 (`just fight-sim skills --anima
+  prismatico`).
+- The Queen is the only fight where it wakes and goes off, and there it does not hold them longer:
+  the party falls 1.3 rounds sooner with it.
+- `levers` and `optimize` measure against targets, and there is no pair to measure against yet: the
+  numbers above are the bench's `story` with `--ban` and `--tune`.
 
 To decide with Aitor: another holding fight (a long one with several foes standing to the end, which
-the third year does not have), or Fin de fiesta stronger than a Traca, before any pair can hold.
+the third year does not have), a condition that can be met inside a room, or accepting it without a
+pair, before any pair can hold.
 
 ## What a round looks like
 

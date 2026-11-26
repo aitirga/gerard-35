@@ -243,7 +243,7 @@ cats do something.
   whole worth what casting it would do plus a life (`LIVES_LIFE`). Held by `reina-con-siete-vidas` against
   `reina-sin-custodia` in the Queen's first fight: woken in about half of them, the ward taking a killing blow a
   third of the times, and she needs two rounds more to bring the party down (13.2 rounds against 11.1). It costs
-  the other boss fights a little (`livesAtStake` in `src/battle-sim.ts` has the numbers).
+  the other boss fights a little (`wakeAtStake` in `src/battle-sim.ts` has the numbers).
 
 ## What a round looks like
 
