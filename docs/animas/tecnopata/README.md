@@ -135,8 +135,13 @@ remoto, beside Virus atómico, in the jar's first stage (`passiveNode('tecnopata
 | | |
 | --- | --- |
 | **Wakes in a fight when** | A Bomba remota goes off at its top (50) while Aitor wears Tecnópata |
-| **Then** | Once in that fight, for the turn and no maná. Every foe standing gets a bomb already at its top, and every clock on those foes starts over; the party's clocks (a Sanación) are not the swarm's (Aitor 2026-11-25). No blow, no number |
-| **In the game** | *Abstract*: `Bip se deshace en un enjambre: le pega a cada enemigo una bomba remota que ya está al máximo. Sus estados con reloj vuelven a empezar.` |
+| **Then** | Once in that fight, for the turn and no maná. Bip comes apart into a **hive** (Aitor 2026-11-26): every foe standing gets a bomb already at its top, and for **60 s** of the fight's clock (`COLMENA`, about ten rounds at Dirección) each bomb that goes off on a foe still standing leaves a new one in its place, on its whole clock and from nothing. Stretching them (Rayo de energía, Telemetría, Reinicio) still loads them; Explosión sets them all off and the hive puts them back at once. When the minute is up the hive is gone and the bombs left run out as any other. No blow, no number |
+| **Shows as** | *Colmena* on Aitor's plate, its ring the minute it has left; *Otra bomba* (Colmena · 12 s) over a foe each time it puts one back |
+| **In the game** | *Abstract*: `Bip se deshace en una colmena durante un minuto: cada enemigo lleva una bomba remota al máximo, y cada bomba que estalla deja otra en su sitio.` |
+
+Until 2026-11-26 it was one bomb at its top on each foe and every clock on them started over. That paid in the old
+Dirección (three foes, eight rounds) and nowhere else: against one foe it was a single bomb, and the harder Dirección
+outlasts it. The hive grows with the fight instead, and pays against one foe as well as three.
 
 ### What a round looks like (one foe A, one B; a turn about every 4 s, first guess)
 
@@ -174,10 +179,12 @@ remoto, beside Virus atómico, in the jar's first stage (`passiveNode('tecnopata
   network (64 k agents and their trail, compute in WGSL) that reaches every foe's feet, holds on and thins to the paths
   that join them (to 1.4 s). Nanites run up each body in closing rings and, at 1.6 s, the bombs close on every chest
   one after another, each with its clank, already at their top («Bomba al máximo»; no number). A white pulse runs out
-  along the network as the clocks start over (1.9 s, a rewind), and Bip forms again at home out of nanites coming back
-  from it (2.4–3.2 s). Bip is undone only for this launch, at no cost. The network **stays**, beating red each time the
-  bombs flash, until the last of them has gone off; then it fades. Cyan, white and graphite, red only in its beat.
-  Sounds: the swarm's buzz, the network's data chirps, a clink a foe, one beep from all the bombs, the rewind.
+  along the network as the hive takes hold (1.9 s, a chirp), and Bip forms again at home out of nanites coming back
+  from it (2.4–3.2 s). Bip is undone only for this launch, at no cost. The network **stays** while the hive lasts,
+  beating red each time the bombs flash; each time it puts a bomb back, nanites run up from it to the foe's chest in
+  closing rings and the new bomb clamps on with a softer clank. Once the hive is gone and the last bomb has gone off, it
+  fades. Cyan, white and graphite, red only in its beat. Sounds: the swarm's buzz, the network's data chirps, a clink a
+  foe, one beep from all the bombs.
   Measured 2026-11-26 (`--perf`, this machine): the whole frame's CPU 3.2 ms with the network, three bombs and three
   fires on screen, against 2.05 ms after they have gone.
 
@@ -194,50 +201,37 @@ winning a little easier or longer: magos-con-magia, directo-con-tecnopata, campe
 carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 0.7 of what it will
 take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
 
-**Enjambre's pair of targets is open again** (2026-11-26, the same day): Dirección got harder (Respaldo, Readmisión,
-about fifteen rounds) and there casting Enjambre now does worse than holding it (Matemágico/Prismático with
-Tecnópata/Papagato, 200 fights: 35 % won with it, 63 % with it banned), and at the Queen and Aurelià it never wakes
-(the bomb needs more than one foe standing). The two targets were taken out; it waits on Aitor: Enjambre against Caída
-and Readmisión, or its pair somewhere else. What follows is how the pair stood in the earlier meeting.
+**Enjambre's pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) is held at the Queen's
+first fight since its hive: `reina-con-enjambre` against `reina-sin-enjambre`, Gerard on Matemágico and Aitor on
+Tecnópata (`TECH`), with the third floor's party and `tecnopata:definitiva` bought on top. That fight is lost by design
+at her tenth, so it is measured as whether the party gets her there (`decimo`, once a fight).
 
-**Enjambre's pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) was held at Dirección,
-the long boss with three foes standing to the end: `direccion-con-enjambre` against `direccion-sin-enjambre`, Gerard on
-Matemágico and Aitor on Tecnópata (`TECH`), with the third floor's party and `tecnopata:definitiva` bought on top
-(`mixto` does not reach it at `castillo-3`). Dirección is met before the definitivas open, so the pair says what the
-team is with it, not a stretch of the story.
-
-To get there the bot had to learn the way (`src/battle-sim.ts`, only where `swarmAtStake`: a boss's fight with more than
-one foe standing, the Queen's hands and bubble not counted):
+The bot's way (`src/battle-sim.ts`, in a boss's fight, `swarmAtStake`):
 - Enjambre's nearness is the bomb it **will** go off with (`bombPower(age + left)`), not the one it is now, so a clock
   started over (Rayo de energía) is a step nearer and a bomb set off short (Explosión) a step back; short of going off
   it is at most nine tenths of the way (`SWARM_AHEAD`).
-- What waking it is worth is what Enjambre would do (`ultiWorth`): the PV its bombs take, the clock played on past
-  their twelve seconds on a copy (`gain` counts a bomb by its power and leaves the bomber's Magia out: 105 against 165
-  PV at Dirección).
+- What waking it is worth is what Enjambre would do (`ultiWorth`): the PV its hive's bombs take, the clock played on a
+  copy through the minute and the last bombs it left, an action's seconds at a time.
 - Its share of that is `SWARM_SHARE` (2.5) in place of `ULTI_SHARE` (.5): the way is a bomb and two Rayos de energía,
-  all of Aitor's maná at the start, while Explosión on three foes is worth more than the bomb at once and sets it off
-  short. At .5 to 1.75 the bot never keeps a bomb (0–1 % woken); at 2, 66 %; at 2.5, 79 %; from 3, 80–82 %, losing a
-  few more fights to the turns the bomb takes.
-- Against one foe the push costs more than the bang, so it stays off there: pushed at the Queen's first fight too, with
-  this pair's party, the party fell in 14.9 and 15.8 rounds; gated, in 17.6, as with Enjambre not bought (17.5).
+  all of Aitor's maná at the start. Since the hive it no longer asks for more than one foe standing.
 
 The ripening pays on its own, so the counterpart keeps it: with `ban: ['enjambre']` the bot plays the same way, the bomb
 ripens and wakes Enjambre as often, and only the cast is out of reach. The gap between the two rows is the cast.
 
-| Seed (200 fights) | With it | Same play, not cast (`ban: ['enjambre']`) | Not bought (Explosión on the three) | Woken |
-| --- | --- | --- | --- | --- |
-| 35 | 86 %, 8.3 rounds, 40 % PV | 81 %, 9.5 rounds, 36 % PV | 89 %, 8.5 rounds, 23 % PV | 79 % |
-| 7 | 88 %, 8.3 rounds, 40 % PV | 84 %, 9.4 rounds, 35 % PV | 89 %, 8.5 rounds, 23 % PV | 82 % |
-| 99 | 88 %, 8.3 rounds, 42 % PV | 86 %, 9.6 rounds, 34 % PV | 90 %, 8.4 rounds, 24 % PV | 82 % |
+| Seed (200 fights) | With it: at her tenth | Same play, not cast | Woken |
+| --- | --- | --- | --- |
+| 35 | 89 %, round 13.4 | 52 %, round 17.9 | 81 % |
+| 7 | 87 %, round 13.3 | 47 %, round 18.4 | 84 % |
+| 99 | 89 %, round 13.3 | 49 %, round 18.6 | 83 % |
 
-The cast is worth more than a round and five or six points of PV; most of the PV against Explosión spent as it comes is
-the bomb kept on one foe and Rayo de sanación played with the turns it frees (0.8 a fight against 0.1). The targets hold
-the round (8.3 against 9.5) and the PV (38 % or more against 37.5 % or less).
+With the definitiva not bought the same party gets her there in 59 % of fights, at round 17.6. The targets hold
+`decimo` at 75 % or more with it and 62 % or less without.
 
-Where it was tried first and cannot hold: the Gemelos de tercero last about six rounds, 40–55 s on the simulator's
-clock, and a bomb needs 27 s on one foe and two restarts to go off at its top (0 % woken; pushed, 1–2 % and the room
-lost). At the Queen, a single foe most of the fight, Enjambre's bombs pay little more than the three turns they take:
-with Gerard on Matemágico, Freática and Colorista and Aitor only on Tecnópata, a share of 1.5 wakes it in 29 % of fights and the party gets her to her tenth less often (85 % → 68 %).
+Where it was held before: Dirección, with the single bomb on each of the three (`direccion-con-enjambre`, 8.3 rounds
+and 40 % of PV against 9.5 and 35 %). The harder Dirección (Respaldo, Readmisión, about fifteen rounds) made casting
+it worse than holding it, and the meeting is too long for Matemágico and Tecnópata alone even with the hive (5 % won
+with it, none without); the definitivas also come after it. The Gemelos de tercero last about six rounds, too short
+for a bomb to ripen (0 % woken).
 
 ### Open (Aitor's)
 

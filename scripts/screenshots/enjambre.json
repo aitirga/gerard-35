@@ -1,6 +1,6 @@
 {
-  "title": "Enjambre · red de Physarum",
-  "description": "La definitiva de Tecnópata con su aspecto propio (src/swarm-fx.ts, src/physarum.ts): Bip se deshace, la red de rastro crece por el suelo hasta cada enemigo, las bombas se cierran al máximo, el pulso blanco y Bip rehecho; la red late en rojo con las bombas y se va cuando estallan con Explosión. Con --gpu.",
+  "title": "Enjambre · la colmena",
+  "description": "La definitiva de Tecnópata (src/swarm-fx.ts, src/physarum.ts, COLMENA en src/battle.ts): Bip se deshace, la red de rastro crece por el suelo hasta cada enemigo y las bombas se cierran al máximo; durante un minuto cada bomba que estalla deja otra (Explosión las cobra y vuelven), «Colmena» en la placa de Aitor con su reloj; al acabarse el minuto, las últimas estallan y la red se va. Con --gpu.",
   "steps": [
     {
       "open": "/?story=freatica-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Adefinitiva%22%5D%7D"
@@ -30,7 +30,7 @@
       "timeout": 60000
     },
     {
-      "eval": "ui.tweak(s => { s.swarm = { woke: true }; s.foes.forEach((f, i) => { f.timed = { ...f.timed, quemado: { level: 1, left: 3 + i, next: 1 } }; }); })"
+      "eval": "ui.tweak(s => { s.swarm = { woke: true }; })"
     },
     {
       "wait": 800
@@ -56,12 +56,12 @@
       "seconds": 3.4,
       "fps": 30,
       "tiles": 16,
-      "caption": "Enjambre: Bip sube sobre los enemigos temblando y se deshace en un enjambre de nanitos que cae al suelo; allí crece una red de Physarum (agentes en compute WGSL) que agarra a cada enemigo y adelgaza hasta el árbol que los une; los nanitos suben por cada cuerpo y cierran la bomba con su clank (al máximo); un pulso blanco recorre la red mientras los relojes vuelven a empezar, y Bip se rehace en casa. Ningún número sobre los enemigos: «Bomba al máximo» y «Vuelve a empezar»"
+      "caption": "Enjambre: Bip sube sobre los enemigos temblando y se deshace en un enjambre de nanitos que cae al suelo; allí crece una red de Physarum (agentes en compute WGSL) que agarra a cada enemigo y adelgaza hasta el árbol que los une; los nanitos suben por cada cuerpo y cierran la bomba con su clank (al máximo); un pulso blanco recorre la red al asentarse la colmena, y Bip se rehace en casa. Ningún número sobre los enemigos"
     },
     {
       "shot": "red-latiendo",
       "delay": 900,
-      "caption": "Después: la red se queda latiendo en rojo con los pitidos de las bombas hasta que estallan"
+      "caption": "Después: «Colmena» en la placa de Aitor, su anillo el minuto que le queda; la red se queda latiendo en rojo con los pitidos de las bombas"
     },
     {
       "until": "window.turn && window.turn('gerard')",
@@ -90,12 +90,23 @@
       "seconds": 3.2,
       "fps": 30,
       "tiles": 12,
-      "caption": "Explosión justo después hace estallar cada bomba al máximo, una tras otra; con ellas se va la red"
+      "caption": "Explosión hace estallar cada bomba al máximo, una tras otra; la colmena les pone otra en su sitio: nanitos que suben desde la red, el clank y «Otra bomba»"
     },
     {
-      "shot": "despues",
+      "shot": "colmena-repone",
       "delay": 1200,
-      "caption": "La red se ha ido con las bombas"
+      "caption": "Cada enemigo vuelve a llevar su bomba (nueva, de 12 s) y la red sigue: la colmena aún dura"
+    },
+    {
+      "eval": "ui.tweak(s => { s.swarm.left = .3; s.foes.forEach(f => { if (f.timed?.bomba) f.timed.bomba.left = .6; }); })"
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "shot": "colmena-se-apaga",
+      "delay": 200,
+      "caption": "Acabado el minuto la colmena se va de la placa; las últimas bombas estallan sin dejar otra, y la red se desvanece con ellas"
     },
     {
       "eval": "if (window.errors.length) throw new Error(window.errors.join(' | '))"

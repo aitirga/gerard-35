@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, turnAt } from './song';
-import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse } from './battle';
+import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, COLMENA, hiveOn, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -448,6 +448,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Sugestión: where a confused foe's blow, and Idea fija's next beat, would go.
       // Horas extra: the actions it still has, none spending maná; then Agotado for the round after.
       case 'horas-extra': { const left = state!.extra!.left; return { id: 'horas-extra', name: `Horas extra: ${left === 1 ? 'una acción más' : `${left} acciones más`} sin gastar maná`, mark: String(left), timed: false, lasts: 'hasta acabarlas' }; }
+      // Enjambre's hive: each bomb that goes off leaves another, for the seconds it has left.
+      case 'colmena': return { id: 'colmena', name: 'Colmena: cada bomba que estalla en un enemigo deja otra en su sitio', mark: '', timed: true, lasts: `${Math.ceil(state!.swarm!.left!)} s` };
       case 'agotado': return { id: 'agotado', name: 'Agotado: solo puede atacar o defender, y defender no le da maná', mark: '', timed: false, lasts: 'esta ronda' };
       case 'sugestion': return { id: 'sugestion', name: 'Sugestión: el golpe de un enemigo confundido, y el de Idea fija, va a este enemigo', mark: '', timed: false, lasts: 'hasta que un aliado apunte a otro' };
       case 'punto-debil': return { id: 'punto-debil', name: 'Punto débil: el siguiente golpe hace el triple', mark: `×${WEAK_SPOT}`, timed: false, lasts: rounds(weakSpotRounds(state!, c)) };
@@ -727,6 +729,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         compas.style.setProperty('--ticks', 'conic-gradient(#120c0f 0deg 7deg, transparent 7deg 173deg, #f2e2a8 173deg 187deg, transparent 187deg 353deg, #120c0f 353deg)');
       }
     }
+    // Enjambre's hive: its ring empties over the minute it lasts.
+    const hive = state?.swarm?.left ? plate.querySelector<HTMLElement>('.status-icon[data-status="colmena"]') : null;
+    if (hive && state?.swarm?.left) hive.style.setProperty('--left', Math.max(0, state.swarm.left / COLMENA.seconds).toFixed(3));
     for (const [id, on] of Object.entries(shownTimed(c)).filter(([, on]) => on) as [TimedId, Timed][]) {
       const icon = plate.querySelector<HTMLElement>(`.status-icon[data-status="${id}"]`);
       if (!icon) continue;
@@ -816,8 +821,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const stopped = !state || !!root.dataset.entering || !!root.dataset.beat || !!root.dataset.announcing || !!root.dataset.revealing || !!root.dataset.guide || callbacks.paused();
     if (state?.song && !['won', 'lost', 'escaped'].includes(state.phase)) callbacks.song?.(state.song.t, stopped ? 0 : rate);
     if (!state || stopped) return;
-    const pulses = runClock(state, seconds, c => heldFire.has(c.id));
-    const sung = showSong() || showLight() || showEcos();
+    const hived = hiveOn(state), pulses = runClock(state, seconds, c => heldFire.has(c.id));
+    const sung = showSong() || showLight() || showEcos() || (hived && !hiveOn(state));
     // What a pulse brought on (Vertitrón's eye burnt out) plays once nothing else is.
     if (state.news?.length && !busy) void showNews();
     // Siete vidas went off on something that had no number of its own to turn over (a note of La Voz's): it says so now.
@@ -837,7 +842,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // La crecida's pulses come off in their own colour: the current's yellow, the sinking's blue-green.
       // A Bomba remota went off: its number with its own word, and the scene blows it up.
       // It implodes first (src/bomb.ts `BOMB.implode`, 0.8 s): the number comes with the burst.
-      else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) { pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); if (blast.awoken) ultiAwoke(blast.awoken); } }, 800); callbacks.pulse(p.target, p.status, p.by); }
+      else if (p.blast) { const blast = p, when = generation; setTimeout(() => { if (when === generation) { pop(blast.target, `−${blast.amount}`, 'damage', '¡Estalla!'); if (blast.awoken) ultiAwoke(blast.awoken); if (blast.hived) setTimeout(() => { if (when === generation) pop(blast.target, 'Otra bomba', 'status', `Colmena · ${BOMBA.seconds} s`, 'colmena'); }, 380); } }, 800); callbacks.pulse(p.target, p.status, p.by); }
       else if (p.status === 'corriente' || p.status === 'hundido') { pop(p.target, `−${p.amount}`, 'damage', p.status === 'hundido' ? TIMED.hundido.name : `${TIMED[p.status].name} ${roman(p.level)}`, p.status); callbacks.pulse(p.target, p.status, p.by); }
       // Corriente alterna's beat: its number named after the circuit (it has no level: the beat is not one), set aside when
       // the reaction's own number on the same foe comes after it.

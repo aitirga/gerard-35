@@ -67,7 +67,7 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   confusion: { start: [{ id: 'think', volume: .7 }], impact: [{ id: 'glitch' }] },
   'bomba-remota': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'clink', volume: .7 }, { id: 'glitch', volume: .4, delay: .15 }] },
   escolta: { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'guard' }, { id: 'clink', volume: .5, delay: .1 }] },
-  // Enjambre: Bip comes apart buzzing; the network's chirps, each bomb's clink and the rewind come from the scene (src/swarm-fx.ts
+  // Enjambre: Bip comes apart buzzing; the network's chirps and each bomb's clink (the hive's too) come from the scene (src/swarm-fx.ts
   // SWARM); as the bombs land, one beep from all of them at once.
   enjambre: { start: [{ id: 'swarm-buzz', volume: .7, delay: .45 }], impact: [{ id: 'glitch', volume: .5 }, { id: 'bomb-beep', delay: .2 }] },
   'rayo-encogedor': { start: [{ id: 'charge', volume: .4 }], impact: [{ id: 'zap', volume: .6 }, { id: 'sink' }] },

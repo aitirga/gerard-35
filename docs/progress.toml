@@ -765,27 +765,27 @@ note = "Una bomba en el enemigo que crece con el tiempo de su reloj (Bomba remot
 grep = "id: 'bomba-remota'"
 in = "src/battle.ts"
 
-# Aitor 2026-11-21, rules settled 2026-11-25 (docs/plans/definitivas/PLAN.md 2.4): only the foes' clocks start over, no blow.
+# Aitor 2026-11-21; its hive 2026-11-26 (docs/animas/tecnopata/README.md § Definitiva), in place of starting the clocks over.
 [[block.item]]
 title = "Tecnópata: la definitiva Enjambre"
 priority = "animas"
-note = "Hecho: se compra en el bote y despierta cuando una Bomba remota estalla al máximo con Tecnópata puesta. Pega a cada enemigo en pie una bomba ya al máximo y les vuelve a empezar los relojes (solo los de los enemigos: los del equipo siguen). Sin golpe ni número: «Bomba al máximo» sobre cada uno."
-grep = "id: 'enjambre'"
+note = "Hecho: se compra en el bote y despierta cuando una Bomba remota estalla al máximo con Tecnópata puesta. Bip se deshace en una colmena: cada enemigo en pie recibe una bomba ya al máximo y, durante un minuto del reloj del combate (COLMENA), cada bomba que estalla en un enemigo deja otra en su sitio. «Colmena» en la placa de Aitor con su reloj; «Otra bomba» sobre el enemigo cada vez que repone una. Sin golpe ni número."
+grep = "export const COLMENA"
 in = "src/battle.ts"
 
 # Built 2026-11-26 (docs/animas/tecnopata/README.md § Look, Aitor 2026-11-25: «red de rastro»; docs/graphics.md § Physarum).
 [[block.item]]
 title = "Enjambre: la red de Bips"
 priority = "animas"
-note = "Hecho: Bip se deshace sobre los enemigos solo durante el lanzamiento (unos 3 s); su enjambre cae al suelo y crece allí como un Physarum (64 k agentes y su rastro en compute WGSL, src/physarum.ts) que agarra a cada enemigo y adelgaza; los nanitos suben por cada cuerpo y cierran la bomba; un pulso blanco recorre la red y Bip se rehace en casa. La red se queda latiendo en rojo con las bombas hasta que estallan. Sonidos swarm-buzz, data-chirp y rewind. just screenshots enjambre --gpu."
+note = "Hecho: Bip se deshace sobre los enemigos solo durante el lanzamiento (unos 3 s); su enjambre cae al suelo y crece allí como un Physarum (64 k agentes y su rastro en compute WGSL, src/physarum.ts) que agarra a cada enemigo y adelgaza; los nanitos suben por cada cuerpo y cierran la bomba; un pulso blanco recorre la red y Bip se rehace en casa. La red se queda latiendo en rojo mientras dura la colmena; cada bomba que repone sube por el enemigo en anillos de nanitos desde la red. Sonidos swarm-buzz y data-chirp. just screenshots enjambre --gpu."
 grep = "physarum"
 in = "src/swarm-fx.ts"
 
 [[block.item]]
 title = "Enjambre: su pareja de objetivos"
 priority = "animas"
-note = "Abierta otra vez (2026-11-26): con la Dirección más dura (Respaldo, Readmisión, unas quince rondas) lanzar Enjambre allí sale peor que no lanzarla (35 % frente a 63 % con Matemágico/Prismático y Tecnópata/Papagato), y en la Reina y Aurelià no despierta (la bomba pide más de un enemigo en pie). Se quitaron los dos objetivos; espera a Aitor. Antes: hecha en Dirección (Aitor, 2026-11-26: cada pareja de definitiva en un jefe largo): direccion-con-enjambre frente a direccion-sin-enjambre, con el equipo del tercer curso y Enjambre comprada encima (TECH, Aitor en Tecnópata). El bot guarda una bomba en una de las tres y le reinicia el reloj dos veces (SWARM_SHARE, solo con más de un enemigo en pie, y Enjambre valorada por los PV de sus bombas); al estallar al máximo despierta Enjambre (79–82 %). La «sin» juega igual (el veto deja el empuje) y solo no la lanza, así que la diferencia es el lanzamiento: 8.3 rondas y 40–42 % de PV frente a 9.4–9.6 rondas y 34–36 %. Medido el 2026-11-26, semillas 35, 7 y 99. Dirección llega antes de que se abran las definitivas: es lo que vale con ellas, no un tramo de la historia."
-grep = "(?s)\\A(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')"
+note = "Hecha en la primera de la Reina desde la colmena (2026-11-26): reina-con-enjambre frente a reina-sin-enjambre, con el equipo del tercer curso y Enjambre comprada encima (TECH, Aitor en Tecnópata). El bot madura una bomba hasta el máximo y despierta Enjambre (81–84 %); la «sin» juega igual y solo no la lanza. Con ella el equipo lleva a la Reina a su décimo en el 87–89 % de los combates (ronda 13.3), sin ella en el 47–52 % (ronda 17.9–18.6). Medido con 200 combates, semillas 35, 7 y 99. Antes estaba en Dirección, con la bomba única en cada una; la Dirección más dura la dejó sin sostenerse."
+grep = "(?s)\\A(?=.*id: 'reina-con-enjambre')(?=.*id: 'reina-sin-enjambre')"
 in = "src/battle-sim.ts"
 
 # PLAN.md step 3 (docs/plans/definitivas/), built 2026-11-26 (docs/animas/tecnopata/README.md § Sugestión).
@@ -1641,8 +1641,8 @@ done = true
 [[block.item]]
 title = "Las definitivas en fight-sim"
 priority = "animas"
-note = "Una pareja de objetivos por definitiva, con ella y sin ella, en un jefe largo (Aitor, 2026-11-26): reina-con-fin-de-fiesta, reina-con-siete-vidas, reina-con-bajo-cero, reina-con-golpe-de-dados y vertigo-con-horas-extra, cada una con su «sin», ya están. Faltan Da capo (ningún jefe largo la sujeta aún: su ítem dice por qué) y Enjambre (su pareja en Dirección dejó de sostenerse con la Dirección más dura), cada una como <combate>-con-<id> y <combate>-sin-<id>. El bot ya valora lo que pagan y el tarro mixto las compra todas."
-grep = "(?s)\\A(?=.*id: 'reina-con-fin-de-fiesta')(?=.*id: 'reina-sin-fin-de-fiesta')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')(?=.*id: 'reina-con-golpe-de-dados')(?=.*id: 'reina-sin-golpe-de-dados')(?=.*id: '[a-z0-9-]*-con-horas-extra')(?=.*id: '[a-z0-9-]*-sin-horas-extra')"
+note = "Una pareja de objetivos por definitiva, con ella y sin ella, en un jefe largo (Aitor, 2026-11-26): reina-con-fin-de-fiesta, reina-con-siete-vidas, reina-con-bajo-cero, reina-con-golpe-de-dados y vertigo-con-horas-extra, cada una con su «sin», ya están. reina-con-enjambre también, desde la colmena. Falta Da capo (ningún jefe largo la sujeta aún: su ítem dice por qué), como <combate>-con-<id> y <combate>-sin-<id>. El bot ya valora lo que pagan y el tarro mixto las compra todas."
+grep = "(?s)\\A(?=.*id: 'reina-con-fin-de-fiesta')(?=.*id: 'reina-sin-fin-de-fiesta')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'reina-con-enjambre')(?=.*id: 'reina-sin-enjambre')(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')(?=.*id: 'reina-con-golpe-de-dados')(?=.*id: 'reina-sin-golpe-de-dados')(?=.*id: '[a-z0-9-]*-con-horas-extra')(?=.*id: '[a-z0-9-]*-sin-horas-extra')"
 in = "src/battle-sim.ts"
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the

@@ -1268,23 +1268,49 @@ test('Enjambre wakes when a bomb goes off at its top while Tecnópata is worn, a
   assert.equal(swarmReady(s), false, 'once a fight');
 });
 
-// Enjambre's rules (Aitor 2026-11-25, docs/plans/definitivas/PLAN.md § Enjambre): only the foes' clocks start over, no number.
+// Enjambre's rules (Aitor 2026-11-26, docs/animas/tecnopata/README.md § Definitiva): a hive for a minute, no number.
 const swarmAwake = () => {
   const s = techFight();
   improve(s, { skills: ['explosion', 'confusion', 'enjambre'] });
   s.swarm = { woke: true };
   return s;
 };
-test('Enjambre starts over only the foes\' clocks: the party\'s Sanación keeps its time', () => {
+test('Enjambre\'s hive leaves a new bomb where one goes off, for a minute, and its clocks are not started over', async () => {
+  const { BOMBA, COLMENA, hiveOn, plateMarks } = await import('../src/battle.ts');
   const s = swarmAwake();
-  s.foes[0].timed = { quemado: { level: 2, left: 2, next: 1 }, cegado: { level: 1, left: 1, next: 6 } };
-  const gerard = byId(s, 'gerard');
-  gerard.timed = { sanacion: { level: 1, left: 3, next: 1 } };
+  s.foes.forEach(f => { f.hp = f.maxHp = 5000; });
+  s.foes[0].timed = { quemado: { level: 2, left: 2, next: 1 } };
   turnOf(s, 'aitor');
-  const e = act(s, 'skill', 'dog-0', 'enjambre');
-  assert.equal(s.foes[0].timed.quemado.left, TIMED.quemado.seconds); assert.equal(s.foes[0].timed.cegado.left, TIMED.cegado.seconds);
-  assert.equal(gerard.timed.sanacion.left, 3, 'an ally\'s clock is not the swarm\'s');
-  assert.deepEqual(e.restarted.map(r => r.target), ['dog-0']);
+  act(s, 'skill', 'dog-0', 'enjambre');
+  assert.ok(hiveOn(s)); assert.equal(s.swarm.left, COLMENA.seconds);
+  assert.equal(s.foes[0].timed.quemado.left, 2, 'no clock starts over');
+  assert.ok(plateMarks(s, byId(s, 'aitor')).includes('colmena'), 'on the bomber\'s plate');
+  assert.ok(!plateMarks(s, byId(s, 'gerard')).includes('colmena'));
+  const pulses = runClock(s, BOMBA.seconds + .1).filter(p => p.blast);
+  assert.deepEqual(pulses.map(p => p.target), ['dog-0', 'dog-1']);
+  assert.ok(pulses.every(p => p.hived && p.amount > 0));
+  // The new one is a fresh bomb, on its whole clock.
+  assert.ok(s.foes.every(f => f.timed.bomba && f.timed.bomba.age === 0 && f.timed.bomba.left === BOMBA.seconds));
+  // Explosión sets them off and the hive puts them back at once.
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'explosion');
+  assert.ok(e.detonated.every(d => d.hived));
+  assert.ok(s.foes.every(f => f.timed.bomba));
+  // Past the minute the hive is gone: the bombs left go off and leave nothing.
+  for (let t = 0; t < COLMENA.seconds; t += 1) runClock(s, 1);
+  assert.equal(hiveOn(s), false);
+  assert.ok(!plateMarks(s, byId(s, 'aitor')).includes('colmena'));
+  const last = runClock(s, BOMBA.seconds + .1).filter(p => p.blast);
+  assert.ok(last.every(p => !p.hived));
+  assert.ok(s.foes.every(f => !f.timed?.bomba));
+});
+test('Enjambre\'s hive leaves no bomb on a foe its blast brought down', async () => {
+  const { BOMBA } = await import('../src/battle.ts');
+  const s = swarmAwake();
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'enjambre');
+  s.foes[0].hp = 1;
+  runClock(s, BOMBA.seconds + .1);
+  assert.equal(s.foes[0].hp, 0); assert.ok(!s.foes[0].timed?.bomba);
 });
 test('Enjambre deals no blow: no number goes over any foe', () => {
   const s = swarmAwake();

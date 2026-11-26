@@ -2812,8 +2812,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * Enjambre's look as it goes (src/swarm-fx.ts, docs/animas/tecnopata/README.md § Look), each moment once, from Bip's frame:
    * it comes apart over the foes into a swarm of nanites that pours down onto the floor among them (`SWARM_BIP.apart`); the
    * network grows there to every foe (`SWARM.land`); nanites climb each foe to its chest (`SWARM.hold`), where the bombs close
-   * on at `contact` (`bipBurst`); a white pulse runs along the network and the clocks wind back (`SWARM.pulse`); and the
-   * nanites come back from it to form Bip at home (`SWARM_BIP.reform`). The network stays until the bombs have gone off.
+   * on at `contact` (`bipBurst`); a white pulse runs along the network as the hive takes hold (`SWARM.pulse`); and the
+   * nanites come back from it to form Bip at home (`SWARM_BIP.reform`). The network stays while the hive keeps putting
+   * bombs back (battle.ts `COLMENA`), and until the last of them has gone off.
    */
   function swarmFrame(e: BattleEffect, b: NonNullable<ReturnType<typeof bips.get>>, over: pc.Vec3, rest: pc.Vec3, t: number) {
     let played = swarmPlayed.get(e);
@@ -2845,9 +2846,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       cue('data-chirp', { volume: .5, delay: .05 });
     }
     if (once('pulse', SWARM.pulse)) {
-      // The clocks start over: a white pulse runs out along the network (its sheet), a rewind under it.
+      // The hive takes hold: a white pulse runs out along the network (its sheet), the swarm chirping as it settles.
       dualFx.ring(v3(land.clone().add(new pc.Vec3(0, .06, 0))), up, .6, '#ffffff', { count: 140, outward: 5, life: .5, size: 1.3, light: 2 });
-      cue('rewind', { volume: .8 });
+      cue('data-chirp', { volume: .8 });
     }
     if (once('reform', SWARM_BIP.reform)) {
       // Home: the nanites come back from the network and Bip forms out of them.
@@ -3569,6 +3570,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         if (animate && effect && !impacted && effect.planted?.includes(id)) continue;
         if (gathered && id === effect?.target) continue;
         b = ensureBomb(id);
+        // Enjambre's hive puts a bomb back where one went off: nanites run up from the network to its chest and it clamps on.
+        if (animate && swarmFx.on && swarmHeld.has(id)) {
+          const feet = floorUnder(f), spot = bombSpot(f), rise = Math.max(.3, spot.y - feet.y), up = { x: 0, y: 1, z: 0 };
+          for (let k = 0; k < 4; k++) dualFx.after(k * .05, () => dualFx.ring({ x: feet.x, y: feet.y + .05 + rise * k / 3, z: feet.z }, up, Math.max(.25, extent(f).radius * (1 - .12 * k)), BIP.cyan, { kind: 'nanite', count: 60, outward: -1, around: k % 2 ? -3 : 3, life: .3, size: 1.1 }));
+          dualFx.after(.2, () => { dualFx.ring(v3(spot), viewDir(), .22 * f.scale.y, BIP.cyan, { kind: 'nanite', count: 50, outward: -1.6, around: 3, life: .3, size: 1.1, light: 1.2 }); cue('clink', { volume: .45 }); });
+          swarmFx.beat(.5);
+        }
       }
       const left = on?.left ?? 0, heat = on ? 1 - clamp01(left / BOMBA.seconds) : 1;
       const charge = on ? clamp01((bombPower(on.age ?? 0) - BOMBA.base) / (BOMBA.top - BOMBA.base)) : 1;

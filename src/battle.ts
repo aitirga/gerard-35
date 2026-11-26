@@ -193,8 +193,9 @@ export const SKILLS = [
   // the ally takes a third of each blow, as Defending, and Bip sticks a Bomba remota on the foe that struck them (`enemyAct`).
   { id: 'escolta', name: 'Escolta', cost: 1, side: 'allies', power: 0, kind: 'guard', escort: 2, node: true, description: 'Protege a un aliado durante 2 rondas. Bip le pega una bomba remota a quien le golpee.', class: 'tecnopata' },
   // Enjambre, its definitiva (`ulti`): bought at the jar, it wakes once a Bomba remota goes off at its top while Tecnópata
-  // is worn (`swarmReady`). Bip comes apart over the foes: a bomb already at its top on each, and every clock over.
-  { id: 'enjambre', name: 'Enjambre', cost: 0, side: 'all-foes', power: 0, kind: 'magic', swarm: true, ulti: true, node: true, abstract: true, class: 'tecnopata', description: 'Bip se deshace en un enjambre: le pega a cada enemigo una bomba remota que ya está al máximo. Sus estados con reloj vuelven a empezar.' },
+  // is worn (`swarmReady`). Bip comes apart into a hive over the foes (Aitor 2026-11-26, `COLMENA`): a bomb already at its
+  // top on each, and for a minute each bomb that goes off on a foe leaves a new one in its place (`blowBomb`).
+  { id: 'enjambre', name: 'Enjambre', cost: 0, side: 'all-foes', power: 0, kind: 'magic', swarm: true, ulti: true, node: true, abstract: true, class: 'tecnopata', description: 'Bip se deshace en una colmena durante un minuto: cada enemigo lleva una bomba remota al máximo, y cada bomba que estalla deja otra en su sitio.' },
   { id: 'escudo-de-bits', name: 'Escudo de bits', cost: 2, side: 'party', power: 40, kind: 'guard', bits: true, node: true, description: 'Protege a todo el equipo durante 2 rondas. Una cúpula de bits detiene los golpes hasta que se rompe. Lo que una cura no puede dar a un aliado bajo la cúpula, la repara.', class: 'tecnopata' },
   // Dadista's skill is a die thrown (docs/animas/dadaista/): its maná is dice, each with a face in
   // view that is a move of its own. Tirar dado (`die`) spends the die chosen and does what its face
@@ -292,6 +293,14 @@ const kept = (state: BattleState, id: PassiveId) => !state.without?.includes(id)
  * what loads it; Explosión sets it off now. First guesses (docs/fight-sim.md).
  */
 export const BOMBA = { seconds: 12, base: 10, perSecond: 1.5, top: 50 };
+/**
+ * Enjambre's hive (docs/animas/tecnopata/README.md § Definitiva, Aitor 2026-11-26): `seconds` of the fight's clock after it is
+ * cast, each bomb that goes off on a foe standing leaves a new one in its place (`blowBomb`), on its whole clock and from
+ * nothing. Then the hive is gone and the bombs left run out as any other. Tunable (`just fight-sim`, `colmena.rules.seconds`).
+ */
+export const COLMENA = { seconds: 60 };
+/** Whether Enjambre's hive is on now (`COLMENA`). */
+export const hiveOn = (state: BattleState) => (state.swarm?.left ?? 0) > 0;
 /** The power a bomb that has been on for `age` seconds goes off with. */
 export const bombPower = (age: number) => Math.min(BOMBA.top, BOMBA.base + BOMBA.perSecond * Math.max(0, age));
 /** The level at which an ánima that grows by level gains a point of maná (docs/animas/README.md § Levels). */
@@ -1450,8 +1459,8 @@ export interface Timed {
 export interface TimedPulse { target: string; status: TimedId; level: number; amount: number; heal?: boolean; mended?: number; saved?: Saved;
   /** Idea fija: the foe whose eco made it strike `target`. */
   by?: string;
-  /** A Bomba remota went off (its `amount`), and the definitiva it woke, if any (Enjambre). */
-  blast?: true; awoken?: SkillId;
+  /** A Bomba remota went off (its `amount`), and the definitiva it woke, if any (Enjambre); `hived`: Enjambre's hive left a new one in its place. */
+  blast?: true; awoken?: SkillId; hived?: true;
   /**
    * Corriente alterna's beat (`electricBeat`): `by` is the pole it came from; what it turned on `target` (the reaction, with
    * the PV it took from each it reached), who it left in Shock, and whether Toma de tierra gave its sender a maná back.
@@ -1766,8 +1775,8 @@ export interface BattleState {
   circuits?: Circuit[];
   /** Bajo cero in this fight: whether a foe's water has reached the third mark while Freática was worn, whether it went off, and whose Magia its ice breaks with. */
   cold?: { woke?: true; used?: true; by?: string };
-  /** Enjambre (Tecnópata's definitiva): woken by a Bomba remota going off at its top while Tecnópata was worn; used. */
-  swarm?: { woke?: true; used?: true };
+  /** Enjambre (Tecnópata's definitiva): woken by a Bomba remota going off at its top while Tecnópata was worn; used; the seconds its hive has left (`COLMENA`). */
+  swarm?: { woke?: true; used?: true; left?: number };
   /** Un golpe de dados (Dadista's definitiva): woken by its wearer's Crítico reaching COUP.wake (`wakeCoup`); used. */
   coup?: { woke?: true; used?: true };
   /** Horas extra (Matemágico's definitiva): woken by every foe standing at Quemado III at once while Matemágico was worn (`wakeOvertime`); used. */
@@ -2213,7 +2222,7 @@ export interface BattleEffect {
   /** Cegado: whom a blinded foe's physical blows missed in this action (nothing landed on them). */
   missed?: string[];
   /** Bombas remotas set off by this action (Explosión), with what each took; foes a bomb was stuck on (Bomba remota, Escolta, Enjambre). */
-  detonated?: { target: string; amount: number }[]; planted?: string[];
+  detonated?: { target: string; amount: number; hived?: true }[]; planted?: string[];
   /** Escolta: Bip went to stand by `target` for these rounds. */
   escorted?: number;
   /** A timed status a skill left on its target and nothing else (Confusión, Encogido). */
@@ -2556,7 +2565,7 @@ function fallen(state: BattleState) {
  * disagree. Agua and Mojado are one icon (the water's), fire at IV is Combustión's, a Mecha encendida is fire's icon and
  * Sutura de luz the cure's. `shown` is what the fight's screen holds back until a blow lands (a fire, the PV).
  */
-export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | 'sugestion' | 'horas-extra' | 'agotado' | StatusId | TimedId;
+export type PlateMark = 'encarnado' | 'luz' | 'enfado' | 'cancion' | 'converge' | 'reaccion' | 'shock' | 'cargado' | 'pelicula' | 'racha' | 'meteoro' | 'sutura' | 'cortina' | 'definitiva' | 'dormida' | 'compas' | 'acecho' | 'siete-vidas' | 'bits' | 'mecha' | 'punto-debil' | 'combustion' | 'sugestion' | 'horas-extra' | 'agotado' | 'colmena' | StatusId | TimedId;
 export function plateMarks(state: BattleState | undefined, c: Combatant, shown: { timed?: Combatant['timed']; hp?: number } = {}): PlateMark[] {
   if ((shown.hp ?? c.hp) <= 0) return [];
   const timed = shown.timed ?? c.timed ?? {}, ally = !!state?.allies.includes(c), marks: PlateMark[] = [];
@@ -2581,6 +2590,8 @@ export function plateMarks(state: BattleState | undefined, c: Combatant, shown: 
   put(state && overtime(state, c), 'horas-extra');
   put(state && tired(state, c), 'agotado');
   put(state && ecosOf(state, c).length, 'compas');
+  // Enjambre's hive, on whoever set it off (the bomber), its ring the minute it lasts.
+  put(ally && state && hiveOn(state) && bomber(state) === c, 'colmena');
   put(c.stalk, 'acecho');
   put(warded(c), 'siete-vidas');
   put(c.bits && !c.bits.broken && c.bits.hp > 0, 'bits');
@@ -3942,10 +3953,12 @@ function plantBomb(foe: Combatant, age = 0) {
   foe.timed = { ...foe.timed, bomba: { level: 1, left: Math.max(on?.left ?? 0, BOMBA.seconds), next: BOMBA.seconds, age: Math.max(on?.age ?? 0, age) } };
 }
 /** Who sets the bombs off: whoever has Tecnópata in their kit (Aitor), worn or not. */
-const bomber = (state: BattleState) => state.allies.find(a => a.classId === 'tecnopata') ?? state.allies.find(a => a.kit?.includes('tecnopata'));
+export const bomber = (state: BattleState) => state.allies.find(a => a.classId === 'tecnopata') ?? state.allies.find(a => a.kit?.includes('tecnopata'));
 /**
  * A Bomba remota goes off on `foe` (its clock ran out, or Explosión): magic of no element of `bombPower` by its age, with the
- * bomber's Magia. One at its top while its bomber wears Tecnópata, standing, wakes Enjambre (`swarmReady`). Returns what it took.
+ * bomber's Magia. One at its top while its bomber wears Tecnópata, standing, wakes Enjambre (`swarmReady`). While Enjambre's
+ * hive is on (`hiveOn`), a foe still standing gets a new bomb in its place at once (`plantBomb`): `foe.timed.bomba` is there
+ * again after it. Returns what it took.
  */
 function blowBomb(state: BattleState, foe: Combatant, effect?: BattleEffect): number {
   const on = foe.timed?.bomba;
@@ -3959,6 +3972,7 @@ function blowBomb(state: BattleState, foe: Combatant, effect?: BattleEffect): nu
     (state.swarm ??= {}).woke = true;
     if (!was && swarmReady(state) && !state.unbound && effect) effect.awoken = 'enjambre';
   }
+  if (hiveOn(state) && foe.hp > 0 && state.foes.includes(foe)) plantBomb(foe);
   return amount;
 }
 /** Reinicio and Rayo de energía: every clock on `foe` that is not a cure starts over from its whole time, at its level. */
@@ -4549,15 +4563,15 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.crit) state.message += ' ¡Golpe crítico!';
   } else if (everyone && 'swarm' in ability!) {
-    // Enjambre: every clock on every foe standing starts over (only the foes': the party's keep theirs), and each gets a bomb
-    // already at its top (`plantBomb`). No blow: nothing goes in `hits`, so no number shows over anyone.
+    // Enjambre: the hive goes up (`COLMENA`) and each foe standing gets a bomb already at its top (`plantBomb`); from now on
+    // each bomb that goes off leaves another (`blowBomb`). No blow: nothing goes in `hits`, so no number shows over anyone.
     effect.skill = skill; effect.target = target!.id;
-    (state.swarm ??= {}).used = true;
+    const swarm = state.swarm ??= {};
+    swarm.used = true; swarm.left = COLMENA.seconds;
     const standing = targets.filter(foe => foe.hp > 0 && state.foes.includes(foe));
-    effect.restarted = standing.map(foe => ({ target: foe.id, statuses: restartClocks(state, foe) })).filter(r => r.statuses.length);
     for (const foe of standing) plantBomb(foe, (BOMBA.top - BOMBA.base) / BOMBA.perSecond);
     effect.planted = standing.map(foe => foe.id);
-    state.message = `${actor.name} usa ${ability!.name}. Bip se deshace sobre los enemigos: cada uno lleva una bomba al máximo.`;
+    state.message = `${actor.name} usa ${ability!.name}. Bip se deshace en una colmena: cada enemigo lleva una bomba al máximo, y durante un minuto cada bomba que estalle deja otra.`;
   } else if (everyone && skill === 'fin-de-fiesta') {
     // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.
     effect.skill = skill; effect.target = target!.id;
@@ -4645,7 +4659,7 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     // …it sets off every Bomba remota it finds on them, as grown as it is now…
     if ('detonates' in ability!) {
       const armed = targets.filter(foe => foe.hp > 0 && foe.timed?.bomba);
-      if (armed.length) effect.detonated = armed.map(foe => ({ target: foe.id, amount: blowBomb(state, foe, effect) }));
+      if (armed.length) effect.detonated = armed.map(foe => { const amount = blowBomb(state, foe, effect); return { target: foe.id, amount, ...foe.timed?.bomba ? { hived: true as const } : {} }; });
     }
     // …and Bip has to put itself back together: its wearer sits the next round out.
     if ('spends' in ability!) actor.out = state.round + 1;
@@ -7572,7 +7586,7 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       on.age = (on.age ?? 0) + seconds; on.left -= seconds;
       if (on.left <= 1e-6 || c.hp <= 0) {
         const was = swarmReady(state), amount = foeSide && c.hp > 0 ? blowBomb(state, c) : (delete c.timed![id], 0);
-        if (foeSide && amount >= 0 && !c.timed?.bomba) pulses.push({ target: c.id, status: id, level: 1, amount, blast: true, ...!was && swarmReady(state) && !state.unbound ? { awoken: 'enjambre' as const } : {} });
+        if (foeSide) pulses.push({ target: c.id, status: id, level: 1, amount, blast: true, ...!was && swarmReady(state) && !state.unbound ? { awoken: 'enjambre' as const } : {}, ...c.timed?.bomba ? { hived: true as const } : {} });
       }
       continue;
     }
@@ -7613,6 +7627,8 @@ export function runClock(state: BattleState, seconds: number, waiting?: (c: Comb
       delete c.timed[id];
     }
   }
+  // Enjambre's hive runs out on the fight's clock, after the bombs of this moment had their say (`COLMENA`).
+  if (state.swarm?.left) state.swarm.left = Math.max(0, state.swarm.left - seconds);
   if (!pulses.length && !sung && !lapped && !echoed) return pulses;
   holdWater(state);
   // Horas extra: a volcano's beat raised the last fire to III, or the one foe short of it fell to a pulse.

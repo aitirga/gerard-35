@@ -15,7 +15,7 @@ import {
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, COUP, PASSIVES, stacks, HORAS_EXTRA, affords, overtime, tired, bodies,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, COLMENA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
@@ -299,6 +299,8 @@ const BOOKS = {
   found: { rules: FOUND },
   // Un golpe de dados: the wearer's Crítico (%) that wakes it and the hand its dice fill up to (battle.ts `COUP`).
   coup: { rules: COUP },
+  // Enjambre's hive: the seconds it keeps putting bombs back (battle.ts `COLMENA`).
+  colmena: { rules: COLMENA },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
   // Progression (docs/fight-sim.md § Progression): what wearing an ánima adds, what each friend's ánima adds to
@@ -1015,13 +1017,11 @@ const ripest = (state: BattleState) => Math.max(0, ...state.foes.map(f => f.time
  */
 const wakeAtStake = (state: BattleState) => isBoss(state);
 /**
- * Where ripening a bomb for Enjambre is worth its turns (`SWARM_SHARE`): a boss's fight with more than one foe standing,
- * not counting a fight's pieces (`isPiece`: the Queen's hands and bubble), where the swarm finds each of them. Against one
- * foe the three turns a bomb takes cost more than its bang: pushed at the Queen's first fight too (`direccion-con-enjambre`'s
- * party there, 150 fights, seeds 35 and 7, measured 2026-11-26) the party fell in 14.9 and 15.8 rounds; gated, in 17.6 and
- * 17.6, as with Enjambre not bought (17.5 and 17.5).
+ * Where ripening a bomb for Enjambre is worth its turns (`SWARM_SHARE`): a boss's fight (`wakeAtStake`). Since its hive
+ * (Aitor 2026-11-26, battle.ts `COLMENA`) a minute of bombs pays against one foe too, so it no longer asks for more than
+ * one standing, as the single bomb on each it was did.
  */
-const swarmAtStake = (state: BattleState) => wakeAtStake(state) && state.foes.filter(f => f.hp > 0 && !isPiece(f)).length > 1;
+const swarmAtStake = (state: BattleState) => wakeAtStake(state);
 /** Foes standing with powder on them, for Fin de fiesta's nearness. */
 const dusted = (state: BattleState) => state.foes.filter(f => f.hp > 0 && f.timed?.empolvado).length;
 /** Foes with powder on them before the choice that fell with it: their powder went with them, not spent. */
@@ -1037,7 +1037,7 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     // Enjambre's gate is read before the choice for both sides, so a foe falling does not change the scale mid-way.
     const swarm = swarmAtStake(before), from = nearness(before, was, 0, swarm), to = nearness(after, ally, from?.skill === 'fin-de-fiesta' ? dustedOut(before, after) : 0, swarm);
     // A definitiva the bot may not use is nothing to wake. Not Enjambre: ripening a bomb pays on its own where it is pushed
-    // (`swarmAtStake`), so with it banned the bot plays the same way and only the cast is out of reach (`direccion-sin-enjambre`).
+    // (`swarmAtStake`), so with it banned the bot plays the same way and only the cast is out of reach (`reina-sin-enjambre`).
     // Nor Horas extra: a fire raised on every foe pays on its own (Foc Binari, Pirámide ígnea), so with it banned the bot
     // plays the same way and only the cast is out of reach (`vertigo-sin-horas-extra`).
     if (from && ban.includes(from.skill) && !(from.skill === 'enjambre' && swarm) && from.skill !== 'horas-extra') return;
@@ -1066,8 +1066,8 @@ const ULTI_SHARE = .5;
  * over twice (Bomba remota, Rayo de energía, Rayo de energía: all of Aitor's maná at the start), while Explosión on three foes
  * is worth more than the bomb at once and sets it off short. Measured 2026-11-26 at Dirección (`direccion-con-enjambre`, 200
  * fights): at .5 to 1.75 of its PV the bot never keeps a bomb (it wakes in 0–1 %); at 2, 66 %; at 2.5, 79 %; at 3 and above,
- * 80–82 %, losing a few more fights to the turns the bomb takes. Only where `swarmAtStake` (more than one foe standing):
- * the Queen, alone but for her hands and bubble, does not move with it.
+ * 80–82 %, losing a few more fights to the turns the bomb takes. Its worth since the hive is a minute of bombs (`ultiWorth`),
+ * far more than the one bomb it was, and 2.5 still wakes it in 81–84 % at the Queen (`reina-con-enjambre`, 2026-11-26).
  */
 const SWARM_SHARE = 2.5;
 /**
@@ -1104,10 +1104,11 @@ function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
     if (apply(after, choice)) value = Math.max(0, gain(look, after, choice, threatOn(look), []));
     // Siete vidas: its ward waits for the blow that would bring someone down, and keeps them: a life, their PV (`LIVES_LIFE`).
     if (skill === 'siete-vidas') value += LIVES_LIFE * lifeOf(look);
-    // Enjambre: its bombs as PV, not as power (`gain` leaves the bomber's Magia out): the clock played on past their twelve
-    // seconds on a copy, against the same clock without it, whatever else that clock did too (a fire started over).
+    // Enjambre: its hive's bombs as PV, not as power (`gain` leaves the bomber's Magia out): the clock played on through the
+    // minute it lasts and the last bombs it left (`COLMENA`), an action's seconds at a time, on a copy, against the same
+    // clock without it, whatever else that clock did too (a fire burning on).
     if (skill === 'enjambre') {
-      const off = (state: BattleState) => { const hp = state.foes.map(f => f.hp); runClock(state, BOMBA.seconds + .5); return state.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - Math.max(0, f.hp)), 0); };
+      const off = (state: BattleState) => { const hp = state.foes.map(f => f.hp); for (let t = 0; t < COLMENA.seconds + BOMBA.seconds + .5 && (state.phase === 'player' || state.phase === 'enemy'); t += ACTION_SECONDS) runClock(state, ACTION_SECONDS); return state.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - Math.max(0, f.hp)), 0); };
       value = Math.max(value, (off(copy(after)) - off(copy(look))) * BOMB_WORTH);
     }
   }
@@ -1375,7 +1376,7 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
     // The Queen's fights: the round she takes Aitor (`toma`, set once, not a count; in the first, at her tenth). Its mean over
     // the fights is how soon the party gets her there, what a definitiva that hurts her is held to (0 for a fight that never does).
-    if (run.events.toma === undefined && state.foes.some(f => f.kind === 'reina' && f.castle?.stage === 'aitor')) run.events.toma = state.round;
+    if (run.events.toma === undefined && state.foes.some(f => f.kind === 'reina' && f.castle?.stage === 'aitor')) { run.events.toma = state.round; run.events.decimo = 1; }
     takeNews(state).forEach(note);
     // Sincopante's ecos: each note one sounded, and each chord (three at once).
     for (const news of takeEcoNews(state)) {
@@ -1941,12 +1942,17 @@ export const TARGETS: readonly Target[] = [
   // Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: 7.3–7.6 against 8.5–8.8.
   { id: 'reina-con-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { toma: [6.5, 8], 'despierta:fin-de-fiesta': [.6, 1] }, why: 'Con Aitor en Colorista, el polvo de la Reina estalla, envenena y cristaliza en las primeras rondas y despierta Fin de fiesta: las tres cosas a la vez la llevan a su décimo, y a tomar a Aitor, ronda y media antes.' },
   { id: 'reina-sin-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', ban: ['fin-de-fiesta'], win: [0, 0], happens: { toma: [8.2, 9.6] }, why: 'Sin Fin de fiesta, el mismo polvo reacciona de una en una: la Reina llega a su décimo ronda y media más tarde.' },
-  // Enjambre (Tecnópata's definitiva) has no pair since Dirección got harder (2026-11-26: Respaldo, Readmisión, about fifteen
-  // rounds). Its pair stood there (`direccion-con-enjambre` against `-sin-enjambre`: 8.3 rounds and 40 % of PV against 9.5 and
-  // 35 % in the old meeting), and Dirección is the only long boss fight with more than one foe standing, which the bomb needs.
-  // In the new meeting casting it does worse: Matemágico/Prismático with Tecnópata/Papagato won 35 % with it, 63 % with it
-  // banned; Matemágico with Tecnópata 1 % and 0 %. At the Queen and Aurelià it never wakes (measured 2026-11-26, 200 fights).
-  // Waits on Aitor: Enjambre against Caída and Readmisión, or the pair somewhere else.
+  // Enjambre (Tecnópata's definitiva), held in the Queen's first fight since its hive (Aitor 2026-11-26, battle.ts `COLMENA`:
+  // for a minute each bomb that goes off leaves another, so it pays against one foe too). The party is the third floor's
+  // with Aitor in Tecnópata and the definitiva bought on top. The bot ripens a bomb to its top (`SWARM_SHARE`), it goes off
+  // and wakes Enjambre, and the hive keeps a bomb on her, her hands and her bubble for a minute. Measured as whether the
+  // party gets her to her tenth (`decimo`: once a fight; `toma`, its round, has 0 for a fight that never does, so a mean
+  // that mixes the two). Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: woken in 81–84 %; she is at her tenth in
+  // 87–89 % of fights, at round 13.3, against 47–52 % at round 17.9–18.6 with the same push and no cast (59 % at 17.6 with
+  // the definitiva not bought). Dirección was its pair's place before its hive and is not now: the meeting is too long for
+  // Matemágico and Tecnópata alone (5 % won with it, none without), and the definitivas come after it.
+  { id: 'reina-con-enjambre', fight: 'reina', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', win: [0, 0], happens: { decimo: [.75, 1], 'despierta:enjambre': [.6, 1] }, why: 'Con Aitor en Tecnópata y Enjambre en el tarro: una bomba madurada hasta el máximo despierta Enjambre, y la colmena le deja a la Reina, a sus manos y a su pompa una bomba tras otra durante un minuto. Casi siempre se la llevan hasta su décimo.' },
+  { id: 'reina-sin-enjambre', fight: 'reina', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', ban: ['enjambre'], win: [0, 0], happens: { decimo: [0, .62], 'despierta:enjambre': [.6, 1] }, why: 'Jugando igual, con la bomba madurada y Enjambre despierto pero sin lanzarlo, solo una de cada dos veces llegan a su décimo, y más tarde.' },
   // Un golpe de dados (Dadista's definitiva), held in the Queen's first fight (Aitor, 2026-11-26: in a long boss fight), lost by
   // design at her tenth, measured as Fin de fiesta's is: the round she takes Aitor (`toma`). The party is the third floor's
   // with Aitor in Dadista and the definitiva bought on top. The bot keeps the Racha and plays Ases en dúo to bring his

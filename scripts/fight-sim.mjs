@@ -13,6 +13,7 @@ const HELP = `Simulador de combates de la campaña: las reglas reales del juego,
 
   just fight-sim list                     Qué se puede simular, en JSON (combates, habilidades, políticas, objetivos)
   just fight-sim check                    Comprueba que los combates siguen siendo lo que deben ser; sale con 1 si no
+                                          (--target a,b: solo esos objetivos)
   just fight-sim run [opciones]           Prueba todas las combinaciones de las listas dadas
   just fight-sim story [opciones]         Cada combate con el equipo que llega a él según la historia
   just fight-sim report [opciones]        La página de balance: todo lo anterior junto, en output/reports/balance/index.html
@@ -196,9 +197,11 @@ async function command(options, play) {
   let report, failed = false;
   if (options.command === 'check') {
     // Several numbers to try: which combination holds up best, the best last.
-    const tried = tunings(options.tune), setups = TARGETS.map(targetSetup);
+    // --target a,b: only those (a quick look while tuning one pair; the whole check is what holds).
+    const checked = options.targets ? TARGETS.filter(t => options.targets.includes(t.id)) : TARGETS;
+    const tried = tunings(options.tune), setups = checked.map(targetSetup);
     const rows = await play(tried.flatMap(tuning => setups.map(setup => job(setup, tuning))));
-    const judged = tried.map((_, n) => TARGETS.map((target, i) => judge(target, rows[n * TARGETS.length + i])));
+    const judged = tried.map((_, n) => checked.map((target, i) => judge(target, rows[n * checked.length + i])));
     if (tried.length > 1) {
       const results = tried.map((tuning, n) => ({ tuning, passed: judged[n].filter(t => t.pass).length, of: judged[n].length, failing: judged[n].filter(t => !t.pass).map(t => ({ id: t.id, failures: t.failures })) })).sort((a, b) => a.passed - b.passed);
       for (const r of results) say(`${String(r.passed).padStart(2)}/${r.of}  ${tuningLabel(r.tuning)}${r.failing.length ? `\n       falla: ${r.failing.map(f => f.id).join(', ')}` : ''}`);
