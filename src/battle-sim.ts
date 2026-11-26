@@ -14,7 +14,7 @@ import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
-  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, PASSIVES, stacks,
+  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, COUP, PASSIVES, stacks,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -297,6 +297,8 @@ const BOOKS = {
   gas: { rules: GAS, timed: STATUS_TIMED.gas },
   // Objeto encontrado: the level it comes with, the dice past the cap it deals a round, and how far (battle.ts `FOUND`).
   found: { rules: FOUND },
+  // Un golpe de dados: the wearer's Crítico (%) that wakes it and the hand its dice fill up to (battle.ts `COUP`).
+  coup: { rules: COUP },
   // Only El Plato hits with its own `power`: the onions' blow is ONIONS' (book `onion`), Vertitrón's VERTIGO's.
   fear: { rules: FEAR_RULES, plato: FEAR_FOES.plato },
   // Progression (docs/fight-sim.md § Progression): what wearing an ánima adds, what each friend's ánima adds to

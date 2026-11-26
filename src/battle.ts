@@ -1274,7 +1274,7 @@ export const swarmReady = (state: BattleState) => skillKnown('enjambre', state.l
 /**
  * Un golpe de dados: Crítico `wake` (%) on its wearer wakes it, the Racha and Ases en dúo's ×2 counted (`ownCrit`, whoever the
  * blow is for: never Olor a sangre's, which is the foe's). Each die of light is `power` of magic of no element, a sure golpe
- * crítico, and the hand is filled up to `hand` (`pastCap`). Tunable (`just fight-sim`, book `coup`).
+ * crítico, and the hand is filled up to `hand` (`pastCap`). Tunable (`just fight-sim`, `coup.rules.wake`, `coup.rules.hand`).
  */
 export const COUP = { wake: 100, hand: 6 };
 /** Whether Un golpe de dados is awake in this fight: bought, its wearer's Crítico has reached COUP.wake while Dadista was worn (`wakeCoup`), and not used yet. It stays awake once the Racha is spent. */
