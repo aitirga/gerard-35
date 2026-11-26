@@ -240,7 +240,13 @@ what Fin de fiesta would do now (`ultiWorth`, `dustWorth`). Its pair of targets 
 in the Gemelos de tercero (`alumnos-3c`) with Colorista and Matemágico the room falls in about three
 rounds (Polvareda and a fire are already its answer), and the three reactions cannot all be seen
 before the fourth, so it wakes in 2 % of fights and the pair with and without it plays the same.
-To decide with Aitor (2026-11-26): another fight for it, or a longer one.
+A longer fight does not help: over every fight of the third year (`castillo-3`, the Queen's return
+of eight or nine rounds included), with Matemágico, Freática or Tecnópata beside Colorista, the
+smart bot wakes it in at most 4 % of them. Burn and poison come every fight; Cristalizado almost
+never, because water on every powdered foe at once (Vasos comunicantes, Rociada) poisons them all
+and is worth more than one electric blow that crystallises one. To decide with Aitor (2026-11-26):
+the condition (Cristalizado is the step nobody takes) or how the bot weighs that last step, before
+any fight can hold the pair.
 
 ## What a round looks like
 
