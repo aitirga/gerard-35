@@ -218,3 +218,60 @@ test('La Voz: a note that finds the one waiting charged makes the charge jump to
   assert.ok(news, 'the jump comes as news');
   assert.equal(news.arcDischarge.target, voz.id); assert.ok(voz.hp < hp);
 });
+
+// Siete vidas (docs/animas/papagato/README.md § Definitiva) with the cat that waits: its pounce wakes it, and its ward
+// goes before the charge jumps.
+/** The pair with Papagato's definitiva bought, and Siete vidas cast already by Aitor if `warded`. */
+function livesPair(nodes = [], ward = false) {
+  const s = pair(['papagato:definitiva', ...nodes]);
+  if (ward) { s.unbound = true; s.active = 1; act(s, 'skill', undefined, 'siete-vidas'); delete s.unbound; delete s.spent; s.phase = 'player'; s.active = 0; }
+  for (const ally of s.allies) ally.secondary = ally.maxSecondary;
+  return s;
+}
+
+test('Arco voltaico\'s pounce on a wound of five wakes Siete vidas, whole or at half after its charge jumped', () => {
+  // (Six: the round's end bleeds it a stack before the cat lands.)
+  const whole = livesPair();
+  addStatus(whole.foes[0], 'sangrado', 6);
+  const p = landed(whole);
+  assert.equal(p.bled, 5); assert.equal(p.awoken, 'siete-vidas');
+  const half = livesPair();
+  addStatus(half.foes[0], 'sangrado', 6);
+  actDual(half, 'arco-voltaico', 'dog-0');
+  half.phase = 'enemy'; half.enemyActions = [];
+  assert.ok(enemyAct(half, 'dog-2', 'aitor').arcDischarge, 'the charge jumped');
+  half.enemyActions = half.foes.map(f => f.id); nextRound(half);
+  const q = takeNews(half).find(n => n.pounce);
+  assert.equal(q.pounceDual.half, true); assert.equal(q.bled, 5); assert.equal(q.awoken, 'siete-vidas');
+});
+
+test('a killing blow on the one waiting charged: the ward cures them first, then the charge jumps to whoever struck', () => {
+  const s = livesPair([], true), aitor = by(s, 'aitor');
+  actDual(s, 'arco-voltaico', 'dog-0');
+  aitor.hp = 1;
+  s.phase = 'enemy'; s.enemyActions = [];
+  const blow = enemyAct(s, 'dog-2', 'aitor');
+  assert.equal(blow.amount, 0); assert.equal(blow.lives.target, 'aitor'); assert.equal(aitor.hp, 1 + blow.lives.amount);
+  assert.equal(blow.arcDischarge.from, 'aitor'); assert.equal(blow.arcDischarge.target, 'dog-2');
+  assert.equal(aitor.stalk.charged, false);
+  assert.ok(s.message.indexOf('¡Siete vidas!') < s.message.indexOf('salta de Aitor'), s.message);
+});
+
+test('Superficie mínima in front of a blow that would have killed: the guard takes enough of it, and the ward is kept', () => {
+  const water = ['matemagico:agua', 'matemagico:vasos', 'matemagico:superficie-minima'];
+  const hit = guard => {
+    const s = livesPair(water, true), gerard = by(s, 'gerard');
+    if (guard) { gerard.film = s.round; gerard.guarding = true; }
+    gerard.hp = 999; gerard.maxHp = 999;
+    s.phase = 'enemy'; s.enemyActions = [];
+    return enemyAct(s, 'dog-0', 'gerard').amount;
+  };
+  const full = hit(false), guarded = hit(true);
+  assert.ok(guarded + 1 <= full, 'the film is a guard: unguarded, the blow would kill them at that');
+  const s = livesPair(water, true), gerard = by(s, 'gerard');
+  gerard.film = s.round; gerard.guarding = true; gerard.hp = guarded + 1;
+  s.phase = 'enemy'; s.enemyActions = [];
+  const blow = enemyAct(s, 'dog-0', 'gerard');
+  assert.equal(blow.lives, undefined); assert.equal(blow.amount, guarded); assert.equal(gerard.hp, 1);
+  assert.ok(s.allies.every(a => a.lives && !a.lives.spent), 'the ward still waits for the party');
+});

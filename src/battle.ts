@@ -3294,11 +3294,12 @@ function shortCircuit(state: BattleState, target: Combatant, effect: BattleEffec
 }
 /**
  * Whom a foe's action reached with a blow: its target and every other it took PV from, one hit of many (`hits`) or a blow on
- * everyone (`splash`: El Campeón's Rayo total). A blow that took nothing (a shield's, a miss) reached nobody. Condensador's
- * charge and Superficie mínima's film.
+ * everyone (`splash`: El Campeón's Rayo total). A blow that took nothing (a shield's, a miss) reached nobody; one Siete vidas'
+ * ward turned into a cure (`lives`, or `livesTook` while the action is resolved) did reach them, and the ward went first. Condensador's charge, Arco voltaico's and
+ * Superficie mínima's film.
  */
 function struckBy(effect: BattleEffect) {
-  return new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...[...effect.hits ?? [], ...effect.splash ?? []].filter(h => h.amount > 0).map(h => h.target)]);
+  return new Set([...effect.target && (effect.amount ?? 0) > 0 ? [effect.target] : [], ...[...effect.hits ?? [], ...effect.splash ?? []].filter(h => h.amount > 0).map(h => h.target), ...effect.lives ? [effect.lives.target] : [], ...livesTook.map(l => l.target)]);
 }
 /** Whoever stands under a soap film this round (Superficie mínima). */
 export const filmed = (state: BattleState, c: Combatant) => c.film === state.round;
@@ -5555,13 +5556,15 @@ export function enemyAct(state: BattleState, id: string, targetId?: string): Bat
     plantBomb(striker); effect.planted = [...effect.planted ?? [], striker.id];
     state.message += ` Bip le pega una bomba a ${striker.name}.`;
   }
-  // Superficie mínima first: the striker is wet before any charge jumps to it.
+  // Siete vidas' ward first (it turned the blow as it landed), then Superficie mínima: the striker is wet before any charge
+  // jumps to it.
+  if (effect) livesSay(state, effect);
   if (effect) filmTouch(state, effect);
   if (effect) discharge(state, effect);
   if (effect && protectedAlly && !protectedAlly.suture) effect.sutureSpent = protectedAlly.id;
   // Whoever held the foes' water may have fallen to this: every cell breaks (La crecida).
   if (effect) holdWater(state, effect); else holdWater(state);
-  if (effect) { missSay(state, effect, state.foes.find(f => f.id === id)); cortinaSay(state, effect, state.foes.find(f => f.id === id)); livesSay(state, effect); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; missTook.length = 0; }
+  if (effect) { missSay(state, effect, state.foes.find(f => f.id === id)); cortinaSay(state, effect, state.foes.find(f => f.id === id)); wallSay(state, effect, state.foes.find(f => f.id === id)); spread(state, effect); } else { wallTook.took = 0; wallTook.broke = false; wallTook.mirror = 0; screenTook.length = 0; livesTook.length = 0; missTook.length = 0; }
   const host = state.foes.find(f => f.id === id && f.fuse);
   if (host && state.enemyActions.includes(id)) {
     ignitePaint(state, host);

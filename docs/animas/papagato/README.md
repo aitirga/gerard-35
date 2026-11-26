@@ -233,6 +233,10 @@ cats do something.
   orbital's three strikes. That hit lands the wound's bonus, and at five the sure crítico that wakes Siete vidas;
   the rest land plain. A hit La Voz's song swallows spends nothing. A dual of one blow spends it only if it is
   physical, as any blow.
+- **With the cat that waits** (Arco voltaico): its pounce, whole or at half, wakes it on a wound of five. A killing
+  blow on the one waiting charged goes to the ward first (it reached them, and was turned into a cure), and then
+  the charge jumps to whoever struck, as it would from any blow that landed. Superficie mínima's guard that takes
+  enough of a blow for it not to kill keeps the ward for the next one.
 - **In `just fight-sim`** (2026-11-26): the bot values the ward (`LIVES_WORTH` for each ally the next blow would
   bring down, `LIVES_IDLE` otherwise) and, in a boss's fight only, waking it: a wound cut towards five and the
   blow that spends it each a step of it, a wound spent short a step back (not one that went with its foe), the
