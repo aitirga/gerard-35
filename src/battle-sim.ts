@@ -499,6 +499,14 @@ const HAND_WORTH = MANA_WORTH + 3;
  */
 const WAKE_WORTH = 15;
 /**
+ * Bajo cero's push (`wakeWorth`): in a boss's fight (`wakeAtStake`), bringing the deepest foe's water to the third mark is
+ * worth more than `WAKE_WORTH`, on the same square, since the ice there holds the boss for up to a minute. Measured
+ * 2026-11-26 (200 fights, Gerard on Freática at the Queen's first): at 15 it is cast in 52 % of fights, at 40 in 68 %, at
+ * 80 in 71 %; of the other targets only `reina-toma-a-aitor` moves (19.4 rounds held → 20.7). Outside a boss's fight the
+ * rooms are over before any water is at III, and a push only lengthens them.
+ */
+const ICE_WAKE_WORTH = 40;
+/**
  * Electrólisis's gas, as `smart` sees it: the blast a level of it keeps waiting for a fire (some 18 PV at the stats the
  * party meets it with) and the fire it leaves. Set off, the blast's own PV take its place (`gain`): a fire on gas is worth
  * what it does, never less than the gas was. Lost any other way (moved off, its foe fallen), it comes back off.
@@ -894,7 +902,7 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta') && !wakeAtStake(before) ? 0 : 1;
     if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
     if (from && to && from.skill === 'fin-de-fiesta' && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
   });
   return worth;
 }
