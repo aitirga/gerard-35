@@ -1,0 +1,104 @@
+{
+  "title": "Enjambre · red de Physarum",
+  "description": "La definitiva de Tecnópata con su aspecto propio (src/swarm-fx.ts, src/physarum.ts): Bip se deshace, la red de rastro crece por el suelo hasta cada enemigo, las bombas se cierran al máximo, el pulso blanco y Bip rehecho; la red late en rojo con las bombas y se va cuando estallan con Explosión. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=freatica-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22tecnopata%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22tecnopata%3Aexplosion%22%2C%22tecnopata%3Aconfusion%22%2C%22tecnopata%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.defend = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); window.errors = []; addEventListener('error', e => window.errors.push(String(e.message))); ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 900; }); });"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.swarm = { woke: true }; s.foes.forEach((f, i) => { f.timed = { ...f.timed, quemado: { level: 1, left: 3 + i, next: 1 } }; }); })"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "press": "Digit2",
+      "gap": 600
+    },
+    {
+      "shot": "despierta",
+      "delay": 200,
+      "caption": "Enjambre despierta en la lista de Aitor (una bomba ha estallado al máximo con Tecnópata puesta): sin maná, una vez en el combate"
+    },
+    {
+      "eval": "window.skill('enjambre')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "enjambre",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 16,
+      "caption": "Enjambre: Bip sube sobre los enemigos temblando y se deshace en un enjambre de nanitos que cae al suelo; allí crece una red de Physarum (agentes en compute WGSL) que agarra a cada enemigo y adelgaza hasta el árbol que los une; los nanitos suben por cada cuerpo y cierran la bomba con su clank (al máximo); un pulso blanco recorre la red mientras los relojes vuelven a empezar, y Bip se rehace en casa. Ningún número sobre los enemigos: «Bomba al máximo» y «Vuelve a empezar»"
+    },
+    {
+      "shot": "red-latiendo",
+      "delay": 900,
+      "caption": "Después: la red se queda latiendo en rojo con los pitidos de las bombas hasta que estallan"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.defend()"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "eval": "window.skill('explosion')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "explosion-cobra",
+      "seconds": 3.2,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Explosión justo después hace estallar cada bomba al máximo, una tras otra; con ellas se va la red"
+    },
+    {
+      "shot": "despues",
+      "delay": 1200,
+      "caption": "La red se ha ido con las bombas"
+    },
+    {
+      "eval": "if (window.errors.length) throw new Error(window.errors.join(' | '))"
+    }
+  ]
+}
