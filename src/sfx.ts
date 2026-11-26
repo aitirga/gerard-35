@@ -335,6 +335,7 @@ export const SOUNDS = {
   timbre: { synth: (c, out, at, p) => { const ring = 1.7; for (let t = 0; t < ring; t += .045) { const fade = 1 - t / ring * .5; tone(c, out, at + t, { type: 'triangle', from: 1180 * p, length: .09, gain: .05 * fade }); tone(c, out, at + t, { from: 2950 * p, length: .06, gain: .022 * fade }); noise(c, out, at + t, { cutoff: 4200 * p, to: 3000, type: 'bandpass', q: 6, length: .02, gain: .07 * fade }); } tone(c, out, at + ring, { from: 1180 * p, length: 1.1, gain: .05 }); tone(c, out, at + ring, { from: 2950 * p, length: .8, gain: .02 }); return ring + 1.1; }, jitter: 15, gap: 1.5, voices: 1 },
   stamp: { synth: (c, out, at, p) => { tone(c, out, at, { from: 160 * p, to: 70 * p, length: .16, gain: .6 }); noise(c, out, at, { cutoff: 1600, to: 300, length: .14, gain: .45 }); noise(c, out, at + .01, { cutoff: 5000 * p, to: 2500, type: 'bandpass', q: 1.2, length: .05, gain: .22 }); return .2; }, jitter: 50, gap: .2, voices: 1 },
   // A pane of the glass into or out of a fight's pocket turning (src/post.ts): a tiny glassy tick, never twice the same.
+  'glass-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 3600 * p, to: 3100 * p, length: .035, gain: .045 }); noise(c, out, at, { cutoff: 9000 * p, to: 5000, type: 'highpass', q: .8, length: .022, gain: .08 }); return .04; }, jitter: 450, gap: .024, voices: 3 },
   // Bajo cero (docs/animas/freatica/README.md § Sound): frozen, everything goes quiet but the ice. The water locking into
   // ice all at once (a crystalline hiss falling, glassy partials that are not a chord, a low settling); each blow's dry
   // snap on it; the break, a burst of glass over a thud (in place of a golpe crítico's); and the ice ticking as it holds.
@@ -358,7 +359,6 @@ export const SOUNDS = {
     return .5;
   }, jitter: 40, gap: .1, voices: 2 },
   'ice-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 4200 * p, to: 3900 * p, length: .028, gain: .04 }); noise(c, out, at, { cutoff: 7500 * p, to: 4500, type: 'highpass', q: .9, length: .018, gain: .05 }); return .04; }, jitter: 300, gap: .25, voices: 1 },
-  'glass-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 3600 * p, to: 3100 * p, length: .035, gain: .045 }); noise(c, out, at, { cutoff: 9000 * p, to: 5000, type: 'highpass', q: .8, length: .022, gain: .08 }); return .04; }, jitter: 450, gap: .024, voices: 3 },
   // Stats going up or down (src/stat-fx.ts), in step with its chevrons: a rush of air rising and three
   // bright notes climbing with a bell over each, a sparkle at the top; or air falling, three notes
   // sinking and bending down, and a low thud as it lands.
