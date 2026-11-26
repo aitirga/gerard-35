@@ -1,5 +1,6 @@
 import type { Effects } from './effects';
 import type { GpuBurst, GpuKind } from './fight-particles';
+import { STATUS_KINDS } from './status-fx.ts';
 
 /**
  * What dual attacks and the tower's fears draw in a fight (docs/graphics.md § Ataques duales y
@@ -157,7 +158,8 @@ export function createDualFx(effects: Effects) {
   function ensureKinds() {
     const g = effects.gpu;
     if (!g) return;
-    for (const [name, kind] of Object.entries(DUAL_KINDS)) if (!g.get(name)) g.define(name, kind);
+    // A dual may burst a status's kind (Vulcano's smog) before any status has drawn one.
+    for (const [name, kind] of Object.entries({ ...STATUS_KINDS, ...DUAL_KINDS })) if (!g.get(name)) g.define(name, kind);
   }
   ensureKinds();
   /** Things to draw later, in fight seconds from now. */
