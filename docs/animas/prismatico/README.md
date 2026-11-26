@@ -236,17 +236,29 @@ his definitiva is *Horas extra* now ([`../README.md`](../README.md) § Definitiv
 
 **In fight-sim:** the bot values powder laid where someone can turn it (`DUST_WORTH`), the poison and
 shards it turns into (`POISON_WORTH`, `SHARD_WORTH`), and each reaction not yet seen as a third of
-what Fin de fiesta would do now (`ultiWorth`, `dustWorth`). Its pair of targets is **not held yet**:
-in the Gemelos de tercero (`alumnos-3c`) with Colorista and Matemágico the room falls in about three
-rounds (Polvareda and a fire are already its answer), and the three reactions cannot all be seen
-before the fourth, so it wakes in 2 % of fights and the pair with and without it plays the same.
-A longer fight does not help: over every fight of the third year (`castillo-3`, the Queen's return
-of eight or nine rounds included), with Matemágico, Freática or Tecnópata beside Colorista, the
-smart bot wakes it in at most 4 % of them. Burn and poison come every fight; Cristalizado almost
-never, because water on every powdered foe at once (Matemágico's Cubo acuático, Rociada) poisons them all
-and is worth more than one electric blow that crystallises one. To decide with Aitor (2026-11-26):
-the condition (Cristalizado is the step nobody takes) or how the bot weighs that last step, before
-any fight can hold the pair.
+what Fin de fiesta would do now (`ultiWorth`). While it sleeps, powder on a foe counts as half of a
+reaction still to see, one foe for each reaction missing (`nearness`, `DUST_STEP`), and spending it on
+a reaction already seen, or all of it on one (a fire on every powdered foe), is a step back
+(`wakeWorth`); so the bot turns one foe with a spark and another with water before the fire, and a
+banned Fin de fiesta is nothing to prepare.
+
+Its pair of targets is **not held**, and cannot be in the Gemelos de tercero (measured 2026-11-26,
+smart, `castillo-3`, Gerard on Matemágico and Aitor on Colorista, 200 fights):
+- The condition needs two lays of powder and three turns of it, fire last or alone: the earliest it
+  wakes is Gerard's fourth turn. The room's own answer (Polvareda, then one fire on everyone) has
+  both twins down in the second round and the room over in 3.2: it wakes in 1 % of fights.
+- Awake from the first turn (an upper bound nobody can play) it changes nothing either: 3.10
+  rounds and 62 % of PV left against 3.22 and 58 % without it. It is weaker than Traca: 95 PV a
+  use against 125 (`just fight-sim skills --anima prismatico`).
+- As Encarnados (`alumnos-3c:encarnados`) the bot wakes it in 47 % of fights, but by then only the
+  Empollón is left and the room ends that turn: used in 3 %, won in 4.8 rounds against 4.3 without
+  chasing it.
+- The Queen (`reina`) is the only fight where it wakes and goes off (82 %, 0.8 uses a fight), and it
+  does not hold them longer: they fall in 13.6 rounds with it and 14.9 without, and in 15.0 with it
+  awake from the first turn.
+
+To decide with Aitor: another holding fight (a long one with several foes standing to the end, which
+the third year does not have), or Fin de fiesta stronger than a Traca, before any pair can hold.
 
 ## What a round looks like
 
