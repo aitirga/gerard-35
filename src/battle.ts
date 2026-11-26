@@ -3358,6 +3358,7 @@ function arcJump(state: BattleState, holder: Combatant, foe: Combatant, effect: 
 /**
  * `element` has landed on `target`, who carries powder (`POWDER_RULES`): it explodes, runs as poison
  * or sets as shards. Returns whether there was any to turn. Fire turns it even on someone the blow felled.
+ * Whatever turned it (a blow, a skill, a dual, a passive, Fin de fiesta), it is a reaction `actor` set off (`reacted`).
  */
 function powder(state: BattleState, actor: Combatant, target: Combatant, element: Element, effect: BattleEffect) {
   if (!target.timed?.empolvado || (target.hp <= 0 && element !== 'fuego')) return false;
@@ -3381,6 +3382,7 @@ function powder(state: BattleState, actor: Combatant, target: Combatant, element
     effect.reaction = { id: 'estallido', hits, burns };
     state.message += ` ¡El polvo estalla! ${hits.map(h => `−${h.amount}`).join(', ')} PV. Todos arden un nivel más.`;
     powderTurned(state, 'estallido', effect);
+    reacted(state, actor, effect);
     return true;
   }
   delete target.timed.empolvado;
@@ -3396,6 +3398,7 @@ function powder(state: BattleState, actor: Combatant, target: Combatant, element
     state.message += ` ¡El polvo cristaliza! ${TIMED.cristalizado.name}.`;
   }
   powderTurned(state, element === 'agua' ? 'veneno' : 'cristal', effect);
+  reacted(state, actor, effect);
   return true;
 }
 /** Two boosts that are the same screen (Cortina, Telón) do not add up: raising one takes the other's Defensa with it. */
@@ -3506,12 +3509,20 @@ const passive = (state: BattleState, actor: Combatant, id: PassiveId) => actor.c
 function note(effect: BattleEffect, id: PassiveId, who: Combatant) {
   if (!effect.passives?.some(p => p.id === id)) effect.passives = [...effect.passives ?? [], { id, name: PASSIVES[id].name, who: who.id }];
 }
+/** Who has already been heard reacting in each action (`reacted`): an action's reactions count once for each actor. */
+const heard = new WeakMap<BattleEffect, Set<string>>();
 /**
- * A reaction between elements has happened in the action being resolved, and `actor` set it off (`effect.reaction`, an
- * Estallido, a Combustión, the gas going up, what Atractor extraño brought): the one place that hears of it. Whatever answers
- * a reaction hangs from here (Toma de tierra; Objeto encontrado to come), so a new way of reacting only has to call it.
+ * A reaction between elements has happened in the action being resolved, and `actor` set it off: the one place that hears
+ * of it. Every way of reacting calls it: `react` (an element landing), `powder` (Estallido, Envenenado, Cristalizado, from
+ * whatever turned the powder: a blow, a skill, a dual, Superficie mínima, Fin de fiesta), Vapor from a skill or a dual,
+ * Combustión, the gas going up (`ignite`) and what Atractor extraño brought (`gather`). Whatever answers a reaction hangs
+ * from here (Toma de tierra; Objeto encontrado to come), so a new way of reacting only has to call it. However many
+ * reactions one action sets off, each actor is heard once.
  */
 function reacted(state: BattleState, actor: Combatant, effect: BattleEffect) {
+  const seen = heard.get(effect) ?? new Set<string>();
+  if (seen.has(actor.id)) return;
+  seen.add(actor.id); heard.set(effect, seen);
   ground(state, actor, effect);
 }
 /** Toma de tierra: a reaction its wearer set off gives a maná back, once a round (`reacted`). */
@@ -4406,7 +4417,6 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const landing = elementOf(ability), powdered = new Set<string>();
     state.message = '';
     if (landing) for (const foe of targets) if (powder(state, actor, foe, landing, effect)) powdered.add(foe.id);
-    if (powdered.size) reacted(state, actor, effect);
     const powderSaid = state.message;
     // A blow that powders (Polvareda): whoever it took PV from and still stands is Empolvado.
     if ('powders' in ability!) for (const foe of targets) if (foe.hp > 0 && hitOf(foe).amount > 0) { kindle(foe, 'empolvado', 1); hitOf(foe).burn = { id: 'empolvado', level: 1 }; }
