@@ -248,36 +248,39 @@ against 71 %), a gap Fin de fiesta did not cause. Gated, both play the same. Wha
 that powder alone is worth too little to the bot (`DUST_WORTH`): with the chase it opened Polvareda
 0.93 times a fight, without it 0.54. Raising it is its own change, to decide with Aitor.
 
-Its pair of targets is **not held**, and cannot be in the Gemelos de tercero. Measured 2026-11-26, 300
-fights (the Queen 200), seed 35, with the party the story brings to the third floor (`castillo-3`, the
-ecos spent on `mixto`, so every definitiva is bought):
+**Its pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) is held in the Queen's first
+fight: `reina-con-fin-de-fiesta` against `reina-sin-fin-de-fiesta`, Gerard on Matemágico and Aitor on Colorista
+(`COLOR`) with what the third floor gives. Her layers (fire, water and electric fillings) have the party strike with
+each element in turn, so the powder sees its three reactions early, and Fin de fiesta wakes in about four fights of
+five. What it changes is how soon she reaches her tenth and takes Aitor (`toma`, the round it happens; every fight
+gets there, with it or without it):
 
 ```sh
-just fight-sim story --at castillo-3 --build mixto --fight alumnos-3c,alumnos-3c:encarnados,reina \
-  --party gerard:matemagico+aitor:prismatico --policy smart --ban none,fin-de-fiesta --runs 300 --json
+just fight-sim story --at castillo-3 --build mixto --fight reina --party gerard:matemagico+aitor:prismatico \
+  --policy smart --ban none,fin-de-fiesta --runs 200 --json
 ```
+
+| Seed (200 fights) | `toma` with it | `toma` without it | Woken |
+| --- | --- | --- | --- |
+| 35 | 7.44 | 8.82 | 78 % |
+| 7 | 7.55 | 8.52 | 80 % |
+| 99 | 7.32 | 8.76 | 83 % |
+
+The fight as a whole ends 1.3 rounds sooner with it (13.6 rounds against 14.9): that is the tenth reached sooner, not
+the party falling sooner, since Gerard then holds out as long against Aitor (`suyo` 7.1 against 6.8). Earlier this
+page read the same 1.3 rounds as the party falling sooner; with `toma` counted it reads the other way.
+
+The third year's rooms still cannot hold it (measured 2026-11-26, 300 fights, seed 35, the same party):
 
 | Fight | With it | Without it (`--ban fin-de-fiesta`) | Wakes | Used |
 | --- | --- | --- | --- | --- |
 | `alumnos-3c` | 94 %, 5.17 rounds, 53 % PV | 94 %, 5.16 rounds, 53 % PV | 0 % | 0 |
 | `alumnos-3c:encarnados` | 71 %, 5.86 rounds, 51 % PV | 71 %, 5.86 rounds, 51 % PV | 1 % | 0.01 |
-| `reina` (lost by design) | falls in 13.6 rounds | falls in 14.9 rounds | 78 % | 0.74 |
 
 - The condition needs two lays of powder and three turns of it, fire last or alone: the earliest it
-  wakes is Gerard's fourth turn, and the room is over before then.
-- Stronger is not the answer there: with the Estallido doubled (`--tune powder.rules.blast=44`, which
-  doubles every fire on powder, not only Fin de fiesta's) the room plays 96 % in 4.36 rounds with it
-  and without it alike, and as Encarnados 77 % in 5.42 against 5.47: it still does not wake. It is
-  weaker than Traca where it is used: 59 PV a use against 100 (`just fight-sim skills --anima
-  prismatico`).
-- The Queen is the only fight where it wakes and goes off, and there it does not hold them longer:
-  the party falls 1.3 rounds sooner with it.
-- `levers` and `optimize` measure against targets, and there is no pair to measure against yet: the
-  numbers above are the bench's `story` with `--ban` and `--tune`.
-
-To decide with Aitor: another holding fight (a long one with several foes standing to the end, which
-the third year does not have), a condition that can be met inside a room, or accepting it without a
-pair, before any pair can hold.
+  wakes is Gerard's fourth turn, and a room is over before then.
+- Stronger is not the answer there: with the Estallido doubled (`--tune powder.rules.blast=44`) it still does not
+  wake. It is weaker than Traca where it is used: 59 PV a use against 100 (`just fight-sim skills --anima prismatico`).
 
 ## What a round looks like
 

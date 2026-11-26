@@ -151,7 +151,7 @@ one that went with its foe: a kill is a kill). Without it the Queen's fight woke
 everywhere the castle's rooms lost to the turns spent cutting, `gemelos-tercero-bien` 88 % → 70 %. It still
 costs the boss fights it does not decide a little (`delegada-bien` 98 % → 94 %, `reina-toma-a-aitor` falls
 1.3 rounds sooner, `reina-con-artilugio` wins 1.3 rounds later), and narrower gates lose Siete vidas' own
-fight; the numbers are at `wakeAtStake`. Fin de fiesta has the same gate: in a boss's fight it counts powder on a foe as half of a reaction still to see and powder spent on one already seen as a step back; elsewhere it wakes as any other. Bajo cero wakes as any other but in a boss's fight, where bringing the deepest foe's water to III weighs `ICE_WAKE_WORTH` (40) instead of `WAKE_WORTH` (15): the ice holds a boss for up to a minute. Da capo wakes as any other, and besides, the third eco up while it sleeps is worth the chord it makes (`CAPO_CHORD` in `ecoWorth`, tunable as `capo.chord.worth` and `capo.chord.dual`: 20, and 20 for each dual already used); the second eco is not (valued on the square of how near, it pulled the full party off Siete vidas at the Queen). Even so the bot reaches the chord in few fights: three ecos cost more maná than Sincopante holds (docs/animas/sincopante/README.md § Its targets). A definitiva banned is nothing to wake. Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
+fight; the numbers are at `wakeAtStake`. Fin de fiesta has the same gate: in a boss's fight it counts powder on a foe as half of a reaction still to see and powder spent on one already seen as a step back; elsewhere it wakes as any other. Enjambre has the same gate (2026-11-26): in a boss's fight its nearness is the bomb it will go off with (`bombPower(age + left)`), so a clock started over is a step nearer and a bomb set off short a step back, and what waking it is worth is the PV its bombs would take (the clock played on a copy), at `SWARM_SHARE` (2.5) instead of `ULTI_SHARE`; below 2 the bot never keeps a bomb against Explosión (docs/animas/tecnopata/README.md § Enjambre's pair). Bajo cero wakes as any other but in a boss's fight, where bringing the deepest foe's water to III weighs `ICE_WAKE_WORTH` (40) instead of `WAKE_WORTH` (15): the ice holds a boss for up to a minute. Da capo wakes as any other, and besides, the third eco up while it sleeps is worth the chord it makes (`CAPO_CHORD` in `ecoWorth`, tunable as `capo.chord.worth` and `capo.chord.dual`: 20, and 20 for each dual already used); the second eco is not (valued on the square of how near, it pulled the full party off Siete vidas at the Queen). Even so the bot reaches the chord in few fights: three ecos cost more maná than Sincopante holds (docs/animas/sincopante/README.md § Its targets). A definitiva banned is nothing to wake. Run.events counts the round the Queen takes Aitor (`toma`, set once: its mean is how soon the party gets her to her tenth, 0 for a fight that never does), each waking (`despierta:<id>`) and each life Siete vidas keeps
 (`siete-vidas`), each foe Bajo cero freezes (`congela`) and each ice cracked through (`hielo-roto`), the ones Resonancia rang apart (`resuena`), each Da capo (`da-capo`) and each dual it gave back played again (`dual-de-nuevo`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
 its own wakes Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from) or the
 ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after the passives, as it
@@ -453,12 +453,16 @@ list can break without `just fight-sim check` noticing.
 
 As measured on 2026-11-26: no fight without its pair, and a target wears every ánima. 26 skills were
 used by no target, four definitivas among them (*Siete vidas*, *Enjambre*, *Da capo*, *Fin de
-fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own); *Siete vidas* has left
-the list since, held by `reina-con-siete-vidas` and `reina-sin-custodia`. Two are still to
-build (Matemágico's *Horas extra*, Dadista's *Un golpe de dados*); 14 of the 25 duals are made by no
-target; 195 of 958 numbers are read by none (the ice's break among them). Each definitiva's pair is
-`docs/plans/definitivas/PLAN.md`'s, and docs/progress.toml's «Las definitivas en fight-sim» ticks
-once all seven are in.
+fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own). Since then Aitor put every
+definitiva's pair in a long boss fight (2026-11-26), and four are held: *Siete vidas* (`reina-con-siete-vidas`,
+`reina-sin-custodia`), *Bajo cero* (`reina-con-bajo-cero`, `reina-sin-bajo-cero`), *Fin de fiesta*
+(`reina-con-fin-de-fiesta`, `reina-sin-fin-de-fiesta`: the Queen at her tenth a round and a half sooner, `toma`) and
+*Enjambre* (`direccion-con-enjambre`, `direccion-sin-enjambre`: Dirección won with 40 % of PV against 23 %). *Da capo*
+is held by none: at the Queen its chord comes after she has taken Aitor, and at Dirección and Aurelià it does not come
+(docs/animas/sincopante/README.md § Its targets). Two are still to build (Matemágico's *Horas extra*, Dadista's
+*Un golpe de dados*); 14 of the 25 duals are made by no target; 195 of 958 numbers are read by none (the ice's break
+among them). docs/progress.toml's «Las definitivas en fight-sim» ticks once all seven are in, each as
+`<fight>-con-<id>` and `<fight>-sin-<id>` for the three still missing.
 
 ### Resonancia: why it has no pair yet
 
@@ -492,9 +496,14 @@ With Aitor on Freática the ice wakes rarely and Resonancia meets it in about on
 only a hard bolt, and what it moves goes both ways by the party (alumnos-3c: 6.4 rounds against 9.4 with `ICE_PARTY`,
 4.4 against 3.8 with Aitor on Freática).
 
-A pair waits on Aitor: a fight where the ice comes without Gerard's turns (Punto de congelación, water's own freezing,
-would be one), or a bot that plans freeze-then-break across ánimas (a switch valued by more than one ply). Until then
-it stays on `coverage`'s list, and docs/progress.toml keeps «Resonancia: su pareja de TARGETS» open.
+Tried again on 2026-11-26 in the long boss fights, to teach the bot to freeze and then break: there is nowhere to cash
+it in. The ice only comes at the Queen, and always after she has taken Aitor (`ICE_PARTY`: 43 of 43 freezes in 80
+fights; Gerard on Freática and Aitor on Matemágico with Resonancia: 30 of 32), when she sits at her tenth and nothing
+brings her lower, so breaking it takes nothing off her. Raising the water harder does not bring it sooner
+(`ICE_WAKE_WORTH` at 200 or 1000 instead of 40: 2–5 freezes before the take in 50 fights). At Dirección, Aurelià and
+the Delegada it does not wake (0–9 %). A pair waits on Aitor: a fight where the ice comes with the foe still to bring
+down (Punto de congelación, water's own freezing, would be one). Until then it stays on `coverage`'s list, and
+docs/progress.toml keeps «Resonancia: su pareja de TARGETS» open.
 
 ### Progression: whether the party's growth keeps step
 

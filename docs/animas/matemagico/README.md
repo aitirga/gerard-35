@@ -198,9 +198,12 @@ cero's cell, `src/freatica-fight.ts`). Sound: a charge rising as it is driven, t
 **Fight-sim** (`resuena`: an ice it broke): `smart` weighs that question. A break is its PV, less the turns the foe gets
 back: what it would do again for the rounds its ice had left, on the freeze's own measure. So it holds a fresh ice on a
 foe that hits hard and rings it apart once it is nearly melted, and breaks a fresh one at once only when the foe in it
-hits little (`tests/resonancia.test.mjs`). It has **no pair of targets yet**: the bot almost never holds the ice and
-Resonancia together, and with Matemágico in the kit of the party that freezes the Queen it leaves Freática to throw
-Resonancia as a plain bolt and plays worse for having it. docs/fight-sim.md § Resonancia gives the numbers.
+hits little (`tests/resonancia.test.mjs`). It has **no pair of targets yet**, and teaching the bot to freeze and then
+break would have nowhere to cash in (tried 2026-11-26 in the long boss fights): Bajo cero's ice only comes at the Queen,
+and always after she has taken Aitor (43 of 43 freezes with `ICE_PARTY`, 30 of 32 with Gerard on Freática and Aitor on
+Matemágico), when she sits at her tenth and nothing brings her lower, so a break takes nothing off her; pushing the bot
+to raise the water (`ICE_WAKE_WORTH` 200 or 1000 instead of 40) does not bring the ice before the take (2–5 of 50). At
+Dirección, Aurelià and the Delegada the ice does not wake (0–9 %). docs/fight-sim.md § Resonancia gives the numbers.
 
 ## Serie de Fourier (Aitor 2026-11-25, built)
 

@@ -583,7 +583,7 @@ to watch:
   whether filling every ánima's maná is too much on top of it. See § Its targets: the bot hardly
   reaches the chord, so nothing measures it yet.
 
-### Its targets (2026-11-26, waits on Aitor)
+### Its targets (2026-11-26, not held: waits on Aitor)
 
 PLAN.md's pair is `delegada-da-capo` (`happens: {'acorde-de-ecos': …}`, more duals, fewer rounds) against
 `delegada-sin-da-capo` (`ban`), in the Delegada's room of the third floor (`delegada-3`). **The room cannot
@@ -611,10 +611,29 @@ hold it as Da capo stands**, so the pair is not written. Measured on 2026-11-26 
   Siete vidas at the Queen (`reina-con-siete-vidas` 13.2 rounds → 11.9, out of its range); only the
   third eco is valued, and the check holds.
 
-To decide: another fight (a long one where the party plays its duals, a boss), a chord that comes
-sooner (three ecos within the maná Sincopante holds). Not the Queen's first fight: she takes Aitor
-before the chord comes. The bot already plays a dual it got back, and `dual-de-nuevo` is there for the
-pair's `happens`.
+**Tried again in the long boss fights (2026-11-26, Aitor: every definitiva's pair in a long boss fight), and none holds
+it.** The third floor's party, `smart`, 100–200 fights, with it and with `--ban da-capo`; `toma` is the round the Queen
+takes Aitor:
+
+| Fight · party | Woken · cast | Duals · played again | With it | Without it |
+| --- | --- | --- | --- | --- |
+| reina · Gerard Sincopante, Aitor Matemágico/Papagato | 73 % · 66 % | 0.14 · 0 | toma 5.3, falls 10.1 | toma 5.3, falls 10.6 |
+| reina · Gerard Matemágico/Sincopante, Aitor Papagato | 38 % · 34 % | 1.3 · 0 | toma 8.7, falls 12.8 | toma 8.7, falls 12.8 |
+| reina · `FULL_DICE` | 43 % · 41 % | 2.05 · 0 | toma 7.4, falls 12.7 | toma 7.5, falls 13.1 |
+| reina-vuelta · Gerard Sincopante/Matemágico, Aitor Papagato/Dadista | 42 % · 0 % | 0.31 · 0 | won 100 %, 6.2 rounds, 86 % PV | won 100 %, 6.6 rounds, 82 % PV |
+| direccion, aurelia · any of these | 0–6 % | ≤ 0.8 · 0 | won 99–100 % | the same |
+
+- At the Queen the chord always comes after she has taken Aitor: Gerard has no partner left, no dual is played again,
+  and what Da capo gives is the maná, which does not hold him longer (the party falls half a round sooner with it).
+- At the Queen's second fight it wakes and is never cast; the gap between the rows there is the third eco's chase (`CAPO_CHORD`) playing the ecos harder, not Da capo.
+- At Dirección and Aurelià the chord does not come: they last 5–8 rounds with the third floor's party, and three ecos
+  cost more maná than Sincopante holds.
+- Valuing the chord's way by what Da capo would do, as Enjambre's is (`ultiWorth` on a copy, at three times its share),
+  wakes it more at the Queen (Gerard on Matemágico/Sincopante: 44 % at its share, 59 % at three times it, against 38 %) and still after the take; it was not kept.
+
+So no pair is written: `just fight-sim coverage` keeps listing it and docs/progress.toml keeps «Da capo: su pareja de
+objetivos» open. To decide with Aitor: a chord that comes sooner (three ecos within the maná Sincopante holds), or a
+long boss where the party plays its duals before the chord sounds.
 
 ## Open
 

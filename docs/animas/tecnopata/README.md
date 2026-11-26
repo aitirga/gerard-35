@@ -194,18 +194,37 @@ winning a little easier or longer: magos-con-magia, directo-con-tecnopata, campe
 carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 0.7 of what it will
 take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
 
-**Enjambre has no pair of targets yet (2026-11-26, waits on Aitor).** PLAN.md's pair is
-`gemelos-tercero-enjambre` against `gemelos-tercero-sin-enjambre`, and the room cannot hold it as it stands.
-First, the plan's setup never has it: at `castillo-3` the mixto build's ecos run out before
-`tecnopata:definitiva` (second to last in `BUILDS.mixto`), so Enjambre is not known there and cannot wake at all;
-the pair would need `improved: [...FLOOR_3.improved, 'tecnopata:definitiva']` (or another build or story point).
-With it bought the rows do not move either (smart 74 % in 6.6 rounds, casual 29 %, the same with Enjambre banned;
-measured 2026-11-26), because of the wake: Gemelos de tercero lasts about six rounds, 40–55 s on the simulator's clock, and a bomb needs 27 s on
-one foe and two restarts to go off at its top. The bot opens with Explosión (which sets bombs off early) and
-plants a bomb 0.06 times a fight: Enjambre wakes in 0 % of them. Pushing the bot to ripen a bomb (a worth on
-the bomb it will go off with, a step back for setting one off short) wakes it in 1–2 % and costs the room
-(71 % won → 19–45 %). At the Queen, with Aitor only on Tecnópata, the same push wakes it in 72 % of fights
-and the party falls sooner (14.8 rounds against 15.4). To decide: another room, or a wake that comes sooner.
+**Enjambre's pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) is held at Dirección,
+the long boss with three foes standing to the end: `direccion-con-enjambre` against `direccion-sin-enjambre`, Gerard on
+Matemágico and Aitor on Tecnópata (`TECH`), with the third floor's party and `tecnopata:definitiva` bought on top
+(`mixto` does not reach it at `castillo-3`). Dirección is met before the definitivas open, so the pair says what the
+team is with it, not a stretch of the story.
+
+To get there the bot had to learn the way (`src/battle-sim.ts`, only where `wakeAtStake`, a boss's fight):
+- Enjambre's nearness is the bomb it **will** go off with (`bombPower(age + left)`), not the one it is now, so a clock
+  started over (Rayo de energía) is a step nearer and a bomb set off short (Explosión) a step back; short of going off
+  it is at most nine tenths of the way (`SWARM_AHEAD`).
+- What waking it is worth is what Enjambre would do (`ultiWorth`): the PV its bombs take, the clock played on past
+  their twelve seconds on a copy (`gain` counts a bomb by its power and leaves the bomber's Magia out: 105 against 165
+  PV at Dirección).
+- Its share of that is `SWARM_SHARE` (2.5) in place of `ULTI_SHARE` (.5): the way is a bomb and two Rayos de energía,
+  all of Aitor's maná at the start, while Explosión on three foes is worth more than the bomb at once and sets it off
+  short. At .5 to 1.75 the bot never keeps a bomb (0–1 % woken); at 2, 66 %; at 2.5, 79 %; from 3, 80–82 %, losing a
+  few more fights to the turns the bomb takes. No other target buys Enjambre, so none moves with it.
+
+| Seed (200 fights) | With it | Without it (`ban: ['enjambre']`) | Woken |
+| --- | --- | --- | --- |
+| 35 | 86 %, 8.3 rounds, 40 % PV | 89 %, 8.5 rounds, 23 % PV | 79 % |
+| 7 | 88 %, 8.3 rounds, 40 % PV | 89 %, 8.5 rounds, 23 % PV | 82 % |
+| 99 | 88 %, 8.3 rounds, 42 % PV | 90 %, 8.4 rounds, 24 % PV | 82 % |
+
+What decides it is the cast, not the chase: with the same push and Enjambre itself kept out of reach the party wins 77 %
+with 26 % PV (measured with `castillo-2`'s party and a share of 2, where it wins 84 % with 36 % cast and 85 % with 22 % banned).
+
+Where it was tried first and cannot hold: the Gemelos de tercero last about six rounds, 40–55 s on the simulator's
+clock, and a bomb needs 27 s on one foe and two restarts to go off at its top (0 % woken; pushed, 1–2 % and the room
+lost). At the Queen, a single foe most of the fight, Enjambre's bombs pay little more than the three turns they take:
+with Gerard on Matemágico, Freática and Colorista and Aitor only on Tecnópata, a share of 1.5 wakes it in 29 % of fights and the party gets her to her tenth less often (85 % → 68 %).
 
 ### Open (Aitor's)
 

@@ -74,6 +74,11 @@ Mientras la expansión no esté en main, este trabajo sale de esa rama, porque t
   - Gemelos de tercero para Fin de fiesta, Enjambre y Un golpe de dados;
   - Delegada para Da capo y Bajo cero;
   - la Reina para Siete vidas.
+- **2026-11-26: cada pareja de TARGETS de una definitiva vive en un jefe largo** (la Reina, el equipo directivo de
+  Direcció, Aurelià u otro jefe largo), no en las salas del tercer curso, donde la condición no da tiempo a cumplirse.
+  Las condiciones de despertar no cambian. Hechas: `reina-con-fin-de-fiesta`, `reina-con-siete-vidas`,
+  `reina-con-bajo-cero` y `direccion-con-enjambre`, cada una con su «sin». Da capo y Resonancia no tienen pareja todavía
+  (docs/animas/sincopante/README.md § Its targets, docs/fight-sim.md § Resonancia).
 
 ---
 

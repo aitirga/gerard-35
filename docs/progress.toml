@@ -779,8 +779,8 @@ in = "src/swarm-fx.ts"
 [[block.item]]
 title = "Enjambre: su pareja de objetivos"
 priority = "animas"
-note = "La pareja de PLAN.md es gemelos-tercero-enjambre frente a gemelos-tercero-sin-enjambre, y espera a Aitor: los Gemelos de tercero no pueden sujetarla tal como es. Primero, el punto del plan no la tiene: en castillo-3 los ecos del tarro mixto se acaban antes de tecnopata:definitiva (la penúltima de BUILDS.mixto), así que Enjambre no se conoce allí y no puede despertar; la pareja necesitaría improved: [...FLOOR_3.improved, 'tecnopata:definitiva'] (u otro tarro o punto). Comprada, las filas tampoco se mueven (smart 74 % en 6.6 rondas, casual 29 %, igual con Enjambre vetada), por el despertar: la sala dura unas seis rondas, 40–55 s del reloj del simulador, y una bomba necesita 27 s puesta y dos reinicios para estallar al máximo; el bot abre con Explosión (que hace estallar las bombas pronto) y Bomba remota sale 0.06 veces por combate. Despierta en el 0 % de los combates; empujando al bot a madurar una bomba despierta en el 1–2 % y la sala pasa del 71 % al 19–45 % de victorias (medido el 2026-11-26). En la Reina, con Aitor solo en Tecnópata, ese empuje la despierta en el 72 % pero el equipo cae antes (14.8 rondas frente a 15.4). Falta decidir: otra sala, o que despierte antes."
-grep = "(?s)\\A(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')"
+note = "Hecha en Dirección (Aitor, 2026-11-26: cada pareja de definitiva en un jefe largo): direccion-con-enjambre frente a direccion-sin-enjambre, con el equipo del tercer curso y Enjambre comprada encima (TECH, Aitor en Tecnópata). El bot guarda una bomba en una de las tres y le reinicia el reloj dos veces (SWARM_SHARE, y Enjambre valorada por los PV de sus bombas); al estallar al máximo despierta Enjambre (79–82 %), y una bomba al máximo en cada una deja al equipo con el 40–42 % de PV frente al 23–24 % sin ella, ganando igual (86–88 % frente a 89–90 %). Medido el 2026-11-26, semillas 35, 7 y 99. Dirección llega antes de que se abran las definitivas: es lo que vale con ellas, no un tramo de la historia."
+grep = "(?s)\\A(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')"
 in = "src/battle-sim.ts"
 
 # PLAN.md step 3 (docs/plans/definitivas/), built 2026-11-26 (docs/animas/tecnopata/README.md § Sugestión).
@@ -866,7 +866,7 @@ note = "Hecha con su regla, su nodo, su figura y su prueba. Su pareja de TARGETS
 [[block.item]]
 title = "Resonancia: su pareja de TARGETS"
 priority = "animas"
-note = "Abierto. smart ya pesa cuándo romper el hielo (lo que el congelado vuelve a hacer por las rondas que le quedaban), pero en la campaña el hielo y Resonancia casi nunca coinciden, y con ICE_PARTY en la Reina el bot deja Freática para tirarla como rayo suelto: el equipo cae en 16.7 rondas contra 21.3 sin ella. Falta un combate donde el hielo llegue sin los turnos de Gerard, o un bot que planee congelar y romper entre ánimas. Hasta entonces `just fight-sim coverage` la lista."
+note = "Abierto. smart ya pesa cuándo romper el hielo (lo que el congelado vuelve a hacer por las rondas que le quedaban), pero en la campaña el hielo y Resonancia casi nunca coinciden, y con ICE_PARTY en la Reina el bot deja Freática para tirarla como rayo suelto: el equipo cae en 16.7 rondas contra 21.3 sin ella. Probado el 2026-11-26 en los jefes largos (la Reina, Dirección, Aurelià; y la Delegada de tercero): el hielo de Bajo cero solo llega en la Reina, y siempre después de que ella se lleve a Aitor (43 de 43 congelaciones con ICE_PARTY, 30 de 32 con Gerard en Freática y Aitor en Matemágico), cuando ya está en su décimo y nada la baja de ahí: romperlo no le quita nada. Ni empujar al bot a preparar el hielo (ICE_WAKE_WORTH a 200 o a 1000) lo adelanta a antes de la toma (2–5 de 50). En Dirección, Aurelià y la Delegada no despierta (0–9 %). Enseñar al bot a congelar y romper no tiene dónde cobrar: falta un combate donde el hielo llegue con el enemigo aún por bajar. Hasta entonces `just fight-sim coverage` la lista."
 grep = "(?s)\\A(?=.*id: '[a-z0-9-]*-con-resonancia')(?=.*id: '[a-z0-9-]*-sin-resonancia')"
 in = "src/battle-sim.ts"
 
@@ -984,8 +984,8 @@ in = "src/eco-fx.ts"
 [[block.item]]
 title = "Da capo: su pareja de objetivos"
 priority = "animas"
-note = "La pareja de PLAN.md es delegada-da-capo frente a delegada-sin-da-capo, y espera a Aitor: la sala de la Delegada de tercero no puede sujetarla tal como es. Dura 5–8 rondas y tres ecos cuestan seis de maná con cinco en Sincopante: Da capo despierta en el 1–7 % de sus combates con cualquier equipo, y las filas con y sin ella son iguales (98–99 %). Ni empujando al bot (3000 por el acorde) pasa del 2 %. Donde despierta (la Reina con Gerard en Sincopante, 62 %; Dirección con Aitor en ella, 42 %) el bot la usa solo por el maná (2.15 dúos por combate con ella, 2.17 sin ella), medido el 2026-11-26: en la Reina llega cuando ella ya se ha llevado a Aitor y no queda con quién hacer un dúo. El bot ya valora cada dúo devuelto por lo que haría jugado de nuevo (capoWorth) y lo vuelve a jugar donde hay compañero; el sim cuenta da-capo y dual-de-nuevo para el happens de la pareja. Falta decidir: otro combate (no la primera de la Reina) o un acorde que llegue antes."
-grep = "(?s)\\A(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')"
+note = "Sin pareja: ningún jefe largo la sujeta tal como es (medido el 2026-11-26, 100–200 combates, el equipo del tercer curso). En la primera de la Reina despierta (41–73 % con Gerard en Sincopante) pero siempre después de que ella se lleve a Aitor (ronda 5–9): no queda con quién hacer un dúo y ninguno se vuelve a jugar (dual-de-nuevo 0); la Reina llega a su décimo igual (toma 5.3 o 8.7 con ella y sin ella) y el equipo cae media ronda antes. En Dirección y Aurelià el acorde no llega (0–6 %): tres ecos cuestan seis de maná con cinco en Sincopante y esos combates duran 5–8 rondas. En la segunda de la Reina despierta en el 20–55 % pero se lanza en el 0–2 %. Valorar el camino del acorde por lo que Da capo haría (como Enjambre) la despierta más en la Reina (59 %), sin que llegue antes de la toma. Falta decidir con Aitor: un acorde que llegue antes, o un jefe largo donde se juegan dúos antes de que el acorde suene."
+grep = "(?s)\\A(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')"
 in = "src/battle-sim.ts"
 
 # The ecos' look from the effects lab, driven by the fight's rules (src/eco-fx.ts `driven`; just screenshots sincopante-crece --gpu).
@@ -1098,8 +1098,8 @@ in = "src/freatica-fight.ts"
 [[block.item]]
 title = "Bajo cero sujeto por un objetivo"
 priority = "animas"
-note = "La pareja de PLAN.md es delegada-bajo-cero-bien frente a delegada-bajo-cero-sin-ella, y espera a Aitor: la Delegada de tercero no puede sujetarla tal como es (cualquier equipo gana su sala en cuatro o cinco rondas, antes de que el agua de nadie llegue a la tercera marca; Bajo cero se lanza en el 0–3 % de sus combates, medido el 2026-11-26). Hecha ya la guarda, reina-con-bajo-cero (la Reina sigue pasando por cada fase y se lleva a Aitor, suyo), con su contraria reina-sin-bajo-cero: 22.1 rondas frente a 15.9. Falta decidir: cambiar su sala o sujetarla en la Reina. Ningún objetivo rompe el hielo todavía."
-grep = "(?s)\\A(?=.*id: 'delegada-bajo-cero-bien')(?=.*id: 'delegada-bajo-cero-sin-ella')"
+note = "La pareja de PLAN.md es delegada-bajo-cero-bien frente a delegada-bajo-cero-sin-ella, y espera a Aitor: la Delegada de tercero no puede sujetarla tal como es (cualquier equipo gana su sala en cuatro o cinco rondas, antes de que el agua de nadie llegue a la tercera marca; Bajo cero se lanza en el 0–3 % de sus combates, medido el 2026-11-26). Hecha ya la guarda, reina-con-bajo-cero (la Reina sigue pasando por cada fase y se lleva a Aitor, suyo), con su contraria reina-sin-bajo-cero: 22.1 rondas frente a 15.9. Aitor decidió el 2026-11-26 que cada pareja de definitiva vive en un jefe largo: esta de la Reina es la suya. Ningún objetivo rompe el hielo todavía."
+grep = "(?s)\\A(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')"
 in = "src/battle-sim.ts"
 
 # Built 2026-11-21: the effects lab's cells driven by the fight's state (src/freatica-fight.ts), with the plate icons and pops.
@@ -1629,15 +1629,15 @@ priority = "pruebas"
 note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: hechos en la pasada final (21-11), just fight-sim coverage no lista ninguno. Los que solo enseñan (los primeros perros, la primera sala de cada curso del castillo y los combates de entrada de cada misión) llevan un objetivo que los sujeta fáciles. Se marca a mano."
 done = true
 
-# docs/plans/definitivas/PLAN.md (Aitor 2026-11-25): each definitiva held to a pair of TARGETS in the third year, one with it
+# docs/plans/definitivas/PLAN.md (Aitor 2026-11-25; 2026-11-26: in a long boss fight, not a third-year room): each definitiva held to a pair of TARGETS, one with it
 # and one without (`ban`), measuring the turn (fewer rounds, more PV), not the win. Ticks once all seven pairs are in
 # src/battle-sim.ts, by these ids; the bot already values what each pays for (POISON_WORTH, SHARD_WORTH, LIVES_WORTH,
 # ICE_CRACK_WORTH, HAND_WORTH, wakeWorth) and BUILDS.mixto buys all seven.
 [[block.item]]
 title = "Las definitivas en fight-sim"
 priority = "animas"
-note = "Una pareja de objetivos por definitiva, con ella y sin ella: fiesta-gemelos, reina-con-siete-vidas, delegada-bajo-cero-bien, gemelos-tercero-enjambre, delegada-da-capo, gemelos-tercero-golpe-de-dados y alumnos-tercero-horas-extra, cada una con su «sin». El bot ya valora lo que pagan y el tarro mixto las compra todas."
-grep = "(?s)\\A(?=.*id: 'fiesta-gemelos')(?=.*id: 'fiesta-gemelos-sin-ella')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'delegada-bajo-cero-bien')(?=.*id: 'delegada-bajo-cero-sin-ella')(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')(?=.*id: 'gemelos-tercero-golpe-de-dados')(?=.*id: 'gemelos-tercero-sin-definitiva')(?=.*id: 'alumnos-tercero-horas-extra')(?=.*id: 'alumnos-tercero-sin-horas-extra')"
+note = "Una pareja de objetivos por definitiva, con ella y sin ella, en un jefe largo (Aitor, 2026-11-26): reina-con-fin-de-fiesta, reina-con-siete-vidas, reina-con-bajo-cero y direccion-con-enjambre, cada una con su «sin», ya están. Faltan Da capo (ningún jefe largo la sujeta aún: su ítem dice por qué), Un golpe de dados y Horas extra (sin construir), cada una como <combate>-con-<id> y <combate>-sin-<id>. El bot ya valora lo que pagan y el tarro mixto las compra todas."
+grep = "(?s)\\A(?=.*id: 'reina-con-fin-de-fiesta')(?=.*id: 'reina-sin-fin-de-fiesta')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')(?=.*id: '[a-z0-9-]*-con-golpe-de-dados')(?=.*id: '[a-z0-9-]*-sin-golpe-de-dados')(?=.*id: '[a-z0-9-]*-con-horas-extra')(?=.*id: '[a-z0-9-]*-sin-horas-extra')"
 in = "src/battle-sim.ts"
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the
