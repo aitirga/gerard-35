@@ -1000,19 +1000,20 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     // A definitiva the bot may not use is nothing to wake. Not Enjambre: ripening a bomb pays on its own where it is pushed
     // (`swarmAtStake`), so with it banned the bot plays the same way and only the cast is out of reach (`direccion-sin-enjambre`).
     if (from && ban.includes(from.skill) && !(from.skill === 'enjambre' && swarm)) return;
-    // Siete vidas, Fin de fiesta and Enjambre: their own worth only in a boss's fight (`wakeAtStake`); elsewhere `WAKE_WORTH`, as any
-    // other. There a wound spent short throws its steps away (the condition is a wound kept and cut to five, then spent), and
-    // so does powder spent on a reaction already seen, or all of it on one. A wound or powder that went with its foe is no
+    // Siete vidas, Fin de fiesta, Enjambre and Un golpe de dados: their own worth only in a boss's fight (`wakeAtStake`); elsewhere
+    // `WAKE_WORTH`, as any other. There a wound spent short throws its steps away (the condition is a wound kept and cut to five,
+    // then spent), and so does powder spent on a reaction already seen, or all of it on one, and a Racha spent before the
+    // Crítico reaches 100 % (Dados astrales, the Campana: Un golpe de dados stays awake once woken, so only before). A wound or powder that went with its foe is no
     // step back (a kill is a kill): the powder of each foe that fell counts as still there (`dustedOut`), the rest's does not.
-    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta') && !wakeAtStake(before) || from?.skill === 'enjambre' && !swarm ? 0 : 1;
+    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta' || from?.skill === 'un-golpe-de-dados') && !wakeAtStake(before) || from?.skill === 'enjambre' && !swarm ? 0 : 1;
     if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && (from.skill === 'fin-de-fiesta' || from.skill === 'enjambre') && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * (to.skill === 'enjambre' ? SWARM_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = (to.skill === 'enjambre' ? SWARM_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
+    if (from && to && (from.skill === 'fin-de-fiesta' || from.skill === 'enjambre' || from.skill === 'un-golpe-de-dados') && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * (to.skill === 'enjambre' ? SWARM_SHARE : to.skill === 'un-golpe-de-dados' ? COUP_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = (to.skill === 'enjambre' ? SWARM_SHARE : to.skill === 'un-golpe-de-dados' ? COUP_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
   });
   return worth;
 }
 /**
- * What Fin de fiesta, Siete vidas or Enjambre would do if it went off now: played on a copy where it is awake, by whoever
+ * What Fin de fiesta, Siete vidas, Enjambre or Un golpe de dados would do if it went off now: played on a copy where it is awake, by whoever
  * wears its ánima, and valued as any choice is (Siete vidas: its claws and its ward, `LIVES_WORTH`; Enjambre: the PV its
  * bombs take). `ULTI_SHARE` of it is what waking it is worth to `smart` (above `WAKE_WORTH`, it goes in steps, not on the
  * square: a third a reaction of the powder not seen yet; a sixth each stack of the wound and the blow that spends it); the
@@ -1028,13 +1029,21 @@ const ULTI_SHARE = .5;
  * the Queen, alone but for her hands and bubble, does not move with it.
  */
 const SWARM_SHARE = 2.5;
+/**
+ * Un golpe de dados' share, in place of `ULTI_SHARE` (only where `wakeAtStake`): its way is the Racha kept and Ases en dúo
+ * played (two dice, the wearer's Crítico ×2), turns that do little on their own. Measured 2026-11-26 at the Queen's first
+ * fight (`reina-con-golpe-de-dados`, 150 fights, seed 35): at .5 it wakes in 37 % of fights and she takes Aitor at 9.7
+ * rounds; at 1, 76 % and 8.7; at 2, 97 % and 7.7, but there the push alone (banned, played the same) gets her there at 8.3,
+ * so most of it is Ases en dúo's and not the definitiva's. At 1 the same push without the cast is 10.2–10.7: the gap is the cast's.
+ */
+const COUP_SHARE = 1;
 let ultiWorths = new WeakMap<BattleState, Map<string, number>>();
 function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
   const known = ultiWorths.get(before) ?? new Map<string, number>(), key = `${wearer}:${skill}`;
   if (known.has(key)) return known.get(key)!;
   let value = 0;
   const spec = SKILLS.find(s => s.id === skill), foe = before.foes.find(f => f.hp > 0);
-  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas' || skill === 'enjambre') && spec && foe) {
+  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas' || skill === 'enjambre' || skill === 'un-golpe-de-dados') && spec && foe) {
     const look = copy(before);
     look.unbound = true; look.phase = 'player'; look.active = wearer;
     delete look.spent; delete look.queued;
@@ -1887,6 +1896,18 @@ export const TARGETS: readonly Target[] = [
   // at all the bot spends Explosión on the three as it comes: 89–90 %, 8.4–8.5 rounds, 23–24 % of PV.)
   { id: 'direccion-con-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', win: [.75, 1], roundsWon: [7.5, 8.9], hpLeftWon: [.38, .5], happens: { 'despierta:enjambre': [.6, 1] }, why: 'Con Aitor en Tecnópata y Enjambre en el tarro: una bomba en una de ellas, su reloj vuelto a empezar dos veces, estalla al máximo y despierta Enjambre; una bomba al máximo en cada una de las tres acaba la reunión más de una ronda antes y con el equipo más entero.' },
   { id: 'direccion-sin-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', ban: ['enjambre'], win: [.7, 1], roundsWon: [9.1, 10.5], hpLeftWon: [.28, .375], happens: { 'despierta:enjambre': [.6, 1] }, why: 'Jugando igual, con la bomba madurada y Enjambre despierto pero sin lanzarlo, la reunión dura más de una ronda más y se sale con menos PV.' },
+  // Un golpe de dados (Dadista's definitiva), held in the Queen's first fight (Aitor, 2026-11-26: in a long boss fight), lost by
+  // design at her tenth, measured as Fin de fiesta's is: the round she takes Aitor (`toma`). The party is the third floor's
+  // with Aitor in Dadista and the definitiva bought on top. The bot keeps the Racha and plays Ases en dúo to bring his
+  // Crítico to 100 % (`COUP_SHARE`; a Racha spent short is a step back, as Fin de fiesta's powder) and casts it: a die of
+  // light on her and on each hand she holds out, and the hand back to six. Its counterpart is the same party with it banned,
+  // which plays as if it were not there. Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: woken in 74–79 %, she takes
+  // Aitor at 8.4–8.8 rounds against 10.6–10.9 without it, and against 10.7–11.0 with the same push and no cast (so the gap
+  // is the cast's, not Ases en dúo's turns). Dirección was the first place tried and holds it worse: the meeting is won in
+  // under five rounds and most of the turn is Ases en dúo's, the cast only a third of a round on top of the same push (4.3–4.4
+  // rounds against 4.7–4.8, Aitor kept on Dadista, 150 fights, seeds 35 and 7).
+  { id: 'reina-con-golpe-de-dados', fight: 'reina', party: MAT_DAD, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'dadaista:definitiva'], policy: 'smart', win: [0, 0], happens: { toma: [7.9, 9.4], 'despierta:un-golpe-de-dados': [.6, 1] }, why: 'Con Aitor en Dadista y Un golpe de dados en el tarro: guardar la Racha y Ases en dúo llevan su Crítico al 100 % y la despiertan; un dado de luz crítico sobre ella y cada mano, y la mano llena hasta seis, la llevan a su décimo, y a tomar a Aitor, dos rondas antes.' },
+  { id: 'reina-sin-golpe-de-dados', fight: 'reina', party: MAT_DAD, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'dadaista:definitiva'], policy: 'smart', ban: ['un-golpe-de-dados'], win: [0, 0], happens: { toma: [10, 11.6], 'despierta:un-golpe-de-dados': [0, .1] }, why: 'Sin Un golpe de dados, la Racha se gasta en Dados astrales según viene: la Reina llega a su décimo dos rondas más tarde.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
