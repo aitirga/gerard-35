@@ -249,8 +249,9 @@ dual attacks again. Bought at the jar (2 ecos) once the castle's second boss fal
 | --- | --- |
 | **Wakes in a fight when** | **Three ecos sound at once: a chord.** It is met while Sincopante is worn, by whoever wears it. The chord can be heard (three notes together) and seen (§ Look) |
 | **Then** | Once in that fight, for the wearer's turn and no maná |
-| **The duals** | **Every dual already used in this fight can go off once more**, as at the start. It only brings back duals already used: one never found, or not used yet, stays as it was. They are played as always: both turns, each half chosen by its wearer, each half paid from its own maná |
-| **The maná** | **Every ánima of both fighters, worn or not, is full again**, so the duals can be paid |
+| **The duals** | **Every dual already used in this fight can go off once more**, as at the start, the dúos mayores too (Aitor 2026-11-25). It only brings back duals already used: one never found, or not used yet, stays as it was. They are played as always: both turns, each half chosen by its wearer, each half paid from its own maná |
+| **One still sounding** | A dual given back can be played while what it left still sounds (Vulcano's volcano, Corriente alterna's circuit, an eco in a foe's head, Staccato's cut, Reserva de color's fuse, Trampantojo's painted cortina): the old one goes out and the new one **starts its clock and its strength over**, wherever it lands. **Never two of the same at once** (Aitor 2026-11-25; `retake` in `src/battle.ts`). Electrólisis's gas is water split, not the dual sounding, and stays |
+| **The maná** | **Every ánima of both fighters, worn or not, is full again**, so the duals can be paid. Dadista's hand comes back to the dice it started the fight with, never to six; a hand already past that (the hand up to six) is kept, never cut (Aitor 2026-11-25) |
 | **The ecos** | The ones standing start their 20 s over, at the grade they have |
 | **What it does not do** | It never fires a dual by itself. It does not bring back a definitiva, its own or another's. A dual takes both turns, so the first one comes the round after, not in the round Da capo is used (the wearer's turn went on it) |
 | **In the game** | *Abstract*: `Los ataques dúo ya usados en este combate se pueden usar otra vez. Todo el equipo recupera todo su maná.` |
@@ -417,11 +418,11 @@ only what a voice leaves in the air.
 | **Pedal** | While it lasts | As the wearer holds on, a thin level line of light runs under the ecos, like the pedal line under a piano stave. Their arcs on *Compás* stop and glow steady, and their notes ring longer. *PASIVA · Pedal*. When the wearer acts again, the line fades |
 | **The chord** (three ecos) | One beat | Three thin lines of light join the three ecos into a triangle for a beat, each shows its figure, and the three notes sound together. If Da capo is bought, its command appears in the dock. Nothing else says so |
 | **Tutti** | 1.6 s | The ecos fly together over the foes (0.4 s) and become one great sounding plate, its figure changing note by note as it grows. The scene dims and a column of warm light through water stands over the foes (0.5 s). The plate comes down on every foe at once and is struck: its grains jump, a ring closes on each foe, a pool of warm light spreads under them, with the fight frozen for 0.25 s as for a golpe crítico, and every note sounds together. Motes rise off the foes for a second, and the ecos are gone |
-| **Da capo** | 2.4 s | The three ecos rise into a column (0.4 s). Every ring on the field turns backwards, a great plate under the party plays its figures from the last to the first while rings close in on it, and the hand of *Compás* spins a whole turn back (0.6 s), while the ecos sing the start of Marta's phrase, *Do Sol Fa Re*. A wave of nácar light crosses the party's side, and every maná pip fills again, one by one, each with a note (0.6 s). The names of the duals already used appear faintly over the party, written on five thin lines, and light up (0.6 s). *¡DA CAPO!* |
+| **Da capo** | 2.4 s | **Built 2026-11-26** (Aitor's «rebobinado del campo», 2026-11-25; `DA_CAPO` in `src/battle-motion.ts`). The three ecos rise into a column over the party (0.4 s). **The whole field plays back**: everything that moved these last six seconds runs back along its own path in streaks of nácar (the particle engine's tape, `src/rewind-field.ts`), the ecos' rings turn backwards, a great plate under the party plays its figures from the last to the first while rings close in on it, and the hand of *Compás* spins a whole turn back (0.6 s), while the ecos sing the start of Marta's phrase, *Do Sol Fa Re*. A wave of nácar (`fluido-nacar`: white, sea foam and pale gold, a fluid on the GPU) rolls across the party, and every maná pip fills again, one by one, each with a glass note (0.6 s). Five strings of nácar are drawn over the party (Corriente alterna's `string` lattice), the staff: the names of the duals given back light on it one after another, a string plucked for each (0.6 s). *¡DA CAPO!* over the staff and on each ally, with her chord, Fa, La and Do; the strings come apart into motes and the ecos go back to their places |
 | **An eco going out** | 0.6 s | Its rings open and drift apart, the motes rise, and its note fades. If the wearer falls, every eco goes out at once |
 
 *Movimiento reducido* keeps the ecos, the pulses and the numbers, and drops the dimming, the freeze
-and the waves.
+and the waves; in Da capo, only the maná filling and the names on the staff.
 
 ### Sound: Marta's voice
 
@@ -539,13 +540,20 @@ takes its colour, nácar. **Her voice is in the ecos from the start**: the ánim
   once a beat, with the beat and off-beat notches; each note's number is named *Eco*.
 - **Her voice**: the four grains in `public/sfx/` (`eco-fa`, `eco-la`, `eco-do`, `eco-dacapo` in
   `SOUNDS`, `src/sfx.ts`), a note for each eco on its beat, the chord in Crescendo and Tutti, her
-  phrase in Da capo; silent while muffled.
+  phrase as Da capo starts and her chord (Fa, La, Do) at its ¡DA CAPO!; silent while muffled. All of
+  them through 2.8 s of a hall's echo (`ECO_HALL`, a ConvolverNode, 2026-11-26), and `eco-pip`, a glass
+  note on Fa an octave up, for each maná pip Da capo fills.
+- **Da capo's own look** (2026-11-26): `src/eco-fx.ts` `dacapo`, the field's tape in
+  `src/rewind-field.ts` (§ Look; docs/graphics.md § The field played back), the maná pip by pip and the
+  staff in `src/battle-ui.ts` (`capoPlay`). `just screenshots da-capo --gpu`.
 - **The fight tester**: its levels, Da capo at the jar, and *Contratiempo seguro*
   (`BattleState.sureOffbeat`). `just screenshots sincopante-crece --gpu` plays it whole.
-- **The bot** (`src/battle-sim.ts`) values the notes still to come (`ecoWorth`) and Da capo.
+- **The bot** (`src/battle-sim.ts`) values the notes still to come (`ecoWorth`), the third eco that
+  makes the chord while Da capo sleeps (`CAPO_CHORD`: 20, and 20 for each dual already used), and Da
+  capo itself (40 for each dual given back, and the maná).
 
 **Not built yet**:
-- The reverb on her voice and the muffled filter (650 Hz low-pass): today a muffled eco is silent.
+- The muffled filter (650 Hz low-pass): today a muffled eco is silent.
 - The compás locked to the song's downbeats (`TRACKS` in `src/music.ts`), and a `key` for each
   fight song to transpose the grains.
 - The rings on the wearer's nape and the dock's theme with the mark.
@@ -570,7 +578,33 @@ to watch:
 - **The clock**. A slow player gets more beats per round (with `think: 8`, about four), as with
   fire.
 - **Da capo**: how much a second Rayo solar or Zarpazos de fuego is worth against a boss, and
-  whether filling every ánima's maná is too much on top of it.
+  whether filling every ánima's maná is too much on top of it. See § Its targets: the bot hardly
+  reaches the chord, so nothing measures it yet.
+
+### Its targets (2026-11-26, waits on Aitor)
+
+PLAN.md's pair is `delegada-da-capo` (`happens: {'acorde-de-ecos': …}`, more duals, fewer rounds) against
+`delegada-sin-da-capo` (`ban`), in the Delegada's room of the third floor (`delegada-3`). **The room cannot
+hold it as Da capo stands**, so the pair is not written. Measured on 2026-11-26 (`smart`, `castillo-3`,
+`mixto`, 200 fights, the rules above and `CAPO_CHORD` in):
+
+- The room lasts 5–8 rounds. Three ecos cost six maná and Sincopante holds five, so the chord needs
+  Ostinato, Ostinato, Crescendo or Defender and Ostinato before the first runs out: Da capo wakes in
+  1–7 % of the room's fights, whatever the party (Aitor alone on Sincopante with Gerard on Matemágico,
+  Vulcano and Corriente alterna bought; Papagato and Sincopante on Aitor; Sincopante on Gerard; the full
+  party), and the rows with it and without it are the same within a round (98–99 % won).
+- Pushing the bot harder does not get there: at 3000 for the chord it calls Ostinato 1.9 times a fight
+  instead of 0.6 and still wakes it in 2 %. The bot looks two moves ahead; the chord is four or five.
+- Where it does wake (the Queen with Gerard on Sincopante, 62 %; Dirección with Aitor on it, 42 %;
+  the full party with Dadista at the Queen, 40 %), it is used for the maná alone: the bot does not play
+  the duals it gives back again (2.15 duals a fight with it, 2.17 without), and the party falls a
+  little sooner for the turns spent on the chord.
+- Valuing the second eco too (the chord's way, on the square of how near) pulled the full party off
+  Siete vidas at the Queen (`reina-con-siete-vidas` 13.2 rounds → 11.9, out of its range); only the
+  third eco is valued, and the check holds.
+
+To decide: another fight (a long one where the party plays its duals, a boss), a chord that comes
+sooner (three ecos within the maná Sincopante holds), or teaching the bot to play a dual it got back.
 
 ## Open
 

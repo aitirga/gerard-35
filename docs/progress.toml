@@ -912,11 +912,34 @@ note = "Se compra en el bote y despierta con tres ecos a la vez (el acorde): los
 grep = "function capoReady|const capoReady"
 in = "src/battle.ts"
 
+# Aitor 2026-11-25 (docs/plans/definitivas/PLAN.md 2.5): the dúos mayores too, one still sounding starts over, the starting hand.
+[[block.item]]
+title = "Da capo: sus reglas decididas (dúos mayores, relanzar refresca, la mano inicial)"
+priority = "animas"
+note = "Hecho: devuelve también los dúos mayores; un dúo devuelto que se juega mientras lo suyo sigue sonando (el volcán, el circuito, un eco dentro de un enemigo, la mecha, el trampantojo) lo vuelve a empezar, reloj y fuerza, y nunca hay dos iguales a la vez; la mano de Dadista vuelve a los dados con que empezó el combate, nunca a seis, y una mano por encima no se recorta."
+grep = "function retake"
+in = "src/battle.ts"
+
+# Built 2026-11-26 (Aitor 2026-11-25: «rebobinado del campo»; docs/graphics.md § The field played back).
+[[block.item]]
+title = "Da capo entera: el campo rebobinado, la ola de nácar y el pentagrama"
+priority = "animas"
+note = "Hecho: los ecos suben en columna; todo lo que se movió en el campo los últimos seis segundos corre hacia atrás en hilos de nácar (la cinta del motor de partículas, src/rewind-field.ts) mientras la aguja de Compás da una vuelta atrás; una ola de fluido-nacar cruza al equipo y el maná se llena punto a punto, cada uno con su nota; cinco cuerdas de nácar (la retícula string de Alterna) con los nombres de los dúos devueltos; ¡DA CAPO! y el acorde Fa-La-Do. Los ecos suenan con 2.8 s de eco de sala. just screenshots da-capo --gpu."
+grep = "rewindField"
+in = "src/eco-fx.ts"
+
+[[block.item]]
+title = "Da capo: su pareja de objetivos"
+priority = "animas"
+note = "La pareja de PLAN.md es delegada-da-capo frente a delegada-sin-da-capo, y espera a Aitor: la sala de la Delegada de tercero no puede sujetarla tal como es. Dura 5–8 rondas y tres ecos cuestan seis de maná con cinco en Sincopante: Da capo despierta en el 1–7 % de sus combates con cualquier equipo, y las filas con y sin ella son iguales (98–99 %). Ni empujando al bot (3000 por el acorde) pasa del 2 %. Donde despierta (la Reina con Gerard en Sincopante, 62 %; Dirección con Aitor en ella, 42 %) el bot la usa solo por el maná y no vuelve a jugar los dúos devueltos (2.15 dúos por combate con ella, 2.17 sin ella), medido el 2026-11-26. Falta decidir: otro combate, un acorde que llegue antes, o enseñar al bot a jugar el dúo devuelto."
+grep = "(?s)\\A(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')"
+in = "src/battle-sim.ts"
+
 # The ecos' look from the effects lab, driven by the fight's rules (src/eco-fx.ts `driven`; just screenshots sincopante-crece --gpu).
 [[block.item]]
 title = "Sincopante: los ecos en el combate de verdad, con la voz de Marta"
 priority = "animas"
-note = "La escena dibuja cada eco que llaman las reglas, su pulso en el compás, Crescendo, Tutti y Da capo; el icono Compás en la placa; la voz de Marta (Fa, La, Do y su frase en Da capo) en cada pulso. Falta: la reverberación y el filtro de «apagados» en el sonido, el compás atado a los tiempos fuertes de la canción y el tono de cada canción."
+note = "La escena dibuja cada eco que llaman las reglas, su pulso en el compás, Crescendo, Tutti y Da capo; el icono Compás en la placa; la voz de Marta (Fa, La, Do y su frase en Da capo) en cada pulso, con 2.8 s de eco de sala. Falta: el filtro de «apagados» en el sonido, el compás atado a los tiempos fuertes de la canción y el tono de cada canción."
 grep = "driven: true"
 in = "src/battle-scene.ts"
 

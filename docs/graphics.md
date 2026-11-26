@@ -678,6 +678,27 @@ gather into a network that joins them and thins, where few go, to close to the s
 - **Cost**: GPU, small for this card (64 k threads and 256 k texels a step). CPU: the whole fight frame went from
   2.05 ms to 3.2 ms with the network, three bombs and their fires on screen (`--perf`, 2026-11-26).
 
+## The field played back (`src/rewind-field.ts`, built 2026-11-26)
+
+Da capo's rewind (docs/animas/sincopante/README.md § Look, Aitor's «rebobinado del campo»; staged by
+`src/eco-fx.ts` `dacapo`): everything that moved on the field these last seconds runs back along its own path, in
+nácar. It lives inside the fight's particle engine (`src/fight-particles.ts`, `rewindField`), which owns it.
+
+- **The tape**: a 512 × 1920 RGBA32F texture, 60 recordings of 32 rows each. Every 0.1 s of the fight's clock a
+  fragment pass over the tape writes one recording's rows (every other row `discard`s, so nothing is cleared or
+  uploaded): for 16 384 of the pool's 131 072 slots, evenly strided, where each is and whether it is alive. Six
+  seconds, a ring. The CPU only says which recording; it never reads a position back.
+- **Played back**: one instanced draw of 16 384 quads. Each reads its sample at a playhead running from the newest
+  recording to the oldest (the tape speeding up, `k² (0.6 + 0.4 k)`), interpolated between two recordings, and a
+  little nearer the present for its tail, and is drawn as a soft streak from one to the other, white, sea foam or
+  pale gold by its own hash, whiter as the tape speeds up. A sample dead at either end, or that jumped (a slot
+  reused by another burst), is not drawn. While it plays the tape is held, so it plays what was.
+- **Cost**: GPU, small (a 1-megatexel pass ten times a second, 16 k quads for 0.6 s). CPU: one draw call ten
+  times a second, and one more while it plays.
+
+The wave that follows it is a fluid kind, `fluido-nacar` (`src/fluid-fx.ts`, the same grid as the lava and the
+steam), and the staff is five `string` lattices (Corriente alterna's) plucked with `travel`.
+
 ## Lattices (`src/lattice.ts`)
 
 A lattice is a shape made of fight particles that holds together: solid and stable, it bends when
