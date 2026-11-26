@@ -176,8 +176,9 @@ random as the mean of it sent to each of the others in turn (no die of its own, 
 throws the same dice: no noise in the difference). Run.events counts each confused foe's blow
 (`confundido`), each one Sugestión sent (`sugestion`, Idea fija's beats too) and each Combustión, set off
 by the party (`combustion`) or by a confused foe (`combustion-confundido`). Its pair is
-`trio-tercero-sugestion` / `trio-tercero-sin-sugestion`: a player's piece, not the room's answer
-(docs/animas/tecnopata/README.md § Sugestión).
+`trio-tercero-sugestion` / `trio-tercero-sin-sugestion`: a player's piece, not the room's answer. They are
+not a with/without split: the half round Sugestión takes off is seed noise across seeds, so their ranges
+overlap and only `happens.sugestion` tells them apart (docs/animas/tecnopata/README.md § Sugestión).
 
 Not simulated: chapter 1's boys and the palace minion's scripted beat.
 

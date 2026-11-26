@@ -673,8 +673,12 @@ function confusionWorth(before: BattleState, after: BattleState, threat: Threat)
   if (newly) return sum(threat) - sum(now) + now.foes - threat.foes;
   // Steered: against the mark where it was, or, with none standing there, against the blow at random, as the mean of it sent to each
   // of the others in turn (no die of its own, so every turn played here throws the same dice after it: no noise in the difference).
+  // The real die picks among every other standing foe that is not a part, confused or not. One global mark cannot play each confused
+  // foe's own pool: with one confused, its pool is the rest exactly; with several, every standing foe in turn (a mark on a confused
+  // one has it hit itself where the die would send it to another, the nearest one mark can play).
   const kept = suggested({ ...after, aimed: before.aimed });
-  const others = kept ? [kept.id] : after.foes.filter(f => f.hp > 0 && !f.part && !confused(f)).map(f => f.id);
+  const pool = after.foes.filter(f => f.hp > 0 && !f.part), lone = pool.filter(confused).length === 1;
+  const others = kept ? [kept.id] : pool.filter(f => !(lone && confused(f))).map(f => f.id);
   if (!others.length) return 0;
   const was = others.map(id => threatOn({ ...after, aimed: id }));
   return was.reduce((total, t) => total + sum(t) - t.foes, 0) / was.length - sum(now) + now.foes;
@@ -1703,10 +1707,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .5], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
   // Sugestión (docs/animas/tecnopata/README.md § Sugestión), Tecnópata's Mente passive, in the room where confusing is part of the
   // answer (the Empollón forgets): with a bot that weighs Confusión (`confusion`, off for the rest), the same party with and
-  // without the node. It is a player's piece, not this room's answer: it does not change who wins, it takes a little more
-  // than half a round and a few PV off it (2026-11-26, 200 runs: 9.2 rounds and 56 % PV against 9.9 and 53 %, both 80 %).
-  { id: 'trio-tercero-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:sugestion'], confusion: true, policy: 'smart', win: [.72, .9], roundsWon: [8.6, 9.6], happens: { sugestion: [.8, 2.5] }, why: 'Con Sugestión, el confundido golpea a quien apunta el equipo (a sí mismo si se le acaba de confundir): la sala sale igual, algo más corta.' },
-  { id: 'trio-tercero-sin-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, confusion: true, policy: 'smart', win: [.72, .9], roundsWon: [9.6, 10.6], happens: { sugestion: [0, 0] }, why: 'Sin Sugestión, el confundido golpea a uno de los suyos al azar: se gana igual, algo más largo.' },
+  // without the node. It has no honest answer pair: it does not change who wins, and on seven seeds (35, 1, 2, 3, 4, 7, 101,
+  // 200 runs, 2026-11-26) the rounds it takes off a won fight (0.4–0.8 on each seed) are within seed noise across them: with it
+  // 9.03–9.66 rounds, without 9.67–10.17; won 73–83 % against 71–83 %. So the pair holds only what holds on every seed (the
+  // ranges over all seven, a little wider), not a split: what tells them apart is that Sugestión sends blows (`happens`).
+  { id: 'trio-tercero-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:sugestion'], confusion: true, policy: 'smart', win: [.66, .9], roundsWon: [8.7, 9.9], happens: { sugestion: [.8, 2.5] }, why: 'Con Sugestión, el confundido golpea a quien apunta el equipo (a sí mismo si se le acaba de confundir): la sala sale igual, algo más corta, y no siempre se nota. Es una pieza del jugador, no la respuesta de la sala.' },
+  { id: 'trio-tercero-sin-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, confusion: true, policy: 'smart', win: [.66, .9], roundsWon: [9.4, 10.5], happens: { sugestion: [0, 0] }, why: 'Sin Sugestión, el confundido golpea a uno de los suyos al azar: se gana igual, algo más largo. No es una sala que se pierda sin ella.' },
   { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe, o mientras está mojado: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado. Cada relleno cede a lo que lo deshace.' },
   { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
   { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },

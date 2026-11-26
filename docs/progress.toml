@@ -765,7 +765,7 @@ in = "src/battle-sim.ts"
 [[block.item]]
 title = "Tecnópata: la pasiva Sugestión (línea Mente)"
 priority = "animas"
-note = "Hecho: un nodo de 1 eco tras Control remoto. Con Tecnópata puesta, el golpe de un enemigo confundido y cada latido de Idea fija van al último enemigo al que apuntó un aliado; ese enemigo lleva un icono cian mientras hay alguien confundido. Su pareja (trio-tercero-sugestion / trio-tercero-sin-sugestion, en alumnos-3b) la sujeta como pieza de jugador, no como respuesta: 9.2 rondas frente a 9.9, las dos al 80 %. Falta su aspecto (el hilo cian del confundido al apuntado)."
+note = "Hecho: un nodo de 1 eco tras Control remoto. Con Tecnópata puesta, el golpe de un enemigo confundido y cada latido de Idea fija van al último enemigo al que apuntó un aliado; ese enemigo lleva un icono cian mientras hay alguien confundido. Su pareja (trio-tercero-sugestion / trio-tercero-sin-sugestion, en alumnos-3b) la sujeta como pieza de jugador, no como respuesta: en siete semillas gana igual (71–83 %) y la media ronda que ahorra es ruido entre semillas, así que sus rangos se solapan y solo las separa que Sugestión mande golpes. Falta su aspecto (el hilo cian del confundido al apuntado)."
 grep = "'tecnopata', 'mente', 'sugestion'"
 in = "src/ecos.ts"
 

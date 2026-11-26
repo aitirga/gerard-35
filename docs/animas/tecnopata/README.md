@@ -120,8 +120,12 @@ remoto, beside Virus atómico, in the jar's first stage (`passiveNode('tecnopata
   coming turn, five targets move (docs/fight-sim.md § Confusión), so it is read only where a target asks for it
   (`confusion: true`). The pair, in Empollón, Repetidor y Chivata of the third year (`alumnos-3b`, the
   room where confusing the Empollón is part of the answer), Gerard on Matemágico and Aitor on Tecnópata: with
-  Sugestión 80 % won in 9.2 rounds with 56 % PV, without it 80 % in 9.9 with 53 % (200 runs, 2026-11-26).
-  `trio-tercero-sugestion` / `trio-tercero-sin-sugestion`. **It is a player's piece, not a room's answer:**
+  Sugestión 80 % won in 9.2 rounds with 56 % PV, without it 80 % in 9.9 with 53 % (200 runs, seed 35, 2026-11-26).
+  **That is not an honest with/without pair:** on seven seeds (35, 1, 2, 3, 4, 7, 101) it is 73–83 % won in
+  9.03–9.66 rounds with it, 71–83 % in 9.67–10.17 without. On each seed it is shorter by 0.4–0.8 rounds,
+  but across seeds that gap is noise, and the win rate does not move. So `trio-tercero-sugestion` /
+  `trio-tercero-sin-sugestion` hold only what holds on every seed (overlapping ranges) plus whether
+  Sugestión sends blows (`happens.sugestion`); they do not claim a split. **It is a player's piece, not a room's answer:**
   no fight found turns on it (castle floors 1–3, the mission fights with Tecnópata; Combustión never reaches
   IV in the bot's hands to be the shove's target). One redirected shove (`CONFUSED_BLOW`) a round is small.
   Idea fija's beats are steered by the rule, but the bot does not weigh them (they come on the clock).

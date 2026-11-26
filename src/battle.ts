@@ -3704,7 +3704,6 @@ function carry(scratch: BattleEffect, effect: BattleEffect) {
   for (const p of scratch.passives ?? []) if (!effect.passives?.some(q => q.id === p.id)) effect.passives = [...effect.passives ?? [], p];
   if (scratch.awoken) effect.awoken = scratch.awoken;
 }
-/** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
 /** Who brings Sugestión to the fight: whoever stands wearing Tecnópata, once it is bought. */
 const suggester = (state: BattleState) => state.improved?.passives?.includes('sugestion') ? state.allies.find(a => a.hp > 0 && a.classId === 'tecnopata') : undefined;
 /**
@@ -3717,6 +3716,7 @@ export function suggested(state: BattleState): Combatant | undefined {
   const foe = state.foes.find(f => f.id === state.aimed);
   return foe && foe.hp > 0 && !foe.part ? foe : undefined;
 }
+/** Who brings Combustión to the fight: someone standing who wears Matemágico with the passive bought. */
 const combustor = (state: BattleState) => state.improved?.passives?.includes('combustion') ? state.allies.find(a => a.hp > 0 && a.classId === 'matemagico') : undefined;
 /** How high fire can climb in this fight: Combustión (IV) while its passive is in it, Quemado III otherwise. */
 export const fireTop = (state: BattleState) => combustor(state) ? COMBUSTION.level : FIRE_TOP;
@@ -5503,6 +5503,8 @@ export function pounce(state: BattleState, holder: Combatant) {
   const standing = state.foes.filter(f => f.hp > 0);
   const target = standing.find(f => f.id === stalk.target) ?? [...standing].sort((a, b) => stacks(b, 'sangrado') - stacks(a, 'sangrado'))[0];
   if (holder.hp <= 0 || holder.classId !== ability.class || !target) return;
+  // The jump aims too (propuesta § 3): Sugestión's mark moves to the foe the cat falls on, even when it is not the one she waited on.
+  state.aimed = target.id;
   dug.length = 0; met.length = 0; lit.length = 0; screenTook.length = 0;
   const effect: BattleEffect = { kind: 'skill', actor: holder.id, skill: 'acecho', target: target.id, pounce: true, ...d ? { pounceDual: { id: d.id, name: d.name, ...half ? { half } : {} }, ...element ? { element } : {} } : {} };
   let said: string;

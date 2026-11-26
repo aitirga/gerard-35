@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, createBattle, enemyAct, improve, plateCount, plateMarks, runClock, suggested, TIMED } from '../src/battle.ts';
+import { act, actDual, addStatus, createBattle, enemyAct, improve, plateCount, plateMarks, pounce, runClock, suggested, TIMED } from '../src/battle.ts';
 import { improvedBy, IMPROVEMENTS } from '../src/ecos.ts';
 
 // Sugestión (docs/animas/tecnopata/README.md § Sugestión): Tecnópata's first passive of the Mente line. A confused foe's
@@ -107,4 +107,18 @@ test('the plate marks the foe aimed at only while someone is confused, and Serie
   assert.ok(plateMarks(s, s.foes[2]).includes('sugestion'));
   assert.ok(!plateMarks(s, s.foes[1]).includes('sugestion'));
   assert.ok(!plateCount(s, s.foes[2]).includes('sugestion'));
+});
+
+test('the cat\'s jump at the round\'s start aims too: the mark goes to the foe it falls on, the prey or, fallen, whoever bleeds most', () => {
+  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'tecnopata' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'papagato' }], 3, false, undefined, ['tecnopata', 'papagato']);
+  s.levels = { papagato: 7 };
+  improve(s, improvedBy(WITH));
+  s.foes.forEach(f => { f.hp = f.maxHp = 999; });
+  const cat = by(s, 'aitor');
+  s.aimed = 'dog-2'; cat.stalk = { target: 'dog-0' };
+  pounce(s, cat);
+  assert.equal(s.aimed, 'dog-0');
+  s.foes[0].hp = 0; addStatus(s.foes[1], 'sangrado', 4); s.aimed = 'dog-2'; cat.stalk = { target: 'dog-0' };
+  pounce(s, cat);
+  assert.equal(s.aimed, 'dog-1'); assert.equal(suggested(s).id, 'dog-1');
 });
