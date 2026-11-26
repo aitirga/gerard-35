@@ -235,10 +235,11 @@ cats do something.
   physical, as any blow.
 - **In `just fight-sim`** (2026-11-26): the bot values the ward (`LIVES_WORTH` for each ally the next blow would
   bring down, `LIVES_IDLE` otherwise) and, in a boss's fight only, waking it: a wound cut towards five and the
-  blow that spends it each a step of it, a wound spent short a step back, the whole worth what casting it would
-  do plus a life (`LIVES_LIFE`). Held by `reina-con-siete-vidas` against `reina-sin-custodia` in the Queen's first
-  fight: woken in about 40 % of them, the ward taking a killing blow in about a quarter, and she needs a round
-  more to bring the party down (12.4 rounds against 11.1).
+  blow that spends it each a step of it, a wound spent short a step back (not one that went with its foe), the
+  whole worth what casting it would do plus a life (`LIVES_LIFE`). Held by `reina-con-siete-vidas` against
+  `reina-sin-custodia` in the Queen's first fight: woken in about half of them, the ward taking a killing blow a
+  third of the times, and she needs two rounds more to bring the party down (13.2 rounds against 11.1). It costs
+  the other boss fights a little (`livesAtStake` in `src/battle-sim.ts` has the numbers).
 
 ## What a round looks like
 
