@@ -1725,7 +1725,9 @@ export const TARGETS: readonly Target[] = [
   { id: 'cebolla-nivel-2', fight: 'cebolla', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.95, 1], hpLeftWon: [.35, 1], why: 'Con Zarpazos la Cebolla cae con claridad.' },
   { id: 'cebollon-nivel-1', fight: 'cebollon', party: MISSION_PARTY, levels: L1, policy: 'casual', win: [0, .05], roundsLost: [2, 6], why: 'Las cebollas grandes matan rápido: a nivel 1 ni se le acerca.' },
   { id: 'cebollon-nivel-1-bien', fight: 'cebollon', party: MISSION_PARTY, levels: L1, policy: 'smart', win: [0, .2], roundsLost: [2, 9], why: 'A nivel 1 tampoco jugando bien: defenderse solo alarga la derrota, la respuesta es otra.' },
-  { id: 'cebollon-nivel-2', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.5, 1], why: 'Con Zarpazos ya se le puede ganar sin darle muchas vueltas, aunque peleado.' },
+  // Since Zarpazos is two claws (2026-11-24, docs/fight-sim.md § Papagato lowered) the careless player at level 2 wins it 10–30 %:
+  // no onion numbers let them win more without level 1 winnable too. The bar holds what it is, until Aitor decides.
+  { id: 'cebollon-nivel-2', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.1, .5], why: 'Con Zarpazos ya se le puede ganar alguna vez sin darle muchas vueltas: peleado, y mejor pensando.' },
   { id: 'cebollon-nivel-2-bien', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'smart', win: [.9, 1], hpLeftWon: [.35, 1], why: 'Zarpazos le quita las capas fácilmente: subir de nivel a Papagato es la respuesta.' },
   { id: 'cebollon-lo-decide-zarpazos', fight: 'cebollon', party: MISSION_PARTY, levels: L2, policy: 'smart', ban: ['zarpazos'], win: [.6, 1], roundsWon: [10, 18], why: 'Sin Zarpazos, a nivel 2, se gana solo aguantando y curándose con Ronroneo, que devuelve una parte de los PV: el doble de rondas que con ellos y saliendo justo.' },
   { id: 'cebollon-nivel-3', fight: 'cebollon', party: MISSION_PARTY, levels: L3, policy: 'smart', win: [.9, 1], why: 'A nivel 3 sigue siendo la respuesta.' },
@@ -1737,7 +1739,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'fantasmitas-sin-pensar', fight: 'crias-3', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [.35, .8], why: 'El tercer anillo aprieta: transparentes, el golpe los atraviesa, y a veces sube La Cebolla con ellos.' },
   // El Plato Misterioso (ring 2's fear): fast to read, and a dual always takes the dish's weakness.
   { id: 'plato-bien', fight: 'plato', party: DUO, levels: P2M1, policy: 'smart', win: [.95, 1], hpLeftWon: [.35, .84], roundsWon: [3, 6], why: 'Leer el plato: golpes, fuego y, con la sorpresa, los dos a la vez o agarrarse. Un dual siempre acierta con el plato, así que es rápido.' },
-  { id: 'plato-sin-duales', fight: 'plato', party: DUO, levels: P2M1, policy: 'smart', ban: ['duals'], win: [.9, 1], roundsWon: [4, 7], why: 'Sin duales también cae: en la sorpresa se aguanta y se recarga. Una o dos rondas más.' },
+  { id: 'plato-sin-duales', fight: 'plato', party: DUO, levels: P2M1, policy: 'smart', ban: ['duals'], win: [.9, 1], roundsWon: [4, 8], why: 'Sin duales también cae: en la sorpresa se aguanta y se recarga. Una o dos rondas más.' },
   { id: 'plato-sin-pensar', fight: 'plato', party: MISSION_PARTY, levels: L2, policy: 'casual', win: [0, .2], roundsWon: [4, 10], why: 'Sin leer el plato se pierde: ¡Puaj! salpica, la sorpresa no deja entrar nada y cada golpe que no acierta con el plato es una ronda regalada.' },
   // Ring 3's fear: La Cebolla y los suyos.
   { id: 'escolta-bien', fight: 'escolta', party: DUO, levels: P2M2, policy: 'smart', win: [.85, 1], hpLeftWon: [.25, .65], roundsWon: [3.5, 6], why: 'El último anillo es la prueba: primero el fantasmita, pelar la cebolla, agarrarse al Aplastón. Pensando, ágil.' },
@@ -1808,7 +1810,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'directo-bien', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'smart', win: [.9, 1], hpLeftWon: [.28, .7], why: 'Lo Directo, pensando: agarrarse cuando te mira y pegar cuando mira al otro.' },
   { id: 'directo-sin-pensar', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .35], why: 'Sin agarrarse a la Estocada ni guardarse para cuando se queda clavado, pega demasiado y aguanta demasiado.' },
   { id: 'directo-a-punetazos', fight: 'cuerdas-directo', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega: pega demasiado fuerte para aguantarlo sin Defender.' },
-  { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', win: [0, .35], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
+  { id: 'directo-con-tecnopata', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', win: [0, .4], why: 'Con dos ánimas de magia y sin nada que le duela de verdad, la ventana de Clavado no basta.' },
   { id: 'directo-electrico', fight: 'cuerdas-directo', party: TECH, ...AT_MARTA, policy: 'smart', improved: [...AT_MARTA.improved ?? [], 'matemagico:electrico'], win: [.4, 1], why: 'Lo Directo es una lanza: es débil a lo eléctrico. Con ese elemento en Atacar, las dos ánimas de magia que sin él perdían, ganan a menudo (desde 2026-11-24 aguanta más: un reto, no un paseo).' },
   // Corriente alterna (docs/animas/matemagico/README.md § Duals): Lo Directo with Sincopante beside Matemágico and the
   // electric line up to Cortocircuito, the rest as at the end of the friends' missions (`ALTERNA_AT`). Alone, it is both
@@ -1939,17 +1941,12 @@ export const TARGETS: readonly Target[] = [
   // Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: 7.3–7.6 against 8.5–8.8.
   { id: 'reina-con-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { toma: [6.5, 8], 'despierta:fin-de-fiesta': [.6, 1] }, why: 'Con Aitor en Colorista, el polvo de la Reina estalla, envenena y cristaliza en las primeras rondas y despierta Fin de fiesta: las tres cosas a la vez la llevan a su décimo, y a tomar a Aitor, ronda y media antes.' },
   { id: 'reina-sin-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', ban: ['fin-de-fiesta'], win: [0, 0], happens: { toma: [8.2, 9.6] }, why: 'Sin Fin de fiesta, el mismo polvo reacciona de una en una: la Reina llega a su décimo ronda y media más tarde.' },
-  // Enjambre (Tecnópata's definitiva), held at Dirección, the long boss with three foes standing to the end (Aitor, 2026-11-26).
-  // Dirección comes before the definitivas open (`castillo-2`), so the party is the third floor's with Enjambre bought on top
-  // (`mixto` does not reach it there): what the team is with it, not a stretch of the story. The bot keeps a bomb on one of
-  // them and starts its clock over twice (`SWARM_SHARE`); at its top it wakes Enjambre, and a bomb at its top on each of the
-  // three ends the fight more than a round sooner with the party more whole. Its counterpart plays the same way (the ban
-  // keeps the push, `wakeWorth`): the bomb ripens and wakes it as often, and only the cast is out of reach, so the gap is
-  // Enjambre's and not the chase's. Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: won in 8.3 rounds with 40–42 % of
-  // PV left against 9.4–9.6 with 34–36 %, won 86–88 % against 81–86 %, woken in 79–82 % in both. (With Enjambre not bought
-  // at all the bot spends Explosión on the three as it comes: 89–90 %, 8.4–8.5 rounds, 23–24 % of PV.)
-  { id: 'direccion-con-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', win: [.75, 1], roundsWon: [7.5, 8.9], hpLeftWon: [.38, .5], happens: { 'despierta:enjambre': [.6, 1] }, why: 'Con Aitor en Tecnópata y Enjambre en el tarro: una bomba en una de ellas, su reloj vuelto a empezar dos veces, estalla al máximo y despierta Enjambre; una bomba al máximo en cada una de las tres acaba la reunión más de una ronda antes y con el equipo más entero.' },
-  { id: 'direccion-sin-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', ban: ['enjambre'], win: [.7, 1], roundsWon: [9.1, 10.5], hpLeftWon: [.28, .375], happens: { 'despierta:enjambre': [.6, 1] }, why: 'Jugando igual, con la bomba madurada y Enjambre despierto pero sin lanzarlo, la reunión dura más de una ronda más y se sale con menos PV.' },
+  // Enjambre (Tecnópata's definitiva) has no pair since Dirección got harder (2026-11-26: Respaldo, Readmisión, about fifteen
+  // rounds). Its pair stood there (`direccion-con-enjambre` against `-sin-enjambre`: 8.3 rounds and 40 % of PV against 9.5 and
+  // 35 % in the old meeting), and Dirección is the only long boss fight with more than one foe standing, which the bomb needs.
+  // In the new meeting casting it does worse: Matemágico/Prismático with Tecnópata/Papagato won 35 % with it, 63 % with it
+  // banned; Matemágico with Tecnópata 1 % and 0 %. At the Queen and Aurelià it never wakes (measured 2026-11-26, 200 fights).
+  // Waits on Aitor: Enjambre against Caída and Readmisión, or the pair somewhere else.
   // Un golpe de dados (Dadista's definitiva), held in the Queen's first fight (Aitor, 2026-11-26: in a long boss fight), lost by
   // design at her tenth, measured as Fin de fiesta's is: the round she takes Aitor (`toma`). The party is the third floor's
   // with Aitor in Dadista and the definitiva bought on top. The bot keeps the Racha and plays Ases en dúo to bring his

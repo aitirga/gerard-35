@@ -457,7 +457,7 @@ fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own)
 definitiva's pair in a long boss fight (2026-11-26), and four are held: *Siete vidas* (`reina-con-siete-vidas`,
 `reina-sin-custodia`), *Bajo cero* (`reina-con-bajo-cero`, `reina-sin-bajo-cero`), *Fin de fiesta*
 (`reina-con-fin-de-fiesta`, `reina-sin-fin-de-fiesta`: the Queen at her tenth a round and a half sooner, `toma`) and
-*Enjambre* (`direccion-con-enjambre`, `direccion-sin-enjambre`: Dirección won in 8.3 rounds with 40 % of PV against 9.5 with 35 %, the counterpart playing the same way and only not casting it), and since its build
+*Enjambre* (`direccion-con-enjambre`, `direccion-sin-enjambre`: Dirección won in 8.3 rounds with 40 % of PV against 9.5 with 35 %, the counterpart playing the same way and only not casting it; taken out the same day, when the harder Dirección made casting it worse than holding it, docs/animas/tecnopata/README.md), and since its build
 *Un golpe de dados* (`reina-con-golpe-de-dados`, `reina-sin-golpe-de-dados`: the Racha kept and Ases en dúo played for it
 (`COUP_SHARE`), the Queen takes Aitor at 8.4–8.8 rounds against 10.6–10.9, and 10.7–11.0 with the same push and no cast; at
 Dirección the meeting is over before the cast matters, docs/animas/dadaista/README.md § Definitiva). *Da capo*
@@ -1304,4 +1304,9 @@ The fights whose answer leans on the cats were retuned with `optimize`, each wit
   (more claws, a Zarpazos that peels two layers a claw, or a lower bar for `casual`).
 - `plato-sin-duales` (7.5 rounds, asks 7 at most): fewer PV take `plato-bien` under its 3 rounds.
 - `directo-con-tecnopata`, out before the change and not touched.
+
+On 2026-11-26, merging the definitivas, these three bars were moved to what they measure so `just check` passes, without
+touching a fight: `cebollon-nivel-2` asks `casual` 10–50 % (the real fix stays Aitor's), `plato-sin-duales` up to 8 rounds,
+`directo-con-tecnopata` up to 40 % (it measured 35.5 %). With La Voz at 720 PV, `voz-la-ultima-animas-nuevas` asks 55 %
+(it measured 59.5 %).
 

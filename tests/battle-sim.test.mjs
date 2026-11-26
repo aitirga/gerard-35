@@ -109,8 +109,12 @@ test('deciding leaves the fight as it was: bots think on a copy', () => {
   assert.deepEqual(state, before);
 });
 
+// The command itself, in its own process: the targets were measured with it (200 fights each, on its pool of workers), and
+// with the game's own rules, golpes críticos by chance included, which tests/setup.mjs turns off for every other test.
 test('the fights are what they are meant to be (just fight-sim check)', () => {
-  for (const result of checkTargets(TARGETS, 80)) assert.ok(result.pass, `${result.id}: ${result.failures.join('; ')}. ${result.why}`);
+  const run = spawnSync(process.execPath, ['--experimental-strip-types', '--no-warnings', 'scripts/fight-sim.mjs', 'check'], { encoding: 'utf8', env: { ...process.env, TYPESAFE_API_KEY: '' } });
+  const out = run.stdout.split('\n').filter(line => /^MAL\b/.test(line) || /^ {5}\S/.test(line)).join('\n');
+  assert.equal(run.status, 0, out || run.stderr);
 });
 
 test('tuning changes the numbers for one simulation only, and a misspelt one is an error', () => {

@@ -194,7 +194,13 @@ winning a little easier or longer: magos-con-magia, directo-con-tecnopata, campe
 carta-bien, sobremesa-duo-bien and two «sin pensar». The bot values a bomb at 0.7 of what it will
 take (`BOMB_WORTH`); no target plays Bomba remota or Escolta yet.
 
-**Enjambre's pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) is held at Dirección,
+**Enjambre's pair of targets is open again** (2026-11-26, the same day): Dirección got harder (Respaldo, Readmisión,
+about fifteen rounds) and there casting Enjambre now does worse than holding it (Matemágico/Prismático with
+Tecnópata/Papagato, 200 fights: 35 % won with it, 63 % with it banned), and at the Queen and Aurelià it never wakes
+(the bomb needs more than one foe standing). The two targets were taken out; it waits on Aitor: Enjambre against Caída
+and Readmisión, or its pair somewhere else. What follows is how the pair stood in the earlier meeting.
+
+**Enjambre's pair of targets** (2026-11-26, Aitor: every definitiva's pair in a long boss fight) was held at Dirección,
 the long boss with three foes standing to the end: `direccion-con-enjambre` against `direccion-sin-enjambre`, Gerard on
 Matemágico and Aitor on Tecnópata (`TECH`), with the third floor's party and `tecnopata:definitiva` bought on top
 (`mixto` does not reach it at `castillo-3`). Dirección is met before the definitivas open, so the pair says what the
