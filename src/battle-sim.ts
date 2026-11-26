@@ -15,7 +15,7 @@ import {
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, PASSIVES, stacks,
-  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
+  type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
 import { VOZ_SONG, songAt, untilSilence } from './song.ts';
@@ -69,6 +69,8 @@ export const FULL = 'gerard:matemagico/freatica/prismatico+aitor:papagato/sincop
 /** The full party with Gerard on Freática from the start: Bajo cero's guard in the Queen's first fight. */
 export const ICE_PARTY = 'gerard:freatica/matemagico/prismatico+aitor:papagato/sincopante';
 export const FULL_DICE = 'gerard:matemagico/prismatico/sincopante+aitor:papagato/dadaista';
+/** Gerard on Matemágico and Aitor on Colorista: the powder and the elements that turn it, Fin de fiesta's pair at the Queen. */
+export const COLOR = 'gerard:matemagico+aitor:prismatico';
 /** The ánimas the fights are tuned with. */
 const MISSION_ANIMAS: ClassId[] = ['matemagico', 'papagato'];
 
@@ -949,8 +951,16 @@ function nearness(state: BattleState, c: Combatant, gone = 0) {
   // into one (a fire on everyone) is a step back. `gone`: powdered foes that fell with the choice, counted as if still there.
   const dust = asleep?.skill === 'fin-de-fiesta' && wakeAtStake(state) ? DUST_STEP * Math.min(asleep.need - asleep.have, dusted(state) + gone) : 0;
   const have = (asleep?.have ?? 0) + dust;
+  // Enjambre, where waking it is worth the turns: the bomb it will go off with, not the one it is now (its age when its
+  // clock runs out, `bombPower(age + left)`), so a clock started over (Rayo de energía, Reinicio) is a step nearer and a
+  // bomb set off short (Explosión) a step back. Short of going off it is never awake: the last tenth is the bang.
+  if (asleep?.skill === 'enjambre' && wakeAtStake(state)) return asleep.used ? undefined : { skill: asleep.skill, at: SWARM_AHEAD * Math.min(1, ripest(state) / BOMBA.top) };
   return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, Math.min(have, asleep.need) / steps) } : undefined;
 }
+/** Enjambre's nearness short of the bang: a bomb that will go off at its top is this near (`nearness`). */
+const SWARM_AHEAD = .9;
+/** The power the ripest bomb on a foe will go off with when its clock runs out (0 with none). */
+const ripest = (state: BattleState) => Math.max(0, ...state.foes.map(f => f.timed?.bomba ? bombPower((f.timed.bomba.age ?? 0) + f.timed.bomba.left) : 0));
 /**
  * Where waking Siete vidas or Fin de fiesta is worth the turns it takes (`wakeWorth`): a boss's fight (`isBoss`: the ones that close a mission
  * or a floor of the castle, and the Queen), which stands the rounds a wound needs to be cut to five and spent, and turns
@@ -980,32 +990,40 @@ function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] 
     const from = nearness(before, was), to = nearness(after, ally, from?.skill === 'fin-de-fiesta' ? dustedOut(before, after) : 0);
     // A definitiva the bot may not use is nothing to wake.
     if (from && ban.includes(from.skill)) return;
-    // Siete vidas and Fin de fiesta: their own worth only in a boss's fight (`wakeAtStake`); elsewhere `WAKE_WORTH`, as any
+    // Siete vidas, Fin de fiesta and Enjambre: their own worth only in a boss's fight (`wakeAtStake`); elsewhere `WAKE_WORTH`, as any
     // other. There a wound spent short throws its steps away (the condition is a wound kept and cut to five, then spent), and
     // so does powder spent on a reaction already seen, or all of it on one. A wound or powder that went with its foe is no
     // step back (a kill is a kill): the powder of each foe that fell counts as still there (`dustedOut`), the rest's does not.
-    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta') && !wakeAtStake(before) ? 0 : 1;
+    const stake = (from?.skill === 'siete-vidas' || from?.skill === 'fin-de-fiesta' || from?.skill === 'enjambre') && !wakeAtStake(before) ? 0 : 1;
     if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at && !bledOut(before, after)) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && from.skill === 'fin-de-fiesta' && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * stake;
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
+    if (from && to && (from.skill === 'fin-de-fiesta' || from.skill === 'enjambre') && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * (to.skill === 'enjambre' ? SWARM_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = (to.skill === 'enjambre' ? SWARM_SHARE : ULTI_SHARE) * ultiWorth(before, i, to.skill) * stake; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * (to.skill === 'bajo-cero' && wakeAtStake(before) ? ICE_WAKE_WORTH : WAKE_WORTH); }
   });
   return worth;
 }
 /**
- * What Fin de fiesta or Siete vidas would do if it went off now: played on a copy where it is awake, by whoever wears its
- * ánima, and valued as any choice is (Siete vidas: its claws and its ward, `LIVES_WORTH`). `ULTI_SHARE` of it is what waking
- * it is worth to `smart` (above `WAKE_WORTH`, it goes in steps, not on the square: a third a reaction of the powder not seen
- * yet; a sixth each stack of the wound and the blow that spends it); the other definitivas, whose conditions are not a few
- * blows of one kind, keep `WAKE_WORTH`. Measured once a decision (`decide`).
+ * What Fin de fiesta, Siete vidas or Enjambre would do if it went off now: played on a copy where it is awake, by whoever
+ * wears its ánima, and valued as any choice is (Siete vidas: its claws and its ward, `LIVES_WORTH`; Enjambre: the PV its
+ * bombs take). `ULTI_SHARE` of it is what waking it is worth to `smart` (above `WAKE_WORTH`, it goes in steps, not on the
+ * square: a third a reaction of the powder not seen yet; a sixth each stack of the wound and the blow that spends it); the
+ * other definitivas, whose conditions are not a few blows of one kind, keep `WAKE_WORTH`. Measured once a decision (`decide`).
  */
 const ULTI_SHARE = .5;
+/**
+ * Enjambre's share, in place of `ULTI_SHARE` (only where `wakeAtStake`): its way is a bomb kept on a foe and its clock started
+ * over twice (Bomba remota, Rayo de energía, Rayo de energía: all of Aitor's maná at the start), while Explosión on three foes
+ * is worth more than the bomb at once and sets it off short. Measured 2026-11-26 at Dirección (`direccion-con-enjambre`, 200
+ * fights): at .5 to 1.75 of its PV the bot never keeps a bomb (it wakes in 0–1 %); at 2, 66 %; at 2.5, 79 %; at 3 and above,
+ * 80–82 %, losing a few more fights to the turns the bomb takes. No other target buys Enjambre, so none moves with it.
+ */
+const SWARM_SHARE = 2.5;
 let ultiWorths = new WeakMap<BattleState, Map<string, number>>();
 function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
   const known = ultiWorths.get(before) ?? new Map<string, number>(), key = `${wearer}:${skill}`;
   if (known.has(key)) return known.get(key)!;
   let value = 0;
   const spec = SKILLS.find(s => s.id === skill), foe = before.foes.find(f => f.hp > 0);
-  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas') && spec && foe) {
+  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas' || skill === 'enjambre') && spec && foe) {
     const look = copy(before);
     look.unbound = true; look.phase = 'player'; look.active = wearer;
     delete look.spent; delete look.queued;
@@ -1013,6 +1031,12 @@ function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
     if (apply(after, choice)) value = Math.max(0, gain(look, after, choice, threatOn(look), []));
     // Siete vidas: its ward waits for the blow that would bring someone down, and keeps them: a life, their PV (`LIVES_LIFE`).
     if (skill === 'siete-vidas') value += LIVES_LIFE * lifeOf(look);
+    // Enjambre: its bombs as PV, not as power (`gain` leaves the bomber's Magia out): the clock played on past their twelve
+    // seconds on a copy, against the same clock without it, whatever else that clock did too (a fire started over).
+    if (skill === 'enjambre') {
+      const off = (state: BattleState) => { const hp = state.foes.map(f => f.hp); runClock(state, BOMBA.seconds + .5); return state.foes.reduce((sum, f, i) => sum + Math.max(0, hp[i] - Math.max(0, f.hp)), 0); };
+      value = Math.max(value, (off(copy(after)) - off(copy(look))) * BOMB_WORTH);
+    }
   }
   known.set(key, value); ultiWorths.set(before, known);
   return value;
@@ -1276,6 +1300,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
   const watch = () => {
     run.firstKo ??= state.allies.some(a => a.hp <= 0) ? state.round : undefined;
     if (hadOnion) run.peeledBy ??= state.foes.every(f => !isOnion(f.kind) || !f.layers || f.hp <= 0) ? state.round : undefined;
+    // The Queen's fights: the round she takes Aitor (`toma`, set once, not a count; in the first, at her tenth). Its mean over
+    // the fights is how soon the party gets her there, what a definitiva that hurts her is held to (0 for a fight that never does).
+    if (run.events.toma === undefined && state.foes.some(f => f.kind === 'reina' && f.castle?.stage === 'aitor')) run.events.toma = state.round;
     takeNews(state).forEach(note);
     // Sincopante's ecos: each note one sounded, and each chord (three at once).
     for (const news of takeEcoNews(state)) {
@@ -1830,6 +1857,22 @@ export const TARGETS: readonly Target[] = [
   // Aitor (`suyo`). Its counterpart with it banned says what the ice is worth there.
   { id: 'reina-con-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [19.5, 26], happens: { congela: [.55, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. Aun así ella pasa por cada fase, llega a su décimo y se lleva a Aitor.' },
   { id: 'reina-sin-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', ban: ['bajo-cero'], win: [0, 0], roundsLost: [13, 17], happens: { congela: [0, 0] }, why: 'Sin Bajo cero, la misma agua solo moja y hunde: la Reina tumba al mismo equipo unas siete rondas antes.' },
+  // Fin de fiesta (Colorista's definitiva), held in the Queen's first fight (Aitor, 2026-11-26: every definitiva's pair in a
+  // long boss fight). Her layers (fire, water, electric fillings) have the party strike with each element in turn, so the
+  // powder sees its three reactions in the first rounds and wakes the definitiva in about four fights of five; its blast,
+  // poison and shards then take her to her tenth (`toma`, the round she takes Aitor) a round and a half sooner. Every
+  // fight gets there with it or without it.
+  // Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: 7.3–7.6 against 8.5–8.8.
+  { id: 'reina-con-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { toma: [6.5, 8], 'despierta:fin-de-fiesta': [.6, 1] }, why: 'Con Aitor en Colorista, el polvo de la Reina estalla, envenena y cristaliza en las primeras rondas y despierta Fin de fiesta: las tres cosas a la vez la llevan a su décimo, y a tomar a Aitor, ronda y media antes.' },
+  { id: 'reina-sin-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', ban: ['fin-de-fiesta'], win: [0, 0], happens: { toma: [8.2, 9.6] }, why: 'Sin Fin de fiesta, el mismo polvo reacciona de una en una: la Reina llega a su décimo ronda y media más tarde.' },
+  // Enjambre (Tecnópata's definitiva), held at Dirección, the long boss with three foes standing to the end (Aitor, 2026-11-26).
+  // Dirección comes before the definitivas open (`castillo-2`), so the party is the third floor's with Enjambre bought on top
+  // (`mixto` does not reach it there): what the team is with it, not a stretch of the story. The bot keeps a bomb on one of
+  // them and starts its clock over twice (`SWARM_SHARE`); at its top it wakes Enjambre, and a bomb at its top on each of the
+  // three ends the fight with the party far less hurt. Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: 40–42 % of PV
+  // left against 23–24 %, won as often (86–88 % against 89–90 %), woken in 79–82 %.
+  { id: 'direccion-con-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', win: [.75, 1], hpLeftWon: [.33, .5], happens: { 'despierta:enjambre': [.6, 1] }, why: 'Con Aitor en Tecnópata y Enjambre en el tarro: una bomba en una de ellas, su reloj vuelto a empezar dos veces, estalla al máximo y despierta Enjambre; una bomba al máximo en cada una de las tres acaba la reunión con el equipo mucho más entero.' },
+  { id: 'direccion-sin-enjambre', fight: 'direccion', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:definitiva'], policy: 'smart', ban: ['enjambre'], win: [.75, 1], hpLeftWon: [.15, .29], happens: { 'despierta:enjambre': [0, .05] }, why: 'Sin Enjambre, Explosión sobre las tres gana igual de a menudo, pero se sale con la mitad de PV.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
