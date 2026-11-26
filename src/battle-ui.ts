@@ -275,6 +275,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const shownHp = (c: Combatant) => Math.min(c.maxHp, c.hp + (owed.get(c.id) ?? 0));
   /** Da capo filling the maná pip by pip (`capoPlay`): what each ally shows of it until their last pip comes. */
   const manaHeld = new Map<string, number>();
+  /** Which Da capo the held maná belongs to: a newer one (or the fight closing) stops an older one's pips. */
+  let capoRun = 0;
   const shownMana = (c: Combatant) => manaHeld.has(c.id) ? Math.min(c.secondary, manaHeld.get(c.id)!) : c.secondary;
   /**
    * A fire settled but not landed, per fighter: how it was before, and the level each of its blows
@@ -308,6 +310,14 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     for (const { c, hp, fire, copy } of before) {
       if (c.hp !== hp) owed.set(c.id, hp - c.hp);
       if (c.timed?.quemado !== fire) heldFire.set(c.id, { before: copy, burns: effect.target === c.id ? effect.burns : undefined, landed: 0 });
+    }
+    // Da capo: the maná waits at what it was until its pips fill it, one by one (`capoPlay`).
+    if (effect.dacapo) {
+      capoRun++; manaHeld.clear();
+      for (const ally of state!.allies) {
+        const was = effect.dacapo.from?.[ally.id];
+        if (was !== undefined && was < ally.secondary) manaHeld.set(ally.id, was);
+      }
     }
   }
   let previousFocus: HTMLElement | null = null;
@@ -462,23 +472,23 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    */
   function capoPlay(d: NonNullable<BattleEffect['dacapo']>, token: number) {
     const T = DA_CAPO, at = (s: number) => Math.max(0, (s - T.contact) * 1000);
-    const later = (ms: number, run: () => void) => setTimeout(() => { if (token === generation && state) run(); }, ms);
-    manaHeld.clear();
+    const run = capoRun;
+    const later = (ms: number, go: () => void) => setTimeout(() => { if (token === generation && state) go(); }, ms);
+    const mine = (ms: number, go: () => void) => later(ms, () => { if (run === capoRun) go(); });
     later(at(T.rewind), () => root.querySelectorAll<HTMLElement>('.status-icon[data-status="compas"]').forEach(icon => { icon.classList.remove('is-rewinding'); void icon.offsetWidth; icon.classList.add('is-rewinding'); }));
-    const pips: string[] = [];
+    // The maná has been held at what it was since the rules filled it (`holdFrom`); here it fills, pip by pip.
+    const pips: { id: string; to: number }[] = [];
     for (const ally of state!.allies) {
-      const was = d.from?.[ally.id];
-      if (was === undefined || was >= ally.secondary) continue;
-      manaHeld.set(ally.id, was);
-      for (let n = was; n < ally.secondary; n++) pips.push(ally.id);
+      const was = manaHeld.get(ally.id);
+      if (was !== undefined) for (let n = was + 1; n <= ally.secondary; n++) pips.push({ id: ally.id, to: n });
     }
-    if (pips.length) render();
-    pips.forEach((id, i) => later(at(T.fill) + i * T.pip * 1000, () => { manaHeld.set(id, (manaHeld.get(id) ?? 0) + 1); callbacks.sound('eco-pip'); render(); }));
-    later(at(T.fill) + pips.length * T.pip * 1000 + 40, () => { manaHeld.clear(); render(); });
+    pips.forEach(({ id, to }, i) => mine(at(T.fill) + i * T.pip * 1000, () => { manaHeld.set(id, to); callbacks.sound('eco-pip'); render(); }));
+    mine(at(T.fill) + pips.length * T.pip * 1000 + 40, () => { manaHeld.clear(); render(); });
     // The staff: five lines, the names of the duals given back (or, with none, the maná alone), lit one after another.
     const names = d.duals.map(id => DUALS.find(x => x.id === id)?.name ?? id);
     let staff: HTMLElement | undefined;
     later(at(T.staff), () => {
+      root.querySelectorAll('.dacapo-staff').forEach(el => el.remove());
       staff = document.createElement('div');
       staff.className = 'dacapo-staff'; staff.setAttribute('aria-hidden', 'true');
       staff.innerHTML = `<div class="dacapo-lines">${(names.length ? names : ['Maná lleno']).map((name, i) => `<span style="--i:${i}">${escapeHtml(name)}</span>`).join('')}</div><strong>¡DA CAPO!</strong>`;
@@ -2843,7 +2853,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     // A card left open goes with the fight, unread: it shows again next time.
     guideOpen = undefined; delete root.dataset.guide; root.querySelector<HTMLElement>('.guide-card')!.hidden = true; onPlates.clear();
     holdOn?.done();
-    generation++; state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
+    generation++; capoRun++; manaHeld.clear(); root.querySelectorAll('.dacapo-staff').forEach(el => el.remove()); state = undefined; busy = false; summaryOpen = false; queueMenu = undefined; firing = undefined; stale = undefined; slowUntil = 0; get('.dual-banner').hidden = true; get('.dual-cinema').hidden = true; clearTimeout(calloutTimer); get('.move-callout').hidden = true; renderSummary(); collapse(); root.hidden = true; cancelAnimationFrame(clockFrame); resetRewards();
     outside().forEach(el => { el.inert = false; }); delete hud.dataset.battle;
     const ended = callbacks.change(undefined);
     if (again) void ended.then(again);
