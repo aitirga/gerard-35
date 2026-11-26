@@ -268,6 +268,29 @@ every strike keeps one rule (a strike is a blow) and makes the dual the shortcut
 **Against the elements** (proposal): a flame does not crack the ice, it melts a mark off it at
 once (20 s of it), with its steam (Cegado, as on the water); electricity does nothing to it.
 
+**What freezes, and what cracks it** (Aitor 2026-11-25): only the water in the cells. A foe that is
+only Mojado (wet by a blow, by a cell breaking, by Superficie mínima) has no water under it and is
+not frozen. **Each blow of Serie de Fourier counts one** on the ice, as each strike of a flurry does:
+a Fourier that counts three things on the plate cracks it by four.
+
+**Its moment** (Aitor 2026-11-25: «nucleación», the supercooled water freezing all at once; built
+2026-11-26, [`src/frost-fx.ts`](../../../src/frost-fx.ts)). The rule lands at 0.9 s and the whole of
+it lasts 2.6 s:
+
+1. **0 s.** The wearer lets the water level meter's probe drop: a bead of light falls from the hip
+   on its tape and touches the floor with a white glint and a tick.
+2. **0.14–0.55 s.** From there, frost grows over the floor towards every foe it will freeze: a
+   phase field on the GPU (Kobayashi's model of dendritic growth), six-fold as ice is, each crystal
+   turned towards the cell it runs to and nucleating again on the way, branching as its heat slows
+   its tips. White and pale cyan (`#dff8ff`, `#bfeff6`).
+3. **0.55 s.** A front of freezing sweeps out from the probe through the water of every cell.
+4. **0.9 s.** The cells lock (the blocks of ice below): the fight stops 0.2 s on it, the picture
+   punches in, blooms white and goes cold (the grade's blue and grey, coming back in steps over two
+   seconds), and the water turns to ice with its sound. The frost on the floor glints and goes by 2.6 s.
+
+Not built from the proposal: the waves of *Riada* or *Golpe de ariete* still out when it is cast
+freezing in mid-crest (nothing keeps a wave out when a turn ends, so there is nothing to freeze).
+
 ## What a round looks like
 
 Aitor wears Freática (Magia 13); Gerard wears Matemágico with fire and electricity for Atacar. Two
@@ -346,7 +369,7 @@ same lab section has a button for each, and the scenario a clip.
 | **Bombeo** | 0 s: the surface of the foe with the most water sinks a mark (0.6 s), with a notch left on its gauge. The water goes back along the floor to each of the party (0.3 s). 0.3 s: green beads rise in a ring round each of them, one after another |
 | **Riada** | 0 s: every foe's water starts to rise a mark, the dry ones' cells drawing themselves in first. A wave crosses each cell from the party's side to its far wall (1 s): a steep white crest with a trough and foam behind, seen on the surface and in profile on the walls it runs along. It breaks on the foe as it reaches it. With it runs a surge of real water (2026-11-21, `agua-ola`, a fluid: docs/graphics.md § The fluid): a low wall of soft teal across the cell's near edge that runs at the foe, breaks on it and spreads over the floor round the cell |
 | **Golpe de ariete** | In every cell with water at once, one blow a mark, 0.42 s apart: three in the deep one while the shallow one takes its one. Each: the whole body of water goes white from its walls in and the edges flare (0.3 s), drops are thrown off the foe, and the level slams down a mark (0.12 s). After a cell's last there is no water in it and it goes |
-| **Bajo cero** | 0 s: a white flash through every body of water (0.12 s). Then each water is gone from its cell and stands as **a block of ice round its foe**, as tall as that water stood (a tall block for the one that was sunk, ankle-high for one at I), setting in 0.3 s with a low breath of cold round its foot. The cells' edges stay, brighter; each gauge keeps its marks, which are now the ice left. **It melts all the while**: the block sinks, a mark every 20 s, its pointer going down with it, giving off cold from its top and running with water down its faces; with the last of it, it is gone. **A blow from outside**: the block flashes white, chips fly, and cracks open from the middle of each face out, an eighth of the way a blow, a quarter for a hard one; a flurry cracks it strike by strike. **Cracked through**: 0.1 s later the block bursts in shards with a flash of light, more and faster the more ice was left, and that foe is out. **A flame**: a mark of it goes at once, in steam, and nothing cracks |
+| **Bajo cero** | (In fights it comes after its own moment, the probe and the frost: § Definitiva; this is the cell's part, as the cells lock at 0.9 s.) 0 s: a white flash through every body of water (0.12 s). Then each water is gone from its cell and stands as **a block of ice round its foe**, as tall as that water stood (a tall block for the one that was sunk, ankle-high for one at I), setting in 0.3 s with a low breath of cold round its foot. The cells' edges stay, brighter; each gauge keeps its marks, which are now the ice left. **It melts all the while**: the block sinks, a mark every 20 s, its pointer going down with it, giving off cold from its top and running with water down its faces; with the last of it, it is gone. **A blow from outside**: the block flashes white, chips fly, and cracks open from the middle of each face out, an eighth of the way a blow, a quarter for a hard one; a flurry cracks it strike by strike. **Cracked through**: 0.1 s later the block bursts in shards with a flash of light, more and faster the more ice was left, and that foe is out. **A flame**: a mark of it goes at once, in steam, and nothing cracks |
 
 ### On the plates and over the field (proposal)
 
@@ -404,11 +427,18 @@ The cell's edges and gauge are grey in the first round and their own white in th
 the lab's *Color*); the water is the same in both. The wearer's pieces follow the same rule (not
 built: there is no first and second round for a look yet).
 
-### Sound (proposal)
+### Sound (proposal; the ice's built)
 
 Low and close, as heard under water. A mark rising is a swell, not a splash; the current is a hum
 that steps up with the level; a Golpe de ariete is the knock of a pipe, once a mark; frozen,
 everything goes quiet but the ice ticking, and each crack is a dry snap; sinking takes the high end off the foes' sounds until they come up.
+
+**Built** (2026-11-26, synthesised in `src/sfx.ts`, played from `src/battle-sounds.ts`, `src/battle-ui.ts`
+and `src/battle-scene.ts`), Bajo cero's four: `ice-form` as the cells lock (a crystalline hiss falling,
+glassy partials that are not a chord, a low settling); `ice-crack`, a dry snap for each blow that cracks
+the ice (up to three for a flurry, one after another); `ice-shatter` for the break, a burst of glass
+over a thud, in place of the golpe crítico's sound the break used to borrow; and `ice-tick`, a tiny high
+tick now and then while any foe stands frozen (and as the probe touches the floor).
 
 ## In the world
 
@@ -452,7 +482,25 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
 - **The fight tester**: Freática at every level from the picker's ánimas column, Bajo cero from its jar list,
   and in a fight *Agua*: every foe standing at no water, I, II or III at will (`stageWater`).
 - **The bots** (`src/battle-sim.ts`): `smart` values a mark raised, the sinking reached, a current set and
-  the turns a freeze takes away.
+  the turns a freeze takes away; each crack in the ice as its share of the break to come (`ICE_CRACK_WORTH`),
+  and waking Bajo cero as any definitiva (`WAKE_WORTH`). Valuing the waking by what the freeze would do
+  (as Siete vidas' and Fin de fiesta's are) was tried on 2026-11-26 and played the Queen's fight worse
+  (19.4 rounds held → 18.9) without waking it more: it stays generic.
+- **Its pair of targets** (`reina-con-bajo-cero` against `reina-sin-bajo-cero`, `FULL`, the third floor),
+  in the Queen's first fight, lost by design at her tenth: with Gerard on Freática her water reaches the
+  third mark, Bajo cero freezes her (0.46 times a fight) and the party holds 19.4 rounds against 15.0
+  without it; with the ice melting at once (`--tune crecida.rules.ice=0.01`) 13.9, so it is the ice that
+  holds them. The guard is in the same target: a minute of ice does not skip her phases, she still gets to
+  her tenth and takes Aitor (`suyo`). The run counts each foe frozen (`congela`) and each ice broken
+  (`hielo-roto`). **Not the Delegada**, as the plan proposed: her room on the third floor is over in about
+  five rounds, before any foe's water is at III (woken in 6 % of fights and cast in none, Aitor on Freática
+  alone, 2026-11-26), so no pair can hold there.
+- **Its moment** ([`src/frost-fx.ts`](../../../src/frost-fx.ts), driven by `src/freatica-fight.ts`): the
+  probe's drop, the frost's phase field (a WGSL compute shader, docs/graphics.md § A phase field on the
+  GPU), the front and the lock; the cells' blocks lock at `FROST.lock`, the rule's contact
+  (`FREATICA_SKILLS['bajo-cero']`). The hit-stop, punch, bloom and cold grade are `coldBeat` in
+  `src/battle-scene.ts` (the grade is `post.setDark`, a few steps, not one a frame). Tests:
+  `tests/frost.test.mjs`. Screenshots: `just screenshots bajo-cero --gpu`.
 - Tests: [`tests/freatica.test.mjs`](../../../tests/freatica.test.mjs). Screenshots:
   `just screenshots freatica-combate --gpu`.
 
@@ -478,7 +526,7 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
   the water's over, never the ice's; Virus atómico never spreads water, current, sinking or ice. A fire on
   every foe (Explosión, a charged fire dual) steams each water as any fire does. A frozen La Voz sings no notes.
 
-**Not built**: the wearer's cast (the probe let down, the dowser's rods), the first and second round for
+**Not built**: the wearer's cast for every skill (the probe let down, the dowser's rods; only Bajo cero drops it), the first and second round for
 its pieces on the wearer, the foes moving slower and sounding duller under water, *Contener* in the world.
 
 ## For the balance, later
