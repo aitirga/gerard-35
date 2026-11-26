@@ -238,6 +238,32 @@ test('A flurry is the shortcut: Zarpazos de fuego\'s eight claws break a whole i
   assert.ok(!frozenOf(a));
 });
 
+test('Bajo cero freezes only the water in the cells: a foe only Mojado, with no water under it, is not frozen', () => {
+  const s = fight(7, ['freatica:definitiva']), [a, b, c] = s.foes;
+  stageWater(s, [3, 0, 0]);
+  b.timed = { ...b.timed, mojado: { level: 1, left: TIMED.mojado.seconds, next: TIMED.mojado.every } };
+  turn(s, 'aitor');
+  const e = act(s, 'skill', undefined, 'bajo-cero');
+  assert.deepEqual(e.frozen, [{ target: a.id, marks: 3 }]);
+  assert.ok(frozenOf(a) && !frozenOf(b) && !frozenOf(c));
+  assert.ok(b.timed.mojado, 'its Mojado stays as it was');
+});
+
+test('Each blow of Serie de Fourier cracks the ice once, as a flurry\'s strikes do', () => {
+  const s = fight(7, ['freatica:definitiva', 'matemagico:fourier']), a = s.foes[0];
+  a.hp = a.maxHp = 4000;
+  stageWater(s, 3);
+  turn(s, 'aitor'); act(s, 'skill', undefined, 'bajo-cero');
+  // Its plate shows the ice and a mark more: two things, three blows.
+  a.timed.quemado = { level: 1, left: 20, next: 2 };
+  turn(s, 'gerard');
+  const e = act(s, 'skill', a.id, 'fourier');
+  assert.equal(e.strikes.length, 1 + e.harmonics.length);
+  assert.ok(e.harmonics.length >= 2);
+  assert.equal(a.cracks, e.strikes.filter(n => n > 0).length, 'one crack a blow that reached');
+  assert.deepEqual(e.ice, [{ target: a.id, cracks: a.cracks, added: a.cracks }]);
+});
+
 test('The fight tester sets the water at will', () => {
   const s = fight(1);
   assert.ok(stageWater(s, 2));
