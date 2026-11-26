@@ -5,14 +5,17 @@ import { FILM_COL, HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES,
 /**
  * A general particle engine on the GPU, for fights (docs/graphics.md, "Fight particles on the GPU").
  *
- * State lives in a float texture of five bands of rows, ping-ponged by one full-screen pass a frame
+ * State lives in a float texture of seven bands of rows, ping-ponged by one full-screen pass a frame
  * on WebGPU (WGSL):
  *   A position + age · B velocity + life · C kind, seed, the part it clings to, size ·
- *   D when it lets go + its colour tint · E the particle it follows, where it sits in its chain, its batch.
+ *   D when it lets go + its colour tint · E the particle it follows, where it sits in its chain, its batch ·
+ *   F where it was born · G where it was a moment after (`REWIND`): the two its `rewind` plays it back through.
  * The CPU keeps a ring of slots and sends batches to spawn (`burst`, `emitter`); everything else
  * happens on the GPU:
- * - spawning in a ball, on a ring, along a line or on a fighter's real surface (points on its
- *   triangles, bent by its bones: src/surface-samples.ts), or its parts' boxes if it has none;
+ * - spawning in a ball, on a ring, along a line, on a fighter's real surface (points on its
+ *   triangles, bent by its bones: src/surface-samples.ts), or its parts' boxes if it has none, or on a
+ *   cloud of points the CPU gives (`points`: any model's surface, sampled the same way);
+ * - played back (`rewind`): a batch runs its own path backwards to where it was born, and becomes another kind;
  * - motion: gravity or buoyancy, drag, a divergence-free turbulent flow and force `field`s
  *   (swirl round any axis, pull, lift) that can follow a fighter;
  * - particles that see each other: siblings from the same batch flock (separation, cohesion,
@@ -138,8 +141,11 @@ export interface GpuLaw {
 export interface GpuBurst {
   at: { x: number; y: number; z: number };
   count: number;
-  /** `ball` fills a sphere of `spread`; `ring` a circle of `spread` round `axis`; `line` from `at` to `to`; `surface` a fighter's parts. */
-  shape?: 'ball' | 'ring' | 'line' | 'surface';
+  /**
+   * `ball` fills a sphere of `spread`; `ring` a circle of `spread` round `axis`; `line` from `at` to `to`; `surface` a fighter's
+   * parts; `points` the points given (`points`, each particle the next of them, `spread` round it).
+   */
+  shape?: 'ball' | 'ring' | 'line' | 'surface' | 'points';
   spread?: number;
   /** The ring's axis (up by default). */
   axis?: { x: number; y: number; z: number };
@@ -175,6 +181,11 @@ export interface GpuBurst {
   light?: { intensity: number; range: number; colour?: string };
   /** Its particles follow this law (`law`) while it lives, whatever their kind (not a lattice's). */
   law?: GpuLaw;
+  /**
+   * `points` only: where its particles are born, in the world, up to MAX_CLOUD_POINTS (a model's surface as
+   * `writeSurface` gives it: a cat's silhouette standing where she sat). Up to MAX_CLOUDS such bursts a frame.
+   */
+  points?: readonly Vec3Like[];
   /**
    * A path through a `galton` law: one bit a row, 1 knocks it right (`galtonPath` makes one that ends in a
    * bin). Every particle of the burst takes it; without one each draws its own at random.
@@ -418,14 +429,25 @@ export interface GpuEmitter extends Omit<GpuBurst, 'count' | 'light'> { rate: nu
 
 // The pool: 131 072 particles since 2026-11-21 (32 768 before). The GPU is not the limit (Aitor plays on an RTX 5070 Ti):
 // effects can be dense. The simulation pass and the draw cover the whole pool every frame.
-const W = 512, H = 256, N = W * H, BANDS = 5;
+const W = 512, H = 256, N = W * H, BANDS = 7;
 // Every kind registered at once: the fight's own, the duals', the statuses', the motes' and the ánimas' looks (Colorista's
 // powder, Freática's water: one name each). A row of a small data texture each: 128 since Freática's water joined the fights, 256 since each newer dual brings its own (src/duo-fx).
 export const MAX_KINDS = 256;
 // MAX_BATCHES: bursts a frame. The spawn loop stops at the frame's own count, so only a frame that uses them pays;
 // 256 since the newer duals' drawings (src/duo-fx) burst more than 64 on their busiest frames.
 const KIND_COLS = 15, MAX_BATCHES = 256, SPAWN_COLS = 9, MAX_FIELDS = 16, FIELD_COLS = 3, MAX_PARTS = 256, PART_COLS = 9, MAX_FIGHTERS = 8, FLOOR = 64;
-const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3 } as const;
+const SPAWN_SHAPES = { ball: 0, ring: 1, surface: 2, line: 3, points: 4 } as const;
+/**
+ * Clouds of points bursts are born on (`points`): up to MAX_CLOUDS a frame, MAX_CLOUD_POINTS each, a row of
+ * a small texture each.
+ */
+export const MAX_CLOUDS = 8, MAX_CLOUD_POINTS = 1024;
+/**
+ * Played back (`rewind`): batches running their path backwards at once, and how long after its birth a
+ * particle's second point (band G) is kept, the moment after the blow it played back through.
+ */
+export const MAX_REWINDS = 8;
+const REWIND = { mid: .17 };
 /**
  * The fluid's grid: cells of `CELL` metres, `GX` × `GY` × `GZ` of them round where the fluid was last
  * thrown, laid out on one texture `GX × GY` wide (a slice of `GX` columns for each height) and `GZ` tall.
@@ -513,6 +535,8 @@ var uGrid: texture_2d<uff>;
 uniform uGridAt: vec4f;
 var uLaws: texture_2d<uff>;
 var uIgnites: texture_2d<uff>;
+var uClouds: texture_2d<uff>;
+var uRewinds: texture_2d<uff>;
 varying vUv0: vec2f;
 
 fn hashu(v: u32) -> u32 { var x = v; x ^= x >> 16u; x *= 0x7feb352du; x ^= x >> 15u; x *= 0x846ca68bu; x ^= x >> 16u; return x; }
@@ -623,6 +647,8 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
   let id = u32(index);
   let frame = u32(uniform.uFrame);
   let A = st(0, index); let B = st(1, index); let C = st(2, index); let D = st(3, index); let E = st(4, index);
+  // Where it was born and where it was a moment after (\`rewind\` plays it back through them).
+  var origin = st(5, index).xyz; var mid = st(6, index).xyz;
   var pos = A.xyz; var vel = B.xyz; var tint = D.yzw;
   var age = A.w; var life = B.w; var kind = C.x; var seed = C.y; var part = C.z; var size = C.w; var release = D.x;
   var link = E.x; var chainPos = E.y; var group = E.z; var member = E.w;
@@ -659,6 +685,10 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       let a = r2 * 6.2831853;
       normal = u * cos(a) + v * sin(a);
       pos = s1.xyz + normal * s1.w;
+    } else if (s3.x > 3.5) {
+      // On a cloud of points the CPU gave (\`points\`): each particle the next point, a little round it.
+      let n = max(1, i32(s7.x + 0.5));
+      pos = textureLoad(uClouds, vec2i(i32(offset - inChain + 0.5) % n, i32(s3.y)), 0).xyz + unitVec(r2, r3) * s1.w * r4;
     } else if (s3.x > 2.5) { pos = mix(s1.xyz, s7.xyz, (offset - inChain + 0.5) / s0.y) + unitVec(r2, r3) * s1.w * r4; }
     else if (textureLoad(uFighters, vec2i(1, i32(s3.y)), 0).y < 0.5) { pos = s1.xyz; }
     else if (textureLoad(uFighters, vec2i(2, i32(s3.y)), 0).x > 0.5) {
@@ -733,12 +763,48 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
       link = rowLeader(l, o);
       chainPos = -lat(l, 19).z * 1.6;
     }
+    origin = pos; mid = pos;
     fresh = true;
     break;
   }
 
+  // Played back (\`rewind\`): a batch (its start, how many, the seconds since it started going back, how long it takes)
+  // runs back through where each particle was a moment after its birth (G) to where it was born (F), the
+  // tape speeding up, its age going back with it; there it becomes the request's kind (or is gone). Then
+  // it leaves its batch, so it is played back once.
+  var rewinding = false;
+  if (life > 0.0 && age < life && uniform.uDt > 0.0 && !fresh && abs(member) < 0.5) {
+    let rewinds = i32(uniform.uExtra.w);
+    for (var q = 0; q < ${MAX_REWINDS}; q++) {
+      if (q >= rewinds) { break; }
+      let r0 = textureLoad(uRewinds, vec2i(0, q), 0);
+      let off = (f32(index) - r0.x + ${N}.0) % ${N}.0;
+      if (off >= r0.y || abs(group - r0.x) > 0.5 || r0.z < 0.0) { continue; }
+      rewinding = true;
+      let dt = uniform.uDt; let total = max(r0.w, 1e-3); let was = max(0.0, r0.z - dt);
+      part = 0.0; link = -1.0;
+      if (r0.z >= total) {
+        pos = origin; vel = vec3f(0.0);
+        let into = textureLoad(uRewinds, vec2i(1, q), 0).x;
+        if (into > -0.5) { kind = into; age = 0.0; life = lifeOf(kind, seed); } else { age = life; }
+        group = -2.0;
+      } else {
+        // Two legs, the second shorter (the tape speeds up): to G by 60 % of the time, then to F.
+        let bend = total * 0.6;
+        let goal = select(origin, mid, was < bend);
+        let legEnd = select(total, bend, was < bend);
+        let k = clamp(dt / max(legEnd - was, dt), 0.0, 1.0);
+        let next = mix(pos, goal, k);
+        vel = (next - pos) / dt;
+        pos = next;
+        age = max(0.0, age * (1.0 - k * select(1.0, 0.5, was < bend)));
+      }
+      break;
+    }
+  }
+
   let alive = life > 0.0 && age < life;
-  if (alive && uniform.uDt > 0.0 && !fresh) {
+  if (alive && uniform.uDt > 0.0 && !fresh && !rewinding) {
     let k = i32(kind);
     let k0 = kin(k, 0); let k1 = kin(k, 1); let k7 = kin(k, 7); let k8 = kin(k, 8); let k9 = kin(k, 9);
     let dt = uniform.uDt;
@@ -1173,12 +1239,16 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
     }
     // Dying, it may become something else where it is.
     if (age >= life && k9.y > -0.5 && part < 0.5) { kind = k9.y; age = 0.0; life = lifeOf(kind, seed); vel *= 0.3; link = -1.0; part = 0.0; }
+    // The moment after its birth, kept for a \`rewind\` to play back through.
+    if (age < ${REWIND.mid}) { mid = pos; }
   }
   if (band == 0) { output.color = vec4f(pos, age); }
   else if (band == 1) { output.color = vec4f(vel, life); }
   else if (band == 2) { output.color = vec4f(kind, seed, part, size); }
   else if (band == 3) { output.color = vec4f(release, tint); }
-  else { output.color = vec4f(link, chainPos, group, member); }
+  else if (band == 4) { output.color = vec4f(link, chainPos, group, member); }
+  else if (band == 5) { output.color = vec4f(origin, 0.0); }
+  else { output.color = vec4f(mid, 0.0); }
   return output;
 }`;
 
@@ -1694,6 +1764,8 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   fill(floorTex, () => {});
   const lawTex = data(LAW_COLS, MAX_LAWS, 'Leyes de movimiento'), igniteTex = data(1, MAX_IGNITES, 'Igniciones');
   fill(lawTex, () => {}); fill(igniteTex, () => {});
+  const cloudTex = data(MAX_CLOUD_POINTS, MAX_CLOUDS, 'Nubes de puntos'), rewindTex = data(2, MAX_REWINDS, 'Rebobinados');
+  fill(cloudTex, () => {}); fill(rewindTex, () => {});
   const volumeTex = data(VOLUME_COLS, MAX_VOLUMES, 'Volúmenes'), groupTex = data(1, MAX_LIGHT_GROUPS, 'Grupos de luz'), latticeTex = data(LATTICE_COLS, MAX_LATTICES, 'Retículas');
   const lightTex = data(MAX_LIGHT_GROUPS, 2, 'Luz de las partículas'), lightTarget = new pc.RenderTarget({ colorBuffer: lightTex, depth: false });
   fill(volumeTex, () => {}); fill(groupTex, () => {}); fill(latticeTex, () => {});
@@ -1740,7 +1812,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   uploadKinds();
 
   const sim = pc.ShaderUtils.createShader(device, {
-    uniqueName: 'gerard-fight-particles-sim-4', attributes: { vertex_position: pc.SEMANTIC_POSITION },
+    uniqueName: 'gerard-fight-particles-sim-5', attributes: { vertex_position: pc.SEMANTIC_POSITION },
     vertexChunk: 'fullscreenQuadVS', fragmentWGSL: SIM_WGSL, fragmentOutputTypes: 'vec4',
   });
   const lightShader = pc.ShaderUtils.createShader(device, {
@@ -1780,7 +1852,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     state: u('uState'), kinds: u('uKinds'), spawns: u('uSpawns'), fields: u('uFields'), parts: u('uParts'), fighters: u('uFighters'), surface: u('uSurface'), floorMap: u('uFloorMap'),
     dt: u('uDt'), time: u('uTime'), frame: u('uFrame'), counts: u('uCounts'), floor: u('uFloor'),
     volumes: u('uVolumes'), extra: u('uExtra'), groups: u('uGroups'), lattices: u('uLattices'),
-    grid: u('uGrid'), gridAt: u('uGridAt'), laws: u('uLaws'), ignites: u('uIgnites'),
+    grid: u('uGrid'), gridAt: u('uGridAt'), laws: u('uLaws'), ignites: u('uIgnites'), clouds: u('uClouds'), rewinds: u('uRewinds'),
   };
 
   // The draw: one quad per slot; dead slots collapse to nothing in the vertex shader.
@@ -1975,6 +2047,11 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   /** Which slot a new law takes: the one freed longest ago, so particles of an old law are the least likely to pick up a new one. */
   let lawTurn = 0;
   const ignites: { at: Vec3Like; radius: number }[] = [];
+  /**
+   * Batches played back (`rewind`): seconds since they started going back (below 0, still waiting), how long it takes, the
+   * kind they become; `sent` once the GPU has been told they are there, so it turns them.
+   */
+  const rewinds: { start: number; count: number; elapsed: number; seconds: number; into: number; sent: boolean }[] = [];
   function writeLaws() {
     fill(lawTex, out => laws.forEach(l => {
       if (l.follow) { l.at.copy(l.follow.getPosition()); l.rotation.copy(l.follow.getRotation()); }
@@ -2319,6 +2396,19 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
     get laws(): readonly GpuLaw[] { return [...laws]; },
     /** Lights every particle that can catch (`ignite`) within `radius` of `at`, this frame (up to MAX_IGNITES a frame). */
     ignite(at: Vec3Like, radius: number) { if (ignites.length < MAX_IGNITES) ignites.push({ at: { x: at.x, y: at.y, z: at.z }, radius }); },
+    /**
+     * Plays `batch` back, `after` seconds from now (the moment of the blow it recorded): over `seconds` each of its particles
+     * runs its own path backwards (from where it is, through where it was a moment after its birth, to where it was born),
+     * the tape speeding up and its colours going back with it; there it becomes `into` (or is gone). Up to MAX_REWINDS at
+     * once, the oldest giving way. Siete vidas' blow un-happening.
+     */
+    rewind(batch: GpuBatch | undefined, o: { seconds?: number; after?: number; into?: string } = {}) {
+      if (!batch) return;
+      const into = o.into === undefined ? -1 : names.indexOf(o.into);
+      if (o.into !== undefined && into < 0) throw new Error(`Unknown fight particle kind: ${o.into}`);
+      if (rewinds.length >= MAX_REWINDS) rewinds.shift();
+      rewinds.push({ start: batch.start, count: batch.count, elapsed: -Math.max(0, o.after ?? 0), seconds: Math.max(.05, o.seconds ?? .45), into, sent: false });
+    },
     /** Simulates `dt` (and draws) while `on`; off, nothing runs and nothing is drawn. */
     update(dt: number, on: boolean) {
       entity.enabled = on && draw;
@@ -2335,13 +2425,22 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       }
       time += dt; frame++;
       const { parts, count } = writeParts();
+      // Clouds of points (`points`): a row each, the first MAX_CLOUDS bursts of the frame; past them, a ball at `at`.
+      const clouds = new Map<GpuBurst, number>();
+      fill(cloudTex, out => batches.forEach(b => {
+        if (b.o.shape !== 'points' || !b.o.points?.length || clouds.size >= MAX_CLOUDS) return;
+        const row = clouds.size, points = b.o.points.slice(0, MAX_CLOUD_POINTS);
+        clouds.set(b.o, row);
+        points.forEach((p, i) => out.set([p.x, p.y, p.z, 1], (row * MAX_CLOUD_POINTS + i) * 4));
+      }));
+      uniforms.clouds.setValue(cloudTex);
       fill(spawnTex, out => batches.forEach((b, i) => {
-        const o = b.o, s = SPAWN_SHAPES[o.shape ?? 'ball'], v = o.velocity ?? { x: 0, y: 0, z: 0 }, at = o.at, row = i * SPAWN_COLS * 4;
-        const end = o.shape === 'ring' ? (o.axis ?? { x: 0, y: 1, z: 0 }) : (o.to ?? o.at), c = o.colour ? tint(o.colour) : undefined;
+        const o = b.o, cloud = clouds.get(o), s = SPAWN_SHAPES[o.shape === 'points' && cloud === undefined ? 'ball' : o.shape ?? 'ball'], v = o.velocity ?? { x: 0, y: 0, z: 0 }, at = o.at, row = i * SPAWN_COLS * 4;
+        const end = cloud !== undefined ? { x: Math.min(MAX_CLOUD_POINTS, o.points!.length), y: 0, z: 0 } : o.shape === 'ring' ? (o.axis ?? { x: 0, y: 1, z: 0 }) : (o.to ?? o.at), c = o.colour ? tint(o.colour) : undefined;
         out.set([b.start, b.count, b.kind, Math.random()], row);
         out.set([at.x, at.y, at.z, o.spread ?? 0], row + 4);
         out.set([v.x, v.y, v.z, o.speed ?? 0], row + 8);
-        out.set([s, o.fighter ?? 0, o.cone ?? 4, o.size ?? 1], row + 12);
+        out.set([s, cloud ?? o.fighter ?? 0, o.cone ?? 4, o.size ?? 1], row + 12);
         out.set([o.life[0], o.life[1], o.above ?? 0, o.outward ?? 0], row + 16);
         out.set([o.up ?? 0, Math.max(1, Math.round(o.chain ?? 1)), o.around ?? 0, b.member], row + 20);
         out.set([c?.[0] ?? 1, c?.[1] ?? 1, c?.[2] ?? 1, c ? 1 : 0], row + 24);
@@ -2371,6 +2470,14 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       // Kept until a step with time in it reads them (a paused frame simulates nothing).
       extra[1] = ignites.length; if (dt > 0) ignites.length = 0;
       uniforms.ignites.setValue(igniteTex);
+      // Batches played back: on the same clock as the step (a paused frame moves none of them).
+      const step = Math.min(dt, 1 / 20);
+      if (step > 0) for (const r of rewinds) r.elapsed += step;
+      fill(rewindTex, out => rewinds.forEach((r, i) => { out.set([r.start, r.count, r.elapsed, r.seconds], i * 8); out.set([r.into, 0, 0, 0], i * 8 + 4); }));
+      extra[3] = rewinds.length;
+      uniforms.rewinds.setValue(rewindTex);
+      // Told once they are past their time (the step turns them into what they become), they are done.
+      if (step > 0) { for (const r of rewinds) if (r.elapsed >= r.seconds) r.sent = true; for (let i = rewinds.length - 1; i >= 0; i--) if (rewinds[i].sent && rewinds[i].elapsed >= rewinds[i].seconds + step * 1.5) rewinds.splice(i, 1); }
       uniforms.floor.setValue(floor);
       // The fluid: splat this frame's particles into the grid first, so the simulation reads it (§ The fluid).
       uniforms.gridAt.setValue(gridAt);
@@ -2392,10 +2499,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       states.forEach(s => fill(s, () => {}));
       [...lattices].forEach(l => l.remove());
       batches.length = 0; emitters.length = 0; fields.length = 0; volumes.length = 0; groups.length = 0; live = 0; head = 0;
-      [...laws].forEach(l => l.remove()); ignites.length = 0;
+      [...laws].forEach(l => l.remove()); ignites.length = 0; rewinds.length = 0;
       placeLights(false);
     },
-    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex, lawTex, igniteTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
+    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex, lawTex, igniteTex, cloudTex, rewindTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
   };
 }
 export type FightParticles = ReturnType<typeof createFightParticles>;
