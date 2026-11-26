@@ -10,7 +10,7 @@
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
 import {
-  ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
+  ALTERNA, ANIMA_NAMES, BELL, POWDER_TURNS, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   ultiProgress, awakeUlti, warded, iceBreakPower, DICED,
@@ -454,6 +454,14 @@ const ICE_CRACK_WORTH = .8;
  */
 const POISON_WORTH = POWDER_RULES.poison - 1, SHARD_WORTH = POWDER_RULES.shard * MARK_HITS;
 /**
+ * Powder laid on a foe standing (Puñado, Polvareda, Traca, a Rebufo), as `smart` values it while someone standing can turn it
+ * (an Atacar with an element, `elementsFor`): a share of the Estallido it is a fire away from (`POWDER_RULES.blast`), since the
+ * blow that turns it may come too late or turn it into something else. The turn itself is valued as what it does.
+ */
+const DUST_WORTH = .5;
+/** Powder laid while Fin de fiesta sleeps: the share of the step it waits for that it is already worth (`dustWorth`). */
+const DUST_STEP = .5;
+/**
  * Siete vidas' ward, as `smart` values putting it on the party: a life kept for each ally the foes' coming turn would bring
  * down (`LIVES_WORTH`); with nobody in reach, a little (`LIVES_IDLE`), since it waits there until the fight turns.
  */
@@ -666,6 +674,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     if (!gathers) value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
     // Colorista's powder turned into poison or shards: what each will add to the hits to come (`powderWorth`).
     if (!gathers) value += powderWorth(before, after, i);
+    // Powder laid where someone can set it off: a share of the Estallido it waits for (`DUST_WORTH`).
+    if (!gathers && now.hp > 0 && now.timed?.empolvado && !foe.timed?.empolvado && turnsPowder(after)) value += POWDER_RULES.blast * DUST_WORTH;
     // Bajo cero's ice cracked and still standing: its share of the break to come.
     if (now.hp > 0 && now.timed?.congelado && (now.cracks ?? 0) > (foe.cracks ?? 0)) value += ((now.cracks ?? 0) - (foe.cracks ?? 0)) * iceBreakPower(now.timed.congelado.left / CRECIDA.ice) / CRECIDA.blows * ICE_CRACK_WORTH;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
@@ -762,7 +772,7 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   const ward = after.allies.filter((a, i) => a.hp > 0 && warded(a) && !warded(before.allies[i]));
   if (ward.length) { const saved = ward.filter(a => (threat.hp.get(a.id) ?? 0) >= (before.allies.find(b => b.id === a.id)?.hp ?? 0)).length; value += saved ? saved * LIVES_WORTH : LIVES_IDLE; }
   // The hand past its cap, and a sleeping definitiva brought nearer to waking.
-  value += handWorth(before, after) + wakeWorth(before, after);
+  value += handWorth(before, after) + wakeWorth(before, after) + dustWorth(before, after);
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   // A guard put on one ally (Superficie mínima, Escolta, Corchete): what holding on would be worth to them, as Defender's.
@@ -813,6 +823,8 @@ function powderWorth(before: BattleState, after: BattleState, i: number) {
   if (now.timed?.cristalizado && !was.timed?.cristalizado) worth += now.timed.cristalizado.level * SHARD_WORTH * hands;
   return worth;
 }
+/** Whether someone standing in the party can turn a foe's powder with an Atacar of an element. */
+const turnsPowder = (state: BattleState) => state.allies.some(a => a.hp > 0 && elementsFor(state, a).length > 0);
 /** How near `c`'s definitiva is to waking now, 0 to 1 (1: awake), and which; nothing if none is bought, or it went off already. */
 function nearness(state: BattleState, c: Combatant) {
   const awake = awakeUlti(state, c);
@@ -827,9 +839,43 @@ function wakeWorth(before: BattleState, after: BattleState) {
     const was = before.allies[i];
     if (!was || ally.hp <= 0 || ally.classId !== was.classId) return;
     const from = nearness(before, was), to = nearness(after, ally);
-    if (from && to && from.skill === to.skill) worth += Math.max(0, to.at ** 2 - from.at ** 2) * WAKE_WORTH;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill); worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
   });
   return worth;
+}
+/**
+ * What Fin de fiesta would do if it went off now: played on a copy where it is awake, by whoever wears Colorista, and valued
+ * as any choice is. `ULTI_SHARE` of it is what waking it is worth to `smart`, a third a reaction of the powder not seen yet
+ * (above `WAKE_WORTH`, it goes in steps, not on the square: each of the three is as far as the others); the other
+ * definitivas, whose conditions are not a few blows of one kind, keep `WAKE_WORTH`. Measured once a decision (`decide`).
+ */
+const ULTI_SHARE = .5;
+let ultiWorths = new WeakMap<BattleState, Map<string, number>>();
+function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
+  const known = ultiWorths.get(before) ?? new Map<string, number>(), key = `${wearer}:${skill}`;
+  if (known.has(key)) return known.get(key)!;
+  let value = 0;
+  const spec = SKILLS.find(s => s.id === skill), foe = before.foes.find(f => f.hp > 0);
+  if (skill === 'fin-de-fiesta' && spec && foe) {
+    const look = copy(before);
+    look.unbound = true; look.phase = 'player'; look.active = wearer;
+    delete look.spent; delete look.queued;
+    const after = copy(look), choice: Choice = { action: 'skill', skill, target: foe.id };
+    if (apply(after, choice)) value = Math.max(0, gain(look, after, choice, threatOn(look), []));
+  }
+  known.set(key, value); ultiWorths.set(before, known);
+  return value;
+}
+/**
+ * Powder newly laid on a foe standing while Fin de fiesta sleeps with a reaction still to see: half of the step it is a blow
+ * of an element away from (what `wakeWorth` gives that step), once for the choice however many foes it powdered.
+ */
+function dustWorth(before: BattleState, after: BattleState) {
+  const laid = after.foes.some((f, i) => f.hp > 0 && f.timed?.empolvado && !before.foes[i]?.timed?.empolvado);
+  const wearer = before.allies.findIndex(a => a.hp > 0 && a.classId === 'prismatico'), near = wearer >= 0 ? nearness(before, before.allies[wearer]) : undefined;
+  if (!laid || !near || near.skill !== 'fin-de-fiesta' || near.at >= 1) return 0;
+  const own = ULTI_SHARE * ultiWorth(before, wearer, near.skill);
+  return own > WAKE_WORTH ? own / POWDER_TURNS.length * DUST_STEP : 0;
 }
 /** Dice past the hand's cap one choice dealt to whoever wears Dadista (`HAND_WORTH`): what the hand holds over the most it held, and over its cap. */
 function handWorth(before: BattleState, after: BattleState) {
@@ -923,6 +969,8 @@ export function decide(state: BattleState, setup: Setup, random: () => number): 
   if (policy === 'attack') return options.find(o => o.action === 'attack') ?? options[0];
   if (policy === 'random' || random() < (setup.error ?? ERRORS[policy])) return options[Math.floor(random() * options.length)];
   if (policy === 'casual') { const seen = unread(state, policy, random); return best(options, choice => damageNow(seen, choice))[0]; }
+  // What each definitiva would do is measured on the fight as it stands now (`ultiWorth`): the fight is played in place.
+  ultiWorths = new WeakMap();
   const threat = threatOn(state);
   const singles = options.filter(o => o.action !== 'dual'), duals = options.filter(o => o.action === 'dual');
   const [alone, aloneWorth] = best(singles, choice => worth(state, choice, threat, setup.ban));
