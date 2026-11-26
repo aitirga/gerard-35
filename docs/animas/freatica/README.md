@@ -502,6 +502,11 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
   and each ice broken (`hielo-roto`). **No target breaks the ice**: in the Queen's fight keeping her frozen
   is worth more than the break (even at two blows an ice, `--tune crecida.rules.blows=2`, it breaks in 4 %
   of fights), and in the rooms there is no ice to break.
+- **Its numbers** (`just fight-sim levers --fight reina --scope all --vary crecida.rules.blows --vary
+  crecida.rules.breakTop --vary crecida.rules.breakLow --vary crecida.rules.frozen --vary crecida.rules.ice --vary
+  skill.bajo-cero.cost`, 2026-11-26): a fifth either way of any of them leaves every Queen target where it is
+  (moves 0, loss 0). Her first fight is lost by design, so they cannot be read on a win there; the break's
+  numbers wait for a fight where the ice is cast and broken, with the Delegada's pair.
 - **A wave caught in the ice**: a Riada still crossing a cell when Bajo cero lands freezes in mid-crest, a
   white lip of ice across the cell until the ice goes (`crest` in `src/freatica-fx.ts`). In a fight the
   actions take turns and the wave is always over before the next one, so it shows in the effects lab
