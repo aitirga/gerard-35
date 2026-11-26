@@ -1,6 +1,6 @@
 {
   "title": "Corriente alterna",
-  "description": "docs/animas/matemagico/README.md § Duals. From the fight tester's «Probar un dúo»: Matemágico's Cortocircuito with Sincopante's Crescendo against three dogs, with the dual's own camera (`alternaShot`), then each of its four beats, alternating between the two poles. Run it with --gpu.",
+  "description": "docs/animas/matemagico/README.md § Duals. From the fight tester's «Probar un dúo»: Matemágico's Cortocircuito with Sincopante's Crescendo against three dogs, with the dual's own camera (`alternaShot`), then each of its four beats, alternating between the two poles; the first beat on the other pole spends a wound of three put there by hand. Run it with --gpu.",
   "steps": [
     {
       "open": "/?story=got-wrapper&solo=1&fight=%7B%22trial%22%3A%22corriente-alterna%22%7D"
@@ -69,12 +69,15 @@
       "caption": "Después: la cuerda tensa entre el objetivo y el perro de al lado, y el icono de Alterna en las dos placas."
     },
     {
+      "eval": "(() => { const s = window.gerard.battleUI.live, other = s.foes.find(f => f.id === s.circuits[0].poles[0]); other.statuses = { ...other.statuses, sangrado: 3 }; })()"
+    },
+    {
       "until": "(c => !!c && c.beat === 0 && c.next < 1.15)(window.gerard.battleUI.live?.circuits?.[0])",
       "timeout": 60000
     },
     {
       "record": "latido-1",
-      "caption": "Primer latido: el pulso corre por la cuerda hacia el otro polo (el que arde), se da la vuelta allí y el rayo cae en él: ¡Plasma!",
+      "caption": "Primer latido: el pulso corre por la cuerda hacia el otro polo (el que arde, con tres de Sangrado puestos a mano), se da la vuelta allí y el rayo cae en él: ¡Plasma!, y el primer golpe de la corriente en ese polo gasta su herida: la sangre salta y su número dice +60 % · Sangrado.",
       "seconds": 1.7,
       "fps": 20,
       "tiles": 12,

@@ -789,12 +789,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // Corriente alterna's beat: its number named after the circuit (it has no level: the beat is not one), set aside when
       // the reaction's own number on the same foe comes after it.
       // Its first beat on a bleeding pole spends the wound (`multiHit`): a golpe crítico's number when that is the sure one of
-      // Olor a sangre, saying what the wound added, otherwise the plain number and the wound's own red beside it.
+      // Olor a sangre, otherwise its plain number; either says what the wound added, in Sangrado's red (the reaction's
+      // name takes the place above the foe).
       else if (p.status === 'alterna') {
         const dx = p.reaction?.hits?.some(h => h.target === p.target) ? -48 : 0, opened = p.bled ? `Sangrado +${Math.round((woundScale(p.bled) - 1) * 100)}%` : '';
         if (p.crit) pop(p.target, `−${p.amount}`, 'crit', opened ? `¡Crítico! · ${opened}` : '¡Crítico!', opened ? 'sangrado' : undefined, dx);
-        else pop(p.target, `−${p.amount}`, 'damage', TIMED.alterna.name, undefined, dx);
-        if (opened && !p.crit) { const wound = p, when = generation; setTimeout(() => { if (when === generation) pop(wound.target, opened.replace('Sangrado ', ''), 'status', 'Sangrado', 'sangrado'); }, 60); }
+        else pop(p.target, `−${p.amount}`, 'damage', opened ? `${TIMED.alterna.name} · ${opened}` : TIMED.alterna.name, opened ? 'sangrado' : undefined, dx);
         callbacks.pulse(p.target, p.status, p.by, p);
       }
       else { pop(p.target, `−${p.amount}`, 'damage', `${TIMED[p.status].name} ${roman(p.level)}`); callbacks.pulse(p.target, p.status, p.by); }
