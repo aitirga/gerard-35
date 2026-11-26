@@ -161,8 +161,8 @@ everything the party has: stage 3, the definitivas, three ánimas each. No joke,
   low along the front the footlights come on one by one while the party walks on; the camera glides
   up the dark stage to the throne, her core beating fast in the bubble, she a shape beside it; her
   spotlight slams on (a flash, a shake) and the camera is close on her from below; her crown's
-  flavours light one after another and her name comes up («La Reina Bubbaloo. Lo que dejasteis en
-  el patio.»); the camera pulls back over the party's shoulders into the fight and the bars open.
+  flavours light one after another and her name comes up («La Reina Bubbaloo. La que Todo lo
+  ¿Corrompe?»); the camera pulls back over the party's shoulders into the fight and the bars open.
   The game drives the camera and light (`throneShot` in src/game.ts, the stage's `update`), the
   fight's screen the bars and the name in time with it (battle-ui `entrance`). Her figure and the
   stage's textures load as the party comes into the throne room, so it starts without waiting.

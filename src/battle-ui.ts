@@ -28,8 +28,8 @@ const YEAR_WORDS = { 1: 'PRIMERO', 2: 'SEGUNDO', 3: 'TERCERO' } as const;
  * Queen's in her pink; Aurelià's and Dirección's in possession's violet, held by her.
  */
 const BOSS_CARDS: Partial<Record<string, { place: string; who: string; sub: string; held?: true }>> = {
-  reina: { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'Lo que dejasteis en el patio.' },
-  'reina-vuelta': { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'Lo que dejasteis en el patio.' },
+  reina: { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'La que Todo lo ¿Corrompe?' },
+  'reina-vuelta': { place: 'El salón del trono', who: 'La Reina <em>Bubbaloo</em>', sub: 'La que Todo lo ¿Corrompe?' },
   aurelia: { place: 'El gimnasio', who: '<em>Aurelià</em>', sub: 'No levanta la voz. Nunca le ha hecho falta.', held: true },
   direccion: { place: 'Direcció', who: 'Mar, Montse <em>y Pilar</em>', sub: 'El equipo de Dirección. Reunido desde las nueve.', held: true },
 };
