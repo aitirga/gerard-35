@@ -1,6 +1,6 @@
 {
   "title": "Bajo cero · nucleación",
-  "description": "La definitiva de Freática con su momento propio (src/frost-fx.ts): la sonda, la escarcha que crece por el suelo hasta cada celda, el frente de congelación, el bloqueo con su parada y su gradación fría; después, la grieta y la rotura con sus sonidos de hielo. Con --gpu.",
+  "description": "La definitiva de Freática con su momento propio (src/frost-fx.ts): la sonda, la escarcha que crece por el suelo hasta cada celda, el frente de congelación, el bloqueo con su parada y su gradación fría; después, la grieta, Hielo 4/8 y la rotura con sus sonidos de hielo. Con --gpu.",
   "steps": [
     {
       "open": "/?story=freatica-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22freatica%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22tecnopata%22%2C%22freatica%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22freatica%3Adefinitiva%22%5D%7D"
@@ -85,6 +85,36 @@
       "fps": 30,
       "tiles": 12,
       "caption": "Un golpe desde fuera agrieta el hielo un octavo, con su chasquido seco: «Hielo 1/8»"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit4",
+      "gap": 300
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes[0].cracks = 3; })"
+    },
+    {
+      "press": "Digit1",
+      "gap": 350
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "hielo-4-8",
+      "seconds": 1.6,
+      "fps": 30,
+      "tiles": 12,
+      "caption": "Hielo 4/8: el bloque ya lleva tres grietas y este golpe deja la cuarta; medio hielo agrietado, aún aguanta"
     },
     {
       "until": "window.turn && window.turn('aitor')",
