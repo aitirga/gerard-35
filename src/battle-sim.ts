@@ -13,6 +13,7 @@ import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
+  ultiProgress, awakeUlti, warded, iceBreakPower, DICED,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -142,10 +143,14 @@ export const BUILDS: Record<string, readonly string[]> = {
   nada: [],
   // A bit of everything: the trunk first, then an element and its skill, then Aitor's.
   mixto: ['matemagico:angulo', 'tecnopata:explosion', 'matemagico:fuego', 'matemagico:analisis', 'tecnopata:escolta', 'matemagico:factor-comun', 'matemagico:agua', 'tecnopata:confusion', 'matemagico:electrico', 'matemagico:cardioide', 'matemagico:vasos', 'matemagico:descarga',
-    // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the passives, the second rungs, grade III and the definitivas.
+    // With the ecos the castle gives (2026-11-21), the rest: the shared ánimas' maná, the definitivas, the passives, the second rungs and grade III.
+    // The definitivas are all seven, before the passives so the third year has every one built to hold its pair of targets to (2026-11-26); one whose
+    // move is not built yet is a place kept, veiled, and `withinEcos` skips it until it is. With the third year's 34 ecos the two last maná go unbought;
+    // each definitiva built from here takes two more ecos off the passives at its end.
     // Not Superficie mínima (2026-11-25): bought here, smart plays it twice a castle room and the third-year rooms drop (`elementos` buys it).
-    'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez', 'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos',
-    'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1', 'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva'],
+    'papagato:mana-1', 'freatica:mana-1', 'dadaista:mana-1', 'sincopante:mana-1', 'prismatico:mana-1', 'dadaista:otra-vez',
+    'papagato:definitiva', 'freatica:definitiva', 'sincopante:definitiva', 'prismatico:definitiva', 'tecnopata:definitiva', 'dadaista:definitiva', 'matemagico:definitiva',
+    'tecnopata:control-remoto', 'tecnopata:telemetria', 'tecnopata:nanitos', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo', 'matemagico:mana-1', 'tecnopata:mana-1'],
   // Everything into the elements: Atacar's three, then what lays and cashes them.
   elementos: ['matemagico:fuego', 'matemagico:agua', 'matemagico:electrico', 'matemagico:vasos', 'matemagico:superficie-minima', 'matemagico:descarga', 'matemagico:factor-comun', 'matemagico:capilaridad', 'matemagico:toma-de-tierra', 'matemagico:rescoldo'],
   // Skills and maná, no element.
@@ -438,6 +443,36 @@ const EYE_WORTH = .8, EYE_BROKEN = 30;
 const BOMB_WORTH = .7;
 const WATER_WORTH = 6, SUNK_PULSES = 6, CURRENT_PULSES = 4, ICE_ROUNDS_PER_MARK = 1.2;
 /**
+ * A crack in Bajo cero's ice that does not break it yet: its share of the break's blow (`iceBreakPower` by the ice still
+ * there, over the `CRECIDA.blows` it holds), a little less since the ice may melt before it breaks. The break itself is PV.
+ */
+const ICE_CRACK_WORTH = .8;
+/**
+ * Colorista's powder turned, as `smart` values it on a foe standing (by the status, whoever turned it: Rociada, Puñado,
+ * Polvareda, Fin de fiesta): Envenenado, the share more each blow lands with (`POWDER_RULES.poison`) on the hits the party
+ * will land on it while it lasts (`MARK_HITS` a hand, at a plain Atacar's), besides its pulses; Cristalizado, the shards
+ * those same hits dig in (`POWDER_RULES.shard` a level a hit).
+ */
+const POISON_WORTH = POWDER_RULES.poison - 1, SHARD_WORTH = POWDER_RULES.shard * MARK_HITS;
+/**
+ * Siete vidas' ward, as `smart` values putting it on the party: a life kept for each ally the foes' coming turn would bring
+ * down (`LIVES_WORTH`); with nobody in reach, a little (`LIVES_IDLE`), since it waits there until the fight turns.
+ */
+const LIVES_WORTH = 40, LIVES_IDLE = 8;
+/**
+ * A die past the hand's cap (the hand up to six: Un golpe de dados, Objeto encontrado): the maná it is and the face it plays.
+ * Nothing deals one yet; `handWorth` already counts it.
+ */
+const HAND_WORTH = MANA_WORTH + 3;
+/**
+ * A definitiva bought and still asleep, as `smart` values bringing it nearer by its own condition (`ultiProgress`'s have of
+ * need) or waking it: `WAKE_WORTH` for the whole way, on the square of how near it is, so the last steps (a wound left at
+ * four, the second ripe bomb) weigh most and the first ones never pull the fight's answer aside (at 30 the bot opened El
+ * Montón with Zarpazos for Siete vidas, `monton-bien` 89 % → 67 %). A step back (a wound spent short, a mark drained)
+ * takes nothing off: the condition is the ánima played well, not something to hoard.
+ */
+const WAKE_WORTH = 15;
+/**
  * Electrólisis's gas, as `smart` sees it: the blast a level of it keeps waiting for a fire (some 18 PV at the stats the
  * party meets it with) and the fire it leaves. Set off, the blast's own PV take its place (`gain`): a fire on gas is worth
  * what it does, never less than the gas was. Lost any other way (moved off, its foe fallen), it comes back off.
@@ -630,6 +665,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     value += ((now.statuses?.sangrado ?? 0) - (foe.statuses?.sangrado ?? 0)) * 3;
     // (A skill that gathers the statuses measures them by what they still have to give: `clockWorth`, below.)
     if (!gathers) value += ((now.timed?.quemado?.level ?? 0) - (foe.timed?.quemado?.level ?? 0)) * 10;
+    // Colorista's powder turned into poison or shards: what each will add to the hits to come (`powderWorth`).
+    if (!gathers) value += powderWorth(before, after, i);
+    // Bajo cero's ice cracked and still standing: its share of the break to come.
+    if (now.hp > 0 && now.timed?.congelado && (now.cracks ?? 0) > (foe.cracks ?? 0)) value += ((now.cracks ?? 0) - (foe.cracks ?? 0)) * iceBreakPower(now.timed.congelado.left / CRECIDA.ice) / CRECIDA.blows * ICE_CRACK_WORTH;
     // A debuff's mark on a foe that will stand a while: every later hit on it lands harder, about a
     // hit per ally standing for each of its rounds.
     if (foe.hp > 60) for (const [id, mark] of Object.entries(now.marks ?? {})) if (!foe.marks?.[id as SkillId] && mark) value += mark.amount * MARK_HITS * after.allies.filter(a => a.hp > 0).length;
@@ -720,6 +759,11 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   value += circuitWorth(after) - circuitWorth(before);
   // Da capo: every dual already used back, and the party's maná full (what each point gathered is worth).
   if (choice.skill === 'da-capo') value += (before.usedDuals?.length ?? 0) * 40 + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
+  // Siete vidas: its ward put on the party, a life for each ally the foes' coming turn would bring down.
+  const ward = after.allies.filter((a, i) => a.hp > 0 && warded(a) && !warded(before.allies[i]));
+  if (ward.length) { const saved = ward.filter(a => (threat.hp.get(a.id) ?? 0) >= (before.allies.find(b => b.id === a.id)?.hp ?? 0)).length; value += saved ? saved * LIVES_WORTH : LIVES_IDLE; }
+  // The hand past its cap, and a sleeping definitiva brought nearer to waking.
+  value += handWorth(before, after) + wakeWorth(before, after);
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   // A guard put on one ally (Superficie mínima, Escolta, Corchete): what holding on would be worth to them, as Defender's.
@@ -745,11 +789,55 @@ function clockWorth(state: BattleState) {
   return up.reduce((total, f) => {
     const t = f.timed ?? {}, venom = t.envenenado;
     let worth = t.quemado ? firePulses(t.quemado) * pulseDamage('quemado', t.quemado.level, f.maxHp) : 0;
-    if (venom) worth += (Math.floor(Math.max(0, venom.left - venom.next) / STATUS_TIMED.envenenado.every) + 1) * pulseDamage('envenenado', venom.level, f.maxHp);
-    worth += (t.cristalizado?.level ?? 0) * POWDER_RULES.shard * MARK_HITS * hands;
+    if (venom) worth += venomPulses(f);
+    worth += (t.cristalizado?.level ?? 0) * SHARD_WORTH * hands;
     worth = Math.min(f.hp, worth);
     if ((t.quemado?.level ?? 0) >= COMBUSTION.level) worth += COMBUSTION.blast * up.length * .5;
     return total + worth;
+  }, 0);
+}
+/** What the poison on `f` still has to give in pulses (0 without one). */
+function venomPulses(f: Combatant) {
+  const venom = f.timed?.envenenado;
+  return venom ? (Math.floor(Math.max(0, venom.left - venom.next) / STATUS_TIMED.envenenado.every) + 1) * pulseDamage('envenenado', venom.level, f.maxHp) : 0;
+}
+/**
+ * The powder turned on the foe at `i` by one choice (`before` to `after`), as `smart` values it (`POISON_WORTH`, `SHARD_WORTH`):
+ * a poison's pulses gained, and a foe newly poisoned or newly full of shards, for the hits the party will land on it.
+ */
+function powderWorth(before: BattleState, after: BattleState, i: number) {
+  const was = before.foes[i], now = after.foes[i];
+  if (!now || now.hp <= 0) return 0;
+  const hands = after.allies.filter(a => a.hp > 0).length, hits = MARK_HITS * hands;
+  let worth = Math.min(now.hp, Math.max(0, venomPulses(now) - venomPulses(was)));
+  if (now.timed?.envenenado && !was.timed?.envenenado) worth += POISON_WORTH * plainCopy(before, was.id) * hits;
+  if (now.timed?.cristalizado && !was.timed?.cristalizado) worth += now.timed.cristalizado.level * SHARD_WORTH * hands;
+  return worth;
+}
+/** How near `c`'s definitiva is to waking now, 0 to 1 (1: awake), and which; nothing if none is bought, or it went off already. */
+function nearness(state: BattleState, c: Combatant) {
+  const awake = awakeUlti(state, c);
+  if (awake) return { skill: awake.id, at: 1 };
+  const asleep = ultiProgress(state, c);
+  return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, asleep.have / asleep.need) } : undefined;
+}
+/** What one choice brought the party's sleeping definitivas nearer to waking (`WAKE_WORTH`), for whoever wears each, standing. */
+function wakeWorth(before: BattleState, after: BattleState) {
+  let worth = 0;
+  after.allies.forEach((ally, i) => {
+    const was = before.allies[i];
+    if (!was || ally.hp <= 0 || ally.classId !== was.classId) return;
+    const from = nearness(before, was), to = nearness(after, ally);
+    if (from && to && from.skill === to.skill) worth += Math.max(0, to.at ** 2 - from.at ** 2) * WAKE_WORTH;
+  });
+  return worth;
+}
+/** Dice past the hand's cap one choice dealt to whoever wears Dadista (`HAND_WORTH`): what the hand holds over the most it held, and over its cap. */
+function handWorth(before: BattleState, after: BattleState) {
+  return after.allies.reduce((worth, ally, i) => {
+    const was = before.allies[i];
+    if (!was || ally.classId !== DICED || was.classId !== DICED || ally.hp <= 0) return worth;
+    return worth + Math.max(0, ally.secondary - Math.max(was.secondary, ally.maxSecondary)) * HAND_WORTH;
   }, 0);
 }
 /** Everything the foes would do to the party now, in PV. */
@@ -952,6 +1040,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     // Electrólisis's gas going up (`gas`), and Atractor extraño bringing the others' statuses (`atrae`).
     if (effect.ignited) count('gas');
     if (effect.gathered?.length) count('atrae');
+    // A definitiva waking (`despierta:<id>`, what its pair of targets holds), and Siete vidas' ward taking a blow that would have killed.
+    if (effect.awoken) count(`despierta:${effect.awoken}`);
+    if (effect.lives) count('siete-vidas');
     // Serie de Fourier: each blow past its first, one for each thing on the foe's plate (`armonico`).
     for (const _ of effect.harmonics ?? []) count('armonico');
     // A pounce lands as the round starts, out of anyone's turn: its PV are the action's that crouched (Acecho, or Arco voltaico).

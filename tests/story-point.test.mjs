@@ -28,7 +28,9 @@ test('the introduction has nothing behind it; an open mission has the introducti
 });
 
 test('a build is a shopping list of real nodes, and a point buys only what its ecos pay for', () => {
-  for (const [name, list] of Object.entries(BUILDS)) for (const id of list) assert.ok(improvementOf(id) && !improvementOf(id).veiled, `${name}: ${id}`);
+  // A definitiva whose move is not built yet is a real place kept, veiled: a build can name it, and it is bought once it is built.
+  for (const [name, list] of Object.entries(BUILDS)) for (const id of list) assert.ok(improvementOf(id) && (!improvementOf(id).veiled || improvementOf(id).kind === 'ulti'), `${name}: ${id}`);
+  for (const id of storyPoint('castillo-3', 'mixto').setup.improved) assert.ok(!improvementOf(id).veiled, `castillo-3 buys ${id}`);
   for (const build of Object.keys(BUILDS)) for (const at of ['marta:first', 'marta:last', 'universidad:last']) {
     const point = storyPoint(at, build);
     assert.ok(costOf(point.setup.improved) <= point.ecos, `${at} ${build}`);
