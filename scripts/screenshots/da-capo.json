@@ -1,0 +1,242 @@
+{
+  "title": "Da capo",
+  "description": "La definitiva de Sincopante con su aspecto propio (docs/animas/sincopante/README.md § Look; src/rewind-field.ts, src/eco-fx.ts `dacapo`): Vulcano usado, tres ecos que hacen el acorde y la despiertan, Da capo (la columna de ecos, el campo rebobinado en la GPU, la ola de nácar, el maná punto a punto, el pentagrama con los dúos devueltos y ¡DA CAPO!), y Vulcano otra vez sobre el volcán que aún sonaba, que se refresca. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=sincopante-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22sincopante%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22sincopante%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22sincopante%3Adefinitiva%22%2C%22matemagico%3Afuego%22%2C%22matemagico%3Afactor-comun%22%2C%22matemagico%3Arescoldo%22%2C%22matemagico%3Acombustion%22%2C%22matemagico%3Avulcano%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = (side = 'foes', i = 0) => document.querySelectorAll('.battle-target[data-side=\"' + side + '\"]:not(:disabled)')[i]?.click(); window.defend = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"defend\"] .command-trigger')?.click(); window.dualSheet = () => document.querySelector('.battle-dock[data-dock=\"1\"] [data-command=\"dual\"] .command-trigger')?.click(); window.errors = []; addEventListener('error', e => window.errors.push(String(e.message))); window.fresh = () => ui.tweak(s => { window.st = s; s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.allies.forEach(a => { a.secondary = a.maxSecondary; }); s.ecos?.forEach(e => { e.left = Math.max(e.left, 40); }); }); window.fresh();"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.dualSheet()"
+    },
+    {
+      "wait": 500
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"vulcano\"]')?.click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "eval": "if (!document.querySelector('.battle-hold')?.hidden) ui.control('confirm', 1)"
+    },
+    {
+      "until": "!!window.st?.usedDuals?.includes('vulcano')",
+      "timeout": 20000
+    },
+    {
+      "shot": "primer-vulcano",
+      "delay": 2600,
+      "caption": "Antes: Vulcano, el dúo mayor de Foc Binari y Ostinato, ya usado en este combate; el volcán sube el fuego de los tres"
+    },
+    {
+      "until": "window.turn && (window.turn('aitor') || window.turn('gerard'))",
+      "timeout": 60000
+    },
+    {
+      "until": "(window.turn && window.turn('gerard') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('aitor'))",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh()"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "window.skill('ostinato')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aim('foes', 0)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh(); window.defend()"
+    },
+    {
+      "until": "(window.turn && window.turn('gerard') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('aitor'))",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh()"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "window.skill('ostinato')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aim('foes', 1)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh(); window.defend()"
+    },
+    {
+      "until": "(window.turn && window.turn('gerard') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('aitor'))",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh()"
+    },
+    {
+      "press": "Digit2",
+      "gap": 400
+    },
+    {
+      "eval": "window.skill('ostinato')"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "eval": "window.aim('foes', 2)"
+    },
+    {
+      "until": "window.st?.dacapo?.woke",
+      "timeout": 40000
+    },
+    {
+      "shot": "acorde",
+      "delay": 400,
+      "caption": "Tres ecos a la vez: el acorde, y Da capo despierta en Aitor («Definitiva · despierta»)"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh(); window.defend()"
+    },
+    {
+      "until": "(window.turn && window.turn('gerard') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('aitor'))",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh()"
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "da-capo-en-la-lista",
+      "delay": 300,
+      "caption": "Da capo encabeza la lista de Aitor: una vez en este combate, sin maná"
+    },
+    {
+      "eval": "ui.tweak(s => { s.allies.forEach(a => { a.secondary = 1; }); }); window.skill('da-capo')"
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "da-capo",
+      "seconds": 2.9,
+      "fps": 30,
+      "tiles": 15,
+      "caption": "Da capo (2.4 s): los tres ecos suben en columna sobre el equipo; todo el campo se rebobina en hilos de nácar (la cinta de partículas en la GPU) mientras la aguja de Compás da una vuelta atrás y la placa toca sus figuras al revés; una ola de nácar cruza al equipo y el maná se llena punto a punto, cada uno con su nota; cinco cuerdas de nácar (la retícula string de Corriente alterna) hacen el pentagrama donde se encienden los dúos devueltos; ¡DA CAPO! y el acorde Fa-La-Do"
+    },
+    {
+      "shot": "despues",
+      "delay": 300,
+      "caption": "Después: el maná de los dos lleno y los ecos de vuelta en su sitio, con su reloj de nuevo a 20 s"
+    },
+    {
+      "until": "(window.turn && window.turn('aitor') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('gerard'))",
+      "timeout": 60000
+    },
+    {
+      "eval": "window.fresh(); window.dualSheet()"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "shot": "vulcano-de-nuevo",
+      "delay": 200,
+      "caption": "La hoja de dúos (desarrollo): Vulcano se puede usar otra vez"
+    },
+    {
+      "eval": "document.querySelector('[data-dual=\"vulcano\"]')?.click()"
+    },
+    {
+      "wait": 300
+    },
+    {
+      "press": "Enter",
+      "gap": 0
+    },
+    {
+      "record": "segundo-vulcano",
+      "seconds": 2.6,
+      "fps": 24,
+      "tiles": 10,
+      "caption": "El segundo Vulcano del combate: sale sobre el volcán que aún sonaba y lo vuelve a empezar (reloj y fuerza), nunca dos a la vez"
+    },
+    {
+      "eval": "if (!document.querySelector('.battle-hold')?.hidden) ui.control('confirm', 1)"
+    },
+    {
+      "shot": "volcan-refrescado",
+      "delay": 600,
+      "caption": "Un solo volcán en cada placa, con su reloj de nuevo entero"
+    },
+    {
+      "until": "(window.turn && window.turn('gerard') && (window.fresh(), window.defend(), false)) || (window.turn && window.turn('aitor'))",
+      "timeout": 60000
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "gastada",
+      "delay": 300,
+      "caption": "Da capo ya usada: no vuelve en este combate"
+    },
+    {
+      "eval": "if (window.errors.length) throw new Error(window.errors.join(' | '))"
+    }
+  ]
+}
