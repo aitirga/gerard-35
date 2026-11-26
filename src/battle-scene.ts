@@ -4036,6 +4036,13 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // beat is a bolt: its flash is the bolt's, and what it turned shows as any reaction does (`reactFx`).
       const bolt = status === 'alterna';
       hit(f, bolt ? ELEMENT_FLASH.electrico : status && status in DUO_STAGINGS ? white : flame, bolt ? .9 : .7);
+      // Its first beat on a bleeding pole spent the wound (`multiHit`): the blood flung off along the bolt, and the golpe
+      // crítico's freeze when it was the sure one of Olor a sangre.
+      if (bolt && (beat?.bled || beat?.crit)) {
+        const from = by ? fighters.get(by)?.base : undefined, dx = from ? f.base.x - from.x : 0, dz = from ? f.base.z - from.z : 1, d = Math.hypot(dx, dz) || 1;
+        if (beat.crit) { critBeat(beat as unknown as BattleEffect, [f], by ? fighters.get(by) : undefined, { x: dx / d, z: dz / d }); cue('crit'); }
+        if (beat.bled) { statusFx.spill(id, v3(chestOf(f)), { x: dx / d, z: dz / d }, beat.bled); cue('bleed'); }
+      }
       if (beat?.reaction) reactFx({ actor: id, kind: 'skill', target: id, reaction: beat.reaction });
       // A cortina the reaction raised (Remolino) stands up as any other.
       if (beat?.cortina) powderFx.telon(beat.cortina, foesCentre(), beat.cortina.map(() => nextMix()));
