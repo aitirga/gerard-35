@@ -550,7 +550,9 @@ takes its colour, nácar. **Her voice is in the ecos from the start**: the ánim
   (`BattleState.sureOffbeat`). `just screenshots sincopante-crece --gpu` plays it whole.
 - **The bot** (`src/battle-sim.ts`) values the notes still to come (`ecoWorth`), the third eco that
   makes the chord while Da capo sleeps (`CAPO_CHORD`: 20, and 20 for each dual already used), and Da
-  capo itself (40 for each dual given back, and the maná).
+  capo itself (`capoWorth`: each dual given back at what it would be worth played again now, over the
+  two turns alone it takes, and the maná). A dual given back is then weighed as any other; `Run.events`
+  counts `da-capo` and each dual it gave back played again (`dual-de-nuevo`).
 
 **Not built yet**:
 - The muffled filter (650 Hz low-pass): today a muffled eco is silent.
@@ -599,12 +601,20 @@ hold it as Da capo stands**, so the pair is not written. Measured on 2026-11-26 
   the full party with Dadista at the Queen, 40 %), it is used for the maná alone: the bot does not play
   the duals it gives back again (2.15 duals a fight with it, 2.17 without), and the party falls a
   little sooner for the turns spent on the chord.
+- Why it was never played again (looked into 2026-11-26, after the review): at the Queen, Da capo comes
+  after she has taken Aitor (rounds 10–16), so Gerard has no partner left and no dual can start; there
+  the maná is all it gives, and the bot now values it so. The flat 40 a dual given back was worth is
+  now `capoWorth`, the dual's own worth on the fight as it stands, and where a partner is there the
+  bot does play it again (the Queen's second fight, `reina-vuelta`: wakes in 42–56 %, but by then only
+  0.4–0.7 duals have been used, so Da capo is cast in 1 % and a dual played again in 1 %).
 - Valuing the second eco too (the chord's way, on the square of how near) pulled the full party off
   Siete vidas at the Queen (`reina-con-siete-vidas` 13.2 rounds → 11.9, out of its range); only the
   third eco is valued, and the check holds.
 
 To decide: another fight (a long one where the party plays its duals, a boss), a chord that comes
-sooner (three ecos within the maná Sincopante holds), or teaching the bot to play a dual it got back.
+sooner (three ecos within the maná Sincopante holds). Not the Queen's first fight: she takes Aitor
+before the chord comes. The bot already plays a dual it got back, and `dual-de-nuevo` is there for the
+pair's `happens`.
 
 ## Open
 

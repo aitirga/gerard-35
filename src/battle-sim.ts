@@ -677,6 +677,29 @@ function worth(before: BattleState, choice: Choice, threat: Threat, ban: readonl
   const effect = apply(after, choice);
   return gain(before, after, choice, threat, ban, !!effect?.ignited);
 }
+/**
+ * The duals Da capo gives back, as `smart` values them on the fight once it has played (`after`): for each one, the most it
+ * would be worth to whichever ally could start it on their next turn, over the two turns alone it takes from both (the
+ * holder's best twice), never below nothing. A dual given back is then played as any other: `decide` weighs it the same.
+ */
+function capoWorth(after: BattleState, given: readonly DualId[], ban: readonly Ban[]) {
+  let total = 0;
+  for (const id of new Set(given)) {
+    let top = 0;
+    after.allies.forEach((ally, i) => {
+      if (ally.hp <= 0) return;
+      const look = copy(after);
+      look.phase = 'player'; look.active = i; delete look.spent; delete look.queued;
+      const options = legalChoices(look, { ban: [...ban] }, true, true), duals = options.filter(o => o.dual === id);
+      if (!duals.length) return;
+      const threat = threatOn(look);
+      const dual = best(duals, c => worth(look, c, threat, ban))[1], alone = best(options.filter(o => o.action !== 'dual'), c => worth(look, c, threat, ban))[1];
+      top = Math.max(top, dual - 2 * Math.max(0, alone));
+    });
+    total += top;
+  }
+  return total;
+}
 /** What changed from `before` to `after` (one choice played), as `smart` values it; `ignited`: that choice set Electrólisis's gas off. */
 function gain(before: BattleState, after: BattleState, choice: Choice, threat: Threat, ban: readonly Ban[], ignited = false) {
   const actor = before.allies[before.active], skillSpec = SKILLS.find(s => s.id === choice.skill), gathers = !!skillSpec && 'gathers' in skillSpec;
@@ -797,8 +820,9 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   value += ecoWorth(after, !ban.includes('da-capo')) - ecoWorth(before, !ban.includes('da-capo'));
   // Corriente alterna: the beats its circuit has still to give (`circuitWorth`).
   value += circuitWorth(after) - circuitWorth(before);
-  // Da capo: every dual already used back, and the party's maná full (what each point gathered is worth).
-  if (choice.skill === 'da-capo') value += (before.usedDuals?.length ?? 0) * 40 + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
+  // Da capo: every dual already used back, worth what each would do played again now (`capoWorth`), and the party's maná full
+  // (what each point gathered is worth).
+  if (choice.skill === 'da-capo') value += capoWorth(after, before.usedDuals ?? [], ban) + before.allies.reduce((sum, a, i) => sum + Math.max(0, after.allies[i].secondary - a.secondary), 0) * MANA_WORTH;
   // Siete vidas: its ward put on the party, a life for each ally the foes' coming turn would bring down.
   const ward = after.allies.filter((a, i) => a.hp > 0 && warded(a) && !warded(before.allies[i]));
   if (ward.length) { const saved = ward.filter(a => (threat.hp.get(a.id) ?? 0) >= (before.allies.find(b => b.id === a.id)?.hp ?? 0)).length; value += saved ? saved * LIVES_WORTH : LIVES_IDLE; }
@@ -1128,6 +1152,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
   const over = () => state.phase === 'won' || state.phase === 'lost';
   const hadOnion = state.foes.some(f => isOnion(f.kind));
   const count = (key: string) => { run.events[key] = (run.events[key] ?? 0) + 1; };
+  /** The duals Da capo gave back and not played again yet. */
+  const given = new Set<string>();
   const clockNews = (news: readonly { saved?: unknown; awoken?: string }[]) => {
     for (const item of news) { if (item.awoken) count(`despierta:${item.awoken}`); if (item.saved) count('siete-vidas'); }
   };
@@ -1154,6 +1180,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     // A definitiva waking (`despierta:<id>`, what its pair of targets holds), and Siete vidas' ward taking a blow that would have killed.
     if (effect.awoken) count(`despierta:${effect.awoken}`);
     if (effect.lives) count('siete-vidas');
+    // Da capo (`da-capo`), and each dual it gave back played again (`dual-de-nuevo`).
+    if (effect.dacapo) { count('da-capo'); effect.dacapo.duals.forEach(id => given.add(id)); }
+    if (effect.dual && given.delete(effect.dual.id)) count('dual-de-nuevo');
     // Bajo cero: the foes it froze (`congela`, one a foe) and each ice cracked through (`hielo-roto`).
     for (const _ of effect.frozen ?? []) count('congela');
     for (const ice of effect.ice ?? []) if (ice.broke !== undefined) count('hielo-roto');
