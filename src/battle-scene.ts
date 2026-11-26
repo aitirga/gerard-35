@@ -37,6 +37,7 @@ import { bindSobremesa, type Acts, type Friend, type Move } from './sobremesa';
 export interface FightStage { layout: Layout; pocket?: boolean; spread?: number }
 import { createStatusFx, type ReactionId, type StatusLookId } from './status-fx';
 import { createPowderFx, powderMix, FIESTA, TRACA_GAP, type PowderMix } from './powder-fx';
+import { createSwarmFx, SWARM } from './swarm-fx';
 import { createEcoFx, type EcoFx } from './eco-fx';
 import { createFreaticaFight, FREATICA_SKILLS, HAMMER_GAP } from './freatica-fight';
 import { DISINTEGRATE, dissolvable, type Disintegration } from './disintegrate';
@@ -602,6 +603,11 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const statusFx = createStatusFx(effects, { ignite: (id, level) => igniteFighter(id, level) });
   // Colorista's powder (src/powder-fx.ts): the handful, the powder that stays on whoever is Empolvado, and what an element makes of it.
   const powderFx = createPowderFx(app, effects, { model: id => fighters.get(id)?.model });
+  // Enjambre's network on the floor (src/swarm-fx.ts), and the foes whose bombs it beats with until they have gone off.
+  const swarmFx = createSwarmFx(app, effects);
+  let swarmHeld = new Set<string>();
+  /** The moments of Enjambre's look already played for an action (`SWARM`). */
+  const swarmPlayed = new WeakMap<BattleEffect, Set<string>>();
   let powderTurn = 0;
   const nextMix = () => powderMix(powderTurn++);
   /**
@@ -779,14 +785,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   };
   /**
    * Bip's moves that are not rays (docs/animas/tecnopata/README.md § Look): Bomba remota, it flies to the foe, sticks the bomb on
-   * at `contact` and comes home; Escolta, it flies in an arc to the ally and stands by them; Enjambre, it rises over the foes
-   * and comes apart into a swarm that sticks a bomb on each. Fight seconds from the action's start.
+   * at `contact` and comes home; Escolta, it flies in an arc to the ally and stands by them; Enjambre, it rises over the foes,
+   * comes apart into a swarm that grows a network on the floor to every foe (src/swarm-fx.ts `SWARM`), the bombs close on
+   * them at `contact`, and Bip forms again at home by its end. Fight seconds from the action's start.
    */
   const BIP_MOVES: Record<string, { contact: number; end: number }> = {
     'bomba-remota': { contact: .66, end: 1.45 },
     escolta: { contact: .72, end: 1.25 },
-    enjambre: { contact: .85, end: 1.9 },
+    enjambre: { contact: 1.6, end: 3.2 },
   };
+  /** Enjambre's Bip, in fight seconds from the action's start: it comes apart over the foes, and starts forming again at home. */
+  const SWARM_BIP = { apart: .5, reform: 2.4 } as const;
   /**
    * Rayo solar letting go, in fight seconds from its start: Bip rises gathering the sun until
    * `ignite`, then one beam sweeps along the foes for `span` (it burns each as it crosses them), and
@@ -2660,6 +2669,53 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
    * shrinking ray's white), waves of the mind twisting their way to a head, its blast among the foes,
    * or Rayo solar sweeping them one after another in sun yellow, each one catching fire.
    */
+  /**
+   * Enjambre's look as it goes (src/swarm-fx.ts, docs/animas/tecnopata/README.md § Look), each moment once, from Bip's frame:
+   * it comes apart over the foes into a swarm of nanites that pours down onto the floor among them (`SWARM_BIP.apart`); the
+   * network grows there to every foe (`SWARM.land`); nanites climb each foe to its chest (`SWARM.hold`), where the bombs close
+   * on at `contact` (`bipBurst`); a white pulse runs along the network and the clocks wind back (`SWARM.pulse`); and the
+   * nanites come back from it to form Bip at home (`SWARM_BIP.reform`). The network stays until the bombs have gone off.
+   */
+  function swarmFrame(e: BattleEffect, b: NonNullable<ReturnType<typeof bips.get>>, over: pc.Vec3, rest: pc.Vec3, t: number) {
+    let played = swarmPlayed.get(e);
+    if (!played) swarmPlayed.set(e, played = new Set());
+    const once = (moment: string, at: number) => t >= at && !played!.has(moment) && !!played!.add(moment);
+    const land = new pc.Vec3(over.x, groundHeight(over.x, over.z), over.z), up = { x: 0, y: 1, z: 0 };
+    const held = (e.planted ?? []).flatMap(id => { const f = fighters.get(id); return f && f.hp > 0 ? [{ id, f }] : []; });
+    if (once('apart', SWARM_BIP.apart)) {
+      // It cracks open: a shell of nanites bursts off it, and the swarm pours down onto the floor.
+      dualFx.ring(v3(over), viewDir(), .35, BIP.cyan, { kind: 'nanite', count: 260, outward: 2.6, around: 4, life: .4, size: 1.1, light: 3 });
+      dualFx.burst('bipzap', { at: v3(over), count: 70, speed: 3, life: [.2, .45] });
+      const fall = (over.y - land.y) / (SWARM.land - SWARM_BIP.apart);
+      dualFx.burst('nanite', { at: v3(over), count: 4800, spread: .35, velocity: { x: 0, y: -fall, z: 0 }, speed: 1.1, cone: .5, life: [.26, .34], light: { intensity: 2.5, range: 3, colour: BIP.cyan } });
+      cue('glitch', { volume: .45 });
+    }
+    if (once('land', SWARM.land)) {
+      // On the floor: a splash of nanites, and the network starts to grow from there to every foe.
+      dualFx.ring(v3(land.clone().add(new pc.Vec3(0, .05, 0))), up, .5, BIP.cyan, { kind: 'nanite', count: 220, outward: 3.2, life: .45, size: 1.1, light: 2.5 });
+      swarmHeld = new Set(held.map(h => h.id));
+      swarmFx.start({ land: v3(land), foes: held.map(({ f }) => ({ at: v3(floorUnder(f)), radius: extent(f).radius })) });
+      cue('data-chirp', { volume: .7 });
+    }
+    if (once('climb', SWARM.hold)) {
+      // The network has them: nanites run up each body to its chest, rings closing as they climb.
+      held.forEach(({ f }, i) => {
+        const feet = floorUnder(f), spot = bombSpot(f), { radius } = extent(f), rise = Math.max(.3, spot.y - feet.y);
+        for (let k = 0; k < 6; k++) dualFx.after(i * .05 + k * .035, () => dualFx.ring({ x: feet.x, y: feet.y + .05 + rise * k / 5, z: feet.z }, up, Math.max(.3, radius * (1 - .1 * k)), k === 5 ? '#ffffff' : BIP.cyan, { kind: 'nanite', count: 90, outward: -1, around: k % 2 ? -3 : 3, life: .3, size: 1.1, ...k === 0 ? { light: 1.6 } : {} }));
+      });
+      cue('data-chirp', { volume: .5, delay: .05 });
+    }
+    if (once('pulse', SWARM.pulse)) {
+      // The clocks start over: a white pulse runs out along the network (its sheet), a rewind under it.
+      dualFx.ring(v3(land.clone().add(new pc.Vec3(0, .06, 0))), up, .6, '#ffffff', { count: 140, outward: 5, life: .5, size: 1.3, light: 2 });
+      cue('rewind', { volume: .8 });
+    }
+    if (once('reform', SWARM_BIP.reform)) {
+      // Home: the nanites come back from the network and Bip forms out of them.
+      b.bip.entity.setPosition(rest);
+      effects.nanites({ from: v3(land.clone().add(new pc.Vec3(0, .1, 0))), to: b.bip.entity, count: 420, seconds: .7 });
+    }
+  }
   function bipBurst(action: BattleEffect, target: Fighter, from: pc.Vec3, felt: Blow, ax: number, az: number) {
     const chest = chestOf(target), up = { x: 0, y: 1, z: 0 };
     // Bip's rays have flown already (`bipFire`): here they land.
@@ -2689,19 +2745,16 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       return;
     }
     if (action.skill === 'enjambre') {
-      // Enjambre: Bip comes apart into a swarm of little Bips that splits over every foe; each stream sticks a bomb, already at its top.
-      const ids = action.planted ?? [];
-      dualFx.ring(v3(from), up, .45, BIP.cyan, { kind: 'nanite', count: 200, outward: 3, life: .45, size: 1.2, light: 3 });
-      dualFx.burst('bipzap', { at: v3(from), count: 60, speed: 3, life: [.2, .5] });
-      ids.forEach((id, i) => {
+      // Enjambre: the nanites that climbed each foe close into a bomb on its chest, one after another, each with its clank;
+      // they are already at their top. Without motion, the bombs are simply there.
+      (action.planted ?? []).forEach((id, i) => {
         const f = fighters.get(id);
         if (!f) return;
         const spot = bombSpot(f);
-        for (let k = 0; k < 6; k++) effects.trails.comet(v3(from), v3(spot), ['#ffffff', BIP.cyan], .3 + k * .03 + i * .06, { arc: .3 + (k % 3) * .25, width: .03, life: .35, intensity: 2.4, core: .4, additive: 1, twist: { turns: 1.5 + k % 3, radius: .12, phase: k * 1.1 } });
-        dualFx.after(.32 + i * .06, () => { dualFx.ring(v3(spot), viewDir(), .3 * f.scale.y, BIP.cyan, { kind: 'nanite', count: 70, outward: -1.4, life: .35, size: 1.1, light: 2 }); hit(f, cyanFlash, .6); });
-        ensureBomb(id, .36 + i * .06);
+        dualFx.after(i * .06, () => { dualFx.ring(v3(spot), viewDir(), .3 * f.scale.y, BIP.cyan, { kind: 'nanite', count: 90, outward: -1.6, around: 3, life: .35, size: 1.1, light: 2 }); dualFx.burst('bipzap', { at: v3(spot), count: 24, speed: 2.2, life: [.15, .35] }); hit(f, cyanFlash, .6); cue('clink', { volume: .6 }); });
+        ensureBomb(id, .04 + i * .06);
       });
-      shake = Math.max(shake, .35); pulse?.(.3, .4);
+      shake = Math.max(shake, .3); pulse?.(.2, .35);
       return;
     }
     if (action.skill === 'confusion') {
@@ -3393,6 +3446,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
           const close = clamp01((heat - .3) / .7);
           dualFx.ring(v3(spot), viewDir(), (.1 + .12 * close) * f.scale.y, BOMB.red, { count: Math.round(14 + 40 * close), outward: 1 + 2 * close, life: .2 + .1 * close, size: 1 + .4 * close, ...close > .4 ? { light: 1 + 2.5 * close } : {} });
           if (heat > .35) cue('bomb-beep');
+          // Enjambre's network beats red with its bombs.
+          if (swarmHeld.has(id)) swarmFx.beat(.55 + .45 * heat);
         }
       }
       b.bomb.animate(dt, { heat, charge, shown: Math.max(0, b.shown), animate });
@@ -3584,6 +3639,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (!b.shown && b.power <= 0) { b.bip.entity.enabled = false; continue; }
       const center = foes.length ? foes.reduce((sum, o) => sum.add(o.base), new pc.Vec3()).mulScalar(1 / foes.length) : new pc.Vec3(f.base.x + ahead.x * 3, 0, f.base.z + ahead.z * 3);
       let look = new pc.Vec3(center.x, floor + .7, center.z), lean = 0;
+      // Enjambre takes Bip apart for its launch, and it forms again at home (`swarmFrame`): how much of it is there.
+      let whole = 1;
       const acting = b.shown && animate && !!target && effect?.actor === id && botStrikes(effect);
       // Sutura de luz: Bip goes to whoever is cured, beside their head, scans them and sews; then home.
       const sewing = animate && !!target && effect?.dual?.id === 'sutura-de-luz' && effect.dual.actors.includes(id) && t < DUO['sutura-de-luz'].end - .35;
@@ -3614,11 +3671,14 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         b.at.lerp(from, rest, u); b.at.y += Math.sin(u * Math.PI) * .6;
         lean = t < contact ? .8 * Math.sin(u * Math.PI) : 0; look = t < contact * .8 ? rest.clone().add(new pc.Vec3().sub2(rest, from)) : look;
       } else if (acting && effect!.skill === 'enjambre') {
-        // Enjambre: up over the foes, trembling as it comes apart; at `contact` its swarm goes (`bipBurst`), and it gathers again.
-        const { contact } = BIP_MOVES.enjambre, over = new pc.Vec3(center.x, floor + 2.4, center.z), u = smooth(t / contact);
-        const back = smooth((t - contact - .5) / .6), shiver = t < contact ? u * .04 : 0;
-        b.at.lerp(rest, over, u * (1 - back)); b.at.x += (Math.random() - .5) * shiver; b.at.y += (Math.random() - .5) * shiver; lean = .5 * (1 - back);
+        // Enjambre: up over the foes, trembling as it cracks; it comes apart into the swarm (`swarmFrame`) and is gone until it
+        // forms again at home, out of the nanites that come back from the network.
+        const over = new pc.Vec3(center.x, floor + 2.4, center.z), u = smooth(t / SWARM_BIP.apart), shiver = u * .05;
+        if (t < SWARM_BIP.reform) { b.at.lerp(rest, over, u); b.at.x += (Math.random() - .5) * shiver; b.at.y += (Math.random() - .5) * shiver; lean = .5; }
+        else b.at.copy(rest);
+        whole = t < SWARM_BIP.apart ? 1 : t < SWARM_BIP.reform ? 1 - smooth((t - SWARM_BIP.apart) / .12) : smooth((t - SWARM_BIP.reform) / (BIP_MOVES.enjambre.end - SWARM_BIP.reform - .1));
         look = new pc.Vec3(center.x, floor, center.z);
+        swarmFrame(effect!, b, over, rest, t);
       } else if (acting && effect!.exploded) {
         // Explosión: up and into the middle of the foes, faster and faster; it blows up there (`bipBurst`).
         const over = new pc.Vec3(center.x, floor + 1.1, center.z), u = clamp01(t / CONTACT_SECONDS);
@@ -3667,7 +3727,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       const yaw = lean ? watching : watching + (((toView - watching + 540) % 360) - 180) * .45;
       entity.setEulerAngles(0, yaw + spin, 0);
       const grow = b.shown ? 1 + 1.6 * (b.power - 1) ** 3 + .6 * (b.power - 1) ** 2 : b.power;
-      const size = BIP.scale * Math.max(.001, grow) * f.scale.y;
+      const size = BIP.scale * Math.max(.001, grow * whole) * f.scale.y;
       entity.setLocalScale(size, size, size);
       // Charged with Gerard's fire (Rayo solar) it glows sun yellow from when the fire reaches it until it lets go.
       const releasing = !!effect?.release && effect.actor === id && t < SOLAR.ignite + SOLAR.span + .3;
@@ -4182,7 +4242,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       freatica.pending(nextEffect);
       if (!next && last) { const l = last; last = undefined; l.done(); }
       if (!next) {
-        dualFx.clear(); powderFx.clear(); ecoFx?.clear(); freatica.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
+        dualFx.clear(); powderFx.clear(); ecoFx?.clear(); freatica.clear(); swarmFx.clear(); swarmHeld.clear(); marks.forEach(m => m.destroy()); marks.clear(); beam.enabled = false; beamOf = undefined; sunBeam.enabled = false; sunOf = undefined;
         for (const f of fighters.values()) if (f.robot?.swirl) { f.robot.swirl.stream.remove(); f.robot.swirl.field.remove(); f.robot.swirl.glass.remove(); f.robot.swirl = undefined; }
         dualStarted = dualPlan = worldDone = undefined; sungNote = undefined; lensHold = 0; spotWant = spotAmount = 0; critGrey = 0; critOf = undefined; spot?.(0, []); if (cold) { cold = 0; setCold?.(0); }
         Object.assign(lens, { yaw: 0, pitch: 0, zoom: 0, x: 0, y: 0, z: 0 }); Object.assign(lensWant, lens);
@@ -4751,6 +4811,9 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (state) for (const ally of state.allies) powderFx.trackScreen(ally.id, cortinaRounds(state, ally) > 0, foesCentre, nextMix);
       statusFx.update(dt, time);
       freatica.sync(state, dt);
+      // Enjambre's network stays until every bomb it put on has gone off (or its foe has fallen), then fades.
+      if (swarmFx.on && state && !(effect?.skill === 'enjambre' && !impacted) && ![...swarmHeld].some(id => state!.foes.find(f => f.id === id && f.hp > 0)?.timed?.bomba || bombs.has(id))) swarmFx.release();
+      swarmFx.update(dt);
       // Bajo cero: while a foe stands in its ice, the ice ticks now and then.
       if (state?.foes.some(f => f.hp > 0 && f.timed?.congelado) && (iceTickIn -= dt) <= 0) { cue('ice-tick', { volume: .55 }); iceTickIn = 1.2 + Math.random() * .8; }
       // Stats that stay up or down give off motes from the head (src/stat-motes.ts). What this
