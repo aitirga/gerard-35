@@ -189,7 +189,7 @@ cats do something.
 | | |
 | --- | --- |
 | **Wakes in a fight when** | A wound of five stacks or more is spent (with Olor a sangre, always a golpe crítico: no luck in it) |
-| **Then** | Once in that fight, as a dual, for the turn and no maná |
+| **Then** | Once in that fight, una habilidad de quien la lleva: for the turn and no maná |
 | **Haru** | Goes through every foe: light physical damage to each (14) and Sangrado +2 |
 | **Yuki** | Walks among the party: the next blow that would kill someone does not, it cures them what it was going to take |
 | **In the game** | `Daño físico leve a todos los enemigos. Añade sangrado. El próximo golpe que fuera a matar a alguien del equipo no lo mata: lo cura.` |
@@ -217,6 +217,26 @@ cats do something.
   ring of her white at each one's feet, the cat's-head icon on every plate while it holds, and when
   it goes off she dashes in front of whoever it saves, the fight stops on the blow, the picture
   drains but round them, and the red number turns over into the green cure (*¡Siete vidas!*).
+- **Its own look** (Aitor 2026-11-25, «rebobinado y siluetas»; built 2026-11-26, `src/lives-fx.ts`). Where Yuki
+  sits at each one's feet she leaves her silhouette: some 300 specks of bone white on her own surface as she sits
+  (`writeSurface`, src/surface-samples.ts), born on that cloud (`points` on the GPU engine), with an edge of green.
+  While the ward holds they breathe, a new cloud on the same points every 1.6 s that comes up and goes. When it
+  saves someone the killing blow lands, its blood flung out along it, and the fight plays it back: the GPU
+  engine's `rewind` (a band that keeps where each particle was born and where it was a moment after) runs the
+  blood back into the wound, the tape speeding up, and there it turns into Yuki's white thread rising off them;
+  their silhouette leaps in front of them and bursts into green motes, and the others come apart. Its sound is
+  the blow played backwards, a low purr and a rising cure (`siete-vidas-salva`). Screenshots:
+  `just screenshots siete-vidas --gpu`.
+- **Multi-hit duals** (Aitor 2026-11-25): Campana de Gauss's dice and Corriente alterna's blow and beats spend a
+  wound only with their first hit on each foe, as Cacería does (`MULTI_WOUND`): that hit lands the wound's bonus,
+  and at five the sure crítico that wakes Siete vidas; the rest land plain. A physical flurry (Zarpazos de fuego)
+  keeps the wound on every claw, as a flurry's do.
+- **In `just fight-sim`** (2026-11-26): the bot values the ward (`LIVES_WORTH` for each ally the next blow would
+  bring down, `LIVES_IDLE` otherwise) and, in a boss's fight only, waking it: a wound cut towards five and the
+  blow that spends it each a step of it, a wound spent short a step back, the whole worth what casting it would
+  do plus a life (`LIVES_LIFE`). Held by `reina-con-siete-vidas` against `reina-sin-custodia` in the Queen's first
+  fight: woken in about 40 % of them, the ward taking a killing blow in about a quarter, and she needs a round
+  more to bring the party down (12.4 rounds against 11.1).
 
 ## What a round looks like
 
@@ -367,12 +387,14 @@ And of 2026-11-21 (`tests/papagato.test.mjs`):
 1. **Crítico on the status screen**. (Velocidad is out of the turn order since 2026-11-21.)
 2. `just fight-sim`: its targets moved with the new rules (`just fight-sim check` fails on
    `platitos-sin-pensar`); they are set again with the balance, last. The smart bot does not know
-   how to value Acecho, Cacería nor Siete vidas yet (it never or hardly uses them), and with Papagato
-   at 4 or more it does worse on Lo Directo (98 % → 84 %) because of how it spends the fourth maná.
+   how to value Acecho nor Cacería yet (it never or hardly uses them; Siete vidas it plays since
+   2026-11-26, § Definitiva), and with Papagato at 4 or more it does worse on Lo Directo (98 % → 84 %)
+   because of how it spends the fourth maná.
 
 Screenshots: `just screenshots papagato` (the ánima's sheet: look, cats, interface, each skill),
 `papagato-crece` (levels 4 to 7 and Siete vidas: Acecho, Cacería, the definitiva waking, its ward
-saving someone, the victory screen at 4, 5 and 7), `cats`, `cats-fight`, `duals`, `nuria-won`.
+saving someone, the victory screen at 4, 5 and 7), `siete-vidas --gpu` (its own look: the silhouettes and the
+blow played back), `cats`, `cats-fight`, `duals`, `nuria-won`.
 
 ## For the balance, later
 

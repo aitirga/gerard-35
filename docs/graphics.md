@@ -435,9 +435,10 @@ A general particle engine on the GPU, used in fights, and on the street while so
 apart there (Disintegration, below), only with motion on, on a device that renders to float textures;
 everywhere else, in reduced motion and in the headless tests, effects stay on the CPU pool. 131 072 particles (32 768 until 2026-11-21), up to 256 bursts a frame.
 
-- **State** is a float texture of five bands of rows (A position + age; B velocity + life; C kind,
+- **State** is a float texture of seven bands of rows (A position + age; B velocity + life; C kind,
   seed, the part it clings to, size; D when it lets go + its colour tint; E the particle it follows,
-  where it sits in its chain, its batch), ping-ponged by **one full-screen pass a frame**
+  where it sits in its chain, its batch; F where it was born; G where it was a moment after, for
+  `rewind`), ping-ponged by **one full-screen pass a frame**
   (`pc.drawQuadWithShader`): each band's texel recomputes the same step and writes its own share.
 - **Kinds are data, defined at runtime** (`define(name, kind)`, `MAX_KINDS` slots, `GpuKind`): physics
   (drag, gravity or buoyancy, turbulence, how much fields move it, collide, bounce, friction, cling
@@ -608,6 +609,21 @@ fuego»), and `just screenshots particle-laws --gpu --scale 2` records them.
 
 Costs: a law's particles read its texture (nine texels) each step; a mirror two signed distances; a kind
 that can catch seven reads; a bubble eight. The kinds without them pay nothing.
+
+### Point clouds and playing back (built 2026-11-26)
+
+- **Born on a cloud of points** (`shape: 'points'` with `points` on a burst): the CPU hands the points (up to
+  1 024, eight such bursts a frame, a row each of a small texture) and each particle is born on the next, a
+  little round it. A model's surface as `writeSurface` (src/surface-samples.ts) gives it makes a silhouette of
+  that model that stays where it stood once the model has gone: Yuki's at the party's feet (Siete vidas,
+  `src/lives-fx.ts`), each breath a new cloud on the same points.
+- **Playing a batch back** (`gpu.rewind(batch, { after, seconds, into })`): two more bands keep where each
+  particle was born (F) and where it was 0.17 s after (G). A rewind (up to eight at once) takes a batch, after
+  `after` seconds, back through G to F over `seconds`, the second leg shorter so the tape speeds up, its age
+  going back with it (its colours run backwards); there it becomes `into` and leaves its batch, so it is
+  played back once. Siete vidas' killing blow: the blood flung out of whoever it saves runs back into the
+  wound and turns into Yuki's white thread. Costs: every particle reads two more texels a step and the
+  rewinding ones a row of the rewind texture each; nothing else.
 
 ## Lattices (`src/lattice.ts`)
 

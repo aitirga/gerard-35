@@ -708,6 +708,13 @@ note = "Hecho: se compra en el bote y despierta al gastar una herida de cinco o 
 grep = "id: 'siete-vidas'"
 in = "src/battle.ts"
 
+# Built 2026-11-26 (docs/animas/papagato/README.md § Definitiva; docs/plans/definitivas/PLAN.md 2.2): Aitor's «rebobinado y siluetas».
+[[block.item]]
+title = "Siete vidas: su aspecto propio, el rebobinado y las siluetas de Yuki"
+note = "Hecho: Yuki deja su silueta de partículas a los pies de cada uno (sus puntos de superficie), que respira mientras dura la custodia; al salvar, la pelea rebobina el golpe (la banda rewind del motor de partículas) y la sangre vuelve a la herida hecha hilo blanco. Capturas: just screenshots siete-vidas --gpu."
+grep = "rewind\\(batch"
+in = "src/fight-particles.ts"
+
 [[block.item]]
 title = "Tecnópata, la de Aitor"
 priority = "animas"

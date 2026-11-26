@@ -143,7 +143,12 @@ in reach); a crack in Bajo cero's ice that does not break it yet (`ICE_CRACK_WOR
 break); a die past the hand's cap (`HAND_WORTH`, for the hand up to six); and a sleeping definitiva
 brought nearer to waking by its own condition (`wakeWorth`: 15 for the whole way, on the square of how
 near, so the last step weighs most; at 30 on a straight line it opened El Montón with Zarpazos to wake
-Siete vidas). Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
+Siete vidas). Siete vidas has its own (2026-11-26): only in a boss's fight (`isBoss`), where a wound can
+be cut to five and spent before its foe falls and killing blows come, the bot measures what casting it
+would do plus a life (`LIVES_LIFE`, twice the party's mean PV) and counts a sixth of that for each stack
+of the deepest wound and for the blow that spends it, and takes it back for a wound spent short (without
+it the Queen's fight woke it in no fight; with it everywhere the castle's rooms lost to the turns spent
+cutting, `gemelos-tercero-bien` 88 % → 70 %). A definitiva banned is nothing to wake. Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
 (`siete-vidas`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
 its own wakes Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from) or the
 ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after the passives, as it
@@ -413,9 +418,10 @@ it stands (skills, how far it grows, whether its definitiva is built, whether an
 skills and duals no target's bot uses, and the numbers no target's fight reads. Whatever is on that
 list can break without `just fight-sim check` noticing.
 
-As measured on 2026-11-26: no fight without its pair, and a target wears every ánima. 26 skills are
+As measured on 2026-11-26: no fight without its pair, and a target wears every ánima. 26 skills were
 used by no target, four definitivas among them (*Siete vidas*, *Enjambre*, *Da capo*, *Fin de
-fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own), and two are still to
+fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own); *Siete vidas* has left
+the list since, held by `reina-con-siete-vidas` and `reina-sin-custodia`. Two are still to
 build (Matemágico's *Horas extra*, Dadista's *Un golpe de dados*); 14 of the 25 duals are made by no
 target; 195 of 958 numbers are read by none (the ice's break among them). Each definitiva's pair is
 `docs/plans/definitivas/PLAN.md`'s, and docs/progress.toml's «Las definitivas en fight-sim» ticks
