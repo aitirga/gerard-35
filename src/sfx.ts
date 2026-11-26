@@ -335,6 +335,24 @@ export const SOUNDS = {
   timbre: { synth: (c, out, at, p) => { const ring = 1.7; for (let t = 0; t < ring; t += .045) { const fade = 1 - t / ring * .5; tone(c, out, at + t, { type: 'triangle', from: 1180 * p, length: .09, gain: .05 * fade }); tone(c, out, at + t, { from: 2950 * p, length: .06, gain: .022 * fade }); noise(c, out, at + t, { cutoff: 4200 * p, to: 3000, type: 'bandpass', q: 6, length: .02, gain: .07 * fade }); } tone(c, out, at + ring, { from: 1180 * p, length: 1.1, gain: .05 }); tone(c, out, at + ring, { from: 2950 * p, length: .8, gain: .02 }); return ring + 1.1; }, jitter: 15, gap: 1.5, voices: 1 },
   stamp: { synth: (c, out, at, p) => { tone(c, out, at, { from: 160 * p, to: 70 * p, length: .16, gain: .6 }); noise(c, out, at, { cutoff: 1600, to: 300, length: .14, gain: .45 }); noise(c, out, at + .01, { cutoff: 5000 * p, to: 2500, type: 'bandpass', q: 1.2, length: .05, gain: .22 }); return .2; }, jitter: 50, gap: .2, voices: 1 },
   // A pane of the glass into or out of a fight's pocket turning (src/post.ts): a tiny glassy tick, never twice the same.
+  // Enjambre (docs/animas/tecnopata/README.md § Sound): Bip coming apart into a swarm, a dense buzz of tiny motors that
+  // rises and spreads; the network finding its way on the floor, data chirps that run out and branch; and the clocks
+  // starting over, a tape wound back (a falling then rising sweep under a flutter).
+  'swarm-buzz': { synth: (c, out, at, p) => {
+    for (let i = 0; i < 7; i++) tone(c, out, at + i * .04, { type: 'sawtooth', from: (180 + i * 37) * p, to: (260 + i * 53) * p, attack: .12, hold: .35, length: .85 - i * .03, gain: .022 });
+    noise(c, out, at, { cutoff: 2600 * p, to: 5200, type: 'bandpass', q: 3, attack: .15, hold: .3, length: .8, gain: .12 });
+    return .9;
+  }, jitter: 20, gap: .5, voices: 1 },
+  'data-chirp': { synth: (c, out, at, p) => {
+    [0, .05, .09, .16, .2, .27, .33, .4].forEach((t, i) => tone(c, out, at + t, { type: 'square', from: (1700 + (i * 389) % 1300) * p, to: (2600 + (i * 211) % 900) * p, length: .025, gain: .028 }));
+    return .45;
+  }, jitter: 60, gap: .3, voices: 1 },
+  rewind: { synth: (c, out, at, p) => {
+    tone(c, out, at, { type: 'sawtooth', from: 900 * p, to: 180 * p, length: .22, gain: .05 });
+    tone(c, out, at + .2, { type: 'sawtooth', from: 180 * p, to: 1400 * p, length: .25, gain: .045 });
+    for (let t = 0; t < .45; t += .03) noise(c, out, at + t, { cutoff: 3000 * p, to: 1500, type: 'bandpass', q: 4, length: .02, gain: .05 });
+    return .5;
+  }, jitter: 30, gap: .3, voices: 1 },
   'glass-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 3600 * p, to: 3100 * p, length: .035, gain: .045 }); noise(c, out, at, { cutoff: 9000 * p, to: 5000, type: 'highpass', q: .8, length: .022, gain: .08 }); return .04; }, jitter: 450, gap: .024, voices: 3 },
   // Bajo cero (docs/animas/freatica/README.md § Sound): frozen, everything goes quiet but the ice. The water locking into
   // ice all at once (a crystalline hiss falling, glassy partials that are not a chord, a low settling); each blow's dry
