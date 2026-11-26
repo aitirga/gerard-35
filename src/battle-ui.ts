@@ -359,14 +359,16 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const livesShown = new WeakSet<object>();
   /** Cegado: a blinded foe's physical blow went past whoever it was meant for. Smoke grey, over them, where its number would be. */
   const missPop = (id: string, dx = 0) => pop(id, 'Falla', 'status', 'No ve nada', 'cegado', dx)?.setAttribute('data-miss', '');
-  function livesPop(id: string, saved: { blow: number; amount: number }) {
+  function livesPop(id: string, saved: { blow: number; amount: number }, staged = false) {
     if (livesShown.has(saved)) return;
     livesShown.add(saved);
     const el = pop(id, `−${saved.blow}`, 'lives', '¡Siete vidas!');
     if (!el) return;
-    callbacks.sound('crit');
+    // Its one sound (`siete-vidas-salva`: the blow backwards, the purr, the rising cure): the scene plays it with an action's
+    // save it stages (`staged`); a pulse's or a round's tick, which it does not, plays it here.
+    if (!staged) callbacks.sound('siete-vidas-salva');
     const token = generation;
-    setTimeout(() => { if (token !== generation) return; el.querySelector('strong')!.textContent = `+${saved.amount}`; el.dataset.turned = ''; callbacks.sound('heal'); }, 380);
+    setTimeout(() => { if (token !== generation) return; el.querySelector('strong')!.textContent = `+${saved.amount}`; el.dataset.turned = ''; }, 380);
   }
   const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
   /** What a fire landing says over its target: its level, or Combustión at IV, with its own icon. */
@@ -2447,7 +2449,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         effect.splash?.forEach(h => { if (!missed.has(h.target) && h.amount) pop(h.target, `−${h.amount}`, 'damage', ''); });
       }
       else if (rain) hurtPop(rain[0].target, rain[0].amount, label, scatter(0), 'crit' in rain[0] && !!rain[0].crit);
-      else if (effect.hits) effect.hits.forEach(h => h.target === effect.lives?.target ? livesPop(h.target, effect.lives) : h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
+      else if (effect.hits) effect.hits.forEach(h => h.target === effect.lives?.target ? livesPop(h.target, effect.lives, true) : h.crit ? critPop(h.target, h.amount, true) : pop(h.target, `−${h.amount}`, 'damage', h.peeled ? peelText(h.peeled, state!.foes.find(f => f.id === h.target)) : label));
       else if (effect.target && target) {
         // A big onion's weight falls on the others as well.
         effect.splash?.forEach(other => pop(other.target, `−${other.amount}`, 'damage', isOnion(state!.foes.find(f => f.id === effect.actor)?.kind) ? '¡Qué peso!' : ''));
@@ -2456,7 +2458,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
         // Corchete: no number, the ally between brackets says so.
         if (effect.guarded) pop(effect.target, 'Protegido', 'guard', label);
         // Siete vidas: the blow that would have felled them turns into a cure.
-        else if (effect.lives?.target === effect.target) livesPop(effect.target, effect.lives);
+        else if (effect.lives?.target === effect.target) livesPop(effect.target, effect.lives, true);
         // Acecho: nothing lands yet; the crouch says so over the wearer (below).
         else if (effect.stalking) { /* its stamp below */ }
         else if (strikes) hurtPop(effect.target, strikes[0], label, spread(0), critOn(effect.target));
