@@ -286,6 +286,17 @@ Rules that come with a linear HDR buffer:
 - For before/after comparisons, `window.gerard.game.post.enabled = false` renders straight to the
   screen (development build), and `post.graded = false` keeps the pass but drops the grading.
 
+### The collage (built 2026-11-26)
+
+Un golpe de dados (docs/animas/dadaista/README.md § Definitiva) tears the picture in the compose pass (`collage`,
+`COLLAGE` in `src/post.ts`; its timing in `src/coup-fx.ts`): five to seven strips across, leaning together, each with
+torn edges (two octaves of value noise along x), slid and turned by its own hash and drawn from the scene through the
+same grade, tone map and vignette as the rest. Between them a night sky of hashed stars and a red rule, bright past white
+so the astral's night that comes after it in the pass keeps its red. Each strip's top margin is ivory paper printed with
+a line of the poem: eight lines drawn once on a canvas (`COLLAGE_WORDS`, Didot-like capitals of different sizes, as
+Mallarmé's page) into a texture the pass samples by row. Off (`shown` 0) it is one uniform branch; on, a handful of
+samples a pixel. Torn back to `askew` and faded out is the strips glued back.
+
 ### Tilt-shift and contact shadows
 
 Two effects read the scene depth, which a **depth prepass** draws first (an MSAA scene can't

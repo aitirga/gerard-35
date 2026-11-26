@@ -680,12 +680,12 @@ title = "Objeto encontrado: el dado de hueso que sale de la reacción"
 priority = "animas"
 note = "De los restos de la reacción sale despedido un dado pequeño de hueso mate con filo astral, hace un arco hasta quien la lleva y cae en la mano rodando, con unas motas detrás: un emisor found en la GPU que reutiliza la malla del dado, nunca rosa ni violeta, y el clic bajo de un dado que rueda. Hoy se ven «Objeto encontrado · Pasiva · +1 dado» y el sexto dado en la bandeja."
 
-# Designed (docs/animas/dadaista/README.md § Definitiva: Un golpe de dados): the hand filled to six.
+# Built 2026-11-26 (docs/animas/dadaista/README.md § Definitiva: Un golpe de dados): the hand filled to six.
 [[block.item]]
 title = "Dadista: la definitiva Un golpe de dados"
 priority = "historia"
-note = "La definitiva de Dadista (dadaista/README): por construir."
-grep = "un-golpe-de-dados"
+note = "Hecha: despierta con el Crítico de quien lleva Dadista al 100 % (Racha y el ×2 de Ases en dúo contados) y sigue despierta; un dado de luz por enemigo, 40 mágico no elemental, crítico seguro; no gasta dado ni Racha y llena la mano hasta seis. Su aspecto, el collage (pase collage de src/post.ts, src/coup-fx.ts), y su pareja en el primer combate de la Reina (reina-con-golpe-de-dados / -sin-: lo toma a Aitor dos rondas antes)."
+grep = "id: 'un-golpe-de-dados'"
 in = "src/battle.ts"
 
 # ——— Ánimas ———
@@ -1636,8 +1636,8 @@ done = true
 [[block.item]]
 title = "Las definitivas en fight-sim"
 priority = "animas"
-note = "Una pareja de objetivos por definitiva, con ella y sin ella, en un jefe largo (Aitor, 2026-11-26): reina-con-fin-de-fiesta, reina-con-siete-vidas, reina-con-bajo-cero y direccion-con-enjambre, cada una con su «sin», ya están. Faltan Da capo (ningún jefe largo la sujeta aún: su ítem dice por qué), Un golpe de dados y Horas extra (sin construir), cada una como <combate>-con-<id> y <combate>-sin-<id>. El bot ya valora lo que pagan y el tarro mixto las compra todas."
-grep = "(?s)\\A(?=.*id: 'reina-con-fin-de-fiesta')(?=.*id: 'reina-sin-fin-de-fiesta')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')(?=.*id: '[a-z0-9-]*-con-golpe-de-dados')(?=.*id: '[a-z0-9-]*-sin-golpe-de-dados')(?=.*id: '[a-z0-9-]*-con-horas-extra')(?=.*id: '[a-z0-9-]*-sin-horas-extra')"
+note = "Una pareja de objetivos por definitiva, con ella y sin ella, en un jefe largo (Aitor, 2026-11-26): reina-con-fin-de-fiesta, reina-con-siete-vidas, reina-con-bajo-cero, direccion-con-enjambre y reina-con-golpe-de-dados, cada una con su «sin», ya están. Faltan Da capo (ningún jefe largo la sujeta aún: su ítem dice por qué) y Horas extra (sin construir), cada una como <combate>-con-<id> y <combate>-sin-<id>. El bot ya valora lo que pagan y el tarro mixto las compra todas."
+grep = "(?s)\\A(?=.*id: 'reina-con-fin-de-fiesta')(?=.*id: 'reina-sin-fin-de-fiesta')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'direccion-con-enjambre')(?=.*id: 'direccion-sin-enjambre')(?=.*id: '[a-z0-9-]*-con-da-capo')(?=.*id: '[a-z0-9-]*-sin-da-capo')(?=.*id: 'reina-con-golpe-de-dados')(?=.*id: 'reina-sin-golpe-de-dados')(?=.*id: '[a-z0-9-]*-con-horas-extra')(?=.*id: '[a-z0-9-]*-sin-horas-extra')"
 in = "src/battle-sim.ts"
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the

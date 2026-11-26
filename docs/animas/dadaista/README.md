@@ -3,9 +3,9 @@
 Status: playable to level 7 (its dice as maná, Tirar dado and its five faces, the Comodín, the
 *Racha* and its counter, Agitar and its node at the jar, Estrella fugaz, Maná +1, Dados astrales,
 Ases en dúo, Meteorito → Meteoro → Asteroide, its look and interface; since 2026-11-26 the hand
-up to six and Objeto encontrado at level 6). Designed whole 2026-11-20 round Aitor's direction of
-that day (dice, luck and the astral) and built the same day. Still a design: the definitiva *Un
-golpe de dados*, a partner giving maná · Comes from: the
+up to six and Objeto encontrado at level 6, and the definitiva *Un golpe de dados* with its look,
+the collage). Designed whole 2026-11-20 round Aitor's direction of that day (dice, luck and the
+astral) and built the same day. Still a design: a partner giving maná · Comes from: the
 university friends' mission, [`docs/quests/universidad.md`](../../quests/universidad.md)
 
 What is **decided** says so and by whom. Everything else is a proposal with its numbers as first
@@ -125,7 +125,7 @@ A die has six faces (`DIE_FACES`): two hands and one each of the others. All cos
   round's rest never fill it past that.
 - **Six is the most it ever holds** (Aitor 2026-11-25; built 2026-11-26, `HAND.most`). Only two
   things deal past the top: **Objeto encontrado** (one die a round, below) and the definitiva
-  *Un golpe de dados* (the hand filled to six; not built yet). Six is what the three meteors
+  *Un golpe de dados* (the hand filled to six, built 2026-11-26). Six is what the three meteors
   cost, and no hand gets there by waiting.
 - **Nothing takes the dice past the top off.** Defender and a round's rest still fill only to
   the top, and with a hand past it they give nothing and take nothing; Estrella fugaz deals only
@@ -273,6 +273,42 @@ Bought at the jar (2 ecos). The name is Mallarmé's: *Un golpe de dados jamás a
 
 The sky throws for once: one great die of light on each foe, and a hand of six, which is the
 three meteors paid for. To look at again now that Asteroide exists: both fall on every foe.
+
+**Built 2026-11-26** (`un-golpe-de-dados` in `SKILLS`, `COUP` in `src/battle.ts`):
+
+- **Waking** (`wakeCoup`, Aitor 2026-11-25): once any action of the party leaves someone standing in
+  Dadista with Crítico 100 % or more (their own, the Racha's and Ases en dúo's ×2: `ownCrit`, never
+  Olor a sangre's, which is the foe's). A die spent, Ases en dúo and Suceso seguro are what get it
+  there. It stays awake once the Racha is spent. The sleeping row and the plate show the Crítico it
+  has, as a %.
+- **What it does**: one die of light on every foe standing, power 40, magic of no element, a sure
+  golpe crítico. It spends a foe's Punto débil; a shell, a song or a mirror still stop it. It spends
+  no die and no Racha (the meteor goes back to Meteorito, as with anything else), and fills the hand
+  up to six (`pastCap`, `HAND.most`): «+N dados · Mano de seis» over the wearer.
+- **Its look, the collage** (`src/coup-fx.ts`, the `collage` pass in `src/post.ts`): the astral's
+  night comes down; the picture tears into five to seven strips of ivory paper, slid and turned a
+  little, with a sky of stars in the gaps and a red rule across, each strip with a line of the
+  poem in Spanish along its top margin («Un golpe de dados», «jamás», «aunque lanzado en
+  circunstancias eternas», «desde el fondo de un naufragio», «abolirá el azar»…); a constellation of
+  red ink joins the foes; a great die of glass light (a `box` lattice) comes down turning on each;
+  at the contact the fight stops a quarter of a second and each bursts into the Comodín's vermilion
+  star with a pool of light on the floor; six dice of glass go back to the hand in arcs and the strips
+  are stuck back, crooked, and gone. Reduced motion keeps the dice and numbers and drops the strips.
+  Not built from the design: the lens under each die's weight (the black hole's lens reads wrong here).
+- **Sound**: the night rising, paper torn (`rasgado`), three dice of glass knocking as they fall; at
+  the contact the slam, the golpe crítico, the glass of the six dice and the hand filling.
+- **Its pair of targets** (Aitor 2026-11-26: in a long boss fight): `reina-con-golpe-de-dados` against
+  `reina-sin-golpe-de-dados`, the Queen's first fight (lost by design at her tenth), measured as Fin de
+  fiesta's: the round she takes Aitor. Aitor on Dadista, Gerard on Matemágico, the third floor's party
+  with the definitiva bought on top. The bot keeps the Racha and plays Ases en dúo to bring his
+  Crítico to 100 % (`COUP_SHARE` in `src/battle-sim.ts`: a Racha spent short is a step back, as Fin de
+  fiesta's powder) and casts it on her and her hands. Measured 2026-11-26, 200 fights, seeds 35, 7 and
+  99: woken in 74–79 % of fights; she takes Aitor at 8.4–8.8 rounds against 10.6–10.9 without it, and
+  10.7–11.0 when the bot plays the same push and only does not cast it, so the two rounds are the
+  definitiva's and not Ases en dúo's.
+  **Dirección holds it worse** (tried first): the meeting is won in under five rounds and most of
+  what changes is Ases en dúo's turn; the cast adds only a third of a round on top of the same push
+  (4.3–4.4 rounds against 4.7–4.8, Aitor kept on Dadista, 150 fights, seeds 35 and 7).
 
 ## What a round looks like
 
@@ -464,7 +500,7 @@ Ases en dúo or reaches the Asteroide, so it cannot value them.
 
 **To build**:
 
-5. The definitiva, when definitivas are built; a partner's skill that gives maná.
+5. A partner's skill that gives maná. (The definitiva, *Un golpe de dados*, is built: § Definitiva.)
 6. The simulator: faces as things to ban, `worth` for the bracket, the eye and the Racha.
 
 ## For the balance, later
