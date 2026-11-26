@@ -1102,9 +1102,10 @@ function lastNotes(state: BattleState, effect: BattleEffect) {
 }
 /**
  * What the ecos up are still worth, for the bot (src/battle-sim.ts): each one's notes still to come at
- * its grade on whoever it would reach now, about. Pure: a copy of the fight is looked at.
+ * its grade on whoever it would reach now, about; and, with `chord` (Da capo is the bot's to use), the third
+ * eco that makes the chord waking it (`CAPO_CHORD`). Pure: a copy of the fight is looked at.
  */
-export function ecoWorth(state: BattleState): number {
+export function ecoWorth(state: BattleState, chord = true): number {
   let worth = 0;
   const foes = state.foes.filter(f => f.hp > 0 && !f.part);
   if (!foes.length) return 0;
@@ -1120,8 +1121,23 @@ export function ecoWorth(state: BattleState): number {
     } else if (e.kind === 'acompanamiento') worth += beats * .7 * magical(SKILLS.find(s => s.id === 'acompanamiento')!.power, stats, guard) * k * (e.grade === 2 ? foes.length : 1);
     else worth += Math.min(e.grade === 2 ? Infinity : aimed.hp, beats * magical(ECOS.pulse, stats, guard) * k * (e.grade === 2 ? foes.length : 1));
   }
+  // Da capo bought and asleep: the third eco up is its chord, which wakes it at the next beat (`runEcos`). The ecos before
+  // it are left to `wakeWorth`'s steps, as any definitiva's.
+  if (chord && chordReady(state)) worth += CAPO_CHORD.worth + CAPO_CHORD.dual * (state.usedDuals?.length ?? 0);
   return worth;
 }
+/**
+ * What the third eco is worth to the bot when it makes the chord that wakes Da capo (`ecoWorth`): `worth` for the maná it
+ * will bring back, and `dual` for each dual already used that it would give back. Measured 2026-11-26
+ * (docs/animas/sincopante/README.md § Its targets): valuing the second eco too, on the square of how near the chord is,
+ * pulled the full party off Siete vidas at the Queen (`reina-con-siete-vidas` 13.2 rounds → 11.9); the third alone does not.
+ * In the rooms the bot hardly reaches the chord at any worth: three ecos cost more maná than Sincopante holds.
+ */
+export const CAPO_CHORD = { worth: 20, dual: 20 };
+/** Whether the ecos up are the chord that would wake Da capo at the next beat: bought and asleep, three of them, and Sincopante worn by someone standing. */
+const chordReady = (state: BattleState) => !state.unbound && !state.dacapo?.woke && skillKnown('da-capo', state.levels, state.improved)
+  && state.allies.some(a => a.hp > 0 && a.classId === 'sincopante')
+  && (state.ecos?.filter(e => (state.allies.find(a => a.id === e.owner)?.hp ?? 0) > 0).length ?? 0) >= ECOS.most;
 /**
  * What Corriente alterna's circuits are still worth, for the bot (src/battle-sim.ts): each beat still to come on the pole
  * it would go to now, with its sender's Magia, and the first beat on a pole that carries something to turn (water, smoke,

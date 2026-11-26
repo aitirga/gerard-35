@@ -13,7 +13,7 @@ import { isBoss } from './home-lights.ts';
 import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
-  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
+  takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   ultiProgress, awakeUlti, warded, iceBreakPower, DICED,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
@@ -273,6 +273,8 @@ const BOOKS = {
   reaction: { rules: REACTION_RULES },
   // Corriente alterna's circuit: its first beat's power, how much more each, and how many (battle.ts `ALTERNA`).
   alterna: { rules: ALTERNA },
+  // What the bot sees in the chord that wakes Da capo: its maná and each dual it would give back (battle.ts `CAPO_CHORD`).
+  capo: { chord: CAPO_CHORD },
   // Cegado: how long it lasts (s), and how often a physical blow misses in smoke and in Explosión's flash (battle.ts `CEGADO`).
   cegado: { rules: STATUS_TIMED.cegado, odds: CEGADO },
   element: { rules: ELEMENT_RULES },
@@ -792,7 +794,7 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     value += (sum(threat) - sum(threatOn(after))) * 1.5;
   }
   // Sincopante's ecos: the notes still to come from those up (a call adds them, Crescendo raises them, Tutti spends them).
-  value += ecoWorth(after) - ecoWorth(before);
+  value += ecoWorth(after, !ban.includes('da-capo')) - ecoWorth(before, !ban.includes('da-capo'));
   // Corriente alterna: the beats its circuit has still to give (`circuitWorth`).
   value += circuitWorth(after) - circuitWorth(before);
   // Da capo: every dual already used back, and the party's maná full (what each point gathered is worth).
