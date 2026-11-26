@@ -4,6 +4,7 @@ import { markHeights } from '../freatica-fx';
 import { ELECTROLYSIS_DRAIN } from '../freatica-fight';
 import type { GpuKind } from '../fight-particles';
 import { neonCurve } from '../math-figures';
+import { deflagrate } from '../deflagrate';
 import type { DuoFighter, DuoStage, DuoStaging } from './types';
 
 /**
@@ -302,14 +303,9 @@ function ignition(stage: DuoStage, e: BattleEffect) {
   const fx = stage.fx, clouds = e.ignited!.hits.flatMap(h => { const f = stage.fighter(h.target); return f ? [{ f, ...cloudOf(f, h.level), level: h.level }] : []; });
   // Fresh gas in every cloud at once, so the front has something to run through even where the hold's has thinned.
   for (const c of clouds) g.burst('electro-gas', { at: c.at, count: 90 * c.level, spread: c.radius, speed: .04, life: [1.8, 2.2], colour: C.h2 });
-  clouds.forEach((c, i) => {
-    const from = i ? clouds[i - 1].at : c.at, way = { x: c.at.x - from.x, y: 0, z: c.at.z - from.z }, d = Math.hypot(way.x, way.z) || 1;
-    const dir = i ? { x: way.x / d, y: 0, z: way.z / d } : screenAxes(stage.view).right;
-    const start = i * IGNITION_GAP + .03, sweep = .26, steps = 16;
-    // A point of fire that crosses the cloud: what it reaches catches, and what catches lights the rest (`ignite`).
-    for (let s = 0; s <= steps; s++) fx.after(start + sweep * s / steps, () => g.ignite(add(c.at, dir, c.radius * (-1.2 + 2.4 * s / steps)), c.radius * .9));
-    // And whatever the front left behind, all at once as it ends: no bead of gas outlives its cloud.
-    for (const late of [.05, .25, .5]) fx.after(start + sweep + late, () => g.ignite(c.at, c.radius * 2.4 + .3));
+  // The front through each cloud in turn (src/deflagrate.ts, as Fin de fiesta's powder): where it reaches, the crack.
+  deflagrate(g, fx.after, clouds, { start: .03, gap: IGNITION_GAP, sweep: .26, steps: 16, across: screenAxes(stage.view).right }, (c0, i, start) => {
+    const c = clouds[i];
     fx.after(start + .02, () => {
       stage.cue('gas-crack', { pan: stage.pan(c.at), volume: .8 + .1 * c.level });
       stage.fluid.fireball(c.at, .25 + .12 * c.level, .45 + .2 * c.level, { smoke: false });
@@ -322,7 +318,7 @@ function ignition(stage: DuoStage, e: BattleEffect) {
       stage.shake(.18 + .1 * c.level); stage.pulse(.25, .6 + .15 * c.level, .08 * c.level);
     });
     // Hydrogen and oxygen make water: a fine drizzle out of where the cloud was (it wets nobody).
-    fx.after(start + sweep + .15, () => stage.fluid.burst('fluido-agua', { at: c.at, count: Math.round(110 * c.level), spread: c.radius * .9, speed: .25, life: [.7, 1.1], size: .45 }));
+    fx.after(start + .26 + .15, () => stage.fluid.burst('fluido-agua', { at: c0.at, count: Math.round(110 * c.level), spread: c.radius * .9, speed: .25, life: [.7, 1.1], size: .45 }));
   });
   stage.punch(.3);
 }
