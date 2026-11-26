@@ -1142,6 +1142,9 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
     // A definitiva waking (`despierta:<id>`, what its pair of targets holds), and Siete vidas' ward taking a blow that would have killed.
     if (effect.awoken) count(`despierta:${effect.awoken}`);
     if (effect.lives) count('siete-vidas');
+    // Bajo cero: the foes it froze (`congela`, one a foe) and each ice cracked through (`hielo-roto`).
+    for (const _ of effect.frozen ?? []) count('congela');
+    for (const ice of effect.ice ?? []) if (ice.broke !== undefined) count('hielo-roto');
     // Serie de Fourier: each blow past its first, one for each thing on the foe's plate (`armonico`).
     for (const _ of effect.harmonics ?? []) count('armonico');
     // A pounce lands as the round starts, out of anyone's turn: its PV are the action's that crouched (Acecho, or Arco voltaico).
@@ -1680,6 +1683,15 @@ export const TARGETS: readonly Target[] = [
   // ward taking a killing blow a third of the times (the proposal's floor, .3), 13.2 rounds against 11.1.
   { id: 'reina-con-siete-vidas', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [12.2, 15], happens: { 'siete-vidas': [.3, 1] }, why: 'Con Aitor en Papagato, la herida cortada hasta cinco y gastada despierta Siete vidas, y Yuki se queda con el equipo: el golpe que iba a tumbar a alguien lo cura. La Reina tarda dos rondas más en tumbarlos.' },
   { id: 'reina-sin-custodia', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', ban: ['siete-vidas'], win: [0, 0], roundsLost: [10, 11.5], happens: { 'siete-vidas': [0, 0] }, why: 'Sin Siete vidas, el primer golpe que mata, mata: la Reina tumba al mismo equipo dos rondas antes.' },
+  // Bajo cero (Freática's definitiva), held where a foe's water can reach the third mark: the Queen's first fight, lost by
+  // design at her tenth. The Delegada of the third floor cannot hold it: her room is over in five rounds, before any foe's
+  // water is at III (woken in 6 % of fights, cast in none, measured 2026-11-26 with Aitor on Freática alone). Played, the
+  // ice keeps her from acting for up to a minute; banned, the same party falls sooner. Measured 2026-11-26 (200 fights):
+  // cast 0.46 times a fight, the party falls at 19.4 rounds against 15.0, and at 13.9 with the ice melting at once
+  // (`--tune crecida.rules.ice=0.01`): the ice is what holds them, not the water raised to wake it. The guard is `suyo`:
+  // a minute of ice must not skip her phases, she still gets to her tenth and takes Aitor.
+  { id: 'reina-con-bajo-cero', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [17, 22], happens: { congela: [.3, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. El equipo aguanta cuatro rondas más, y aun así ella llega a su décimo y se lleva a Aitor.' },
+  { id: 'reina-sin-bajo-cero', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', ban: ['bajo-cero'], win: [0, 0], roundsLost: [13, 16.5], happens: { congela: [0, 0] }, why: 'Sin Bajo cero, la misma agua solo moja y hunde: la Reina tumba al mismo equipo cuatro rondas antes.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
