@@ -9,6 +9,7 @@
  */
 import { ACTION_SECONDS, BEAT, DUAL_CLOCK } from './battle-motion.ts';
 import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts';
+import { isBoss } from './home-lights.ts';
 import {
   ALTERNA, ANIMA_NAMES, BELL, POWDER_TURNS, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
@@ -467,6 +468,21 @@ const DUST_STEP = .5;
  */
 const LIVES_WORTH = 40, LIVES_IDLE = 8;
 /**
+ * Siete vidas asleep, as `smart` measures how near it is: the wound's stacks up to five, and then the blow that spends it,
+ * a step of its own (`nearness`), so cutting to five and cashing it in both bring it nearer, and the spend most.
+ */
+const LIVES_STEPS = 1;
+/**
+ * What waking Siete vidas is worth to `smart` over what its claws and its ward do the turn it is cast (`ultiWorth`): the ward
+ * waits for the blow that would bring someone down, so in a fight that gets there it keeps a life: the PV it gives back and
+ * the turns that ally goes on to play, `LIVES_LIFE` times the PV of one of the party (their mean). Measured now, with nobody
+ * in reach yet, it would be worth only `LIVES_IDLE`, and the bot never cut a wound to five for it (the Queen, 2026-11-26:
+ * woken in 0 % of fights; at 1, 13 %; at 2, about 40 %).
+ */
+const LIVES_LIFE = 2;
+/** The PV of one of the party standing, their mean: what a life kept is. */
+const lifeOf = (state: BattleState) => { const up = state.allies.filter(a => a.hp > 0); return up.reduce((sum, a) => sum + a.maxHp, 0) / Math.max(1, up.length); };
+/**
  * A die past the hand's cap (the hand up to six: Un golpe de dados, Objeto encontrado): the maná it is and the face it plays.
  * Nothing deals one yet; `handWorth` already counts it.
  */
@@ -772,7 +788,7 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   const ward = after.allies.filter((a, i) => a.hp > 0 && warded(a) && !warded(before.allies[i]));
   if (ward.length) { const saved = ward.filter(a => (threat.hp.get(a.id) ?? 0) >= (before.allies.find(b => b.id === a.id)?.hp ?? 0)).length; value += saved ? saved * LIVES_WORTH : LIVES_IDLE; }
   // The hand past its cap, and a sleeping definitiva brought nearer to waking.
-  value += handWorth(before, after) + wakeWorth(before, after) + dustWorth(before, after);
+  value += handWorth(before, after) + wakeWorth(before, after, ban) + dustWorth(before, after);
   const skill = SKILLS.find(s => s.id === choice.skill);
   if (skill?.kind === 'boost') value += skill.power * 3 * before.foes.filter(f => f.hp > 0).length;
   // A guard put on one ally (Superficie mínima, Escolta, Corchete): what holding on would be worth to them, as Defender's.
@@ -830,24 +846,40 @@ function nearness(state: BattleState, c: Combatant) {
   const awake = awakeUlti(state, c);
   if (awake) return { skill: awake.id, at: 1 };
   const asleep = ultiProgress(state, c);
-  return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, asleep.have / asleep.need) } : undefined;
+  // Siete vidas: the wound cut to five is not yet the definitiva; the blow that spends it is the last step (`LIVES_STEPS`).
+  const steps = asleep?.skill === 'siete-vidas' ? asleep.need + LIVES_STEPS : asleep?.need ?? 0;
+  return asleep && !asleep.used && asleep.need > 0 ? { skill: asleep.skill, at: Math.min(1, Math.min(asleep.have, asleep.need) / steps) } : undefined;
 }
+/**
+ * Where waking Siete vidas is worth the turns it takes (`wakeWorth`): a boss's fight (`isBoss`: the ones that close a mission
+ * or a floor of the castle, and the Queen), which stands the rounds a wound needs to be cut to five and spent, and turns
+ * into the killing blows its ward is for. In a room of the castle the foes fall before the wound is deep, and the turns
+ * spent cutting it lose the room (`gemelos-tercero-bien` 88 % → 70 %, `monton-bien` 90 % → 63 %, measured 2026-11-26).
+ */
+const livesAtStake = (state: BattleState) => isBoss(state);
 /** What one choice brought the party's sleeping definitivas nearer to waking (`WAKE_WORTH`), for whoever wears each, standing. */
-function wakeWorth(before: BattleState, after: BattleState) {
+function wakeWorth(before: BattleState, after: BattleState, ban: readonly Ban[] = []) {
   let worth = 0;
   after.allies.forEach((ally, i) => {
     const was = before.allies[i];
     if (!was || ally.hp <= 0 || ally.classId !== was.classId) return;
     const from = nearness(before, was), to = nearness(after, ally);
-    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill); worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
+    // A definitiva the bot may not use is nothing to wake.
+    if (from && ban.includes(from.skill)) return;
+    // Siete vidas: only in a boss's fight (`livesAtStake`); there a wound spent short throws its steps away (the condition is
+    // a wound kept and cut to five, then spent).
+    const lives = from?.skill === 'siete-vidas' && !livesAtStake(before) ? 0 : 1;
+    if (from && to && from.skill === 'siete-vidas' && to.skill === from.skill && to.at < from.at) worth -= (from.at - to.at) * ULTI_SHARE * ultiWorth(before, i, to.skill) * lives;
+    if (from && to && from.skill === to.skill && to.at > from.at) { const own = ULTI_SHARE * ultiWorth(before, i, to.skill) * lives; worth += own > WAKE_WORTH ? (to.at - from.at) * own : (to.at ** 2 - from.at ** 2) * WAKE_WORTH; }
   });
   return worth;
 }
 /**
- * What Fin de fiesta would do if it went off now: played on a copy where it is awake, by whoever wears Colorista, and valued
- * as any choice is. `ULTI_SHARE` of it is what waking it is worth to `smart`, a third a reaction of the powder not seen yet
- * (above `WAKE_WORTH`, it goes in steps, not on the square: each of the three is as far as the others); the other
- * definitivas, whose conditions are not a few blows of one kind, keep `WAKE_WORTH`. Measured once a decision (`decide`).
+ * What Fin de fiesta or Siete vidas would do if it went off now: played on a copy where it is awake, by whoever wears its
+ * ánima, and valued as any choice is (Siete vidas: its claws and its ward, `LIVES_WORTH`). `ULTI_SHARE` of it is what waking
+ * it is worth to `smart` (above `WAKE_WORTH`, it goes in steps, not on the square: a third a reaction of the powder not seen
+ * yet; a sixth each stack of the wound and the blow that spends it); the other definitivas, whose conditions are not a few
+ * blows of one kind, keep `WAKE_WORTH`. Measured once a decision (`decide`).
  */
 const ULTI_SHARE = .5;
 let ultiWorths = new WeakMap<BattleState, Map<string, number>>();
@@ -856,12 +888,14 @@ function ultiWorth(before: BattleState, wearer: number, skill: SkillId) {
   if (known.has(key)) return known.get(key)!;
   let value = 0;
   const spec = SKILLS.find(s => s.id === skill), foe = before.foes.find(f => f.hp > 0);
-  if (skill === 'fin-de-fiesta' && spec && foe) {
+  if ((skill === 'fin-de-fiesta' || skill === 'siete-vidas') && spec && foe) {
     const look = copy(before);
     look.unbound = true; look.phase = 'player'; look.active = wearer;
     delete look.spent; delete look.queued;
     const after = copy(look), choice: Choice = { action: 'skill', skill, target: foe.id };
     if (apply(after, choice)) value = Math.max(0, gain(look, after, choice, threatOn(look), []));
+    // Siete vidas: its ward waits for the blow that would bring someone down, and keeps them: a life, their PV (`LIVES_LIFE`).
+    if (skill === 'siete-vidas') value += LIVES_LIFE * lifeOf(look);
   }
   known.set(key, value); ultiWorths.set(before, known);
   return value;
@@ -1627,6 +1661,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'reina-toma-a-aitor', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [2.5, 12] }, why: 'La Reina, con lo que pide cada fase: arrancarle las capas con lo que deshace cada una, aguantar la mano que sujeta y romperlas, reventar La Pompa a tiempo. Se la lleva hasta el décimo de sus PV; ahí toma a Aitor, y sin el artilugio Gerard cae.' },
   { id: 'reina-con-el-duo', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [.6, 12] }, why: 'Sin llevar puestas las ánimas de los amigos también se la lleva hasta ahí casi siempre: más largo y más justo.' },
   { id: 'reina-sin-pensar', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, 0], happens: { suyo: [0, .5] }, why: 'Sin la respuesta de cada fase no se llega a su décimo: bajo el chicle todo entra a un cuarto, una mano se lleva a uno y La Pompa revienta entera. Es una caída cualquiera.' },
+  // Siete vidas (Papagato's definitiva), held where a killing blow comes for sure: the Queen's first fight, lost by design at
+  // her tenth. Played, Yuki's ward takes a blow that would have brought someone down, and she needs a round more to bring
+  // the party down; banned, the same party falls sooner. Measured 2026-11-26 (200 fights): woken in about 40 % of them, the
+  // ward taking a killing blow in about a quarter, 12.4 rounds against 11.1.
+  { id: 'reina-con-siete-vidas', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [11.8, 14.5], happens: { 'siete-vidas': [.15, 1] }, why: 'Con Aitor en Papagato, la herida cortada hasta cinco y gastada despierta Siete vidas, y Yuki se queda con el equipo: el golpe que iba a tumbar a alguien lo cura. La Reina tarda una ronda más en tumbarlos.' },
+  { id: 'reina-sin-custodia', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', ban: ['siete-vidas'], win: [0, 0], roundsLost: [10, 11.5], happens: { 'siete-vidas': [0, 0] }, why: 'Sin Siete vidas, el primer golpe que mata, mata: la Reina tumba al mismo equipo una ronda antes.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
