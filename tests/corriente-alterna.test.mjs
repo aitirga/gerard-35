@@ -151,22 +151,26 @@ test('a clock started over on a pole (Rayo de energía) keeps its circuit going,
   assert.ok(more[1].amount >= more[0].amount * .9, 'past the last it beats at the last');
 });
 
-test('two circuits on one pole run each on its own clock: a new one never stretches the old', () => {
+test('played again (Da capo) while its circuit still beats, the old circuit goes out: the new one starts its clock and its beats over', () => {
   const s = pair();
   actDual(s, 'corriente-alterna', 'dog-0');
   s.phase = 'player';
   beat(s, true); beat(s); beat(s);
-  // Da capo gives the dual back: a second circuit between dog-2 and dog-1, sharing dog-1.
+  assert.equal(s.circuits[0].beat, 3);
+  // Da capo gives the dual back: on dog-1 it wires dog-2 and dog-1, and the old circuit (dog-1 and dog-0) is gone.
   delete s.usedDuals; s.phase = 'player'; s.active = 0; delete s.spent; for (const a of s.allies) a.secondary = a.maxSecondary;
   assert.deepEqual(actDual(s, 'corriente-alterna', 'dog-1').circuit, ['dog-2', 'dog-1']);
-  assert.equal(s.circuits.length, 2);
-  assert.equal(s.foes[1].timed.alterna.left, TIMED.alterna.seconds, 'the shared pole shows the longer clock');
+  assert.equal(s.circuits.length, 1, 'never two at once');
+  assert.deepEqual(s.circuits[0].poles, ['dog-2', 'dog-1']); assert.equal(s.circuits[0].beat, 0, 'its strength from the first beat');
+  assert.equal(s.foes[0].timed?.alterna, undefined, 'the old pole no longer carries it');
+  assert.equal(s.foes[1].timed.alterna.left, TIMED.alterna.seconds);
   s.phase = 'player';
   const beats = [];
   for (let i = 0; i < 8; i++) beats.push(...runClock(s, TIMED.alterna.every));
-  const old = beats.filter(p => p.status === 'alterna' && p.level >= 4 && (p.target === 'dog-0' || p.by === 'dog-0'));
-  assert.equal(old.length, 1, 'the first circuit gives the one beat it had left');
-  assert.equal(beats.filter(p => p.status === 'alterna').length, 5, 'one from the old, four from the new');
+  const alterna = beats.filter(p => p.status === 'alterna');
+  assert.equal(alterna.length, ALTERNA.beats, 'the new circuit\'s four beats, none from the old');
+  assert.deepEqual(alterna.map(p => p.level), [1, 2, 3, 4]);
+  assert.ok(alterna.every(p => p.target !== 'dog-0'));
   assert.equal(s.circuits, undefined); assert.ok(s.foes.every(f => !f.timed?.alterna));
 });
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, awakeUlti, capoReady, createBattle, DUALS, ECOS, ecosOf, improve, offbeat, runClock, skillsFor, takeEcoNews, validTargets, wearAnima, manaMax, SKILLS, PASSIVES } from '../src/battle.ts';
+import { act, actDual, awakeUlti, capoReady, createBattle, diceOf, DUALS, ECOS, ecosOf, improve, offbeat, runClock, skillsFor, takeEcoNews, TIMED, validTargets, wearAnima, manaMax, SKILLS, PASSIVES } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
 import { skillsAt, passivesAt, topOf } from '../src/levels.ts';
 
@@ -197,6 +197,56 @@ test('Da capo: the duals already used can go off again, everyone\'s maná fills 
   assert.equal(aitor.secondary, aitor.maxSecondary);
   assert.ok(s.ecos.every(e => e.left === ECOS.life));
   assert.ok(!capoReady(s), 'once a fight'); assert.ok(!ids(s, 'aitor').includes('da-capo'));
+});
+
+const FIRE_TO_VULCANO = ['matemagico:fuego', 'matemagico:factor-comun', 'matemagico:rescoldo', 'matemagico:combustion', 'matemagico:vulcano'];
+/** Da capo awake and used by Aitor now. */
+const daCapo = s => { s.dacapo = { woke: true }; turn(s, 'aitor'); return act(s, 'skill', undefined, 'da-capo'); };
+
+test('Da capo gives back the dúos mayores too, and one played again while it still sounds starts over: never two at once', () => {
+  const s = fight(7, ['sincopante:definitiva', ...FIRE_TO_VULCANO]);
+  turn(s, 'gerard');
+  assert.ok(actDual(s, 'vulcano'), 'Vulcano, a dúo mayor');
+  s.phase = 'player'; tick(s, 6);
+  assert.ok(s.foes.every(f => f.timed.volcan.left < TIMED.volcan.seconds));
+  const effect = daCapo(s);
+  assert.deepEqual(effect.dacapo.duals, ['vulcano']);
+  turn(s, 'gerard');
+  assert.ok(actDual(s, 'vulcano'), 'the dúo mayor goes off a second time');
+  assert.ok(s.foes.every(f => f.timed.volcan.left === TIMED.volcan.seconds && f.timed.volcan.level === 1), 'its clock and its strength over');
+  turn(s, 'gerard');
+  assert.equal(actDual(s, 'vulcano'), undefined, 'and once more is once more: it is spent again');
+});
+
+test('a dual that leaves an eco in one foe, played again on another, takes it from the first: Staccato', () => {
+  const s = fight(7, ['sincopante:definitiva']);
+  const gerard = by(s, 'gerard');
+  gerard.classId = 'papagato'; s.levels = { ...s.levels, papagato: 7 }; gerard.maxSecondary = manaMax(s.improved, 'papagato', s.levels);
+  turn(s, 'gerard');
+  assert.ok(actDual(s, 'staccato', 'dog-0'));
+  assert.ok(by(s, 'dog-0').timed.staccato);
+  daCapo(s);
+  turn(s, 'gerard');
+  assert.ok(actDual(s, 'staccato', 'dog-2'));
+  assert.equal(by(s, 'dog-0').timed?.staccato, undefined, 'the old one is gone');
+  assert.equal(by(s, 'dog-2').timed.staccato.left, TIMED.staccato.seconds);
+});
+
+test('Da capo brings Dadista\'s hand back to the dice it started with, never to six, and never cuts a hand past that', () => {
+  const s = fight(7, ['sincopante:definitiva']);
+  const gerard = by(s, 'gerard');
+  gerard.classId = 'dadaista'; s.levels = { ...s.levels, dadaista: 7 }; gerard.maxSecondary = manaMax(s.improved, 'dadaista', s.levels);
+  const start = gerard.maxSecondary;
+  gerard.secondary = 1; diceOf(s, gerard);
+  daCapo(s);
+  assert.equal(gerard.secondary, start); assert.equal(diceOf(s, gerard).length, start);
+  assert.ok(start < 6);
+  // A hand past its top (the hand up to six) is kept as it is.
+  const t = fight(7, ['sincopante:definitiva']), other = by(t, 'gerard');
+  other.classId = 'dadaista'; t.levels = { ...t.levels, dadaista: 7 }; other.maxSecondary = manaMax(t.improved, 'dadaista', t.levels);
+  other.secondary = other.maxSecondary + 1;
+  daCapo(t);
+  assert.equal(other.secondary, other.maxSecondary + 1);
 });
 
 test('A dual is an action too: an eco at either one\'s side repeats it once', () => {

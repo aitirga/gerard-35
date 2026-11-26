@@ -962,6 +962,16 @@ export const contratiempoOf = (state: BattleState, c: Combatant) => c.classId ==
 export const pedalOf = (state: BattleState, c: Combatant) => c.classId === 'sincopante' && c.hp > 0 && ((state.levels?.sincopante ?? 1) >= PASSIVES.pedal.level! || !!state.unbound);
 /** How strong an eco's note is: its grade, and half while muffled. */
 const ecoScale = (state: BattleState, e: Eco) => (e.grade ? ECOS.raise : 1) * (ecoMuffled(state, e) ? ECOS.muffled : 1);
+/**
+ * Da capo's maná on `ally`: every ánima back to the start of the fight, worn or resting. Dadista's hand comes back to the
+ * dice it started with, never to six (Aitor, 2026-11-25); a hand or a pool already past that (the hand up to six) is
+ * kept, never cut.
+ */
+function fromTheTop(state: BattleState, ally: Combatant) {
+  ally.secondary = Math.max(ally.secondary, ally.maxSecondary);
+  for (const [id, held] of Object.entries(ally.mana ?? {}) as [ClassId, number][]) if (held <= manaMax(state.improved, id, state.levels)) delete ally.mana![id];
+  if (ally.mana && !Object.keys(ally.mana).length) delete ally.mana;
+}
 /** Whether Da capo is awake in this fight: bought, a chord has sounded while Sincopante was worn, and not used yet. */
 export const capoReady = (state: BattleState) => skillKnown('da-capo', state.levels, state.improved)
   && (state.unbound || (!!state.dacapo?.woke && !state.dacapo.used));
@@ -4085,13 +4095,13 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     const loudest = Math.max(...mine.map(e => e.grade));
     state.message = `${actor.name} usa ${ability.name}. ${mine.length === 1 ? 'Su eco suena' : 'Sus ecos suenan'} ${GRADE_NAMES[loudest]}${loudest === 2 ? ': llegan a todos' : ', más fuerte'}.`;
   } else if (party && ability && 'capo' in ability) {
-    // Da capo: back to the beginning. Every dual already used can go off once more, every ánima of everyone is full
-    // of maná again (worn or not), and the ecos up start their clocks over. It fires no dual by itself.
+    // Da capo: back to the beginning. Every dual already used can go off once more (the dúos mayores too), every ánima
+    // of everyone is full of maná again (worn or not), and the ecos up start their clocks over. It fires no dual by itself.
     effect.skill = skill; effect.target = actor.id;
     (state.dacapo ??= {}).used = true;
     const duals = [...state.usedDuals ?? []];
     delete state.usedDuals;
-    for (const ally of state.allies) if (ally.hp > 0 && wearsAnimas(ally)) { ally.secondary = ally.maxSecondary; delete ally.mana; }
+    for (const ally of state.allies) if (ally.hp > 0 && wearsAnimas(ally)) fromTheTop(state, ally);
     for (const e of state.ecos ?? []) e.left = ECOS.life;
     effect.dacapo = { duals, ecos: (state.ecos ?? []).map(e => e.id) };
     state.message = `${actor.name} usa ${ability.name}. ¡Todo vuelve al principio! El maná de todo el equipo se llena${duals.length ? ` y ${duals.length === 1 ? 'el ataque dúo ya usado vuelve' : 'los ataques dúo ya usados vuelven'}` : ''}.`;
@@ -4832,6 +4842,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   (state.spent ??= []).push(b.id);
   (state.usedDuals ??= []).push(d.id);
   if (state.queued) delete state.queued[b.id];
+  retake(state, d);
   const parts = halves.map(h => SKILLS.find(s => s.id === h)!);
   const striker = [a, b][Math.max(0, parts.findIndex(p => p.kind === d.kind))];
   const effect: BattleEffect = { actor: a.id, kind: 'skill', target: target.id, dual: { id: d.id, name: d.name, parts: [...halves], actors: [a.id, b.id], spent: { [a.id]: cost[halves[0]]!, [b.id]: cost[halves[1]]! } } };
@@ -5300,6 +5311,23 @@ function runCircuits(state: BattleState, seconds: number, pulses: TimedPulse[]) 
   if (!state.circuits.length) delete state.circuits;
   showPoles(state);
   if (pulses.length > before) checkEye(state);
+}
+/**
+ * A dual played again (Da capo gives it back, or the fight tester's Sin límites) while what it left still sounds: the old
+ * one goes out first, so the new one starts its clock and its strength over, wherever it lands, and there are never two of
+ * the same at once (Aitor, 2026-11-25). Its circuit (Corriente alterna), what it left on the foes (an eco in a head, a
+ * volcano, a tide, a wound kept open), its fuse (Reserva de color) and its painted cortina (Trampantojo). Electrólisis's gas
+ * is not the dual sounding but water split, and stays until a fire finds it.
+ */
+function retake(state: BattleState, d: DualSpec) {
+  if (d.id === 'corriente-alterna' && state.circuits) { delete state.circuits; showPoles(state); }
+  const left = d.leaves === 'gas' || d.leaves === 'alterna' ? undefined : d.leaves;
+  for (const foe of state.foes) {
+    if (left && foe.timed?.[left]) delete foe.timed[left];
+    if (d.volcano && foe.timed?.volcan) delete foe.timed.volcan;
+    if (d.id === 'reserva-de-color') delete foe.fuse;
+  }
+  if (d.id === 'trampantojo') for (const ally of state.allies) delete ally.decoy;
 }
 /** A timed status a dual leaves on `c`, from its whole time. */
 function lay(c: Combatant, id: TimedId) {
