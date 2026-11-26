@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { bodyOf, type Effects } from './effects.ts';
 import type { GpuEmitter, GpuKind } from './fight-particles.ts';
+import { deflagrate } from './deflagrate.ts';
 
 /**
  * The coloured powder of Luca's ánima, as a look (docs/animas/prismatico/README.md § Look and
@@ -117,13 +118,42 @@ export const POWDER_KINDS: Record<string, GpuKind> = {
     shape: 'dot', drag: 1.1, gravity: 5, curl: .4, response: .3, collide: true, bounce: 0, friction: 1, size: [.022, .014], sizeJitter: .6,
     colours: ['#ffffff', '#d9ebf3', '#a9c8d8'], intensity: [1.7, 1.35, 1.1], middle: .3, fadeIn: .03, fadeOut: .35, additive: .2, opacity: .7, core: .5,
   },
+  // Fin de fiesta (`fiesta`): the bags' powder gathered into one matte cloud over the foes, which catches (`ignite`) and burns
+  // as a front crosses it (src/deflagrate.ts); what burnt falls back as a heavy rain of wet pigment, and the stain stays.
+  fiestacloud: {
+    shape: 'powder', drag: 3, gravity: 0, curl: .7, response: .6, cohesion: .7, radius: .45, size: [.2, .46], sizeJitter: .55, blur: .3,
+    colours: WHITE, intensity: BRIGHT, middle: .4, fadeIn: .15, fadeOut: .25, additive: 0, opacity: .62, core: 0,
+    ignite: { into: 'fiestaflame', delay: .06, radius: .3 },
+  },
+  fiestaflame: {
+    shape: 'flame', drag: 2.4, gravity: -2.6, curl: 1.3, response: .8, size: [.14, .36], sizeJitter: .5, blur: [0, .6], life: [.35, .7],
+    colours: ['#fff2cc', '#ff8f2a', '#3b2a22'], intensity: [5.5, 3, .5], middle: .25, fadeIn: 0, fadeOut: .5, additive: .8, opacity: 1, flicker: .3,
+  },
+  fiestarain: {
+    shape: 'dot', drag: .25, gravity: 11, curl: .1, response: .1, collide: true, bounce: 0, friction: 1, size: [.04, .03], sizeJitter: .5, stretch: .02,
+    colours: WHITE, intensity: [1.2, 1.1, 1], fadeIn: .02, fadeOut: .05, additive: 0, opacity: 1, core: .6, onLand: 'paintpool',
+  },
+  fiestaarc: {
+    shape: 'streak', drag: 3, gravity: 0, curl: .2, size: [.024, .01], sizeJitter: .4, stretch: .03, aspect: .3,
+    colours: ['#ffffff', '#fff6c8', '#ffe27a'], intensity: [4, 3, 1.6], middle: .3, fadeIn: .01, fadeOut: .5, additive: 1, core: .6,
+  },
+  // The party's over: a stain of every colour on the floor where each foe stood, for the rest of the fight.
+  fiestastain: {
+    shape: 'powder', flat: true, settle: true, drag: 8, gravity: 30, collide: true, bounce: 0, friction: 1, size: [.22, .6], sizeJitter: .6,
+    colours: WHITE, intensity: [1.3, 1.2, 1.05], fadeIn: .2, fadeOut: .08, additive: 0, opacity: .5, core: 0, life: [400, 480],
+  },
   ...Object.fromEntries(Array.from({ length: COATS }, (_, i) => [`coat-${i}`, COAT])),
 };
 /** The shards are a few kinds in turn too (`shardling-0`…), so one fighter's can come off and the others' stay (`unshard`); as many as the coats, for the same reason. */
 const SHARD_SETS = 6;
 for (let i = 0; i < SHARD_SETS; i++) POWDER_KINDS[`shardling-${i}`] = POWDER_KINDS.shardling;
-/** Fin de fiesta, from the moment its puffs land (`at`): when the fire, the second puff, the water, the third puff and the spark come. */
-export const FIESTA = { contact: .9, repowder: .45, water: .85, third: 1.3, spark: 1.7, end: 2.4 };
+/**
+ * Fin de fiesta (docs/animas/prismatico/README.md § Fin de fiesta), in seconds: `bags` the belt's bags torn open, `cloud` the
+ * handfuls gathered over the foes, `contact` the front of fire through the cloud (the numbers land then); and from contact,
+ * `rain` the burnt cloud falling, `soak` the green, `spark` the arc from foe to foe (each foe's spikes `hop` after the last),
+ * `end` when it is over. The spikes take the last of it: the arc reaches the last foe well before the end.
+ */
+export const FIESTA = { bags: .3, cloud: .35, contact: .9, front: .12, rain: .6, soak: .95, spark: 1.2, hop: .14, end: 2.4 };
 /** Traca: seconds between two of its puffs. */
 export const TRACA_GAP = .12;
 /**
@@ -231,6 +261,34 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     sharded.set(id, { left: seconds, pale });
     shardUntil[shardSet] = Math.max(shardUntil[shardSet], now + seconds);
     return true;
+  }
+
+  /**
+   * Fire on `id`'s powder (in `colour`): a flash, a ball of flame off their whole body, the powder blown out charred, a ring
+   * along the floor, a scorch and smoke; and the blast reaches `near` (whoever stands by), embers thrown at them.
+   */
+  function blast(id: string, colour: string, near: readonly string[]) {
+    const g = gpu(), f = who(id);
+    if (!g || !f || f.index < 0) return;
+    const on = { at: f.feet, shape: 'surface' as const, fighter: f.index, above: .08 };
+    g.burst('blastflash', { at: f.chest, count: 3, spread: .1, life: [.16, .22] });
+    g.burst('blastring', { at: { x: f.feet.x, y: f.feet.y + .03, z: f.feet.z }, count: 1, spread: 0, life: [.4, .46] });
+    g.burst('fireball', { ...on, count: 110, outward: 5.5, up: 1.6, speed: 2.2, life: [.3, .75], light: { intensity: 5, range: 6, colour: '#ffb060' } });
+    g.burst('fireball', { at: f.chest, count: 40, spread: .3, speed: 7, life: [.25, .5], size: 1.3 });
+    g.burst('char', { ...on, count: 800, outward: 9, up: 2.6, speed: 4.5, life: [1, 2.4], colour });
+    if (g.get('ember')) g.burst('ember', { ...on, count: 180, outward: 6.5, up: 3, speed: 2.5, life: [.6, 1.5] });
+    if (g.get('crackle')) g.burst('crackle', { ...on, count: 60, outward: 4, up: 3, speed: 2, life: [.3, .8] });
+    effects.mark('scorch', f.feet, 1.1);
+    after(.14, () => { if (g.get('burnsmoke')) g.burst('burnsmoke', { ...on, count: 70, outward: 1.2, up: 1.6, speed: .8, life: [1.2, 2.6], size: 1.6 }); });
+    scene.onBurn?.(id);
+    for (const other of near) {
+      if (other === id) continue;
+      const o = who(other);
+      if (!o) continue;
+      const to = { x: o.chest.x - f.chest.x, y: o.chest.y - f.chest.y, z: o.chest.z - f.chest.z }, d = Math.hypot(to.x, to.y, to.z) || 1, v = 11;
+      if (g.get('ember')) g.burst('ember', { at: f.chest, count: 46, spread: .2, velocity: { x: to.x / d * v, y: to.y / d * v + 1, z: to.z / d * v }, cone: .3, speed: 3, life: [.4, .9] });
+      after(d / v, () => { g.burst('fireball', { at: o.chest, count: 22, spread: .2, speed: 3, life: [.25, .5], size: .8 }); scene.onBurn?.(other); });
+    }
   }
 
   const api = {
@@ -393,24 +451,57 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       after(delay, () => { coming.delete(id); api.dust(id, colour); });
     },
     /**
-     * Fin de fiesta: a handful on each of `targets`, and its exit at once; then a second puff and
-     * the water, a third and the spark (`FIESTA`). While it plays, `track` leaves the powder alone.
+     * Fin de fiesta (`FIESTA`), the dust explosion: the bags on the belt of whoever wears Colorista torn open, a handful at each
+     * of `targets` that gathers with the others into one matte cloud over them; a front of fire crosses it foe after foe
+     * (src/deflagrate.ts, the same front as Electrólisis's gas) and each goes up; what burnt falls back as a heavy rain of wet
+     * pigment that turns green on them; an arc jumps from foe to foe and the shards come out of the powder; and a stain of
+     * every colour stays on the floor. While it plays, `track` leaves the powder alone.
      */
     fiesta(from: string, targets: readonly string[], mixes: readonly PowderMix[]) {
+      const g = gpu(), a = who(from), foes = targets.flatMap(id => { const f = who(id); return f ? [{ id, f }] : []; });
       held = now + FIESTA.contact + FIESTA.end;
-      const again = (at: number, turn: number) => after(FIESTA.contact + at, () => targets.forEach((id, i) => {
-        const f = who(id), mix = mixes[(i + turn) % mixes.length];
-        if (f) { api.puff(f.chest, mix, { x: 0, y: 0, z: 0 }, .6, f.feet.y); api.dust(id, mix); }
+      if (!g || !a || !foes.length) return false;
+      const mixOf = (i: number, turn = 0) => mixes[(i + turn) % mixes.length];
+      // 0–0.3 s: the bags on the belt torn open, one after another round the waist.
+      const waist = { x: a.feet.x, y: a.feet.y + a.body.height * .45, z: a.feet.z }, aim = towards(a.feet, foes[Math.floor(foes.length / 2)].f.feet);
+      [-1.1, -.35, .35, 1.1].forEach((k, i) => after(i * FIESTA.bags / 4, () => {
+        const side = { x: aim.x * Math.cos(k) - aim.z * Math.sin(k), y: 0, z: aim.x * Math.sin(k) + aim.z * Math.cos(k) };
+        const at = { x: waist.x + side.x * (a.body.radius + .05), y: waist.y, z: waist.z + side.z * (a.body.radius + .05) };
+        api.puff(at, mixOf(i), { x: side.x * .6, y: .4, z: side.z * .6 }, .32, a.feet.y);
       }));
-      // The handfuls land together just before the fire, however many foes there are.
-      const flight = .3, first = Math.max(0, FIESTA.contact - flight - .12 - (targets.length - 1) * .1);
-      targets.forEach((id, i) => api.lanzar(from, id, mixes[i % mixes.length], first + i * .1, flight));
-      after(FIESTA.contact, () => api.ignite(targets));
-      again(FIESTA.repowder, 1);
-      after(FIESTA.contact + FIESTA.water, () => { const a = who(from); if (a) api.rociada(from, targets); });
-      after(FIESTA.contact + FIESTA.water + .3, () => api.soak(targets));
-      again(FIESTA.third, 2);
-      after(FIESTA.contact + FIESTA.spark, () => api.crystallise(targets));
+      // 0.3–0.9 s: a handful at each, and every handful drawn into one matte cloud over them all.
+      const flight = .3;
+      foes.forEach(({ id }, i) => api.lanzar(from, id, mixOf(i), FIESTA.bags * .5 + i * .06, flight));
+      const clouds = foes.map(({ f }) => ({ at: { x: f.chest.x, y: f.feet.y + f.body.height * .8, z: f.chest.z }, radius: f.body.radius + .45 }));
+      for (let step = 0; step < 5; step++) after(FIESTA.cloud + step * (FIESTA.contact - FIESTA.cloud - .05) / 5, () => clouds.forEach((c, i) => {
+        for (const shade of shadesOf(mixOf(i))) g.burst('fiestacloud', { at: c.at, count: 26, spread: c.radius * (1.25 - step * .1), outward: -.4, speed: .3, life: [1.6, 2.2], colour: shade });
+      }));
+      // Contact: the front of fire through the cloud, foe after foe; each goes up as it reaches them.
+      const across = towards(clouds[0].at, clouds[clouds.length - 1].at);
+      after(FIESTA.contact, () => {
+        const lit = foes.map(({ id }) => ({ id, colour: powdered.get(id)?.colour ?? middleOf(mixOf(0)) }));
+        take(foes.map(({ id }) => id));
+        deflagrate(g, after, clouds, { gap: FIESTA.front, sweep: .22, steps: 12, across: foes.length > 1 ? across : { x: 1, y: 0, z: 0 } },
+          (_, i, at) => after(at + .03, () => blast(lit[i].id, lit[i].colour, [])));
+      });
+      // The burnt cloud falls back on them as a heavy rain of wet pigment, and it turns green on them: poison.
+      after(FIESTA.contact + FIESTA.rain - .05, () => foes.forEach(({ id }, i) => api.dust(id, mixOf(i, 1))));
+      after(FIESTA.contact + FIESTA.rain, () => clouds.forEach((c, i) => {
+        const shades = shadesOf(mixOf(i, 1));
+        for (const shade of shades) g.burst('fiestarain', { at: { ...c.at, y: c.at.y + .5 }, count: Math.round(200 / shades.length), spread: c.radius * 1.1, velocity: { x: 0, y: -1.5, z: 0 }, speed: .6, life: [1.2, 1.8], colour: blend(shade, '#3b2f28', .15) });
+      }));
+      after(FIESTA.contact + FIESTA.soak, () => api.soak(foes.map(({ id }) => id)));
+      // An arc from foe to foe, and the shards come out of the powder where it reaches.
+      after(FIESTA.contact + FIESTA.spark - .05, () => foes.forEach(({ id }, i) => api.dust(id, mixOf(i, 2))));
+      foes.forEach(({ id, f }, i) => {
+        const at = FIESTA.contact + FIESTA.spark + i * FIESTA.hop, prev = i ? foes[i - 1].f.chest : a.chest;
+        after(at - FIESTA.hop * .8, () => { for (let k = 0; k <= 8; k++) g.burst('fiestaarc', { at: { x: prev.x + (f.chest.x - prev.x) * k / 8 + (Math.random() - .5) * .12, y: prev.y + (f.chest.y - prev.y) * k / 8 + (Math.random() - .5) * .18, z: prev.z + (f.chest.z - prev.z) * k / 8 }, count: 10, spread: .04, speed: .3, life: [.12, .25] }); });
+        after(at, () => api.crystallise([id]));
+      });
+      // What is left: a stain of every colour on the floor where each stood.
+      after(FIESTA.contact + FIESTA.rain + .5, () => foes.forEach(({ f }) => {
+        for (const colour of POWDER_COLOURS) g.burst('fiestastain', { at: { x: f.feet.x, y: f.feet.y + .25, z: f.feet.z }, count: 3, spread: f.body.radius + .55, life: [400, 480], colour });
+      }));
       return true;
     },
     /** Who has a cortina standing in front of them. */
@@ -424,29 +515,7 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       if (!g || !powdered.size) return false;
       const lit = [...powdered.entries()];
       strip(); powdered.clear();
-      lit.forEach(([id, p], i) => after(i * .12, () => {
-        const f = who(id);
-        if (!f || f.index < 0) return;
-        const on = { at: f.feet, shape: 'surface' as const, fighter: f.index, above: .08 };
-        g.burst('blastflash', { at: f.chest, count: 3, spread: .1, life: [.16, .22] });
-        g.burst('blastring', { at: { x: f.feet.x, y: f.feet.y + .03, z: f.feet.z }, count: 1, spread: 0, life: [.4, .46] });
-        g.burst('fireball', { ...on, count: 110, outward: 5.5, up: 1.6, speed: 2.2, life: [.3, .75], light: { intensity: 5, range: 6, colour: '#ffb060' } });
-        g.burst('fireball', { at: f.chest, count: 40, spread: .3, speed: 7, life: [.25, .5], size: 1.3 });
-        g.burst('char', { ...on, count: 800, outward: 9, up: 2.6, speed: 4.5, life: [1, 2.4], colour: p.colour });
-        if (g.get('ember')) g.burst('ember', { ...on, count: 180, outward: 6.5, up: 3, speed: 2.5, life: [.6, 1.5] });
-        if (g.get('crackle')) g.burst('crackle', { ...on, count: 60, outward: 4, up: 3, speed: 2, life: [.3, .8] });
-        effects.mark('scorch', f.feet, 1.1);
-        after(.14, () => { if (g.get('burnsmoke')) g.burst('burnsmoke', { ...on, count: 70, outward: 1.2, up: 1.6, speed: .8, life: [1.2, 2.6], size: 1.6 }); });
-        scene.onBurn?.(id);
-        for (const other of near) {
-          if (other === id) continue;
-          const o = who(other);
-          if (!o) continue;
-          const to = { x: o.chest.x - f.chest.x, y: o.chest.y - f.chest.y, z: o.chest.z - f.chest.z }, d = Math.hypot(to.x, to.y, to.z) || 1, v = 11;
-          if (g.get('ember')) g.burst('ember', { at: f.chest, count: 46, spread: .2, velocity: { x: to.x / d * v, y: to.y / d * v + 1, z: to.z / d * v }, cone: .3, speed: 3, life: [.4, .9] });
-          after(d / v, () => { g.burst('fireball', { at: o.chest, count: 22, spread: .2, speed: 3, life: [.25, .5], size: .8 }); scene.onBurn?.(other); });
-        }
-      }));
+      lit.forEach(([id, p], i) => after(i * .12, () => blast(id, p.colour, near)));
       return true;
     },
     /** Water on the powder: on everyone covered it runs as wet paint, turning green as it goes, drips, pools at their feet, and poisons them. */

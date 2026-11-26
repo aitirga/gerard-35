@@ -28,7 +28,9 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   polvareda: { impact: [{ id: 'hit', volume: .5 }, { id: 'hit', volume: .4, delay: .1 }, { id: 'hit', volume: .35, delay: .2 }] },
   // Traca's first puff lands here, the rest from the scene.
   traca: { impact: [{ id: 'hit', volume: .5 }] },
-  'fin-de-fiesta': { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'hit', volume: .6 }, { id: 'fire-hit', delay: .35 }, { id: 'splash', delay: .8 }, { id: 'zap', delay: 1.25 }] },
+  // Fin de fiesta (src/powder-fx.ts FIESTA, from contact): the bags torn open, the cloud going up, the rain of burnt pigment,
+  // its green, the arc and a crack of glass for each foe's shards.
+  'fin-de-fiesta': { start: [{ id: 'gust', volume: .5 }], impact: [{ id: 'whump' }, { id: 'fire-hit', volume: .5, delay: .06 }, { id: 'rain-hiss', delay: .6 }, { id: 'splash', volume: .5, delay: .95 }, { id: 'zap', volume: .7, delay: 1.1 }, { id: 'glass-tick', delay: 1.2 }, { id: 'glass-tick', delay: 1.34 }, { id: 'glass-tick', delay: 1.48 }] },
   // Freática's water is low and close, heard as under water: a mark rising is a swell, not a splash; the current a
   // bolt that sinks into it; the water hammer a pipe's knock, once a mark (the rest from the scene); the ice a crack and a sink.
   recarga: { start: [{ id: 'cast-soft', volume: .5 }], impact: [{ id: 'rise', volume: .55 }, { id: 'splash', volume: .35, delay: .3 }] },

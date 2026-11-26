@@ -204,14 +204,42 @@ each) and a level of Quemado, Envenenado I (or a level more on whoever was poiso
 Cristalizado. It kills few by itself: it leaves the whole field burning, poisoned and full of
 shards for the round that follows, which is the ánima in one move.
 
-How it shows: when the third thing happens, *Definitiva · despierta* comes up over the wearer and
-an icon stays on their plate. Used, the fight plays it in two and a half seconds: the handfuls and
-the blast, a second puff and the water, a third and the spark, each with its pop.
+Every way the powder turns counts, whoever or whatever turns it: a blow or a skill of an element, a
+dual, Superficie mínima's film, the statuses Atractor extraño brings to a powdered foe (or the powder
+it brings to a burning or wet one), and a beat of Corriente alterna on a powdered pole, out of
+anyone's turn (`powderTurned`; `tests/powder.test.mjs`). The castle's gate holds it like every
+definitiva: it can be bought only after Dirección ([`../README.md`](../README.md) § Growth opens with
+the castle).
 
-Close to Matemágico's condition (three different reactions between elements); the powder's three
-count for his too. To settle at the duals and balance steps. The castle's gate on definitivas
-([`../README.md`](../README.md) § Definitivas) is not wired to the jar yet: today it can be bought
-as soon as the ánima is had.
+How it shows: when the third thing happens, *Definitiva · despierta* comes up over the wearer and
+an icon stays on their plate (asleep it shows n/3). Used, it is **the dust explosion** (Aitor
+2026-11-25), 3.3 s (`FIESTA` in `src/powder-fx.ts`):
+
+1. **0–0.3 s**: the bags on the wearer's belt torn open, one after another round the waist.
+2. **0.3–0.9 s**: a handful at each foe, and every handful drawn into one matte cloud over them
+   (`fiestacloud`: dry pigment that flocks together, no glow).
+3. **0.9 s, contact**: a front of fire crosses the cloud foe after foe (`deflagrate`,
+   `src/deflagrate.ts`, the same front as Electrólisis's gas): the cloud catches particle by
+   particle and each foe goes up as it reaches them (flash, fireball, ring, scorch). The numbers land.
+4. **1.5 s**: what burnt falls back as a heavy rain of wet pigment, which turns green on them: poison.
+5. **2.1 s**: an arc jumps from the wearer to the first foe and on from foe to foe; the shards come
+   out of the powder where it reaches, the last well before the end.
+6. **After**: a stain of every colour of the palette on the floor where each foe stood, for the
+   rest of the fight.
+
+Its sound: the bags' gust, a low muffled whump (dust, not gas: no crack), the rain's hiss, the green
+splash, the arc and a crack of glass for each foe's shards (`SKILL_SOUNDS`).
+
+Close to Matemágico's old condition (three different reactions between elements), which is gone:
+his definitiva is *Horas extra* now ([`../README.md`](../README.md) § Definitivas).
+
+**In fight-sim:** the bot values powder laid where someone can turn it (`DUST_WORTH`), the poison and
+shards it turns into (`POISON_WORTH`, `SHARD_WORTH`), and each reaction not yet seen as a third of
+what Fin de fiesta would do now (`ultiWorth`, `dustWorth`). Its pair of targets is **not held yet**:
+in the Gemelos de tercero (`alumnos-3c`) with Colorista and Matemágico the room falls in about three
+rounds (Polvareda and a fire are already its answer), and the three reactions cannot all be seen
+before the fourth, so it wakes in 2 % of fights and the pair with and without it plays the same.
+To decide with Aitor (2026-11-26): another fight for it, or a longer one.
 
 ## What a round looks like
 
@@ -284,7 +312,8 @@ three exits show, beat by beat: [`../README.md`](../README.md) § Empolvado.
   - *Telón*: a screen in front of each ally, thrown one after another.
   - *Traca*: five small puffs a tenth of a second apart on whoever each one finds, each a
     different mix and each with its own number.
-  - *Fin de fiesta*: three puffs over every foe; fire, water and a spark through them in turn.
+  - *Fin de fiesta*: the dust explosion (§ Definitiva: Fin de fiesta): a matte cloud over every foe,
+    a front of fire through it, a rain of burnt pigment, an arc and the shards, and a stain of every colour.
 - **Interface** (built, `#hud[data-class="prismatico"]`): a pigment seller's tray. Flat matte swatches
   with a grain to them and a small label, no glow and no gradient; the selected block is a swatch
   with a thumbprint in it.
@@ -332,7 +361,8 @@ gives the ánima: its colours (§ Look and interface).
 - **In the fight** (`src/powder-fx.ts`, from `src/battle-scene.ts`; all on the GPU): the handful
   thrown, the powder that stays on whoever is Empolvado, the explosion, the powder running green,
   the shards and the splinters a blow knocks out, the cortina standing and bursting over whoever
-  breaks it, Rociada's fan of water, Traca's puffs, Fin de fiesta's sequence. A cortina in the
+  breaks it, Rociada's fan of water, Traca's puffs, Fin de fiesta's dust explosion (`fiesta`, with
+  `deflagrate` from `src/deflagrate.ts`; `scripts/screenshots/fin-de-fiesta.json`). A cortina in the
   scene follows the fight's state, so one raised by Remolino or lost to its three rounds shows too.
 - **On the wearer and in the interface**: § Look and interface.
 - **Reach**: the fight tester plays every level (`?story=prismatico-7`, or `levels` in a `fight`)

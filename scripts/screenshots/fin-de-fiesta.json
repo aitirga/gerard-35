@@ -1,0 +1,90 @@
+{
+  "title": "Fin de fiesta · la explosión de polvo",
+  "description": "La definitiva de Colorista (docs/animas/prismatico/README.md § Fin de fiesta) en un combate real con Matemágico: cómo despierta con la tercera reacción del polvo y su aspecto propio, la explosión de polvo (src/powder-fx.ts `fiesta`, con el frente de src/deflagrate.ts que comparte con el gas de Electrólisis). Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=prismatico-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22prismatico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22prismatico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A3%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22prismatico%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = () => document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click(); window.aimAlly = id => document.querySelector('.roster-target[data-target=\"' + id + '\"]:not(:disabled)')?.click(); ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); });"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; f.timed = {}; }); s.finale = { seen: ['estallido', 'veneno'] }; s.foes[1].timed = { empolvado: { level: 1, left: 20, next: 20 } }; s.allies[0].element = 'electrico'; });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "shot": "dormida",
+      "delay": 400,
+      "caption": "Fin de fiesta dormida (2/3): el polvo ya ha estallado y envenenado en este combate; falta que cristalice"
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "record": "despierta",
+      "seconds": 3.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && document.querySelectorAll('.battle-target[data-side=\"foes\"]:not(:disabled)')[1]?.click()",
+      "caption": "Un rayo de Gerard sobre el perro empolvado: Cristalizado, la tercera reacción del polvo, y la definitiva despierta (cuentan igual las llegadas de Atractor extraño y los latidos de Corriente alterna)"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; f.timed = {}; }); });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit2",
+      "gap": 500
+    },
+    {
+      "shot": "lista",
+      "delay": 400,
+      "caption": "Despierta, encabeza la lista: sin coste de maná, una vez por combate"
+    },
+    {
+      "record": "explosion-de-polvo",
+      "seconds": 4.2,
+      "fps": 30,
+      "tiles": 16,
+      "each": "window.frame === 0 && window.skill('fin-de-fiesta')",
+      "caption": "Fin de fiesta · la explosión de polvo: las bolsas del cinto se rasgan, los puñados se juntan en una nube mate sobre los tres, un frente de llama la cruza de uno a otro y cada uno estalla; lo quemado cae como lluvia de pigmento que se vuelve verde (veneno), un arco salta de perro en perro y los pinchos salen del polvo"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "shot": "despues",
+      "delay": 600,
+      "caption": "Después: los tres ardiendo, envenenados y con esquirlas, y en el suelo una mancha de todos los colores donde estaba cada uno, que se queda el resto del combate"
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt('dog-1'); if (at) window.gerard.game.frame({ x: at.x, y: at.y + .3, z: at.z }, 2.2); }"
+    },
+    {
+      "shot": "mancha",
+      "delay": 1200,
+      "caption": "La mancha de la fiesta en el suelo, de cerca"
+    }
+  ]
+}

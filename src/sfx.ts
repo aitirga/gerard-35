@@ -485,6 +485,20 @@ export const SOUNDS = {
     tone(c, out, at, { from: 170 * p, to: 55 * p, attack: .002, length: .14, gain: .3 });
     return .16;
   }, jitter: 120, gap: .03, voices: 4 },
+  // Fin de fiesta: the powder cloud going up all at once, a low muffled whump (no crack: it is dust, not gas), and the burnt
+  // cloud coming down as a heavy rain, a hiss with drops in it.
+  whump: { synth: (c, out, at, p) => {
+    tone(c, out, at, { from: 110 * p, to: 32 * p, attack: .004, length: .5, gain: .5 });
+    noise(c, out, at, { cutoff: 380 * p, to: 90, type: 'lowpass', q: .8, attack: .01, length: .55, gain: .45 });
+    noise(c, out, at + .02, { cutoff: 900 * p, to: 300, type: 'bandpass', q: .7, length: .25, gain: .12 });
+    return .6;
+  }, jitter: 40, gap: .2, voices: 1 },
+  'rain-hiss': { synth: (c, out, at, p) => {
+    const length = .9;
+    noise(c, out, at, { cutoff: 2600 * p, to: 1400, type: 'bandpass', q: .5, attack: .08, hold: .45, length, gain: .1 });
+    for (let i = 0; i < 26; i++) noise(c, out, at + Math.random() * (length - .1), { cutoff: (900 + Math.random() * 1400) * p, to: 400, type: 'bandpass', q: 2, length: .03, gain: .05 + Math.random() * .05 });
+    return length;
+  }, jitter: 30, gap: .3, voices: 1 },
   // Campana de Gauss: a ball off a peg (one tick, panned where it falls) and a whole board of them rattling down, left to right and back.
   peg: { synth: (c, out, at, p) => { tone(c, out, at, { type: 'triangle', from: 4200 * p, to: 4050 * p, attack: .001, length: .035, gain: .09 }); tone(c, out, at, { from: 6300 * p, length: .02, gain: .03 }); noise(c, out, at, { cutoff: 7000, to: 9000, type: 'highpass', length: .012, gain: .08 }); return .04; }, jitter: 300, gap: 0, voices: 16 },
   pachinko: { synth: (c, out, at, p) => {

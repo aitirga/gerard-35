@@ -597,6 +597,11 @@ fuego»), and `just screenshots particle-laws --gpu --scale 2` records them.
   alight, and after `delay` (±40 %) it becomes `into`, with that kind's `life`. A cloud burns from where it
   was lit outwards, a front at about `radius / delay` m/s. The timer lives in `release` (negative), which a
   free particle does not otherwise use.
+- **A deflagration through clouds** (`deflagrate`, `src/deflagrate.ts`): a point of fire swept across
+  each cloud in turn (`gpu.ignite` a step at a time, crossing each from the side of the one before), then
+  one wide catch so no particle outlives its cloud, with a callback as the front reaches each cloud for
+  what lands there. Electrólisis's gas going up and Fin de fiesta's cloud of powder (`fiestacloud` →
+  `fiestaflame`, `src/powder-fx.ts`) are the same front.
 - **Bubbles** (`bubble: { lift, flow }` on a kind): where the fluid's grid is packed (any fluid, full at 6
   to a cell) it rises by `lift` m/s² and is carried by the flow; out of the fluid it keeps to its own
   gravity and drag, a slow drift. It reads the grid only on frames the grid was filled.

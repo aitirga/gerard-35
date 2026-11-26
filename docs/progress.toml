@@ -913,6 +913,12 @@ title = "Colorista: la definitiva Fin de fiesta"
 grep = "fin-de-fiesta"
 in = "src/battle.ts"
 
+# docs/plans/definitivas/PLAN.md § 2.1 (Aitor 2026-11-25): its own look, the dust explosion, with the front shared with Electrólisis.
+[[block.item]]
+title = "Fin de fiesta: la explosión de polvo"
+grep = "fiestacloud"
+in = "src/powder-fx.ts"
+
 [[block.item]]
 title = "Colorista: a prueba dentro del salón de Luca (Puñado y Cortina antes de ganarla)"
 priority = "animas"
