@@ -176,8 +176,8 @@ So at the end the party holds most of it, but not all, and re-does the split bef
   with the castle): Fuego adds the passive *Combustión*, fire's fourth level (3 ecos, § Combustión), and past it the
   node of the dúo mayor *Vulcano* (3, § Dúos mayores); Cálculo *Integral impropia* (3; a cure for everyone, then Sanación)
   and beside it *Atractor extraño* (2; the others' statuses on the clock gathered on one foe, § Statuses that move);
-  all built. Agua *Punto de congelación* and Eléctrico *Resonancia* are designed, waiting for the
-  freezing rule. [matemagico/README.md](matemagico/README.md) § Grade III.
+  Eléctrico *Resonancia* (2; a hard bolt that breaks Bajo cero's ice at once, built 2026-11-26); all built. Agua
+  *Punto de congelación* is designed, on the shared Congelado rule. [matemagico/README.md](matemagico/README.md) § Grade III.
 
 **Tecnópata's tree.** Root: Rayo de energía and Rayo de sanación.
 
@@ -1001,7 +1001,9 @@ Built 2026-11-21 (`TIMED.congelado`, `freeze` and `chill` in `src/battle.ts`), i
   huge broken at the start, less as it melts, still a lot, and a blow, not a share of its PV; proposed base 90 with three marks of
   ice, falling with it to 40 as the last goes), and is free at once.
 - The break is nobody's blow: never a golpe crítico, and it spends no wound.
-- A flame (magic fire) does not crack it: it melts a mark off at once, with its steam. Electricity does nothing.
+- A flame (magic fire) does not crack it: it melts a mark off at once, with its steam. Electricity does nothing,
+  but for Matemágico's *Resonancia* (grade III, built 2026-11-26): its bolt breaks the ice at once, whatever cracks it
+  had, for the same break (matemagico/README.md § Resonancia).
 - **A boss can be frozen too** (Aitor), and takes as little as anyone while its ice holds.
 
 **How it shows** (built as a look: the lab's *Bajo cero*, *Golpe al hielo*, *Golpe alto al hielo*,

@@ -152,7 +152,7 @@ everywhere the castle's rooms lost to the turns spent cutting, `gemelos-tercero-
 costs the boss fights it does not decide a little (`delegada-bien` 98 % → 94 %, `reina-toma-a-aitor` falls
 1.3 rounds sooner, `reina-con-artilugio` wins 1.3 rounds later), and narrower gates lose Siete vidas' own
 fight; the numbers are at `wakeAtStake`. Fin de fiesta has the same gate: in a boss's fight it counts powder on a foe as half of a reaction still to see and powder spent on one already seen as a step back; elsewhere it wakes as any other. Bajo cero wakes as any other but in a boss's fight, where bringing the deepest foe's water to III weighs `ICE_WAKE_WORTH` (40) instead of `WAKE_WORTH` (15): the ice holds a boss for up to a minute. Da capo wakes as any other, and besides, the third eco up while it sleeps is worth the chord it makes (`CAPO_CHORD` in `ecoWorth`, tunable as `capo.chord.worth` and `capo.chord.dual`: 20, and 20 for each dual already used); the second eco is not (valued on the square of how near, it pulled the full party off Siete vidas at the Queen). Even so the bot reaches the chord in few fights: three ecos cost more maná than Sincopante holds (docs/animas/sincopante/README.md § Its targets). A definitiva banned is nothing to wake. Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
-(`siete-vidas`), each foe Bajo cero freezes (`congela`) and each ice cracked through (`hielo-roto`), each Da capo (`da-capo`) and each dual it gave back played again (`dual-de-nuevo`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
+(`siete-vidas`), each foe Bajo cero freezes (`congela`) and each ice cracked through (`hielo-roto`), the ones Resonancia rang apart (`resuena`), each Da capo (`da-capo`) and each dual it gave back played again (`dual-de-nuevo`), for a pair's `happens`, whatever brought it: an action, the clock (a bomb going off on
 its own wakes Enjambre, a pulse or a round's tick can be what Siete vidas saves someone from) or the
 ecos' chord (Da capo). `BUILDS.mixto` names all seven definitivas, last, after the passives, as it
 always had them: whichever the ecos do not reach goes unbought, and one not built yet is skipped.
@@ -456,6 +456,28 @@ build (Matemágico's *Horas extra*, Dadista's *Un golpe de dados*); 14 of the 25
 target; 195 of 958 numbers are read by none (the ice's break among them). Each definitiva's pair is
 `docs/plans/definitivas/PLAN.md`'s, and docs/progress.toml's «Las definitivas en fight-sim» ticks
 once all seven are in.
+
+### Resonancia: why it has no pair yet
+
+Matemágico's *Resonancia* (built 2026-11-26, docs/animas/matemagico/README.md § Resonancia) answers one thing: a foe in
+Bajo cero's ice, which it breaks at once. Run.events counts each ice it broke as `resuena`. The bot plays it on a fresh
+ice when it has one (`tests/resonancia.test.mjs`), but in the campaign the two almost never meet, so no pair can hold
+what it is for. Measured 2026-11-26, 150–400 fights each, smart, the castle's third floor as `castillo-3` buys it with
+Cortocircuito, Condensador and Resonancia added (`mixto` never reaches grade III):
+
+| Fight · party | Bought | Banned | `congela` · `resuena` with it |
+| --- | --- | --- | --- |
+| reina · `ICE_PARTY` (Gerard on Freática, Matemágico in his kit) | lost in 16.4 rounds | lost in 21.5 | .06 · 0 (banned: .55 frozen) |
+| reina · Gerard Matemágico, Aitor Freática | lost in 19.4 | lost in 19.6 | .11 · .01 |
+| delegada-3, alumnos-3a…3d · either party | won as banned, ±1 round | | 0–.01 · 0 |
+
+With Resonancia in the jar Gerard leaves Freática for Matemágico to throw it as a plain hard bolt (1.6 a fight at the
+Queen), and nobody raises the water to III: the ice that `reina-con-bajo-cero` holds (.55 a fight) all but goes, and the
+Queen fells the party five rounds sooner. With Aitor on Freática the ice wakes in a third of the fights and is cast in a
+tenth; Resonancia meets it in one in a hundred. In the rooms it is only a hard bolt, and what it moves goes both ways by
+the party (alumnos-3c: 6.4 rounds against 9.4 with `ICE_PARTY`, 4.4 against 3.8 with Aitor on Freática). A pair waits on
+Aitor: a fight where the ice comes without Gerard's turns (Punto de congelación, water's own freezing, would be one), or
+a bot that plans freeze-then-break across ánimas. Until then it stays on `coverage`'s list.
 
 ### Progression: whether the party's growth keeps step
 

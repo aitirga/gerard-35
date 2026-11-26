@@ -29,15 +29,15 @@ to grow). The level table below is what is built today and moves to the tree.
 
 Four lines from his core, each node bought with ecos at the jar (`../README.md` § The jar). Every node
 is 1 eco but the grade III ones, which only show after Aurelià (`growthStage`): Combustión, Integral
-impropia and the dúos mayores 3, Atractor extraño 2 (Aitor, 2026-11-25: «baja algún eco»).
+impropia and the dúos mayores 3, Atractor extraño and Resonancia 2 (Aitor, 2026-11-25: «baja algún eco»).
 
 | Line | Nodes, in the order they open (ecos) | Ecos |
 | --- | --- | --- |
 | Fuego | Fuego (1) → Pirámide ígnea (1) → Rescoldo (1) → Combustión (3) → dúo mayor Vulcano (3) | 9 |
 | Agua | Agua (1) → Cubo acuático (1) → Capilaridad (1) → dúo mayor Marea (3); off Cubo acuático, Superficie mínima (1) | 7 |
-| Eléctrico | Eléctrico (1) → Punto eléctrico (1) → Toma de tierra (1) → Cortocircuito (1) → ∂Q/∂t Condensador (1) → dúo mayor Fulgurita (3) | 8 |
+| Eléctrico | Eléctrico (1) → Punto eléctrico (1) → Toma de tierra (1) → Cortocircuito (1) → ∂Q/∂t Condensador (1) → dúo mayor Fulgurita (3); off Condensador, Resonancia (2) | 10 |
 | Cálculo | Ángulo exacto (1) → Análisis Parálisis (1) → Cardioide (1) → Maná +1 (1) → Integral impropia (3) → dúo mayor Suceso seguro (3); off Análisis, Serie de Fourier (1); off Maná +1, Atractor extraño (2) | 13 |
-| **All** | 33 before 2026-11-25; Serie de Fourier, Superficie mínima and Atractor extraño add 4 | **37**, and 2 for the definitiva |
+| **All** | 33 before 2026-11-25; Serie de Fourier, Superficie mínima and Atractor extraño add 4, Resonancia 2 (2026-11-26) | **39**, and 2 for the definitiva |
 
 The four duals of 2026-11-25 (§ Duals) are not nodes: each is there once both of its halves are known.
 
@@ -71,6 +71,7 @@ Foc Binari is his from the start; every other skill is a node of his tree, bough
 | Eléctrico | Punto eléctrico | 2 | 26 magic, electric | `Daño mágico eléctrico medio a un enemigo. Salta a todos los mojados.` |
 | Eléctrico | Cortocircuito | 2 | 14 magic, electric | `Daño mágico eléctrico leve a un enemigo. Si está mojado o prepara un movimiento anunciado, pierde su siguiente turno. No se repite hasta que vuelva a actuar.` |
 | Eléctrico | ∂Q/∂t Condensador | 1 | ×2 on the next electric blow; 20 magic, electric, to a foe that strikes first | `Carga a quien la usa hasta su siguiente golpe eléctrico, que hace el doble de daño. Si un enemigo le golpea antes, la carga salta a ese enemigo.` |
+| Eléctrico | Resonancia (grade III) | 2 | 38 magic, electric; breaks Bajo cero's ice at once | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` |
 | Cálculo | Ángulo exacto | 1 | −3 Defensa and Espíritu, one foe, 3 rounds | `Baja Defensa y Espíritu de un enemigo durante 3 rondas.` |
 | Cálculo | Análisis Parálisis | 2 | +3 Fuerza and Magia, party, 3 rounds | `Sube Fuerza y Magia de todo el equipo durante 3 rondas.` |
 | Cálculo | Cardioide | 2 | 30 heal | `Cura media a un aliado herido.` |
@@ -121,7 +122,7 @@ keeps its job: **fire piles up, water sets up, electricity cashes in**; grade II
 | Cálculo | **Integral impropia** | 2 | 3 | 26 heal, party, then Sanación | `Cura media a todo el equipo. Sigue curándolos poco a poco durante 15 segundos.` | Built |
 | Cálculo | **Atractor extraño** (beside Integral, past Maná +1) | 2 | 2 | 16 magic, astral, one foe | `Daño mágico no elemental leve a un enemigo. Le pasan Quemado, Mojado, Cegado, Empolvado, Envenenado, Cristalizado, Encogido, Confusión, Gas y Bomba de los demás enemigos: si ya tiene uno, sus niveles se suman. Al juntarse, los elementos reaccionan.` | Built (§ Atractor extraño) |
 | Agua | Passive · **Punto de congelación** | 2 | — | — | `Pasiva. El agua puede subir hasta un nivel III y, un nivel más, congela: el enemigo no actúa hasta que el hielo se rompe o se derrite.` | Designed |
-| Eléctrico | **Resonancia** | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Designed (Aitor liked it, 2026-11-20); built with the freezing rule |
+| Eléctrico | **Resonancia** (past Condensador, beside Fulgurita) | 2 | 2 | 38 magic, electric | `Daño mágico eléctrico alto a un enemigo. Si está congelado, rompe el hielo de golpe.` | Built 2026-11-26 on Bajo cero's Congelado (§ Resonancia) |
 
 - **Vulcano, a dúo mayor** (Aitor 2026-11-20: Foc Binari with Marta's Ostinato, unlocked; `../README.md`
   § Dúos mayores): Gerard's binary fire goes into the ground behind the foes, Marta's eco beats on it
@@ -162,6 +163,41 @@ whose fire flares as they land; *¡Combustión!* over it and *PASIVA · Combusti
 
 - **Marea**: built 2026-11-21 as a dúo mayor with Freática's Recarga, with *Fulgurita* (Colorista's
   Puñado) and *Suceso seguro* (Dadista's Ases en dúo); `../README.md` § Dúos mayores.
+
+## Resonancia (Aitor 2026-11-25, built 2026-11-26)
+
+Grade III of Eléctrico, the line's top: **2 ecos** past ∂Q/∂t Condensador, beside the dúo mayor Fulgurita, and **2
+maná**. Kirchhoff, the other candidate for the slot, is out (PLAN.md, Aitor 2026-11-25). Electricity cashes in; this is
+the bolt that cashes in the ice.
+
+**Rules** (`shatters` in `SKILLS`, `chill` in `src/battle.ts`; `tests/resonancia.test.mjs`):
+
+1. A blow of 38, electric magic, on one foe: `alto`. It is a bolt like any other: on a wet foe it runs to every wet one
+   (Conducción), on a burning one it cashes the fire, on a blinded one it jumps through the smoke; a Condensador charge
+   doubles it.
+2. **On a foe frozen in Bajo cero's ice** (Congelado, `../README.md` § Congelado) the bolt lands at a quarter, as every
+   blow does there, and **the ice breaks at once**: every crack it still lacked (`CRECIDA.blows` less those it had), with
+   the break's blow as if cracked through (`iceBreakPower` by the ice left, with the Magia of whoever froze it, water). The
+   foe is free.
+3. Every other bolt still does nothing to the ice (Punto eléctrico, Sondeo, Corriente alterna's beats); a flame still
+   melts a mark. Resonancia is the one electric blow the ice answers to, by the skill's own trait (`shatters`), never by
+   who wears it.
+
+The question it asks is when: the ice is worth most fresh (90 at three marks, 40 near melted) and holds its foe still
+while it lasts, so breaking it early is the biggest blow and a foe back on its feet sooner. Only the ice of Bajo cero
+exists yet: Punto de congelación, water's own freezing (§ Grade III), would give it a second source.
+
+**Look** (`resonancia` in `src/math-figures.ts`; `FIGURES.resonancia`, contact 1.24 s): a driven oscillator at its own
+frequency, **x(t) = t·sin(ωt)**, drawn left to right in his circle in the bolt's yellow, inside its envelope ±t (two
+dashed lines opening like a horn) over a faint axis. Drawn, it **rings**: it shivers up and down harder and faster, arcs
+leaping off its crests, and flies at the foe still ringing. At contact a bolt goes from it into the chest, and round the
+foe **a ring of light takes up the note**: a standing wave of six lobes, r = R(1 + ε·cos 6θ·cos ωt), whose ε grows until
+it bursts into sparks, a flash and a ring on the floor (bigger and paler where it broke the ice; the break itself is Bajo
+cero's cell, `src/freatica-fight.ts`). Sound: a charge rising as it is driven, the zap, a struck note ringing on.
+
+**Fight-sim** (`resuena`: an ice it broke): the bot plays it on a fresh ice (`tests/resonancia.test.mjs`), valuing the
+break as PV. It has **no pair of targets yet**, because the bot almost never holds the ice and Resonancia together:
+docs/fight-sim.md § Resonancia gives the numbers.
 
 ## Serie de Fourier (Aitor 2026-11-25, built)
 
@@ -403,6 +439,7 @@ lands at its own moment (`FIGURES` in `src/battle-motion.ts`), and the fight's n
 | Integral impropia | ∫ from 0 to ∞, upright, its limits small | It turns a quarter as it goes to lie between the party at chest height, ends towards them; green light jets from each end into whoever is that side, and Sanación stays on them | 1.55 s |
 | Superficie mínima | Two coaxial gold rings, one over the other, pulled apart with a soap film between them (a catenoid) | The rings fly to the ally, to the ankles and over the head, the film an hourglass sleeve in thin-film colours, held to the round's end (§ Superficie mínima) | 1.4 s |
 | Punto eléctrico | A point of charge in front of him: a white-hot bead in a yellow glow, crackling | It rises, slows at the top and falls on its foe as lightning: three strikes a breath apart along fresh jagged paths, each forking, arcs that run round the foe and down to the floor, sparks that bounce, a ring on the floor | 1.0 s |
+| Resonancia | t·sin(ωt) in yellow inside its dashed envelope ±t, a horn opening | It rings harder and faster and flies at the foe; a bolt into the chest, and a ring of six lobes standing round the foe swells until it bursts (§ Resonancia) | 1.24 s |
 
 `just screenshots matemagico-figuras --gpu` plays the five.
 
@@ -683,5 +720,5 @@ duals' look come with the duals' cinematic (`docs/animas/README.md` § Combined 
 
 - Whether Análisis Parálisis and Cardioide keep their look, or get their own (a chalkboard of sums for
   Análisis, the cardioid drawn by hand).
-- Grade III (§ Grade III): the tree costs 37 ecos since 2026-11-25 (33 before Serie de Fourier, Atractor extraño and
-  Superficie mínima; each dúo mayor 3, Combustión and Integral impropia 3, Atractor extraño 2; `src/ecos.ts`). They only show after Aurelià.
+- Grade III (§ Grade III): the tree costs 39 ecos since 2026-11-26 (33 before Serie de Fourier, Atractor extraño,
+  Superficie mínima and Resonancia; each dúo mayor 3, Combustión and Integral impropia 3, Atractor extraño and Resonancia 2; `src/ecos.ts`). They only show after Aurelià.
