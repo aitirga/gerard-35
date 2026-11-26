@@ -483,18 +483,29 @@ _Open_ with her mission's second round (`docs/quests/emilie.md` § Open): the ki
   and in a fight *Agua*: every foe standing at no water, I, II or III at will (`stageWater`).
 - **The bots** (`src/battle-sim.ts`): `smart` values a mark raised, the sinking reached, a current set and
   the turns a freeze takes away; each crack in the ice as its share of the break to come (`ICE_CRACK_WORTH`),
-  and waking Bajo cero as any definitiva (`WAKE_WORTH`). Valuing the waking by what the freeze would do
-  (as Siete vidas' and Fin de fiesta's are) was tried on 2026-11-26 and played the Queen's fight worse
-  (19.4 rounds held → 18.9) without waking it more: it stays generic.
-- **Its pair of targets** (`reina-con-bajo-cero` against `reina-sin-bajo-cero`, `FULL`, the third floor),
-  in the Queen's first fight, lost by design at her tenth: with Gerard on Freática her water reaches the
-  third mark, Bajo cero freezes her (0.46 times a fight) and the party holds 19.4 rounds against 15.0
-  without it; with the ice melting at once (`--tune crecida.rules.ice=0.01`) 13.9, so it is the ice that
-  holds them. The guard is in the same target: a minute of ice does not skip her phases, she still gets to
-  her tenth and takes Aitor (`suyo`). The run counts each foe frozen (`congela`) and each ice broken
-  (`hielo-roto`). **Not the Delegada**, as the plan proposed: her room on the third floor is over in about
-  five rounds, before any foe's water is at III (woken in 6 % of fights and cast in none, Aitor on Freática
-  alone, 2026-11-26), so no pair can hold there.
+  and waking Bajo cero as any definitiva (`WAKE_WORTH`), but for a push in a boss's fight
+  (`ICE_WAKE_WORTH`, 40 on the same square): there the ice holds the boss for up to a minute, and the push
+  takes the Queen's water to the third mark more often (cast in 52 % of her first fights at 15, 68 % at 40,
+  71 % at 80, 2026-11-26). In a room it would only lengthen the fight: no water reaches III before it is won.
+  Valuing the waking by what the freeze would do (as Siete vidas' and Fin de fiesta's are) was tried on
+  2026-11-26 and played the Queen's fight worse (19.4 rounds held → 18.9) without waking it more.
+- **Its targets.** PLAN.md (Aitor, 2026-11-25) holds it with a pair in the Delegada's room on the third floor
+  (`delegada-bajo-cero-bien` against `delegada-bajo-cero-sin-ella`) and a guard in the Queen's first fight
+  (`reina-con-bajo-cero`). The Delegada cannot hold it as her room is: every party that reaches her wins it in
+  four or five rounds, before any foe's water is at III, and Bajo cero is cast in 0–3 % of her fights with
+  any push, her Encarnados or the night's (2026-11-26, `story --at castillo-3 --build mixto`, Gerard or Aitor
+  on Freática). **That pair waits on Aitor**: her room changed, or the pair held in the Queen. Built: the
+  guard, `reina-con-bajo-cero` (`ICE_PARTY`: the full party with Gerard on Freática from the start), lost by
+  design at her tenth: Bajo cero freezes her in two of three fights, and a minute of ice does not skip her
+  phases, she still gets to her tenth and takes Aitor (`suyo`); its contrary `reina-sin-bajo-cero` says
+  what the ice is worth there, 22.1 rounds held against 15.9. The run counts each foe frozen (`congela`)
+  and each ice broken (`hielo-roto`). **No target breaks the ice**: in the Queen's fight keeping her frozen
+  is worth more than the break (even at two blows an ice, `--tune crecida.rules.blows=2`, it breaks in 4 %
+  of fights), and in the rooms there is no ice to break.
+- **A wave caught in the ice**: a Riada still crossing a cell when Bajo cero lands freezes in mid-crest, a
+  white lip of ice across the cell until the ice goes (`crest` in `src/freatica-fx.ts`). In a fight the
+  actions take turns and the wave is always over before the next one, so it shows in the effects lab
+  (`just screenshots freatica-fx --gpu`, «ola-congelada»).
 - **Its moment** ([`src/frost-fx.ts`](../../../src/frost-fx.ts), driven by `src/freatica-fight.ts`): the
   probe's drop, the frost's phase field (a WGSL compute shader, docs/graphics.md § A phase field on the
   GPU), the front and the lock; the cells' blocks lock at `FROST.lock`, the rule's contact

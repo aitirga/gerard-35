@@ -66,6 +66,8 @@ export const MAT_SINC = 'gerard:matemagico+aitor:sincopante';
  * Sincopante; `FULL_DICE`, Prismático, Sincopante and Dadaísta.
  */
 export const FULL = 'gerard:matemagico/freatica/prismatico+aitor:papagato/sincopante';
+/** The full party with Gerard on Freática from the start: Bajo cero's guard in the Queen's first fight. */
+export const ICE_PARTY = 'gerard:freatica/matemagico/prismatico+aitor:papagato/sincopante';
 export const FULL_DICE = 'gerard:matemagico/prismatico/sincopante+aitor:papagato/dadaista';
 /** The ánimas the fights are tuned with. */
 const MISSION_ANIMAS: ClassId[] = ['matemagico', 'papagato'];
@@ -1691,15 +1693,18 @@ export const TARGETS: readonly Target[] = [
   // ward taking a killing blow a third of the times (the proposal's floor, .3), 13.2 rounds against 11.1.
   { id: 'reina-con-siete-vidas', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [12.2, 15], happens: { 'siete-vidas': [.3, 1] }, why: 'Con Aitor en Papagato, la herida cortada hasta cinco y gastada despierta Siete vidas, y Yuki se queda con el equipo: el golpe que iba a tumbar a alguien lo cura. La Reina tarda dos rondas más en tumbarlos.' },
   { id: 'reina-sin-custodia', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', ban: ['siete-vidas'], win: [0, 0], roundsLost: [10, 11.5], happens: { 'siete-vidas': [0, 0] }, why: 'Sin Siete vidas, el primer golpe que mata, mata: la Reina tumba al mismo equipo dos rondas antes.' },
-  // Bajo cero (Freática's definitiva), held where a foe's water can reach the third mark: the Queen's first fight, lost by
-  // design at her tenth. The Delegada of the third floor cannot hold it: her room is over in five rounds, before any foe's
-  // water is at III (woken in 6 % of fights, cast in none, measured 2026-11-26 with Aitor on Freática alone). Played, the
-  // ice keeps her from acting for up to a minute; banned, the same party falls sooner. Measured 2026-11-26 (200 fights):
-  // cast 0.46 times a fight, the party falls at 19.4 rounds against 15.0, and at 13.9 with the ice melting at once
-  // (`--tune crecida.rules.ice=0.01`): the ice is what holds them, not the water raised to wake it. The guard is `suyo`:
-  // a minute of ice must not skip her phases, she still gets to her tenth and takes Aitor.
-  { id: 'reina-con-bajo-cero', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [17, 22], happens: { congela: [.3, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. El equipo aguanta cuatro rondas más, y aun así ella llega a su décimo y se lleva a Aitor.' },
-  { id: 'reina-sin-bajo-cero', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', ban: ['bajo-cero'], win: [0, 0], roundsLost: [13, 16.5], happens: { congela: [0, 0] }, why: 'Sin Bajo cero, la misma agua solo moja y hunde: la Reina tumba al mismo equipo cuatro rondas antes.' },
+  // Bajo cero (Freática's definitiva). PLAN.md (Aitor, 2026-11-25) holds it with `delegada-bajo-cero-bien` against
+  // `delegada-bajo-cero-sin-ella`, and `reina-con-bajo-cero` as a guard. The Delegada of the third floor cannot hold it as
+  // she is: every party that reaches her wins her room in four or five rounds (99–100 %), before any foe's water is at
+  // III, so the pair would be the same fight twice (measured 2026-11-26, 200 fights, `story --at castillo-3 --build
+  // mixto`, Gerard or Aitor on Freática, her room, its Encarnados and the night's: cast in 0–3 % with any push, the
+  // rounds and PV the same with it banned). That pair waits on Aitor: her room changed, or the Queen in its place.
+  // Here, the guard: the Queen's first fight, lost by design at her tenth, with Gerard on Freática from the start
+  // (`ICE_PARTY`, so it is not `reina-toma-a-aitor` again). Bajo cero is cast in two of three fights (`ICE_WAKE_WORTH`)
+  // and her ice holds her for up to a minute, but it must not skip her phases: she still gets to her tenth and takes
+  // Aitor (`suyo`). Its counterpart with it banned says what the ice is worth there.
+  { id: 'reina-con-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [19.5, 26], happens: { congela: [.55, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. Aun así ella pasa por cada fase, llega a su décimo y se lleva a Aitor.' },
+  { id: 'reina-sin-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', ban: ['bajo-cero'], win: [0, 0], roundsLost: [13, 17], happens: { congela: [0, 0] }, why: 'Sin Bajo cero, la misma agua solo moja y hunde: la Reina tumba al mismo equipo unas siete rondas antes.' },
   { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry

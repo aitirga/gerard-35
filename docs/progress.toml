@@ -999,8 +999,8 @@ in = "src/freatica-fight.ts"
 [[block.item]]
 title = "Bajo cero sujeto por un objetivo"
 priority = "animas"
-note = "reina-con-bajo-cero frente a reina-sin-bajo-cero, en la primera pelea de la Reina: con ella el equipo aguanta 19.4 rondas frente a 15.0 y la Reina sigue llegando a su décimo (suyo). La Delegada no puede sujetarla: su sala acaba antes de que el agua de nadie llegue a la tercera marca."
-grep = "id: 'reina-sin-bajo-cero'"
+note = "La pareja de PLAN.md es delegada-bajo-cero-bien frente a delegada-bajo-cero-sin-ella, y espera a Aitor: la Delegada de tercero no puede sujetarla tal como es (cualquier equipo gana su sala en cuatro o cinco rondas, antes de que el agua de nadie llegue a la tercera marca; Bajo cero se lanza en el 0–3 % de sus combates, medido el 2026-11-26). Hecha ya la guarda, reina-con-bajo-cero (la Reina sigue pasando por cada fase y se lleva a Aitor, suyo), con su contraria reina-sin-bajo-cero: 22.1 rondas frente a 15.9. Falta decidir: cambiar su sala o sujetarla en la Reina. Ningún objetivo rompe el hielo todavía."
+grep = "(?s)\\A(?=.*id: 'delegada-bajo-cero-bien')(?=.*id: 'delegada-bajo-cero-sin-ella')"
 in = "src/battle-sim.ts"
 
 # Built 2026-11-21: the effects lab's cells driven by the fight's state (src/freatica-fight.ts), with the plate icons and pops.
@@ -1537,8 +1537,8 @@ done = true
 [[block.item]]
 title = "Las definitivas en fight-sim"
 priority = "animas"
-note = "Una pareja de objetivos por definitiva, con ella y sin ella: fiesta-gemelos, reina-con-siete-vidas, reina-con-bajo-cero (en la Reina: la Delegada acaba antes de que el agua llegue a III), gemelos-tercero-enjambre, delegada-da-capo, gemelos-tercero-golpe-de-dados y alumnos-tercero-horas-extra, cada una con su «sin». El bot ya valora lo que pagan y el tarro mixto las compra todas."
-grep = "(?s)\\A(?=.*id: 'fiesta-gemelos')(?=.*id: 'fiesta-gemelos-sin-ella')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'reina-con-bajo-cero')(?=.*id: 'reina-sin-bajo-cero')(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')(?=.*id: 'gemelos-tercero-golpe-de-dados')(?=.*id: 'gemelos-tercero-sin-definitiva')(?=.*id: 'alumnos-tercero-horas-extra')(?=.*id: 'alumnos-tercero-sin-horas-extra')"
+note = "Una pareja de objetivos por definitiva, con ella y sin ella: fiesta-gemelos, reina-con-siete-vidas, delegada-bajo-cero-bien, gemelos-tercero-enjambre, delegada-da-capo, gemelos-tercero-golpe-de-dados y alumnos-tercero-horas-extra, cada una con su «sin». El bot ya valora lo que pagan y el tarro mixto las compra todas."
+grep = "(?s)\\A(?=.*id: 'fiesta-gemelos')(?=.*id: 'fiesta-gemelos-sin-ella')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'delegada-bajo-cero-bien')(?=.*id: 'delegada-bajo-cero-sin-ella')(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')(?=.*id: 'gemelos-tercero-golpe-de-dados')(?=.*id: 'gemelos-tercero-sin-definitiva')(?=.*id: 'alumnos-tercero-horas-extra')(?=.*id: 'alumnos-tercero-sin-horas-extra')"
 in = "src/battle-sim.ts"
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the
