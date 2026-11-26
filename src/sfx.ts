@@ -335,6 +335,29 @@ export const SOUNDS = {
   timbre: { synth: (c, out, at, p) => { const ring = 1.7; for (let t = 0; t < ring; t += .045) { const fade = 1 - t / ring * .5; tone(c, out, at + t, { type: 'triangle', from: 1180 * p, length: .09, gain: .05 * fade }); tone(c, out, at + t, { from: 2950 * p, length: .06, gain: .022 * fade }); noise(c, out, at + t, { cutoff: 4200 * p, to: 3000, type: 'bandpass', q: 6, length: .02, gain: .07 * fade }); } tone(c, out, at + ring, { from: 1180 * p, length: 1.1, gain: .05 }); tone(c, out, at + ring, { from: 2950 * p, length: .8, gain: .02 }); return ring + 1.1; }, jitter: 15, gap: 1.5, voices: 1 },
   stamp: { synth: (c, out, at, p) => { tone(c, out, at, { from: 160 * p, to: 70 * p, length: .16, gain: .6 }); noise(c, out, at, { cutoff: 1600, to: 300, length: .14, gain: .45 }); noise(c, out, at + .01, { cutoff: 5000 * p, to: 2500, type: 'bandpass', q: 1.2, length: .05, gain: .22 }); return .2; }, jitter: 50, gap: .2, voices: 1 },
   // A pane of the glass into or out of a fight's pocket turning (src/post.ts): a tiny glassy tick, never twice the same.
+  // Bajo cero (docs/animas/freatica/README.md § Sound): frozen, everything goes quiet but the ice. The water locking into
+  // ice all at once (a crystalline hiss falling, glassy partials that are not a chord, a low settling); each blow's dry
+  // snap on it; the break, a burst of glass over a thud (in place of a golpe crítico's); and the ice ticking as it holds.
+  'ice-form': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 9000 * p, to: 2400, type: 'bandpass', q: 1.1, attack: .03, length: .55, gain: .3 });
+    [2637, 3311, 4186, 5274].forEach((from, i) => tone(c, out, at + .03 + i * .045, { from: from * p, to: from * .985 * p, length: .5 - i * .07, gain: .05 }));
+    tone(c, out, at + .02, { from: 92 * p, to: 44 * p, length: .45, gain: .32 });
+    noise(c, out, at + .35, { cutoff: 600, to: 200, length: .3, gain: .07 });
+    return .6;
+  }, jitter: 30, gap: .3, voices: 1 },
+  'ice-crack': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 4800 * p, to: 1700, type: 'bandpass', q: 3, length: .05, gain: .5 });
+    tone(c, out, at, { type: 'triangle', from: 1500 * p, to: 620 * p, length: .045, gain: .08 });
+    noise(c, out, at + .028, { cutoff: 3200 * p, to: 1400, type: 'bandpass', q: 2.5, length: .035, gain: .28 });
+    return .08;
+  }, jitter: 140, gap: .04, voices: 3 },
+  'ice-shatter': { synth: (c, out, at, p) => {
+    noise(c, out, at, { cutoff: 8200 * p, to: 1500, type: 'bandpass', q: .7, length: .38, gain: .48 });
+    tone(c, out, at, { from: 130 * p, to: 38 * p, length: .36, gain: .62 });
+    [3951, 2960, 4699, 3520, 5588, 3136, 4435, 6272].forEach((from, i) => tone(c, out, at + .02 + i * .028, { from: from * p, length: .16 + (i % 3) * .05, gain: .045 }));
+    return .5;
+  }, jitter: 40, gap: .1, voices: 2 },
+  'ice-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 4200 * p, to: 3900 * p, length: .028, gain: .04 }); noise(c, out, at, { cutoff: 7500 * p, to: 4500, type: 'highpass', q: .9, length: .018, gain: .05 }); return .04; }, jitter: 300, gap: .25, voices: 1 },
   'glass-tick': { synth: (c, out, at, p) => { tone(c, out, at, { from: 3600 * p, to: 3100 * p, length: .035, gain: .045 }); noise(c, out, at, { cutoff: 9000 * p, to: 5000, type: 'highpass', q: .8, length: .022, gain: .08 }); return .04; }, jitter: 450, gap: .024, voices: 3 },
   // Stats going up or down (src/stat-fx.ts), in step with its chevrons: a rush of air rising and three
   // bright notes climbing with a bell over each, a sparkle at the top; or air falling, three notes

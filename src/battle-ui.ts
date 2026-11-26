@@ -1910,12 +1910,12 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (effect.cells) for (const id of effect.cells.wetted) says.push({ target: id, id: 'mojado', text: `¡${TIMED.mojado.name}!`, detail: 'Las celdas se rompen' });
     return says;
   }
-  /** The break of a frozen foe's ice: the largest number the ánima shows, slammed on as a golpe crítico's, «¡Roto!» under it. */
+  /** The break of a frozen foe's ice: the largest number the ánima shows, slammed on as a golpe crítico's, «¡Roto!» under it, with the ice's own burst of glass. */
   function iceBreaks(effect: BattleEffect, token: number) {
     (effect.ice ?? []).filter(i => i.broke !== undefined).forEach((i, k) => setTimeout(() => {
       if (token !== generation) return;
       pop(i.target, `−${i.broke}`, 'crit', '¡Roto!', 'congelado');
-      callbacks.sound('crit');
+      callbacks.sound('ice-shatter');
     }, 260 + k * 220));
   }
   /** One action on screen: a dual's banner or a foe's move named up top, Uri's shout from up on Vertitrón, then the action itself. */

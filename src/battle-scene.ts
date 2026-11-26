@@ -414,6 +414,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   let setNight: ((amount: number, lift?: number) => void) | undefined, night = 0, nightLift = 0, shownNight = 0;
   /** Bajo cero's cold grade (post.setDark: blue and grey), 0–1. */
   let setCold: ((amount: number) => void) | undefined, cold = 0;
+  /** When Bajo cero's ice next ticks while a foe stands frozen (s). */
+  let iceTickIn = 0;
   /** What duals and the tower's fears draw (src/dual-fx.ts), on the fight's clock. */
   const dualFx = createDualFx(effects);
   /** Fire, lava, smoke and water as fluids (src/fluid-fx.ts), on the fight's clock. */
@@ -4749,6 +4751,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (state) for (const ally of state.allies) powderFx.trackScreen(ally.id, cortinaRounds(state, ally) > 0, foesCentre, nextMix);
       statusFx.update(dt, time);
       freatica.sync(state, dt);
+      // Bajo cero: while a foe stands in its ice, the ice ticks now and then.
+      if (state?.foes.some(f => f.hp > 0 && f.timed?.congelado) && (iceTickIn -= dt) <= 0) { cue('ice-tick', { volume: .55 }); iceTickIn = 1.2 + Math.random() * .8; }
       // Stats that stay up or down give off motes from the head (src/stat-motes.ts). What this
       // action changes waits for its blow to land, and the motes start as its chevrons pass.
       if (state) {

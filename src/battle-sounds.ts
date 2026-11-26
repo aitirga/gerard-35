@@ -39,7 +39,8 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   bombeo: { start: [{ id: 'sink', volume: .5 }], impact: [{ id: 'heal' }, { id: 'splash', volume: .3, delay: .1 }] },
   riada: { start: [{ id: 'rise', volume: .6 }], impact: [{ id: 'splash' }, { id: 'splash', volume: .6, delay: .25 }] },
   'golpe-de-ariete': { start: [{ id: 'charge', volume: .35 }], impact: [{ id: 'thump' }, { id: 'splash', volume: .5, delay: .05 }] },
-  'bajo-cero': { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'crack', volume: .7 }, { id: 'glass-tick', delay: .15 }, { id: 'sink', volume: .5, delay: .3 }] },
+  // Bajo cero's probe drops (a tick as it touches), the frost runs; as the cells lock, the water turns to ice (src/frost-fx.ts).
+  'bajo-cero': { start: [{ id: 'cast-soft', volume: .5 }, { id: 'ice-tick', delay: .14 }], impact: [{ id: 'ice-form' }, { id: 'sink', volume: .35, delay: .25 }] },
   'foc-binari': { start: [{ id: 'fire-cast' }], impact: [{ id: 'fire-hit' }] },
   // A boost's stats going up sound on their own (`stat-up`, from the scene).
   analisis: { start: [{ id: 'think' }], impact: [] },
@@ -200,6 +201,10 @@ export function impactSounds(effect: BattleEffect, state?: BattleState): Cue[] {
   // A blow that opens a wound (it spent Sangrado) tears as it lands.
   // And a golpe crítico is heard before anything else of the blow (a flurry's later ones, as each claw lands: battle-scene).
   const torn: Cue[] = [...effect.crit && effect.crits?.[0] !== false && !effect.dual ? [{ id: 'crit' as const }] : [], ...effect.bled || effect.hits?.some(h => h.bled) ? [{ id: 'bleed' as const, delay: .04 }] : []];
+  // Bajo cero's ice: each blow that cracks it snaps (up to three, a flurry's strikes one after another); the break is
+  // its own sound (battle-ui `iceBreaks`).
+  const iced: Cue[] = (effect.ice ?? []).filter(i => !i.melted && i.broke === undefined).flatMap(i => Array.from({ length: Math.min(3, i.added ?? 1) }, (_, n) => ({ id: 'ice-crack' as const, delay: .02 + n * .07 })));
+  torn.push(...iced);
   // Atacar with an element sounds of it, and what it turned on top.
   if (effect.kind === 'attack') return effect.amount ? [{ id: 'hit' }, ...effect.element ? [ELEMENT_SOUNDS[effect.element]] : [], ...effect.reaction ? REACTION_SOUNDS[effect.reaction.id] : [], ...torn] : [];
   // A dual that rolls claw by claw sounds each claw as it lands, fire or not (battle-scene `dualStrike`): the first says nothing of the rest.
