@@ -370,7 +370,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       const who = coming ?? target;
       mark(who).marked = true; use('chivatazo'); effect.target = who.id; effect.amount = 0;
       called.push({ target: who.id, text: 'Chivatazo', detail: `El siguiente golpe, ×${CASTLE.chivatazo}` });
-      state.message = `${actor.name} señala a ${who.name} sin decir nada. El siguiente golpe que reciba hará el triple.`;
+      state.message = `${actor.name} señala a ${who.name} sin decir nada. El siguiente golpe que reciba hará el doble.`;
     } else {
       use('pellizco'); effect.amount = strike(target, CASTLE.senalar);
       state.message = `${actor.name} pellizca a ${target.name} y se aparta. −${effect.amount} PV.`;

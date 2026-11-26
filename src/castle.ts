@@ -291,7 +291,7 @@ export const CASTLE_FIGHTS: Record<RoomEncounter, readonly PupilKind[]> = {
   'alumnos-3a': ['chivata', 'chivata', 'repetidor'],
   'alumnos-3b': ['empollon', 'repetidor', 'chivata'],
   'alumnos-3c': ['gemelo', 'gemelo', 'empollon'],
-  // El Montón with La Chivata: whatever it was shown comes back, and her mark triples it.
+  // El Montón with La Chivata: whatever it was shown comes back, and her mark doubles it.
   'alumnos-3d': ['monton', 'chivata'],
   'delegada-3': ['delegada', 'gemelo', 'gemelo'],
 };
@@ -429,7 +429,7 @@ export type Hand = keyof typeof HANDS;
  */
 export const CASTLE = {
   year1: 1.7, year2: 1.5, year3: 1.9,
-  empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 3, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
+  empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 2.5, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
   salto: .5, derrame: 32,
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
   carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 104, expuesto: 1.5, castigo: 40, castigoLeve: 28,

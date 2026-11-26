@@ -122,14 +122,15 @@ test('an open mission\'s foes grow with the other missions\' ánimas behind it, 
   assert.equal(voz.foes[0].stats.magia, plain.foes[0].stats.magia + Math.round(FIGHT_GROWTH.voz.stat * 3) + Math.round(FIGHT_GROWTH.voz.hit * 3)); assert.equal(voz.grown, 3);
 });
 
-test('inside the castle a fight is worth three times its foes, and out at night half as much again', () => {
-  assert.deepEqual(XP_RULES, { castle: 3, night: 1.5 });
+test('inside the castle a fight is worth three times its foes, out at night two and a half, and in Luca\'s and Marta\'s missions twice', () => {
+  assert.deepEqual(XP_RULES, { castle: 3, night: 2.5, luca: 2, marta: 2 });
   const slots = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata' }];
   const worth = state => state.foes.reduce((sum, foe) => sum + FOE_XP[foe.kind], 0);
   const room = createEncounter(slots, 'alumnos-1a', { random: seeded(1) }), night = createEncounter(slots, 'night-guard', { night: { room: 'alumnos-1a', might: 2 }, random: seeded(1) });
-  assert.ok(worth(room) > 0); assert.equal(fightXp(room), 3 * worth(room)); assert.equal(fightXp(night), Math.round(1.5 * worth(night)));
+  assert.ok(worth(room) > 0); assert.equal(fightXp(room), 3 * worth(room)); assert.equal(fightXp(night), Math.round(2.5 * worth(night)));
   withTuning({ 'xp.rules.night': 1 }, () => assert.equal(fightXp(night), worth(night)));
-  assert.equal(fightXp(createEncounter(slots, 'fran', { random: seeded(1) })), worth(createEncounter(slots, 'fran', { random: seeded(1) })));
+  const fran = createEncounter(slots, 'fran', { random: seeded(1) }), voz = createEncounter(slots, 'voz', { random: seeded(1) }), plato = createEncounter(slots, 'plato', { random: seeded(1) });
+  assert.equal(fightXp(fran), 2 * worth(fran)); assert.equal(fightXp(voz), 2 * worth(voz)); assert.equal(fightXp(plato), worth(plato));
   withTuning({ 'xp.rules.castle': 1 }, () => assert.equal(fightXp(room), worth(room)));
   // What development adds is not multiplied: it is the EXP to the next level, exactly.
   assert.equal(fightXp({ ...room, extraXp: 7 }), 3 * worth(room) + 7);

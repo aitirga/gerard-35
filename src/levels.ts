@@ -1,5 +1,5 @@
 import { isCastleEncounter } from './castle.ts';
-import { MANA_LEVEL, PASSIVES, SKILLS, type BattleState, type ClassId, type FoeKind, type PassiveId, type SkillId } from './battle.ts';
+import { CUERDAS_ENCOUNTERS, LUCA_ENCOUNTERS, MANA_LEVEL, PASSIVES, SKILLS, type BattleState, type ClassId, type FoeKind, type PassiveId, type SkillId } from './battle.ts';
 
 /**
  * Ánima levels (docs/animas/README.md § Levels): ánimas learn by fighting. Every foe beaten is worth
@@ -105,14 +105,22 @@ export const passivesAt = (id: ClassId, level: number): PassiveId[] => level > t
  * Inside the castle a fight is worth `castle` times its foes. It is where the shared ánimas grow: the
  * party comes in with all five and the castle opens their levels a boss at a time (`levelCap`), so
  * what its few fights leave has to carry them from 4 to 7. Out on the Meridiana at night the same
- * pupils are worth `night` times theirs (2026-11-21, it was what they are worth): a place to grow a
- * little, at the price of a fight that can end the day, and never what the castle is. Tunable (`just fight-sim`, `xp.rules.castle`, `xp.rules.night`).
+ * pupils are worth `night` times theirs (2026-11-21, it was what they are worth; 1.5 until 2026-11-26): a place to grow,
+ * at the price of a fight that can end the day, and never what the castle is. Luca's and Marta's missions
+ * (Sillones-Fran and Las cuerdas) are worth `luca` and `marta` times their foes (Aitor, 2026-11-26: the
+ * ánimas grew too little there). Tunable (`just fight-sim`, `xp.rules.castle`, `xp.rules.night`…).
  */
-export const XP_RULES = { castle: 3, night: 1.5 };
-/** What a won fight is worth: every foe's EXP (`XP_RULES.castle` times, inside the castle), plus whatever development adds (`extraXp`). */
+export const XP_RULES = { castle: 3, night: 2.5, luca: 2, marta: 2 };
+const xpScale = (encounter?: BattleState['encounter']) =>
+  isCastleEncounter(encounter) ? XP_RULES.castle
+  : encounter === 'night-guard' ? XP_RULES.night
+  : (LUCA_ENCOUNTERS as readonly string[]).includes(encounter ?? '') ? XP_RULES.luca
+  : (CUERDAS_ENCOUNTERS as readonly string[]).includes(encounter ?? '') ? XP_RULES.marta
+  : 1;
+/** What a won fight is worth: every foe's EXP times its place's `XP_RULES` (the castle, the night, Luca's and Marta's missions), plus whatever development adds (`extraXp`). */
 export function fightXp(state: Pick<BattleState, 'foes' | 'extraXp'> & Partial<Pick<BattleState, 'encounter'>>) {
   const foes = state.foes.reduce((sum, foe) => sum + (foe.kind ? FOE_XP[foe.kind] : 0), 0);
-  return Math.round(foes * (isCastleEncounter(state.encounter) ? XP_RULES.castle : state.encounter === 'night-guard' ? XP_RULES.night : 1)) + (state.extraXp ?? 0);
+  return Math.round(foes * xpScale(state.encounter)) + (state.extraXp ?? 0);
 }
 /**
  * The ánimas that took part in the fight, in the order they are unlocked, with who wore them:

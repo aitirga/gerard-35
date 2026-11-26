@@ -128,7 +128,7 @@ character **is** how it fights.
 | --- | --- | --- |
 | **El Repetidor** | Big and slow. Announces *Empujón → X* and hits very hard. Wrapped in thick pringue (first year) or a crust (third) | **Moment** and **element**: Defender on the tell; any blow of fire melts the pringue; the crust gives after two physical blows, or while it is wet |
 | **El Empollón** | Studies the party: after taking a kind of blow it *learns* it and resists it (a chip on its plate). The kind it has not learned it does not know: «No se lo sabe», ×1.5. Confused, it forgets | **Kind of blow**: alternate physical and magic, never repeat; or **status**: confuse it |
-| **La Chivata** | Fragile. *Chivatazo → X* marks one of the party: the next blow they take is tripled. Blinded she cannot point («No ve a quién») | **Who first**: her, before El Repetidor hits; or **status**: blind her |
+| **La Chivata** | Fragile. *Chivatazo → X* marks one of the party: the next blow they take is doubled. Blinded she cannot point («No ve a quién») | **Who first**: her, before El Repetidor hits; or **status**: blind her |
 | **Los Gemelos** | Two bodies. If one falls alone, the other holds it up a whole round more and gets it up at the end of the next one (2026-11-23: at the end of the same round it was too tight). Weak to electricity, and a spark on one passes to the other («Pasa al otro») | **Order and moment**: fell the other before the next round is over; a spark does it for both |
 | **El Ausente** | Not there: it cannot be hit except in the round it has just acted. Clock statuses do reach it. Wet, it shows («Se le ve») | **Moment**, or **status**: burn it and let the clock work, or wet it and hit it when it likes |
 | **El Castigado** | Facing the wall, it does not attack. Every blow that does not fell it gives it *Rabia*; at three it bursts on everyone | **Moment**: leave it for last and fell it in one big blow (an open wound, a dual, Punto débil) |
@@ -181,7 +181,7 @@ floor and asked twice more.
   Repetidor (the mark and the shove), El Empollón with El Castigado (no blow twice, and it must
   fall in one), La Delegada with Los Gemelos, El Ausente with El Repetidor (one blow told a turn
   ahead, one never told but on a rhythm), El Montón with La Chivata (whatever it was shown comes
-  back, and her mark triples it). Each room is a combination with its own question.
+  back, and her mark doubles it). Each room is a combination with its own question.
 - From phase 2 on a room is **not meant to be won the first time**: it kills a party that has not
   read it, and the fall costs the day. The second meeting is the one that is played.
 - Each combination keeps its pair of `TARGETS` (`src/battle-sim.ts`), and each pupil and La
