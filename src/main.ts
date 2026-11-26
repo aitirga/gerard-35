@@ -874,8 +874,8 @@ try {
     if (currentLocation !== place) game.setEnvironment(place);
     const bonus = setup.adult && setup.friends.length ? { grown: animaGrowth(setup.friends) } : {};
     const party: PartySlot[] = [
-      { id: 'gerard', name: 'Gerard', profile: setup.adult ? 'gerard35' : 'gerard', classId: setup.wear.gerard, ...bonus },
-      ...!setup.partner ? [] : setup.adult ? [{ id: 'aitor', name: 'Aitor', profile: 'aitor' as const, classId: setup.wear.aitor, ...bonus }] : [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }],
+      { id: 'gerard', name: 'Gerard', profile: setup.adult ? 'gerard35' : 'gerard', classId: setup.wear.gerard, ...bonus, ...setup.kits?.gerard ? { kit: setup.kits.gerard } : {} },
+      ...!setup.partner ? [] : setup.adult ? [{ id: 'aitor', name: 'Aitor', profile: 'aitor' as const, classId: setup.wear.aitor, ...bonus, ...setup.kits?.aitor ? { kit: setup.kits.aitor } : {} }] : [{ id: 'bernat', name: 'Bernat', profile: 'bernat' as const }],
     ];
     const possessed = setup.encounter === 'possessed';
     // A frame for the new place to settle before the fight takes its stage.

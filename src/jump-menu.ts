@@ -102,6 +102,8 @@ export interface FightSetup {
   /** What the Ecos de luz are in for this fight (src/ecos.ts): awake improvements, whatever they would cost. */
   improved: string[];
   trial?: keyof typeof DUAL_TRIALS;
+  /** What each one can switch between with L / R (their own ánima, the one worn and their extras); missing: their own and the one worn. */
+  kits?: { gerard?: ClassId[]; aitor?: ClassId[] };
 }
 /** The help any fight gets in development, the story's too. */
 export type FightHelp = Pick<FightSetup, 'free' | 'immune' | 'unbound' | 'crit' | 'offbeat'>;
@@ -172,7 +174,23 @@ export function validFight(value: unknown): FightSetup {
     free: v.free !== false, immune: v.immune === true, unbound: v.unbound === true, crit: v.crit === true, offbeat: v.offbeat === true,
     strong: v.strong === true && adult && (encounter === 'night-guard' || encounter.startsWith('alumnos-')),
     improved: Array.isArray(v.improved) ? v.improved.filter(id => { const item = improvementOf(id); return !!item && !item.veiled && (!item.after || v.improved!.includes(item.after)); }) : [],
+    ...v.kits && typeof v.kits === 'object' ? { kits: kitsOf(v.kits, animas, wear) } : {},
   };
+}
+/** Each one's kit as given, kept to what they can wear and is unlocked, never an ánima in both kits; the worn one always in. */
+function kitsOf(value: object, animas: readonly ClassId[], wear: FightSetup['wear']): NonNullable<FightSetup['kits']> {
+  const given = value as Partial<Record<'gerard' | 'aitor', unknown>>;
+  const taken = new Set<ClassId>();
+  const kits: NonNullable<FightSetup['kits']> = {};
+  for (const who of ['gerard', 'aitor'] as const) {
+    if (!Array.isArray(given[who])) continue;
+    const worn = wear[who];
+    const list = [...new Set([...worn ? [worn] : [], ...given[who] as unknown[]])]
+      .filter((id): id is ClassId => typeof id === 'string' && animas.includes(id as ClassId) && canWear(who, id as ClassId) && !taken.has(id as ClassId));
+    list.forEach(id => taken.add(id));
+    kits[who] = list;
+  }
+  return kits;
 }
 const fightKey = 'gerard35.fight.v1';
 
