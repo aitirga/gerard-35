@@ -245,8 +245,9 @@ test('Dirección: the Acta is Mar\'s to preside; a blinded one does not sign; th
   castleRoundEnd(s);
   assert.equal(s.castle.firmas, 0, 'left open, it is void');
   // Pilar falls: Mar and Montse are still a quorum, two signatures close it.
+  const hers = [...pilar.castle.elements], marHad = [...mar.castle.elements];
   pilar.hp = 0; castleAfter(KIT, s);
-  assert.deepEqual(mar.castle.elements, ['fuego', 'electrico'], 'the next in line takes her folder');
+  assert.deepEqual(mar.castle.elements, [...new Set([...marHad, ...hers])], 'the next in line takes her folder');
   delete montse.timed;
   s.round = CASTLE.actaEvery * 2 - 1; castleRoundEnd(s); s.round++;
   foeTurn(s, mar); const closed = foeTurn(s, montse);
@@ -264,6 +265,41 @@ test('Dirección: the Acta is Mar\'s to preside; a blinded one does not sign; th
   assert.ok(chips(t, t.foes[0]).includes('voto'));
   assert.ok(stageMoment(t, 'direccion-funciones'));
   assert.ok(chips(t, t.foes[1]).includes('funciones') && t.foes[1].hp > 0 && t.foes[0].hp === 0);
+});
+
+test('Dirección holds each other up: Respaldo heals one under half, and one who falls is readmitted once, unless finished on the floor with what undoes her folder', () => {
+  const s = fight('direccion'), [mar, montse, pilar] = s.foes;
+  // Respaldo: on a round with no Acta, the one with the most PV says it the round before, and gives a fifth back on her turn.
+  s.round = 1; montse.hp = Math.floor(montse.maxHp * .3); castleRoundEnd(s); s.round++;
+  const backer = s.foes.find(d => d.intent?.ability === 'respaldo');
+  assert.ok(backer && backer !== montse && backer.castle.backs === 'montse');
+  assert.match(intentLabel(s, backer), /Respaldo → Montse/);
+  const low = montse.hp, held = foeTurn(s, backer);
+  assert.ok(held.called.some(c => c.text === 'Respaldo'));
+  assert.equal(montse.hp - low, Math.round(montse.maxHp * CASTLE.respaldo));
+  // Pilar falls: on the floor at 1 PV, someone takes her folder and starts her papers.
+  pilar.hp = 0; castleAfter(KIT, s, { kind: 'attack', actor: 'gerard', target: 'pilar', amount: 10 });
+  assert.equal(pilar.hp, 1); assert.ok(pilar.castle.down && castleIdle(pilar));
+  const by = s.foes.find(d => d.castle?.readmits === 'pilar');
+  assert.ok(by && by !== pilar);
+  assert.ok(mar.castle.elements.includes('electrico'), 'meanwhile her folder is held');
+  // A blow she is not weak to leaves her at 1 PV.
+  pilar.hp = 0; const plain = { kind: 'attack', actor: 'gerard', target: 'pilar', amount: 1 };
+  castleAfter(KIT, s, plain);
+  assert.equal(pilar.hp, 1); assert.ok(plain.called.some(c => c.text === 'Aguanta'));
+  // Two rounds' ends of papers and she is back with a quarter of her PV and her folder.
+  for (let i = 0; i < CASTLE.readmisionTurns; i++) { castleRoundEnd(s); s.round++; }
+  assert.equal(pilar.hp, Math.round(pilar.maxHp * CASTLE.readmision)); assert.ok(!pilar.castle.down);
+  assert.ok(!mar.castle.elements.includes('electrico'), 'her folder comes back to her');
+  // The second time she falls she stays down.
+  pilar.hp = 0; castleAfter(KIT, s, { kind: 'attack', actor: 'gerard', target: 'pilar', amount: 10 });
+  assert.equal(pilar.hp, 0); assert.ok(pilar.castle.told);
+  // Montse falls, and on the floor what undoes her folder (water → electricity) finishes her at once.
+  const t = fight('direccion'), m2 = t.foes[1];
+  m2.hp = 0; castleAfter(KIT, t, { kind: 'attack', actor: 'gerard', target: 'montse', amount: 10 });
+  assert.ok(m2.castle.down);
+  m2.hp = 0; castleAfter(KIT, t, { kind: 'attack', actor: 'gerard', target: 'montse', amount: 1, affinity: 'weak' });
+  assert.equal(m2.hp, 0); assert.ok(m2.castle.told && !t.foes.some(d => d.castle?.readmits === 'montse'));
 });
 
 test('La Reina: five layers, each torn off by what undoes it, a piece of her with it, and none comes back', () => {
@@ -330,6 +366,10 @@ test('La Reina: one hand holds and one crushes, both say whom; holding on, nobod
 
 test('La Reina: La Pompa is a thing in front of her; burst in time it goes off in her face, left alone on everyone', () => {
   const s = fight('reina-vuelta'), queen = of(s, 'reina');
+  // Back with the artilugio she comes with most of her PV, her hands first (2026-11-26); La Pompa below its share.
+  assert.equal(queen.hp, Math.round(queen.maxHp * CASTLE.reinaVuelta));
+  assert.equal(queen.castle.stage, CASTLE.reinaVuelta > CASTLE.pompa ? 'manos' : 'pompa');
+  queen.hp = Math.floor(queen.maxHp * CASTLE.pompa); queen.castle = { stage: 'pompa', seen: queen.hp };
   foeTurn(s, queen);
   const bubble = of(s, 'pompa');
   assert.ok(bubble && castleIdle(bubble), 'a thing with its own PV and no turn');

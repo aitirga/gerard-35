@@ -112,9 +112,10 @@ the way here.
 | *Horario* | Whoever holds water: wets everyone |
 | *Circular* | Whoever holds electricity: electric on everyone; brutal on the wet |
 | **The ring** | Each is weak to what undoes her folder (fire → water, water → electricity, electricity → fire). That blow also **overrules** her («Desautorizada»): she loses the move she had announced. Once per folder each: after it she is «Sobre aviso» until the next trade |
-| ***Acta*** | **Mar presides.** Every third round those standing with her each sign on their turn (chips «Firma 1/3»). The last signature closes it and announces *Resolución* on everyone for her next turn: it all but kills whoever does not hold on. One who is blinded, confused or without her turn does not sign («No firma»). An Acta left open at the end of the round is void. **Without Mar there is no Acta** |
+| ***Acta*** | **Mar presides.** Every fourth round (third until 2026-11-26) those standing with her each sign on their turn (chips «Firma 1/3»). The last signature closes it and announces *Resolución* on everyone for her next turn: it all but kills whoever does not hold on. One who is blinded, confused or without her turn does not sign («No firma»). An Acta left open at the end of the round is void. **Without Mar there is no Acta** |
 | *Cambio de cargo* | Every four rounds they trade folders, and their weaknesses with them. It takes «Sobre aviso» off |
-| **When one falls** | The next in line takes her folder; an Acta being signed, or a Resolución announced, is void |
+| *Respaldo* | (2026-11-26) On a round with no Acta, one under half her PV is held up by the one of them with the most: «Respaldo → Montse» on her plate the round before, and on her turn she gives her a fifth of her PV back. One every two rounds at most. Overruled like any told move |
+| **When one falls** | (2026-11-26) The first time, she stays on the floor at 1 PV («Caída»), and another takes her folder meanwhile and starts her *Readmisión*, still doing her own moves: at the end of each round a page of the papers («Readmisión 1/2»), and after two she is back in her seat with a quarter of her PV and her folder. **On the floor only what undoes her folder finishes her** («Aguanta» otherwise). Overruling the one readmitting stops that round's page. Nobody comes back twice, and with nobody left in her seat there is nobody to readmit her. An Acta being signed, or a Resolución announced, is void. Down for good, the next in line keeps her folder |
 | **The last one** | If she is **Mar**: *Voto de calidad*, the three elements in one and she hits harder. If Montse or Pilar: **«En funciones»**, the three elements without the extra |
 
 The question has three parts:
@@ -122,7 +123,7 @@ The question has three parts:
 | Part | Answer |
 | --- | --- |
 | **What to break before it fires** | Each round there are three moves told and two turns: overrule the *Circular* while the party is wet, or the *Horario* before it |
-| **Order** | Mar first (no more Actas, no Voto de calidad, but she is the one who takes longest) or whoever holds water first (the spark loses its edge). Both work and each costs something else |
+| **Order** | Mar first (no more Actas, no Voto de calidad, but she is the one who takes longest) or whoever holds water first (the spark loses its edge). Both work and each costs something else. And whoever falls: finish her on the floor with what undoes her folder, or she is back in two rounds |
 | **Moment** | Keep a status (blind, confuse, shock) for the signature, and the Cúpula, the Telón or Defender for the *Resolución* |
 
 - **A second answer for a party without the element**: Cortocircuito, Confusión, Control remoto and
@@ -170,8 +171,11 @@ everything the party has: stage 3, the definitivas, three ánimas each. No joke,
   footlights falter; freed, the warm light comes back.
 - **The rules are her definitive design** (2026-11-21, once every ánima's mechanics existed): the
   whole game asked again, each stage examining a floor of the castle. Aitor held, the artilugio, the
-  melody, the last scene and the two endings are as they were, and she still comes back at 40 % of
-  her PV, in La pompa.
+  melody, the last scene and the two endings are as they were. Since 2026-11-26 (Aitor: «aumenta la
+  dificultad de la batalla final», then «unas 15 rondas de media») she comes back with 2.5 times the
+  first fight's PV (`reinaVueltaPv`), at 70 % of it, so **Las manos** come out of the floor again
+  before La pompa; `reinaFuria` would make her hands and pegotes land harder on the way back (1 for
+  now). La Pompa and Aitor's blows are as they were (`CASTLE`, `src/castle.ts`).
 
 | Stage | PV | What she does | What it examines |
 | --- | --- | --- | --- |
@@ -220,7 +224,7 @@ order).
   day back, but not the artilugio once Bernat has brought it, nor the night she took Aitor
   (`rewind` in `src/story.ts`). Otherwise a fall to her on the last day sends the party to a doomed
   morning and the death that has to happen once happens again.
-- To settle: how much PV she has on the way back (proposal: 40 %, the wounds showing).
+- How much PV she has on the way back: 70 % of 2.5 times her first fight's (2026-11-26; it was 40 %, the wounds showing).
 
 ### With the artilugio
 

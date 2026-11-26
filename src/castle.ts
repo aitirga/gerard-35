@@ -412,6 +412,11 @@ export type Hand = keyof typeof HANDS;
  * `circular` on everyone, `conducida` times as hard on the wet. Every `actaEvery` rounds each signs
  * instead; three signatures are a Resolución, `resolucion` on everyone. Every `cargoEvery` rounds
  * they trade elements. The last one standing hits `voto` times as hard.
+ * They hold each other up (2026-11-26): one under `respaldoBelow` of her PV is given `respaldo` of
+ * them back by another (Respaldo, said the round before, at most every `respaldoEvery` rounds); one
+ * who falls stays on the floor at 1 PV while another readmits her (still doing her own moves), and
+ * after `readmisionTurns` rounds' ends she is back with `readmision` of her PV, once. On the floor only what undoes her
+ * folder finishes her.
  *
  * La Reina. Phases at `manos`, `pompa` and `toma` of her PV. A layer of gum lets `gum` of anything
  * in; what takes it off tears `capa` of her PV away with it, and she spends her next turn wrapping
@@ -429,11 +434,13 @@ export const CASTLE = {
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
   carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 104, expuesto: 1.5, castigo: 40, castigoLeve: 28,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 80, recordRounds: 2,
-  expediente: 18, horario: 6, circular: 16, conducida: 1.8, actaEvery: 3, resolucion: 100, cargoEvery: 4, voto: 1.3,
+  expediente: 18, horario: 6, circular: 16, conducida: 1.8, actaEvery: 4, resolucion: 85, cargoEvery: 4, voto: 1.3,
+  respaldo: .2, respaldoBelow: .5, respaldoEvery: 2, readmision: .25, readmisionTurns: 2,
   manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 74, mano: .25, aplastar: 44,
-  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, aitor: 30, aitorGrows: .35, reinaVuelta: .4,
+  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, aitor: 30, aitorGrows: .35, reinaVuelta: .7, reinaFuria: 1, reinaVueltaPv: 2.5,
 };
-/** How much of her PV the Queen has when the party comes back with the artilugio (docs/castle-bosses.md: 40 %, proposed). */
+/** `reinaFuria`: how much harder her hands and her pegotes land on the way back (not La Pompa, not Aitor's blows); `reinaVueltaPv`: her whole PV on the way back, times the first fight's. */
+/** How much of her PV the Queen has when the party comes back with the artilugio (70 % since 2026-11-26, so her hands come out again first; it was 40 %). */
 export const QUEEN_RETURN_HP = CASTLE.reinaVuelta;
 /**
  * The artilugio (docs/story-outline.md § The device): four buttons, red, yellow, green and blue
@@ -511,6 +518,12 @@ export interface CastleMark {
   step?: number;
   /** A directiva: struck with what undoes her element, she loses the move she had announced (`overruled`), once until they next trade (`warned`). */
   elements?: Element[]; signed?: boolean; overruled?: boolean; warned?: boolean;
+  /**
+   * A directiva: the one she is bringing back (`readmits`, an id), the rounds of papers done (`steps`) and whether this
+   * round's are lost (`stalled`: overruled while at it); whether she has
+   * been brought back once already (`readmitted`: never twice); the one her Respaldo will heal (`backs`, an id).
+   */
+  readmits?: string; steps?: number; stalled?: true; readmitted?: true; backs?: string;
   /** The Queen: the layers already torn off her (`peeled`); La Pompa being blown, and the rounds it has left. One of her hands: which. */
   stage?: ReinaPhase | 'libre'; gum?: Gum; peeled?: Gum[]; pompa?: { left: number; id: string }; hand?: Hand; raised?: boolean;
 }
@@ -527,7 +540,10 @@ export interface CastleMark {
  */
 export interface HeldMove { action: 'attack' | 'skill' | 'defend'; skill?: string }
 export interface CastleFight {
-  focus?: string; firmas?: number; cargo?: number; artilugio?: boolean; notes?: number; startled?: boolean; taken?: boolean; freed?: boolean;
+  focus?: string; firmas?: number; cargo?: number;
+  /** Dirección: the round a Respaldo was last said for (one every `CASTLE.respaldoEvery` rounds at most). */
+  respaldo?: number;
+  artilugio?: boolean; notes?: number; startled?: boolean; taken?: boolean; freed?: boolean;
   /** What the round's end had to say, for the next round's message. */ said?: string;
   /** Player 2's choice for Aitor on her next turn; without one (the simulators), she moves him herself. */ aitorMove?: HeldMove;
 }

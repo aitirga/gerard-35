@@ -1158,6 +1158,35 @@ when it loses; more PV or more growth turned him into a wall done last, not into
 Los capellanes were left as they were (harder Tijeretazo walled the party in two new ánimas).
 `directo-electrico` now asks 40 % and `voz-la-ultima-animas-nuevas` 60 %, on purpose.
 
+### Fran, La Voz, Dirección and the last fight, harder (2026-11-26)
+
+Aitor: «aumenta la dificultad de: Fran, Marta, Mar, Montse y Pilar y la batalla final», and for
+Dirección «alguna dinámica que haga que se curen entre ellas, y que cuando una muera alguna de las
+otras la empiece a resucitar al 25 % de la vida después de 2 turnos». Measured with the targets of
+the four fights (`smart`, 200 runs) before and after:
+
+| Fight | Was (`smart`) | Now | What changed |
+| --- | --- | --- | --- |
+| Fran | 99 %, 56 % PV, 10.7 rounds | 70 %, 45 % PV, 12.3 rounds | Corte 26 → 32, Aspersión 22 → 30 (`LUCA`) |
+| La Voz | 93 %, 40 % PV, 9.8 rounds | 76 %, 31 % PV, 11.2 rounds | PV 630 → 720 (`PROFILES.voz`) |
+| Dirección | 98 %, 40 % PV, 8 rounds | 55 %, 36 % PV, 15.2 rounds | Respaldo and Readmisión (castle-bosses.md § Dirección); each 500 PV and 13 Magia (were 245 and 19), an Acta every 4 rounds (was 3), Resolución 85 (was 100) |
+| La Reina, con el artilugio | 100 %, 84 % PV, 4.6 rounds | 65 %, 51 % PV, 15.5 rounds | Back with 2.5 times her PV (`reinaVueltaPv`), at 70 % of it (was 40 %), so Las manos again first |
+
+Careless play still loses all four (0–1 %). The first version of Readmisión spent the readmitting
+one's turns and kept the fallen one's folder off the table while she was down: Dirección got
+*easier* (65 % PV left), since the Circular all but stopped. Now the papers go on at each round's
+end while she keeps doing her own moves, and another holds the fallen one's folder meanwhile. The
+Queen's own stats move nothing in La pompa (she only blows); her losses come late, after Aitor is
+freed, when her pegotes find a party already worn down. Their targets were lowered on purpose:
+`fran-bien` 60–90 %, `voz-bien` 65–92 %, `direccion-bien` 50–75 % in 12–18 rounds (40 % at first; 50 since Enjambre's pair left Dirección, so it is the one that plays the answer),
+`reina-con-artilugio` 45–80 % in 12–18 rounds.
+
+Then Aitor: «Dirección más difícil, unas 15 rondas de media, y la Reina también». More PV alone
+turned Dirección into a race the party lost (450 PV: 4–12 % won): what wears it down in a long
+fight is what piles up (the Acta's Resolución on everyone, the burns, maná running out), so they
+got much more PV, a lighter blow and their Actas further apart. A first try with the Queen's fury
+at 2.2 lost half the fights late; with the PV for the length her fury went back to 1.
+
 ## The castle, as tuned
 
 Final pass, 2026-11-21 (`just fight-sim story`, 200 fights, seed 35): the dual party at each floor's

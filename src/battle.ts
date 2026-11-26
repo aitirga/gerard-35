@@ -427,7 +427,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   // The castle (src/castle-fight.ts): the pupils, Aurelià, Dirección and the Queen.
   | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden' | 'presente' | 'revienta' | 'arrimarse' | 'copia'
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
-  | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo'
+  | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo' | 'respaldo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
   | 'chispa' | 'ola' | 'electron' | 'reaccion' | 'choque' | 'inunda' | 'descarga-modelo' | 'converge'
   | 'aleteo' | 'estampar' | 'tijeretazo' | 'imitacion'
@@ -506,6 +506,7 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   firma: { name: 'Acta', card: true },
   resolucion: { name: 'Resolución', card: true },
   'cambio-cargo': { name: 'Cambio de cargo', card: true },
+  respaldo: { name: 'Respaldo', card: true },
   pegote: { name: 'Pegote', card: false },
   envolver: { name: 'Otra capa', card: true },
   manos: { name: 'Las manos', card: true },
@@ -6697,7 +6698,7 @@ export const LUCA = {
   estampar: 18,
   tijeretazo: 29,
   deslumbre: 14,
-  corte: 26, acolito: 55, acolitoCorte: 22, aspersion: 22, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
+  corte: 32, acolito: 55, acolitoCorte: 22, aspersion: 30, aspersionLamp: 12, aspersionDown: 1, brilloStep: .625, brilloMost: 3, standAt: .75, hisopoAt: .33,
 };
 /** The canopy's three lamps (Fran's fight): each drinks the lights of one side of the day. */
 export type LampId = 'frio' | 'calido' | 'oro';

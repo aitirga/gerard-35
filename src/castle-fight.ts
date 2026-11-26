@@ -104,16 +104,43 @@ const PRESIDES: string = DIRECTIVAS[0].id;
 const MOVES: Record<Element, FoeAbilityId> = { fuego: 'expediente', agua: 'horario', electrico: 'circular' };
 /** Whether the Acta can be signed: Mar, and at least one of the other two. */
 const quorum = (team: Combatant[]) => team.length >= 2 && team.some(d => d.id === PRESIDES);
+/** One of Dirección in her seat: standing, and not on the floor waiting to be readmitted. */
+const seated = (c?: Combatant): c is Combatant => alive(c) && !c.castle?.down;
+/** Dirección's moves that striking a directiva with what undoes her folder takes away: her folder's, and her Respaldo. */
+const OVERRULED: readonly FoeAbilityId[] = [...Object.values(MOVES), 'respaldo'];
+/**
+ * Whoever is on the floor and nobody is readmitting gets someone: the one in her seat with the most PV
+ * who is not already bringing someone back. She keeps doing what her plate says; the papers go on at
+ * each round's end (`castleRoundEnd`), unless she was overruled in it.
+ */
+function readmitters(state: BattleState) {
+  const team = all(state, 'directiva');
+  for (const d of team.filter(x => alive(x) && x.castle?.down)) {
+    if (team.some(x => seated(x) && x.castle?.readmits === d.id)) continue;
+    const by = team.filter(x => seated(x) && !x.castle?.readmits).sort((a, b) => b.hp / b.maxHp - a.hp / a.maxHp)[0];
+    if (!by) continue;
+    mark(by).readmits = d.id; mark(by).steps = 0; delete mark(by).backs;
+    if (by.intent?.ability === 'respaldo') delete by.intent;
+  }
+}
 /**
  * What each of Dirección will do in `round`, on her plate from the round before: her signature on an
  * Acta round, otherwise the move of the folder she carries (in turn, if she carries several). A
  * Resolución already announced stays.
  */
 function planDireccion(state: BattleState, round: number) {
-  const team = all(state, 'directiva').filter(alive), up = standing(state);
+  const team = all(state, 'directiva').filter(seated), up = standing(state), f = fight(state);
   const acta = quorum(team) && round % CASTLE.actaEvery === 0;
+  readmitters(state);
+  // Respaldo: on a round with no Acta, the one in her seat lowest on PV, under half, is held up by the one highest who is free.
+  const hurt = acta || (f.respaldo !== undefined && round - f.respaldo < CASTLE.respaldoEvery) ? undefined
+    : team.filter(d => d.hp < d.maxHp * CASTLE.respaldoBelow).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+  const backer = hurt && team.filter(d => d !== hurt && !d.castle?.readmits && d.intent?.ability !== 'resolucion').sort((a, b) => b.hp / b.maxHp - a.hp / a.maxHp)[0];
+  if (hurt && backer) f.respaldo = round;
   team.forEach((d, i) => {
     if (d.intent?.ability === 'resolucion') return;
+    delete mark(d).backs;
+    if (d === backer) { mark(d).backs = hurt!.id; d.intent = { ability: 'respaldo' }; return; }
     const elements = d.castle?.elements ?? ['fuego'], element = elements[(d.turns ?? 0) % elements.length];
     if (acta) d.intent = { ability: 'firma' };
     else if (element !== 'fuego') d.intent = { ability: MOVES[element], at: 'todos' };
@@ -180,9 +207,12 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
     wrap(queen, 'fresco');
     castle.artilugio = encounter === 'reina-vuelta';
     if (encounter === 'reina-vuelta') {
-      // Back with the artilugio: she is as they left her, the wounds showing, already blowing her Pompa.
+      // Back with the artilugio: the wounds showing, but she has had time to pull herself together. Above La Pompa's
+      // share of her PV her hands come out of the floor again first (2026-11-26: the last fight, harder); below it, she is already blowing.
+      const pv = Math.round(queen.maxHp * CASTLE.reinaVueltaPv);
+      queen.stats = { ...queen.stats, pv }; queen.maxHp = pv;
       queen.hp = Math.round(queen.maxHp * CASTLE.reinaVuelta);
-      queen.castle = { stage: 'pompa', seen: queen.hp };
+      queen.castle = { stage: CASTLE.reinaVuelta > CASTLE.pompa ? 'manos' : 'pompa', seen: queen.hp };
     }
     foes = [queen];
   } else {
@@ -499,7 +529,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
    * otherwise the move of the folder she carries. Struck with what undoes it, she has lost that move.
    */
   function directivaTurn() {
-    const m = mark(actor), team = all(state, 'directiva').filter(alive), f = fight(state);
+    const m = mark(actor), team = all(state, 'directiva').filter(seated), f = fight(state);
     const last = team.length === 1, casting = last && actor.id === PRESIDES, power = (base: number) => base * (casting ? CASTLE.voto : 1);
     const due = actor.intent; delete actor.intent;
     if (m.overruled) {
@@ -514,6 +544,19 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       use('resolucion'); everyone(spell, () => CASTLE.resolucion, target);
       state.message = `Resolución: lo que dice el acta, se cumple. −${effect.amount} PV a ${target.name}.`;
       return;
+    }
+    // Respaldo: she gives the one her plate named a fifth of her PV back.
+    if (due?.ability === 'respaldo') {
+      const backed = team.find(d => d.id === m.backs);
+      delete m.backs; delete effect.target;
+      if (backed) {
+        use('respaldo');
+        const gained = Math.min(backed.maxHp - backed.hp, Math.round(backed.maxHp * CASTLE.respaldo));
+        backed.hp += gained; mark(backed).seen = backed.hp;
+        called.push({ target: backed.id, text: 'Respaldo', detail: `+${gained} PV` });
+        state.message = `${actor.name} respalda a ${backed.name}: lo que ella diga, va a misa. +${gained} PV.`;
+        return;
+      }
     }
     if (due?.ability === 'firma' && quorum(team) && !m.signed) {
       delete effect.target;
@@ -558,6 +601,8 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
   /** The Queen, by her stage: the gum, her hands, La Pompa, and Aitor's hand against Gerard. */
   function reinaTurn() {
     const m = mark(actor), stage = m.stage ?? 'chicle', hands = all(state, 'mano');
+    // On the way back with the artilugio her hands and her pegotes land harder (`reinaFuria`); La Pompa is what it was.
+    const fury = state.encounter === 'reina-vuelta' ? CASTLE.reinaFuria : 1;
     if (stage === 'aitor') {
       const aitor = state.allies.find(a => a.castle?.held === 'reina'), gerard = up.find(a => a !== aitor);
       if (!aitor || !gerard) { delete effect.target; state.message = `${actor.name} espera.`; return; }
@@ -643,10 +688,10 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
         } else state.message = `La ${holder.name.toLowerCase()} se cierra en el aire.`;
       } else if (due?.ability === 'aplastar' && crusher) {
         target = named(due) ?? target; effect.target = target.id;
-        use('aplastar'); effect.amount = strike(target, CASTLE.aplastar);
+        use('aplastar'); effect.amount = strike(target, CASTLE.aplastar * fury);
         state.message = `La ${crusher.name.toLowerCase()} cae sobre ${target.name}. −${effect.amount} PV.`;
       } else {
-        use('pegote'); effect.amount = strike(target, CASTLE.pegote);
+        use('pegote'); effect.amount = strike(target, CASTLE.pegote * fury);
         state.message = `${actor.name} lanza un pegote contra ${target.name}. −${effect.amount} PV.`;
       }
       tell(due?.ability);
@@ -662,7 +707,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
         return;
       }
     }
-    use('pegote'); effect.amount = strike(target, CASTLE.pegote);
+    use('pegote'); effect.amount = strike(target, CASTLE.pegote * fury);
     state.message = `${actor.name} lanza un pegote contra ${target.name}. −${effect.amount} PV.`;
     // Wrapped in a layer with a filling, her gum carries it.
     if (m.gum && m.gum !== 'fresco' && m.gum !== 'rancio' && effect.amount > 0) state.message += fill(m.gum, target);
@@ -853,16 +898,48 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
     // Struck with what undoes the folder she carries, she loses the move she had announced. Once, until they next trade.
     if (blow && effect) for (const d of team) {
       const m = mark(d), move = d.intent?.ability;
-      if (!alive(d) || !weakened.has(d.id) || m.warned || !move || !(Object.values(MOVES) as FoeAbilityId[]).includes(move)) continue;
+      if (!seated(d) || !weakened.has(d.id) || m.warned || (m.readmits ? m.stalled : !move || !OVERRULED.includes(move))) continue;
+      // Readmitting, she loses this round's papers too (not the ones already done).
+      if (m.readmits) m.stalled = true;
+      if (!move || !OVERRULED.includes(move)) {
+        m.warned = true;
+        called.push({ target: d.id, text: 'Desautorizada', detail: 'La readmisión no avanza esta ronda' });
+        said.push(`${d.name} pierde el hilo: la readmisión se queda parada esta ronda.`);
+        continue;
+      }
       delete d.intent; m.overruled = true; m.warned = true; effect.cancelled = move;
-      called.push({ target: d.id, text: 'Desautorizada', detail: `Pierde ${FOE_ABILITIES[move].name}` });
+      called.push({ target: d.id, text: 'Desautorizada', detail: `Pierde ${FOE_ABILITIES[move].name}${m.readmits ? ' · la readmisión no avanza' : ''}` });
       said.push(`${d.name} pierde el hilo: ${FOE_ABILITIES[move].name} se queda sin leer.`);
     }
     for (const d of team) {
       const m = mark(d);
       if (d.hp > 0 || m.told) continue;
+      // On the floor, only what undoes her folder finishes her; anything else leaves her at 1 PV.
+      if (m.down && !weakened.has(d.id) && team.some(x => seated(x))) {
+        d.hp = 1;
+        called.push({ target: d.id, text: 'Aguanta', detail: 'En el suelo solo la remata lo que deshace su carpeta' });
+        said.push(`${d.name} sigue en el suelo, agarrada a sus papeles.`);
+        continue;
+      }
+      // The first time she falls, if another is in her seat to readmit her: on the floor at 1 PV, and someone starts the papers.
+      if (!m.down && !m.readmitted && team.some(x => x !== d && seated(x))) {
+        d.hp = 1; m.down = true; m.downAt = state.round; m.readmitted = true;
+        delete d.intent; delete d.statuses; delete d.timed; delete d.shock; delete m.signed; delete m.readmits; delete m.steps; delete m.backs;
+        f.firmas = 0;
+        for (const x of team) { delete x.castle!.signed; if (x.intent?.ability === 'resolucion' || x.intent?.ability === 'firma') { if (x.intent.ability === 'resolucion' && effect) effect.cancelled = 'resolucion'; delete x.intent; } }
+        readmitters(state);
+        const by = team.find(x => x.castle?.readmits === d.id);
+        // Meanwhile her folders are held by whoever is first in her seat (and used), until she is back.
+        const keeper = team.find(seated);
+        if (keeper) { mark(keeper).elements = [...new Set([...mark(keeper).elements ?? [], ...m.elements ?? []])]; delete mark(keeper).found; }
+        called.push({ target: d.id, text: 'Caída', detail: by ? `${by.name} la readmite en ${CASTLE.readmisionTurns} turnos` : 'Espera a que la readmitan' });
+        said.push(`${d.name} cae de la silla${by ? `, y ${by.name} ya está rellenando su readmisión` : ''}. En el suelo solo la remata lo que deshace su carpeta.`);
+        continue;
+      }
+      delete m.down; delete m.downAt;
+      for (const x of team) if (x.castle?.readmits === d.id) { delete x.castle.readmits; delete x.castle.steps; delete x.castle.stalled; }
       m.told = true; f.firmas = 0;
-      const left = team.filter(alive), heir = left[0];
+      const left = team.filter(seated), heir = left[0];
       // An Acta being signed is void, and a closed one with it: one of them is missing.
       for (const x of team) { delete x.castle!.signed; if (x.intent?.ability === 'resolucion' || x.intent?.ability === 'firma') { if (x.intent.ability === 'resolucion' && effect) effect.cancelled = 'resolucion'; delete x.intent; } }
       if (!heir) continue;
@@ -872,6 +949,11 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
       const alone = left.length === 1, text = alone ? heir.id === PRESIDES ? 'Voto de calidad' : 'En funciones' : quorum(left) ? 'Hereda' : 'Sin quórum';
       called.push({ target: heir.id, text, detail: mark(heir).elements!.map(e => ELEMENTS[e].name).join(' · ') });
       said.push(`${d.name} se sienta. ${alone ? heir.id === PRESIDES ? `${heir.name} se queda con todo: voto de calidad.` : `${heir.name} se queda con todo, en funciones.` : quorum(left) ? `${heir.name} se queda con lo suyo, y sigue habiendo quórum para el acta.` : `Sin Mar no hay quién presida: ya no habrá más actas. ${heir.name} se queda con lo suyo.`}`);
+    }
+    // Nobody left in her seat to readmit whoever is on the floor: she stays there.
+    if (!team.some(seated)) for (const d of team) if (alive(d) && d.castle?.down) {
+      d.hp = 0; delete d.castle.down; delete d.castle.downAt; d.castle.told = true;
+      said.push(`Ya no queda nadie para readmitir a ${d.name}.`);
     }
   }
   function reina() {
@@ -974,7 +1056,29 @@ export function castleRoundEnd(state: BattleState) {
     } else { c.hp = 0; m.told = true; }
   }
   delete f.focus;
-  const team = all(state, 'directiva').filter(alive);
+  const team = all(state, 'directiva').filter(seated);
+  // Readmisión: each round's end, a step of the papers for whoever is readmitting and was not overruled in it; the last brings her back.
+  for (const d of team) {
+    const m = mark(d), fallen = all(state, 'directiva').find(x => x.id === m.readmits && alive(x) && x.castle?.down);
+    if (!m.readmits) continue;
+    if (!fallen) { delete m.readmits; delete m.steps; delete m.stalled; continue; }
+    if (m.stalled) { delete m.stalled; continue; }
+    m.steps = (m.steps ?? 0) + 1;
+    if (m.steps < CASTLE.readmisionTurns) {
+      called.push({ target: fallen.id, text: `Readmisión ${m.steps}/${CASTLE.readmisionTurns}`, detail: `${d.name} la está readmitiendo` });
+      said.push(`${d.name} rellena otra hoja de la readmisión de ${fallen.name}. ${m.steps} de ${CASTLE.readmisionTurns}.`);
+      continue;
+    }
+    delete m.readmits; delete m.steps;
+    const fm = mark(fallen);
+    delete fm.down; delete fm.downAt;
+    // Her folders come back to her from whoever held them.
+    for (const x of team) { const kept = (mark(x).elements ?? []).filter(e => !fm.elements?.includes(e)); if (kept.length && kept.length !== mark(x).elements?.length) { mark(x).elements = kept; delete mark(x).found; } }
+    fallen.hp = Math.max(1, Math.round(fallen.maxHp * CASTLE.readmision)); fm.seen = fallen.hp;
+    called.push({ target: fallen.id, text: 'Readmitida', detail: `+${fallen.hp} PV` });
+    said.push(`${d.name} firma la readmisión. ${fallen.name} vuelve a su silla con ${fallen.hp} PV.`);
+    team.push(fallen);
+  }
   if (team.length) {
     // An Acta left open (a signature missed) is void; a closed one waits for its Resolución while there is quorum.
     const closed = quorum(team) && team.some(d => d.intent?.ability === 'resolucion');
@@ -1117,8 +1221,14 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
     if (m.tripped && m.phase !== 'leccion') chips.push(['tropiezo', `Tropezó: ${statusName(m.tripped)}`]);
   }
   if (c.kind === 'directiva') {
-    const team = all(state, 'directiva').filter(alive);
+    const team = all(state, 'directiva').filter(seated);
     chips.push(['cargo', (m.elements ?? []).map(e => ELEMENTS[e].name).join(' · ')]);
+    if (m.down) {
+      const by = team.find(d => d.castle?.readmits === c.id);
+      chips.push(['caida', by ? `En el suelo · Readmisión ${by.castle?.steps ?? 0}/${CASTLE.readmisionTurns}` : 'En el suelo']);
+      return chips;
+    }
+    if (m.readmits) chips.push(['readmite', `Readmite a ${state.foes.find(d => d.id === m.readmits)?.name ?? ''}`]);
     if (team.length === 1) chips.push(c.id === PRESIDES ? ['voto', 'Voto de calidad'] : ['funciones', 'En funciones']);
     else if (c.id === PRESIDES && quorum(team)) chips.push(['preside', 'Preside el acta']);
     if (m.signed) chips.push(['firma', `Firma ${f.firmas ?? 0}/${team.length}`]);
@@ -1145,7 +1255,10 @@ export function castleIntent(state: BattleState, c: Combatant): string | undefin
   const intent = c.intent;
   if (!intent || c.hp <= 0) return undefined;
   if (c.kind !== 'delegada' && c.kind !== 'aurelia' && c.kind !== 'directiva' && c.kind !== 'reina' && inCharge(state)) return undefined;
-  const name = FOE_ABILITIES[intent.ability].name, who = intent.target ? state.allies.find(a => a.id === intent.target)?.name : intent.at;
+  const name = FOE_ABILITIES[intent.ability].name;
+  // Dirección holding one of their own up: whom, by her name.
+  const own = intent.ability === 'respaldo' ? c.castle?.backs : undefined;
+  const who = own ? state.foes.find(f => f.id === own)?.name : intent.target ? state.allies.find(a => a.id === intent.target)?.name : intent.at;
   const count = intent.ability === 'record' && c.castle?.record ? ` · ${c.castle.record}` : '';
   return `${who ? `${name} → ${who}` : name}${count}`;
 }

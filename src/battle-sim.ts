@@ -832,6 +832,14 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
     // what the foes would no longer do, the real rules on a copy. Aurelià's Récord is rounds away, so it has its own worth.
     if (isCastle(foe.kind) && foe.intent && now.hp > 0 && !now.intent) value += Math.max(0, sum(threat) - sum(threatOn(after))) + (foe.intent.ability === 'record' ? RECORD_WORTH : 0);
     if (foe.kind === 'aurelia' && now.hp > 0 && now.castle?.tripped !== foe.castle?.tripped) value += TRIP_WORTH;
+    // Dirección holding each other up: one on the floor finished is the quarter of her PV she will not come back with;
+    // a Respaldo or a Readmisión overruled, what it would have given back (a turn of the papers, half of that quarter).
+    if (foe.kind === 'directiva') {
+      if (foe.castle?.down && foe.hp > 0 && now.hp <= 0) value += CASTLE.readmision * foe.maxHp;
+      const backed = before.foes.find(f => f.id === foe.castle?.backs);
+      if (now.hp > 0 && now.castle?.overruled && !foe.castle?.overruled && foe.intent?.ability === 'respaldo' && backed) value += Math.min(backed.maxHp - backed.hp, CASTLE.respaldo * backed.maxHp);
+      if (now.hp > 0 && now.castle?.stalled && !foe.castle?.stalled) value += CASTLE.readmision * foe.maxHp / CASTLE.readmisionTurns;
+    }
     // A directiva about to sign who will not: blinded, confused or without her turn.
     if (foe.kind === 'directiva' && now.hp > 0 && foe.intent?.ability === 'firma' && !(foe.timed?.cegado || foe.timed?.confusion || foe.shock) && (now.timed?.cegado || now.timed?.confusion || now.shock)) value += SIGNATURE_WORTH;
     if (foe.kind === 'reina') value += ((now.castle?.peeled?.length ?? 0) - (foe.castle?.peeled?.length ?? 0)) * LAYER_WORTH;
@@ -1811,9 +1819,9 @@ export const TARGETS: readonly Target[] = [
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
-  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.85, 1], hpLeftWon: [.22, .58], roundsWon: [7, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar.' },
+  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.65, .92], hpLeftWon: [.15, .45], roundsWon: [7, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar. Desde 2026-11-26 aguanta más: se gana casi siempre, pero justo.' },
   { id: 'voz-sin-cubrirse', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['defend'], win: [.5, 1], why: 'Pegando bien pero sin cubrirse nunca, sus notas entran enteras y con el agua y el rayo encima: cuesta bastante más.' },
-  { id: 'voz-sin-duales', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['duals'], win: [.6, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
+  { id: 'voz-sin-duales', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['duals'], win: [.35, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
   { id: 'voz-sin-pensar', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
   { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, ...AT_MARTA, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
@@ -1824,11 +1832,12 @@ export const TARGETS: readonly Target[] = [
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
   // With its two newest ánimas at level 1 it is the cliff it always was (docs/fight-sim.md § The final pass, as done); whole games win it 92 % at the first try.
   ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.55, 1], [0, .3]),
-  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.9, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.6, 1], [0, .3]),
+  // La Voz with 720 PV (2026-11-26): its two newest ánimas win it 60 % (200 fights), at the edge of what was asked; the floor went to 55 %.
+  ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.8, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.55, 1], [0, .3]),
   ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.66, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),
   ...doneLast('luca-carta', 'Las camisas de Luca', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .25]),
-  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.88, 1], roundsWon: [5.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),
+  ...doneLast('fran', 'Fran', LUCA_LAST, { win: [.75, 1], roundsWon: [5.5, 13] }, NEW_TIDE, [.88, 1], [0, .45]),
   // The castle (docs/castle.md, docs/castle-bosses.md), measured 2026-11-21 with the party as the story leaves it
   // (`storyPoint`): on arriving with Nuria's ánima and one side mission's (ONE), with two (TWO), and with them all
   // at each of the castle's stages. Its bosses ask for ánimas (docs/fight-sim.md § Power and the castle).
@@ -1893,7 +1902,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'aurelia-carrera-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', win: [.78, 1], happens: { armonico: [.6, 3] }, why: 'Lo de aurelia-con-emilie con Serie de Fourier en el tarro: el sangrado, el agua y el fuego le llenan la placa y en La carrera cada estado nuevo es un Tropiezo; Fourier cobra esa variedad, un golpe por icono. Se usa y ayuda un poco (unos puntos de victoria), sin quitarle el sitio a nada.' },
   { id: 'aurelia-carrera-sin-fourier', fight: 'aurelia', party: WATER_CATS, ...WITH_EMILIE, improved: [...WITH_EMILIE.improved ?? [], 'matemagico:fourier'], policy: 'smart', ban: ['fourier'], win: [.7, .93], happens: { armonico: [0, 0] }, why: 'La misma pareja con Fourier en el tarro y sin usarla: lo de aurelia-con-emilie, unos puntos de victoria menos (82 % frente a 87 %, medido el 2026-11-26).' },
   { id: 'aurelia-sin-pensar', fight: 'aurelia', party: DUO, ...TWO, policy: 'casual', win: [0, .3], why: 'Con lo justo para entrar (Nuria y dos misiones), sin defender la Pregunta ni la Expulsión, pegándole tras el atril, a mitad de daño, y sin tropiezos: el Ritmo se acumula, el Récord llega entero y se pierde.' },
-  { id: 'direccion-bien', fight: 'direccion', party: DUO, ...FLOOR_2, policy: 'smart', win: [.75, 1], roundsWon: [5, 9], why: 'Dirección con las ánimas de todos: leer lo que avisa cada una y desautorizar con lo que deshace su carpeta el gesto que más duele (la Circular estando mojados), dejar a una sin firmar el acta y Defender la Resolución. Mar primero acaba con las actas; la del agua primero le quita el filo a la chispa.' },
+  { id: 'direccion-bien', fight: 'direccion', party: DUO, ...FLOOR_2, policy: 'smart', win: [.5, .75], hpLeftWon: [.2, .5], roundsWon: [12, 18], why: 'Dirección con las ánimas de todos (desde 2026-11-26 un combate largo, unas quince rondas, que desgasta): leer lo que avisa cada una y desautorizar con lo que deshace su carpeta el gesto que más duele (la Circular estando mojados, o el Respaldo), dejar a una sin firmar el acta y Defender la Resolución; y a la que cae, rematarla en el suelo con lo que deshace su carpeta antes de que la readmitan. Mar primero acaba con las actas; la del agua primero le quita el filo a la chispa.' },
   { id: 'direccion-con-dos', fight: 'direccion', party: TECH, ...TWO, policy: 'smart', win: [0, .35], why: 'Con solo dos misiones detrás las tres juntas son demasiado: la Circular y la Resolución acaban con el grupo antes.' },
   { id: 'direccion-sin-pensar', fight: 'direccion', party: DUO, ...THREE, policy: 'casual', win: [0, .15], why: 'Con tres de las cuatro misiones detrás, sin leer los avisos: mojados cuando llega la Circular y con el acta cerrada, se pierde.' },
   // Encarnados (docs/castle.md § Encarnados): the room's own question, with less room for mistakes.
@@ -1964,7 +1973,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'vertigo-con-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', win: [.95, 1], roundsWon: [6.5, 8.7], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Con Gerard en Matemágico y Horas extra en el tarro: Foc Binari sobre Vertitrón hasta Quemado III (el ojo no cuenta) la despierta, y Rescoldo la sostiene; tres acciones sin maná, lo caro y lo que remata, lo tiran cuatro rondas antes.' },
   { id: 'vertigo-sin-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['horas-extra'], win: [.95, 1], roundsWon: [10.7, 13], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Jugando igual, con el fuego en III y Horas extra despierta pero sin lanzarla, Vertitrón aguanta cuatro rondas más.' },
   { id: 'vertigo-horas-extra-sin-rescoldo', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['rescoldo'], win: [.9, 1], happens: { 'despierta:horas-extra': [0, .15] }, why: 'Sin Rescoldo el fuego se apaga entre turno y turno antes de llegar a III: Horas extra casi nunca despierta.' },
-  { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.9, 1], roundsWon: [3.5, 9], why: 'Con el artilugio: romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor.' },
+  { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.5, .8], roundsWon: [12, 18], why: 'Con el artilugio (desde 2026-11-26 vuelve con dos veces y media sus PV, al 70 %, y las manos primero: unas quince rondas): romper la mano que sujeta, aguantar la que aplasta, romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor. Es el último combate: se gana, pero no siempre.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
   // (foe.celda-seca…). Inside it every Atacar can carry water or electricity, so the answer never depends on the jar. The
@@ -1992,7 +2001,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'sillones-a-punetazos', fight: 'luca-sillones', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
   { id: 'carta-bien', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'smart', win: [.88, 1], hpLeftWon: [.15, .55], why: 'Las camisas de Luca, pensando: pegar solo a la que está en su luz, y con otra cosa que el elemento que esa luz se come.' },
   { id: 'carta-sin-pensar', fight: 'luca-carta', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .35], why: 'Repartiendo golpes sin mirar la luz, la mayoría caen sobre una camisa apagada y no hacen nada.' },
-  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.82, 1], hpLeftWon: [.22, .7], roundsWon: [6, 12], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia.' },
+  { id: 'fran-bien', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'smart', win: [.6, .9], hpLeftWon: [.22, .7], roundsWon: [7, 15], why: 'Fran, pensando: romper cada lámpara en su propia luz, con otro elemento: se le apaga el brillo, esa luz ya no se come nada y la Aspersión cae casi limpia. Desde 2026-11-26 corta más: se gana, pero no siempre.' },
   { id: 'fran-sin-pensar', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'casual', win: [0, .25], why: 'Sin mirar a las lámparas, cada luz le da más brillo, sigue comiéndose los elementos y la Aspersión llega teñida de todas.' },
   { id: 'fran-a-punetazos', fight: 'fran', party: DUO, ...AT_LUCA, policy: 'attack', win: [0, .05], why: 'Solo Atacar no llega.' },
 ];

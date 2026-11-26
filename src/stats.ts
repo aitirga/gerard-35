@@ -89,7 +89,7 @@ export const PROFILES = {
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
   directo: base(530, 16, 10, 11, 10),
-  voz: base(630, 12, 15, 5, 7),
+  voz: base(720, 12, 15, 5, 7),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the
@@ -111,7 +111,9 @@ export const PROFILES = {
   atril: base(90, 1, 1, 10, 8),
   // Each of Mar, Montse and Pilar. 2026-11-21 (they were 160 PV, 13 Magia, 10 Defensa, 12 Espíritu): with three of the
   // four side missions' ánimas it is a coin, with fewer it is lost, with all of them it is won in some seven rounds.
-  directiva: base(245, 10, 19, 12, 14),
+  // 2026-11-26 (they were 245 PV, 19 Magia): a long fight, some fifteen rounds won, that wears the party down; they
+  // hold each other up (Respaldo, Readmisión; castle.ts CASTLE).
+  directiva: base(500, 10, 13, 12, 14),
   reina: base(620, 17, 17, 12, 13),
   mano: base(110, 12, 10, 11, 10),
   // La Pompa she blows: a thing to burst before it does. First guess.
