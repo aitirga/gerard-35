@@ -243,7 +243,7 @@ before the fourth, so it wakes in 2 % of fights and the pair with and without it
 A longer fight does not help: over every fight of the third year (`castillo-3`, the Queen's return
 of eight or nine rounds included), with Matemágico, Freática or Tecnópata beside Colorista, the
 smart bot wakes it in at most 4 % of them. Burn and poison come every fight; Cristalizado almost
-never, because water on every powdered foe at once (Vasos comunicantes, Rociada) poisons them all
+never, because water on every powdered foe at once (Matemágico's Cubo acuático, Rociada) poisons them all
 and is worth more than one electric blow that crystallises one. To decide with Aitor (2026-11-26):
 the condition (Cristalizado is the step nobody takes) or how the bot weighs that last step, before
 any fight can hold the pair.
