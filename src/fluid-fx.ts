@@ -7,7 +7,7 @@ import type { GpuBurst, GpuKind } from './fight-particles';
  * pushed from where it crowds and carried by the flow round it, so a ball of fire swells under its own
  * pressure and rolls as one, lava runs and pools slowly, smoke billows. Fight clock only (`after`).
  *
- * Fire keeps to orange and gold, smoke to warm greys; no pink, no violet (docs/visual-style.md).
+ * Fire keeps to orange and gold, smoke to warm greys, nácar to white, sea foam and pale gold; no pink, no violet (docs/visual-style.md).
  */
 export const FLUID_KINDS = {
   // Lava: heavy, very thick, white-gold where it is fresh, orange, cooling to a dark crust; it slides
@@ -34,6 +34,13 @@ export const FLUID_KINDS = {
     shape: 'glow', blur: [.6, 1.2], drag: 1.2, gravity: -2.6, curl: .9, response: .8, size: [.12, .36], sizeJitter: .5,
     colours: ['#ffffff', '#eef6f6', '#cfdede'], intensity: [1.4, 1.1, .8], middle: .3, fadeIn: .06, fadeOut: .55, additive: .3, opacity: .32, core: 0,
     fluid: { pressure: 16, viscosity: 2.5, rest: 6 },
+  },
+  // Nácar (Da capo's wave, src/eco-fx.ts): a light body of white, sea foam and pale gold that rolls across the party under
+  // its own push and thins as it goes, never landing.
+  'fluido-nacar': {
+    shape: 'glow', blur: [.5, .9], drag: .9, gravity: -.4, curl: .45, response: .5, size: [.07, .16], sizeJitter: .45,
+    colours: ['#fffaf0', '#8fe3c4', '#f2e2a8'], intensity: [2.2, 1.5, .9], middle: .35, fadeIn: .08, fadeOut: .5, additive: .7, opacity: .7, core: .2,
+    fluid: { pressure: 18, viscosity: 3, rest: 7 },
   },
   // What a fire leaves: warm dark smoke that billows up and spreads under its own push.
   'fluido-humo': {

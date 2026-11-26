@@ -11,7 +11,7 @@ import { CUERDAS_SIZES } from './cuerdas-foes';
 import { MODELO_SIZES, PHOSPHOR } from './modelo-foes';
 import { LUCA_SIZES, styleChaplain, lightShirt } from './luca-foes';
 import { CLASSES, grownUp, inheritColour, wearClass } from './classes';
-import { ATRACTOR, atractorGiven, atractorLeave, ACTION_SECONDS, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, FOURIER_GAP, figureEnd, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
+import { ATRACTOR, atractorGiven, atractorLeave, ACTION_SECONDS, DA_CAPO, CAST_CONTACT, CAST_FLIGHT, CAST_GAP, CAST_LAUNCH, FOURIER_GAP, figureEnd, CONTACT_SECONDS, SPELL_CONTACT, SPELL_LAUNCH, DUAL_EASE, DUAL_FREEZE, ENTRY_SECONDS, clamp01, contactMotion, smooth, surge } from './battle-motion';
 import { WalkAnimation, idlePose, poseLegs, type LimbRig } from './walk-animation';
 import { MATERIAL_ROLES, RIG } from './character-model';
 import { faceOf } from './face';
@@ -647,7 +647,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         zoom.x = Math.max(zoom.x, HIT.punch.size * 1.3); shake = Math.max(shake, .45);
       });
     }
-    if (action.dacapo) { fx?.dacapo(); pulse?.(.2, .6, .15); }
+    if (action.dacapo) { fx?.dacapo({ duals: action.dacapo.duals.length }); pulse?.(.2, .6, .15); }
     fx?.setMuffled(ecosMuffled());
   }
   // Freática's water (src/freatica-fight.ts): a cell under each foe, the look of the effects lab driven by the fight's state.
@@ -4325,7 +4325,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (effect && (duo || blastOf) && !duoPlayed.has(effect)) startDuo(effect, target, animate);
       // Bip's skills land when its ray does (`bipContact`).
       const bipSkill = botStrike && effect!.kind === 'skill';
-      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
+      const contact = times ? times[0] : duo ? duo.contact : blastOf ? blastOf.contact : casting ? castContact : dicing ? diceContact(effect!) : bipSkill ? bipContact(effect!) : effect?.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].contact : effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].contact : effect?.pounceDual ? ARC_POUNCE.contact : effect?.pounce ? ACECHO.contact : effect?.dacapo ? DA_CAPO.contact : effect?.target && !support ? CONTACT_SECONDS : .2;
       // Freática's skills start their look on the cells at once (Recarga's tape, Riada's wave): the numbers come at their contact.
       if (effect?.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' && state) freatica.play(effect, state);
       // What Colorista throws ahead of its contact: Rociada's fan of water, Fin de fiesta's handfuls and all that follows them.
@@ -4935,7 +4935,7 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       if (onTurn) turnAt.copy(onTurn.base);
       focus.add(new pc.Vec3((turnAt.x - anchor.x) * .32 * turnPush, 0, (turnAt.z - anchor.z) * .32 * turnPush));
       // Without motion (reduced motion, a hidden tab) every blow has landed by now: done at once, a dual or a cast too.
-      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
+      const over = complete && (effect ? !animate || t >= (dual ? dualEnd : duo || blastOf ? duoEnd(effect) : casting ? figured ? figureEnd(effect.skill as FigureSkill, effect.strikes?.length ?? 1) : castContact + CAST_GAP + .42 : dicing ? diceEnd(effect) : bipSkill ? bipEnd(effect) : effect.skill && POWDER_SKILLS[effect.skill] ? POWDER_SKILLS[effect.skill].end : effect.hammer?.length ? contact + (effect.hammer.length - 1) * HAMMER_GAP + .8 : effect.skill && FREATICA_SKILLS[effect.skill] && effect.kind === 'skill' ? FREATICA_SKILLS[effect.skill].end : effect.pounceDual ? ARC_POUNCE.end : effect.pounce ? ACECHO.end : effect.dacapo ? DA_CAPO.end : effect.hunt?.length ? contact + (effect.hunt.length - 1) * huntGap(effect.hunt.length) + .75 + (effect.ward ? Math.max(0, effect.ward.length * WARD_STEP - .4) : 0) : support ? .85 : target ? ACTION_SECONDS : .65) : entryTime >= ENTRY_SECONDS);
       if (over) {
         // Any foe Rayo solar's beam never reached still takes its blow.
         if (effect?.release && impacted) while ((solarBurned.get(effect) ?? 0) < solarPlan(effect).crossings.length) solarCross(effect, true);

@@ -10,7 +10,8 @@ import type { EnvironmentId } from './environments';
  */
 /** Draws the sound at `at`, its notes multiplied by `pitch`, and returns how long it lasts. */
 type Recipe = (context: AudioContext, out: AudioNode, at: number, pitch: number) => number;
-interface Sound { src?: string; synth?: Recipe; volume?: number; jitter?: number; gap?: number; voices?: number }
+/** `hall`: seconds of a hall's echo it is also sent through (a ConvolverNode, `hall`), at `wet` of its level. */
+interface Sound { src?: string; synth?: Recipe; volume?: number; jitter?: number; gap?: number; voices?: number; hall?: number; wet?: number }
 
 /** `hold` keeps a note or a noise at full for that long after its attack before it dies away. */
 function tone(context: AudioContext, out: AudioNode, at: number, { type = 'sine', from, to = from, attack = .005, hold = 0, length, gain }: { type?: OscillatorType; from: number; to?: number; attack?: number; hold?: number; length: number; gain: number }) {
@@ -70,12 +71,16 @@ function meow(context: AudioContext, out: AudioNode, at: number, { pitch, length
   osc.onended = () => env.disconnect();
 }
 
-/** A high hall's echo, made once for each context: three seconds of noise dying away, darker as it goes, after a moment's distance. */
-const halls = new WeakMap<BaseAudioContext, AudioBuffer>();
-function hall(context: BaseAudioContext) {
-  let buffer = halls.get(context);
+/** A high hall's echo, made once for each context and length: `seconds` (three by default) of noise dying away, darker as it goes, after a moment's distance. */
+/** Sincopante's ecos sound in a big room (docs/animas/sincopante/README.md § Sound): 2.8 s of a hall's echo, a third of their level. */
+const ECO_HALL = { hall: 2.8, wet: .35 } as const;
+const halls = new WeakMap<BaseAudioContext, Map<number, AudioBuffer>>();
+function hall(context: BaseAudioContext, seconds = 3) {
+  const made = halls.get(context) ?? new Map<number, AudioBuffer>();
+  halls.set(context, made);
+  let buffer = made.get(seconds);
   if (!buffer) {
-    const rate = context.sampleRate, length = Math.round(rate * 3);
+    const rate = context.sampleRate, length = Math.round(rate * seconds);
     buffer = context.createBuffer(2, length, rate);
     for (let channel = 0; channel < 2; channel++) {
       const data = buffer.getChannelData(channel);
@@ -83,11 +88,11 @@ function hall(context: BaseAudioContext) {
       for (let i = 0; i < length; i++) {
         const t = i / rate;
         // A one-pole lowpass that closes as the echo dies (about 5 kHz to 800 Hz), the way stone swallows the top.
-        low += (Math.random() * 2 - 1 - low) * (.5 - .4 * t / 3);
-        data[i] = low * Math.exp(-2.3 * t) * Math.min(1, Math.max(0, (t - .025) / .02));
+        low += (Math.random() * 2 - 1 - low) * (.5 - .4 * t / seconds);
+        data[i] = low * Math.exp(-6.9 * t / seconds) * Math.min(1, Math.max(0, (t - .025) / .02));
       }
     }
-    halls.set(context, buffer);
+    made.set(seconds, buffer);
   }
   return buffer;
 }
@@ -474,10 +479,17 @@ export const SOUNDS = {
   'artilugio-4': artilugio(4), 'artilugio-5': artilugio(5), 'artilugio-6': artilugio(6), 'artilugio-7': artilugio(7),
   // Sincopante's ecos sing with Marta's voice (docs/animas/sincopante/README.md § Sound): grains cut from her recording,
   // Fa, La and Do (the battle song's own F major chord), and the start of her phrase for Da capo. Far under the music.
-  'eco-fa': { src: 'sfx/eco-fa.mp3', volume: .32, gap: .05, voices: 2 },
-  'eco-la': { src: 'sfx/eco-la.mp3', volume: .3, gap: .05, voices: 2 },
-  'eco-do': { src: 'sfx/eco-do.mp3', volume: .32, gap: .05, voices: 2 },
-  'eco-dacapo': { src: 'sfx/eco-dacapo.mp3', volume: .55, gap: 1, voices: 1 },
+  // All of them through a hall's echo of 2.8 s (`ECO_HALL`), as if sung in a big room; and a glass pip for each point of maná
+  // Da capo fills (Fa, an octave over her Fa, light and short), the same echo on it.
+  'eco-fa': { src: 'sfx/eco-fa.mp3', volume: .32, gap: .05, voices: 2, ...ECO_HALL },
+  'eco-la': { src: 'sfx/eco-la.mp3', volume: .3, gap: .05, voices: 2, ...ECO_HALL },
+  'eco-do': { src: 'sfx/eco-do.mp3', volume: .32, gap: .05, voices: 2, ...ECO_HALL },
+  'eco-dacapo': { src: 'sfx/eco-dacapo.mp3', volume: .55, gap: 1, voices: 1, ...ECO_HALL },
+  'eco-pip': { synth: (c, out, at, p) => {
+    tone(c, out, at, { from: 1396.9 * p, length: .16, gain: .07 });
+    tone(c, out, at, { from: 2793.8 * p, length: .07, gain: .02 });
+    return .18;
+  }, jitter: 6, gap: .025, voices: 6, ...ECO_HALL },
   // Additive synthesis (Serie de Fourier): each strike one partial more over a sine, until the tone is almost square (`partialSound`).
   'partial-1': partial(1), 'partial-2': partial(2), 'partial-3': partial(3), 'partial-4': partial(4), 'partial-5': partial(5), 'partial-6': partial(6),
   // A string plucked a tone higher each beat (Corriente alterna, `stringSound`).
@@ -759,9 +771,20 @@ export function createSfx(audio: GameAudio) {
       gain.gain.value = volume * (sound.volume ?? 1);
       panner.pan.value = Math.max(-1, Math.min(1, pan));
       gain.connect(panner).connect(bus.sfx);
+      // Its hall's echo, if it has one: sent from its level, it rings on after it ends.
+      let echo: ConvolverNode | undefined, wet: GainNode | undefined;
+      if (sound.hall) {
+        echo = bus.context.createConvolver(); echo.buffer = hall(bus.context, sound.hall);
+        wet = bus.context.createGain(); wet.gain.value = sound.wet ?? .35;
+        gain.connect(echo).connect(wet).connect(panner);
+      }
       const pitch = 2 ** ((sound.jitter ? (Math.random() * 2 - 1) * sound.jitter : 0) / 1200);
       playing.set(id, (playing.get(id) ?? 0) + 1);
-      const done = () => { playing.set(id, (playing.get(id) ?? 1) - 1); gain.disconnect(); panner.disconnect(); };
+      const done = () => {
+        playing.set(id, (playing.get(id) ?? 1) - 1);
+        const free = () => { gain.disconnect(); panner.disconnect(); echo?.disconnect(); wet?.disconnect(); };
+        if (echo) setTimeout(free, (sound.hall ?? 0) * 1000 + 100); else free();
+      };
       if (sound.synth) setTimeout(done, (sound.synth(bus.context, gain, now + .005 + delay, pitch) + delay + .1) * 1000);
       else if (sound.src) {
         audio.load(sound.src).then(buffer => {

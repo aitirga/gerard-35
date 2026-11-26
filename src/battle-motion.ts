@@ -3,6 +3,12 @@
 export const ENTRY_SECONDS = 1.05;
 export const CONTACT_SECONDS = .46;
 export const ACTION_SECONDS = 1.16;
+/**
+ * Da capo (docs/animas/sincopante/README.md § Look), from the action's start: the ecos rise into a column, the field plays
+ * back (`rewind`), a wave of nácar crosses the party as the maná fills pip by pip (`fill`, `pip` apart), the staff with the
+ * duals given back (`staff`), ¡DA CAPO! (`title`), and the action is over at `end`. Its rules land at `contact`.
+ */
+export const DA_CAPO = { contact: .2, rewind: .4, fill: 1, pip: .06, staff: 1.6, title: 2.2, end: 2.6 } as const;
 /** A cast (Foc Binari): the hand goes up, the fire leaves it, and it lands this long after. */
 export const CAST_LAUNCH = .38, CAST_FLIGHT = .42, CAST_CONTACT = CAST_LAUNCH + CAST_FLIGHT;
 /** Foc Binari's two braided streams, the zero and then the one, land a hair apart: a quick tac-tac. */

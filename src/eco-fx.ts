@@ -3,6 +3,8 @@ import type { Effects } from './effects';
 import type { GpuEmitter, GpuKind, GpuVolume } from './fight-particles';
 import type { createPost } from './post';
 import { createEcoSheets } from './eco-shaders';
+import { ensureFluidKinds } from './fluid-fx';
+import { DA_CAPO } from './battle-motion';
 
 /**
  * Sincopante's ecos as the fight will show them (docs/animas/sincopante/README.md § Look and
@@ -65,6 +67,8 @@ export const ECO_KINDS = {
   'eco-spark': { shape: 'spark', colours: ['#ffffff', ECO.gold, ECO.foam], intensity: [3.2, 2, .7], size: [.024, .004], stretch: .06, drag: 2.2, gravity: -.3, curl: .2, fadeOut: .5, additive: 1 },
   // The specks that orbit an eco at *f*.
   'eco-orbit': { shape: 'dot', colours: [ECO.nacar, ECO.gold, ECO.foam], intensity: [2.4, 1.7, .8], size: [.015, .008], drag: .5, curl: .12, fadeIn: .25, fadeOut: .4, additive: 1, flicker: .4, core: .4 },
+  // Da capo's staff: five strings of nácar drawn as threads (Corriente alterna's `string` lattice), over the party.
+  'eco-hilo': { shape: 'strand', colours: ['#ffffff', ECO.nacar, ECO.foam], intensity: [2.6, 2, 1], size: [.009, .007], drag: .2, curl: .04, response: 1, middle: .5, fadeIn: .1, fadeOut: .4, additive: 1, flicker: .08 },
   // A ripple's dots running out over the floor.
   'eco-floor': { shape: 'dot', colours: [ECO.nacar, ECO.foam, ECO.foam], intensity: [1.8, 1.1, .4], size: [.02, .012], drag: 1.6, fadeIn: .02, fadeOut: .7, additive: 1, core: .2 },
 } satisfies Record<string, GpuKind>;
@@ -399,24 +403,73 @@ export function createEcoFx(app: pc.AppBase, effects: Effects, post: Post | unde
     return true;
   }
   /**
-   * Back to the beginning: every eco's clock runs backwards, a great plate under the party plays its
-   * figures from the last to the first while rings close in on it, and the ecos start over.
+   * Da capo, back to the beginning (docs/animas/sincopante/README.md § Look), from its contact (`DA_CAPO`, from the action's
+   * start): the ecos rise into a column over the party; the whole field plays back (src/rewind-field.ts) as their clocks run
+   * backwards and a great plate under the party plays its figures from the last to the first; a wave of nácar rolls across
+   * the party (its maná fills in the fight's interface); five strings of nácar are drawn over them, the staff the duals
+   * given back are written on, and are plucked as their names light; at ¡DA CAPO! the ecos go back to their places and the
+   * strings come apart. With reduced motion, only the ecos' clocks start over (the maná and the names are the interface's).
    */
-  function dacapo() {
+  function dacapo(o: { duals?: number } = {}) {
     if (ecos.length < (scene.driven ? 0 : 3) || muffled) return false;
-    const { us, party } = sides(), at = { x: us.x, y: us.y + .05, z: us.z };
-    for (const e of ecos) { e.left = ECO.life; e.swellAt = time; e.flash = 1.3; strike(e, 1.4, 1); }
-    rewind = 1.2;
-    plate(at, 2.7, 'flat', 1.6, (k, m, m2) => {
-      const note = 3 * (1 - k);
-      m[0] = Math.min(2, Math.floor(note)); m[1] = m[0] + 1; m[2] = note - m[0];
-      m[3] = Math.pow(Math.sin(Math.PI * k), .6); m2[3] = -k * 1.4;
-    }, { cells: 32 });
-    for (let i = 0; i < 3; i++) wave(at, 2.9, 'flat', .9, (k, w, w2) => { w[0] = .95 - .85 * ease(k); w[1] = .1; w[2] = .07; w[3] = Math.sin(Math.PI * k); w2[1] = .5; }, { delay: i * .18, lam: .05 });
-    gpu()?.burst('eco-floor', { at, shape: 'ring', spread: 2.2, count: 70, outward: -1.1, around: -1.2, life: [.9, 1.2] });
-    for (const f of party) { const c = chest(f.id); if (c) gpu()?.burst('eco-mote', { at: c, count: 40, spread: .5, up: .6, life: [1, 1.8], light: { intensity: 1.5, range: 2, colour: ECO.nacar } }); }
-    post?.pulse(.02, .6, .12);
-    swellLight(1.6, .5);
+    const T = DA_CAPO, at0 = T.contact;
+    for (const e of ecos) e.left = ECO.life;
+    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+    const { us, party, fwd } = sides(), at = { x: us.x, y: us.y + .05, z: us.z };
+    const cam = camera(), right = cam ? cam.right.clone() : new pc.Vec3().cross(fwd, pc.Vec3.UP);
+    right.y = 0; right.normalize();
+    // The column: the three over the party, one above the other, a little behind them; back to their places at the end.
+    const top = us.clone().add(fwd.clone().mulScalar(-ECO.back * .6));
+    ecos.filter(e => !e.follow).forEach((e, i) => {
+      const was = e.home.clone(), to = top.clone().add(new pc.Vec3(0, 1.25 + .5 * i, 0));
+      tween(T.rewind - at0, k => { e.home.lerp(was, to, ease(k)); });
+      e.swellAt = time; e.flash = 1;
+      after(T.title - at0, () => { const home = slotAt(e.slot), from = e.home.clone(); tween(.35, k => { e.home.lerp(from, home, ease(k)); }); });
+    });
+    // The field played back, the ecos' clocks with it, and the plate under the party playing its figures backwards.
+    after(T.rewind - at0, () => {
+      gpu()?.rewindField({ seconds: T.fill - T.rewind, width: .013, intensity: 2.4 });
+      for (const e of ecos) strike(e, 1.4, 1);
+      rewind = T.fill - T.rewind;
+      plate(at, 2.7, 'flat', 1.6, (k, m, m2) => {
+        const note = 3 * (1 - k);
+        m[0] = Math.min(2, Math.floor(note)); m[1] = m[0] + 1; m[2] = note - m[0];
+        m[3] = Math.pow(Math.sin(Math.PI * k), .6); m2[3] = -k * 1.4;
+      }, { cells: 32 });
+      for (let i = 0; i < 3; i++) wave(at, 2.9, 'flat', .9, (k, w, w2) => { w[0] = .95 - .85 * ease(k); w[1] = .1; w[2] = .07; w[3] = Math.sin(Math.PI * k); w2[1] = .5; }, { delay: i * .18, lam: .05 });
+      gpu()?.burst('eco-floor', { at, shape: 'ring', spread: 2.2, count: 70, outward: -1.1, around: -1.2, life: [.9, 1.2] });
+      post?.pulse(.02, .6, .12);
+    });
+    // The wave of nácar: a body of it rolls in from behind the party, through them and on, as the maná fills.
+    after(T.fill - at0, () => {
+      const g = effects.gpu;
+      ensureFluidKinds(g);
+      const back = us.clone().add(fwd.clone().mulScalar(-1.3)).add(new pc.Vec3(0, .5, 0)), wide = right.clone().mulScalar(1.9);
+      gpu()?.burst('fluido-nacar', { at: back.clone().sub(wide), to: back.clone().add(wide), shape: 'line', count: 2600, spread: .25, velocity: { x: fwd.x * 3.4, y: .5, z: fwd.z * 3.4 }, speed: .5, up: .3, life: [.9, 1.3] });
+      for (const f of party) { const c = chest(f.id); if (c) gpu()?.burst('eco-mote', { at: c, count: 40, spread: .5, up: .6, life: [1, 1.8], light: { intensity: 1.5, range: 2, colour: ECO.nacar } }); }
+      swellLight(1.6, .5);
+    });
+    // The staff: five strings over the party, plucked one after another as the names of the duals given back light.
+    after(T.staff - at0, () => {
+      const g = gpu();
+      if (!g) return;
+      const mid = us.clone().add(new pc.Vec3(0, 2.25, 0)).add(fwd.clone().mulScalar(.2)), half = right.clone().mulScalar(1.7);
+      const strings = Array.from({ length: 5 }, (_, i) => {
+        const y = (i - 2) * .1, a = mid.clone().sub(half).add(new pc.Vec3(0, y, 0)), b = mid.clone().add(half).add(new pc.Vec3(0, y, 0));
+        return g.lattice('eco-hilo', {
+          grid: [260, 1, 1], size: { x: .01, y: 0, z: 0 }, shape: 'string', life: 4, hold: .4, colour: i === 2 ? ECO.gold : ECO.nacar, scale: .8,
+          rigidity: 600, bonds: 200, damping: 12, viscosity: 2, glow: .5, rim: 1, wave: { height: .003, length: .4, speed: 1.6 }, between: [a, b],
+        });
+      });
+      const plucks = Math.max(1, Math.min(5, o.duals ?? 1));
+      for (let n = 0; n < plucks; n++) after(.12 * n, () => { const s = strings[(n * 2) % 5]; if (s.alive) s.travel({ toward: n % 2 ? -1 : 1, height: .05, speed: 3.4, width: .2, decay: .9, shine: 2.4 }); });
+      // At ¡DA CAPO! they come apart into motes, and are gone.
+      after(T.title - T.staff, () => {
+        for (const s of strings) { if (!s.alive) continue; s.breakInto = 'eco-mote'; tween(.4, k => { if (s.alive) s.dissolve = k; }, () => { if (s.alive) s.remove(); }); }
+        gpu()?.burst('eco-ring', { at: mid, count: 4, life: [.6, .9], size: 3 });
+        post?.pulse(.04, .8, .18);
+      });
+    });
     return true;
   }
 

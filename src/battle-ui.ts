@@ -13,7 +13,7 @@ import { costPips, flashAnima, setVitals, vitalsPlate } from './vitals';
 import { FACE_LINES, FACE_NAMES, faceSvg } from './die-faces';
 import { DOG_PROFILES } from './encounters';
 import { planEnemyTurn } from './battle-ai';
-import { BEAT, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, atractorGiven, holdAfter } from './battle-motion';
+import { BEAT, DA_CAPO, DUAL_BANNER, DUAL_BANNER_SEEN, DUAL_EASE, DUAL_SLOW, atractorGiven, holdAfter } from './battle-motion';
 import { MAX_LEVEL, award, fightXp, levelForXp, levelProgress, participants, reachOf, toNextLevel, topOf, type Growth } from './levels';
 import type { Direction } from './movement';
 import type { PlayerId } from './party';
@@ -273,6 +273,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
   const owed = new Map<string, number>();
   /** The PV someone's bar shows right now: what they have, plus what is still on its way. */
   const shownHp = (c: Combatant) => Math.min(c.maxHp, c.hp + (owed.get(c.id) ?? 0));
+  /** Da capo filling the maná pip by pip (`capoPlay`): what each ally shows of it until their last pip comes. */
+  const manaHeld = new Map<string, number>();
+  const shownMana = (c: Combatant) => manaHeld.has(c.id) ? Math.min(c.secondary, manaHeld.get(c.id)!) : c.secondary;
   /**
    * A fire settled but not landed, per fighter: how it was before, and the level each of its blows
    * brings if it rolls them one by one (Zarpazos de fuego), of which `landed` have landed.
@@ -452,6 +455,41 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     return { id, name: `${TIMED[id].name} ${roman(on.level)}`, mark: roman(on.level), timed: true, lasts: `${Math.ceil(on.left)} s` };
   }
   /** Compás: how many ecos `c` has up, at what grade, and the longest time one has left. */
+  /**
+   * Da capo in the interface, on the scene's clock from its contact (`DA_CAPO`; the picture is src/eco-fx.ts `dacapo`): the
+   * hand of every Compás spins a turn back; each ally's maná, held at what it was, fills pip by pip, each with a note; the
+   * names of the duals given back are written on a staff and light one after another; then ¡DA CAPO! over each of them.
+   */
+  function capoPlay(d: NonNullable<BattleEffect['dacapo']>, token: number) {
+    const T = DA_CAPO, at = (s: number) => Math.max(0, (s - T.contact) * 1000);
+    const later = (ms: number, run: () => void) => setTimeout(() => { if (token === generation && state) run(); }, ms);
+    manaHeld.clear();
+    later(at(T.rewind), () => root.querySelectorAll<HTMLElement>('.status-icon[data-status="compas"]').forEach(icon => { icon.classList.remove('is-rewinding'); void icon.offsetWidth; icon.classList.add('is-rewinding'); }));
+    const pips: string[] = [];
+    for (const ally of state!.allies) {
+      const was = d.from?.[ally.id];
+      if (was === undefined || was >= ally.secondary) continue;
+      manaHeld.set(ally.id, was);
+      for (let n = was; n < ally.secondary; n++) pips.push(ally.id);
+    }
+    if (pips.length) render();
+    pips.forEach((id, i) => later(at(T.fill) + i * T.pip * 1000, () => { manaHeld.set(id, (manaHeld.get(id) ?? 0) + 1); callbacks.sound('eco-pip'); render(); }));
+    later(at(T.fill) + pips.length * T.pip * 1000 + 40, () => { manaHeld.clear(); render(); });
+    // The staff: five lines, the names of the duals given back (or, with none, the maná alone), lit one after another.
+    const names = d.duals.map(id => DUALS.find(x => x.id === id)?.name ?? id);
+    let staff: HTMLElement | undefined;
+    later(at(T.staff), () => {
+      staff = document.createElement('div');
+      staff.className = 'dacapo-staff'; staff.setAttribute('aria-hidden', 'true');
+      staff.innerHTML = `<div class="dacapo-lines">${(names.length ? names : ['Maná lleno']).map((name, i) => `<span style="--i:${i}">${escapeHtml(name)}</span>`).join('')}</div><strong>¡DA CAPO!</strong>`;
+      root.append(staff);
+    });
+    later(at(T.title), () => {
+      staff?.classList.add('is-title');
+      for (const ally of state!.allies.filter(a => a.hp > 0)) pop(ally.id, '¡Da capo!', 'status', d.duals.length ? 'Maná lleno · dúos de nuevo' : 'Maná lleno', 'compas');
+    });
+    later(at(T.end) + 500, () => staff?.remove());
+  }
   function compasStatus(c: Combatant) {
     const mine = ecosOf(state!, c), muffled = mine.some(e => ecoMuffled(state!, e));
     const grades = mine.map(e => GRADE_NAMES[e.grade]).join(' · ');
@@ -1023,7 +1061,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
    * and get some back while they rest (`REST_CHARGE`). Three to a row, so six fit in two.
    */
   function chipMana(button: HTMLButtonElement, owner: Combatant, id: ClassId) {
-    const most = manaMax(state?.improved, id, state?.levels), left = id === owner.classId ? owner.secondary : owner.mana?.[id] ?? most;
+    const most = manaMax(state?.improved, id, state?.levels), left = id === owner.classId ? shownMana(owner) : owner.mana?.[id] ?? most;
     const box = button.querySelector<HTMLElement>('.chip-mana');
     if (!box) return;
     box.hidden = !most;
@@ -1299,7 +1337,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       boost.textContent = `▲ ${boostRounds(state)}`;
       boost.title = SKILLS.filter(skill => boostRounds(state!, skill.id)).map(skill => `${skill.name}: ${boostedStats(skill.id)} +${state!.boosts![skill.id]!.amount}`).join(' · ');
       card.querySelector('.unit-status')!.textContent = c.hp === 0 ? 'FUERA' : c.guarding ? 'EN GUARDIA' : choosing ? 'ACTIVO' : '';
-      setVitals(card.querySelector('.vitals')!, shownHp(c), c.maxHp, c.secondary, animaMax(c), c.classId === DICED ? diceOf(state, c) : undefined);
+      setVitals(card.querySelector('.vitals')!, shownHp(c), c.maxHp, shownMana(c), animaMax(c), c.classId === DICED ? diceOf(state, c).slice(0, shownMana(c)) : undefined);
       const plate = root.querySelector(`.battle-target[data-target="${c.id}"]`);
       plate?.toggleAttribute('data-hers', hers.includes(c));
       card.toggleAttribute('data-hers', hers.includes(c));
@@ -1308,7 +1346,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (platePips && platePips.childElementCount !== c.maxSecondary) platePips.innerHTML = '<i data-pip="full"></i>'.repeat(c.maxSecondary);
       platePips?.toggleAttribute('hidden', !animaMax(c));
       platePips?.toggleAttribute('data-dice', c.classId === DICED);
-      plate?.querySelectorAll<HTMLElement>('.plate-pips i').forEach((pip, i) => { pip.dataset.pip = i < c.secondary ? 'full' : 'spent'; });
+      plate?.querySelectorAll<HTMLElement>('.plate-pips i').forEach((pip, i) => { pip.dataset.pip = i < shownMana(c) ? 'full' : 'spent'; });
       if (plate && (!unlanded || released.has(c.id))) showStatuses(plate, c);
     }
     const order = state.allies.map(c => root.querySelector(`.party-card[data-unit="${c.id}"]`)!).filter(card => card.parentElement === roster);
@@ -2592,7 +2630,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (effect.ecosRaised?.length) landed.push({ target: effect.actor, id: 'compas', text: 'Crescendo', detail: effect.ecosRaised.map(r => GRADE_NAMES[r.grade]).join(' · ') });
       effect.tutti?.forEach((last, i) => last.hits.forEach((h, j) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `${h.heal ? '+' : '−'}${h.amount}`, h.heal ? 'heal' : 'damage', 'Eco · última nota', undefined, j * 16); }, 1300 + i * 120)));
       effect.accompanied?.hits.forEach((h, i) => setTimeout(() => { if (token === generation && h.amount) pop(h.target, `−${h.amount}`, 'damage', 'Acompañamiento', undefined, i * 16); }, 560 + i * 60));
-      if (effect.dacapo) for (const ally of state!.allies.filter(a => a.hp > 0)) landed.push({ target: ally.id, id: 'compas', text: '¡Da capo!', detail: effect.dacapo.duals.length ? 'Maná lleno · dúos de nuevo' : 'Maná lleno' });
+      if (effect.dacapo) capoPlay(effect.dacapo, token);
       // A cure on the whole party (Integral, Bombeo): each one's PV back, a beat apart.
       effect.cures?.slice(1).forEach((c, i) => setTimeout(() => { if (token === generation) pop(c.target, `+${c.amount}`, 'heal', SKILLS.find(sk => sk.id === effect.skill)?.name ?? 'Integral'); }, 140 + i * 90));
       // Atractor extraño: what came to its target, named over it; then what met there, each with its word and the PV it took.

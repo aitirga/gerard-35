@@ -2057,8 +2057,8 @@ export interface BattleEffect {
   tutti?: { eco: number; kind: EcoKind; hits: EcoHit[] }[];
   /** Acompañamiento: the eco at this fighter's side repeated their blow. */
   accompanied?: { eco: number; hits: EcoHit[] };
-  /** Da capo: the duals given back, and the ecos whose clocks started over. */
-  dacapo?: { duals: DualId[]; ecos: number[] };
+  /** Da capo: the duals given back, the ecos whose clocks started over, and the maná each ally wore before it filled (`from`, for the fight to fill it pip by pip). */
+  dacapo?: { duals: DualId[]; ecos: number[]; from?: Record<string, number> };
   /** Siete vidas' ward went off: the blow that would have killed `target` (`blow` PV) cured them `amount` instead. */
   lives?: { target: string; blow: number; amount: number };
   /** The blow, or one strike of it at least, was a golpe crítico (CRIT_RULES); `crits` says which strikes of a flurry. */
@@ -4115,11 +4115,11 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     // of everyone is full of maná again (worn or not), and the ecos up start their clocks over. It fires no dual by itself.
     effect.skill = skill; effect.target = actor.id;
     (state.dacapo ??= {}).used = true;
-    const duals = [...state.usedDuals ?? []];
+    const duals = [...state.usedDuals ?? []], from: Record<string, number> = {};
     delete state.usedDuals;
-    for (const ally of state.allies) if (ally.hp > 0 && wearsAnimas(ally)) fromTheTop(state, ally);
+    for (const ally of state.allies) if (ally.hp > 0 && wearsAnimas(ally)) { from[ally.id] = ally.secondary; fromTheTop(state, ally); }
     for (const e of state.ecos ?? []) e.left = ECOS.life;
-    effect.dacapo = { duals, ecos: (state.ecos ?? []).map(e => e.id) };
+    effect.dacapo = { duals, ecos: (state.ecos ?? []).map(e => e.id), from };
     state.message = `${actor.name} usa ${ability.name}. ¡Todo vuelve al principio! El maná de todo el equipo se llena${duals.length ? ` y ${duals.length === 1 ? 'el ataque dúo ya usado vuelve' : 'los ataques dúo ya usados vuelven'}` : ''}.`;
   } else if (ability && 'accompany' in ability && target) {
     // Acompañamiento: an eco at the ally's side that repeats their blows (`accompany`). One per ally: a new one takes the old one's place.

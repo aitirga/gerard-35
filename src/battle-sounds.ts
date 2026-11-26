@@ -2,6 +2,7 @@ import { isCastle } from './castle.ts';
 import { isOnion, type BattleEffect, type BattleState, type Element, type ElementReaction, type FoeKind, type SkillId } from './battle.ts';
 import type { SoundId } from './sfx.ts';
 import { FIESTA } from './powder-fx.ts';
+import { DA_CAPO } from './battle-motion.ts';
 
 /**
  * What a fight sounds like (docs/audio.md § Effects), all in one table: which sound goes with each
@@ -20,7 +21,8 @@ export const SKILL_SOUNDS: Record<SkillId, Sounds> = {
   crescendo: { start: [{ id: 'rise', volume: .5 }], impact: [{ id: 'eco-fa', volume: .8 }, { id: 'eco-la', volume: .8, delay: .05 }, { id: 'eco-do', volume: .8, delay: .1 }] },
   acompanamiento: { start: [{ id: 'cast-soft' }], impact: [{ id: 'eco-do', delay: .4 }] },
   tutti: { start: [{ id: 'rise', volume: .6 }], impact: [{ id: 'clink' }, { id: 'eco-fa', volume: 1.3 }, { id: 'eco-la', volume: 1.3 }, { id: 'eco-do', volume: 1.3 }] },
-  'da-capo': { start: [{ id: 'eco-dacapo' }], impact: [{ id: 'heal', volume: .6, delay: .8 }] },
+  // Da capo: the start of her phrase as it begins, and at ¡DA CAPO! (`DA_CAPO.title`, from its contact) her chord, Fa, La and Do.
+  'da-capo': { start: [{ id: 'eco-dacapo' }], impact: [{ id: 'eco-fa', delay: DA_CAPO.title - DA_CAPO.contact }, { id: 'eco-la', delay: DA_CAPO.title - DA_CAPO.contact }, { id: 'eco-do', delay: DA_CAPO.title - DA_CAPO.contact }] },
   punado: { impact: [{ id: 'hit', volume: .55 }] },
   // Colorista's powder is dry and soft: a muffled thud, never a ring. The screens are a boost (`stat-up` from the scene).
   cortina: { start: [{ id: 'cast-soft', volume: .6 }], impact: [] },
