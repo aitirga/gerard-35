@@ -849,6 +849,10 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   // Bajo cero: what the frozen would no longer do, for as many rounds as their ice lasts.
   const iced = after.foes.filter((foe, i) => frozenOf(foe) && !frozenOf(before.foes[i]));
   if (iced.length) value += (sum(threat) - sum(threatOn(after))) * ICE_ROUNDS_PER_MARK * Math.max(...iced.map(f => f.timed!.congelado!.level));
+  // An ice broken (Resonancia at once, or its last crack) with its foe still standing: the turns it gives back for the rounds
+  // the ice had left, on the freeze's own measure. A fresh ice is worth holding; one nearly thawed costs little to break.
+  const freed = before.foes.filter((foe, i) => frozenOf(foe) && after.foes[i].hp > 0 && !frozenOf(after.foes[i]));
+  if (freed.length) value -= Math.max(0, sum(threatOn(after)) - sum(threat)) * ICE_ROUNDS_PER_MARK * Math.max(...freed.map(f => f.timed!.congelado!.left / CRECIDA.ice));
   // Fran's salon (docs/quests/luca.md): the freshly styled chaplain down leaves the others still;
   // what the foes would no longer do, the real rules on a copy.
   const stilled = after.foes.some((foe, i) => foe.still === after.round && before.foes[i]?.still !== before.round);

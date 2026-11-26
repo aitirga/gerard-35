@@ -838,7 +838,15 @@ title = "Matemágico: Resonancia (el rayo que rompe el hielo)"
 grep = "id: 'resonancia'"
 in = "src/battle.ts"
 file = "tests/resonancia.test.mjs"
-note = "Hecha con su regla, su nodo, su figura y su prueba. Sin pareja en fight-sim: el bot casi nunca llega a tener hielo con ella en la mano (ver docs/fight-sim.md § Resonancia)."
+note = "Hecha con su regla, su nodo, su figura y su prueba. Su pareja de TARGETS falta: es el ítem siguiente."
+
+# PLAN.md step 3 asks Resonancia for its pair of TARGETS; not held yet (docs/fight-sim.md § Resonancia).
+[[block.item]]
+title = "Resonancia: su pareja de TARGETS"
+priority = "animas"
+note = "Abierto. smart ya pesa cuándo romper el hielo (lo que el congelado vuelve a hacer por las rondas que le quedaban), pero en la campaña el hielo y Resonancia casi nunca coinciden, y con ICE_PARTY en la Reina el bot deja Freática para tirarla como rayo suelto: el equipo cae en 16.7 rondas contra 21.3 sin ella. Falta un combate donde el hielo llegue sin los turnos de Gerard, o un bot que planee congelar y romper entre ánimas. Hasta entonces `just fight-sim coverage` la lista."
+grep = "(?s)\\A(?=.*id: '[a-z0-9-]*-con-resonancia')(?=.*id: '[a-z0-9-]*-sin-resonancia')"
+in = "src/battle-sim.ts"
 
 # Proposal 2026-11-20 (docs/animas/README.md § Dúos mayores): strong duals unlocked by the castle and a
 # node at the jar; Vulcano first, as Foc Binari + Ostinato.

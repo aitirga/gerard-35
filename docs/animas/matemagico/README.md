@@ -195,9 +195,12 @@ foe **a ring of light takes up the note**: a standing wave of six lobes, r = R(1
 it bursts into sparks, a flash and a ring on the floor (bigger and paler where it broke the ice; the break itself is Bajo
 cero's cell, `src/freatica-fight.ts`). Sound: a charge rising as it is driven, the zap, a struck note ringing on.
 
-**Fight-sim** (`resuena`: an ice it broke): the bot plays it on a fresh ice (`tests/resonancia.test.mjs`), valuing the
-break as PV. It has **no pair of targets yet**, because the bot almost never holds the ice and Resonancia together:
-docs/fight-sim.md § Resonancia gives the numbers.
+**Fight-sim** (`resuena`: an ice it broke): `smart` weighs that question. A break is its PV, less the turns the foe gets
+back: what it would do again for the rounds its ice had left, on the freeze's own measure. So it holds a fresh ice on a
+foe that hits hard and rings it apart once it is nearly melted, and breaks a fresh one at once only when the foe in it
+hits little (`tests/resonancia.test.mjs`). It has **no pair of targets yet**: the bot almost never holds the ice and
+Resonancia together, and with Matemágico in the kit of the party that freezes the Queen it leaves Freática to throw
+Resonancia as a plain bolt and plays worse for having it. docs/fight-sim.md § Resonancia gives the numbers.
 
 ## Serie de Fourier (Aitor 2026-11-25, built)
 

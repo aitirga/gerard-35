@@ -61,13 +61,27 @@ test('half cracked, it breaks the rest; the other bolts still do nothing to the 
   assert.ok(frozenOf(b)); assert.equal(b.cracks, 0, 'Punto eléctrico does not crack it');
 });
 
-test('the smart bot rings a fresh ice apart: Resonancia on the frozen foe', async () => {
+// When to break it (docs/animas/matemagico/README.md § Resonancia): `smart` weighs the ice's rounds left, the turns the foe gets
+// back, against the break, which is worth most fresh.
+async function choose(marks, fuerza = 1) {
   const { decide } = await import('../src/battle-sim.ts');
   const s = fight(), [a] = s.foes;
-  freeze(s, a, 3);
+  freeze(s, a, marks);
+  if (marks < 1) { a.timed.congelado.left = CRECIDA.ice * marks; a.timed.congelado.level = 1; }
+  a.stats.fuerza *= fuerza;
   turn(s);
   const setup = { fight: 'dogs:2', party: 'gerard:matemagico+aitor:freatica', policy: 'smart', ban: ['duals', 'defend'] };
-  const choice = decide(s, setup, () => .99);
-  assert.equal(choice.skill, 'resonancia', JSON.stringify(choice));
-  assert.equal(choice.target, a.id);
+  return [decide(s, setup, () => .99), a.id];
+}
+
+test('the smart bot rings a fresh ice apart when the foe in it hits little: the break is worth more than its turns', async () => {
+  const [choice, id] = await choose(3);
+  assert.equal(choice.skill, 'resonancia', JSON.stringify(choice)); assert.equal(choice.target, id);
+});
+
+test('on a foe that hits hard it lets the fresh ice hold, and breaks it once it is nearly thawed', async () => {
+  const [fresh, id] = await choose(3, 3);
+  assert.ok(!(fresh.skill === 'resonancia' && fresh.target === id), JSON.stringify(fresh));
+  const [fading] = await choose(.2, 3);
+  assert.equal(fading.skill, 'resonancia', JSON.stringify(fading)); assert.equal(fading.target, id);
 });

@@ -460,24 +460,38 @@ once all seven are in.
 ### Resonancia: why it has no pair yet
 
 Matemágico's *Resonancia* (built 2026-11-26, docs/animas/matemagico/README.md § Resonancia) answers one thing: a foe in
-Bajo cero's ice, which it breaks at once. Run.events counts each ice it broke as `resuena`. The bot plays it on a fresh
-ice when it has one (`tests/resonancia.test.mjs`), but in the campaign the two almost never meet, so no pair can hold
-what it is for. Measured 2026-11-26, 150–400 fights each, smart, the castle's third floor as `castillo-3` buys it with
-Cortocircuito, Condensador and Resonancia added (`mixto` never reaches grade III):
+Bajo cero's ice, which it breaks at once. Run.events counts each ice it broke as `resuena`.
+
+When to break it is `smart`'s to weigh (`gain`): an ice broken with its foe standing, by Resonancia or by its last
+crack, costs what the foe would do again (`threatOn`, the real rules on a copy) for the rounds the ice had left
+(`ICE_ROUNDS_PER_MARK`), the freeze's own measure the other way. Before that term a break was only its PV, so the bot
+rang every fresh ice apart at once. Now it holds a fresh ice on a foe that hits hard and breaks it near the thaw
+(`tests/resonancia.test.mjs`); no target moved with it.
+
+No pair holds what it is for. Measured 2026-11-26, 200–300 fights each, smart, the castle's third floor as `castillo-3`
+buys it with Cortocircuito, Condensador and Resonancia added after Toma de tierra (`mixto` never reaches grade III),
+with the term above:
 
 | Fight · party | Bought | Banned | `congela` · `resuena` with it |
 | --- | --- | --- | --- |
-| reina · `ICE_PARTY` (Gerard on Freática, Matemágico in his kit) | lost in 16.4 rounds | lost in 21.5 | .06 · 0 (banned: .55 frozen) |
-| reina · Gerard Matemágico, Aitor Freática | lost in 19.4 | lost in 19.6 | .11 · .01 |
+| reina · `ICE_PARTY` (Gerard on Freática, Matemágico in his kit) | lost in 16.7 rounds | lost in 21.3 | .08 · .01 (banned: .54 frozen) |
+| reina · Gerard Matemágico, Aitor Freática | lost in 19.2 | lost in 19.1 | .03 · 0 |
 | delegada-3, alumnos-3a…3d · either party | won as banned, ±1 round | | 0–.01 · 0 |
 
-With Resonancia in the jar Gerard leaves Freática for Matemágico to throw it as a plain hard bolt (1.6 a fight at the
-Queen), and nobody raises the water to III: the ice that `reina-con-bajo-cero` holds (.55 a fight) all but goes, and the
-Queen fells the party five rounds sooner. With Aitor on Freática the ice wakes in a third of the fights and is cast in a
-tenth; Resonancia meets it in one in a hundred. In the rooms it is only a hard bolt, and what it moves goes both ways by
-the party (alumnos-3c: 6.4 rounds against 9.4 with `ICE_PARTY`, 4.4 against 3.8 with Aitor on Freática). A pair waits on
-Aitor: a fight where the ice comes without Gerard's turns (Punto de congelación, water's own freezing, would be one), or
-a bot that plans freeze-then-break across ánimas. Until then it stays on `coverage`'s list.
+The first row is **a valuation problem the skill brings in**, not only a missing fight. With Resonancia in the jar Gerard
+leaves Freática for Matemágico to throw it as a plain hard bolt (1.6 a fight at the Queen, 15 % of the party's damage):
+one ply sees its PV now, and not that nobody raises the Queen's water to III after he goes. The ice that
+`reina-con-bajo-cero` holds (.55 a fight) all but goes, and the Queen fells the party five rounds sooner: the bot plays
+worse for having the skill. Charging the switch away from Bajo cero's wearer in a boss's fight (`ICE_WAKE_WORTH` × how
+near the ice was, and × 2 whatever the nearness) was tried and not kept: it brings the party to 18.0 and 19.2 rounds,
+freezes to .24 and .37, still well short of the 21.5 banned, and it is a plan written into the bot for one party.
+With Aitor on Freática the ice wakes rarely and Resonancia meets it in about one fight in a hundred. In the rooms it is
+only a hard bolt, and what it moves goes both ways by the party (alumnos-3c: 6.4 rounds against 9.4 with `ICE_PARTY`,
+4.4 against 3.8 with Aitor on Freática).
+
+A pair waits on Aitor: a fight where the ice comes without Gerard's turns (Punto de congelación, water's own freezing,
+would be one), or a bot that plans freeze-then-break across ánimas (a switch valued by more than one ply). Until then
+it stays on `coverage`'s list, and docs/progress.toml keeps «Resonancia: su pareja de TARGETS» open.
 
 ### Progression: whether the party's growth keeps step
 
