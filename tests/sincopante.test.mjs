@@ -232,6 +232,53 @@ test('a dual that leaves an eco in one foe, played again on another, takes it fr
   assert.equal(by(s, 'dog-2').timed.staccato.left, TIMED.staccato.seconds);
 });
 
+test('Corriente alterna is there again just after Da capo, and played again its circuit replaces the old one', () => {
+  const s = fight(7, ['sincopante:definitiva', 'matemagico:electrico', 'matemagico:descarga', 'matemagico:toma-de-tierra', 'matemagico:cortocircuito']);
+  turn(s, 'gerard');
+  assert.ok(actDual(s, 'corriente-alterna', 'dog-0'));
+  s.phase = 'player'; tick(s, 11);
+  assert.ok(s.circuits[0].beat >= 2);
+  turn(s, 'gerard');
+  assert.equal(actDual(s, 'corriente-alterna', 'dog-1'), undefined, 'spent before Da capo');
+  const effect = daCapo(s);
+  assert.deepEqual(effect.dacapo.duals, ['corriente-alterna']);
+  // Straight after it, on the maná Da capo filled (turn() would refill it: here it is Da capo's own).
+  s.phase = 'player'; s.active = s.allies.indexOf(by(s, 'gerard')); delete s.spent; delete s.queued;
+  assert.deepEqual(actDual(s, 'corriente-alterna', 'dog-1').circuit, ['dog-2', 'dog-1']);
+  assert.equal(s.circuits.length, 1, 'never two at once');
+  assert.equal(s.circuits[0].beat, 0, 'its strength from the first beat');
+  assert.equal(by(s, 'dog-0').timed?.alterna, undefined, 'the old pole no longer carries it');
+  assert.equal(by(s, 'dog-1').timed.alterna.left, TIMED.alterna.seconds);
+});
+
+test('A escala played again shrinks only its new target, and Trampantojo played again leaves one painted cortina', () => {
+  const s = fight(7, ['sincopante:definitiva', 'tecnopata:escolta', 'tecnopata:nanitos', 'tecnopata:escudo-de-bits', 'tecnopata:redundancia', 'tecnopata:rayo-encogedor']);
+  const gerard = by(s, 'gerard'), aitor = by(s, 'aitor');
+  const wear = (c, id) => { c.classId = id; s.levels = { ...s.levels, [id]: 7 }; c.maxSecondary = manaMax(s.improved, id, s.levels); };
+  wear(gerard, 'freatica'); wear(aitor, 'tecnopata');
+  turn(s, 'gerard'); aitor.secondary = aitor.maxSecondary;
+  assert.ok(actDual(s, 'a-escala', 'dog-0'));
+  assert.ok(by(s, 'dog-0').timed.encogido);
+  wear(aitor, 'sincopante'); daCapo(s); wear(aitor, 'tecnopata');
+  turn(s, 'gerard'); aitor.secondary = aitor.maxSecondary;
+  assert.ok(actDual(s, 'a-escala', 'dog-2'));
+  assert.equal(by(s, 'dog-0').timed?.encogido, undefined, 'the first foe is its own size again');
+  assert.ok(by(s, 'dog-2').timed.encogido);
+
+  const t = fight(7, ['sincopante:definitiva', 'tecnopata:confusion']);
+  const g = by(t, 'gerard'), a = by(t, 'aitor');
+  const put = (c, id) => { c.classId = id; t.levels = { ...t.levels, [id]: 7 }; c.maxSecondary = manaMax(t.improved, id, t.levels); };
+  put(g, 'prismatico'); put(a, 'tecnopata');
+  turn(t, 'gerard'); a.secondary = a.maxSecondary;
+  assert.ok(actDual(t, 'trampantojo', 'gerard'));
+  assert.ok(g.decoy && g.cortina !== undefined);
+  put(a, 'sincopante'); daCapo(t); put(a, 'tecnopata');
+  turn(t, 'gerard'); a.secondary = a.maxSecondary;
+  assert.ok(actDual(t, 'trampantojo', 'aitor'));
+  assert.equal(g.cortina, undefined, 'the old painted cortina is gone'); assert.equal(g.decoy, undefined);
+  assert.ok(a.decoy && a.cortina !== undefined);
+});
+
 test('Da capo brings Dadista\'s hand back to the dice it started with, never to six, and never cuts a hand past that', () => {
   const s = fight(7, ['sincopante:definitiva']);
   const gerard = by(s, 'gerard');

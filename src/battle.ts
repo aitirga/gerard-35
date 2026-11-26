@@ -1688,6 +1688,8 @@ export interface BattleState {
   spent?: string[];
   /** Duals already played this fight: each one goes off once a fight (`dualBlock` 'used'). */
   usedDuals?: DualId[];
+  /** The foe A escala last shrank, whose Encogido goes out if the dual is played again (`retake`). */
+  scaled?: string;
   /** What the powder has been in this fight while Colorista was worn (`POWDER_TURNS`), and whether Fin de fiesta went off already. */
   finale?: { seen: PowderTurn[]; used?: true };
   /** Siete vidas in this fight: whether a wound of five or more has been spent while Papagato was worn (`woke`), and whether it went off. */
@@ -5056,6 +5058,7 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
     }
     if (id === 'a-escala' && target.hp > 0) {
       target.timed = { ...target.timed, encogido: { level: 1, left: SCALE_SECONDS, next: SCALE_SECONDS } };
+      state.scaled = target.id;
       effect.afflicted = { id: 'encogido', level: 1 };
       effect.stats = [{ target: target.id, way: 'down', stats: ['defensa'] }];
       raiseWater(state, [a, b].find(c => c.classId === 'freatica') ?? striker, target, effect);
@@ -5332,18 +5335,23 @@ function runCircuits(state: BattleState, seconds: number, pulses: TimedPulse[]) 
  * A dual played again (Da capo gives it back, or the fight tester's Sin límites) while what it left still sounds: the old
  * one goes out first, so the new one starts its clock and its strength over, wherever it lands, and there are never two of
  * the same at once (Aitor, 2026-11-25). Its circuit (Corriente alterna), what it left on the foes (an eco in a head, a
- * volcano, a tide, a wound kept open), its fuse (Reserva de color) and its painted cortina (Trampantojo). Electrólisis's gas
+ * volcano, a tide, a wound kept open), A escala's shrink, its fuse (Reserva de color) and its painted cortina (Trampantojo). Electrólisis's gas
  * is not the dual sounding but water split, and stays until a fire finds it.
  */
 function retake(state: BattleState, d: DualSpec) {
   if (d.id === 'corriente-alterna' && state.circuits) { delete state.circuits; showPoles(state); }
   const left = d.leaves === 'gas' || d.leaves === 'alterna' ? undefined : d.leaves;
+  // A escala's shrink is Encogido, which Rayo encogedor also leaves: only the one the dual left goes out.
+  const scaled = d.id === 'a-escala' ? state.scaled : undefined;
+  if (d.id === 'a-escala') delete state.scaled;
   for (const foe of state.foes) {
     if (left && foe.timed?.[left]) delete foe.timed[left];
     if (d.volcano && foe.timed?.volcan) delete foe.timed.volcan;
     if (d.id === 'reserva-de-color') delete foe.fuse;
+    if (scaled === foe.id && foe.timed?.encogido) delete foe.timed.encogido;
   }
-  if (d.id === 'trampantojo') for (const ally of state.allies) delete ally.decoy;
+  // The painted cortina goes with its figure; a cortina raised by Cortina or Telón stays.
+  if (d.id === 'trampantojo') for (const ally of state.allies) if (ally.decoy) { delete ally.decoy; delete ally.cortina; }
 }
 /** A timed status a dual leaves on `c`, from its whole time. */
 function lay(c: Combatant, id: TimedId) {
