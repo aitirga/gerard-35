@@ -133,7 +133,19 @@ show yet: a layer off an onion, Sangrado and fire put on, a debuff's mark (about
 standing), a fresh Punto débil (what the next blow on it would add, a dual included), PV off Vertitrón's eye
 (×0.8: they bring no win closer, but the eye broken is worth 30 more, since no Rayo comes after), mental statuses taken away, the blow and the Mareo Defender avoids, and the
 maná Defender gathers (5 a point: with one ánima each, as in the dual party, it is the only way maná
-comes back). Each copy rolls its own dice, so a bot never sees the real fight's next coin.
+comes back).
+
+What the definitivas pay for (2026-11-26), generic so whatever else leaves the same is measured too:
+powder turned to poison (`POISON_WORTH`: the quarter more each blow lands with, on about three hits a
+hand, besides its pulses) or to shards (`SHARD_WORTH`: four a level on those hits); Siete vidas' ward
+(`LIVES_WORTH`, 40, for each ally the foes' coming turn would bring down, `LIVES_IDLE`, 8, with nobody
+in reach); a crack in Bajo cero's ice that does not break it yet (`ICE_CRACK_WORTH`: its share of the
+break); a die past the hand's cap (`HAND_WORTH`, for the hand up to six); and a sleeping definitiva
+brought nearer to waking by its own condition (`wakeWorth`: 15 for the whole way, on the square of how
+near, so the last step weighs most; at 30 on a straight line it opened El Montón with Zarpazos to wake
+Siete vidas). Run.events counts each waking (`despierta:<id>`) and each life Siete vidas keeps
+(`siete-vidas`), for a pair's `happens`. `BUILDS.mixto` buys all seven definitivas before the passives
+(one not built yet is skipped), so the third year can hold each pair. Each copy rolls its own dice, so a bot never sees the real fight's next coin.
 
 Not simulated: chapter 1's boys and the palace minion's scripted beat.
 
@@ -398,9 +410,13 @@ it stands (skills, how far it grows, whether its definitiva is built, whether an
 skills and duals no target's bot uses, and the numbers no target's fight reads. Whatever is on that
 list can break without `just fight-sim check` noticing.
 
-As measured on 2026-11-21: 19 fights without their pair; no target wears Dadista, Colorista,
-Sincopante or Freática; 30 skills and 6 of the 9 duals are used by no target; 219 of 823 numbers are
-read by none (every number of those four ánimas among them).
+As measured on 2026-11-26: no fight without its pair, and a target wears every ánima. 26 skills are
+used by no target, four definitivas among them (*Siete vidas*, *Enjambre*, *Da capo*, *Fin de
+fiesta*; *Bajo cero* comes up in the Queen's fights, held by no pair of its own), and two are still to
+build (Matemágico's *Horas extra*, Dadista's *Un golpe de dados*); 14 of the 25 duals are made by no
+target; 195 of 958 numbers are read by none (the ice's break among them). Each definitiva's pair is
+`docs/plans/definitivas/PLAN.md`'s, and docs/progress.toml's «Las definitivas en fight-sim» ticks
+once all seven are in.
 
 ### Progression: whether the party's growth keeps step
 

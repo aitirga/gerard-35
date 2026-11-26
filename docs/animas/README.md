@@ -421,7 +421,8 @@ follow it: the own ánimas' constellations at the jar show and sell more nodes, 
   later stage is not in the sky (`inSky`) and does not stand among what is bought (`withinEcos` with
   the story's stage): ecos put in it come back, and come back to it once the stage is reached (a
   rewound day works the same). A definitiva is always in the sky as a place kept, asleep (`asleep`)
-  until stage 3; then the ones whose move is built (Fin de fiesta today) can be bought.
+  until stage 3; then the ones whose move is built (five today: Fin de fiesta, Siete vidas, Enjambre, Da capo and
+  Bajo cero) can be bought.
 - **The levels**: a shared ánima stops at the cap (`reachOf`, `award`'s `cap`) and **keeps the EXP
   it earns**; when a boss raises the cap, the EXP kept gives its levels at once (`Story.ripen`, after
   the boss's fight), each with its note, back home after the flash. On the victory screen and the
@@ -451,18 +452,19 @@ and each ánima has **a condition that, met in a fight, unlocks it** there. The 
 - **Per fight**: met, the definitiva can be used once, for the turn and no maná; the next fight
   starts over. It is met while the ánima is worn, by whoever wears it.
 - **How it reads**: until it is met, nothing (the HUD shows what can be pressed). Met, the command
-  appears in the wearer's dock and a continuous status icon sits on their plate. The jar says the
-  condition in one line when it is bought (_open_: or it is found by playing).
+  appears in the wearer's dock and a continuous status icon sits on their plate. Nothing says the
+  condition, not the jar either (Aitor 2026-11-25): it is found by playing, and while it sleeps the
+  wearer's plate shows how near it is (the sleeping icon, n/N) until *Definitiva · despierta*.
 
 | Ánima | Condition | Definitiva |
 | --- | --- | --- |
-| Matemágico | Three different reactions between elements in one fight | *Q.E.D.*: very high magic on every foe, of every element he has: each lays its status |
+| Matemágico | Every foe standing is at Quemado III or more at once, while someone standing wears Matemágico (against a boss with parts, only its body counts) | *Horas extra* (Aitor 2026-11-25, in place of *Q.E.D.*): whoever uses it acts three times in a row with no maná (not a dual nor a definitiva; they may change ánima between them), and is then *Agotado* for a round: only Atacar, with its element, or Defender, which gives no maná back. To build: `docs/plans/definitivas/PLAN.md` |
 | Papagato | A wound of five Sangrado stacks or more is spent (always a golpe crítico, by its passive) | *Siete vidas*: Haru hurts every foe and leaves them bleeding; Yuki walks among the party, and the next blow that would kill someone cures them instead what it was going to take. **Built** (2026-11-21), the second |
 | Tecnópata | A Bomba remota goes off at its top while Tecnópata is worn (Aitor 2026-11-21, `tecnopata/README.md` § The design) | *Enjambre*: Bip comes apart over the foes: every foe gets a bomb already at its top, and every clock on the field starts over. **Built** (2026-11-21) |
-| Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them |
+| Sincopante | Three ecos sound at once: a chord (proposal 2026-11-20) | *Da capo* (Aitor's, 2026-11-20: the duals again): every dual already used in the fight can go off once more, and every ánima of both fighters is full of maná again to pay for them. **Built** (2026-11-21) |
 | Colorista | The powder has been all three things in the fight: an Estallido, an Envenenado and a Cristalizado | *Fin de fiesta*: every foe is powdered and its powder blows up, poisons and crystallises at once. **Built** (2026-11-21), the first: § The one that is built |
-| Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, 20 s a mark of its own, melting live. Frozen they do not act and take little; breaking the ice with four to eight blows lands a very large one, larger the sooner. Designed; its look built |
-| Dadista | The wearer's Crítico reaches 100 % (proposal 2026-11-20) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
+| Freática | A foe has its water at the third mark (Aitor 2026-11-20) | *Bajo cero* (Aitor 2026-11-20): every foe with water freezes, 20 s a mark of its own, melting live. Frozen they do not act and take little; breaking the ice with eight blows (a hard one counts two) lands a very large one, larger the sooner. **Built** (2026-11-21) |
+| Dadista | The wearer's Crítico reaches 100 %, Ases en dúo's ×2 counted, and it stays awake once the Racha is spent (Aitor 2026-11-25) | *Un golpe de dados*: a great die of light on every foe, high magic of no element and a sure golpe crítico; the hand is filled to six dice |
 
 ### The one that is built
 
@@ -486,7 +488,7 @@ how the next ones are:
   `changeHealth` by the first blow, pulse or tick that would kill any of them.
 
 The castle's gate on buying it is built (§ Growth opens with the castle): it sleeps until Dirección
-has fallen. Not built: the line at the jar that says the condition.
+has fallen.
 
 ## Combined skills
 

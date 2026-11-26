@@ -968,10 +968,11 @@ grep = "id: 'golpe-de-ariete'"
 in = "src/battle.ts"
 
 # Built 2026-11-21 (docs/animas/freatica/README.md § Definitiva): bought at the jar, it wakes once a foe's water reaches
-# the third mark while Freática is worn; every foe with water freezes, 20 s a mark, and its ice breaks in four to eight blows.
+# the third mark while Freática is worn; every foe with water freezes, 20 s a mark, and its ice breaks at eight blows (a hard one two).
+# Its rules are built; its own moment (the nucleation), its sounds and its pair of targets are PLAN.md's (docs/plans/definitivas).
 [[block.item]]
 title = "Freática: la definitiva Bajo cero (Congelado: no actúan, reciben poco, y el hielo se derrite en vivo y se rompe a golpes)"
-note = "Hecho: se compra en el bote y despierta con un enemigo en la tercera marca. Congelados no actúan y reciben un cuarto; el hielo baja una marca cada 20 s, aguanta ocho golpes (uno alto cuenta dos, cada golpe de una ráfaga uno) y al romperse hace un golpe de agua de 90 a 40 según el hielo que queda. Una llama lo derrite; la electricidad no le hace nada."
+note = "Reglas hechas (falta su momento propio, la nucleación, sus sonidos y su pareja de objetivos: docs/plans/definitivas/PLAN.md): se compra en el bote y despierta con un enemigo en la tercera marca. Congelados no actúan y reciben un cuarto; el hielo baja una marca cada 20 s, aguanta ocho golpes (uno alto cuenta dos, cada golpe de una ráfaga uno) y al romperse hace un golpe de agua de 90 a 40 según el hielo que queda. Una llama lo derrite; la electricidad no le hace nada."
 grep = "id: 'bajo-cero'"
 in = "src/battle.ts"
 
@@ -1158,7 +1159,7 @@ used = "extraSlots"
 [[block.item]]
 title = "Definitivas en el bote tras Dirección"
 priority = "crecimiento"
-note = "Hecho: hasta vencer al Equipo de dirección cada definitiva duerme en el bote (un «?», Todavía duerme); tras él despiertan las que tienen su golpe hecho (hoy Fin de fiesta): 2 ecos y luego su condición en combate. El tope de nivel de las compartidas pasa a 7 con la EXP guardada."
+note = "Hecho: hasta vencer al Equipo de dirección cada definitiva duerme en el bote (un «?», Todavía duerme); tras él despiertan las que tienen su golpe hecho (hoy cinco: Fin de fiesta, Siete vidas, Bajo cero, Da capo y Enjambre): 2 ecos y luego su condición en combate. El tope de nivel de las compartidas pasa a 7 con la EXP guardada."
 used = "definitivasOpen"
 
 [[block.item]]
@@ -1501,6 +1502,17 @@ title = "Cada combate con su pareja de objetivos en el simulador"
 priority = "pruebas"
 note = "Los dos TARGETS de cada combate, jugando su respuesta y sin ella: hechos en la pasada final (21-11), just fight-sim coverage no lista ninguno. Los que solo enseñan (los primeros perros, la primera sala de cada curso del castillo y los combates de entrada de cada misión) llevan un objetivo que los sujeta fáciles. Se marca a mano."
 done = true
+
+# docs/plans/definitivas/PLAN.md (Aitor 2026-11-25): each definitiva held to a pair of TARGETS in the third year, one with it
+# and one without (`ban`), measuring the turn (fewer rounds, more PV), not the win. Ticks once all seven pairs are in
+# src/battle-sim.ts, by these ids; the bot already values what each pays for (POISON_WORTH, SHARD_WORTH, LIVES_WORTH,
+# ICE_CRACK_WORTH, HAND_WORTH, wakeWorth) and BUILDS.mixto buys all seven.
+[[block.item]]
+title = "Las definitivas en fight-sim"
+priority = "animas"
+note = "Una pareja de objetivos por definitiva, con ella y sin ella: fiesta-gemelos, reina-con-siete-vidas, delegada-bajo-cero-bien, gemelos-tercero-enjambre, delegada-da-capo, gemelos-tercero-golpe-de-dados y alumnos-tercero-horas-extra, cada una con su «sin». El bot ya valora lo que pagan y el tarro mixto las compra todas."
+grep = "(?s)\\A(?=.*id: 'fiesta-gemelos')(?=.*id: 'fiesta-gemelos-sin-ella')(?=.*id: 'reina-con-siete-vidas')(?=.*id: 'reina-sin-custodia')(?=.*id: 'delegada-bajo-cero-bien')(?=.*id: 'delegada-bajo-cero-sin-ella')(?=.*id: 'gemelos-tercero-enjambre')(?=.*id: 'gemelos-tercero-sin-enjambre')(?=.*id: 'delegada-da-capo')(?=.*id: 'delegada-sin-da-capo')(?=.*id: 'gemelos-tercero-golpe-de-dados')(?=.*id: 'gemelos-tercero-sin-definitiva')(?=.*id: 'alumnos-tercero-horas-extra')(?=.*id: 'alumnos-tercero-sin-horas-extra')"
+in = "src/battle-sim.ts"
 
 # Decided 2026-11-21 with just fight-sim progress and just game-sim: each friend's ánima adds to the
 # party's attributes, so an open mission's foes grow with the other missions' ánimas (FOE_GROWTH), and
