@@ -96,7 +96,9 @@ export function createShardSpikes(app: pc.AppBase, effects: Effects) {
   const g0 = effects.gpu;
   if (g0) for (const [name, kind] of Object.entries(SHARD_KINDS)) if (!g0.get(name)) try { g0.define(name, kind); } catch { /* the engine's kinds are full: no particles for it */ }
   const kind = (name: string, fallback: string) => gpu()?.get(name) ? name : fallback;
-  const meshes = Array.from({ length: 4 }, (_, i) => spikeMesh(app.graphicsDevice, i + 1));
+  // Every spike shares these, and a mesh instance destroyed with its spike destroys the mesh once none holds it: the
+  // module holds them too, so the first spikes to shatter never leave the next ones drawing a mesh that is gone.
+  const meshes = Array.from({ length: 4 }, (_, i) => { const mesh = spikeMesh(app.graphicsDevice, i + 1); mesh.incRefCount(); return mesh; });
   const material = new pc.StandardMaterial();
   material.name = 'Esquirla';
   material.diffuse.set(1, 1, 1); material.diffuseVertexColor = true;
