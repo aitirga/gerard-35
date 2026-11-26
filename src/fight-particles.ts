@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
 import { SURFACE_SAMPLES, writeSurface } from './surface-samples.ts';
+import { createRewindField } from './rewind-field.ts';
 import { FILM_COL, HIT_SAMPLES, LATTICE_COLS, LATTICE_DISSOLVES, LATTICE_SHAPES, LOOK_COL, MAX_PULSES, MAX_RIPPLES, RIPPLE_COL, RUPTURE_COL, SNAP_COL, TRAVEL_COL, packColour, MAX_AIMS, MAX_LATTICES, MAX_MEMBERS, latticeReach, latticeRippleWgsl, latticeSpacing, latticeWgsl, stringReflections, type LatticeDissolve, type LatticeShape, type Vec3Like } from './lattice.ts';
 
 /**
@@ -1877,6 +1878,8 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
   const light = new Float32Array([1, 1, 1]);
   material.setParameter('uLight', light);
   material.update();
+  // The field played back (Da capo): a tape of where a share of the pool was, these last seconds (src/rewind-field.ts).
+  const field = createRewindField(app, W, H);
   const instance = new pc.MeshInstance(quad, material);
   instance.setInstancing(buffer);
   instance.instancingCount = N;
@@ -2409,6 +2412,13 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       if (rewinds.length >= MAX_REWINDS) rewinds.shift();
       rewinds.push({ start: batch.start, count: batch.count, elapsed: -Math.max(0, o.after ?? 0), seconds: Math.max(.05, o.seconds ?? .45), into, sent: false });
     },
+    /**
+     * Plays the field back (`rewindField`, src/rewind-field.ts): everything that moved these last seconds runs back along its
+     * own path in streaks of nácar, over `seconds`, `after` seconds from now. Da capo's. Whether there was a tape to play.
+     */
+    rewindField(o: { seconds?: number; after?: number; width?: number; intensity?: number } = {}) { return field.play(o); },
+    /** Recordings on the field's tape (development and tests). */
+    get taped() { return field.kept; },
     /** Simulates `dt` (and draws) while `on`; off, nothing runs and nothing is drawn. */
     update(dt: number, on: boolean) {
       entity.enabled = on && draw;
@@ -2490,6 +2500,7 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       uniforms.grid.setValue(gridTex);
       pc.drawQuadWithShader(device, targets[1 - current], sim, undefined, undefined, 'Partículas de combate');
       current = 1 - current;
+      field.update(step, states[current]);
       batches.length = 0;
       material.setParameter('uState', states[current]);
       material.setParameter('uTime', time % 600);
@@ -2502,9 +2513,10 @@ export function createFightParticles(app: pc.AppBase, kinds: Record<string, GpuK
       [...lattices].forEach(l => l.remove());
       batches.length = 0; emitters.length = 0; fields.length = 0; volumes.length = 0; groups.length = 0; live = 0; head = 0;
       [...laws].forEach(l => l.remove()); ignites.length = 0; rewinds.length = 0;
+      field.clear();
       placeLights(false);
     },
-    destroy() { destroyed = true; lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex, lawTex, igniteTex, cloudTex, rewindTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
+    destroy() { destroyed = true; field.destroy(); lights.forEach(e => e.destroy()); lightTarget.destroy(); entity.destroy(); targets.forEach(t => t.destroy()); gridTarget.destroy(); gridTex.destroy(); splatQuad.destroy(); splat.destroy(); [...states, kindTex, spawnTex, fieldTex, partTex, fighterTex, surfaceTex, floorTex, volumeTex, groupTex, lightTex, latticeTex, lawTex, igniteTex, cloudTex, rewindTex].forEach(t => t.destroy()); buffer.destroy(); quad.destroy(); material.destroy(); },
   };
 }
 export type FightParticles = ReturnType<typeof createFightParticles>;
