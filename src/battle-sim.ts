@@ -14,7 +14,7 @@ import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
   FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
-  ultiProgress, awakeUlti, warded, iceBreakPower, DICED,
+  ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
@@ -94,6 +94,12 @@ export interface Setup {
    * never holds on.
    */
   ban?: Ban[];
+  /**
+   * `smart` weighs what a foe it confuses does on its coming turn (`confusionWorth`). Off for the campaign's targets, which were
+   * balanced with a bot that never cast Confusión for what it is worth: on for all of them it moves five (2026-11-26, docs/fight-sim.md
+   * § Confusión). Where Sugestión sends a confused foe's blow is weighed either way.
+   */
+  confusion?: boolean;
   /** The ánimas L and R walk through; Matemágico and Papagato by default, as in Nuria's mission. */
   animas?: ClassId[];
   /** Friends' ánimas already gained, whose bonus the whole party gets. */
@@ -635,16 +641,43 @@ const CRUST_WORTH = 25;
  */
 const TRIP_WORTH = 15, RECORD_WORTH = 60, SIGNATURE_WORTH = 25, LAYER_WORTH = 25, KEPT_WORTH = 30;
 const SHAPE_WORTH: Record<MontonForm, number> = { golpe: 0, fuego: 15, agua: 0, electrico: 30, sangrado: 12 };
-interface Threat { hp: Map<string, number>; mareo: Map<string, number> }
-/** What the foes would do to each ally if their turn came now (PV, and Mareo stacks): the real rules, on a copy. */
+interface Threat { hp: Map<string, number>; mareo: Map<string, number>; foes: number }
+/**
+ * What the foes would do to each ally if their turn came now (PV, and Mareo stacks), and the PV they would take off their own
+ * (`foes`: a confused one's blow, a Combustión it sets off): the real rules, on a copy.
+ */
 function threatOn(state: BattleState): Threat {
-  const look = copy(state), before = new Map(look.allies.map(a => [a.id, { hp: a.hp, mareo: a.statuses?.mareo ?? 0 }]));
+  const look = copy(state), before = new Map(look.allies.map(a => [a.id, { hp: a.hp, mareo: a.statuses?.mareo ?? 0 }])), standing = look.foes.reduce((sum, f) => sum + Math.max(0, f.hp), 0);
   look.phase = 'enemy'; look.enemyActions = [];
   for (const foe of look.foes) if (foe.hp > 0 && look.phase === 'enemy') enemyAct(look, foe.id);
   return {
     hp: new Map(look.allies.map(a => [a.id, before.get(a.id)!.hp - a.hp])),
     mareo: new Map(look.allies.map(a => [a.id, Math.max(0, (a.statuses?.mareo ?? 0) - before.get(a.id)!.mareo)])),
+    foes: standing - look.foes.reduce((sum, f) => sum + Math.max(0, f.hp), 0),
   };
+}
+/** `Setup.confusion` for the decision being made (`decide`). */
+let readsConfusion = false;
+/**
+ * Confusión, and where Sugestión sends it (docs/animas/tecnopata/README.md § Sugestión), as `smart` values a choice: the foes'
+ * coming turn played on a copy, what it would no longer do to the party and what it would take off the foes themselves, against
+ * the same turn without the confusion this choice put on (`before`'s), or with the mark Sugestión had before it moved
+ * (`state.aimed`). Only the coming turn: a confusion's later turns are not counted, as no other status's are.
+ */
+function confusionWorth(before: BattleState, after: BattleState, threat: Threat) {
+  const confused = (f: Combatant) => f.hp > 0 && !!f.timed?.confusion;
+  const newly = readsConfusion && after.foes.some((f, i) => confused(f) && !confused(before.foes[i]));
+  const steered = !newly && after.aimed !== before.aimed && after.foes.some(confused) && !!suggested(after);
+  if (!newly && !steered) return 0;
+  const now = threatOn(after);
+  if (newly) return sum(threat) - sum(now) + now.foes - threat.foes;
+  // Steered: against the mark where it was, or, with none standing there, against the blow at random, as the mean of it sent to each
+  // of the others in turn (no die of its own, so every turn played here throws the same dice after it: no noise in the difference).
+  const kept = suggested({ ...after, aimed: before.aimed });
+  const others = kept ? [kept.id] : after.foes.filter(f => f.hp > 0 && !f.part && !confused(f)).map(f => f.id);
+  if (!others.length) return 0;
+  const was = others.map(id => threatOn({ ...after, aimed: id }));
+  return was.reduce((total, t) => total + sum(t) - t.foes, 0) / was.length - sum(now) + now.foes;
 }
 /**
  * Whether blows like this one would burst La Pompa before it is full: a new one comes whole each time, so PV off one
@@ -800,6 +833,8 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
   }
   // Shock (Cortocircuito's for sure): the turn the foe loses, the real rules on a copy.
   if (after.foes.some((foe, i) => foe.shock && !before.foes[i]?.shock)) value += sum(threat) - sum(threatOn(after));
+  // Confusión: the foe's turn turned on its own; with Sugestión, on the foe this choice aims at.
+  value += confusionWorth(before, after, threat);
   // ∂Q/∂t Condensador: about what the charge will add to the next electric blow, or take off a foe that strikes first.
   if (choice.skill === 'condensador') value += chargeWorth(before);
   // Superficie mínima: the water the foes' own blows will bring, the real rules on a copy.
@@ -1054,6 +1089,7 @@ export function decide(state: BattleState, setup: Setup, random: () => number): 
   if (policy === 'casual') { const seen = unread(state, policy, random); return best(options, choice => damageNow(seen, choice))[0]; }
   // What each definitiva would do is measured on the fight as it stands now (`ultiWorth`): the fight is played in place.
   ultiWorths = new WeakMap();
+  readsConfusion = !!setup.confusion;
   const threat = threatOn(state);
   const singles = options.filter(o => o.action !== 'dual'), duals = options.filter(o => o.action === 'dual');
   const [alone, aloneWorth] = best(singles, choice => worth(state, choice, threat, setup.ban));
@@ -1154,8 +1190,8 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
   const count = (key: string) => { run.events[key] = (run.events[key] ?? 0) + 1; };
   /** The duals Da capo gave back and not played again yet. */
   const given = new Set<string>();
-  const clockNews = (news: readonly { saved?: unknown; awoken?: string }[]) => {
-    for (const item of news) { if (item.awoken) count(`despierta:${item.awoken}`); if (item.saved) count('siete-vidas'); }
+  const clockNews = (news: readonly { saved?: unknown; awoken?: string; passives?: BattleEffect['passives'] }[]) => {
+    for (const item of news) { if (item.awoken) count(`despierta:${item.awoken}`); if (item.saved) count('siete-vidas'); if (item.passives?.some(p => p.id === 'sugestion')) count('sugestion'); }
   };
   const note = (effect?: BattleEffect) => {
     if (!effect) return;
@@ -1165,6 +1201,10 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
       if (kind) { const moves = run.moves[kind] ??= {}; moves[effect.ability.id] = (moves[effect.ability.id] ?? 0) + 1; }
     }
     if (effect.eye) count('ojo-roto');
+    // A confused foe's blow on its own (`confundido`), and the ones Sugestión sent to the foe the party aimed at (`sugestion`).
+    if (effect.confused) count('confundido');
+    if (effect.combustion) count(effect.kind === 'enemy' ? 'combustion-confundido' : 'combustion');
+    if (effect.passives?.some(p => p.id === 'sugestion')) count('sugestion');
     // Fran's salon: a lamp of the canopy broken, and a blow the light ate.
     if (effect.lampBroken) count('lampara-rota');
     if (effect.annulled) count('anulado');
@@ -1661,6 +1701,12 @@ export const TARGETS: readonly Target[] = [
   { id: 'gemelos-primero', fight: 'alumnos-1c', party: DUO, ...TWO, policy: 'smart', win: [.95, 1], roundsWon: [1, 4.5], why: 'Los Gemelos de primero enseñan a tumbarlos a la par: quien lo hace, con lo justo para entrar, gana siempre y pronto.' },
   { id: 'alumnos-tercero-bien', fight: 'alumnos-3b', party: DUO, ...FLOOR_3, policy: 'smart', win: [.8, 1], why: 'Tercer curso: chicle rancio, que se rompe a golpes y mojado se reblandece; el Empollón no se sabe la clase de golpe que no ha aprendido y el Repetidor lleva costra. Alternar físico y mágico, y tumbar a la Chivata antes.' },
   { id: 'alumnos-tercero-sin-pensar', fight: 'alumnos-3b', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .5], why: 'Repetir el mismo golpe contra el Empollón y dejar a la Chivata marcar: se pierde.' },
+  // Sugestión (docs/animas/tecnopata/README.md § Sugestión), Tecnópata's Mente passive, in the room where confusing is part of the
+  // answer (the Empollón forgets): with a bot that weighs Confusión (`confusion`, off for the rest), the same party with and
+  // without the node. It is a player's piece, not this room's answer: it does not change who wins, it takes a little more
+  // than half a round and a few PV off it (2026-11-26, 200 runs: 9.2 rounds and 56 % PV against 9.9 and 53 %, both 80 %).
+  { id: 'trio-tercero-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'tecnopata:sugestion'], confusion: true, policy: 'smart', win: [.72, .9], roundsWon: [8.6, 9.6], happens: { sugestion: [.8, 2.5] }, why: 'Con Sugestión, el confundido golpea a quien apunta el equipo (a sí mismo si se le acaba de confundir): la sala sale igual, algo más corta.' },
+  { id: 'trio-tercero-sin-sugestion', fight: 'alumnos-3b', party: TECH, ...FLOOR_3, confusion: true, policy: 'smart', win: [.72, .9], roundsWon: [9.6, 10.6], happens: { sugestion: [0, 0] }, why: 'Sin Sugestión, el confundido golpea a uno de los suyos al azar: se gana igual, algo más largo.' },
   { id: 'ausente-bien', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Ausente solo está la ronda después de su golpe, o mientras está mojado: pegarle entonces, o dejarle un fuego que trabaje mientras no está, y Defender el Empujón anunciado. Cada relleno cede a lo que lo deshace.' },
   { id: 'ausente-sin-pensar', fight: 'alumnos-2d', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Quien no lee su placa le pega al aire la mitad de las rondas, y entre «Presente» y Empujón se pierde.' },
   { id: 'castigado-bien', fight: 'alumnos-2e', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'El Castigado no ataca: dejarlo para el final, sin darle tres golpes que no lo tumben, y alternar físico y mágico contra el Empollón.' },
