@@ -1267,3 +1267,47 @@ test('Enjambre wakes when a bomb goes off at its top while Tecnópata is worn, a
   assert.ok(s.foes.every(f => f.timed.bomba && f.timed.bomba.age * BOMBA.perSecond + BOMBA.base >= BOMBA.top - 1e-9));
   assert.equal(swarmReady(s), false, 'once a fight');
 });
+
+// Enjambre's rules (Aitor 2026-11-25, docs/plans/definitivas/PLAN.md § Enjambre): only the foes' clocks start over, no number.
+const swarmAwake = () => {
+  const s = techFight();
+  improve(s, { skills: ['explosion', 'confusion', 'enjambre'] });
+  s.swarm = { woke: true };
+  return s;
+};
+test('Enjambre starts over only the foes\' clocks: the party\'s Sanación keeps its time', () => {
+  const s = swarmAwake();
+  s.foes[0].timed = { quemado: { level: 2, left: 2, next: 1 }, cegado: { level: 1, left: 1, next: 6 } };
+  const gerard = byId(s, 'gerard');
+  gerard.timed = { sanacion: { level: 1, left: 3, next: 1 } };
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'enjambre');
+  assert.equal(s.foes[0].timed.quemado.left, TIMED.quemado.seconds); assert.equal(s.foes[0].timed.cegado.left, TIMED.cegado.seconds);
+  assert.equal(gerard.timed.sanacion.left, 3, 'an ally\'s clock is not the swarm\'s');
+  assert.deepEqual(e.restarted.map(r => r.target), ['dog-0']);
+});
+test('Enjambre deals no blow: no number goes over any foe', () => {
+  const s = swarmAwake();
+  turnOf(s, 'aitor');
+  const e = act(s, 'skill', 'dog-0', 'enjambre');
+  assert.equal(e.hits, undefined); assert.equal(e.amount, undefined);
+  assert.ok(s.foes.every(f => f.hp === f.maxHp));
+});
+test('Enjambre\'s own bombs at their top do not wake it again, and Explosión right after cashes each one at its top', async () => {
+  const { BOMBA, bombPower, swarmReady } = await import('../src/battle.ts');
+  const s = swarmAwake();
+  turnOf(s, 'aitor'); act(s, 'skill', 'dog-0', 'enjambre');
+  assert.ok(s.foes.every(f => bombPower(f.timed.bomba.age) === BOMBA.top));
+  turnOf(s, 'aitor');
+  const blast = act(s, 'skill', 'dog-0', 'explosion');
+  assert.deepEqual(blast.detonated.map(d => d.target), ['dog-0', 'dog-1']);
+  // Both foes the same and the same Magia behind them: the same top-sized blast on each, and bigger than a fresh bomb's.
+  assert.equal(blast.detonated[0].amount, blast.detonated[1].amount);
+  const fresh = swarmAwake();
+  turnOf(fresh, 'aitor'); act(fresh, 'skill', 'dog-0', 'bomba-remota');
+  turnOf(fresh, 'aitor');
+  const small = act(fresh, 'skill', 'dog-0', 'explosion');
+  assert.ok(blast.detonated[0].amount > small.detonated[0].amount * 2, `${blast.detonated[0].amount} > 2 × ${small.detonated[0].amount}`);
+  assert.equal(blast.awoken, undefined, 'used once a fight: its own bombs do not wake it again');
+  assert.equal(swarmReady(s), false);
+});

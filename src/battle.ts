@@ -4323,14 +4323,14 @@ export function act(state: BattleState, action: BattleAction, targetId?: string,
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
     if (effect.crit) state.message += ' ¡Golpe crítico!';
   } else if (everyone && 'swarm' in ability!) {
-    // Enjambre: every clock on every foe starts over, and each gets a bomb already at its top (`plantBomb`).
+    // Enjambre: every clock on every foe standing starts over (only the foes': the party's keep theirs), and each gets a bomb
+    // already at its top (`plantBomb`). No blow: nothing goes in `hits`, so no number shows over anyone.
     effect.skill = skill; effect.target = target!.id;
     (state.swarm ??= {}).used = true;
-    const standing = targets.filter(foe => foe.hp > 0);
+    const standing = targets.filter(foe => foe.hp > 0 && state.foes.includes(foe));
     effect.restarted = standing.map(foe => ({ target: foe.id, statuses: restartClocks(state, foe) })).filter(r => r.statuses.length);
     for (const foe of standing) plantBomb(foe, (BOMBA.top - BOMBA.base) / BOMBA.perSecond);
     effect.planted = standing.map(foe => foe.id);
-    effect.hits = targets.map(foe => ({ target: foe.id, amount: 0 }));
     state.message = `${actor.name} usa ${ability!.name}. Bip se deshace sobre los enemigos: cada uno lleva una bomba al máximo.`;
   } else if (everyone && skill === 'fin-de-fiesta') {
     // Fin de fiesta: three puffs over every foe standing, and each takes its exit at once (`powder`): fire, water, a spark.

@@ -92,6 +92,9 @@ test('two bombs add their charge up to the top, with the clock of the one closer
   const b = s.foes[0].timed.bomba;
   assert.equal(b.left, 3);
   assert.equal(Math.round(bombPower(b.age)), Math.round(bombPower(4) + bombPower(6)));
+  // Its age is the one that grows that charge, (min(top, p1 + p2) − base) / perSecond: not the two ages added, which would count the base twice.
+  assert.ok(Math.abs(b.age - (Math.min(BOMBA.top, bombPower(4) + bombPower(6)) - BOMBA.base) / BOMBA.perSecond) < 1e-9);
+  assert.notEqual(b.age, 4 + 6);
   s.foes[0].timed = { bomba: { level: 1, left: 9, next: 12, age: 20 } };
   s.foes[2].timed = { bomba: { level: 1, left: 5, next: 12, age: 20 } };
   cast(s);
