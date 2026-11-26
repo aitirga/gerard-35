@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { DIRECCION_MEETING } from './castle';
 import type { Environment } from './environments';
 import type { GeoTexture } from './geo';
 import { shine } from './lighting';
@@ -638,6 +639,43 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
 
     // The same desk, repeated in rows: the same monitor, the same mug, the same pile, the same note.
     const screen = mat('#9fb4c8', .6, .35), mug = mat('#e8e4da', .5), chairMat = mat('#2a2c30', .3);
+    function officeChair(cx: number, pz: number, yaw = 0) {
+      const chair = at(cx, pz, 'Silla de oficina');
+      chair.setLocalEulerAngles(0, yaw, 0);
+      part(chair, 'Asiento', 'box', chairMat, [0, .47, 0], [.46, .07, .44], [0, 0, 0], false);
+      part(chair, 'Respaldo', 'box', chairMat, [0, .8, .22], [.42, .48, .05], [-6, 0, 0], false);
+      part(chair, 'Columna', 'cylinder', frameGrey, [0, .25, 0], [.05, .42, .05], [0, 0, 0], false);
+      part(chair, 'Base', 'cylinder', black, [0, .05, 0], [.55, .04, .55], [0, 0, 0], false);
+      return chair;
+    }
+
+    const meeting = DIRECCION_MEETING;
+    const upholstery = mat('#42645b', .2);
+    for (const seat of Object.values(meeting.seats)) {
+      const chair = officeChair(seat.x, seat.z, 180 + seat.yaw);
+      part(chair, 'Respaldo tapizado', 'box', upholstery, [0, .94, .32], [.59, .78, .11], [7, 0, 0]);
+      for (const side of [-1, 1]) {
+        part(chair, 'Soporte', 'box', frameGrey, [side * .30, .59, .02], [.035, .27, .035]);
+        part(chair, 'Reposabrazos', 'box', upholstery, [side * .30, .73, .02], [.08, .055, .36]);
+      }
+    }
+    const table = at(meeting.table.x, meeting.table.z, 'Mesa de juntas');
+    const wood = mat('#80634c', .35), binding = mat(P.binder, .3);
+    part(table, 'Tablero de juntas', 'box', wood, [0, .76, 0], [3.48, .09, .95]);
+    for (const side of [-1, 1]) part(table, 'Pie de la mesa', 'box', frameGrey, [side * .86, .36, 0], [.09, .72, .72]);
+    // The bound minutes open before Mar, a signature folder and an ink stamp within reach.
+    part(table, 'Libro de actas', 'box', binding, [0, .825, -.23], [.65, .04, .39]);
+    for (const side of [-1, 1]) {
+      part(table, 'Hoja del acta', 'box', paper, [side * .154, .853, -.23], [.294, .02, .35], [0, 0, side * -2]);
+      for (let line = 0; line < 5; line++) part(table, 'Renglón', 'box', frameGrey, [side * .154, .869, -.33 + line * .045], [.21, .004, .008]);
+    }
+    part(table, 'Carpeta de firmas', 'box', binding, [-1.33, .832, -.07], [.52, .05, .38], [0, 12, 0]);
+    part(table, 'Impreso para firmar', 'box', paper, [-1.31, .862, -.07], [.43, .012, .31], [0, 12, 0]);
+    part(table, 'Bolígrafo', 'box', black, [-1, .82, -.04], [.027, .025, .23], [0, -15, 0]);
+    part(table, 'Expediente', 'box', box, [1.24, .84, -.04], [.48, .07, .33], [0, -8, 0]);
+    part(table, 'Base del sello', 'box', black, [1.55, .83, .11], [.16, .05, .1]);
+    part(table, 'Mango del sello', 'sphere', wood, [1.55, .90, .11], [.082, .12, .082]);
+
     function desk(cx: number, pz: number, own: boolean) {
       const d = at(cx, pz, own ? 'La mesa de Gerard' : 'Mesa');
       part(d, 'Tablero', 'box', laminate, [0, .73, 0], [1.6, .04, .78]);
@@ -648,12 +686,7 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
       part(d, 'Pantalla', 'box', screen, [.1, 1.06, -.148], [.53, .31, .004], [0, 0, 0], false);
       part(d, 'Teclado', 'box', black, [.05, .755, .13], [.44, .02, .14], [0, 0, 0], false);
       for (let k = 0; k < 4; k++) part(d, 'Impresos', 'box', paper, [.55, .76 + k * .022, -.04], [.3, .02, .22], [0, (k % 2 - .5) * 10, 0], false);
-      // An office chair pushed in, on its five-legged base.
-      const chair = at(cx + .1, pz + .66, 'Silla de oficina');
-      part(chair, 'Asiento', 'box', chairMat, [0, .47, 0], [.46, .07, .44], [0, 0, 0], false);
-      part(chair, 'Respaldo', 'box', chairMat, [0, .8, .22], [.42, .48, .05], [-6, 0, 0], false);
-      part(chair, 'Columna', 'cylinder', frameGrey, [0, .25, 0], [.05, .42, .05], [0, 0, 0], false);
-      part(chair, 'Base', 'cylinder', black, [0, .05, 0], [.55, .04, .55], [0, 0, 0], false);
+      officeChair(cx + .1, pz + .66);
       if (own) return d;
       part(d, 'Taza', 'cylinder', mug, [-.5, .8, .05], [.08, .1, .08], [0, 0, 0], false);
       sticky(d, [.3, 1.18, -.145], 'south', 1);

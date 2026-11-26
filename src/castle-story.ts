@@ -9,7 +9,7 @@
 import type { Dialogue, DialogueLine } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { StoryEffect, Trigger } from './story.ts';
-import { CASTLE_LIGHTS, CASTLE_PHASES, ROOM_LIGHTS, STRONG_LIGHTS, castlePhase, floorFor, isCastleEncounter, isCastlePlace, roomRound,
+import { CASTLE_LIGHTS, CASTLE_PHASES, DIRECCION_MEETING, ROOM_LIGHTS, STRONG_LIGHTS, castlePhase, floorFor, isCastleEncounter, isCastlePlace, roomRound,
   type CastleEncounter, type CastleFlag, type CastleFloor, type CastlePhaseId, type Cell, type RoomEncounter } from './castle.ts';
 
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
@@ -257,7 +257,10 @@ export function castleNear(host: CastleHost, id: string): StoryEffect[] {
   }
   const boss = id.slice('castillo-'.length);
   if (boss === 'aurelia') return host.has('aurelia') ? [] : [say(LINES_CASTLE.aureliaBefore), { kind: 'battle', encounter: 'aurelia' }];
-  if (boss === 'direccion') return host.has('direccion') ? [] : [say(LINES_CASTLE.direccionBefore), { kind: 'battle', encounter: 'direccion' }];
+  if (boss === 'direccion') return host.has('direccion') ? [] : [
+    { kind: 'look', cell: DIRECCION_MEETING.table, height: 3.7 }, say(LINES_CASTLE.direccionBefore),
+    { kind: 'look' }, { kind: 'battle', encounter: 'direccion' },
+  ];
   if (boss === 'reina') return [say(host.has('artilugio') ? LINES_CASTLE.reinaAgain : LINES_CASTLE.reinaBefore), { kind: 'battle', encounter: bossFight(host, 'reina') }];
   return [];
 }

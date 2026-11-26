@@ -74,7 +74,8 @@ import { REACH } from './chasers';
 import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
-import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { seatDirectiva } from './direccion-seated';
+import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECCION_MEETING, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
 import { isCastleZone } from './castle-mood';
 import { createFloorStreet, roomGroups, roomTag, syncFloor } from './castle-pupils';
 import { castleFigure, castleModel, castleModelSettled, encarnar, figureClips, foeFigure, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
@@ -646,7 +647,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
   summitShade.blendType = pc.BLEND_NORMAL; summitShade.depthWrite = false; summitShade.useMetalness = false; summitShade.update();
   /** `away`: seconds until a pack of young beaten comes back (story FEARS `respawn`). */
   /** `clips`: a castle room's pupils drawn from their own figures, walking on their round and running after the party. */
-  let hunters: { chaser: Chaser; model: pc.Entity; id: string; respawn: boolean; away: number; clips?: FigureClips[] }[] = [];
+  let hunters: { chaser: Chaser; model: pc.Entity; id: string; respawn: boolean; away: number; seated?: boolean; clips?: FigureClips[] }[] = [];
   /** The hunter whose fight is on, so a pack of young beaten can go away for a while. */
   let fightingHunter: string | undefined;
   /**
@@ -1495,12 +1496,23 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     const own = castleModel(figure);
     const one = (own?.template ?? minion.root).clone(); one.enabled = true;
     const size = (own?.size ?? CASTLE_SIZES[kind]) * .9; one.setLocalScale(size, size, size);
-    const played = own && figureClips(one, own);
+    const played = clips && own && figureClips(one, own);
     if (played) clips?.push(played);
     return one;
   }
   /** A fear as it hunts the ramp; their young go in a little pack of the ring's own fear, small. */
   function huntingModel(encounter: FearEncounter | CampingEncounter | CastleEncounter, clips?: FigureClips[]) {
+    if (encounter === 'direccion') {
+      const group = new pc.Entity('Dirección en sesión');
+      for (const director of DIRECTIVAS) {
+        const body = castleBody('directiva', director.id), seat = DIRECCION_MEETING.seats[director.id];
+        const y = seatDirectiva(body);
+        body.setLocalEulerAngles(0, seat.yaw, 0);
+        body.setLocalPosition(seat.x - DIRECCION_MEETING.approach.x, y, seat.z - DIRECCION_MEETING.approach.z);
+        group.addChild(body);
+      }
+      return group;
+    }
     // The castle: a room's pupils walk as the group they fight as, a boss stands alone. Each its own figure once it has one, gum until then.
     if (isCastleEncounter(encounter)) {
       const group = new pc.Entity('Alumnos'), kinds = castleKinds(encounter), figures = castleFigures(encounter);
@@ -1678,11 +1690,17 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       }
       const clips: FigureClips[] = [], model = huntingModel(spec.encounter, clips);
       // Skinned figures move by their bones: only the gum's loose pieces are merged into one mesh.
-      castRoot.addChild(model); if (!clips.length) mergeHunter(model);
-      hunters.push({ id: spec.id, model, respawn: !!spec.respawn, away: 0, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }), ...clips.length ? { clips } : {} });
+      const seated = spec.encounter === 'direccion';
+      castRoot.addChild(model);
+      if (seated) {
+        const at = scenery.toWorld(DIRECCION_MEETING.approach.x, DIRECCION_MEETING.approach.z);
+        model.setPosition(at.x, scenery.groundHeight(at.x, at.z), at.z);
+      } else if (!clips.length) mergeHunter(model);
+      hunters.push({ id: spec.id, model, seated, respawn: !!spec.respawn, away: 0, chaser: createChaser({ id: spec.id, patrol: spec.patrol, sight: spec.sight, walk: spec.walk, run: spec.run }), ...clips.length ? { clips } : {} });
     }
     let chased = false;
     for (const h of hunters) {
+      if (h.seated) { h.model.enabled = !battle; continue; }
       if (h.away > 0) {
         h.model.enabled = false;
         if (!battle && !cutscene && !paused) h.away -= dt;

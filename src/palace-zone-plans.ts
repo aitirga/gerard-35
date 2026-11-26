@@ -1,3 +1,4 @@
+import { DIRECCION_MEETING } from './castle.ts';
 import type { Environment, WorldProp } from './environments';
 
 /**
@@ -51,7 +52,7 @@ export const ZONE_GLYPHS = {
   'L': 'montón de objetos perdidos', 'E': 'muro con espalderas', 'M': 'colchonetas apiladas', 'C': 'carro de pelotas',
   'V': 'puerta de los vestuarios', 'r': 'cuerda (suelo)', 'o': 'aro en el suelo (suelo)', 'p': 'plinto',
   'K': 'mostrador', 'W': 'la finestreta', 'F': 'trampilla del mostrador (suelo)', 'q': 'la cola', 'N': 'muro con el tablón de corcho',
-  'd': 'mesa de oficina', 'X': 'fotocopiadora', 'R': 'armarios del archivo', '~': 'montón de impresos', 'G': 'la mesa de Gerard',
+  'J': 'mesa de juntas y sillas', 'd': 'mesa de oficina', 'X': 'fotocopiadora', 'R': 'armarios del archivo', '~': 'montón de impresos', 'G': 'la mesa de Gerard',
   'k': 'muro con el armario de llaves', 'h': 'sillas', 'O': 'el balcón', 'S': 'escenario (suelo alto)', '_': 'borde del escenario',
   's': 'escalones del escenario (suelo)', 'c': 'bastidores', 'Q': 'el trono', 'n': 'piano',
   '1': 'puerta', '2': 'puerta', '3': 'puerta', ' ': 'fuera',
@@ -227,11 +228,11 @@ export const PALACE_GYM: Environment = {
 const OFFICE_PLAN = [
   '######2#####################', // 0
   '#GG........................#', // 1
-  '#....RR.B....RR......RR....#', // 2
-  '#....RR..RR..RR~.RR..RR....#', // 3
-  'k....RR..RR..RR..RR..RR....#', // 4
-  '#....RR.~RR..RR..RR..RR....#', // 5
-  '#....RR..RR..RR..RR.~RR....#', // 6
+  '#.......JJJJJ........RR....#', // 2
+  '#.......JJJJJ..~.RR..RR....#', // 3
+  'k.........B......RR..RR....#', // 4
+  '#................RR..RR....#', // 5
+  '#....RR......RR..RR.~RR....#', // 6
   '#....RR..RR..RR..RR..RR....#', // 7
   '#........RR......RR........#', // 8
   '#........................X.#', // 9
@@ -277,8 +278,8 @@ export const PALACE_OFFICE: Environment = {
       { name: 'La secretaría', x: 1, z: 1, w: 26, d: 14, floor: 'tile' },
       { name: 'La sala de espera', x: 1, z: 15, w: 26, d: 5, floor: 'tile' },
     ],
-    // Where the management team stands, out of Direcció and before its door; his desk is the set-piece.
-    anchors: { 'boss-direccion': { x: 7, z: 2 }, 'la-mesa': { x: 2, z: 1 } },
+    // The visitor's side of the meeting table, and Gerard's desk.
+    anchors: { 'boss-direccion': DIRECCION_MEETING.approach, 'la-mesa': { x: 2, z: 1 } },
   },
   interactions: [
     { id: 'secretaria-patio', cell: { x: 4, z: 19 }, label: 'Volver al patio', to: { environment: 'palacio-patio', cell: { x: 28, z: 2 } } },

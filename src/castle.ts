@@ -11,6 +11,16 @@
 import type { Element } from './battle.ts';
 
 export interface Cell { x: number; z: number }
+/** The meeting outside Direcció. Positions are in office cells, yaw faces the visitor at zero. */
+export const DIRECCION_MEETING = {
+  table: { x: 10, z: 2.9 },
+  approach: { x: 10, z: 4 },
+  seats: {
+    mar: { x: 10, z: 2.04, yaw: 0 },
+    montse: { x: 8.04, z: 2.69, yaw: 60 },
+    pilar: { x: 11.96, z: 2.69, yaw: -60 },
+  },
+} as const;
 export interface Rect { x: number; z: number; w: number; d: number }
 /** Anything that can say whether a story flag is set: the story's own set of flags. */
 export interface Flags { has(flag: string): boolean }
@@ -65,7 +75,7 @@ export const CASTLE_PHASES: readonly CastlePhase[] = [
     fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
     into: { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } }, out: { environment: 'palacio-gimnasio', cell: { x: 19, z: 2 } },
     // The management team has come out of Direcció and waits before its door, at the far end of Gerard's office.
-    bossAt: { x: 7, z: 2 }, bossRadius: 3.2,
+    bossAt: DIRECCION_MEETING.approach, bossRadius: 1.65,
   },
   {
     id: 3, environment: 'castillo-3', name: 'Castillo · Tercer curso', rooms: 12, lattice: [5, 4], from: 'secretaria', to: 'trono',
@@ -80,7 +90,7 @@ export const castlePhaseAt = (flags: Flags): CastlePhaseId => flags.has('direcci
 /**
  * The checkpoint (docs/castle.md § Structure): a boss beaten stays beaten, and from then on every
  * entry to the castle starts in that boss's room. None before Aurelià: the hall, as ever. After
- * Dirección, before Direcció's door, where the three of them stood: the way on to phase 3.
+ * Dirección, before Direcció's door, beside the meeting table: the way on to phase 3.
  */
 export function castleEntry(flags: Flags): { environment: 'palacio-gimnasio' | 'palacio-secretaria'; cell: Cell } | undefined {
   if (flags.has('direccion')) return { environment: 'palacio-secretaria', cell: { x: 7, z: 2 } };
