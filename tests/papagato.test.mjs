@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, addStatus, createBattle, enemyAct, improve, inflict, nextRound, runClock, skillsFor, stacks, takeNews, validTargets, awakeUlti, ultiProgress, livesReady, warded, woundScale, CRIT_RULES, SCENT, SKILLS, STATUSES, TIMED } from '../src/battle.ts';
 import { improvedBy } from '../src/ecos.ts';
-import { manaMax } from '../src/battle.ts';
+import { manaMax, actDual } from '../src/battle.ts';
 
 // Papagato from level 4 to 7, and its definitiva (docs/animas/papagato/README.md § Skills per level,
 // § Definitiva): Maná +1, Olor a sangre, Acecho (a blow that waits for the next round), Cacería (the
@@ -183,4 +183,19 @@ test('Siete vidas is a definitiva of the jar\'s, and its description follows the
   assert.equal(lives.ulti, true); assert.equal(lives.node, true); assert.equal(lives.cost, 0); assert.equal(lives.class, 'papagato');
   assert.equal(lives.description, 'Daño físico leve a todos los enemigos. Añade sangrado. El próximo golpe que fuera a matar a alguien del equipo no lo mata: lo cura.');
   assert.equal(SCENT.sure, 5, 'it wakes where Olor a sangre makes the spent wound a sure crítico');
+});
+
+test('Siete vidas wakes on Campana de Gauss\'s first die on a wound of five, with Papagato worn by someone standing', () => {
+  const s = createBattle([{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'dadaista' }, { id: 'nuria', name: 'Nuria', profile: 'gerard35', classId: 'papagato' }], 3, false, undefined, ['matemagico', 'papagato', 'dadaista']);
+  s.levels = { papagato: 7, dadaista: 7 };
+  improve(s, improvedBy(['papagato:definitiva', 'matemagico:fuego', 'matemagico:factor-comun']));
+  s.foes.forEach(f => { f.hp = f.maxHp = 999; });
+  for (const ally of s.allies) ally.secondary = ally.maxSecondary;
+  addStatus(s.foes[1], 'sangrado', 5);
+  s.phase = 'player'; s.active = 0;
+  const e = actDual(s, 'campana-de-gauss', 'dog-1');
+  assert.ok(e, 'Gerard and Aitor bring Campana de Gauss');
+  assert.equal(e.bled, 5); assert.equal(e.awoken, 'siete-vidas');
+  assert.ok(e.crit, 'a wound of five spent is a golpe crítico, even on a die');
+  assert.equal(livesReady(s), true);
 });

@@ -1381,6 +1381,8 @@ export interface TimedPulse { target: string; status: TimedId; level: number; am
    */
   reaction?: { id: ElementReaction; level?: number; hits?: { target: string; amount: number }[]; targets?: string[] };
   shocked?: string[]; mana?: string;
+  /** The wound its first hit on `target` spent (`MULTI_WOUND`), and whether that made it the sure crítico of Olor a sangre. */
+  bled?: number; crit?: true;
   /** …and what the reaction set off besides: La crecida's Corriente, the cortina Remolino raised, the passives that spoke. */
   current?: BattleEffect['current']; cortina?: string[]; passives?: BattleEffect['passives'] }
 /** Siete vidas' ward went off on a pulse or a round's tick: what it would have taken (`blow`), and the cure it gave instead. */
@@ -3044,6 +3046,12 @@ function wound(target: Combatant, physicalBlow: boolean, skill?: SkillId) {
   const bled = physicalBlow && !cut ? stacks(target, 'sangrado') : 0;
   return { bled, scale: woundScale(bled, skill) };
 }
+/**
+ * The duals of many hits whatever their kind (Campana de Gauss's dice, Corriente alterna's blow and beats): as a dual counts as
+ * every kind, they spend a wound, but only with their first hit on each foe, as Cacería's claws and Traca's puffs do. That hit
+ * lands the wound's bonus, and at five stacks the sure crítico of Olor a sangre that wakes Siete vidas; the rest land plain.
+ */
+export const MULTI_WOUND: ReadonlySet<string> = new Set(['campana-de-gauss', 'corriente-alterna']);
 /** A physical blow has spent the wound on `target`: its stacks go, unless Metralla holds it open. */
 function closeWound(target: Combatant) {
   if (!target.timed?.metralla) delete target.statuses!.sangrado;
@@ -4976,8 +4984,10 @@ function dualAct(state: BattleState, id: DualId, targetId?: string, die?: number
   } else {
     if (melts && target.shell) { target.shell = false; effect.melted = true; state.message += ' El pringue se derrite.'; }
     const layered = target.layers ?? 0, strikes: number[] = [], coins: (0 | 1)[] = [], burns: number[] = [];
-    // A dual that cuts piles its own stacks on the wound and spends none (Staccato).
-    const { bled, scale } = wound(target, d.kind === 'physical' && !d.bleed, id === 'relevo-de-sangre' ? 'llaga' : undefined), weak = weakScale(state, target), chance = d.burnChance ?? 1;
+    // A dual that cuts piles its own stacks on the wound and spends none (Staccato); every claw of a physical flurry carries
+    // it, as a flurry's do (Zarpazos de fuego). Corriente alterna's blow is the first of its hits on its target: it spends
+    // the wound there, as its first beat on the other pole does there (`MULTI_WOUND`).
+    const { bled, scale } = wound(target, (d.kind === 'physical' || MULTI_WOUND.has(id)) && !d.bleed, id === 'relevo-de-sangre' ? 'llaga' : undefined), weak = weakScale(state, target), chance = d.burnChance ?? 1;
     // Géiser: a blow for each mark of the water under it, all of it spent. Cadáver exquisito: three elements nobody chose.
     const marks = id === 'geiser' ? waterOf(target) : 0, blows = id === 'geiser' ? Math.max(1, marks) : d.strikes ?? 1;
     const drawn: Element[] = id === 'cadaver-exquisito' ? exquisite(state, blows, streak) : [];
@@ -5092,7 +5102,7 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
   const dice: NonNullable<BattleEffect['bell']> = effect.bell = [];
   // The target first, so whatever reads the first of the hits (an eco that repeats it) finds the foe picked.
   const totals = new Map<Combatant, NonNullable<BattleEffect['hits']>[number]>([[target, { target: target.id, amount: 0 }]]);
-  const fallback = [target, before, after].filter((c): c is Combatant => !!c);
+  const fallback = [target, before, after].filter((c): c is Combatant => !!c), opened = new Set<Combatant>();
   for (const wanted of bellSplit(state, count, target, before, after)) {
     const foe = wanted.hp > 0 || eaten ? wanted : fallback.find(c => c.hp > 0);
     if (!foe) break;
@@ -5103,7 +5113,13 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
     if (foe.hp > 0 && !eaten) {
       if (foe.shell) { foe.shell = false; effect.melted = true; }
       const blocked = singing(state, foe) || reflects(foe), weak = weakScale(state, foe);
-      amount = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * weak * affinityScale(foe, 'fuego'), 'dual'));
+      // The first die on each foe spends its wound (`MULTI_WOUND`): its bonus, and at five the sure crítico; the rest, plain.
+      const first = !blocked && !opened.has(foe);
+      if (!blocked) opened.add(foe);
+      const { bled, scale } = first ? wound(foe, true) : { bled: 0, scale: 1 }, sure = bled > 0 && sureCrit(state, bled, effect);
+      amount = blocked ? 0 : hurt(state, foe, fearDamage(state, foe, dualBlow(d, current(state, striker), current(state, foe)) * (scale + (sure ? CRIT_RULES.bonus : 0)) * weak * affinityScale(foe, 'fuego'), 'dual'));
+      if (bled) { closeWound(foe); hit.bled = bled; if (foe === target) effect.bled = bled; }
+      if (sure && amount > 0) { hit.crit = true; effect.crit = true; }
       // A die of fire that lands is a blow of fire: on a foe with Electrólisis's gas, it sets the gas of all off (`ignite`).
       if (amount > 0) lit.push(foe.id);
       if (weak > 1 && amount > 0) { delete foe.weakSpot; effect.weakSpot = 'spent'; hit.weakSpot = true; }
@@ -5124,6 +5140,7 @@ function bellFall(state: BattleState, d: DualSpec, target: Combatant, striker: C
     state.message += ` Caen ${dice.length} dados de fuego: −${effect.amount} PV${hits.length > 1 ? ' entre todos' : ''}.`;
     if (effect.melted) state.message += ' El pringue se derrite.';
     if (effect.weakSpot) state.message += ' ¡Punto débil: el triple de daño!';
+    if (hits.some(h => h.bled)) state.message += effect.crit ? ' El primer dado abre la herida: ¡golpe crítico!' : ' El primer dado abre la herida.';
     // Fire finds the powder first (all of it goes up), then the ice (a mark melts, and that foe does not burn), then
     // shapes each one's fire.
     const said = state.message;
@@ -5174,7 +5191,9 @@ export const waterGas = (c: Combatant) => c.hp <= 0 || frozenOf(c) ? 0 : Math.mi
  * beats sounded and its own clock. Each circuit keeps its clock: Reinicio and Telemetría on a pole stretch the circuits
  * on that pole (`stretchCircuits`), and the pole's `TIMED.alterna` only shows the longest of them on the plate (`showPoles`).
  */
-export interface Circuit { poles: [string, string]; by: string; beat: number; left: number; next: number }
+export interface Circuit { poles: [string, string]; by: string; beat: number; left: number; next: number;
+  /** The poles its hits have reached already: only the first hit on each spends a wound (`MULTI_WOUND`). The blow is the first on its target. */
+  opened?: string[] }
 /**
  * Corriente alterna wires `target` to the next foe standing in the row (the one before if it is the last; itself if it
  * is alone). A target felled by the blow leaves the circuit to the other pole alone.
@@ -5183,7 +5202,7 @@ function wire(state: BattleState, by: Combatant, target: Combatant, effect: Batt
   const others = state.foes.filter(f => f.hp > 0 && !f.part && f !== target), at = state.foes.indexOf(target);
   const other = state.foes.slice(at + 1).find(f => others.includes(f)) ?? state.foes.slice(0, at).reverse().find(f => others.includes(f)) ?? target;
   if (other.hp <= 0) return;
-  (state.circuits ??= []).push({ poles: [other.id, target.id], by: by.id, beat: 0, left: alternaSeconds(), next: ALTERNA.every });
+  (state.circuits ??= []).push({ poles: [other.id, target.id], by: by.id, beat: 0, left: alternaSeconds(), next: ALTERNA.every, opened: [target.id] });
   showPoles(state);
   const poles = [...new Set([other, target])].filter(f => f.hp > 0);
   effect.left = { id: 'alterna', targets: poles.map(f => f.id) };
@@ -5227,15 +5246,20 @@ function stretchCircuits(state: BattleState, foe: Combatant, how: 'restart' | nu
  * the pole again between beats. What the reaction set off besides (a definitiva woken, Remolino's cortina, La crecida's
  * Corriente, a passive) goes with the pulse, for the fight to show.
  */
-function electricBeat(state: BattleState, sender: Combatant, victim: Combatant, power: number, level: number, from: Combatant): TimedPulse {
+function electricBeat(state: BattleState, sender: Combatant, victim: Combatant, power: number, level: number, from: Combatant, circuit?: Circuit): TimedPulse {
   const said = state.message;
-  const amount = hurt(state, victim, fearDamage(state, victim, magical(power, current(state, sender), current(state, victim)) * affinityScale(victim, 'electrico'), 'magic', 'electrico'));
-  const effect: BattleEffect = { actor: sender.id, kind: 'skill', target: victim.id, amount };
+  const effect: BattleEffect = { actor: sender.id, kind: 'skill', target: victim.id, amount: 0 };
+  // The circuit's first hit on this pole spends its wound (`MULTI_WOUND`); every other beat lands plain.
+  const first = !!circuit && !(circuit.opened ??= []).includes(victim.id);
+  if (first) circuit!.opened!.push(victim.id);
+  const { bled, scale } = first ? wound(victim, true) : { bled: 0, scale: 1 }, sure = bled > 0 && sureCrit(state, bled, effect);
+  const amount = effect.amount = hurt(state, victim, fearDamage(state, victim, magical(power, current(state, sender), current(state, victim)) * (scale + (sure ? CRIT_RULES.bonus : 0)) * affinityScale(victim, 'electrico'), 'magic', 'electrico'));
+  if (bled) closeWound(victim);
   react(state, sender, victim, 'electrico', effect);
   const reaction = effect.reaction;
   // A pulse says nothing on the plate's message: its numbers and the reaction's name say it.
   state.message = said;
-  return { target: victim.id, status: 'alterna', level, amount, ...from !== victim ? { by: from.id } : {},
+  return { target: victim.id, status: 'alterna', level, amount, ...from !== victim ? { by: from.id } : {}, ...bled ? { bled } : {}, ...sure && amount > 0 ? { crit: true as const } : {},
     ...reaction ? { reaction: { id: reaction.id, ...reaction.level ? { level: reaction.level } : {}, ...reaction.hits ? { hits: reaction.hits } : {}, ...reaction.targets ? { targets: reaction.targets } : {} } } : {},
     ...effect.shocked?.length ? { shocked: effect.shocked } : {}, ...effect.mana ? { mana: sender.id } : {},
     ...effect.awoken ? { awoken: effect.awoken } : {}, ...effect.current ? { current: effect.current } : {},
@@ -5262,7 +5286,7 @@ function runCircuits(state: BattleState, seconds: number, pulses: TimedPulse[]) 
       if (!victim) { circuit.left = 0; break; }
       const power = alternaPower(circuit.beat);
       circuit.beat++;
-      pulses.push(electricBeat(state, sender, victim, power, circuit.beat, victim === aimed ? other ?? victim : aimed ?? victim));
+      pulses.push(electricBeat(state, sender, victim, power, circuit.beat, victim === aimed ? other ?? victim : aimed ?? victim, circuit));
     }
     circuit.left -= dt; circuit.next -= dt;
     if (poles.every(p => !p || p.hp <= 0)) circuit.left = 0;

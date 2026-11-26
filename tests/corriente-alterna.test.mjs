@@ -235,3 +235,22 @@ test('for the bot, a circuit is worth its beats to come, and less with each one 
   for (let i = 1; i < worth.length; i++) assert.ok(worth[i] < worth[i - 1], worth.join());
   assert.equal(worth[4], 0);
 });
+
+test('a wound is spent by the first hit of the dual on each pole alone: the blow on its target, the first beat on the other', () => {
+  const s = pair();
+  s.levels = { ...s.levels, papagato: 7 };
+  s.foes[0].statuses = { ...s.foes[0].statuses, sangrado: 3 };
+  s.foes[1].statuses = { ...s.foes[1].statuses, sangrado: 2 };
+  const e = actDual(s, 'corriente-alterna', 'dog-0');
+  assert.equal(e.bled, 3, 'the blow spends its target\'s wound, as a dual counts as every kind');
+  assert.equal(s.foes[0].statuses.sangrado, undefined);
+  s.phase = 'player';
+  const first = beat(s, true)[0];
+  assert.equal(first.target, 'dog-1'); assert.equal(first.bled, 2, 'the first beat on the other pole spends its wound');
+  assert.equal(s.foes[1].statuses.sangrado, undefined);
+  // A wound cut again between beats stays: the circuit has reached both already.
+  s.foes[0].statuses.sangrado = 4; s.foes[1].statuses.sangrado = 4;
+  const later = [beat(s)[0], beat(s)[0]];
+  assert.ok(later.every(p => p.bled === undefined));
+  assert.equal(s.foes[0].statuses.sangrado, 4); assert.equal(s.foes[1].statuses.sangrado, 4);
+});

@@ -205,3 +205,17 @@ test('the gas it sets off is lit by whoever brought the fire, whichever of the t
   assert.deepEqual(aitor, gerard, 'the same dual on the same foes ends the same');
   assert.ok(gerard.fires.every(left => left === 15), 'Rescoldo: every fire lasts 15 s, the blast does not cut it back');
 });
+
+test('Campana de Gauss spends a wound with its first die on each foe alone: that die lands the bonus, the rest plain', () => {
+  const plain = pair(3, 7), cut = pair(3, 7);
+  cut.foes[1].statuses = { ...cut.foes[1].statuses, sangrado: 3 };
+  const a = actDual(plain, 'campana-de-gauss', 'dog-1'), b = actDual(cut, 'campana-de-gauss', 'dog-1');
+  assert.equal(b.bled, 3); assert.equal(b.hits[0].bled, 3);
+  assert.equal(cut.foes[1].statuses.sangrado, undefined, 'the wound is spent');
+  const firstOn = e => e.bell.findIndex(die => die.target === 'dog-1');
+  const i = firstOn(b);
+  assert.ok(b.bell[i].amount > a.bell[firstOn(a)].amount, 'the first die on it lands harder');
+  const rest = (e, from) => e.bell.filter((die, n) => die.target === 'dog-1' && n > from).map(die => die.amount);
+  assert.deepEqual(rest(b, i), rest(a, firstOn(a)), 'the others land as they would without it');
+  assert.match(cut.message, /El primer dado abre la herida/);
+});
