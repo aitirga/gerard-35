@@ -1,0 +1,95 @@
+{
+  "title": "Cristalizado · pinchos de cristal",
+  "description": "El aspecto de Cristalizado (electricidad sobre el polvo de Colorista, src/shard-spikes.ts): pinchos de cristal morado que se forman alrededor del enemigo, apuntando a él, y se le clavan; cada golpe los hunde más. Con --gpu.",
+  "steps": [
+    {
+      "open": "/?story=prismatico-7&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22prismatico%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22prismatico%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%5D%2C%22encounter%22%3A%22dogs%22%2C%22foes%22%3A2%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%2C%22unbound%22%3Afalse%2C%22improved%22%3A%5B%22matemagico%3Afuego%22%2C%22matemagico%3Aagua%22%2C%22matemagico%3Aelectrico%22%2C%22prismatico%3Adefinitiva%22%5D%7D"
+    },
+    {
+      "eval": "navigator.getGamepads = () => []"
+    },
+    {
+      "until": "!!window.gerard && document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO'",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.ui = window.gerard.battleUI; window.turn = id => document.querySelector('#battle .turn-meta')?.textContent === 'TU TURNO' && document.querySelector('.battle-dock[data-dock=\"1\"]')?.dataset.member === id && !ui.fight?.busy; window.skill = id => document.querySelector('.skill-list [data-skill=\"' + id + '\"]')?.click(); window.aim = () => document.querySelector('.battle-target[data-side=\"foes\"]:not(:disabled)')?.click(); window.aimAlly = id => document.querySelector('.roster-target[data-target=\"' + id + '\"]:not(:disabled)')?.click(); ui.tweak(s => { s.foes.forEach(f => { f.hp = f.maxHp = 900; }); }); window.closeUp = (id = window.foe0) => { const at = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: at.x, y: at.y + .7, z: at.z }, 1.9); };"
+    },
+    {
+      "until": "window.turn && window.turn('gerard')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { window.foe0 = s.foes[0].id; window.foe1 = s.foes[1].id; s.foes.forEach(f => { f.hp = f.maxHp = 900; }); s.foes[0].timed = { ...s.foes[0].timed, empolvado: { level: 1, left: 20, next: 20 } }; s.allies[0].element = 'electrico'; });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "record": "se-clavan",
+      "seconds": 3,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "Electricidad sobre el polvo: el polvo se recoge en pinchos de cristal morado alrededor del perro, cada uno apuntando a él, y se le clavan uno tras otro"
+    },
+    {
+      "shot": "clavados",
+      "delay": 300,
+      "caption": "Cristalizado: los pinchos quedan clavados por la punta, siguiendo su cuerpo"
+    },
+    {
+      "eval": "window.closeUp()"
+    },
+    {
+      "shot": "de-cerca",
+      "delay": 1200,
+      "caption": "De cerca: facetas de cristal morado, la punta dentro y el extremo roto fuera"
+    },
+    {
+      "until": "window.turn && window.turn('aitor')",
+      "timeout": 60000
+    },
+    {
+      "eval": "ui.tweak(s => { const c = s.foes[0].timed?.cristalizado; if (c) c.left = 20; });"
+    },
+    {
+      "press": "Digit1",
+      "gap": 400
+    },
+    {
+      "record": "mas-hondo",
+      "seconds": 2.4,
+      "fps": 30,
+      "tiles": 12,
+      "each": "window.frame === 0 && window.aim()",
+      "caption": "De cerca, un golpe sobre él: cada pincho sale un poco y se clava de golpe más hondo, temblando y con un destello; crecen y brillan un nivel más, saltan esquirlas y llegan dos más"
+    },
+    {
+      "eval": "window.closeUp()"
+    },
+    {
+      "shot": "mas-hondo-cerca",
+      "delay": 600,
+      "caption": "Nivel II: más pinchos, más grandes y más encendidos que en el nivel I"
+    },
+    {
+      "eval": "window.gerard.game.frame(); ui.tweak(s => { s.foes[1].timed = { ...s.foes[1].timed, cristalizado: { level: 3, left: 20, next: 20 } }; });"
+    },
+    {
+      "wait": 2600
+    },
+    {
+      "eval": "{ const at = window.gerard.game.fighterAt(window.foe1); window.gerard.game.frame({ x: at.x, y: at.y + .7, z: at.z }, 2.6); }"
+    },
+    {
+      "shot": "estado-base",
+      "delay": 1500,
+      "caption": "El estado por sí solo: un perro con Cristalizado III puesto sin reacción (como lo deja Fulgurita o el selector) muestra también sus pinchos, al nivel que tiene"
+    }
+  ]
+}

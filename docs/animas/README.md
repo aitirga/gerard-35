@@ -1056,7 +1056,7 @@ three mixed in every puff; never saturated pink or violet.
 | **While it lasts** | The powder stays on its body, all over the side it came from, and on the floor round it; a few grains shed every second and a thin haze stays at its feet. Its plate has the icon, a small cloud, with the 20 s ring |
 | **Estallido** (0.6 s) | A white flash on the body, then a fireball that swallows it and a ring along the floor; the powder leaves as black char. Embers fly to every other foe; a powdered one goes up 0.15 s after the one before. Scorch on the floor, smoke, and every foe left with Quemado's flames. *Estallido* in fire's colour, with its PV beside it |
 | **Envenenado** (0.6 s) | The water darkens the powder; it runs down the body in thick streaks turning green and pools at its feet. From there on it is Envenenado's look (bubbles, ooze, the haze at its feet). *Envenenado* in its green |
-| **Cristalizado** (0.5 s) | A spark runs over the powder; it draws together into small hard shards that stand out of the body, the only thing of the powder that catches the light. *Cristalizado* in electricity's colour |
+| **Cristalizado** (1 s) | A spark runs over the powder; it lifts off the body and draws together into spikes of purple crystal that stand round it in the air, each aimed at it, then drive in one after another, buried by their point and left quivering, chips flying where each goes in (`src/shard-spikes.ts`). The only thing of the powder with a colour of its own. *Cristalizado* in electricity's colour |
 
 - *Movimiento reducido*: no jets and no flying char; the powder appears, changes colour and goes.
 
@@ -1094,10 +1094,12 @@ cuerdas.)
   end, after Defensa and after anything that multiplies. Every hit of a flurry counts, and an
   eco's; pulses do not. The count is on its plate, as Sangrado's, and goes with the status.
   So the poison is for whoever hits hard and the crystal for whoever hits often.
-- **How it shows**: small hard shards stand out of the body where the powder was, in the powder's
-  colours gone pale; they glint when the foe moves. Each blow drives them in: a short glassy
-  crack, three or four splinters thrown out, and *Esquirlas +4* (then *+8*, *+12*…) beside the
-  number. Its icon on
+- **How it shows**: spikes of purple crystal (faceted, lit, a short broken end outside) stuck in
+  the body by their point, on its real surface, so they move with it (Aitor 2026-11-25: purple,
+  clearly spikes aimed at the foe). Each blow yanks every one of them out a little and slams it
+  back in deeper, quivering and flashing, chips flying; with each level they grow and glow more and
+  two more arrive; *Esquirlas +4* (then *+8*, *+12*…) beside the number. Whoever is Cristalizado
+  shows them at its level however it got it (a dúo, the picker), and when it ends they shatter. Its icon on
   the plate, a splinter, with the 20 s ring.
 
 ### Statuses that move (Atractor extraño)

@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import { bodyOf, type Effects } from './effects.ts';
 import type { GpuEmitter, GpuKind } from './fight-particles.ts';
 import { deflagrate } from './deflagrate.ts';
+import { createShardSpikes } from './shard-spikes.ts';
 
 /**
  * The coloured powder of Luca's ánima, as a look (docs/animas/prismatico/README.md § Look and
@@ -21,9 +22,11 @@ import { deflagrate } from './deflagrate.ts';
  *   the floor (`blastring`), embers thrown at whoever stands near, a scorch and smoke.
  * - **Water on it** (`soak`): the powder runs wet, which shines (`wetpatch`, `paintblob`,
  *   `paintpool`: the `pool` shape), turning a sick green as it goes: poison.
- * - **Electricity on it** (`crystallise`): the powder draws together into small hard shards that
- *   stand out of the body (`shardling`), the one thing of it that catches the light; each blow that
- *   lands afterwards throws a few out (`splinter`).
+ * - **Electricity on it** (`crystallise`): the powder draws together into spikes of purple crystal
+ *   round the body, each aimed at it, that drive in one after another and stay stuck in it,
+ *   quivering (src/shard-spikes.ts); each blow that lands afterwards drives them deeper, chips flying
+ *   (`splinter`), and they shatter when it is over. The one thing of it that is not matte and has a
+ *   colour of its own.
  * - **The cortina** (`cortina`, `romper`): the protective spell. A handful thrown upwards hangs in
  *   front of an ally as a standing screen (`pigmentscreen`), grains falling from it; the blow that
  *   breaks it throws the whole of it forward over whoever dealt it, who is left covered.
@@ -76,14 +79,14 @@ export const POWDER_KINDS: Record<string, GpuKind> = {
     shape: 'powder', drag: 3.2, gravity: .04, curl: .8, response: .7, size: [.2, .38], sizeJitter: .5,
     colours: WHITE, intensity: BRIGHT, middle: .4, fadeIn: .22, fadeOut: .5, additive: 0, opacity: .72, core: 0,
   },
-  // Electricity on the powder: shards standing out of the body, and the ones a blow knocks out.
+  // Electricity on the powder: fine purple specks of crystal between the spikes, and the chips a blow knocks off them.
   shardling: {
-    shape: 'shard', drag: 4, gravity: 0, curl: 0, response: 0, collide: true, bounce: 0, friction: 1, stick: 1, stickTime: 24, size: [.05, .06], sizeJitter: .6, stretch: 0,
-    colours: ['#ffffff', '#f4f4f4', '#dcdcdc'], intensity: [2.4, 1.7, 1.5], middle: .04, fadeIn: .12, fadeOut: .05, additive: .15, opacity: .95, flicker: .35,
+    shape: 'shard', drag: 4, gravity: 0, curl: 0, response: 0, collide: true, bounce: 0, friction: 1, stick: 1, stickTime: 24, size: [.022, .02], sizeJitter: .6, stretch: 0,
+    colours: ['#e6d6ff', '#a274f0', '#5a24b0'], intensity: [2.4, 1.7, 1.5], middle: .04, fadeIn: .12, fadeOut: .05, additive: .15, opacity: .95, flicker: .35,
   },
   splinter: {
-    shape: 'shard', drag: .8, gravity: 7, curl: .1, response: .2, collide: true, bounce: .4, friction: .5, size: [.05, .035], sizeJitter: .6, stretch: .012, spin: 480,
-    colours: ['#ffffff', '#f4f4f4', '#dcdcdc'], intensity: [2.6, 1.6, 1.2], middle: .2, fadeIn: 0, fadeOut: .3, additive: .15, opacity: .95,
+    shape: 'shard', drag: .8, gravity: 7, curl: .1, response: .2, collide: true, bounce: .4, friction: .5, size: [.045, .03], sizeJitter: .6, stretch: .012, spin: 480,
+    colours: ['#e6d6ff', '#a274f0', '#5a24b0'], intensity: [2.8, 1.7, 1.2], middle: .2, fadeIn: 0, fadeOut: .3, additive: .2, opacity: .95,
   },
   // Fire on the powder: what was hanging in the air, blown out and charred as it goes.
   char: {
@@ -200,10 +203,11 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
   const gpu = () => effects.gpu && effects.gpu.active ? effects.gpu : undefined;
   const g0 = effects.gpu;
   if (g0) for (const [name, kind] of Object.entries(POWDER_KINDS)) if (!g0.get(name)) g0.define(name, kind);
+  const spikes = createShardSpikes(app, effects);
   const powdered = new Map<string, Powdered>();
   const screens = new Map<string, Screen>();
   /** Who has a handful on its way; what the fight last said of each fighter's powder, and since when (`track`). */
-  const coming = new Set<string>(), told = new Map<string, { on: boolean; since: number }>(), toldScreen = new Map<string, { on: boolean; since: number }>();
+  const coming = new Set<string>(), told = new Map<string, { on: boolean; since: number }>(), toldScreen = new Map<string, { on: boolean; since: number }>(), toldShards = new Map<string, { on: boolean; since: number }>(), toldLevel = new Map<string, number>();
   /** Until when what is shown is a sequence of its own (Fin de fiesta) and `track` leaves it alone. */
   let now = 0, held = 0;
   const timers: { left: number; run(): void }[] = [];
@@ -218,8 +222,8 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     for (let i = 0; i < until.length; i++) if (i !== at && until[i] < until[best]) best = i;
     return best;
   }
-  /** Who has shards standing out of them, for how long yet and in what colour. */
-  const sharded = new Map<string, { left: number; pale: string }>();
+  /** Who has specks of crystal between their spikes, and for how long yet. */
+  const sharded = new Map<string, { left: number }>();
 
   /** Someone in the fight: where they stand, how big they are and where the fight particles have them. */
   function who(id: string) {
@@ -253,12 +257,12 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     return true;
   }
 
-  /** Shards standing out of `id` for `seconds`, in `pale`, in the set in use. */
-  function shard(id: string, seconds: number, pale: string) {
+  /** Fine specks of crystal between `id`'s spikes for `seconds`, in the set in use. */
+  function shard(id: string, seconds: number) {
     const g = gpu(), f = who(id);
     if (!g || !f || f.index < 0) return false;
-    g.burst(`shardling-${shardSet}`, { at: f.feet, shape: 'surface', fighter: f.index, above: .1, count: 80, outward: -.3, speed: .04, life: [Math.max(.5, seconds - 1.5), seconds], colour: pale });
-    sharded.set(id, { left: seconds, pale });
+    g.burst(`shardling-${shardSet}`, { at: f.feet, shape: 'surface', fighter: f.index, above: .1, count: 24, outward: -.3, speed: .04, life: [Math.max(.5, seconds - 1.5), seconds] });
+    sharded.set(id, { left: seconds });
     shardUntil[shardSet] = Math.max(shardUntil[shardSet], now + seconds);
     return true;
   }
@@ -540,25 +544,31 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       return true;
     },
     /**
-     * Electricity on the powder of `ids`: it draws together into shards that stand out of their body
-     * for `seconds`, with a spark over them as it sets.
+     * Electricity on the powder of `ids`: it draws in off their body into a cloud with sparks in it,
+     * sets as spikes of purple crystal round them, each aimed at them, and they drive in one after
+     * another and stay for `seconds` (src/shard-spikes.ts).
      */
     crystallise(ids: readonly string[], seconds = 20, keepPowder = false) {
       const g = gpu();
       if (!g) return false;
-      const set = ids.map(id => ({ id, f: who(id), pale: blend(powdered.get(id)?.colour ?? POWDER_GREY, '#ffffff', .55) }));
+      const set = ids.map(id => ({ id, f: who(id), pale: blend(powdered.get(id)?.colour ?? POWDER_GREY, '#b48cff', .6) }));
       if (!keepPowder) take(ids.filter(id => powdered.has(id)));
       api.unshard(ids.filter(id => sharded.has(id)));
-      for (const { id, f, pale } of set) {
-        if (!f || f.index < 0) continue;
+      set.forEach(({ id, f, pale }, i) => {
+        if (!f) return;
+        spikes.crystallise(id, f.model, seconds, i * .08);
+        // Shown now: the fight's word that it has none (from before the spark) waits its grace again.
+        toldShards.set(id, { on: true, since: now });
+        if (f.index < 0) return;
         const on = { at: f.feet, shape: 'surface' as const, fighter: f.index, above: .1 };
-        shard(id, seconds, pale);
-        if (g.get('crackle')) g.burst('crackle', { ...on, count: 40, outward: 2, up: 1, speed: 1.5, life: [.2, .5] });
-        g.burst('grain', { ...on, count: 160, outward: 1.4, up: .4, speed: .8, life: [.8, 1.6], colour: pale });
-      }
+        // The powder lifts off them and hangs round, where the spikes set; sparks run through it.
+        g.burst('grain', { ...on, count: 220, outward: 1.1, up: .3, speed: .5, life: [.4, .8], colour: pale });
+        if (g.get('crackle')) g.burst('crackle', { ...on, count: 50, outward: 2.2, up: 1, speed: 1.5, life: [.15, .4] });
+        shard(id, seconds);
+      });
       return true;
     },
-    /** The shards come off `ids` and nobody else's: the set in use is hidden, and whoever keeps theirs has them laid again, for what they had left. */
+    /** The specks between the spikes come off `ids` and nobody else's: the set in use is hidden, and whoever keeps theirs has them laid again, for what they had left. */
     unshard(ids: readonly string[]) {
       const g = gpu();
       if (!g || !ids.some(id => sharded.has(id))) return false;
@@ -567,28 +577,55 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
       shardSet = nextSet(shardUntil, shardSet);
       g.define(`shardling-${shardSet}`, POWDER_KINDS.shardling);
       sharded.clear();
-      for (const [id, s] of keep) shard(id, Math.max(1, s.left), s.pale);
+      for (const [id, s] of keep) shard(id, Math.max(1, s.left));
       return true;
     },
     /**
-     * What `id` carries of the ánima's (its powder, its shards) leaves it quietly, nothing shown going (Atractor extraño takes it
-     * somewhere else). Returns the powder's mix, if it had any, for wherever it is put down again.
+     * What `id` carries of the ánima's (its powder, its spikes) leaves it quietly, nothing shown going (Atractor extraño takes it
+     * somewhere else; `trackShards` sets the spikes on wherever they arrive). Returns the powder's mix, if it had any, for wherever
+     * it is put down again.
      */
     lift(id: string): PowderMix | undefined {
       const mix = powdered.get(id)?.mix;
       coming.delete(id);
       take([id]);
       api.unshard([id]);
+      spikes.drop(id);
+      toldShards.delete(id); toldLevel.delete(id);
       return mix;
     },
     /** How long `id`'s shards have left, if it has any. */
     shardsOn(id: string) { return sharded.get(id)?.left; },
-    /** A blow lands on someone full of shards: a few are knocked out of `id`. */
+    /** A blow lands on someone full of shards: the spikes in `id` go in deeper, and chips fly off. */
     splinter(id: string, strength = 1) {
       const g = gpu(), f = who(id);
+      spikes.drive(id);
       if (!g || !f || f.index < 0) return false;
-      g.burst('splinter', { at: f.feet, shape: 'surface', fighter: f.index, above: .2, count: Math.round(14 * strength), outward: 3.4, up: 1.6, speed: 1.6, life: [.5, 1.1] });
+      g.burst('splinter', { at: f.feet, shape: 'surface', fighter: f.index, above: .2, count: Math.round(10 * strength), outward: 3, up: 1.6, speed: 1.6, life: [.5, 1.1] });
       return true;
+    },
+    /**
+     * The fight's own word, every frame: `id`'s Cristalizado (its level and seconds left), or
+     * `undefined` for none. What is shown follows it after `GRACE`: spikes form on whoever has it
+     * with none shown, catch up with its level, and shatter off whoever no longer has it.
+     */
+    trackShards(id: string, shards: { level: number; left: number } | undefined) {
+      const on = !!shards, last = toldShards.get(id);
+      if (!last || last.on !== on) toldShards.set(id, { on, since: now });
+      const settled = now >= held && now - toldShards.get(id)!.since >= GRACE;
+      if (!shards) { if (spikes.has(id) && settled) spikes.shatter(id); return; }
+      // Whoever is Cristalizado shows its spikes, however it came (a dúo, the picker): after the grace
+      // a reaction has to show them itself, they form; a level reached with no blow shown, they catch up.
+      if (spikes.has(id)) {
+        spikes.hold(id, shards.left + GRACE);
+        const lag = toldLevel.get(id);
+        if (spikes.level(id) === Math.min(5, shards.level)) toldLevel.delete(id);
+        else if (lag === undefined) toldLevel.set(id, now);
+        else if (now - lag >= GRACE) { spikes.setLevel(id, shards.level); toldLevel.delete(id); }
+      } else if (settled) {
+        const f = who(id);
+        if (f) { spikes.crystallise(id, f.model, shards.left + GRACE, 0, shards.level); toldLevel.delete(id); }
+      }
     },
     /** The powder comes off `id` with nothing to show for it (its 20 seconds are over). */
     settle(id: string) { return take([id]); },
@@ -608,8 +645,8 @@ export function createPowderFx(app: pc.AppBase, effects: Effects, scene: PowderS
     /** Who is covered in powder now. */
     get powdered() { return [...powdered.keys()]; },
     /** Takes the powder off everyone (what is in the air and on the floor goes on its own). */
-    clear() { strip(); powdered.clear(); if (sharded.size) api.unshard([...sharded.keys()]); timers.length = 0; screens.clear(); coming.clear(); told.clear(); toldScreen.clear(); held = 0; },
-    destroy() { api.clear(); app.off('update', update); },
+    clear() { strip(); powdered.clear(); if (sharded.size) api.unshard([...sharded.keys()]); timers.length = 0; screens.clear(); coming.clear(); told.clear(); toldScreen.clear(); toldShards.clear(); toldLevel.clear(); spikes.clear(); held = 0; },
+    destroy() { api.clear(); spikes.destroy(); app.off('update', update); },
   };
   function update(dt: number) {
     now += dt;
