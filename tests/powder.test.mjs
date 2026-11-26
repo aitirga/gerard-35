@@ -293,3 +293,35 @@ test('Fin de fiesta: bought at the jar, it wakes once the powder has been all th
   assert.equal(finaleReady(s), false); assert.ok(!skills().includes('fin-de-fiesta'));
   turn(s, 'aitor'); assert.equal(act(s, 'skill', undefined, 'fin-de-fiesta'), undefined);
 });
+
+test('Fin de fiesta: every way the powder turns counts to wake it, Atractor extraño bringing a fire to it and a beat of Corriente alterna too', () => {
+  // Atractor extraño: the fire of another foe comes to the powdered one and sets it off; that is the third thing it has been.
+  const s = fight(['prismatico:definitiva', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'matemagico:atractor']);
+  s.finale = { seen: ['veneno', 'cristal'] };
+  powder(s, 0); inflict(s.foes[1], 'quemado');
+  turn(s, 'gerard');
+  const e = act(s, 'skill', 'dog-0', 'atractor');
+  assert.equal(e.gathered[0].reactions[0].id, 'estallido');
+  assert.equal(e.awoken, 'fin-de-fiesta'); assert.equal(finaleReady(s), true);
+  // Powder that comes to a wet foe turns into poison there, and counts the same.
+  const w = fight(['prismatico:definitiva', 'matemagico:angulo', 'matemagico:analisis', 'matemagico:cardioide', 'matemagico:mana-1', 'matemagico:atractor']);
+  w.foes[0].timed = { mojado: { level: 1, left: 20, next: 20 } }; powder(w, 1);
+  turn(w, 'gerard'); act(w, 'skill', 'dog-0', 'atractor');
+  assert.deepEqual(w.finale.seen, ['veneno']);
+  // Corriente alterna: a beat is a bolt for the reactions, so on powder it makes shards, out of anyone's turn.
+  const c = fight(['prismatico:definitiva']);
+  c.finale = { seen: ['estallido', 'veneno'] };
+  powder(c, 1);
+  c.circuits = [{ poles: ['dog-1', 'dog-0'], by: 'gerard', beat: 0, left: 20, next: 5 }];
+  c.phase = 'player';
+  const beat = runClock(c, 5.01).find(p => p.status === 'alterna');
+  assert.equal(beat.target, 'dog-1'); assert.equal(beat.reaction.id, 'cristal');
+  assert.equal(beat.awoken, 'fin-de-fiesta'); assert.equal(finaleReady(c), true);
+  // Without Colorista worn by someone standing, nothing is counted.
+  const off = fight(['prismatico:definitiva']);
+  by(off, 'aitor').hp = 0; powder(off, 1);
+  off.circuits = [{ poles: ['dog-1', 'dog-0'], by: 'gerard', beat: 0, left: 20, next: 5 }];
+  off.phase = 'player';
+  assert.equal(runClock(off, 5.01).find(p => p.status === 'alterna').reaction.id, 'cristal');
+  assert.equal(off.finale, undefined);
+});
