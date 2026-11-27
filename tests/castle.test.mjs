@@ -209,7 +209,12 @@ test('held, Aitor plays her side: player 2 picks his blow from his own kit, and 
   queen.hp = 0; castleAfter(undefined, state);
   const aitor = state.allies.find(a => a.id === 'aitor'), gerard = state.allies.find(a => a.id === 'gerard');
   assert.equal(aitor.castle?.held, 'reina');
-  const moves = heldMoves(state, aitor);
+  assert.equal(aitor.hp, aitor.maxHp, 'taking him, she cures him whole');
+  // While she has him every stat of his is half as much again, and his summary says why.
+  const { statShifts } = await import('../src/battle.ts');
+  const fuerza = statShifts(state, aitor).find(sh => sh.stat === 'fuerza');
+  assert.ok(fuerza && fuerza.way === 'up' && fuerza.from.includes('Suyo') && fuerza.amount === Math.round(aitor.stats.fuerza * .5));
+    const moves = heldMoves(state, aitor);
   assert.deepEqual([moves[0].action, moves.at(-1).action], ['attack', 'defend'], 'Atacar first, Defender last, his skills between');
   // His own blow, on her turn: it lands on Gerard and the fight goes on, hers.
   state.phase = 'enemy'; state.enemyActions = [];

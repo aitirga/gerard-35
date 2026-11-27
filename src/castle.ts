@@ -490,7 +490,8 @@ export type Hand = keyof typeof HANDS;
  * stands she takes `pompaTras` of everything; burst, it costs her a turn and `pompaRota` of her PV;
  * after `pompaRounds` rounds it is `pompaBlow` on everyone, and on each round it grows its skin drips
  * a pegote on one of the party, `pompaGotea` of hers (no turn of hers goes by empty).
- * With Aitor held, his blow on Gerard is `aitor`, and `aitorGrows` more of it each turn she has him. On
+ * With Aitor held, his blow on Gerard is `aitor`, and `aitorGrows` more of it each turn she has him; taking
+ * him she cures him whole, and while she has him his stats are `suyo` times his own. On
  * her way back she has `reinaVuelta` of her PV.
  */
 export const CASTLE = {
@@ -504,7 +505,7 @@ export const CASTLE = {
   expediente: 18, horario: 6, circular: 16, conducida: 1.8, actaEvery: 4, resolucion: 85, cargoEvery: 4, voto: 1.3,
   respaldo: .2, respaldoBelow: .5, respaldoEvery: 2, readmision: .25, readmisionTurns: 2,
   manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 70, mano: .25, aplastar: 44,
-  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, pompaGotea: .3, aitor: 30, aitorGrows: .35, reinaVuelta: .7, reinaFuria: 1, reinaVueltaPv: 2.5,
+  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, pompaGotea: .3, aitor: 30, aitorGrows: .35, suyo: 1.5, reinaVuelta: .7, reinaFuria: 1, reinaVueltaPv: 2.5,
 };
 /** `reinaFuria`: how much harder her hands and her pegotes land on the way back (not La Pompa, not Aitor's blows); `reinaVueltaPv`: her whole PV on the way back, times the first fight's. */
 /** How much of her PV the Queen has when the party comes back with the artilugio (70 % since 2026-11-26, so her hands come out again first; it was 40 %). */

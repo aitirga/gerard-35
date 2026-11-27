@@ -1950,7 +1950,7 @@ export const TARGETS: readonly Target[] = [
   // her tenth. Played, Yuki's ward takes a blow that would have brought someone down, and she needs two rounds more to bring
   // the party down; banned, the same party falls sooner. Measured 2026-11-26 (200 fights): woken in about half of them, the
   // ward taking a killing blow a third of the times (the proposal's floor, .3), 13.2 rounds against 11.1.
-  { id: 'reina-con-siete-vidas', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [12.2, 15], happens: { 'siete-vidas': [.3, 1] }, why: 'Con Aitor en Papagato, la herida cortada hasta cinco y gastada despierta Siete vidas, y Yuki se queda con el equipo: el golpe que iba a tumbar a alguien lo cura. La Reina tarda dos rondas más en tumbarlos.' },
+  { id: 'reina-con-siete-vidas', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [11.6, 15], happens: { 'siete-vidas': [.3, 1] }, why: 'Con Aitor en Papagato, la herida cortada hasta cinco y gastada despierta Siete vidas, y Yuki se queda con el equipo: el golpe que iba a tumbar a alguien lo cura. La Reina tarda dos rondas más en tumbarlos.' },
   { id: 'reina-sin-custodia', fight: 'reina', party: FULL_DICE, ...FLOOR_3, policy: 'smart', ban: ['siete-vidas'], win: [0, 0], roundsLost: [10, 11.5], happens: { 'siete-vidas': [0, 0] }, why: 'Sin Siete vidas, el primer golpe que mata, mata: la Reina tumba al mismo equipo dos rondas antes.' },
   // Bajo cero (Freática's definitiva). PLAN.md (Aitor, 2026-11-25) holds it with `delegada-bajo-cero-bien` against
   // `delegada-bajo-cero-sin-ella`, and `reina-con-bajo-cero` as a guard. The Delegada of the third floor cannot hold it as
@@ -1962,7 +1962,7 @@ export const TARGETS: readonly Target[] = [
   // (`ICE_PARTY`, so it is not `reina-toma-a-aitor` again). Bajo cero is cast in two of three fights (`ICE_WAKE_WORTH`)
   // and her ice holds her for up to a minute, but it must not skip her phases: she still gets to her tenth and takes
   // Aitor (`suyo`). Its counterpart with it banned says what the ice is worth there.
-  { id: 'reina-con-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [19.5, 26], happens: { congela: [.55, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. Aun así ella pasa por cada fase, llega a su décimo y se lleva a Aitor.' },
+  { id: 'reina-con-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', win: [0, 0], roundsLost: [18.5, 26], happens: { congela: [.55, 1], suyo: [2.5, 12] }, why: 'Con Gerard en Freática, el agua de la Reina en la tercera marca despierta Bajo cero, y su hielo la deja sin actuar hasta un minuto. Aun así ella pasa por cada fase, llega a su décimo y se lleva a Aitor.' },
   { id: 'reina-sin-bajo-cero', fight: 'reina', party: ICE_PARTY, ...FLOOR_3, policy: 'smart', ban: ['bajo-cero'], win: [0, 0], roundsLost: [13, 17], happens: { congela: [0, 0] }, why: 'Sin Bajo cero, la misma agua solo moja y hunde: la Reina tumba al mismo equipo unas siete rondas antes.' },
   // Fin de fiesta (Colorista's definitiva), held in the Queen's first fight (Aitor, 2026-11-26: every definitiva's pair in a
   // long boss fight). Her layers (fire, water, electric fillings) have the party strike with each element in turn, so the

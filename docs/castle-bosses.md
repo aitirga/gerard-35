@@ -226,6 +226,9 @@ order).
   possession is what nearly beating her brings. Lost to her before her tenth, it is an ordinary
   fall, with no call from Bernat; at her tenth she takes him even if he is down, and no blow can
   take her past it (`beaten` looks at her first).
+- **Taking him she cures him whole, and while she has him every stat of his is 1.5 times his own**
+  (`CASTLE.suyo`, Aitor 2026-11-28): her strength in him, shown on his card as a rise from «Suyo».
+  Freed, his stats are his again and the PV stay.
 - Built so far: his blow on Gerard comes on her turn (`CASTLE.aitor`, growing each turn she has
   him). **Player 2 plays that turn** (built 2026-11-19, a full turn on her side): his commands
   cross to the right of the fight in possession's violet, and they are **the same control as his own

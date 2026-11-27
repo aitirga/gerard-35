@@ -1114,8 +1114,8 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
     if ((m.stage === 'pompa' || m.stage === 'manos' || m.stage === 'chicle') && queen.hp <= floor && aitor && !f.freed) {
       queen.hp = floor; m.stage = 'aitor'; queen.turns = 0; delete m.pompa; delete queen.intent; delete m.gum; delete m.stunned; burst();
       for (const hand of hands) if (hand.hp > 0) { hand.hp = 0; mark(hand).told = true; release(hand.id, ''); }
-      // Down or not, he is hers: she lifts him to half his PV, so the moment cannot be skipped.
-      if (aitor.hp <= 0) aitor.hp = Math.ceil(aitor.maxHp / 2);
+      // Down or not, he is hers: she cures him whole, so the moment cannot be skipped (and his stats are `CASTLE.suyo` times his own while she has him, src/battle.ts `current`).
+      aitor.hp = aitor.maxHp;
       mark(aitor).held = 'reina'; aitor.guarding = false;
       if (!state.spent?.includes(aitor.id)) (state.spent ??= []).push(aitor.id);
       delete state.queued?.[aitor.id];

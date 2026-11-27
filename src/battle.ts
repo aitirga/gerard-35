@@ -4,7 +4,7 @@ import type { AnimaId } from './animas.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, grown, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, gapAt, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
-import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
+import { CASTLE, CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
 import { castleAffinity, castleBlow, castleConfused, castleProp, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
@@ -2002,6 +2002,8 @@ function current(state: BattleState, c: Combatant, cut = true): Stats {
   for (const mark of Object.values(c.marks ?? {})) {
     if (mark && mark.until >= state.round) stats = withBonus(stats, Object.fromEntries(mark.stats.map(stat => [stat, -mark.amount])));
   }
+  // Held by the Queen, Aitor fights with her strength too: every stat `CASTLE.suyo` times his own.
+  if (c.castle?.held === 'reina') stats = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, k === 'pv' ? v : Math.round(v * CASTLE.suyo)])) as Stats;
   if (c.lasting) stats = withBonus(stats, c.lasting.shifts);
   if (c.evening) stats = withBonus(stats, c.evening.shifts);
   for (const id of STATUS_IDS) {
@@ -2042,6 +2044,8 @@ export function statShifts(state: BattleState, c: Combatant): StatShift[] {
     // Ases en dúo adds as much Crítico again as they have.
     for (const stat of ability.stats) add(stat, 'double' in ability ? ownCrit(state, c) / 2 : side.boosts![ability.id]!.amount, boostRounds(side, ability.id), ability.name);
   }
+  // Held by the Queen: half as much again of every stat, for as long as she has him.
+  if (c.castle?.held === 'reina') for (const stat of STAT_ORDER) add(stat, Math.round(c.stats[stat] * (CASTLE.suyo - 1)), 0, 'Suyo');
   // Racha: Crítico for as long as it is kept, so with no rounds.
   if (rachaOf(c)) add('critico', rachaOf(c) * RACHA.crit, 0, `Racha ${rachaOf(c)}`);
   for (const [id, mark] of Object.entries(c.marks ?? {}) as [SkillId, NonNullable<Combatant['marks']>[SkillId]][]) {
