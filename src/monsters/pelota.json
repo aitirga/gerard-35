@@ -1,0 +1,11 @@
+{
+  "id": "pelota",
+  "name": "El Pelota",
+  "glb": "models/monsters/pelota.glb",
+  "clips": {
+    "walking": "models/monsters/pelota-walking.glb",
+    "running": "models/monsters/pelota-running.glb",
+    "actions": "models/monsters/pelota-actions.glb"
+  },
+  "height": 1.3
+}

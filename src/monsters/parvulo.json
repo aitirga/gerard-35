@@ -1,0 +1,11 @@
+{
+  "id": "parvulo",
+  "name": "Párvulo",
+  "glb": "models/monsters/parvulo.glb",
+  "clips": {
+    "walking": "models/monsters/parvulo-walking.glb",
+    "running": "models/monsters/parvulo-running.glb",
+    "actions": "models/monsters/parvulo-actions.glb"
+  },
+  "height": 0.75
+}

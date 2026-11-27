@@ -1,0 +1,11 @@
+{
+  "id": "mayor",
+  "name": "El Mayor",
+  "glb": "models/monsters/mayor.glb",
+  "clips": {
+    "walking": "models/monsters/mayor-walking.glb",
+    "running": "models/monsters/mayor-running.glb",
+    "actions": "models/monsters/mayor-actions.glb"
+  },
+  "height": 2.1
+}

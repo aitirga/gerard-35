@@ -383,6 +383,58 @@ height = 2.4
 [repetidor-tercero.view_notes]
 back = "Hot pink rolls of gum over its back, spotted with black pustules and black rot."
 
+# The pupils of the second and third floors' new rooms (docs/castle.md § Bestiary, 2026-11-27): two that
+# fall to one blow (a Párvulo of La Fila, El Pelota) and two that do not (El Estirón, El Mayor). The same
+# family: gum in a pupil's shape, no face, never a joke.
+[parvulo]
+name = "Párvulo"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+SECOND YEAR, older gum: the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a cold water blue. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest. The face bubble is a dull dark pink.
+THIS ONE, one of the nursery class, the smallest thing in the school (the game shows three or four of them in a row): the height of a three-year-old and with a three-year-old's proportions, a body too short under a face bubble too big and too round for it, short thick legs, standing very still with its feet together. Its smock is far too long and pools on the floor. Its right arm is held straight up above its head, as a small child's is when a grown-up holds its hand, and the small fist is closed round a loop of thick gum cord, the walking rope of a nursery class, which hangs down past its side to the floor and trails away, torn at the end. Its left arm hangs. Nothing cute about it: it is too still, too symmetrical, and the face pressed into the bubble from inside is an adult's, tired, far too big for the body."""
+# Its own walk from Meshy's library, to chase the party.
+animations = [112]
+height = 0.75
+[parvulo.view_notes]
+right = "The raised arm and the loop of gum cord in its fist are on this side; the cord hangs to the floor."
+
+[pelota]
+name = "El Pelota"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+SECOND YEAR, older gum: the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows an electric yellow. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest. The face bubble is a dull dark pink.
+THIS ONE, the toady, the one who flatters whoever is in charge: thin and narrow-shouldered, of a twelve-year-old's height, bent forward from the waist in a permanent half bow, knees a little bent, its long-fingered hands clasped together in front of its chest, wringing. Its neck is stretched forward and up, so that its face bubble, small and smooth and polished to a wet shine unlike the others' matte gum, is tilted up towards someone much taller than itself. A long thin strand of gum runs from its clasped hands up to its own face bubble, like a thread of spit. Its smock is the neatest of all of them, the folds sharp and even, the hem straight. Its back is worn smooth and shiny from bowing. It is not funny: it is servile, and it is watching."""
+# Its own walk from Meshy's library, to chase the party.
+animations = [524]
+height = 1.3
+[pelota.view_notes]
+left = "In profile it is a hook: the bowed back, the neck reaching forward and up, the hands clasped under the chin."
+right = "In profile it is a hook: the bowed back, the neck reaching forward and up, the hands clasped under the chin."
+
+[estiron]
+name = "El Estirón"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+SECOND YEAR, older gum: the gum gone a deep bruised plum-maroon and set harder, split by a few big cracks through which its filling glows a deep fire orange. A manila paper file tag hangs from its wrist on a string, and a round registry stamp in dark navy ink is pressed into its chest. The face bubble is a dull dark pink.
+THIS ONE, the growth spurt, a pupil that has grown too fast: very tall and painfully thin, all limbs, as if a child's body had been taken by the head and the feet and pulled. Legs twice too long, forearms and shins stretched thin as rope, big knobbly knees and elbows, hands and feet too big for the limbs, narrow sloping shoulders, a long neck. Where the gum was pulled thinnest, at the shins, the forearms, the waist and the neck, it has gone pale and almost see-through, with stretch marks and small tears through which the orange filling glows. The smock is far too small for it, and it is gum like the rest of it, the same bruised plum, with no print, no stripes, no badge, no logo and no other colour: only the folds of a collar and a hem moulded in the gum, the hem ending above the waist and the sleeves at the elbows, split at the seams. The face bubble is small, high up, and droops a little forward, as if it had to stoop under a ceiling. It stands awkwardly, arms hanging, not knowing where to put its hands."""
+# Its own walk from Meshy's library, to chase the party.
+animations = [111]
+height = 1.9
+[estiron.view_notes]
+back = "The split seams of the too-small smock run up its back, the stretched pale waist showing below the hem."
+
+[mayor]
+name = "El Mayor"
+kind = "monster"
+about = """One of La Reina Bubbaloo's pupils: chewed bubble gum moulded into the shape of a school pupil. Not a real child and not a person: a thing of gum that has copied one. The school smock is only hinted by a few big folds and a hem in the gum itself. Where the face should be there is no face, only a taut smooth bubble of gum with the faint hollow imprint of a face pressed into it from inside: no eyes, no mouth, no nose. Its feet melt into the floor in thick strings of gum.
+THIRD YEAR, the Queen's own gum gone bad: loud, saturated hot bubble-gum pink, more gum than ever, stretchy, with the soft sheen of freshly chewed gum, bubbles swelling and half-burst on it and long stretched strings; and at the same time rotting: big patches of black spreading through the pink like necrosis, clusters of big black pustules and blisters, each the size of a fist, black veins in the stretched parts, hard black crust at the edges of the burst bubbles. Strong contrast: hot pink against black, nothing grey.
+THIS ONE, the oldest pupil, the big one the little ones follow: as tall as a grown man and heavier, with a wide heavy chest and thick arms held a little out from the body, standing square, feet planted apart. Thick cords of gum, the walking ropes of a nursery class, are wound several times round each of his big fists like a dog handler's leashes, and their ends hang to the floor and trail away behind him, each ending in a small empty loop. All over his legs and the hem of his smock, up to the height of his hips and no higher, the gum is dented with dozens of small handprints, pressed in deep, where small hands have held on to him. His face bubble is big and half burst, black at the torn edge, and tilted down, looking at something small at his feet."""
+# Its own walk from Meshy's library, to chase the party.
+animations = [113]
+height = 2.1
+[mayor.view_notes]
+back = "The cords from both fists trail away behind him along the floor; the small handprints cover the backs of his legs too."
+
 
 # Las cuerdas (docs/quests/marta.md § Monsters): the qualities Marta lost, with nobody to govern them. Each
 # `about` opens with the same sentence; the fight keeps what moves by hand (src/cuerdas-foes.ts): La
