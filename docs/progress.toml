@@ -553,7 +553,7 @@ grep = "music/marta-voz.m4a"
 in = "src/song.ts"
 
 [[block.item]]
-title = "Marta: La Voz ataca con su canción (cada nota una habilidad, solo herible en sus silencios)"
+title = "Marta: La Voz ataca con su canción (cada nota una habilidad, solo herible en sus huecos)"
 # docs/quests/marta.md § Final boss: each of the six notes is a beam with its element; holding on lasts until acting again.
 grep = "VOZ_NOTES"
 in = "src/battle.ts"

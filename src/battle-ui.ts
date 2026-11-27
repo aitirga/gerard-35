@@ -2,8 +2,8 @@ import { clickControllerButton } from './controller-ui';
 import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
-import { TONES, VOZ_SONG, turnAt } from './song';
-import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, COLMENA, hiveOn, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse } from './battle';
+import { TONES, VOZ_SONG, gapEdgesOf, turnAt } from './song';
+import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, COLMENA, hiveOn, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse, MARTA, silenceAt, VOZ_GAPS } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -415,7 +415,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // La Voz angered by blows that went through her while she sang: whom her next note goes at, and how hard.
       case 'enfado': return { id: 'enfado', name: `Enfado: su siguiente nota va a por ${state!.allies.find(a => a.id === c.enfado!.at)?.name ?? 'quien la enfadó'} y pega más`, mark: c.enfado!.level > 1 ? String(c.enfado!.level) : '', timed: false, lasts: 'su siguiente nota' };
       // La Voz's song, a status that never runs out: its ring is the phrase, its hand where the song is, its corner her Crescendo.
-      case 'cancion': return { id: 'cancion', name: `Canción: ${songLabel(state!)}. Solo recibe daño en sus silencios.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] };
+      case 'cancion': return { id: 'cancion', name: `Canción: ${songLabel(state!)}. Solo recibe daño en los huecos de su canción.`, mark: c.crescendo ? String(c.crescendo) : '', timed: true, lasts: VOZ_PARTS[state!.song!.part] };
       // El que no converge, converged: it takes every blow whole for the turns in its corner.
       case 'converge': return { id: 'converge', name: 'Converge: recibe el golpe entero', mark: String(c.converged), timed: false, lasts: `${c.converged} ${c.converged === 1 ? 'turno' : 'turnos'}` };
       // El Átomo: its turns to its Reacción, in the corner; at 1 its next turn throws every electron it has at once.
@@ -705,17 +705,20 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     const tune = c.kind === 'voz' && state?.song ? plate.querySelector<HTMLElement>('.status-icon[data-status="cancion"]') : null;
     if (tune && state?.song) {
       // The ring is the turn of her phrase she is singing, each note an arc in its colour and each
-      // silence a gap, in her recording's rhythm; the hand goes round once a turn.
-      const turn = turnAt(VOZ_SONG, state.song.t), { length } = turn, now = songNow(state)!;
+      // gap (a silence and the edges of the notes round it, VOZ_GAPS) a break, in her recording's
+      // rhythm; the hand goes round once a turn.
+      const turn = turnAt(VOZ_SONG, state.song.t), { length } = turn, now = songNow(state)!, closed = now.sounding && !silenceAt(now);
       tune.style.setProperty('--left', (1 - (state.song.t - turn.start) / length).toFixed(4));
-      tune.style.setProperty('--status', now.sounding ? TONES[now.tone].colour : '#7f97a3');
-      tune.toggleAttribute('data-sounding', now.sounding);
-      const key = turn.start.toFixed(3);
+      tune.style.setProperty('--status', closed ? TONES[now.tone].colour : '#7f97a3');
+      tune.toggleAttribute('data-sounding', closed);
+      const key = `${turn.start.toFixed(3)}:${MARTA.hueco}:${MARTA.ligado}`;
       if (tune.dataset.ticks !== key) {
         tune.dataset.ticks = key;
         const arcs = turn.beats.map((beat, i) => {
-          const from = beat.at / length * 360, to = (beat.at + beat.sing) / length * 360, next = (turn.beats[i + 1]?.at ?? length) / length * 360;
-          return `#1b1216 ${from}deg, ${TONES[beat.tone].colour} ${from}deg ${to}deg, #1b1216 ${to}deg ${next}deg`;
+          const open = gapEdgesOf(VOZ_SONG, beat.index, VOZ_GAPS), next = (turn.beats[i + 1]?.at ?? length) / length * 360;
+          const start = beat.at / length * 360, sung = Math.max(0, beat.sing - open.head - open.tail);
+          const from = (beat.at + Math.min(open.head, beat.sing)) / length * 360, to = (beat.at + Math.min(open.head, beat.sing) + sung) / length * 360;
+          return `#1b1216 ${start}deg ${from}deg, ${TONES[beat.tone].colour} ${from}deg ${to}deg, #1b1216 ${to}deg ${next}deg`;
         });
         tune.style.setProperty('--ticks', `conic-gradient(${arcs.join(', ')})`);
       }

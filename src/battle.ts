@@ -3,7 +3,7 @@ import { adjustResource } from './combat/engine.ts';
 import type { AnimaId } from './animas.ts';
 import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, grown, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
-import { TONES, VOZ_SONG, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
+import { TONES, VOZ_SONG, gapAt, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
 import { castleAffinity, castleBlow, castleProp, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
@@ -616,9 +616,10 @@ export const CAMPING = {
  * Lo Directo goes round DIRECTO_TURNS: Golpe directo (`directo`), En línea recta on everyone
  * (`linea`), and an Estocada (`estocada`) that leaves it stuck until its next turn: every blow on it
  * lands `clavado` times as hard.
- * La Voz (docs/quests/marta.md § Final boss): a blow only lands in one of her silences; while a note
- * sounds it goes through her. A blow pressed up to `hueco` seconds into a note that came after a
- * silence still counts as that silence (the ear hears her start a little late). Every note she sings
+ * La Voz (docs/quests/marta.md § Final boss): a blow only lands in one of her gaps; while a note
+ * sounds it goes through her. A gap is each silence and `hueco` seconds of the notes on each side of
+ * it (she lets a note go and takes it up again), and, even where she sings on, `ligado` seconds on
+ * each side of every change of note with no silence (the voice breaks as it moves). Every note she sings
  * is a move of hers, a beam of it at whom she sings that turn of her phrase at, whoever struck her last
  * in the turn before (VOZ_NOTES): `vozDo`, `vozSol` (water,
  * it wets), `vozFa` (a bolt; on someone wet it runs through the water, `vozConduce`, and may leave
@@ -640,7 +641,7 @@ export const MARTA = {
   // Her song is Marta's recording (src/song.ts): some 64 notes in 87 s, each one a beam, so each is small and her
   // Magia (13) against the party's Espíritu does the rest: light on Gerard (13), heavy on Aitor (10); Re, a physical
   // blow, the other way round. Each Crescendo is a quarter point of Magia (2026-11-20, `just fight-sim`).
-  vozDo: 2, vozSol: 1, vozFa: 2, vozConduce: 6, vozRe: 4, vozSib: 1, vozLa: 1, hueco: .1,
+  vozDo: 2, vozSol: 1, vozFa: 2, vozConduce: 6, vozRe: 4, vozSib: 1, vozLa: 1, hueco: .3, ligado: .15,
   crescendo: .25, acorde: 1.5, coro: 32, calderon: 30,
   allegro: .6, capela: .25, enfado: 3, enfadoMost: 3,
 };
@@ -2497,15 +2498,12 @@ function songAim(state: BattleState): Moment {
   return songAt(VOZ_SONG, aim !== undefined && aim <= t && t - aim <= AIM_KEPT ? aim : t);
 }
 /**
- * The silence of La Voz's song at moment `m`: which one (the note it follows, and the turn round that
- * note is in), or nothing while a note sounds. A note that came after a silence still counts as it for
- * its first `hueco` seconds: the ear hears her start a little late.
+ * The gap of La Voz's song at moment `m`: which one (the note it follows, and the turn round that
+ * note is in), or nothing while a note sounds outside them. Each silence is one, with `hueco` seconds
+ * of the notes on each side; each change of note with no silence, `ligado` seconds on each side.
  */
-export function silenceAt(m: Moment): { loop: number; index: number } | undefined {
-  if (!m.sounding) return { loop: m.loop, index: m.index };
-  const last = VOZ_SONG.beats.length - 1, before = m.index ? { loop: m.loop, index: m.index - 1 } : { loop: m.loop - 1, index: last };
-  return m.into < MARTA.hueco && VOZ_SONG.beats[before.index].rest > 0 ? before : undefined;
-}
+export const VOZ_GAPS = { get rest() { return MARTA.hueco; }, get bound() { return MARTA.ligado; } };
+export const silenceAt = (m: Moment) => gapAt(VOZ_SONG, m, VOZ_GAPS);
 /** The silence a blow on La Voz falls in (when it was pressed), if she is silent then. */
 const openSilence = (state: BattleState) => state.song ? silenceAt(songAim(state)) : undefined;
 /** Whether `c` is La Voz while a note sounds: she is all voice then, and nothing hurts her. */

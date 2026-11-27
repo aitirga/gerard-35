@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import type { BattleEffect, Combatant, CuerdasKind, FoeAbilityId } from './battle';
+import { silenceAt, type BattleEffect, type Combatant, type CuerdasKind, type FoeAbilityId } from './battle';
 import { TONES, type Moment } from './song';
 import { buildFoeBody } from './character-model';
 import { FOE_BODIES } from './foe-bodies';
@@ -171,7 +171,7 @@ export function createCuerdasFoes(app: pc.Application) {
     /**
      * Each frame, one of Las cuerdas' foes shows its rule now. An Eco's bead goes faster and it has a
      * ring more each turn; Lo Cristalino's shards turn; Lo Directo draws its lance back at whom it
-     * said and shows its crossbar for En línea recta; La Voz is solid in a silence of `song` (the
+     * said and shows its crossbar for En línea recta; La Voz is solid in a gap of `song` (the
      * only time she can be struck) and see-through while a note sounds, lit from inside in its colour,
      * and has a ring lit behind her for each Crescendo. `animate` false snaps to it.
      *
@@ -265,8 +265,9 @@ export function createCuerdasFoes(app: pc.Application) {
           };
         }
         const v = s.voz, alive = unit.hp > 0;
-        // Solid in her silences, the only time a blow finds her; while a note sounds she is all voice, light of its colour.
-        const sounding = song ? song.sounding : !unit.silent;
+        // Solid in her gaps (a silence and the edges of the notes round it, or a change of note), the only time a blow
+        // finds her; while a note sounds outside them she is all voice, light of its colour.
+        const sounding = song ? song.sounding && !silenceAt(song) : !unit.silent;
         const there = alive && sounding ? 0 : 1;
         s.there = (s.there ?? there) + (there - (s.there ?? there)) * ease(12);
         // Taking air for her Calderón (from the turn that says it until she lets it go or it breaks); out of air after it broke.

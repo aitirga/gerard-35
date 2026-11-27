@@ -12,13 +12,13 @@ import { ANIMA_GROWTH, ANIMA_IDS, animaGrowth, type AnimaId } from './animas.ts'
 import { isBoss } from './home-lights.ts';
 import {
   ALTERNA, ANIMA_NAMES, BELL, CLASS_STATS, CRIT_RULES, BROOD, CAMPING, CONDENSADOR, MARTA, MODELO, isModelo, LUCA, dazzle, ELEMENT_RULES, POWDER_RULES, DEFEND_CHARGE, DUALS, dualTargets, REACTION_RULES, elementsFor, improve, FEAR_ENCOUNTERS, FEAR_FOES, FEAR_RULES, BROOD_ENCOUNTERS, MENTAL_STATUSES, ONIONS, SKILLS, SOBREMESA, STATUSES, VERTIGO, act, actDual, commit, createBattle, createBroodBattle,
-  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, takeNews, takeSongNews,
+  FOE_BLOW, FOE_GROWTH, LEVEL_GROWTH, FIGHT_GROWTH, gatheredFor, growFoes, createEncounter, createFearBattle, createGuardBattle, GUARDS, dualOf, dualOptions, dualPartner, enemyAct, free, pounce, isOnion, kitIn, nextRound, palaceGuards, queue, runClock, skillsFor, silenceAt, VOZ_GAPS, takeNews, takeSongNews,
   takeQueued, validTargets, wearAnima, aimed, markSpent, shake, rachaOf, RACHA, ecoWorth, CAPO_CHORD, circuitWorth, takeEcoNews, CRECIDA, waterOf, frozenOf, pulseDamage, firePulses, COMBUSTION, GAS, gasOf,
   ultiProgress, awakeUlti, warded, iceBreakPower, DICED, suggested, foundOf, FOUND, COUP, PASSIVES, stacks, HORAS_EXTRA, affords, overtime, tired, bodies,
   type BattleAction, type BattleEffect, type BattleState, type BroodEncounter, type ClassId, type DualId, type DualSpec, type Element, type PassiveId, type FoeKind, type PartySlot, type SkillId, skillKnown, bombPower, BOMBA, COLMENA, type Combatant , TIMED as STATUS_TIMED , CEGADO } from './battle.ts';
 import { FRIEND_ECOS, IMPROVEMENTS, costOf, improvedBy, withinEcos } from './ecos.ts';
 import { HEAL, PROFILES, type ProfileId } from './stats.ts';
-import { VOZ_SONG, songAt, untilSilence } from './song.ts';
+import { VOZ_SONG, songAt, untilGap } from './song.ts';
 import { ARTILUGIO_NOTES, CASTLE, STRONG, CASTLE_LIGHTS, CASTLE_UNLOCKS, isCastle, levelCap, type GrowthStage, type MontonForm, type RoomEncounter } from './castle.ts';
 import { castleStrong } from './castle-fight.ts';
 import { FOE_XP, LEVELLED, LEVEL_XP, XP_RULES, levelForXp, topOf } from './levels.ts';
@@ -1290,8 +1290,8 @@ function ahead(state: BattleState, partnerId: string, setup: Setup, random: () =
 }
 /**
  * La Voz (docs/quests/marta.md § Final boss): how often each kind of player waits for one of her
- * silences before a blow, the shortest silence worth waiting for (`ROOM`) and how far into it the
- * press comes (`REACT`, seconds). `smart` holds on while she sings at them and her next silence is
+ * gaps (`VOZ_GAPS`) before a blow, the shortest gap worth waiting for (`ROOM`) and how far into it the
+ * press comes (`REACT`, seconds). `smart` holds on while she sings at them and her next gap is
  * more than `DENSE` seconds away.
  */
 const TIMED: Record<Policy, number> = { attack: 0, random: 0, casual: .5, smart: 1 };
@@ -1417,7 +1417,7 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
       let held: Choice | undefined;
       const voz = state.foes.find(f => f.kind === 'voz' && f.hp > 0), alone = !state.foes.some(f => f.hp > 0 && f.kind !== 'voz');
       if (state.song && voz && alone && !ready && !waiting) {
-        const me = state.allies[state.active], gap = () => untilSilence(VOZ_SONG, state.song!.t, ROOM);
+        const me = state.allies[state.active], gap = () => untilGap(VOZ_SONG, state.song!.t, VOZ_GAPS, ROOM);
         if (setup.policy === 'smart' && voz.facing === me.id && !me.guarding && gap() > DENSE && !setup.ban?.includes('defend')) held = { action: 'defend' };
         else if (gap() > 0 && random() < TIMED[setup.policy]) {
           tick(gap() + REACT); watch();
@@ -1822,12 +1822,12 @@ export const TARGETS: readonly Target[] = [
   // La Voz, the mission's boss (2026-11-20: each note she sings is a beam, and she is only hurt in her silences). Who
   // strikes while she sings loses the blow; who stands in her song while she sings at them takes every note whole, and the
   // water and the bolt on top (Conducción, Shock); the Acorde (both inside the same silence) is what shortens it.
-  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.65, .92], hpLeftWon: [.15, .45], roundsWon: [7, 16], why: 'La Voz, leyendo la canción: pegar en sus silencios, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar. Desde 2026-11-26 aguanta más: se gana casi siempre, pero justo.' },
+  { id: 'voz-bien', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', win: [.85, 1], hpLeftWon: [.25, .6], roundsWon: [7, 16], why: 'La Voz, leyendo la canción: pegar en sus huecos, los dos en el mismo si se puede, y cubrirse mientras canta a uno y tarda en callar. Desde 2026-11-27 sus huecos son más anchos y tiene menos PV: se gana casi siempre.' },
   { id: 'voz-sin-cubrirse', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['defend'], win: [.5, 1], why: 'Pegando bien pero sin cubrirse nunca, sus notas entran enteras y con el agua y el rayo encima: cuesta bastante más.' },
   { id: 'voz-sin-duales', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'smart', ban: ['duals'], win: [.35, 1], hpLeftWon: [.1, .45], why: 'Sin ataques duales también se gana, más largo: el Crescendo ya aprieta al final.' },
-  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana.' },
+  { id: 'voz-sin-pensar', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'casual', win: [0, .15], why: 'Quien pega mientras canta la atraviesa y pierde el golpe, y no se cubre cuando las notas van a por él: casi nunca gana, aunque sus huecos sean más anchos.' },
   { id: 'voz-a-punetazos', fight: 'voz', party: DUO, ...AT_MARTA, policy: 'attack', win: [0, .02], why: 'Sin mirar la canción no hay manera.' },
-  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, ...AT_MARTA, policy: 'smart', win: [.25, .8], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada silencio, y Aitor con poco Espíritu se lleva caras sus notas.' },
+  { id: 'voz-con-tecnopata', fight: 'voz', party: TECH, ...AT_MARTA, policy: 'smart', win: [.5, .95], why: 'Con dos ánimas de magia y sin duales cuesta más: menos golpe en cada hueco, y Aitor con poco Espíritu se lleva caras sus notas.' },
   // The four open missions done last (2026-11-21, the final pass): each fight that asks a question, held at the other end of the story too.
   ...doneLast('camping-negra', 'La parcela negra', UNI_LAST, { win: [.85, 1], hpLeftWon: [.15, .6] }, NEW_WATER, [.7, 1], [0, .2]),
   ...doneLast('campeon', 'El Campeón', UNI_LAST, { win: [.9, 1], roundsWon: [3, 11] }, NEW_WATER, [.82, 1], [0, .15]),
@@ -1835,7 +1835,7 @@ export const TARGETS: readonly Target[] = [
   ...doneLast('cuerdas-lealtad', 'La Lealtad', MARTA_LAST, { win: [.85, 1] }, NEW_WATER, [.75, 1], [0, .2]),
   // With its two newest ánimas at level 1 it is the cliff it always was (docs/fight-sim.md § The final pass, as done); whole games win it 92 % at the first try.
   ...doneLast('cuerdas-directo', 'Lo Directo', MARTA_LAST, { win: [.9, 1] }, NEW_WATER, [.55, 1], [0, .3]),
-  // La Voz with 720 PV (2026-11-26): its two newest ánimas win it 60 % (200 fights), at the edge of what was asked; the floor went to 55 %.
+  // La Voz with 660 PV and wider gaps (2026-11-27): its two newest ánimas win it about 90 %.
   ...doneLast('voz', 'La Voz', MARTA_LAST, { win: [.8, 1], roundsWon: [4.5, 14] }, NEW_WATER, [.55, 1], [0, .3]),
   ...doneLast('no-converge', 'El que no converge', EMILIE_LAST, { win: [.66, 1], roundsWon: [5.5, 13] }, NEW_SONG, [.78, 1], [0, .1]),
   ...doneLast('luca-sillones', 'Los capellanes', LUCA_LAST, { win: [.88, 1] }, NEW_TIDE, [.78, 1], [0, .3]),

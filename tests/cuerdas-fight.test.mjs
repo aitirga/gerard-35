@@ -239,7 +239,7 @@ const afterBound = () => { let clock = 0; for (const [i, beat] of VOZ_SONG.beats
 
 test('La Voz is only hurt in her silences: while a note sounds a blow goes through her, maná spent', () => {
   const s = fight('voz'), voz = s.foes[0], beat = VOZ_SONG.beats[0];
-  sing(s, .3);
+  sing(s, .7);
   assert.equal(songLabel(s), 'Nota · Do'); assert.ok(singing(s, voz));
   as(s, 'gerard');
   const hp = voz.hp, mana = ally(s, 'gerard').secondary, miss = act(s, 'skill', 'voz', 'foc-binari');
@@ -256,14 +256,27 @@ test('La Voz is only hurt in her silences: while a note sounds a blow goes throu
   assert.ok(act(s, 'attack', 'voz').amount > 0);
 });
 
-test('a blow pressed just as she starts again still counts as the silence before, never one after a bound note', () => {
+test('her gaps reach into her notes: `hueco` on each side of a silence, `ligado` on each side of a bound change of note', () => {
   const s = fight('voz'), voz = s.foes[0];
+  // Taking a note up again after a silence, and letting the one before it go.
   sing(s, afterSilence() + MARTA.hueco / 2);
   assert.ok(songNow(s).sounding); assert.ok(!singing(s, voz));
   sing(s, afterSilence() + MARTA.hueco * 1.5);
   assert.ok(singing(s, voz));
-  sing(s, afterBound() + MARTA.hueco / 2);
+  const silent = VOZ_SONG.beats.findIndex((_, i) => i && VOZ_SONG.beats[i - 1].rest > .2), letGo = afterSilence() - VOZ_SONG.beats[silent - 1].rest;
+  sing(s, letGo - MARTA.hueco / 2);
+  assert.ok(songNow(s).sounding); assert.ok(!singing(s, voz));
+  // Even where she sings on, the voice breaks as it moves: a shorter gap at each bound change.
+  sing(s, afterBound() + MARTA.ligado / 2);
+  assert.ok(songNow(s).sounding); assert.ok(!singing(s, voz));
+  sing(s, afterBound() - MARTA.ligado / 2);
+  assert.ok(songNow(s).sounding); assert.ok(!singing(s, voz));
+  sing(s, afterBound() + MARTA.ligado * 2);
   assert.ok(singing(s, voz));
+  // A blow in a bound gap lands, and the gap is the note it follows, for the Acorde.
+  sing(s, afterBound() + MARTA.ligado / 2);
+  as(s, 'gerard');
+  assert.ok(act(s, 'attack', 'voz').amount > 0);
 });
 
 test('a blow is judged when it was pressed: one pressed in a silence lands though it plays after a note started', () => {

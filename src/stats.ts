@@ -83,13 +83,14 @@ export const PROFILES = {
    * a wall, an Eco frail, Lo Cristalino has spirit to spare (magic does nothing to it anyway),
    * Lo Directo hits. La Voz is all of them, and hard to hit (only in her silences), but with little
    * Defensa and Espíritu: what finds her hurts, and her Enfado (battle.ts MARTA) answers whoever
-   * strikes her while she sings (2026-11-21, `just fight-sim`).
+   * strikes her while she sings (2026-11-21, `just fight-sim`). Since 2026-11-27 wider gaps and fewer
+   * PV (Aitor: easier to hit).
    */
   lealtad: base(290, 12, 9, 15, 12),
   eco: base(50, 12, 12, 8, 8),
   cristalino: base(300, 10, 13, 10, 14),
   directo: base(530, 16, 10, 11, 10),
-  voz: base(720, 12, 15, 5, 7),
+  voz: base(660, 12, 15, 5, 7),
   /**
    * The castle (docs/castle.md § Bestiary, docs/castle-bosses.md): the Queen's pupils in their first
    * year (src/castle.ts `CASTLE` scales the others), Aurelià and his lectern, one of Dirección, the

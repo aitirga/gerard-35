@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TONES, VOZ_RECORDING, VOZ_SONG, duty, onsets, phraseLength, recordingAt, songAt, turnAt, untilNote } from '../src/song.ts';
+import { TONES, VOZ_RECORDING, VOZ_SONG, duty, gapAt, onsets, phraseLength, recordingAt, songAt, turnAt, untilGap, untilNote } from '../src/song.ts';
 
 test('her song has silences, and a note sounding most of the time', () => {
   const d = duty(VOZ_SONG);
@@ -61,5 +61,19 @@ test('no note is pink or violet', () => {
     const [r, g, b] = [1, 3, 5].map(i => parseInt(tone.colour.slice(i, i + 2), 16));
     // Pink and violet: red and blue both well over green.
     assert.ok(!(r > g + 40 && b > g + 40), tone.name);
+  }
+});
+
+test('the wait for a gap and the gap at each moment agree, round the end of the song too', () => {
+  const edges = { rest: .3, bound: .15 }, open = t => !!gapAt(VOZ_SONG, songAt(VOZ_SONG, t), edges), length = phraseLength(VOZ_SONG);
+  for (let t = 0; t < length + 3; t += .37) {
+    const wait = untilGap(VOZ_SONG, t, edges, .2);
+    assert.ok(open(t + wait + .005), `open at ${t} + ${wait}`);
+    assert.ok(open(t + wait + .195), `still open .2 s later (${t})`);
+  }
+  // Even bound, every change of note opens a gap.
+  for (const [i, beat] of VOZ_SONG.beats.entries()) if (beat.rest === 0) {
+    const end = VOZ_SONG.beats.slice(0, i + 1).reduce((sum, b, j) => sum + b.sing + (j < i ? b.rest : 0), 0);
+    assert.ok(open(end - .05) && open(end + .05), `bound change after note ${i}`);
   }
 });

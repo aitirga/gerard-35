@@ -209,15 +209,19 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
 
 ### The fight (built 2026-11-20, `MARTA`, `VOZ_NOTES` and `voiceNote` in `src/battle.ts`)
 
-- **She is only hurt in her silences.** While a note sounds she is all voice: a blow goes through her
-  (nothing, and the maná is spent), and a fire or a wound on her takes nothing.
+- **She is only hurt in her gaps.** While a note sounds she is all voice: a blow goes through her
+  (nothing, and the maná is spent), and a fire or a wound on her takes nothing. A gap is each silence
+  and the edges of the notes round it: `hueco` (0.3 s) of the note before a silence, as she lets it
+  go, and of the one after, as she takes it up again; and, **even where she sings on**, `ligado`
+  (0.15 s) on each side of every change of note with no silence, where the voice breaks as it moves
+  (Aitor 2026-11-27: easier to hit, with 660 PV instead of 720). The ring on her plate draws the gaps
+  as breaks between the notes' arcs, and goes grey in them (`VOZ_GAPS`, `gapAt` in `src/song.ts`).
 - **A blow that goes through her angers her** (Enfado, Aitor 2026-11-21): «Se enfada» over her and a
   status on her plate, and her next note goes at whoever angered her, whomever she was singing at,
   `enfado` times as hard more for each grade (three blows through her before a note at most), and
-  spends it. Its number says «· Enfado»; holding on still takes two thirds off. A blow pressed in the
-  first tenth of a second of a note that came after a silence still counts as that silence (`hueco`,
-  the ear hears her start a little late). **A blow is judged when it is pressed**, not when it plays:
-  a blow confirmed in a silence lands even if it waits behind the partner's (`song.aim`).
+  spends it. Its number says «· Enfado»; holding on still takes two thirds off. **A blow is judged
+  when it is pressed**, not when it plays: a blow confirmed in a gap lands even if it waits behind
+  the partner's (`song.aim`).
 - **Every note she sings is a beam of it**, from her throat, in the note's colour, at **whom she sings
   that turn of her phrase at**. The plate says it («Canta → Gerard»); she sings each turn at whoever
   struck her last in the turn before, and the fight says so as the turn starts («Le canta»), so
@@ -241,9 +245,9 @@ slows and catches up with it), and `VOZ_SONG` in `src/song.ts` has every note.
   whoever she sings at holds on; where she leaves room (1, 4, 8) both strike in her silences.
 - ***Crescendo***: every time the phrase comes round, her Magia goes up a quarter of a point, and
   every note with it. No ceiling: the fight cannot be sat out.
-- ***Acorde*** (the players' side): a second blow from **the other** fighter inside the same silence
-  lands half as hard again. With silences of a fifth of a second to a second, the two players press
-  together on purpose.
+- ***Acorde*** (the players' side): a second blow from **the other** fighter inside the same gap
+  lands half as hard again. With gaps of a third of a second to a second and a half, the two players
+  press together on purpose.
 - **Her own turns** (`VOZ_TURNS`): in *Andante* none, her song is all she does. In *Allegro* (from 60 %
   of her PV) ***Coro***, once: a **second voice** beside her, an Eco of her own (few PV, its
   Resonancia growing) that sings at the one she is not singing at and can be struck while she sings.

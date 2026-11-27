@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, actDual, ALTERNA, circuitWorth, createBattle, createFearBattle, enemyAct, eyeOpen, improve, runClock, stageMoment, takeNews, TIMED } from '../src/battle.ts';
+import { act, actDual, ALTERNA, circuitWorth, createBattle, createFearBattle, enemyAct, eyeOpen, improve, runClock, silenceAt, stageMoment, takeNews, TIMED } from '../src/battle.ts';
+import { VOZ_SONG, songAt } from '../src/song.ts';
 import { improvedBy } from '../src/ecos.ts';
 
 // Corriente alterna (Matemágico's Cortocircuito + Sincopante's Crescendo, docs/animas/matemagico/README.md § Duals): the
@@ -264,8 +265,11 @@ test('a beat La Voz\'s song swallows spends no wound: the first that reaches the
   s.foes[1].statuses = { ...s.foes[1].statuses, sangrado: 5 };
   actDual(s, 'corriente-alterna', 'dog-0');
   s.phase = 'player';
-  // dog-1 is all voice for the first beat, as La Voz is while a note sounds.
-  s.foes[1].kind = 'voz'; s.song = { t: .3 };
+  // dog-1 is all voice for the first beat, as La Voz is while a note sounds outside her gaps.
+  const beatAt = TIMED.alterna.every, sung = t => [-.05, 0, .05].every(d => !silenceAt(songAt(VOZ_SONG, t + beatAt + d)));
+  let from = 0;
+  while (!sung(from)) from += .05;
+  s.foes[1].kind = 'voz'; s.song = { t: from };
   const swallowed = runClock(s, TIMED.alterna.every + .01).filter(p => p.status === 'alterna' && p.target === 'dog-1');
   assert.ok(swallowed.length && swallowed.every(p => p.amount === 0 && p.bled === undefined && !p.awoken));
   assert.equal(s.foes[1].statuses.sangrado, 5, 'the wound is still there');

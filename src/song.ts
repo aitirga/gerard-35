@@ -126,33 +126,79 @@ export function turnStarts(phrase: Phrase): number[] {
   phrase.beats.forEach((beat, index) => { if (index === 0 || beat.round) starts.push(clock); clock += beat.sing + beat.rest; });
   return starts;
 }
-/** Seconds from `t` until a silence with at least `room` seconds of it left (0 if in one now). */
-export function untilSilence(phrase: Phrase, t: number, room = 0): number {
-  const now = songAt(phrase, t);
-  if (!now.sounding && now.left >= room) return 0;
-  let wait = now.sounding ? now.left : now.left + phrase.beats[(now.index + 1) % phrase.beats.length].sing;
-  for (let step = now.sounding ? 0 : 1; step <= phrase.beats.length; step++) {
-    const index = (now.index + step) % phrase.beats.length, beat = phrase.beats[index];
-    if (beat.rest >= room && beat.rest > 0) return wait;
-    wait += beat.rest + phrase.beats[(index + 1) % phrase.beats.length].sing;
-  }
-  return wait;
-}
 /** The share of a phrase in which a note sounds. */
 export const duty = (phrase: Phrase) => phrase.beats.reduce((sum, b) => sum + b.sing, 0) / phraseLength(phrase);
+
+/**
+ * How far a gap in a song reaches into its notes (La Voz, src/battle.ts MARTA): `rest` seconds of the
+ * note before a silence and of the one after it, and `bound` seconds on each side of a change of note
+ * with no silence between them.
+ */
+export interface GapEdges { rest: number; bound: number }
+/** Seconds of the end of note `index` (and of the start of the next) that the gap after it takes. */
+const edgeAfter = (phrase: Phrase, index: number, edges: GapEdges) => phrase.beats[index].rest > 0 ? edges.rest : edges.bound;
+/**
+ * The gap of the song moment `m` is in, named by the note it comes after (and the turn round that
+ * note is in), or nothing while a note sounds outside every gap. Every change of note is one: its
+ * silence, if it has one, and `edges` of the notes on each side; a note short enough to be all edges
+ * belongs to the gap nearer it.
+ */
+export function gapAt(phrase: Phrase, m: Moment, edges: GapEdges): { loop: number; index: number } | undefined {
+  if (!m.sounding) return { loop: m.loop, index: m.index };
+  const last = phrase.beats.length - 1, before = m.index ? { loop: m.loop, index: m.index - 1 } : { loop: m.loop - 1, index: last };
+  const head = m.into < edgeAfter(phrase, before.index, edges), tail = m.left <= edgeAfter(phrase, m.index, edges);
+  if (head && tail) return m.into < m.left ? before : { loop: m.loop, index: m.index };
+  return head ? before : tail ? { loop: m.loop, index: m.index } : undefined;
+}
+/** The gaps of each note of a turn as `turnAt` draws it: seconds of its start and of its end that are open. */
+export function gapEdgesOf(phrase: Phrase, index: number, edges: GapEdges): { head: number; tail: number } {
+  const before = (index + phrase.beats.length - 1) % phrase.beats.length;
+  return { head: edgeAfter(phrase, before, edges), tail: edgeAfter(phrase, index, edges) };
+}
+const gapCache = new WeakMap<Phrase, Map<string, [number, number][]>>();
+/** Where the gaps of one go of the phrase are, as seconds into it, joined where they touch (cached). */
+function gapSpans(phrase: Phrase, edges: GapEdges): [number, number][] {
+  const key = `${edges.rest}:${edges.bound}`, byPhrase = gapCache.get(phrase) ?? new Map<string, [number, number][]>();
+  gapCache.set(phrase, byPhrase);
+  const known = byPhrase.get(key);
+  if (known) return known;
+  const raw: [number, number][] = [], { beats } = phrase;
+  let start = 0;
+  beats.forEach((beat, index) => {
+    const edge = edgeAfter(phrase, index, edges), next = beats[(index + 1) % beats.length], end = start + beat.sing;
+    raw.push([end - Math.min(edge, beat.sing), end + beat.rest + Math.min(edge, next.sing)]);
+    start = end + beat.rest;
+  });
+  const spans: [number, number][] = [];
+  for (const span of raw) {
+    const last = spans[spans.length - 1];
+    if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]); else spans.push([...span]);
+  }
+  byPhrase.set(key, spans);
+  return spans;
+}
+/** Seconds from `t` until a gap with at least `room` seconds of it left (0 if in one now). */
+export function untilGap(phrase: Phrase, t: number, edges: GapEdges, room = 0): number {
+  const length = phraseLength(phrase), spans = gapSpans(phrase, edges), at = ((Math.max(0, t) % length) + length) % length;
+  for (const lap of [-length, 0, length, 2 * length]) for (const [from, to] of spans) {
+    const s = from + lap, e = to + lap, begin = Math.max(s, at);
+    if (e - begin >= room && e > at) return begin - at;
+  }
+  return length;
+}
 
 /**
  * The turn of the phrase `t` is in, for drawing it: where it starts and how long it is (seconds into
  * the song), and its notes from its start. A phrase with no `round` beats is one turn.
  */
-export function turnAt(phrase: Phrase, t: number): { start: number; length: number; beats: { at: number; sing: number; tone: ToneId }[] } {
+export function turnAt(phrase: Phrase, t: number): { start: number; length: number; beats: { at: number; sing: number; tone: ToneId; index: number }[] } {
   const total = phraseLength(phrase), loop = Math.floor(Math.max(0, t) / total), at = Math.max(0, t) - loop * total;
-  const turns: { start: number; length: number; beats: { at: number; sing: number; tone: ToneId }[] }[] = [];
+  const turns: { start: number; length: number; beats: { at: number; sing: number; tone: ToneId; index: number }[] }[] = [];
   let clock = 0;
   phrase.beats.forEach((beat, index) => {
     if (index === 0 || beat.round) turns.push({ start: clock, length: 0, beats: [] });
     const turn = turns[turns.length - 1];
-    turn.beats.push({ at: clock - turn.start, sing: beat.sing, tone: beat.tone });
+    turn.beats.push({ at: clock - turn.start, sing: beat.sing, tone: beat.tone, index });
     clock += beat.sing + beat.rest;
     turn.length = clock - turn.start;
   });
