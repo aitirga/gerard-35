@@ -692,8 +692,11 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       const grows = 1 + CASTLE.aitorGrows * (actor.turns! - 1);
       const move = state.castle?.aitorMove; if (state.castle) delete state.castle.aitorMove;
       // Player 2 plays him, on her side, with his own kit (docs/castle-bosses.md § Aitor, held).
+      let did = '';
       if (move) {
         const before = gerard.hp, done = kit.heldAct(state, aitor, move), hurt = before - gerard.hp;
+        // Whatever he chose that does not hurt Gerard (a cure, a boost on her side, a blow that misses) it does, and the thread of gum pulls his arm anyway.
+        if (done && move.action !== 'defend' && state.message) did = `${state.message} `;
         if (done && hurt > 0) {
           const extra = gerard.hp > 0 ? kit.changeHealth(gerard, -Math.round(hurt * (grows - 1))) : 0;
           effect.actor = aitor.id; effect.amount = hurt - extra;
@@ -702,12 +705,10 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
           forsaken(state);
           return;
         }
-        // Whatever he chose that does not hurt Gerard, the thread of gum pulls his arm anyway.
-        if (done) state.message = 'Aitor duda. ';
       }
       const raw = physical(Math.round(CASTLE.aitor * grows), kit.current(state, aitor), kit.current(state, gerard));
       effect.amount = kit.changeHealth(gerard, -(gerard.guarding ? Math.ceil(raw / 3) : raw));
-      state.message = `${move ? 'Aitor duda. El hilo de chicle tira de su brazo y' : 'Aitor, con los ojos violeta,'} golpea a ${gerard.name} con todo lo que sabe. −${effect.amount} PV.`;
+      state.message = `${move ? `${did || 'Aitor duda. '}El hilo de chicle tira de su brazo y` : 'Aitor, con los ojos violeta,'} golpea a ${gerard.name} con todo lo que sabe. −${effect.amount} PV.`;
       forsaken(state);
       return;
     }

@@ -3,7 +3,7 @@ import { statusSvg, type IconId } from './status-icons';
 import { GUIDES, GUIDE_GROUPS, guideIcon, guideState, guideVersion, isGuide, type GuideId, type GuidesSeen } from './status-guide';
 import type { ControlAction } from './controller';
 import { TONES, VOZ_SONG, gapEdgesOf, turnAt } from './song';
-import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldMoves, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, COLMENA, hiveOn, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse, MARTA, silenceAt, VOZ_GAPS } from './battle';
+import { affords, tired, overtime, ECOS, GRADE_NAMES, ecosOf, ecoMuffled, takeEcoNews, type EcoNews, PASSIVES, COMBUSTION, AFFINITIES, ELEMENT_RULES, POWDER_RULES, cortinaRounds, awakeUlti, ultiProgress, MANA_LEVEL, elementOf, type Affinity, type FoeKind, diceOf, dieUse, faceUse, bestDie, spareDie, shake, shakesLeft, rachaOf, meteorOf, RACHA, DICED, isCuerdas, attackElement, chooseElement, cycleElement, elementsFor, ELEMENTS, improve, manaMax, woundScale, scentOf, SCENT, markLeft, markSpent, kitIn, DUALS, dualTargets, dualSingle, dualPartner, takeTurn, dualOf, dualReady, createEncounter, DISHES, act, actDual, aimed, awaken, BEAT_HP, boostedStats, boostRounds, commit, dualCost, dualOptions, statNames, intentLabel, isOnion, isSobremesa, planMost, NOTES, childParty, cornered, escapeShown, enemyAct, nextRound, queue, queuedDual, roman, runClock, skillsFor, SKILLS, STAGED_MOMENTS, stageMoment, STAT_SHORT, statShifts, STATUSES, songLabel, songNow, switchAnima, VOZ_PARTS, takeNews, takeSongNews, TIMED, validTargets, WEAK_SPOT, weakSpotRounds, wearAnima, wearsAnimas, type ClassId, type DualBlock, type DualId, type DualSpec, type Element as AttackElement, type Encounter, type GuardStrength, type Improved, type PartySlot, type Queued, type SkillId, type StagedMoment, type BattleAction, type BattleEffect, type BattleState, type Combatant, type StatShift, type StatusId, type Timed, type TimedId, SIGNS, reactionIn, FEAR_ENCOUNTERS, FOE_ABILITIES, vozNote, takeLightNews, lightNow, lampLit, shirtLit, LAMPS, lightEats as lightEatsNow, dieSkill, faceAs, heldAnima, heldView, ANIMA_NAMES, ANIMA_OWNERS, canWear, free, type DieFace, CRECIDA, BOMBA, COLMENA, hiveOn, stageWater, ORBITAL_BLIND, plateMarks, type PlateMark, IGNITION_GAP, type ElementReaction, type TimedPulse, MARTA, silenceAt, VOZ_GAPS } from './battle';
 import { LIGHTS, cancels, lightAt, upcoming, WALKS, walkLength } from './vidrieras';
 import { animaOf, CLASSES, grownUp } from './classes';
 import { BATTLE_LINES } from './chapter-1';
@@ -2980,8 +2980,9 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     }
     // Aitor held, played from the keyboard (alone, or with no second pad): its arrows and Enter.
     if (heldChoice && heldDriver() === 1) {
-      const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm' } as Record<string, ControlAction>)[event.key];
-      if (action) { event.preventDefault(); event.stopPropagation(); heldControl(action); }
+      const action = ({ ArrowUp: 'up', ArrowDown: 'down', Enter: 'confirm', ' ': 'confirm', Escape: 'cancel', q: 'prev', Q: 'prev', e: 'next', E: 'next', x: 'element', X: 'element' } as Record<string, Parameters<typeof heldControl>[0]>)[event.key];
+      if (action && !(event.repeat && action !== 'up' && action !== 'down')) { event.preventDefault(); event.stopPropagation(); heldControl(action); }
+      else if (/^[1-9]$/.test(event.key) && !event.repeat && heldChoice.rows[Number(event.key) - 1]) { event.preventDefault(); event.stopPropagation(); heldChoice.at = Number(event.key) - 1; showHeld(); runHeld(); }
       return;
     }
     // The summary is anyone's to open and close, at any moment (R, or Esc while it is open).
@@ -2998,36 +2999,93 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     if (!state || foe.kind !== 'reina' || foe.castle?.stage !== 'aitor' || foe.castle?.stunned) return undefined;
     return state.allies.find(a => a.castle?.held === 'reina' && a.hp > 0);
   }
-  let heldChoice: { moves: HeldMove[]; at: number; done: (move: HeldMove) => void; panel: HTMLElement } | undefined;
+  /** A row of Aitor's commands on her side: what it says, why it cannot be now (`off`), and what choosing it does. */
+  interface HeldRow { label: string; note?: string; off?: boolean; colour?: string; run: () => void }
+  /** Where his commands are: the list (`main`), the dice of his hand for a skill that spends one, or whom to aim at. */
+  type HeldStep = { kind: 'main' } | { kind: 'dice'; skill: SkillId } | { kind: 'target'; move: HeldMove };
+  let heldChoice: { held: Combatant; step: HeldStep; rows: HeldRow[]; at: number; done: (move: HeldMove) => void; panel: HTMLElement } | undefined;
   /** Who plays him: his own driver (player 2), or player 1 alone or while player 2 has no pad. */
   const heldDriver = (): PlayerId => callbacks.waiting('aitor') ? 1 : callbacks.driver('aitor');
   /**
-   * Aitor's commands on her side, on the right of the screen, in possession's violet: Atacar, his
-   * skills aimed at a foe (Gerard, for him now) that he can pay for, Defender. Whatever he picks, the
-   * thread makes him hurt Gerard (src/castle-fight.ts).
+   * Aitor's commands on her side, on the right of the screen, in possession's violet: his own turn,
+   * the same control as ever, against Gerard (docs/castle-bosses.md § Aitor, held). Atacar with the
+   * element he picks, every skill of the ánima he wears (Dadista's with the die they spend, Agitar,
+   * an awake definitiva), Defender; L / R change his ánima and △ / X Atacar's element, free, the turn
+   * still his. Whatever he picks, if it does not hurt Gerard the thread makes him (src/castle-fight.ts).
    */
   function chooseHeld(held: Combatant, token: number) {
     return new Promise<HeldMove>(resolve => {
-      const moves = heldMoves(state!, held);
       const panel = document.createElement('section');
       panel.className = 'held-menu';
       panel.dataset.glyphPlayer = String(heldDriver());
-      const label = (move: HeldMove) => move.action === 'attack' ? 'Atacar' : move.action === 'defend' ? 'Defender' : SKILLS.find(s => s.id === move.skill)?.name ?? move.skill!;
-      panel.innerHTML = `<p class="held-kicker">AITOR · SUYO</p><h2>Contra ${escapeHtml(state!.allies.find(a => a !== held && a.hp > 0)?.name ?? 'Gerard')}</h2>`
-        + `<ol>${moves.map((move, i) => `<li><button type="button" data-held="${i}">${escapeHtml(label(move))}${move.action === 'skill' ? `<small>${SKILLS.find(s => s.id === move.skill)?.cost ?? ''} maná</small>` : ''}</button></li>`).join('')}</ol>`
-        + `<p class="held-hint" data-glyph-template="{updown} Elegir · {confirm} Confirmar"></p>`;
       root.append(panel);
       const finish = (move: HeldMove) => { panel.remove(); heldChoice = undefined; render(); resolve(move); };
-      heldChoice = { moves, at: 0, done: finish, panel };
+      heldChoice = { held, step: { kind: 'main' }, rows: [], at: 0, done: finish, panel };
       panel.addEventListener('click', event => {
         const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-held]');
-        if (button && heldChoice) finish(heldChoice.moves[Number(button.dataset.held)]);
+        if (button && heldChoice) { heldChoice.at = Number(button.dataset.held); runHeld(); }
       });
-      showHeld();
+      fillHeld();
       // A fight closed meanwhile leaves nobody to choose: let the turn go.
-      const watch = () => { if (token !== generation && heldChoice?.panel === panel) finish(moves[0]); else if (heldChoice?.panel === panel) requestAnimationFrame(watch); };
+      const watch = () => { if (token !== generation && heldChoice?.panel === panel) finish({ action: 'attack' }); else if (heldChoice?.panel === panel) requestAnimationFrame(watch); };
       requestAnimationFrame(watch);
     });
+  }
+  /** What he picked, aimed: at once when there is only one to reach (Gerard, or himself on her side), else whom. */
+  function aimHeld(move: HeldMove) {
+    const h = heldChoice!, view = heldView(state!, h.held);
+    const spec = SKILLS.find(sk => sk.id === move.skill);
+    const targets = move.action === 'attack' ? validTargets(view, 'attack') : validTargets(view, 'skill', move.skill as SkillId, move.die);
+    if (move.action === 'defend' || targets.length < 2 || spec?.side === 'party' || spec?.side === 'all-foes') { h.done(move); return; }
+    h.step = { kind: 'target', move }; h.at = 0; fillHeld();
+  }
+  /** The rows of the step he is on, as his own menu would have them. */
+  function heldRows(): HeldRow[] {
+    const h = heldChoice!, s = state!, held = h.held, view = heldView(s, held);
+    if (h.step.kind === 'target') {
+      const move = h.step.move;
+      const targets = move.action === 'attack' ? validTargets(view, 'attack') : validTargets(view, 'skill', move.skill as SkillId, move.die);
+      return [...targets.map(t => ({ label: t.name, note: `${t.hp} PV`, run: () => h.done({ ...move, target: t.id }) })), { label: 'Volver', run: () => backHeld() }];
+    }
+    if (h.step.kind === 'dice') {
+      const skill = h.step.skill, paying = !faceUse(skill);
+      return [...diceOf(view, held).map((face, i) => {
+        const as = faceAs(held, face), usable = paying || (!!dieSkill(view, i) && validTargets(view, 'skill', skill, i).length > 0);
+        const line = face === 'blanco' ? as ? `Repite ${FACE_NAMES[as]}` : 'Nada que repetir' : FACE_LINES[face];
+        return { label: FACE_NAMES[face], note: line, off: !usable, run: () => aimHeld({ action: 'skill', skill, die: i }) };
+      }), { label: 'Volver', run: () => backHeld() }];
+    }
+    const element = attackElement(s, held);
+    const rows: HeldRow[] = [{ label: 'Atacar', note: element ? ELEMENTS[element].name : undefined, colour: element ? ELEMENTS[element].colour : undefined, run: () => aimHeld({ action: 'attack' }) }];
+    for (const skill of skillsFor(view, held)) {
+      const affordable = affords(view, held, skill.cost);
+      if ('free' in skill) {
+        // Agitar: the hand again, and the turn stays his.
+        const uses = shakesLeft(view, held), usable = uses > 0 && diceOf(view, held).length > 0;
+        rows.push({ label: skill.name, note: !uses ? 'Usado' : usable ? uses === 1 ? '1 vez' : `${uses} veces` : 'Sin dados', off: !usable, run: () => shakeHeld() });
+        continue;
+      }
+      const available = validTargets(view, 'skill', skill.id).length > 0;
+      const note = !affordable ? 'Sin maná' : !available ? skill.kind === 'boost' ? 'En marcha' : 'Sin objetivo' : 'ulti' in skill ? 'Definitiva' : overtime(view, held) && skill.cost ? 'Horas extra' : `${skill.cost} maná`;
+      rows.push({ label: skill.name, note, off: !affordable || !available, run: () => dieUse(skill.id) ? (h.step = { kind: 'dice', skill: skill.id }, h.at = Math.max(0, faceUse(skill.id) ? bestDie(view) : spareDie(view)), fillHeld()) : aimHeld({ action: 'skill', skill: skill.id }) });
+    }
+    rows.push({ label: 'Defender', run: () => h.done({ action: 'defend' }) });
+    return rows;
+  }
+  /** Draws his commands again (an ánima swapped, an element, a step in or out), keeping the cursor where it can. */
+  function fillHeld() {
+    const h = heldChoice;
+    if (!h || !state) return;
+    const held = h.held, rows = h.rows = heldRows();
+    h.at = Math.min(h.at, rows.length - 1);
+    const anima = held.classId ? animaOf(held.classId, grownUp(held.profile)).name.toUpperCase() : 'SIN ÁNIMA';
+    const swaps = kitIn(state, held).filter(id => id === held.classId || free(state!, held, id)).length > 1, elements = elementsFor(state, held).length > 0;
+    const step = h.step.kind === 'dice' ? ` · ${SKILLS.find(sk => sk.id === (h.step as { skill: SkillId }).skill)?.name.toUpperCase()}` : h.step.kind === 'target' ? ' · ¿A QUIÉN?' : '';
+    h.panel.dataset.class = held.classId ?? '';
+    h.panel.innerHTML = `<p class="held-kicker">AITOR · SUYO · ${escapeHtml(anima)}${escapeHtml(step)}</p><h2>Contra ${escapeHtml(state.allies.find(a => a !== held && a.hp > 0)?.name ?? 'Gerard')}</h2>`
+      + `<ol>${rows.map((row, i) => `<li><button type="button" data-held="${i}"${row.off ? ' aria-disabled="true"' : ''}${row.colour ? ` style="--element:${row.colour}" data-element` : ''}>${escapeHtml(row.label)}${row.note ? `<small>${escapeHtml(row.note)}</small>` : ''}</button></li>`).join('')}</ol>`
+      + `<p class="held-hint" data-glyph-template="{updown} Elegir · {confirm} Confirmar${h.step.kind === 'main' ? `${swaps ? ' · {prev} {next} ánima' : ''}${elements ? ' · {element} elemento' : ''}` : ' · {cancel} Volver'}"></p>`;
+    showHeld();
   }
   function showHeld() {
     if (!heldChoice) return;
@@ -3037,10 +3095,54 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       if (i === heldChoice!.at) b.focus({ preventScroll: true });
     });
   }
-  function heldControl(action: ControlAction) {
-    if (!heldChoice) return;
-    if (action === 'up' || action === 'down') { heldChoice.at = (heldChoice.at + (action === 'up' ? -1 : 1) + heldChoice.moves.length) % heldChoice.moves.length; showHeld(); }
-    else if (action === 'confirm') heldChoice.done(heldChoice.moves[heldChoice.at]);
+  function runHeld() {
+    const row = heldChoice?.rows[heldChoice.at];
+    if (!row) return;
+    if (row.off) { callbacks.sound('denied'); return; }
+    row.run();
+  }
+  /** Back out of the dice or the aim to his commands. */
+  function backHeld() {
+    const h = heldChoice;
+    if (!h || h.step.kind === 'main') return;
+    const skill = h.step.kind === 'dice' ? h.step.skill : h.step.move.skill;
+    h.step = { kind: 'main' }; fillHeld();
+    const at = h.rows.findIndex(r => r.label === (SKILLS.find(sk => sk.id === skill)?.name ?? 'Atacar'));
+    h.at = Math.max(0, at); showHeld();
+  }
+  /** L / R held: his previous or next ánima, free, the turn still his. */
+  function swapHeld(step: -1 | 1) {
+    const h = heldChoice;
+    if (!h || !state || h.step.kind !== 'main') return;
+    const next = heldAnima(state, h.held, step);
+    if (!next) { callbacks.sound('denied'); return; }
+    callbacks.sound('anima-swap');
+    callbacks.anima(h.held.id, next);
+    h.at = 0; render(); fillHeld();
+    flashAnima(root.querySelector(`.party-card[data-unit="${h.held.id}"] .vitals-avatar`), CLASSES[next].colour);
+  }
+  /** △ / X held: Atacar's next element, then none. */
+  function elementHeld() {
+    const h = heldChoice;
+    if (!h || !state || h.step.kind !== 'main' || !cycleElement(state, h.held)) return;
+    callbacks.sound('ui-move'); fillHeld();
+  }
+  /** Agitar held: the whole hand again, and the turn stays his. */
+  function shakeHeld() {
+    const h = heldChoice!, got = shake(heldView(state!, h.held));
+    if (!got) { callbacks.sound('denied'); return; }
+    callbacks.sound('clink'); callbacks.shakeDice?.(h.held.id);
+    pop(h.held.id, 'Agitar', 'status', got.comodin !== undefined ? '¡Comodín!' : 'Otra mano', 'racha');
+    render(); fillHeld();
+  }
+  function heldControl(action: ControlAction | 'prev' | 'next' | 'element') {
+    const h = heldChoice;
+    if (!h) return;
+    if (action === 'up' || action === 'down') { h.at = (h.at + (action === 'up' ? -1 : 1) + h.rows.length) % h.rows.length; callbacks.sound('ui-move'); showHeld(); }
+    else if (action === 'confirm') runHeld();
+    else if (action === 'cancel') backHeld();
+    else if (action === 'prev' || action === 'next') swapHeld(action === 'prev' ? -1 : 1);
+    else if (action === 'element') elementHeld();
   }
   /** A note of the artilugio (src/artilugio.ts, which also sounds it): what it did over Aitor and her. */
   function note(n: number) {
@@ -3266,6 +3368,8 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
     /** △ / Y (X on a Switch pad): the details window beside the focused skill; on the commands, or aiming Atacar, its next element. */
     details(player: PlayerId = 1) {
       if (!state || guideOpen) return;
+      // Held, his △ / Y is Atacar's element, as on his own turn.
+      if (heldChoice) { if (player === heldDriver()) heldControl('element'); return; }
       const press = () => {
         if (state!.phase === 'player' && (!selected || (selected === 'attack' && targeting))) nextElement(state!.allies[state!.active]);
         else showDetails(!details);
@@ -3280,7 +3384,7 @@ export function createBattleUI(hud: HTMLElement, callbacks: {
       // A guide card holds the fight: either player's confirm or back closes it.
       if (guideOpen) { if (action === 'confirm' || action === 'cancel') closeGuide(); return; }
       if (holdOn) { if (action === 'confirm') releaseHold(); return; }
-      if (heldChoice) { if (player === heldDriver() && action !== 'prev' && action !== 'next') heldControl(action); return; }
+      if (heldChoice) { if (player === heldDriver() && action !== 'menu') heldControl(action); return; }
       if (action === 'cancel' && summaryOpen) { toggleSummary(false); return; }
       const ended = ['won', 'lost', 'escaped'].includes(state.phase);
       if (ended) {

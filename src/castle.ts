@@ -605,9 +605,10 @@ export interface CastleMark {
  */
 /**
  * What Aitor does while the Queen holds him, chosen by player 2 on her turn (docs/castle-bosses.md
- * § Aitor, held): Atacar, one of his skills aimed at a foe (the party, for him now) or Defender.
+ * § Aitor, held): Atacar, any of his skills (with the die it spends, for Dadista's) or Defender, as on
+ * his own turn, aimed at `target` (the party are his foes now; on her side there is only himself).
  */
-export interface HeldMove { action: 'attack' | 'skill' | 'defend'; skill?: string }
+export interface HeldMove { action: 'attack' | 'skill' | 'defend'; skill?: string; die?: number; target?: string }
 export interface CastleFight {
   focus?: string; firmas?: number; cargo?: number;
   /** Dirección: the round a Respaldo was last said for (one every `CASTLE.respaldoEvery` rounds at most). */
@@ -615,6 +616,8 @@ export interface CastleFight {
   artilugio?: boolean; notes?: number; startled?: boolean; taken?: boolean; freed?: boolean;
   /** What the round's end had to say, for the next round's message. */ said?: string;
   /** Player 2's choice for Aitor on her next turn; without one (the simulators), she moves him herself. */ aitorMove?: HeldMove;
+  /** The party boosts Aitor raised on her side while she holds him: only his (src/battle.ts `heldView`). */
+  heldBoosts?: Partial<Record<string, { amount: number; until: number }>>;
 }
 
 /** Moments of the castle's fights the picker can jump to (docs/dev-tools.md), a `FightMoment` each. */

@@ -1,6 +1,6 @@
 {
   "title": "Chapter 2 · Aitor held: player 2 plays her side",
-  "description": "The first Queen at a tenth of her PV takes Aitor: his eyes go violet and, on her turn, his commands cross to her side of the fight for player 2 to play against Gerard (Atacar, his skills aimed at a foe, Defender). Whatever he picks, the thread of gum makes it hurt. Played alone here, so the keyboard drives him.",
+  "description": "The first Queen at a tenth of her PV takes Aitor: his eyes go violet and, on her turn, his commands cross to her side of the fight for player 2 to play against Gerard, with the same control as his own turn: Atacar with its element, every skill of the ánima he wears (cures and boosts on himself, Dadista's dice, an awake definitiva), Defender, and L / R (Q / E) to change ánima, never onto Gerard's. Whatever he picks, the thread of gum makes it hurt. Played alone here, so the keyboard drives him.",
   "steps": [
     {
       "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%7D"
@@ -33,7 +33,15 @@
     {
       "shot": "held-menu",
       "delay": 600,
-      "caption": "Her turn is his: his commands cross to her side, for player 2 to play against Gerard"
+      "caption": "Her turn is his: his own commands cross to her side, for player 2 to play against Gerard"
+    },
+    {
+      "press": "e"
+    },
+    {
+      "shot": "held-anima",
+      "delay": 500,
+      "caption": "R (E on the keyboard): he puts on another ánima of his, free, the turn still his; its skills fill his list"
     },
     {
       "press": "ArrowDown"
@@ -41,7 +49,7 @@
     {
       "shot": "held-pick",
       "delay": 300,
-      "caption": "One of his own skills, aimed at Gerard now"
+      "caption": "One of his own skills, aimed at Gerard now; one he cannot pay for is greyed out, as on his own turn"
     },
     {
       "press": "Enter"

@@ -228,9 +228,14 @@ order).
   take her past it (`beaten` looks at her first).
 - Built so far: his blow on Gerard comes on her turn (`CASTLE.aitor`, growing each turn she has
   him). **Player 2 plays that turn** (built 2026-11-19, a full turn on her side): his commands
-  cross to the right of the fight in possession's violet, Atacar, his skills aimed at a foe that he
-  can pay for, or Defender, and what he picks runs as his own action against Gerard (`heldAct` in
-  `src/battle.ts`), growing as hers did; picked something that does not hurt Gerard, the thread of
+  cross to the right of the fight in possession's violet, and they are **the same control as his own
+  turn, only on the other side** (Aitor, 2026-11-28): Atacar with the element he picks (△ / X), every
+  skill of the ánima he wears (cures and boosts reach himself, the only one on her side; Dadista's with
+  the die they spend; Agitar; an awake definitiva), Defender, and L / R (Q / E) to change ánima, free,
+  never onto the one Gerard wears. What he raises on her side is his alone (`castle.heldBoosts`), and
+  the party's boosts no longer reach him. What he picks runs as his own action against Gerard on a view
+  of the fight where he is the only ally (`heldView`, `heldAct` in `src/battle.ts`), growing as hers did;
+  duals need a partner, so he has none there; picked something that does not hurt Gerard, the thread of
   gum pulls his arm anyway, so the first time there is still no way out. His eyes go violet in the
   fight. Without a choice (the simulators) she moves him herself, as before. He and his card cross to
   her side (`crossOver` in `src/battle-scene.ts`, `.held-side` in `src/battle-ui.ts`, built 2026-11-20).

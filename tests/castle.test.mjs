@@ -227,6 +227,35 @@ test('held, Aitor plays her side: player 2 picks his blow from his own kit, and 
   assert.match(state.message, /hilo de chicle/);
 });
 
+test('held, Aitor keeps all of his kit on her side: his ánimas but Gerard\'s, cures on himself, dice, boosts of his own', async () => {
+  const { enemyAct, heldMoves, heldAnima, heldView, diceOf } = await import('../src/battle.ts');
+  const team = [{ id: 'gerard', name: 'Gerard', profile: 'gerard35', classId: 'matemagico' }, { id: 'aitor', name: 'Aitor', profile: 'aitor', classId: 'tecnopata', kit: ['tecnopata', 'dadaista', 'matemagico'] }];
+  const state = createFearBattle(team, 'reina', ['matemagico', 'tecnopata', 'dadaista']), queen = state.foes.find(f => f.kind === 'reina');
+  state.levels = { ...state.levels, dadaista: 5 };
+  queen.hp = 0; castleAfter(undefined, state);
+  const aitor = state.allies.find(a => a.id === 'aitor'), gerard = state.allies.find(a => a.id === 'gerard');
+  const turn = move => { state.phase = 'enemy'; state.enemyActions = []; state.castle.aitorMove = move; return enemyAct(state, queen.id); };
+  // A cure reaches the one on her side: himself, hurt. The thread still pulls his arm against Gerard.
+  aitor.hp = Math.round(aitor.maxHp / 2);
+  assert.ok(heldMoves(state, aitor).some(m => m.skill === 'rayo-sanacion'), 'his cures are on his list');
+  const hurt = aitor.hp, before = gerard.hp;
+  turn({ action: 'skill', skill: 'rayo-sanacion' });
+  assert.ok(aitor.hp > hurt, 'he cures himself');
+  assert.ok(gerard.hp < before);
+  assert.match(state.message, /Rayo de sanación[\s\S]*hilo de chicle/);
+  // L / R: free, the turn still his, never onto the ánima Gerard wears.
+  for (let i = 0; i < 3; i++) assert.notEqual(heldAnima(state, aitor, 1), 'matemagico', 'Gerard\'s ánima stays Gerard\'s');
+  if (aitor.classId !== 'dadaista') heldAnima(state, aitor, 1);
+  assert.equal(aitor.classId, 'dadaista');
+  // Dadista's dice: a boost paid with them is his, on her side, and not the party's.
+  aitor.secondary = 4; const hand = diceOf(heldView(state, aitor), aitor).length;
+  assert.ok(heldMoves(state, aitor).some(m => m.skill === 'ases-en-duo'));
+  turn({ action: 'skill', skill: 'ases-en-duo', die: 0 });
+  assert.ok(diceOf(heldView(state, aitor), aitor).length < hand, 'it spends his dice');
+  assert.ok(state.castle.heldBoosts?.['ases-en-duo'], 'kept on her side');
+  assert.equal(state.boosts?.['ases-en-duo'], undefined, 'not the party\'s');
+});
+
 test('El Ausente is only there the round after it strikes: a blow goes through it before, a fire it carried still burns', async () => {
   const { act, enemyAct } = await import('../src/battle.ts');
   const state = createFearBattle(party, 'alumnos-2d'), ausente = state.foes.find(f => f.kind === 'ausente');

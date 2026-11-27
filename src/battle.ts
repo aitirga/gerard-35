@@ -1982,6 +1982,8 @@ export function boostRounds(state: BattleState, skill?: SkillId): number {
   const boost = state.boosts?.[skill];
   return boost ? Math.max(0, boost.until - state.round + 1) : 0;
 }
+/** Whose party boosts reach `c`: the party's, or, for someone the Queen holds, their own on her side (`heldView`). */
+const boostSide = (state: BattleState, c: Combatant) => c.castle?.held === 'reina' && state.allies.includes(c) ? heldView(state, c) : state;
 /** What a boost skill raises, in words ("Fuerza y Magia"). */
 export function boostedStats(skill: SkillId) {
   const ability = SKILLS.find(s => s.id === skill);
@@ -1991,9 +1993,10 @@ const STAT_NAMES: Record<string, string> = { fuerza: 'Fuerza', magia: 'Magia', d
 /** A fighter's stats right now: the party boost adds to the allies' own, a debuff's mark takes from a foe's. */
 function current(state: BattleState, c: Combatant, cut = true): Stats {
   let stats = c.stats;
-  if (state.allies.includes(c)) for (const ability of SKILLS) {
-    if (ability.kind !== 'boost' || !boostRounds(state, ability.id)) continue;
-    const amount = state.boosts![ability.id]!.amount;
+  const side = boostSide(state, c);
+  if (side.allies.includes(c)) for (const ability of SKILLS) {
+    if (ability.kind !== 'boost' || !boostRounds(side, ability.id)) continue;
+    const amount = side.boosts![ability.id]!.amount;
     stats = withBonus(stats, Object.fromEntries(ability.stats.map(stat => [stat, amount])));
   }
   for (const mark of Object.values(c.marks ?? {})) {
@@ -2033,10 +2036,11 @@ export function statShifts(state: BattleState, c: Combatant): StatShift[] {
     const sum = sums.get(stat) ?? { amount: 0, rounds: 0, from: [] };
     sum.amount += amount; sum.rounds = Math.max(sum.rounds, rounds); sum.from.push(from); sums.set(stat, sum);
   };
-  if (state.allies.includes(c)) for (const ability of SKILLS) {
-    if (ability.kind !== 'boost' || !boostRounds(state, ability.id)) continue;
+  const side = boostSide(state, c);
+  if (side.allies.includes(c)) for (const ability of SKILLS) {
+    if (ability.kind !== 'boost' || !boostRounds(side, ability.id)) continue;
     // Ases en dúo adds as much Crítico again as they have.
-    for (const stat of ability.stats) add(stat, 'double' in ability ? ownCrit(state, c) / 2 : state.boosts![ability.id]!.amount, boostRounds(state, ability.id), ability.name);
+    for (const stat of ability.stats) add(stat, 'double' in ability ? ownCrit(state, c) / 2 : side.boosts![ability.id]!.amount, boostRounds(side, ability.id), ability.name);
   }
   // Racha: Crítico for as long as it is kept, so with no rounds.
   if (rachaOf(c)) add('critico', rachaOf(c) * RACHA.crit, 0, `Racha ${rachaOf(c)}`);
@@ -3242,7 +3246,7 @@ export function critChance(state: BattleState, actor: Combatant, target: Combata
 }
 /** `actor`'s Crítico whoever the blow is for: their own, the Racha's, `extra`, and all of it twice while Ases en dúo lasts. */
 function ownCrit(state: BattleState, actor: Combatant, extra = 0) {
-  return (current(state, actor).critico + rachaOf(actor) * RACHA.crit + extra) * (boostRounds(state, 'ases-en-duo') ? 2 : 1);
+  return (current(state, actor).critico + rachaOf(actor) * RACHA.crit + extra) * (boostRounds(boostSide(state, actor), 'ases-en-duo') ? 2 : 1);
 }
 /**
  * Un golpe de dados wakes (`coupReady`) once someone standing who wears Dadista has Crítico COUP.wake or more (`ownCrit`: the
@@ -3381,27 +3385,59 @@ const beaten = (state: BattleState) => {
 /** What src/castle-fight.ts borrows from here: this file's own stats, PV and line-up. */
 const castleKit: CastleKit = { current: (state, c) => current(state, c), changeHealth: (target, delta) => changeHealth(target, delta), foe: (id, name, kind, hp) => foe(id, name, kind, hp), lineUp: (party, unlocked) => lineUp(party, unlocked), seedFrom: random => seedFrom(random), heldAct: (state, held, move) => heldAct(state, held, move) };
 /**
- * Someone the Queen holds acting on her side (docs/castle-bosses.md § Aitor, held): their own turn,
- * driven by player 2, with their own kit against the rest of the party. The same `act` runs on a
- * view of the fight where they are the only ally and the party standing are their foes, with nobody's
- * boosts: what it does to people and to the fight's message is real; the turn order and the outcome
- * it would settle are the view's, and the caller (the Queen's turn) settles those.
+ * The fight as someone the Queen holds sees it (docs/castle-bosses.md § Aitor, held): they are the
+ * only ally and their turn is on, the party standing are their foes, and the party boosts are their
+ * own (`castle.heldBoosts`: what they raise on her side lasts its rounds, and the party's do not
+ * reach them). Everything their kit reads and does works on it as on their own turn: their skills,
+ * dice, ánimas and Atacar's element, and `act`. What it does to people and to the fight's message is
+ * real; the turn order and the outcome it would settle are the view's, and the caller (the Queen's
+ * turn) settles those.
+ */
+export function heldView(state: BattleState, held: Combatant): BattleState {
+  const local: Record<string | symbol, unknown> = { allies: [held], foes: state.allies.filter(a => a !== held && a.hp > 0), active: 0, phase: 'player' };
+  return new Proxy(state, {
+    get: (real, key) => key === 'boosts' ? real.castle?.heldBoosts : key in local ? local[key] : Reflect.get(real, key),
+    set: (real, key, value) => {
+      if (key === 'boosts') { (real.castle ??= {}).heldBoosts = value; return true; }
+      if (key in local) { local[key] = value; return true; }
+      return Reflect.set(real, key, value);
+    },
+    // Settling the view (its foes all down, or its one ally through) must not end the real fight.
+    deleteProperty: (real, key) => key === 'queued' || key === 'spent' ? true : key === 'boosts' ? (delete real.castle?.heldBoosts, true) : Reflect.deleteProperty(real, key),
+  });
+}
+/**
+ * Someone the Queen holds acting on her side: their own turn, driven by player 2, with all of their
+ * kit against the rest of the party, the same `act` on `heldView`. Aimed at whom the move says, or
+ * the first it can reach.
  */
 export function heldAct(state: BattleState, held: Combatant, move: HeldMove): BattleEffect | undefined {
-  const local: Record<string | symbol, unknown> = { allies: [held], foes: state.allies.filter(a => a !== held && a.hp > 0), active: 0, phase: 'player', boosts: undefined };
-  const view = new Proxy(state, {
-    get: (real, key) => key in local ? local[key] : Reflect.get(real, key),
-    set: (real, key, value) => { if (key in local) { local[key] = value; return true; } return Reflect.set(real, key, value); },
-    // Settling the view (its foes all down, or its one ally through) must not end the real fight.
-    deleteProperty: (real, key) => key === 'queued' || key === 'spent' ? true : Reflect.deleteProperty(real, key),
-  });
-  const foes = local.foes as Combatant[];
-  return act(view, move.action, foes[0]?.id, move.skill as SkillId | undefined);
+  const view = heldView(state, held), skill = move.skill as SkillId | undefined;
+  const targets = move.action === 'attack' ? validTargets(view, 'attack') : move.action === 'skill' ? validTargets(view, 'skill', skill, move.die) : [];
+  return act(view, move.action, (targets.find(t => t.id === move.target) ?? targets[0])?.id, skill, move.die);
 }
-/** What someone the Queen holds can do on her side: Atacar, each skill of theirs aimed at a foe that they can pay for, Defender. */
+/**
+ * What someone the Queen holds can do on her side now, as on their own turn: Atacar, every skill of
+ * theirs they can pay for and that reaches someone (on her side, themselves; on the other, the party),
+ * Defender. Agitar is not an action (`shake` on `heldView`): the turn stays theirs.
+ */
 export function heldMoves(state: BattleState, held: Combatant): HeldMove[] {
-  const aimedAtFoes = skillsFor(state, held).filter(s => (s.side === 'foes' || s.side === 'all-foes') && held.secondary >= s.cost && !dieUse(s.id));
-  return [{ action: 'attack' }, ...aimedAtFoes.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
+  const view = heldView(state, held);
+  const usable = skillsFor(view, held).filter(s => !('free' in s) && affords(view, held, s.cost) && validTargets(view, 'skill', s.id).length > 0);
+  return [{ action: 'attack' }, ...usable.map(s => ({ action: 'skill' as const, skill: s.id })), { action: 'defend' }];
+}
+/**
+ * L / R for someone the Queen holds: the previous or next ánima of theirs, free and with the turn
+ * still theirs, as on their own turn. Nobody else in the real fight may be wearing it (Gerard's stays
+ * Gerard's). Returns the new one.
+ */
+export function heldAnima(state: BattleState, held: Combatant, step: -1 | 1): ClassId | undefined {
+  if (!wearsAnimas(held)) return;
+  const list = kitIn(state, held).filter(id => id === held.classId || free(state, held, id));
+  if (list.length < 2) return;
+  const index = list.indexOf(held.classId!);
+  const next = list[index < 0 ? (step > 0 ? 0 : list.length - 1) : (index + step + list.length) % list.length];
+  return wearAnima(heldView(state, held), next) ? next : undefined;
 }
 /** A fight over: nothing queued or spent is left behind, and no cat still waits on a prey (Acecho, Arco voltaico). */
 function endFight(state: BattleState) { delete state.queued; delete state.spent; delete state.aimed; delete state.extra; for (const ally of state.allies) delete ally.stalk; }
