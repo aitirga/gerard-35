@@ -50,11 +50,11 @@ export interface RoomGroup { room: number; encounter: RoomEncounter; round: read
 export function roomGroups(floor: CastleFloor, beaten: readonly number[] = []): RoomGroup[] {
   return floor.rooms.filter(room => room.encounter && !beaten.includes(room.id)).map(room => ({ room: room.id, encounter: room.encounter!, round: roomRound(room) }));
 }
-/** The pupils' own grid: the staff room is a wall to them. */
+/** The pupils' own grid: the staff room is a wall to them, and so is the room of the floor's closed door (nobody of hers goes in there, and no chase crosses it). */
 export function pupilsGrid(floor: CastleFloor): string[] {
-  const staff = floor.rooms.find(room => room.kind === 'rest')?.rect;
-  if (!staff) return [...floor.grid];
-  return floor.grid.map((row, z) => z < staff.z || z >= staff.z + staff.d ? row : [...row].map((c, x) => x >= staff.x && x < staff.x + staff.w ? '#' : c).join(''));
+  const shut = floor.rooms.filter(room => room.kind === 'rest' || room.kind === 'puzzle').map(room => room.rect);
+  if (!shut.length) return [...floor.grid];
+  return floor.grid.map((row, z) => [...row].map((c, x) => shut.some(r => z >= r.z && z < r.z + r.d && x >= r.x && x < r.x + r.w) ? '#' : c).join(''));
 }
 /**
  * `floor` as the pupils hunt it. `light` is the light the party carries, a cell the game keeps on

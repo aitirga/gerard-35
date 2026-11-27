@@ -185,7 +185,24 @@ function pupil(kit: CastleKit, kind: PupilKind, id: string, name: string, year: 
   // El Ausente starts out of reach; El Castigado facing the wall, calm.
   if (kind === 'ausente') c.castle.away = true;
   if (kind === 'castigado') c.castle.rage = 0;
+  if (kind === 'estiron') c.castle.grown = 0;
   return c;
+}
+/**
+ * Whom El Pelota flatters: the biggest of his own still standing, if it is bigger than him (never another Pelota, never
+ * one on the floor). With nobody above him he has nobody to flatter.
+ */
+function flattered(state: BattleState, actor: Combatant) {
+  const above = state.foes.filter(f => f !== actor && alive(f) && !castleProp(f) && !f.castle?.down && f.kind !== 'pelota' && f.maxHp > actor.maxHp);
+  return above.sort((a, b) => b.maxHp - a.maxHp)[0];
+}
+/** El Pelota's plate says whom his next Peloteo is for, from the first round. */
+function planPelota(state: BattleState) {
+  for (const c of all(state, 'pelota')) {
+    if (!alive(c)) continue;
+    const big = flattered(state, c);
+    if (big) { mark(c).backs = big.id; c.intent = { ability: 'peloteo' }; } else { delete mark(c).backs; if (c.intent?.ability === 'peloteo') delete c.intent; }
+  }
 }
 /** A castle fight as it starts: a room's pupils in their year, Aurelià behind his lectern, the three of Dirección, or the Queen. */
 export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter: CastleEncounter, animas: ClassId[] | undefined, random: () => number): BattleState {
@@ -236,6 +253,7 @@ export function createCastleBattle(kit: CastleKit, party: PartySlot[], encounter
   };
   // Dirección say what is coming from the first round.
   if (encounter === 'direccion') planDireccion(state, 1);
+  planPelota(state);
   return state;
 }
 /**
@@ -400,6 +418,68 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     state.message = `${actor.name} se da la vuelta y revienta sobre todos. −${effect.amount} PV a ${target.name}. Luego vuelve a la pared.`;
   } else if (actor.kind === 'monton') {
     montonTurn();
+  } else if (actor.kind === 'parvulo') {
+    use('tiron'); effect.amount = strike(target, CASTLE.tiron);
+    state.message = `${actor.name} se cuelga de la manga de ${target.name} y tira. −${effect.amount} PV.`;
+  } else if (actor.kind === 'pelota') {
+    // He does not strike while one of his is bigger than him: he mends it and makes it stronger. Alone, he pinches.
+    const big = flattered(state, actor);
+    delete actor.intent; delete mark(actor).backs;
+    if (big) {
+      const gained = Math.min(big.maxHp - big.hp, Math.round(big.maxHp * CASTLE.peloteoCura));
+      big.hp += gained; mark(big).seen = big.hp;
+      const lasting = big.lasting ??= { shifts: {}, from: FOE_ABILITIES.peloteo.name };
+      const more = Math.min(CASTLE.peloteo, CASTLE.peloteoMost - (lasting.shifts.fuerza ?? 0));
+      if (more > 0) lasting.shifts.fuerza = (lasting.shifts.fuerza ?? 0) + more;
+      use('peloteo'); delete effect.target;
+      called.push({ target: big.id, text: 'Peloteo', detail: `+${gained} PV${more > 0 ? ` · Fuerza +${more}` : ''}` });
+      state.message = `${actor.name} se inclina ante ${big.name} y le dice lo que quiere oír. +${gained} PV${more > 0 ? ', y pega más fuerte' : ''}.`;
+    } else {
+      use('pellizco'); effect.amount = strike(target, CASTLE.senalar);
+      state.message = `${actor.name} no tiene a quién arrimarse. Pellizca a ${target.name} y se aparta. −${effect.amount} PV.`;
+    }
+  } else if (actor.kind === 'estiron') {
+    // At full height it cannot hold itself up: it comes down on everyone, and starts over. Otherwise it strikes, and grows.
+    const m = mark(actor), grown = m.grown ?? 0, due = actor.intent; delete actor.intent;
+    if (due?.ability === 'desplome') {
+      m.grown = 0;
+      use('desplome'); everyone(strike, () => CASTLE.desplome, target);
+      called.push({ target: actor.id, text: 'Se desploma', detail: 'Vuelve a su tamaño' });
+      state.message = `${actor.name} ya no se sostiene: se desploma sobre todos con todo lo que ha crecido. −${effect.amount} PV a ${target.name}. En el suelo, vuelve a ser el que era.`;
+    } else {
+      use('zancada'); effect.amount = strike(target, CASTLE.zancada * (1 + CASTLE.estiron * grown));
+      m.grown = Math.min(CASTLE.estironMost, grown + 1);
+      const full = m.grown >= CASTLE.estironMost;
+      called.push({ target: actor.id, text: `Estirón ${m.grown}`, detail: full ? 'Ya no cabe: se desploma en su turno' : `Su golpe, +${Math.round(CASTLE.estiron * m.grown * 100)} %` });
+      state.message = `${actor.name} alcanza a ${target.name} de una zancada. −${effect.amount} PV. Se le oye crecer: las costuras ceden un palmo más.`;
+      if (full) announce('desplome');
+    }
+  } else if (actor.kind === 'mayor') {
+    // He tells his charge a turn ahead, bringing one more little one if there is room; when it lands, each one standing makes it harder.
+    const m = mark(actor), due = actor.intent, row = all(state, 'parvulo').filter(alive); delete actor.intent;
+    if (due?.ability === 'arremete') {
+      target = named(due) ?? target; effect.target = target.id;
+      use('arremete'); effect.amount = strike(target, CASTLE.arremete * (1 + CASTLE.jaleo * row.length));
+      called.push({ target: actor.id, text: row.length ? `Jaleado ×${row.length}` : 'Nadie le jalea', ...row.length ? { detail: `+${Math.round(CASTLE.jaleo * row.length * 100)} %` } : { detail: 'Su golpe, sin nada' } });
+      state.message = row.length
+        ? `${actor.name} arremete contra ${target.name} con ${row.length > 1 ? `los ${row.length} pequeños` : 'el pequeño'} tirando de él. −${effect.amount} PV.`
+        : `${actor.name} arremete contra ${target.name}, solo. Mira a los lados antes de pegar. −${effect.amount} PV.`;
+    } else {
+      let came = '';
+      if (row.length < CASTLE.fila) {
+        const n = m.brought = (m.brought ?? 0) + 1, year = m.year ?? 3;
+        const little = pupil(kit, 'parvulo', `parvulo-m${n}`, `${CASTLE_NAMES.parvulo} ${all(state, 'parvulo').length + 1}`, year, () => (n % 3) / 3);
+        // One of his: as hard as he is tonight, and it has no turn in the round it comes in.
+        if (m.might) { little.castle!.might = m.might; little.hp = little.maxHp = Math.round(little.maxHp * m.might); }
+        if (m.strong) { little.castle!.strong = true; little.hp = little.maxHp = Math.round(little.maxHp * STRONG.pv); }
+        little.stats = { ...little.stats, pv: little.maxHp }; little.castle!.seen = little.hp;
+        state.foes.push(little); state.enemyActions.push(little.id);
+        called.push({ target: actor.id, text: 'Trae a otro', detail: `${row.length + 1} en fila` });
+        came = ` Tira de una cuerda y del suelo sale otro pequeño, agarrado a ella.`;
+      }
+      use('trae'); announce('arremete', target); delete effect.target;
+      state.message = `${actor.name} se enrolla la cuerda en el puño y mira a ${target.name}.${came}`;
+    }
   } else if (actor.kind === 'aurelia') {
     aureliaTurn();
   } else if (actor.kind === 'directiva') {
@@ -419,6 +499,7 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
   if (called.length) effect.called = [...effect.called ?? [], ...called];
   if (!effect.splash?.length) delete effect.splash;
   forsaken(state);
+  planPelota(state);
   return true;
 
   /**
@@ -661,8 +742,9 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
       }
       m.pompa.left -= 1;
       if (m.pompa.left > 0) {
-        use('pompa'); delete effect.target;
-        state.message = `La pompa sigue creciendo. ${m.pompa.left === 1 ? 'Ya no cabe más aire.' : 'Se le ve la piel tensa.'}`;
+        // No turn of hers goes by with nothing in it: while it grows, the bubble's skin drips a pegote on someone (`pompaGotea` of hers).
+        use('pompa'); effect.amount = strike(target, CASTLE.pegote * CASTLE.pompaGotea * fury);
+        state.message = `La pompa sigue creciendo. ${m.pompa.left === 1 ? 'Ya no cabe más aire.' : 'Se le ve la piel tensa.'} De su piel se descuelga un pegote sobre ${target.name}. −${effect.amount} PV.`;
         return;
       }
       delete m.pompa; delete actor.intent;
@@ -712,6 +794,23 @@ export function castleTurn(kit: CastleKit, state: BattleState, actor: Combatant,
     // Wrapped in a layer with a filling, her gum carries it.
     if (m.gum && m.gum !== 'fresco' && m.gum !== 'rancio' && effect.amount > 0) state.message += fill(m.gum, target);
   }
+}
+
+/**
+ * El Pelota, confused: he does not know whose side he is on, and flatters whoever of the party is lowest, a share of
+ * their PV back. Returns whether he did (nobody to mend: he is confused like anyone, `confusedAct` in src/battle.ts).
+ */
+export function castleConfused(state: BattleState, actor: Combatant, effect: BattleEffect): boolean {
+  if (actor.kind !== 'pelota') return false;
+  const hurt = state.allies.filter(a => a.hp > 0 && a.hp < a.maxHp && !a.castle?.held).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+  if (!hurt) return false;
+  const gained = Math.min(hurt.maxHp - hurt.hp, Math.round(hurt.maxHp * CASTLE.peloteoCura));
+  hurt.hp += gained;
+  actor.turns = (actor.turns ?? 0) + 1; delete actor.intent; delete mark(actor).backs;
+  effect.ability = ability('peloteo'); delete effect.target; effect.confused = true;
+  effect.called = [{ target: hurt.id, text: 'Peloteo', detail: `+${gained} PV` }, { target: actor.id, text: 'Se equivoca de lado', detail: 'Confundido, cura al equipo' }];
+  state.message = `${actor.name}, confundido, se inclina ante ${hurt.name} y le dice lo que quiere oír. +${gained} PV.`;
+  return true;
 }
 
 // ——— An action over ————————————————————————————————————————————————————————————————————
@@ -840,6 +939,7 @@ export function castleAfter(kit: CastleKit, state: BattleState, effect?: BattleE
     }
   }
   aurelia(); direccion(); reina();
+  planPelota(state);
   for (const c of state.foes) if (c.castle) c.castle.seen = c.hp;
   if (!called.length && !said.length) return;
   if (effect) {
@@ -1208,6 +1308,9 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
   if (c.kind === 'ausente') chips.push(m.away ? wet ? ['presente', 'Mojado: se le ve'] : ['ausente', 'Ausente: no se le puede pegar'] : ['presente', 'Presente hasta el final de la ronda']);
   if (c.kind === 'castigado') chips.push(m.rage ? ['rabia', `Rabia ${m.rage}/${CASTLE.rabia}${m.rage >= CASTLE.rabia ? ' · revienta' : ''}`] : ['pared', 'De cara a la pared']);
   if (c.kind === 'monton') chips.push(m.form ? ['forma', `Copia: ${MONTON_FORMS[m.form]} · ${montonCopy(c)}${m.all || m.form === 'agua' ? ' a todos' : ''}`] : ['sin-forma', 'Sin forma: copia el primer golpe']);
+  if (c.kind === 'estiron') chips.push(['estiron', (m.grown ?? 0) >= CASTLE.estironMost ? `Estirón ${m.grown}` : m.grown ? `Estirón ${m.grown} · golpe +${Math.round(CASTLE.estiron * m.grown * 100)} %` : 'Crece en cada turno']);
+  if (c.kind === 'mayor') { const row = all(state, 'parvulo').filter(alive).length; chips.push(['jaleo', row ? `Jaleado ×${row} · golpe +${Math.round(CASTLE.jaleo * row * 100)} %` : 'Nadie le jalea']); }
+  if (c.kind === 'pelota') chips.push(['pelota', flattered(state, c) ? 'Cura y sube a otro' : 'Sin nadie a quien arrimarse']);
   if (m.expelled) chips.push(['expulsado', `Expulsado · ${m.expelled}`]);
   if (m.held) chips.push(['atrapado', m.held === 'reina' ? 'Suyo' : 'Atrapado']);
   if (c.kind === 'delegada') chips.push(['delegada', inCharge(state) ? 'Manda: todos al mismo' : 'Callada']);
@@ -1230,11 +1333,11 @@ export function castleChips(state: BattleState, c: Combatant): [string, string][
     }
     if (m.readmits) chips.push(['readmite', `Readmite a ${state.foes.find(d => d.id === m.readmits)?.name ?? ''}`]);
     if (team.length === 1) chips.push(c.id === PRESIDES ? ['voto', 'Voto de calidad'] : ['funciones', 'En funciones']);
-    else if (c.id === PRESIDES && quorum(team)) chips.push(['preside', 'Preside el acta']);
+    else if (c.id === PRESIDES && quorum(team)) chips.push(['preside', 'Preside']);
     if (m.signed) chips.push(['firma', `Firma ${f.firmas ?? 0}/${team.length}`]);
     if (m.overruled) chips.push(['desautorizada', 'Desautorizada']);
     else if (m.warned) chips.push(['sobre-aviso', 'Sobre aviso']);
-    if (team.length > 1 && state.round % CASTLE.cargoEvery === 0) chips.push(['cambio', 'Cambio de cargo al acabar la ronda']);
+    if (team.length > 1 && state.round % CASTLE.cargoEvery === 0) chips.push(['cambio', 'Cambio de cargo']);
   }
   if (c.kind === 'reina') {
     if (m.stage && m.stage !== 'libre' && m.stage !== 'aitor') chips.push(['fase', REINA_PHASES[m.stage]]);
@@ -1257,7 +1360,7 @@ export function castleIntent(state: BattleState, c: Combatant): string | undefin
   if (c.kind !== 'delegada' && c.kind !== 'aurelia' && c.kind !== 'directiva' && c.kind !== 'reina' && inCharge(state)) return undefined;
   const name = FOE_ABILITIES[intent.ability].name;
   // Dirección holding one of their own up: whom, by her name.
-  const own = intent.ability === 'respaldo' ? c.castle?.backs : undefined;
+  const own = intent.ability === 'respaldo' || intent.ability === 'peloteo' ? c.castle?.backs : undefined;
   const who = own ? state.foes.find(f => f.id === own)?.name : intent.target ? state.allies.find(a => a.id === intent.target)?.name : intent.at;
   const count = intent.ability === 'record' && c.castle?.record ? ` · ${c.castle.record}` : '';
   return `${who ? `${name} → ${who}` : name}${count}`;

@@ -5,7 +5,7 @@ import { DOG_PROFILES } from './encounters.ts';
 import { PROFILES, grown, healing, magical, physical, withBonus, type ProfileId, type StatBonus, type Stats } from './stats.ts';
 import { TONES, VOZ_SONG, gapAt, onsets, songAt, turnStarts, type Moment, type ToneId } from './song.ts';
 import { CASTLE_ENCOUNTERS, CASTLE_MOMENTS, SHREWD, closestToFalling, isCastle, isCastleEncounter, isCastleMoment, type CastleEncounter, type CastleFight, type CastleKind, type CastleMark, type CastleMoment, type HeldMove, type NightFight } from './castle.ts';
-import { castleAffinity, castleBlow, castleProp, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
+import { castleAffinity, castleBlow, castleConfused, castleProp, castleAfter, castleAtNight, castleStrong, castleIdle, castleIntent, castleRoundEnd, castleRoundStart, castleTaken, castleTurn, castleWinMessage, createCastleBattle, runCastle, stageCastle, type CastleKit } from './castle-fight.ts';
 import { LIGHTS, cancels, changes, lightAt, type LightId, type WalkId } from './vidrieras.ts';
 export type BattleAction = 'attack' | 'defend' | 'skill' | 'escape';
 /** `beat`: the fight holds still for a story moment (the palace minion about to finish Bernat). */
@@ -435,6 +435,7 @@ export type FoeAbilityId = 'lagrimilla' | 'capa-nueva' | 'peso' | 'carrerilla' |
   | 'nota-do' | 'nota-sol' | 'nota-fa' | 'nota-re' | 'nota-sib' | 'nota-la' | 'coro' | 'aliento' | 'calderon'
   // The castle (src/castle-fight.ts): the pupils, Aurelià, Dirección and the Queen.
   | 'empujon' | 'repaso' | 'chivatazo' | 'pellizco' | 'codazo' | 'orden' | 'presente' | 'revienta' | 'arrimarse' | 'copia'
+  | 'tiron' | 'peloteo' | 'zancada' | 'desplome' | 'trae' | 'arremete'
   | 'dictado' | 'pregunta' | 'castigo' | 'sprint' | 'expulsion' | 'record'
   | 'expediente' | 'horario' | 'circular' | 'firma' | 'resolucion' | 'cambio-cargo' | 'respaldo'
   | 'pegote' | 'envolver' | 'manos' | 'atrapar' | 'aplastar' | 'pompa' | 'suyo'
@@ -503,6 +504,12 @@ export const FOE_ABILITIES: Record<FoeAbilityId, { name: string; card: boolean }
   revienta: { name: 'Revienta', card: true },
   arrimarse: { name: 'Se arrima', card: false },
   copia: { name: 'Copia', card: true },
+  tiron: { name: 'Tirón', card: false },
+  peloteo: { name: 'Peloteo', card: true },
+  zancada: { name: 'Zancada', card: false },
+  desplome: { name: 'Desplome', card: true },
+  trae: { name: 'Trae a otro', card: true },
+  arremete: { name: 'Arremete', card: true },
   dictado: { name: 'Dictado', card: true },
   pregunta: { name: 'Pregunta', card: true },
   castigo: { name: 'Castigo', card: true },
@@ -5923,6 +5930,9 @@ export const CONFUSED_BLOW = 12;
  */
 function confusedAct(state: BattleState, actor: Combatant): BattleEffect {
   state.enemyActions.push(actor.id);
+  // El Pelota, confused, flatters the party (src/castle-fight.ts).
+  const flattery: BattleEffect = { actor: actor.id, kind: 'enemy' };
+  if (castleConfused(state, actor, flattery)) return flattery;
   delete actor.intent;
   const others = state.foes.filter(f => f !== actor && f.hp > 0 && !f.part), told = suggested(state);
   const victim = told ?? (others.length ? others[Math.floor(roll(state) * others.length)] : actor);

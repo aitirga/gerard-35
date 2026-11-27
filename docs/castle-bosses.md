@@ -107,7 +107,7 @@ the way here.
 
 | Rule | What it is |
 | --- | --- |
-| **Each says what she will do** | Her next move is on her plate, as Aurelià's are: «Expediente → X», «Horario», «Circular», «Firma». The round of the *Acta* shows on the three plates as «Firma», and the trade the round before it comes («Cambio de cargo al acabar la ronda») |
+| **Each says what she will do** | Her next move is on her plate, as Aurelià's are: «Expediente → X», «Horario», «Circular», «Firma». The round of the *Acta* shows on the three plates as «Firma», and the trade on the round it comes at the end of («Cambio de cargo»; the chips were shortened on 2026-11-27, «Preside» for Mar, and a plate's row breaks in two before it runs over its neighbour's) |
 | *Expediente* | Whoever holds fire: burns one, and raises the level of a burn already there |
 | *Horario* | Whoever holds water: wets everyone |
 | *Circular* | Whoever holds electricity: electric on everyone; brutal on the wet |
@@ -188,10 +188,25 @@ everything the party has: stage 3, the definitivas, three ánimas each. No joke,
   (`setPeeled` in src/throne-arena.ts). No new HUD; her plate says «Capas N».
 - **Without the answer**: ×0.25 all through the first stage while she hits every turn, one of the
   party caught, La Pompa whole.
-- **Placeholder**: La Pompa and the two hands are drawn with the palace minion's model at their own
-  size; neither has a figure yet.
+- **Her pieces' figures** (2026-11-27): each hand is her arm (`reina-brazo`, the figure of chapter
+  1's ambush, `QUEEN_ARM` in src/castle-models.ts), three metres of glove standing out of the
+  boards on its cut end, one each side of her. La Pompa is a bubble of her gum made in code
+  (`bubble`, same file), in front of her: three quarters of its size as she starts to blow it and
+  bigger with each round it has left, until at «Revienta en 1» it covers her (`POMPA_SWELL` in
+  src/battle-scene.ts).
+- **No turn of hers goes by empty while she blows** (2026-11-27): on the rounds La Pompa grows,
+  its skin drips a pegote on one of the party, `pompaGotea` (.3) of hers. It used to be two rounds
+  of nothing: now leaving the bubble alone costs something before it goes off, and bursting it
+  early stops the drip too. Her pegote went from 74 to 70 with it. **Wrapping herself in the next
+  layer still costs her the turn**: that is what tearing one off buys.
 
-`TARGETS`: `reina-toma-a-aitor`, `reina-con-artilugio` and `reina-sin-melodia`; one without the answer for each stage is still to be added (the balance round). `FightMoment`s:
+`TARGETS`: `reina-toma-a-aitor`, `reina-con-artilugio` and `reina-sin-melodia`, and since
+2026-11-27 one without the answer for each stage, held to what that stage shows (`QUEEN_CALLS` in
+src/battle-sim.ts counts «Se despega», «Atrapado», «Libre», «¡Pompa rota!» and La Pompa gone off
+whole): `reina-chicle-a-punetazos` (no layer ever comes off, she never leaves her first stage),
+`reina-manos-sin-pensar` (one of the party lifted and never freed) and `reina-pompa-sin-pensar`
+(never burst in time); their other halves are `reina-toma-a-aitor` (two layers or more torn off,
+the hands reached) and `reina-con-artilugio` (the hand broken, La Pompa burst). `FightMoment`s:
 `reina-chicle`, `reina-manos`, `reina-pompa`, `reina-aitor`.
 
 ### Aitor, held

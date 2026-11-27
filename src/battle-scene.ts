@@ -2,7 +2,7 @@ import * as pc from 'playcanvas';
 import { HeldArtilugio, PROP } from './artilugio-held';
 import { HORAS_EXTRA, tired, BOMBA, bombPower, ecoMuffled, type EcoNews, COMBUSTION, cortinaRounds, bitsOf, type BitShield, DICED, diceOf, meteorOf, SKILLS, type SkillId, SOBREMESA_NAMES, STATUSES, TIMED, isCamping, isCuerdas, isModelo, isOnion, isSobremesa, markLeft, markSpent, onionSize, songNow, statShifts, vozNote, weakSpotRounds, type BattleEffect, type BattleState, type TimedPulse, type CampingKind, type ClassId, type CuerdasKind, type ModeloKind, type Combatant, type DishId, type FoeKind, type OnionKind, type StatusId, isLuca, SECOND_VOICE as SECOND_VOICE_ID, shirtLit, type DieFace, filmed, warded } from './battle';
 import { CAMPING_HEIGHTS, CAMPING_SIZES } from './camping-foes';
-import { CASTLE_SIZES, isCastle } from './castle';
+import { CASTLE, CASTLE_SIZES, isCastle } from './castle';
 import { MINION_HEIGHT, castleModel, encarnadoHalo, figureClips, fillGum, foeFigure, redden, type FigureClips } from './castle-models';
 import { DIE, createDie, dressDie, faceUp } from './dice';
 import { createDiceFx, type FaceSpot, DICE_COLOURS } from './dice-fx';
@@ -253,6 +253,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
     model: pc.Entity; base: pc.Vec3; start: pc.Vec3; hp: number; party: boolean;
     /** How much of its size it has now (Encogido eases it down to SHRUNK and back). */
     shrink: number;
+    /** El Estirón (src/castle-fight.ts): how much taller than itself it stands now, a step of `STRETCH` for each it has grown. */
+    stretch?: number;
+    /** La Pompa: how swollen it is drawn, against its full size (it grows as its rounds run out). */
+    swell?: number;
     /** When they fell, and (the party) when they started getting back up; `landed` once they hit the floor. */
     downAt?: number; upAt?: number; landed?: boolean; dissolve?: Disintegration;
     /** Called in mid-fight and not there yet (La Voz's second voice), and its coming together out of specks, or back (an Eco tied again). */
@@ -797,6 +801,10 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
   const BIP_SKILLS: ReadonlySet<string> = new Set(['rayo-energia', 'rayo-sanacion', 'explosion', 'confusion', 'rayo-encogedor', 'control-remoto', 'reinicio', 'virus', 'escudo-de-bits', 'bomba-remota', 'escolta', 'enjambre']);
   /** How much of its size someone Encogido keeps (Rayo encogedor). */
   const SHRUNK = .62;
+  /** How much taller El Estirón stands for each step it has grown (src/castle-fight.ts). */
+  const STRETCH = .14;
+  /** La Pompa, as it is drawn: its size as she starts to blow it, and how much it gains each round until it goes off. */
+  const POMPA_SWELL = { from: .75, step: .25 };
   /** Whether an action is Bip's, decided once for it (Explosión's Bip is gone before the action ends). */
   const bipActs = new WeakMap<BattleEffect, boolean>();
   const botStrikes = (action?: BattleEffect) => {
@@ -4645,6 +4653,8 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
       // El Campeón fires his rays from where he stands.
       const planted = (!!actor?.robot && effect?.ability?.id !== 'pisoton') || (actor?.camp === 'mago' && effect?.ability?.id === 'bombona') || actor?.camp === 'campeon'
         || !!actor?.mesh
+        // Nor does the Queen leave her place while she blows La Pompa: what drips from its skin, and its going off, reach from there.
+        || effect?.ability?.id === 'pompa'
         || (!!actor?.strings && !(actor.strings === 'directo' && (effect?.ability?.id === 'golpe-directo' || effect?.ability?.id === 'estocada')));
       // A blow the bit dome takes whole: the foe comes up to the dome, not through it.
       const shell = domeStopped(effect) && actor && target ? domeEntry(actor, target) : undefined;
@@ -4892,7 +4902,17 @@ export function createBattleScene(app: pc.Application, player: pc.Entity, partyM
         // Encogido (Rayo encogedor): smaller from when the ray lands, and back to size when it wears off.
         const shrunk = state && [...state.foes, ...state.allies].find(u => u.id === id)?.timed?.encogido && !([effect, upcoming].some(e => (e?.skill === 'rayo-encogedor' || e?.dual?.id === 'a-escala') && e.target === id && (e !== effect || !impacted)));
         f.shrink = animate ? f.shrink + ((shrunk ? SHRUNK : 1) - f.shrink) * (1 - Math.exp(-dt * 8)) : shrunk ? SHRUNK : 1;
-        f.model.setLocalScale(f.scale.x * f.shrink * (1 + squash * .09), f.scale.y * f.shrink * (1 - squash * .16 + breathe), f.scale.z * f.shrink * (1 + squash * .09));
+        // El Estirón: taller with each step it has grown and a little thinner, and back down at once when it falls.
+        const grownTo = 1 + (state?.foes.find(u => u.id === id)?.castle?.grown ?? 0) * STRETCH;
+        f.stretch = animate ? (f.stretch ?? 1) + (grownTo - (f.stretch ?? 1)) * (1 - Math.exp(-dt * 5)) : grownTo;
+        // La Pompa: three quarters of its size as she starts to blow it, and bigger with each round it has left to go off.
+        const blown = state?.foes.find(u => u.kind === 'reina')?.castle?.pompa;
+        if (blown?.id === id) {
+          const swollenTo = POMPA_SWELL.from + (CASTLE.pompaRounds - blown.left) * POMPA_SWELL.step;
+          f.swell = animate ? (f.swell ?? POMPA_SWELL.from) + (swollenTo - (f.swell ?? POMPA_SWELL.from)) * (1 - Math.exp(-dt * 3)) : swollenTo;
+        }
+        const tall = f.swell ?? 1, thin = tall / Math.sqrt(f.stretch);
+        f.model.setLocalScale(f.scale.x * f.shrink * thin * (1 + squash * .09), f.scale.y * f.shrink * f.stretch * tall * (1 - squash * .16 + breathe), f.scale.z * f.shrink * thin * (1 + squash * .09));
         if (stance === 'sway' && animate && down < 0) roll += Math.sin(time * 2.3 + f.seed) * (f.rigid ? 1.2 : 6);
         // Cegado: it searches for them, turning one way and the other and leaning in to peer, never settling.
         const groping = stance === 'grope' && animate && down < 0 && id !== effect?.actor ? (Math.sin(time * 1.35 + f.seed * 2.1) * 20 + Math.sin(time * 3.2 + f.seed) * 5) * (f.rigid ? .3 : 1) : 0;

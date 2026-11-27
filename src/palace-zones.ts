@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { DIRECCION_MEETING } from './castle';
+import { DIRECCION_MEETING, type CastleFloor, type CastleRoom } from './castle';
 import type { Environment } from './environments';
 import type { GeoTexture } from './geo';
 import { shine } from './lighting';
@@ -1120,10 +1120,126 @@ export function buildPalaceZone(kit: PalaceZoneKit, environment: Environment) {
         part(root, 'Armario de material', 'box', steel, [x(cell.x), .95, z(cell.z - 1)], [1.6, 1.9, .5]);
       } else if (room.kind === 'antechamber') lamp(cell.x, 2.6, cell.z, .9, 6);
     }
+    if (floor.phase === 2) dressSecond(floor, open); else if (floor.phase === 3) dressThird(floor, open);
     lowDoor(floor.back.x, floor.back.z); lowDoor(floor.exit.x, floor.exit.z);
     // A pool of light walks with the party: by day it only lifts the floor, further in it is most of what there is.
     const pool = lamp(0, 2.6, 0, .9, 5.2, new pc.Color().fromString(t.glow));
     following.push(focus => pool.setPosition(focus.x, focus.y + 2.6, focus.z));
+  }
+
+  /** The cells along a room's north wall and its west one (the two the camera faces) where the wall is whole: a corridor's mouth is left clear. */
+  function wallSpots(room: CastleRoom, open: (px: number, pz: number) => boolean) {
+    const { rect } = room, north: number[] = [], west: number[] = [];
+    for (let px = rect.x; px < rect.x + rect.w; px++) if (!open(px, rect.z - 1)) north.push(px);
+    for (let pz = rect.z; pz < rect.z + rect.d; pz++) if (!open(rect.x - 1, pz)) west.push(pz);
+    return { north, west };
+  }
+  /**
+   * The second floor (docs/castle.md § The art drifts towards the boss): from the gym to Gerard's
+   * office, under emergency lighting. The further along the way, the more of the office there is:
+   * filing cabinets against the walls, minutes pinned up and stamped, tubes that fail overhead, and
+   * the leaks of a building nobody looks after.
+   */
+  function dressSecond(floor: CastleFloor, open: (px: number, pz: number) => boolean) {
+    const cabinet = mat('#7f878b', .45, 0, 'steel'), drawer = mat('#565d61', .35, 0, 'steel'), paper = mat('#e9e2cc', .1), ink = mat('#c8452a', .2);
+    const tubeOn = mat('#eef3ff', .2, 1.4), tubeOff = mat('#70767c', .2), puddle = mat('#12161b', .96), exitSign = mat('#3fbf7a', .2, 1.1);
+    for (const room of floor.rooms) {
+      const { rect, cell, order } = room, { north, west } = wallSpots(room, open), far = Math.max(0, Math.min(1, order));
+      const roll = (n: number) => jitter(room.id * 53 + n);
+      // Filing cabinets, in rows that grow: none by the gym, a wall of them by the office.
+      const cabinets = room.kind === 'antechamber' ? 0 : Math.round(far * 4 + roll(1) * 1.2);
+      north.slice(1, 1 + cabinets).forEach((px, i) => {
+        const tall = 1.05 + (roll(10 + i) > .5 ? .35 : 0), at = z(rect.z) - .22;
+        part(root, 'Archivador', 'box', cabinet, [x(px), tall / 2, at], [.78, tall, .5]);
+        for (let k = 0; k < Math.round(tall / .35); k++) part(root, 'Cajón', 'box', drawer, [x(px), .2 + k * .35, at + .255], [.66, .26, .02], [0, 0, 0], false);
+        // One left open, the further in the more often.
+        if (roll(20 + i) < far * .5) part(root, 'Cajón abierto', 'box', drawer, [x(px), .55, at + .45], [.66, .26, .4]);
+      });
+      // Minutes pinned to the west wall, each with its stamp.
+      const minutes = Math.round(far * 5 + roll(2));
+      west.slice(1, 1 + minutes).forEach((pz, i) => {
+        const high = .78 + roll(30 + i) * .34, tilt = (roll(40 + i) - .5) * 9;
+        part(root, 'Acta', 'box', paper, [x(rect.x) - .47, high, z(pz)], [.02, .4, .29], [tilt, 0, 0], false);
+        part(root, 'Sello', 'box', ink, [x(rect.x) - .455, high - .1, z(pz) + .06], [.01, .08, .11], [tilt, 0, 0], false);
+      });
+      // A tube overhead: lit near the gym, failing further in, dead by the office.
+      if (room.kind !== 'find') {
+        const dead = roll(3) < far - .55, failing = !dead && roll(4) < far + .15;
+        const along = rect.w >= rect.d;
+        part(root, 'Tubo', 'box', dead ? tubeOff : tubeOn, [x(cell.x), 2.5, z(cell.z)], along ? [1.5, .05, .1] : [.1, .05, 1.5], [0, 0, 0], false, !failing);
+        // It hangs from two rods, and its housing over it: there is no ceiling to see, so the fitting says where it is.
+        part(root, 'Regleta', 'box', drawer, [x(cell.x), 2.56, z(cell.z)], along ? [1.62, .06, .2] : [.2, .06, 1.62], [0, 0, 0], false);
+        for (const end of [-.6, .6]) part(root, 'Varilla', 'box', drawer, [x(cell.x) + (along ? end : 0), 3.1, z(cell.z) + (along ? 0 : end)], [.02, 1.05, .02], [0, 0, 0], false);
+        if (!dead) {
+          const light = lamp(cell.x, 2.3, cell.z, .55, 5.5, new pc.Color().fromString('#dfe8ff'));
+          // A failing tube stutters: mostly on, out for a breath, and back with a flicker.
+          if (failing) { const seed = room.id * 1.7; animated.push(time => { const k = (time * .23 + seed) % 1, out = k > .86, flick = k > .78 && Math.sin(time * 61) > 0; light.light!.intensity = out ? 0 : flick ? .2 : .55; }); }
+        }
+      }
+      // Leaks: a dark pool on the floor under a stained patch, where nobody has come to look.
+      if (roll(5) < far * .9) {
+        const px = rect.x + 1 + roll(6) * (rect.w - 2), pz = rect.z + 1 + roll(7) * (rect.d - 2);
+        part(root, 'Gotera', 'sphere', puddle, [x(px), .012, z(pz)], [.9 + roll(8) * .7, .02, .6 + roll(9) * .5], [0, roll(8) * 180, 0], false);
+        part(root, 'Cubo', 'cylinder', drawer, [x(px) + .2, .16, z(pz) - .1], [.3, .32, .3]);
+      }
+      // The emergency light over the way on, in every room of the main path.
+      if (room.onPath && north.length) part(root, 'Luz de emergencia', 'box', exitSign, [x(north[north.length - 1]), 1.28, z(rect.z) - .44], [.42, .16, .06], [0, 0, 0], false);
+    }
+  }
+  /**
+   * The third floor: from Gerard's office to her throne, with almost no light. What is left of the
+   * playground, worn out, and her gum gone old on it: dull, cracked, dried in strands. Towards the
+   * end the throne's gold begins to show.
+   */
+  function dressThird(floor: CastleFloor, open: (px: number, pz: number) => boolean) {
+    const old = mat('#b8708e', .4), older = mat('#8f5672', .3), crack = mat('#2b1a26', .15), chalk = mat('#b9b1a2', .05);
+    const wood = mat('#5f5348', .15), rust = mat('#6a4636', .3, 0, 'steel'), rubber = mat('#17171c', .35), gold = mat('#c9a046', .65, .3);
+    for (const room of floor.rooms) {
+      const { rect, cell, order } = room, { north, west } = wallSpots(room, open), far = Math.max(0, Math.min(1, order));
+      const roll = (n: number) => jitter(room.id * 67 + n);
+      // Old gum in mounds against the walls, cracked across, more of it the nearer to her.
+      const mounds = Math.round(1 + far * 4 + roll(1));
+      for (let i = 0; i < mounds; i++) {
+        const onNorth = i % 2 === 0, list = onNorth ? north : west;
+        if (!list.length) continue;
+        const along = list[Math.floor(roll(10 + i) * list.length)], size = .5 + roll(20 + i) * .7;
+        const px = onNorth ? x(along) : x(rect.x) - .2, pz = onNorth ? z(rect.z) - .2 : z(along);
+        part(root, 'Chicle viejo', 'sphere', i % 3 ? old : older, [px, size * .22, pz], [size * 1.2, size * .6, size], [0, roll(30 + i) * 180, 0]);
+        part(root, 'Grieta', 'box', crack, [px, size * .5, pz + (onNorth ? .12 : 0)], [size * .7, .015, .03], [0, roll(40 + i) * 180, (roll(50 + i) - .5) * 30], false);
+        part(root, 'Grieta', 'box', crack, [px + .08, size * .44, pz + (onNorth ? .16 : .05)], [size * .4, .015, .025], [0, roll(60 + i) * 180, 20], false);
+        // A strand dried on its way down the wall.
+        if (roll(70 + i) < .6) part(root, 'Hilo seco', 'box', older, [onNorth ? px + .2 : x(rect.x) - .46, .75, onNorth ? z(rect.z) - .46 : pz + .2], [.04, 1.3, .04], [onNorth ? 0 : (roll(80 + i) - .5) * 8, 0, onNorth ? (roll(80 + i) - .5) * 8 : 0], false);
+      }
+      // One thing of the playground a room, worn out, where there is room for it (never in the closed room, the staff room or the cupboard).
+      if (room.kind === 'fight' || room.kind === 'corridor' || room.kind === 'elite') {
+        const kind = Math.floor(roll(2) * 4), px = rect.x + 1.2 + roll(3) * Math.max(0, rect.w - 3.4), pz = rect.z + .9;
+        if (kind === 0) {
+          // A hopscotch chalked on the floor, half rubbed out.
+          for (let k = 0; k < 6; k++) if (roll(90 + k) > .25) part(root, 'Rayuela', 'box', chalk, [x(px) + (k === 2 || k === 4 ? (k === 2 ? -.3 : .3) : 0), .012, z(pz) + k * .5], [.52, .008, .46], [0, 0, 0], false);
+        } else if (kind === 1) {
+          // A seesaw with one end on the floor.
+          part(root, 'Balancín', 'box', rust, [x(px), .28, z(pz)], [.12, .56, .12]);
+          part(root, 'Tabla del balancín', 'box', wood, [x(px), .5, z(pz)], [2.3, .07, .26], [0, 0, 13]);
+        } else if (kind === 2) {
+          // Tyres, one on top of another, one fallen.
+          for (let k = 0; k < 2; k++) part(root, 'Neumático', 'cylinder', rubber, [x(px), .13 + k * .25, z(pz)], [.78, .24, .78]);
+          part(root, 'Neumático', 'cylinder', rubber, [x(px) + .85, .38, z(pz) + .1], [.78, .24, .78], [0, 0, 78]);
+        } else {
+          // A bench with a slat gone.
+          for (const side of [-1, 1]) part(root, 'Pata del banco', 'box', rust, [x(px) + side * .7, .2, z(pz)], [.07, .4, .4]);
+          part(root, 'Banco', 'box', wood, [x(px), .42, z(pz) - .12], [1.7, .05, .14]);
+          part(root, 'Banco', 'box', wood, [x(px) - .12, .4, z(pz) + .14], [1.4, .05, .14], [0, 6, 4]);
+        }
+      }
+      // Her gold, from two thirds of the way: a rail's end on a plinth by the wall, catching what light there is.
+      if (far > .62 && north.length > 2) {
+        const px = x(north[1]), pz = z(rect.z) - .15;
+        part(root, 'Peana', 'box', plinth, [px, .35, pz], [.4, .7, .4]);
+        part(root, 'Remate dorado', 'sphere', gold, [px, .86, pz], [.3, .3, .3]);
+        if (far > .8) lamp(north[1], 1.5, rect.z, .35, 3.2, new pc.Color().fromString('#c9a046'));
+      }
+      if (room.kind === 'antechamber') part(root, 'Cordón dorado', 'box', gold, [x(cell.x), .9, z(rect.z) - .46], [rect.w - 1.2, .05, .04], [0, 0, 0], false);
+    }
   }
 
   /**

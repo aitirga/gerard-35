@@ -1228,6 +1228,44 @@ priority = "historia"
 grep = "(?s)(?=.*'ausente')(?=.*'castigado')(?=.*'monton')"
 in = "src/castle.ts"
 
+# Aitor, 2026-11-27 (docs/castle.md § Bestiary, second table): more pupils on the second and third floors,
+# two easy to fell and two hard, a soft room and a hard room a floor with their pairs of TARGETS.
+[[block.item]]
+title = "Cuatro alumnos más en las plantas 2 y 3: El Párvulo (La Fila), El Pelota, El Estirón y El Mayor"
+weight = 2
+priority = "historia"
+grep = "(?s)(?=.*'parvulo')(?=.*'pelota')(?=.*'estiron')(?=.*'mayor')"
+in = "src/castle.ts"
+
+# Its image and views are made (output/characters/3d/estiron/); the model waits for Meshy credits:
+# `just character-3d estiron --from model`. Until then he fights as the palace minion at his size.
+[[block.item]]
+title = "Modelo propio de El Estirón"
+priority = "historia"
+file = "src/monsters/estiron.json"
+
+# Aitor, 2026-11-27 (docs/castle.md § The closed doors): something between the fights on the second and third floors.
+[[block.item]]
+title = "El horario: la puerta cerrada de la segunda planta, un horario 4×4 que solo cuadra de una manera"
+weight = 2
+priority = "historia"
+grep = "export function horarioFor"
+in = "src/horario.ts"
+
+[[block.item]]
+title = "Pica pared: la puerta cerrada de la tercera planta, un Castigado enorme de cara a la pared"
+weight = 2
+priority = "historia"
+grep = "export function stepPica"
+in = "src/pica-pared.ts"
+
+# docs/castle.md § The art drifts towards the boss: what shows up along the way on the second and third floors.
+[[block.item]]
+title = "Las plantas 2 y 3 se visten por el camino: archivadores, actas y tubos que fallan; chicle viejo y patio gastado"
+priority = "historia"
+grep = "function dressThird"
+in = "src/palace-zones.ts"
+
 [[block.item]]
 # Designed 2026-11-19 (docs/castle.md § How they look): `just character-3d <alumno>`, kind "monster".
 # Done when the fights draw them with their own models instead of the minion's.
@@ -1383,12 +1421,14 @@ weight = 3
 grep = "peeled"
 in = "src/castle-fight.ts"
 
-# The Queen's hands and La Pompa fight with the palace minion's model (docs/castle-bosses.md § La Reina Bubbaloo).
+# 2026-11-27 (docs/castle-bosses.md § La Reina Bubbaloo): her hands are her arm's figure (reina-brazo, chapter 1's
+# ambush) standing out of the floor, and La Pompa a bubble of her gum made in code that swells each round.
 [[block.item]]
 title = "Figura propia de La Pompa y de las dos manos de la Reina en su combate"
 priority = "historia"
-note = "Hoy se dibujan con el modelo del esbirro a su tamaño: hacerles figura (just character-3d)."
-file = "src/creatures/pompa.json"
+note = "Las manos, el brazo de la Reina (src/creatures/reina-brazo.json); La Pompa, una pompa de chicle hecha en código que crece con cada ronda."
+grep = "export const QUEEN_ARM"
+in = "src/castle-models.ts"
 
 [[block.item]]
 title = "Aitor poseído: la Reina lo toma al décimo y golpea a Gerard"

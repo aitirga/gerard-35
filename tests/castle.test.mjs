@@ -4,7 +4,10 @@ import { CASTLE, CASTLE_ENCOUNTERS, CASTLE_PHASES, MELODY, castleEntry, extraSlo
 import { aitorTaken, artilugioLive, castleAfter, castleChips, castleIdle, castleNote, castleRoundEnd, castleTaken, montonCopy, nextNote } from '../src/castle-fight.ts';
 import { castleEnvironment } from '../src/castle-floor.ts';
 import { FOE_BLOW, createFearBattle } from '../src/battle.ts';
-import { Story } from '../src/story.ts';
+import { Story, onTrigger } from '../src/story.ts';
+import { pupilsGrid } from '../src/castle-pupils.ts';
+import { HORARIO_GIVEN, horarioFor, solutions, squares } from '../src/horario.ts';
+import { PICA, createPica, stepPica } from '../src/pica-pared.ts';
 import { LINES_CASTLE } from '../src/castle-story.ts';
 import { flagsAt } from '../src/story-points.ts';
 import { canWalk } from '../src/movement.ts';
@@ -303,8 +306,176 @@ test('El Montón takes the shape of the first blow it takes, by what that blow c
   assert.equal(monton.castle.form, 'electrico');
 });
 
+test('La Fila: four Párvulos with El Repetidor, each a tug', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'alumnos-2f'), row = state.foes.filter(f => f.kind === 'parvulo'), gerard = state.allies[0];
+  assert.equal(row.length, 4);
+  assert.ok(row.every(p => p.maxHp < state.foes.find(f => f.kind === 'repetidor').maxHp / 4), 'each a blow\'s worth');
+  state.phase = 'enemy'; state.enemyActions = [];
+  const hp = gerard.hp, tug = enemyAct(state, row[0].id, gerard.id);
+  assert.equal(tug.ability.id, 'tiron');
+  assert.ok(gerard.hp < hp);
+});
+
+test('El Pelota does not strike while one of his is bigger: he mends it and raises its Fuerza, up to a most; alone he pinches, confused he mends the party', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const { castleConfused, castleIntent } = await import('../src/castle-fight.ts');
+  const state = createFearBattle(party, 'alumnos-2g'), pelota = state.foes.find(f => f.kind === 'pelota'), estiron = state.foes.find(f => f.kind === 'estiron'), gerard = state.allies[0];
+  assert.equal(pelota.intent?.ability, 'peloteo', 'told from the start');
+  assert.match(castleIntent(state, pelota) ?? '', /Estirón/, 'and whom');
+  estiron.hp -= 200;
+  const turn = () => { state.phase = 'enemy'; state.enemyActions = []; return enemyAct(state, pelota.id, gerard.id); };
+  const before = estiron.hp, hp = gerard.hp, flattery = turn();
+  assert.equal(flattery.ability.id, 'peloteo');
+  assert.equal(estiron.hp - before, Math.round(estiron.maxHp * CASTLE.peloteoCura));
+  assert.equal(estiron.lasting.shifts.fuerza, CASTLE.peloteo);
+  assert.equal(gerard.hp, hp, 'no blow');
+  for (let i = 0; i < 6; i++) turn();
+  assert.equal(estiron.lasting.shifts.fuerza, CASTLE.peloteoMost, 'never past its most');
+  // Confused, the same Peloteo goes to whoever of the party is lowest.
+  gerard.hp = 10;
+  assert.ok(castleConfused(state, pelota, { actor: pelota.id, kind: 'enemy' }));
+  assert.ok(gerard.hp > 10);
+  // With nobody bigger standing he pinches.
+  estiron.hp = 0; castleAfter(undefined, state);
+  const low = gerard.hp, pinch = turn();
+  assert.equal(pinch.ability.id, 'pellizco');
+  assert.ok(gerard.hp < low);
+});
+
+test('El Estirón grows with every Zancada; at its most it tells the Desplome, comes down on everyone and is its own size again', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'alumnos-2g'), estiron = state.foes.find(f => f.kind === 'estiron'), [gerard, aitor] = state.allies;
+  const turn = () => { state.phase = 'enemy'; state.enemyActions = []; for (const a of state.allies) a.hp = a.maxHp; return enemyAct(state, estiron.id, gerard.id); };
+  const blows = [];
+  for (let i = 1; i <= CASTLE.estironMost; i++) {
+    const step = turn();
+    assert.equal(step.ability.id, 'zancada');
+    assert.equal(estiron.castle.grown, i);
+    blows.push(gerard.maxHp - gerard.hp);
+  }
+  assert.ok(blows[2] > blows[0], 'each stride harder than the last');
+  assert.equal(estiron.intent?.ability, 'desplome', 'told a turn ahead');
+  assert.match(castleChips(state, estiron).map(c => c[1]).join(' '), /Estirón 3/);
+  const fall = turn();
+  assert.equal(fall.ability.id, 'desplome');
+  assert.ok(gerard.hp < gerard.maxHp && aitor.hp < aitor.maxHp, 'on everyone');
+  assert.equal(estiron.castle.grown, 0, 'and back to no steps');
+  assert.equal(turn().ability.id, 'zancada', 'it starts over');
+});
+
+test('El Mayor brings a Párvulo and tells his Arremete; it lands harder for each one standing, and he brings no more than his row', async () => {
+  const { enemyAct } = await import('../src/battle.ts');
+  const state = createFearBattle(party, 'alumnos-3e'), mayor = state.foes.find(f => f.kind === 'mayor'), gerard = state.allies[0];
+  const row = () => state.foes.filter(f => f.kind === 'parvulo' && f.hp > 0);
+  gerard.maxHp = 5000;   // room to measure a blow that would otherwise fell him
+  const turn = () => { state.phase = 'enemy'; state.enemyActions = []; gerard.hp = gerard.maxHp; return enemyAct(state, mayor.id, gerard.id); };
+  assert.equal(row().length, 2);
+  assert.equal(turn().ability.id, 'trae');
+  assert.equal(row().length, CASTLE.fila, 'one more walks in');
+  assert.ok(state.enemyActions.includes(row().at(-1).id), 'with no turn the round it comes');
+  assert.equal(mayor.intent?.ability, 'arremete');
+  assert.match(castleChips(state, mayor).map(c => c[1]).join(' '), /Jaleado ×3/);
+  assert.equal(turn().ability.id, 'arremete');
+  const cheered = gerard.maxHp - gerard.hp;
+  // His row full, he tells the next one without bringing anyone.
+  turn();
+  assert.equal(row().length, CASTLE.fila);
+  // With nobody standing the same blow is one more.
+  for (const p of row()) p.hp = 0;
+  castleAfter(undefined, state);
+  assert.equal(turn().ability.id, 'arremete');
+  assert.ok(gerard.maxHp - gerard.hp < cheered * .6, 'alone it is far less');
+  assert.match(castleChips(state, mayor).map(c => c[1]).join(' '), /Nadie le jalea/);
+});
+
+test('the second and third years each have a soft room and a hard one of the new pupils', () => {
+  const kinds = phase => new Set(CASTLE_PHASES[phase - 1].fights.flatMap(id => createFearBattle(party, id).foes.map(f => f.kind)));
+  for (const kind of ['parvulo', 'pelota', 'estiron']) assert.ok(kinds(2).has(kind) && !kinds(1).has(kind), kind);
+  assert.ok(kinds(3).has('mayor') && !kinds(2).has('mayor'));
+});
+
 test('the second year brings El Ausente and El Castigado, the third El Montón, each in a room of its own', () => {
   const kinds = phase => new Set(CASTLE_PHASES[phase - 1].fights.flatMap(id => createFearBattle(party, id).foes.map(f => f.kind)));
   assert.ok(kinds(2).has('ausente') && kinds(2).has('castigado') && !kinds(1).has('ausente'));
   assert.ok(kinds(3).has('monton') && !kinds(2).has('monton'));
+});
+
+// ——— The closed doors (docs/castle.md § The closed doors) ——————————————————————————————————————
+test('the second and third floors have a closed room in the middle of the way: with its door shut nothing past it can be reached', () => {
+  for (let seed = 0; seed < 12; seed++) {
+    assert.equal(floorFor(seed, 3, 1).puzzle, undefined, 'none on the first floor');
+    for (const phase of [2, 3]) {
+      const floor = floorFor(seed, 3, phase), puzzle = floor.puzzle, room = floor.rooms[puzzle.room];
+      assert.equal(puzzle.id, phase === 2 ? 'horario' : 'pica-pared');
+      assert.equal(room.kind, 'puzzle');
+      assert.ok(room.onPath && room.order > .25 && room.order < .75, 'in the middle of the way');
+      const shut = floor.grid.map((row, z) => [...row].map((c, x) => puzzle.gate.some(g => g.x === x && g.z === z) ? '#' : c).join(''));
+      assert.ok(reaches(shut, floor.spawn, puzzle.entry), 'the room is reached');
+      assert.ok(reaches(shut, floor.spawn, puzzle.board) && puzzle.touch.every(cell => reaches(shut, floor.spawn, cell)), 'and what is in it');
+      assert.ok(!reaches(shut, floor.spawn, floor.exit), 'the way on is not');
+      assert.ok(reaches(floor.grid, floor.spawn, floor.exit), 'open, it is');
+      // Nothing opens off it but its two doors, and nobody of hers goes in.
+      assert.ok(pupilsGrid(floor)[room.cell.z][room.cell.x] === '#');
+    }
+  }
+});
+
+test('El horario squares one way only, another each day, and squaring it opens the door for good and lets go of an Eco de luz', () => {
+  for (let seed = 1; seed < 60; seed++) {
+    const { given, solution } = horarioFor(seed * 7919);
+    assert.ok(squares(solution));
+    assert.equal(solutions([...given]), 1, 'one way only');
+    assert.ok(given.filter(Boolean).length >= HORARIO_GIVEN && given.filter(Boolean).length <= 8);
+    assert.ok(given.every((value, i) => !value || value === solution[i]));
+  }
+  assert.notDeepEqual(horarioFor(1).solution, horarioFor(2).solution);
+  const story = new Story([...flagsAt('castle'), 'aurelia']);
+  const shut = story.blocked('castillo-2'), plan = story.puzzle('castillo-2');
+  assert.equal(plan.id, 'horario');
+  assert.deepEqual(shut, plan.gate);
+  assert.ok(story.interactions('castillo-2').some(i => i.id === 'castillo-horario') && story.interactions('castillo-2').some(i => i.id === 'castillo-puerta'));
+  // The door says why; the sheet opens, with what a timetable is said the first time only.
+  assert.deepEqual(story.handle({ type: 'interact', id: 'castillo-puerta' }), [{ kind: 'dialogue', dialogue: LINES_CASTLE.horarioShut }]);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'castillo-horario' }).map(e => e.kind), ['dialogue', 'horario']);
+  assert.deepEqual(story.handle({ type: 'interact', id: 'castillo-horario' }).map(e => e.kind), ['horario']);
+  const { horario } = story.horario, wrong = [...horario.solution];
+  [wrong[0], wrong[1]] = [wrong[1], wrong[0]];
+  assert.deepEqual(story.handle({ type: 'horario', board: wrong }), [], 'a sheet that does not square opens nothing');
+  story.pencil(wrong);
+  assert.deepEqual(story.horario.tried, wrong, 'what is pencilled stays for the next look');
+  assert.deepEqual(story.handle({ type: 'horario', board: horario.solution }).map(e => e.kind), ['dialogue', 'lights']);
+  assert.ok(story.has('luz-horario'));
+  assert.deepEqual(story.blocked('castillo-2'), []);
+  assert.equal(story.puzzle('castillo-2'), undefined);
+  assert.ok(!story.interactions('castillo-2').some(i => i.id === 'castillo-horario'));
+});
+
+test('Pica pared: it catches whoever moves while it looks, hears a run, and the wall reached opens the door for good', () => {
+  const pica = createPica(7), still = [{ watched: true, moving: false, running: false }], walking = [{ watched: true, moving: true, running: false }];
+  assert.equal(pica.phase, 'away');
+  const until = (phase, walkers = still) => { for (let i = 0; i < 2000 && pica.phase !== phase; i++) assert.deepEqual(stepPica(pica, .01, walkers).caught, [], 'nobody caught on the way'); assert.equal(pica.phase, phase); };
+  // Walking while it counts is the game; its shoulders rise before it turns.
+  until('tell', walking);
+  until('look');
+  // Within a breath of its turning nobody is caught; after it, whoever moves is, and nobody behind the line.
+  assert.deepEqual(stepPica(pica, PICA.grace / 2, walking).caught, []);
+  assert.deepEqual(stepPica(pica, PICA.grace, [...walking, { watched: false, moving: true, running: true }, ...still]).caught, [0]);
+  assert.equal(pica.caught, 1);
+  until('away');
+  // A run is heard: it has turned before a walk's count would have ended.
+  const heard = createPica(7), plain = createPica(7), time = (p, walkers) => { let t = 0; while (p.phase === 'away') { stepPica(p, .01, walkers); t += .01; } return t; };
+  assert.ok(time(heard, [{ watched: true, moving: true, running: true }]) < time(plain, walking));
+  // In the story: the great Castigado stands in the door, the wall is a place to reach, and reaching it is that.
+  const story = new Story([...flagsAt('castle'), 'aurelia', 'direccion']), plan = story.puzzle('castillo-3');
+  assert.equal(plan.id, 'pica-pared');
+  assert.deepEqual(story.blocked('castillo-3'), [...plan.gate, ...plan.door]);
+  const [wall] = story.triggers('castillo-3');
+  assert.ok(plan.touch.every(cell => onTrigger(wall, cell)), 'either side of it');
+  assert.ok(onTrigger(wall, { x: plan.door[0].x - plan.out.x, z: plan.door[0].z - plan.out.z }), 'and right behind its back');
+  assert.ok(!onTrigger(wall, plan.entry));
+  assert.deepEqual(story.handle({ type: 'near', id: wall.id }).map(e => e.kind), ['dialogue', 'lights']);
+  assert.ok(story.has('luz-pica-pared'));
+  assert.deepEqual(story.blocked('castillo-3'), []);
+  assert.deepEqual(story.triggers('castillo-3'), []);
 });

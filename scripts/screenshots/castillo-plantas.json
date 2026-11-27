@@ -1,0 +1,105 @@
+{
+  "title": "El castillo: lo que se junta por el camino en las plantas 2 y 3",
+  "description": "docs/castle.md § The art drifts towards the boss. Three rooms of the second floor and three of the third, from the door they are entered by to the boss's: the office gathering (cabinets, minutes, failing tubes, leaks) and the playground worn out under her old gum, with the throne's gold at the end. The rooms are empty of pupils for the pictures. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => {\n  const g = window.gerard;\n  window.enter = n => { const f = g.story.place('castillo-' + n).palace.floor; window.__f = f; g.story.fears('castillo-' + n); g.story.castle.beaten = { ...g.story.castle.beaten, [n]: f.rooms.map(room => room.id) }; window.__c = f.spawn; g.game.setEnvironment('castillo-' + n, { ...f.spawn }); };\n  window.offset = () => { const at = g.game.app.root.findByName('Jugador').getPosition(); window.__o = { x: at.x - window.__c.x, z: at.z - window.__c.z }; };\n  window.path = () => window.__f.rooms.filter(r => r.onPath).sort((a, b) => a.order - b.order);\n  // The room of the main path nearest to 'order' of the way, of one of 'kinds'.\n  window.room = (order, kinds) => window.path().filter(r => !kinds || kinds.includes(r.kind)).sort((a, b) => Math.abs(a.order - order) - Math.abs(b.order - order))[0];\n  window.go = (order, kinds, d) => { const r = window.room(order, kinds); g.game.setEnvironment(window.__f.phase === 2 ? 'castillo-2' : 'castillo-3', { x: r.cell.x, z: r.cell.z + 1 }); setTimeout(() => g.game.frame({ x: r.cell.x + window.__o.x, y: .6, z: r.cell.z + window.__o.z }, d ?? 9.5), 600); };\n})()"
+    },
+    {
+      "eval": "window.enter(2)"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Segundo curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.offset()"
+    },
+    {
+      "eval": "window.go(0.1, [\"fight\"])"
+    },
+    {
+      "shot": "2-principio",
+      "delay": 2200,
+      "caption": "Second floor, near the gym: mat blue, a tube still lit, hardly a cabinet"
+    },
+    {
+      "eval": "window.go(0.5, [\"fight\",\"corridor\"])"
+    },
+    {
+      "shot": "2-medio",
+      "delay": 2200,
+      "caption": "Halfway: cabinets along the wall, minutes pinned up and stamped, a leak and its bucket"
+    },
+    {
+      "eval": "window.go(0.85, [\"fight\",\"elite\"])"
+    },
+    {
+      "shot": "2-final",
+      "delay": 2200,
+      "caption": "By the office: manila and steel, a wall of cabinets with drawers left open, the tube failing or dead"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.enter(3)"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Tercer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.offset()"
+    },
+    {
+      "eval": "window.go(0.1, [\"fight\",\"corridor\"])"
+    },
+    {
+      "shot": "3-principio",
+      "delay": 2200,
+      "caption": "Third floor, leaving the office: almost no light, the first old gum and a thing of the playground worn out"
+    },
+    {
+      "eval": "window.go(0.5, [\"fight\",\"corridor\"])"
+    },
+    {
+      "shot": "3-medio",
+      "delay": 2200,
+      "caption": "Halfway: more of her gum, dull and cracked, dried in strands down the walls"
+    },
+    {
+      "eval": "window.go(0.9, [\"fight\",\"elite\"])"
+    },
+    {
+      "shot": "3-final",
+      "delay": 2200,
+      "caption": "Near the throne: night indigo, and her gold begins to show on its plinths"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    }
+  ]
+}

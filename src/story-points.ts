@@ -147,8 +147,10 @@ export const STORY_ARCS = [
   // Each room of the castle beaten for the first time (docs/castle.md § Ecos of the rooms): an Eco de luz each.
   { id: 'aulas', chapter: 2, title: 'Las aulas', detail: 'Cada sala del castillo, la primera vez', after: 'castle', steps: [
     { flags: ['luz-alumnos-1a', 'luz-alumnos-1b', 'luz-alumnos-1c', 'luz-delegada-1'], label: 'Primer curso: cada sala vencida una vez' },
-    { flags: ['luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-delegada-2'], label: 'Segundo curso: cada sala vencida una vez' },
-    { flags: ['luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-delegada-3'], label: 'Tercer curso: cada sala vencida una vez' },
+    { flags: ['luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-alumnos-2f', 'luz-alumnos-2g', 'luz-delegada-2'], label: 'Segundo curso: cada sala vencida una vez' },
+    { flags: ['luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-alumnos-3e', 'luz-alumnos-3f', 'luz-delegada-3'], label: 'Tercer curso: cada sala vencida una vez' },
+    { flags: ['luz-horario'], label: 'El horario: la puerta cerrada del segundo curso' },
+    { flags: ['luz-pica-pared'], label: 'Pica pared: la puerta cerrada del tercero' },
   ] },
   // Only one of the two is ever set: each ending hangs from her fall on its own.
   { id: 'final-acabar', chapter: 2, title: 'Final · Acabar', detail: 'El lunes después', after: 'reina', steps: [

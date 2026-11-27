@@ -52,7 +52,7 @@ function themeOf(phase: CastlePhase): ZoneTheme {
     mood: { won: false, screams: phase.id - 1 },
   };
 }
-const ROOM_NAMES = { fight: 'Aula', elite: 'Aula de la delegada', rest: 'Sala de profesores', find: 'Armario de material', corridor: 'Rellano', antechamber: 'Antesala' } as const;
+const ROOM_NAMES = { fight: 'Aula', elite: 'Aula de la delegada', rest: 'Sala de profesores', find: 'Armario de material', corridor: 'Rellano', antechamber: 'Antesala', puzzle: 'Aula cerrada' } as const;
 
 /** `floor` as a place: its grid, its rooms and corridors with their floors, the way back and the way into the boss's room. */
 export function castleEnvironment(floor: CastleFloor): Environment {

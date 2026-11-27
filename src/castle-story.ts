@@ -10,7 +10,8 @@ import type { Dialogue, DialogueLine } from './dialogue';
 import type { EnvironmentId, Interaction } from './environments';
 import type { StoryEffect, Trigger } from './story.ts';
 import { CASTLE_LIGHTS, CASTLE_PHASES, DIRECCION_MEETING, ROOM_LIGHTS, STRONG_LIGHTS, castlePhase, floorFor, isCastleEncounter, isCastlePlace, roomRound,
-  type CastleEncounter, type CastleFlag, type CastleFloor, type CastlePhaseId, type Cell, type RoomEncounter } from './castle.ts';
+  type CastleEncounter, type CastleFlag, type CastleFloor, type CastlePhaseId, type CastlePuzzle, type Cell, type RoomEncounter } from './castle.ts';
+import { horarioFor, squares, withGiven, type Board, type Horario } from './horario.ts';
 
 const gerard = (text: string): DialogueLine => ({ speaker: 'gerard35', text });
 const aitor = (text: string): DialogueLine => ({ speaker: 'aitor', text });
@@ -35,6 +36,31 @@ export const LINES_CASTLE = {
   floorChanged: both(aitor('Ayer esto no estaba así.'), gerard('No. Cada mañana lo recoloca.')),
   rest: both(gerard('La sala de profesores. La cafetera sigue caliente.'), aitor('Cinco minutos. Y seguimos.')),
   find: both(gerard('Un armario de material. Tizas, fundas, un silbato.'), aitor('Nada que sirva. Todavía.')),
+  /** The second floor's closed door (docs/castle.md § The closed doors): it says why it will not open, and whose job that is. */
+  horarioShut: both(
+    gerard('No abre. Lleva un sello de secretaría: «Aula sin horario asignado».'),
+    aitor('¿Y quién le pone horario a un aula?'),
+    gerard('Yo. Cada septiembre.'),
+  ),
+  /** The sheet on the wall, the first time he looks at it each day: what a timetable is, said by whoever makes them. */
+  horarioBoard: both(
+    gerard('El horario de segundo, a medias. Cuatro asignaturas, cuatro aulas, cuatro horas.'),
+    gerard('Nadie da clase en dos aulas a la vez, y ningún grupo repite asignatura en la mañana.'),
+    aitor('Dicho así, parece fácil.'),
+    gerard('Lo parece hasta que falta una casilla.'),
+  ),
+  horarioDone: both(
+    gerard('Cuadra.'),
+    aitor('La puerta. Ha soltado el sello ella sola.'),
+    gerard('Once años haciendo esto. Nunca me había abierto nada.'),
+  ),
+  /** The third floor's: they reached the wall. What the game was, said by whoever played it. */
+  picaDone: both(
+    aitor('Ha dejado de contar.'),
+    gerard('Un, dos, tres, pica pared. En el patio, quien tocaba la pared ganaba.'),
+    aitor('¿Y el que contaba?'),
+    gerard('Se quedaba solo, de cara a ella.'),
+  ),
   aureliaBefore: withThem('aurelia',
     aurelia('Arriba tard, Gerard. I porta algú que no està matriculat.'),
     gerard('Aurelià. Tens els ulls…'),
@@ -157,6 +183,8 @@ export interface CastleRun {
   seen?: boolean; changed?: boolean;
   /** Today's Eco de luz from Encarnados is taken (`strong`), and the fight starting now is against them (`strongFight`). */
   strong?: boolean; strongFight?: boolean;
+  /** El horario: Gerard has said what a timetable is today (`told`), and what is pencilled on today's sheet (`pencil`). */
+  told?: boolean; pencil?: number[];
 }
 export const freshCastle = (stamp = ''): CastleRun => ({ stamp, beaten: {} });
 
@@ -204,7 +232,14 @@ export function strongWon(host: CastleHost): StoryEffect[] {
   return [{ kind: 'lights', people: [light] }];
 }
 /** Today's floor of `phase` (docs/castle.md § The generated floor): the same all day, another tomorrow. */
-export const castleFloor = (host: Pick<CastleHost, 'seed' | 'day'>, phase: CastlePhaseId): CastleFloor => floorFor(host.seed, host.day, phase);
+export function castleFloor(host: Pick<CastleHost, 'seed' | 'day'>, phase: CastlePhaseId): CastleFloor {
+  // Asked for every frame (what a floor keeps shut): the day's three floors are kept, and no more.
+  const key = `${host.seed}:${host.day}:${phase}`;
+  let floor = FLOORS.get(key);
+  if (!floor) { if (FLOORS.size >= 6) FLOORS.clear(); FLOORS.set(key, floor = floorFor(host.seed, host.day, phase)); }
+  return floor;
+}
+const FLOORS = new Map<string, CastleFloor>();
 const roomTag = (phase: CastlePhaseId, room: number) => `castillo-sala-${phase}-${room}`;
 
 /** The pupils roaming today's floor (src/chasers.ts walks them): each fight room's, round its room, until beaten. */
@@ -229,10 +264,45 @@ function bossHere(host: CastleHost, environment: EnvironmentId) {
   const phase = CASTLE_PHASES.find(p => p.into.environment === environment);
   return phase && !host.has(phase.flag) && !host.has('reina') ? phase : undefined;
 }
+/** A floor's puzzle while it stands: today's floor has one and nobody has solved it yet (solved once, it is solved for good). */
+export function castlePuzzle(host: CastleHost, environment: EnvironmentId): CastlePuzzle | undefined {
+  if (!host.adult || host.has('reina') || !isCastlePlace(environment)) return undefined;
+  const puzzle = castleFloor(host, castlePhase(environment).id).puzzle;
+  return puzzle && !host.has(`luz-${puzzle.id}`) ? puzzle : undefined;
+}
+/** The cells a floor's puzzle keeps shut: the corridor behind its door, and the door itself where the great Castigado stands against it. */
+export function castleBlocked(host: CastleHost, environment: EnvironmentId): Cell[] {
+  const puzzle = castlePuzzle(host, environment);
+  return puzzle ? [...puzzle.gate, ...puzzle.id === 'pica-pared' ? puzzle.door : []].map(c => ({ ...c })) : [];
+}
+const PICA_WALL = 'castillo-pica-pared';
+/** Today's timetable and what is pencilled on it (src/horario-ui.ts). */
+export function castleHorario(host: CastleHost): { horario: Horario; tried: Board } {
+  return { horario: horarioFor(castleFloor(host, 2).seed), tried: [...run(host).pencil ?? []] };
+}
+export function castlePencil(host: CastleHost, tried: Board) { run(host).pencil = [...tried]; }
+/** A puzzle solved: its way opens for good, and it lets go of an Eco de luz. */
+function solved(host: CastleHost, id: CastlePuzzle['id'], line: Dialogue): StoryEffect[] {
+  return host.raise(`luz-${id}`) ? [say(line), { kind: 'lights', people: [id] }] : [];
+}
+/** A sheet handed in: it squares over what was in ink, and the door gives. */
+export function castleSquared(host: CastleHost, board: Board): StoryEffect[] {
+  if (!castlePuzzle(host, 'castillo-2')) return [];
+  const { horario } = castleHorario(host);
+  return squares(withGiven(horario, board)) ? solved(host, 'horario', LINES_CASTLE.horarioDone) : [];
+}
 /** Walking up to a boss starts its fight (the same id as the boss standing there). */
 export function castleTriggers(host: CastleHost, environment: EnvironmentId): Trigger[] {
   const waiting = bossHere(host, environment);
   if (waiting) return [{ id: `castillo-${waiting.boss}`, cell: { ...waiting.bossAt }, radius: waiting.bossRadius }];
+  // Pica pared: the wall the great Castigado stands against. Reaching it is touching it.
+  const puzzle = castlePuzzle(host, environment);
+  if (puzzle?.id === 'pica-pared') {
+    // The wall's row from one side of it to the other, and the row before it: right behind its back is the wall too.
+    const cells = puzzle.touch.flatMap(c => [c, { x: c.x - puzzle.out.x, z: c.z - puzzle.out.z }]);
+    const x = Math.min(...cells.map(c => c.x)), z = Math.min(...cells.map(c => c.z));
+    return [{ id: PICA_WALL, cell: { ...puzzle.touch[0] }, radius: 0, area: { x, z, w: Math.max(...cells.map(c => c.x)) - x + 1, d: Math.max(...cells.map(c => c.z)) - z + 1 } }];
+  }
   // The first steps onto the first floor, once a day until Aurelià has fallen: it is not the gym, and it is not yesterday's.
   if (host.adult && environment === 'castillo-1' && !host.has('aurelia') && !run(host).seen) return [{ id: 'castillo-entrada', cell: { ...castleFloor(host, 1).spawn }, radius: 2.5 }];
   return [];
@@ -246,6 +316,7 @@ export function castleNear(host: CastleHost, id: string): StoryEffect[] {
     today.seen = true;
     return [say(today.changed ? LINES_CASTLE.floorChanged : LINES_CASTLE.floorFirst)];
   }
+  if (id.startsWith(PICA_WALL)) return castlePuzzle(host, 'castillo-3')?.id === 'pica-pared' ? solved(host, 'pica-pared', LINES_CASTLE.picaDone) : [];
   const room = /^castillo-sala-(\d)-(\d+)$/.exec(id);
   if (room) {
     const phase = Number(room[1]) as CastlePhaseId, n = Number(room[2]), today = run(host);
@@ -345,14 +416,27 @@ export function castleInteractions(host: CastleHost, environment: EnvironmentId)
     return [{ id: CURTAIN_WAY, label: 'Subir por la escalera', hint: 'Subir', cell: { ...CURTAIN_CELL }, to: { environment: castlePhase(1).environment, cell: { ...castleFloor(host, 1).spawn } } }];
   }
   if (!host.adult || !isCastlePlace(environment)) return [];
-  const floor = castleFloor(host, castlePhase(environment).id);
-  return floor.rooms.flatMap(room => room.kind === 'rest' ? [{ id: 'castillo-descanso', label: 'Sentarse un momento', hint: 'Descansar', cell: { ...room.cell } }]
-    : room.kind === 'find' ? [{ id: 'castillo-armario', label: 'Mirar el armario', cell: { ...room.cell } }] : []);
+  const floor = castleFloor(host, castlePhase(environment).id), puzzle = castlePuzzle(host, environment);
+  return [
+    ...floor.rooms.flatMap(room => room.kind === 'rest' ? [{ id: 'castillo-descanso', label: 'Sentarse un momento', hint: 'Descansar', cell: { ...room.cell } }]
+      : room.kind === 'find' ? [{ id: 'castillo-armario', label: 'Mirar el armario', cell: { ...room.cell } }] : []),
+    // El horario: the sheet on the wall, and the door that says why it will not open.
+    ...puzzle?.id === 'horario' ? [
+      { id: 'castillo-horario', label: 'Mirar el horario', hint: 'Mirar', cell: { ...puzzle.board } },
+      { id: 'castillo-puerta', label: 'Abrir la puerta', cell: { ...puzzle.door[0] } },
+    ] : [],
+  ];
 }
 /** A castle interaction used, or the first step onto a floor. Returns nothing if it is not the castle's. */
 export function castleInteract(host: CastleHost, id: string): StoryEffect[] | undefined {
   if (id === 'castillo-descanso') return [say(LINES_CASTLE.rest), ...host.hour()];
   if (id === 'castillo-armario') return [say(LINES_CASTLE.find)];
+  if (id === 'castillo-puerta') return [say(LINES_CASTLE.horarioShut)];
+  if (id === 'castillo-horario') {
+    const today = run(host), first = !today.told;
+    today.told = true;
+    return [...first ? [say(LINES_CASTLE.horarioBoard)] : [], { kind: 'horario' }];
+  }
   if (id === 'enter-school' && host.has('reina')) return [say(LINES_CASTLE.schoolAgain)];
   return undefined;
 }

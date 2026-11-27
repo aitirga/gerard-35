@@ -14,6 +14,7 @@ import type { ChoirTrack } from './choir-repertoire';
 import { createJarUI } from './jar-ui';
 import { createParcelasUI } from './parcelas-ui';
 import { createCandadoUI } from './candado-ui';
+import { createHorarioUI } from './horario-ui';
 import { CAMP_HUNTERS } from './friends/universidad';
 import { MAX_LEVEL, reachOf, toNextLevel } from './levels';
 import { Story, STORY_FLAGS, type StoryEffect, type StoryEvent, type StoryFlag } from './story';
@@ -96,7 +97,7 @@ let titleOpen = !import.meta.env.DEV || new URLSearchParams(location.search).has
 // La Voz's song: Marta's recording, held to her fight's clock (src/voz-song.ts).
 const vozSong = createVozSong(audio);
 // Registered before the menus so Escape is heard before they take it.
-const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden]), #parcelas-panel:not([hidden]), #candado-panel:not([hidden])'));
+const stopMenuSounds = watchMenuSounds(sfx, () => !!document.querySelector('#controller-menu[open], #hud[data-panel], #lamp-dial:not([hidden]), #travel:not([hidden]), #jar-panel:not([hidden]), #parcelas-panel:not([hidden]), #candado-panel:not([hidden]), #horario-panel:not([hidden])'));
 /** The fight's sounds, from their table (src/battle-sounds.ts). */
 const playCues = (cues: Cue[]) => { for (const { id, ...options } of cues) sfx.play(id, options); };
 /**
@@ -602,6 +603,8 @@ try {
     else if (effect.kind === 'parcelas') await parcelasUI.open(effect.board ? { board: effect.board } : undefined);
     // The pool gate's padlock: the beat lasts while it is open.
     else if (effect.kind === 'candado') await candadoUI.open();
+    // The second floor's timetable: the beat lasts while the sheet is open.
+    else if (effect.kind === 'horario') await horarioUI.open();
     else if (effect.kind === 'photo') { sfx.play('clink'); storyPaused = true; game.setPaused(true); await storyUI.photo(effect.caption); storyPaused = false; game.setPaused(!!exploration.active || menuOpen()); }
     else if (effect.kind === 'news') await watchNews();
     else if (effect.kind === 'metro') await ride(effect.station);
@@ -789,7 +792,7 @@ try {
       const go = () => battlePhase === undefined ? game.setEnvironment(id) : requestAnimationFrame(go);
       go();
     },
-    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active),
+    open: open => game.setPaused(open || storyPaused || menuOpen() || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || horarioUI.isOpen || !!exploration.active),
     dev: import.meta.env.DEV ? {
       flags: () => story.saved,
       day: () => story.days.clock.day,
@@ -1081,6 +1084,14 @@ try {
     // The story judges the numbers; given, the padlock comes off and the gate opens.
     tried: numbers => { storyEvent({ type: 'candado', numbers }); return story.has('candado'); },
   });
+  const horarioUI = createHorarioUI(hud, {
+    pause: paused => { game.setPaused(paused || storyPaused || menuOpen() || !!exploration.active); music.duck(paused || menuOpen() || !!exploration.active); },
+    sound: id => sfx.play(id),
+    sheet: () => story.horario,
+    keep: tried => story.pencil(tried),
+    // The story judges the sheet; squared, the door gives and its light is let go.
+    squared: board => { storyEvent({ type: 'horario', board }); return story.has('luz-horario'); },
+  });
   // Whoever speaks wears their line's face in the world too, not only in the portrait.
   dialogue.onSpeak = (line, talking) => game.speak(line?.speaker, line?.expression, talking);
   for (const light of HOUSE_LIGHTS) game.setLamp(light.id, homeLights.flat[light.id]);
@@ -1120,7 +1131,7 @@ try {
     if (place) scorePlace(place);
   }, 500);
   const controllerContext = (player: PlayerId = 1) => title.isOpen ? 'title' : jumpMenu.isOpen ? 'jump' : battleUI.controllerContext !== 'world' ? battleUI.controllerContextOf(player)
-    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : pianoBook.isOpen ? 'choir-book' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen ? 'candado'
+    : travelUI.open ? 'travel' : lookAway ? 'news' : storyUI.doomOpen ? 'doom' : lampPicker.isOpen ? 'lamp' : portalUI.isOpen ? 'maqueta' : pianoBook.isOpen ? 'choir-book' : jarUI.isOpen ? 'jar' : parcelasUI.isOpen ? 'parcelas' : candadoUI.isOpen || horarioUI.isOpen ? 'candado'
     : dialogue.open ? 'dialogue' : exploration.active ? `journal:${exploration.active}` : 'world';
   let restoreLightsOnResume = false;
   const controller = createControllerUI({
@@ -1133,7 +1144,7 @@ try {
       get: () => control.mode,
       set: (mode: ControlMode) => { control.mode = mode; try { localStorage.setItem(soloKey, mode); } catch { /* Storage is optional. */ } controlChanged(); },
     } : undefined,
-    pause: value => { game.setPaused(value || storyPaused || pianoBook.isOpen || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || !!exploration.active); },
+    pause: value => { game.setPaused(value || storyPaused || pianoBook.isOpen || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || horarioUI.isOpen || !!exploration.active); music.duck(value || lampPicker.isOpen || portalUI.isOpen || jarUI.isOpen || parcelasUI.isOpen || candadoUI.isOpen || horarioUI.isOpen || !!exploration.active); },
     panel: id => id ? exploration.show(id) : exploration.close(),
     retry: { able: () => battleUI.retriable, run: () => battleUI.retry() },
     lights: section => mountHomeLightsPage(section, homeLights),
@@ -1162,6 +1173,7 @@ try {
       if (jarUI.isOpen) { if (action !== 'overview' && action !== 'character') jarUI.control(action, player === 2 ? 2 : 1); return; }
       if (parcelasUI.isOpen) { parcelasUI.control(action, player === 2 ? 2 : 1); return; }
       if (candadoUI.isOpen) { candadoUI.control(action, player === 2 ? 2 : 1); return; }
+      if (horarioUI.isOpen) { horarioUI.control(action, player === 2 ? 2 : 1); return; }
       if (lookAway) { if (action === 'confirm' || action === 'cancel') lookAway(); return; }
       if (storyUI.doomOpen) { if (action === 'confirm') storyUI.confirmDoom(); return; }
       // Each player opens their own half of the status screen with the top face button.

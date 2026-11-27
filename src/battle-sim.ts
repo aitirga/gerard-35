@@ -177,8 +177,8 @@ export const FRIEND_ANIMA: Record<AnimaId, ClassId> = { nuria: 'papagato', unive
 const FLOOR_ROOMS = [4, 6] as const;
 export const CASTLE_STAGES = {
   'castillo-1': { name: 'Castillo · primer curso', stage: 1, lights: 0, fights: ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1', 'aurelia'], teaching: ['alumnos-1a', 'alumnos-1b', 'alumnos-1c'] },
-  'castillo-2': { name: 'Castillo · segundo curso', stage: 2, lights: CASTLE_LIGHTS.aurelia.length + FLOOR_ROOMS[0], fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2', 'direccion'], teaching: ['alumnos-2c'] },
-  'castillo-3': { name: 'Castillo · tercer curso', stage: 3, lights: CASTLE_LIGHTS.aurelia.length + CASTLE_LIGHTS.direccion.length + FLOOR_ROOMS[0] + FLOOR_ROOMS[1], fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3', 'reina-vuelta'], teaching: ['alumnos-3a'] },
+  'castillo-2': { name: 'Castillo · segundo curso', stage: 2, lights: CASTLE_LIGHTS.aurelia.length + FLOOR_ROOMS[0], fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'alumnos-2f', 'alumnos-2g', 'delegada-2', 'direccion'], teaching: ['alumnos-2c', 'alumnos-2f'] },
+  'castillo-3': { name: 'Castillo · tercer curso', stage: 3, lights: CASTLE_LIGHTS.aurelia.length + CASTLE_LIGHTS.direccion.length + FLOOR_ROOMS[0] + FLOOR_ROOMS[1], fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'alumnos-3e', 'alumnos-3f', 'delegada-3', 'reina-vuelta'], teaching: ['alumnos-3a'] },
 } as const satisfies Record<string, { name: string; stage: GrowthStage; lights: number; fights: readonly string[]; teaching: readonly string[] }>;
 export type CastleStageId = keyof typeof CASTLE_STAGES;
 export const CASTLE_STAGE_IDS = Object.keys(CASTLE_STAGES) as CastleStageId[];
@@ -654,6 +654,8 @@ function pounceWorth(after: BattleState, holderId: string) {
 const PRESENT_WORTH = .5, RAGE_WORTH = 6, MONTON_TURNS = 7;
 /** A third-year Repetidor's crust: each of the blows that crack it, since every blow after the last one lands whole. */
 const CRUST_WORTH = 25;
+/** El Pelota (docs/castle.md § Bestiary): how much more a PV off him counts while he has someone to flatter, and the turns of his a fall saves. */
+const PELOTA_FOCUS = .6, PELOTA_TURNS = 2;
 /**
  * The castle's bosses (docs/castle-bosses.md), what is not PV: Aurelià tripped (a lap and a step of Ritmo), his Récord
  * taken from him in the run-up, a signature a directiva will not put, a layer off the Queen (every blow after it lands
@@ -829,6 +831,12 @@ function gain(before: BattleState, after: BattleState, choice: Choice, threat: T
         value -= ((now.castle?.rage ?? 0) - (foe.castle?.rage ?? 0)) * RAGE_WORTH;
         if ((now.castle?.rage ?? 0) >= CASTLE.rabia) value -= sum(threatOn(after)) - sum(threat);
       }
+    }
+    // El Pelota while one of his is bigger than him: every PV off him is worth more than its number, and felling him is the
+    // cures and the Fuerza he will not give (about `PELOTA_TURNS` of his turns).
+    if (foe.kind === 'pelota' && foe.hp > 0) {
+      const big = before.foes.filter(f => f.hp > 0 && f.kind !== 'pelota' && f.maxHp > foe.maxHp).sort((a, b) => b.maxHp - a.maxHp)[0];
+      if (big) { value += (foe.hp - Math.max(0, now.hp)) * PELOTA_FOCUS; if (now.hp <= 0) value += CASTLE.peloteoCura * big.maxHp * PELOTA_TURNS; }
     }
     // The castle: a move said and taken away (a directiva overruled, a hand broken with its blow said, La Pompa burst):
     // what the foes would no longer do, the real rules on a copy. Aurelià's Récord is rounds away, so it has its own worth.
@@ -1334,6 +1342,11 @@ export function playOut(state: BattleState, setup: Setup, random: () => number):
       if (kind) { const moves = run.moves[kind] ??= {}; moves[effect.ability.id] = (moves[effect.ability.id] ?? 0) + 1; }
     }
     if (effect.eye) count('ojo-roto');
+    // The Queen's stages, each by what its answer shows (docs/castle-bosses.md § La Reina Bubbaloo): a layer torn off
+    // (`se-despega`), one of the party lifted by her hand (`atrapado`) or holding on (`no-lo-coge`), La Pompa burst in
+    // her face (`pompa-rota`) or gone off whole on everyone (`pompa-entera`).
+    for (const call of effect.called ?? []) { const key = QUEEN_CALLS[call.text]; if (key) count(key); }
+    if (effect.kind === 'enemy' && effect.ability?.id === 'pompa' && effect.amount && !state.foes.find(f => f.id === effect.actor)?.castle?.pompa) count('pompa-entera');
     // A confused foe's blow on its own (`confundido`), and the ones Sugestión sent to the foe the party aimed at (`sugestion`).
     if (effect.confused) count('confundido');
     if (effect.combustion) count(effect.kind === 'enemy' ? 'combustion-confundido' : 'combustion');
@@ -1624,6 +1637,8 @@ export function conclude(rows: Row[]): string[] {
  * What the fights are meant to be, as numbers (docs/fight-sim.md). `just fight-sim check` and the
  * tests hold the game to them: change a number here on purpose, with its reason, or fix the fight.
  */
+/** What the Queen's fight calls over a head when a stage's answer is played, or is not, and the event each is counted as. */
+const QUEEN_CALLS: Readonly<Record<string, string>> = { 'Se despega': 'se-despega', Atrapado: 'atrapado', 'No lo coge': 'no-lo-coge', '¡Pompa rota!': 'pompa-rota', Libre: 'libre' };
 export interface Target extends Setup {
   id: string;
   why: string;
@@ -1888,6 +1903,15 @@ export const TARGETS: readonly Target[] = [
   { id: 'trio-segundo-sin-atractor', fight: 'alumnos-2a', party: DUO, ...ATTRACT_AT, policy: 'smart', ban: ['atractor'], win: [.85, 1], roundsWon: [4.2, 5.1], happens: { atrae: [0, 0] }, why: 'Sin Atractor, el mismo fuego se queda donde cae: la sala sale igual.' },
   { id: 'empollones-bien', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'smart', win: [.88, 1], why: 'Dos Empollones y la Chivata: no repetir clase de golpe sobre el mismo Empollón (lo que no se sabe le entra más), y la Chivata primero.' },
   { id: 'empollones-sin-pensar', fight: 'alumnos-2b', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .7], why: 'Repitiendo el mismo golpe los dos se lo aprenden y la pelea se alarga con la Chivata marcando: se pierde más veces que se gana.' },
+  // The four of 2026-11-27 (docs/castle.md § Bestiary): two rooms a floor, each with its pair.
+  { id: 'fila-segundo-bien', fight: 'alumnos-2f', party: DUO, ...FLOOR_2, policy: 'smart', win: [.9, 1], why: 'La Fila y el Repetidor, la otra sala blanda del segundo curso: un golpe a todos se lleva a los cuatro Párvulos juntos, y el Empujón avisado se aguanta.' },
+  { id: 'fila-segundo-sin-pensar', fight: 'alumnos-2f', party: DUO, ...FLOOR_2, policy: 'casual', win: [.5, .95], hpLeftWon: [.3, .7], why: 'De uno en uno los Párvulos son cuatro turnos regalados y cuatro tirones cada ronda: se gana más veces que no, y cuesta media vida.' },
+  { id: 'estiron-segundo-bien', fight: 'alumnos-2g', party: DUO, ...FLOOR_2, policy: 'smart', win: [.85, 1], why: 'El Pelota y el Estirón: el Pelota primero (o confundido, que cura al equipo), y el Estirón antes de que llegue arriba; su Desplome avisado se aguanta.' },
+  { id: 'estiron-segundo-sin-pensar', fight: 'alumnos-2g', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .68], hpLeftWon: [0, .55], why: 'Pegándole al grande mientras el Pelota lo cura y lo sube, llega arriba y se desploma sobre todos: se pierde casi una de cada dos, y la que se gana cuesta más de media vida. Es la sala que lo presenta; en tercero, con la Chivata, ya no perdona.' },
+  { id: 'mayor-bien', fight: 'alumnos-3e', party: DUO, ...FLOOR_3, policy: 'smart', win: [.8, 1], why: 'El Mayor y su fila: limpiar a los pequeños con un golpe a todos antes de que arremeta (sin nadie que le jalee su golpe es uno más), o tumbarlo a él para que no lleguen otros.' },
+  { id: 'mayor-sin-pensar', fight: 'alumnos-3e', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .5], why: 'Con tres pequeños en pie cada Arremete llega a más del doble y siempre viene otro: se pierde.' },
+  { id: 'trio-tercero-estiron-bien', fight: 'alumnos-3f', party: DUO, ...FLOOR_3, policy: 'smart', win: [.75, 1], why: 'El Estirón, el Pelota y la Chivata, la sala dura del tercero: los dos frágiles antes (o cegada una y confundido el otro), y aguantar el Desplome avisado, que con su marca encima tumba.' },
+  { id: 'trio-tercero-estiron-sin-pensar', fight: 'alumnos-3f', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .4], why: 'Sin orden, el Estirón crece curado y subido, y la marca de la Chivata multiplica su golpe: se pierde.' },
   { id: 'delegada-segundo-bien', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'smart', win: [.78, 1], why: 'La Delegada de segundo, con los Gemelos y la Chivata: ella primero (o cegada, o confusa), luego la Chivata, y los Gemelos a la par.' },
   { id: 'delegada-segundo-sin-pensar', fight: 'delegada-2', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .45], why: 'Cuatro al mismo y con marca: sin orden se pierde.' },
   { id: 'gemelos-tercero-bien', fight: 'alumnos-3c', party: DUO, ...FLOOR_3, policy: 'smart', win: [.82, 1], why: 'Los Gemelos de tercero con el Empollón: bajarlos a la par (un golpe a todos, o la chispa que pasa de uno al otro), con golpes físicos contra el chicle rancio, y alternar contra el Empollón.' },
@@ -1913,9 +1937,15 @@ export const TARGETS: readonly Target[] = [
   { id: 'encarnados-sin-pensar', fight: 'alumnos-2d:encarnados', party: DUO, ...FLOOR_2, policy: 'casual', win: [0, .25], why: 'Sin leer la sala, lo que antes se aguantaba ya no: se pierde.' },
   // The Queen (docs/castle-bosses.md § La Reina Bubbaloo). Her first fight cannot be won: its pair is whether the party gets her to her tenth,
   // where she takes Aitor (`suyo`, his blows on Gerard), or falls before. Held with the party as it comes, two of the friends' ánimas each.
-  { id: 'reina-toma-a-aitor', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [2.5, 12] }, why: 'La Reina, con lo que pide cada fase: arrancarle las capas con lo que deshace cada una, aguantar la mano que sujeta y romperlas, reventar La Pompa a tiempo. Se la lleva hasta el décimo de sus PV; ahí toma a Aitor, y sin el artilugio Gerard cae.' },
+  { id: 'reina-toma-a-aitor', fight: 'reina', party: FULL, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [2.5, 12], 'se-despega': [2, 5], manos: [.7, 1] }, why: 'La Reina, con lo que pide cada fase: arrancarle las capas con lo que deshace cada una, aguantar la mano que sujeta y romperlas, reventar La Pompa a tiempo. Se la lleva hasta el décimo de sus PV; ahí toma a Aitor, y sin el artilugio Gerard cae.' },
   { id: 'reina-con-el-duo', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { suyo: [.6, 12] }, why: 'Sin llevar puestas las ánimas de los amigos también se la lleva hasta ahí casi siempre: más largo y más justo.' },
   { id: 'reina-sin-pensar', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, 0], happens: { suyo: [0, .5] }, why: 'Sin la respuesta de cada fase no se llega a su décimo: bajo el chicle todo entra a un cuarto, una mano se lleva a uno y La Pompa revienta entera. Es una caída cualquiera.' },
+  // One without the answer for each of her stages (2026-11-27), held to what that stage shows when its answer is not played
+  // (`QUEEN_CALLS`): a layer torn off, one of the party freed from her hand, La Pompa burst in her face. Their other halves are
+  // `reina-toma-a-aitor` (the layers, in the first fight) and `reina-con-artilugio` (the hand broken and La Pompa burst, on the way back).
+  { id: 'reina-chicle-a-punetazos', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'attack', win: [0, 0], roundsLost: [4, 8], happens: { 'se-despega': [0, .2], manos: [0, .2] }, why: 'El chicle sin su respuesta: a puñetazos la capa fresca no se despega nunca, todo entra a un cuarto y no se la saca de su primera fase.' },
+  { id: 'reina-manos-sin-pensar', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], happens: { atrapado: [.8, 1.2], libre: [0, .2] }, why: 'Las manos sin su respuesta: la que sujeta se lleva a uno, nadie la rompe para soltarlo y el otro cae solo.' },
+  { id: 'reina-pompa-sin-pensar', fight: 'reina', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, 0], happens: { 'pompa-rota': [0, .05], 'pompa-entera': [.2, 1] }, why: 'La pompa sin su respuesta: quien llega hasta ella no la rompe a tiempo, y revienta entera sobre todos.' },
   // Siete vidas (Papagato's definitiva), held where a killing blow comes for sure: the Queen's first fight, lost by design at
   // her tenth. Played, Yuki's ward takes a blow that would have brought someone down, and she needs two rounds more to bring
   // the party down; banned, the same party falls sooner. Measured 2026-11-26 (200 fights): woken in about half of them, the
@@ -1941,7 +1971,7 @@ export const TARGETS: readonly Target[] = [
   // fight gets there with it or without it.
   // Measured 2026-11-26, 200 fights, seeds 35, 7 and 99: 7.3–7.6 against 8.5–8.8.
   { id: 'reina-con-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', win: [0, 0], happens: { toma: [6.5, 8], 'despierta:fin-de-fiesta': [.6, 1] }, why: 'Con Aitor en Colorista, el polvo de la Reina estalla, envenena y cristaliza en las primeras rondas y despierta Fin de fiesta: las tres cosas a la vez la llevan a su décimo, y a tomar a Aitor, ronda y media antes.' },
-  { id: 'reina-sin-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', ban: ['fin-de-fiesta'], win: [0, 0], happens: { toma: [8.2, 9.6] }, why: 'Sin Fin de fiesta, el mismo polvo reacciona de una en una: la Reina llega a su décimo ronda y media más tarde.' },
+  { id: 'reina-sin-fin-de-fiesta', fight: 'reina', party: COLOR, ...FLOOR_3, policy: 'smart', ban: ['fin-de-fiesta'], win: [0, 0], happens: { toma: [8.6, 10.4] }, why: 'Sin Fin de fiesta, el mismo polvo reacciona de una en una: la Reina llega a su décimo dos rondas más tarde (desde 2026-11-27 La Pompa gotea mientras crece: sin Fin de fiesta el equipo pasa por las manos y por ella casi siempre, y le cuesta más).' },
   // Enjambre (Tecnópata's definitiva), held in the Queen's first fight since its hive (Aitor 2026-11-26, battle.ts `COLMENA`:
   // for a minute each bomb that goes off leaves another, so it pays against one foe too). The party is the third floor's
   // with Aitor in Tecnópata and the definitiva bought on top. The bot ripens a bomb to its top (`SWARM_SHARE`), it goes off
@@ -1976,7 +2006,7 @@ export const TARGETS: readonly Target[] = [
   { id: 'vertigo-con-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', win: [.95, 1], roundsWon: [6.5, 8.7], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Con Gerard en Matemágico y Horas extra en el tarro: Foc Binari sobre Vertitrón hasta Quemado III (el ojo no cuenta) la despierta, y Rescoldo la sostiene; tres acciones sin maná, lo caro y lo que remata, lo tiran cuatro rondas antes.' },
   { id: 'vertigo-sin-horas-extra', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['horas-extra'], win: [.95, 1], roundsWon: [10.7, 13], happens: { 'despierta:horas-extra': [.7, 1] }, why: 'Jugando igual, con el fuego en III y Horas extra despierta pero sin lanzarla, Vertitrón aguanta cuatro rondas más.' },
   { id: 'vertigo-horas-extra-sin-rescoldo', fight: 'uri-vertigo', party: TECH, ...FLOOR_3, improved: [...FLOOR_3.improved ?? [], 'matemagico:definitiva'], policy: 'smart', ban: ['rescoldo'], win: [.9, 1], happens: { 'despierta:horas-extra': [0, .15] }, why: 'Sin Rescoldo el fuego se apaga entre turno y turno antes de llegar a III: Horas extra casi nunca despierta.' },
-  { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.5, .8], roundsWon: [12, 18], why: 'Con el artilugio (desde 2026-11-26 vuelve con dos veces y media sus PV, al 70 %, y las manos primero: unas quince rondas): romper la mano que sujeta, aguantar la que aplasta, romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor. Es el último combate: se gana, pero no siempre.' },
+  { id: 'reina-con-artilugio', fight: 'reina-vuelta', party: FULL_DICE, ...FLOOR_3, policy: 'smart', win: [.5, .8], roundsWon: [12, 18], happens: { libre: [.5, 1.5], 'pompa-rota': [.25, 1.5] }, why: 'Con el artilugio (desde 2026-11-26 vuelve con dos veces y media sus PV, al 70 %, y las manos primero: unas quince rondas): romper la mano que sujeta, aguantar la que aplasta, romper La Pompa antes de que reviente (mientras la hincha, ella recibe menos de la mitad) o defenderla, y tocar las seis notas cuando tiene a Aitor. Es el último combate: se gana, pero no siempre.' },
   { id: 'reina-sin-melodia', fight: 'reina-vuelta', party: DUO, ...FLOOR_3, policy: 'casual', win: [0, .1], why: 'Tocando botones al azar las marcas se apagan: Aitor sigue siendo suyo.' },
   // Emilie's model (docs/quests/emilie.md § Fights). Its numbers are MODELO (book modelo.rules) and each foe's PROFILES entry
   // (foe.celda-seca…). Inside it every Atacar can carry water or electricity, so the answer never depends on the jar. The

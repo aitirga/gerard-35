@@ -1,0 +1,250 @@
+{
+  "title": "El castillo: los cuatro alumnos nuevos",
+  "description": "docs/castle.md § Bestiary. The four pupils of 2026-11-27, each in its room from the fight tester (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost): La Fila's Párvulos with El Repetidor, El Pelota with El Estirón (Peloteo, the steps he grows, the Desplome told and landed), El Mayor and his row (he brings another, Arremete), and the third floor's hard room. The party holds on so the foes' turns play for real. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2f%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "fila",
+      "delay": 1500,
+      "caption": "Second year, La Fila y Repetidor: four Párvulos, each a blow's worth, and El Repetidor behind them"
+    },
+    {
+      "eval": "closeUp(foe('parvulo').id, 2.2)"
+    },
+    {
+      "shot": "parvulo-cerca",
+      "delay": 1200,
+      "caption": "A Párvulo up close: the smallest pupil, a smock too big for it"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Tirón')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "fila-tiron",
+      "caption": "Their turn: «Tirón», four of them one after another"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-2g%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "pelota-estiron",
+      "delay": 1500,
+      "caption": "Second year, El Pelota and El Estirón. The Pelota's plate says whom he will flatter"
+    },
+    {
+      "eval": "closeUp(foe('pelota').id, 2.6)"
+    },
+    {
+      "shot": "pelota-cerca",
+      "delay": 1200,
+      "caption": "El Pelota up close, bowed"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "closeUp(foe('estiron').id, 3.6)"
+    },
+    {
+      "shot": "estiron-cerca",
+      "delay": 1200,
+      "caption": "El Estirón up close (the minion until its figure is made)"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Peloteo')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "peloteo",
+      "caption": "«Peloteo»: he mends El Estirón and makes him hit harder"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "estiron-1",
+      "delay": 900,
+      "caption": "A round on: «Estirón 1», a little taller"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "desplome-avisado",
+      "delay": 900,
+      "caption": "Three steps up, as tall as he gets: the Desplome is told for his next turn"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Desplome')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "desplome",
+      "caption": "«Desplome» on everyone"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "estiron-vuelve",
+      "delay": 900,
+      "caption": "On the floor he is the size he was, and starts again"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-3e%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "mayor",
+      "delay": 1500,
+      "caption": "Third year, El Mayor and two Párvulos"
+    },
+    {
+      "eval": "closeUp(foe('mayor').id, 3.8)"
+    },
+    {
+      "shot": "mayor-cerca",
+      "delay": 1200,
+      "caption": "El Mayor up close: cords round the fists, small handprints on him"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Trae a otro')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "mayor-trae",
+      "caption": "«Trae a otro»: a third Párvulo walks in"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "mayor-jaleado",
+      "delay": 900,
+      "caption": "Three standing: «Jaleado ×3», and the Arremete told"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Arremete')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "mayor-arremete",
+      "caption": "«Arremete», harder for each one cheering"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22alumnos-3f%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "estiron-pelota-chivata",
+      "delay": 1500,
+      "caption": "Third year's hard room: El Estirón, El Pelota and La Chivata"
+    }
+  ]
+}

@@ -1123,7 +1123,14 @@ export class Playing {
         this.interact('enter-school');
       }
       const day = this.story.clock.day;
-      // Through the floor to the boss's room (doors followed: the story sends the school's door onto today's floor).
+      // The floor's closed door first, if nobody has opened it yet (docs/castle.md § The closed doors): the timetable squared at its board, or the wall reached.
+      const shut = this.story.puzzle(phase.environment);
+      if (shut) {
+        if (!this.goTo(phase.environment, { cell: shut.id === 'horario' ? shut.board : shut.touch[0], radius: 1 })) return;
+        if (this.story.clock.day !== day || this.story.night) return;
+        if (shut.id === 'horario') { this.interact('castillo-horario'); this.send({ type: 'horario', board: [...this.story.horario.horario.solution] }); }
+        else this.send({ type: 'near', id: 'castillo-pica-pared' });
+      }
       if (!this.goTo(phase.into.environment, { cell: phase.bossAt, radius: phase.bossRadius })) return;
       if (this.story.clock.day !== day || this.story.night) return;
       this.send({ type: 'near', id: `castillo-${phase.boss}` });

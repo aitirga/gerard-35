@@ -1,0 +1,196 @@
+{
+  "title": "El castillo: las dos puertas cerradas",
+  "description": "docs/castle.md § The closed doors. The closed room in the middle of the second floor (El horario: the door, the board, the sheet on screen, wrong and then squared) and of the third (Pica pared: the great Castigado counting, looking, catching whoever walks, and the wall reached while it counts). Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1"
+    },
+    {
+      "until": "window.gerard && window.gerard.story.started",
+      "timeout": 180000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "(() => {\n  const g = window.gerard;\n  window.plan = n => g.story.place('castillo-' + n).palace.floor;\n  window.enter = n => { const f = window.plan(n), p = f.puzzle, r = f.rooms[p.room]; window.__f = f; window.__p = p; window.__r = r; g.story.fears('castillo-' + n); g.story.castle.beaten = { ...g.story.castle.beaten, [n]: f.rooms.map(room => room.id) }; g.game.setEnvironment('castillo-' + n, { ...p.entry }); };\n  window.offset = () => { const at = g.game.app.root.findByName('Jugador').getPosition(), p = window.__p; window.__o = { x: at.x - p.entry.x, z: at.z - p.entry.z }; };\n  window.look = (cell, d, y) => g.game.frame({ x: cell.x + window.__o.x, y: y ?? .8, z: cell.z + window.__o.z }, d);\n  // The two keys that walk a grid step with the camera at home (src/movement.ts screenToGrid): +x right and down, -z right and up.\n  window.keysFor = s => s.x > 0 ? ['ArrowRight', 'ArrowDown'] : s.x < 0 ? ['ArrowLeft', 'ArrowUp'] : s.z < 0 ? ['ArrowRight', 'ArrowUp'] : ['ArrowLeft', 'ArrowDown'];\n  window.key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, key: code, bubbles: true }));\n  window.walk = on => { for (const code of window.keysFor(window.__p.out)) window.key(on ? 'keydown' : 'keyup', code); };\n  // Walks towards the door only while it is not looking: what a player who has understood it does.\n  window.cross = () => { window.crossing = setInterval(() => { const d = g.game.door; window.walk(!!d && d.phase === 'away'); if (!d || !d.shut) { clearInterval(window.crossing); window.walk(false); } }, 30); };\n})()"
+    },
+    {
+      "eval": "window.enter(2)"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Segundo curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.offset(); window.look(window.__r.cell, 11)"
+    },
+    {
+      "shot": "horario-sala",
+      "delay": 1800,
+      "caption": "Second floor, the closed room: her gum over the door on, the office's seal on it, and the timetable's board on the side wall under its own lamp"
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'castillo-puerta' })"
+    },
+    {
+      "shot": "horario-puerta",
+      "delay": 1200,
+      "caption": "The door says why it will not open, and whose job that is"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.gerard.storyEvent({ type: 'interact', id: 'castillo-horario' })"
+    },
+    {
+      "shot": "horario-gerard",
+      "delay": 1200,
+      "caption": "The first look at the sheet: Gerard says what a timetable is"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "until": "!!document.querySelector('#horario-panel:not([hidden])')",
+      "timeout": 20000
+    },
+    {
+      "shot": "horario-hoja",
+      "delay": 900,
+      "caption": "The sheet on screen: what is in ink stays, the rest is pencilled in. It squares one way only, another each day"
+    },
+    {
+      "eval": "(() => { const { horario } = window.gerard.story.horario; const cell = i => document.querySelector('.horario-cell[data-cell=\"' + i + '\"]'); window.put = (i, want) => { if (!cell(i).hasAttribute('aria-current')) cell(i).click(); for (let k = 0; k < 6 && cell(i) && Number(cell(i).dataset.subject ?? 0) !== want; k++) cell(i).click(); }; const open = horario.given.map((v, i) => v ? -1 : i).filter(i => i >= 0); window.__last = open[0]; window.put(open[0], (horario.solution[open[0]] % 4) + 1); for (const i of open.slice(1)) window.put(i, horario.solution[i]); })()"
+    },
+    {
+      "shot": "horario-no-cuadra",
+      "delay": 700,
+      "caption": "Full but wrong: «No cuadra.» It never says where"
+    },
+    {
+      "eval": "window.put(window.__last, window.gerard.story.horario.horario.solution[window.__last])"
+    },
+    {
+      "until": "window.gerard.story.has('luz-horario')",
+      "timeout": 20000
+    },
+    {
+      "shot": "horario-cuadra",
+      "delay": 1500,
+      "caption": "It squares: the seal lets go"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.look(window.__p.door[0], 8)"
+    },
+    {
+      "shot": "horario-abierta",
+      "delay": 1500,
+      "caption": "The way on, open for good, and an Eco de luz for the jar"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    },
+    {
+      "eval": "window.enter(3)"
+    },
+    {
+      "until": "document.title.startsWith('Castillo · Tercer curso')",
+      "timeout": 60000
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "eval": "window.offset(); window.look(window.__r.cell, 12, 1.2)"
+    },
+    {
+      "until": "window.gerard.game.door?.phase === 'away'",
+      "timeout": 30000
+    },
+    {
+      "shot": "pica-cuenta",
+      "delay": 200,
+      "caption": "Third floor: a great Castigado against the door on, face to the wall, counting"
+    },
+    {
+      "until": "window.gerard.game.door?.phase === 'look'",
+      "timeout": 30000
+    },
+    {
+      "shot": "pica-mira",
+      "delay": 350,
+      "caption": "It turns round with no more warning than its shoulders: the room lights up under its look"
+    },
+    {
+      "until": "window.gerard.game.door?.phase === 'away'",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.walk(true)"
+    },
+    {
+      "until": "window.gerard.game.door?.caught > 0",
+      "timeout": 30000
+    },
+    {
+      "eval": "window.walk(false)"
+    },
+    {
+      "shot": "pica-pillado",
+      "delay": 500,
+      "caption": "Seen moving: pulled back to the door they came in by. Aitor says what he saw, once"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "eval": "window.cross()"
+    },
+    {
+      "until": "window.gerard.story.has('luz-pica-pared')",
+      "timeout": 120000
+    },
+    {
+      "shot": "pica-tocada",
+      "delay": 1200,
+      "caption": "Walking only while it counts, to the wall beside it: it stops counting"
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "wait": 3500
+    },
+    {
+      "skipDialogue": true
+    },
+    {
+      "shot": "pica-abierta",
+      "delay": 2000,
+      "caption": "It slides down the door and the gum lets go: the way on, open for good"
+    },
+    {
+      "eval": "window.gerard.game.frame()"
+    }
+  ]
+}

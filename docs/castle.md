@@ -69,7 +69,9 @@ Each phase is **one continuous floor**, walked like any place: no loading betwee
   seeded generator (the game already has one, `seeded` in `src/battle-sim.ts`) and checked for a
   way through with `reachable` (`src/street-shift.ts`).
 - **Kinds of room**: fight, corridor, élite (La Delegada, § Bestiary), **rest** (one per floor: a
-  staff room, which cures at the cost of time), **find** (an object) and the boss's antechamber.
+  staff room, which cures at the cost of time), **find** (an object), the boss's antechamber and,
+  on the second and third floors, a **closed classroom** in the middle of the way (§ The closed
+  doors).
 - **Each pupil is a body of its own and hunts its own way**, the same rules as out on the Meridiana
   at night (`src/night-pupils.ts`), with the floor's own numbers (`src/castle-pupils.ts`): what the
   way home rehearsed is what the rooms ask. They can be seen coming, dodged or met; a fight is a
@@ -84,12 +86,36 @@ Each phase is **one continuous floor**, walked like any place: no loading betwee
     within her reach, she walks at him and never stops, and nobody gives up while she stands.
   - **El Ausente is only seen inside the light the party carries**, or once it comes at them.
   - **The staff room is the floor's safe place**, as home's portal is the street's: pupils do not go
-    in and nobody in it is seen.
+    in and nobody in it is seen. **Nor do they go into the closed classroom** (`pupilsGrid`): no
+    chase crosses it, and what is asked there is asked in peace.
+  - The four that came later (§ Bestiary) walk their round and chase like any pupil; none has a
+    way of its own on the floor yet.
   - The first floor is in daylight; on the second and third the pupils see little outside the
     party's light and run faster (`FLOOR_TIERS`), and they glow a little, as they do at night.
   - Nothing to hide behind yet: what cuts a line of sight is a wall, a corner, a corridor. El
     Empollón, who learns the hiding places on the street, has nothing to learn inside (to settle).
 - **No map tells the way.** The map shows the rooms walked and where the party is, never the route.
+
+### The closed doors (2026-11-27)
+
+Aitor asked for something between the fights on the second and third floors. Each has **one closed
+classroom in the middle third of the main path**: the way to the boss goes through it, and its far
+door is clotted with gum until what the room asks is done. Done once, **it stays open for good**
+(another day's floor has the room, empty and open) and leaves an **Eco de luz** (`luz-horario`,
+`luz-pica-pared`, `PUZZLE_LIGHTS`). The room takes the place of one of the floor's quiet landings,
+so no fight is lost to it. Nothing explains it: the door says why it does not open, and what is in
+the room is what there is to try (`CastlePuzzle` in `src/castle.ts`, `castlePuzzle` and
+`castleBlocked` in `src/castle-story.ts`, `buildDoor` and `stepDoor` in `src/game.ts`).
+
+| Floor | Room | What it asks | How it is done |
+| --- | --- | --- | --- |
+| 2 | **El horario** | A paper seal over the gum, stamped «Pendiente de horario», and by the wall a cork board on legs with next year's timetable half made: Gerard's own job every September. Four subjects, four classrooms, four hours; some cells in ink | On screen, like the Hormiguero's lock (`src/horario-ui.ts`): the arrows move, confirm pencils the next subject in. **No subject twice in an hour's row, nor in a classroom's column.** It squares one way only (`horarioFor` in `src/horario.ts`, five to seven cells given); full and wrong, the sheet shakes and says «No cuadra.»; full and right, the seal melts. What is pencilled stays for the day; another sheet each day |
+| 3 | **Pica pared** | A long dark room and, at the far end, **a Castigado more than twice its size, facing the wall** beside the clotted door. The playground game, played by something that was never a child | Walking. It turns on its own clock (`PICA` in `src/pica-pared.ts`): its shoulders rise and it creaks a moment before, then it looks for a second or two. **Whoever is moving while it looks is back at the room's door** (either player; standing still is safe, and nobody is watched in the first step past that door). **Running is heard**: it turns at once. Touch the wall beside it and it sags, and the door opens |
+
+- Neither can be failed for good, and neither costs time or PV: the price is the walk again.
+- The first time each of them is caught, he says so in a bubble («Me ha visto moverme.»), once.
+- The simulators open them without playing (`castle()` in `src/game-sim.ts` squares the sheet with
+  its solution, or sends the wall's touch).
 
 How it could meet the code (for when it is built): one place per phase whose grid is generated on
 entry and put in place of `ENVIRONMENTS[...]`'s, as `src/street-shift.ts` already swaps a grid
@@ -114,10 +140,22 @@ someone's.
   and desaturated: saturated pink is still only her. **Violet** is still only possession: Aurelià's
   eyes, the team's, Aitor's.
 - A phase's rooms count and the numbers above are a first guess, to tune by playing.
+- **Built for the second and third floors (2026-11-27)**, `dressSecond` and `dressThird` in
+  `src/palace-zones.ts`, each thing growing or thinning with how far along the path its room is:
+  - *Second*: steel filing cabinets against the walls, their drawers further out the nearer
+    Direcció is; minutes pinned in rows with their stamp; one strip light a room, lit at first,
+    then flickering, then dead, with its rods hanging; a leak with its puddle and a bucket under
+    it; the green of an emergency light over the door.
+  - *Third*: mounds of old gum, dull and cracked, with dried strands up the wall; one worn
+    playground thing a room (a hopscotch half rubbed out, a seesaw down on one side, tyres, a
+    bench); from two thirds of the way on, gold finials on plinths and a gold cord in the
+    antechamber. The pink here is the old one, grey in it: none of it is saturated.
 
 ## Bestiary: the Queen's pupils
 
-One family for the whole castle, few and well defined: **eight, not thirty**. They are not school
+One family for the whole castle, few and well defined: **eight, not thirty**, and four more since
+2026-11-27, when Aitor asked for more of them on the second and third floors, some easy to fell and
+some hard (second table). They are not school
 objects and they do not change theme by phase. They are **gum in the shape of a pupil**: figures a
 child's height, of stretched bubbaloo, a smock hinted by the folds and, where the face would be, a
 bubble. They are not real children and not possessed people (violet stays reserved): they are
@@ -134,6 +172,15 @@ character **is** how it fights.
 | **El Castigado** | Facing the wall, it does not attack. Every blow that does not fell it gives it *Rabia*; at three it bursts on everyone | **Moment**: leave it for last and fell it in one big blow (an open wound, a dual, Punto débil) |
 | **El Montón** | One of the bunch (*uno del montón*): gum with no shape of its own. It takes the shape of the first blow that lands on it, what it carried and how hard it was, and gives it back every turn. Shaped, it is weak to what undoes its shape (the ring below; a wound's shape, to fire) | **Choose what it is shown**: open with a light blow that carries nothing, or give it a shape the party can undo |
 | **Élite · La Delegada** | In charge. While she stands, hers all strike the same one and their tells do not show | **Part and order**: silence her (confusión, a lost turn) or fell her first |
+
+The four that came on 2026-11-27, two easy to fell and two hard, on the second and third floors only:
+
+| Pupil | Character → how it fights | Question → answer |
+| --- | --- | --- |
+| **El Párvulo** (La Fila) | The smallest, half a pupil's height, very few PV and a weak *Tirón*. Never alone: four of them in a room, or behind El Mayor | **With what**: a blow on everyone takes the row at once; one at a time, each is a turn given away |
+| **El Pelota** | The teacher's pet. He does not hit while one of his own is bigger than he is: *Peloteo → X* cures it and raises its Fuerza (chip «Cura y sube a otro»). Alone, he pinches. Confused, he flatters the wrong side and cures the party | **Who first**: him, before the big one cannot be brought down; or **status**: confuse him |
+| **El Estirón** | Grows on each turn, and it shows (he stands taller): «Estirón 1, 2, 3», each *Zancada* harder. At three he cannot hold himself up and tells *Desplome*, on everyone; down, he is his own size again and starts over | **Moment**: fell him before he has grown twice, and Defender on the Desplome told |
+| **El Mayor** | The big one of the playground. Brings a Párvulo every two turns (three standing at most) and tells *Arremete → X*: each Párvulo standing when it lands adds to it («Jaleado ×N») | **With what and when**: clear the row with a blow on everyone before the Arremete («Nadie le jalea») and hold on; with him down, no more come |
 
 Every rule above is by **kind of blow or status, never by ánima** (combat.md), shows on the plate
 (a chip, a tell, a count), and has an answer within reach of the party the phase is met with.
@@ -182,6 +229,12 @@ floor and asked twice more.
   fall in one), La Delegada with Los Gemelos, El Ausente with El Repetidor (one blow told a turn
   ahead, one never told but on a rhythm), El Montón with La Chivata (whatever it was shown comes
   back, and her mark makes it 2.5 times as hard). Each room is a combination with its own question.
+- **The four new ones' rooms** (2026-11-27), a soft one and a hard one a floor: on the second,
+  *La Fila* (four Párvulos and El Repetidor; it teaches the blow on everyone, and is won without
+  it most times) and *El Estirón y El Pelota* (the pet first, or the tall one never comes down);
+  on the third, *El Mayor y su fila* and *El Estirón, El Pelota y La Chivata* (her mark on the
+  Desplome is the end of whoever carries it). `TARGETS`: `fila-segundo-*`, `estiron-segundo-*`,
+  `mayor-*`, `trio-tercero-estiron-*`.
 - From phase 2 on a room is **not meant to be won the first time**: it kills a party that has not
   read it, and the fall costs the day. The second meeting is the one that is played.
 - Each combination keeps its pair of `TARGETS` (`src/battle-sim.ts`), and each pupil and La
@@ -314,11 +367,12 @@ in the fight tester's Castillo row, the arc «El castillo» and the two endings 
 | Piece | Where | State |
 | --- | --- | --- |
 | The rules book, the phases, the generator | `src/castle.ts` | Floors by save, day and phase; rooms, corridors, the staff room and the cupboard |
-| A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; no drifting props yet |
+| A floor as a place | `src/castle-floor.ts`, `dressCastillo` in `src/palace-zones.ts` | Floors painted along the way, low walls in front, gum in the fight rooms, a lamp; on the second and third floors, what shows up along the way (§ The art drifts towards the boss) |
+| The closed doors | `src/horario.ts`, `src/horario-ui.ts`, `src/pica-pared.ts`, `buildDoor` and `stepDoor` in `src/game.ts` | El horario on the second floor and Pica pared on the third (§ The closed doors) |
 | The pupils on a floor | `src/castle-pupils.ts`, `huntIndoors` in `src/game.ts` | Each pupil a body of its own, hunting as it does at night (§ The generated floor) |
 | The castle after each boss | `src/castle-mood.ts`, `dressMood` in `src/palace-zones.ts` | Won stretches a school again, those ahead more hers, the door onward clotted (§ The castle after each boss) |
 | The bosses' figures | `tools/figures.toml`, `src/monsters/{aurelia,mar,montse,pilar}.json`, `src/creatures/atril.json` | Aurelià, the three of Dirección and El Atril, each its own (castle-bosses.md § How they look) |
-| The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), Aurelià, Dirección, the Queen |
+| The fights | `src/castle-fight.ts`, hooks in `src/battle.ts` | The eight pupils in their three years (El Ausente and El Castigado from the second, El Montón in the third), the four of 2026-11-27 (El Párvulo, El Pelota, El Estirón, El Mayor) on the second and third floors, Aurelià, Dirección, the Queen |
 | The story | `src/castle-story.ts`, hooks in `src/story.ts` | A room won stays won today, an hour a fight, a boss beaten brings her scream, a flash and bed (no night) and moves the way in, lights for the jar, the third slot after Aurelià |
 | Aitor held, the artilugio | `src/castle-fight.ts`, `src/battle-ui.ts`, `src/battle-scene.ts` | She takes him at a tenth (down or not): he walks over to her side and fights from there, his card with him, player 2 choosing his moves; lost, the next morning Bernat calls and the artilugio is had; its notes come from the real board (`artilugio.py`, `src/artilugio.ts`), or the keyboard's 1–4 and the pad stand in |
 | The Queen's figure and stage | `src/monsters/reina.json`, `public/portraits/reina.png`, `src/throne-arena.ts` | Nuria Mendoza's face made cruel; her fight goes up onto the sala d'actes' stage, built for it |
@@ -330,7 +384,10 @@ Placeholders and decisions taken for now (each one Aitor's to change):
   src/creatures/, loaded by `src/castle-models.ts` the first time a fight or a floor needs it), at
   its own height, El Repetidor by his year; in a fight it runs on Meshy's clip when it runs up and
   holds its pose standing, and on the floor it walks its round and runs the chase. Until its figure
-  lands it is the palace minion's model at its own size: today only the Queen's hands are.
+  lands it is the palace minion's model at its own size: today only **El Estirón** is (his image
+  and views are made, `output/characters/3d/estiron/`; the model waits for Meshy credits:
+  `just character-3d estiron --from model`). The Queen's hands are her arm's figure and La Pompa a
+  bubble made in code (castle-bosses.md § La Reina Bubbaloo).
 - On a floor: the staff room is safe, La Delegada waits until she sees Gerard, El Ausente shows only
   in the party's light, and there are no hiding places inside (§ The generated floor).
 - A stretch behind a beaten boss is a school again and the ones ahead harden (§ The castle after

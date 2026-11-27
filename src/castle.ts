@@ -39,8 +39,8 @@ export type CastleFlag = (typeof CASTLE_FLAGS)[number];
 /** Its fights: each room's pupils by phase (their year), La Delegada's, the two bosses and the Queen, before and after the artilugio. */
 export const CASTLE_ENCOUNTERS = [
   'alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1',
-  'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2',
-  'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3',
+  'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'alumnos-2f', 'alumnos-2g', 'delegada-2',
+  'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'alumnos-3e', 'alumnos-3f', 'delegada-3',
   'aurelia', 'direccion', 'reina', 'reina-vuelta',
 ] as const;
 export type CastleEncounter = (typeof CASTLE_ENCOUNTERS)[number];
@@ -72,14 +72,14 @@ export const CASTLE_PHASES: readonly CastlePhase[] = [
   },
   {
     id: 2, environment: 'castillo-2', name: 'Castillo · Segundo curso', rooms: 10, lattice: [5, 3], from: 'gimnasio', to: 'secretaria',
-    fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
+    fights: ['alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'alumnos-2f', 'alumnos-2g'], elite: 'delegada-2', boss: 'direccion', flag: 'direccion',
     into: { environment: 'palacio-secretaria', cell: { x: 4, z: 19 } }, out: { environment: 'palacio-gimnasio', cell: { x: 19, z: 2 } },
     // The management team has come out of Direcció and waits before its door, at the far end of Gerard's office.
     bossAt: DIRECCION_MEETING.approach, bossRadius: 1.65,
   },
   {
     id: 3, environment: 'castillo-3', name: 'Castillo · Tercer curso', rooms: 12, lattice: [5, 4], from: 'secretaria', to: 'trono',
-    fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d'], elite: 'delegada-3', boss: 'reina', flag: 'reina',
+    fights: ['alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'alumnos-3e', 'alumnos-3f'], elite: 'delegada-3', boss: 'reina', flag: 'reina',
     into: { environment: 'palacio-trono', cell: { x: 1, z: 16 } }, out: { environment: 'palacio-secretaria', cell: { x: 7, z: 1 } },
     bossAt: { x: 13, z: 7 }, bossRadius: 3.2,
   },
@@ -131,7 +131,23 @@ export const CASTLE_LIGHTS = { aurelia: ['aurelia'], direccion: ['mar', 'montse'
  * entry is one); `fight` and `elite`: pupils roam it (`encounter`); `rest` and `find`: side rooms;
  * `antechamber`: the last one, with the way into the boss's room.
  */
-export type RoomKind = 'fight' | 'elite' | 'rest' | 'find' | 'corridor' | 'antechamber';
+export type RoomKind = 'fight' | 'elite' | 'rest' | 'find' | 'corridor' | 'antechamber' | 'puzzle';
+/**
+ * What stands between the two halves of a floor from the second on (docs/castle.md § The closed doors): a room on the
+ * main path whose way on is shut until it is solved, once and for good, each worth an Eco de luz (`PUZZLE_LIGHTS`).
+ * `horario`, the second floor's: a timetable to square on the wall (src/horario.ts). `pica-pared`, the third's: a
+ * great Castigado counting against the door, to walk up to while it is not looking (src/pica-pared.ts).
+ */
+export type PuzzleId = 'horario' | 'pica-pared';
+export const PUZZLES: Partial<Record<CastlePhaseId, PuzzleId>> = { 2: 'horario', 3: 'pica-pared' };
+export const PUZZLE_LIGHTS = ['horario', 'pica-pared'] as const;
+/**
+ * A floor's puzzle: its `room`, the way it leaves by (`out`, a step), the corridor cells shut behind its door
+ * (`gate`), the two cells inside the room before them (`door`: where the great Castigado stands), the cell the
+ * party comes in by (`entry`: where whoever is caught is put back), the two cells against the wall either side of
+ * the door (`touch`), and the middle of a side wall (`board`: where the timetable hangs) with the cell before it (`read`).
+ */
+export interface CastlePuzzle { id: PuzzleId; room: number; out: Cell; gate: Cell[]; door: Cell[]; entry: Cell; touch: Cell[]; board: Cell; read: Cell }
 /**
  * A room: `rect` its floor, `cell` its centre, `onPath` whether it is on the main path, `order` how
  * far along that path it is (0 the entry, 1 the antechamber; a side room has its parent's): what its
@@ -143,7 +159,7 @@ export interface CastleRoom { id: number; kind: RoomKind; rect: Rect; cell: Cell
  * them (two cells wide), `spawn` where the party comes in, `back` the way out behind it and `exit`
  * the way into the boss's room.
  */
-export interface CastleFloor { phase: CastlePhaseId; seed: number; grid: string[]; rooms: CastleRoom[]; halls: Rect[]; spawn: Cell; back: Cell; exit: Cell }
+export interface CastleFloor { phase: CastlePhaseId; seed: number; grid: string[]; rooms: CastleRoom[]; halls: Rect[]; spawn: Cell; back: Cell; exit: Cell; puzzle?: CastlePuzzle }
 
 /** The lattice's pitch in cells: a room of nine at most, and three of wall to the next. */
 const PITCH = 12;
@@ -194,7 +210,12 @@ export function floorFor(seed: number, day: number, phase: CastlePhaseId): Castl
   if (!path) throw new Error(`No path of ${spec.rooms} rooms on a ${gw}×${gh} lattice.`);
   // Who is on the path: the entry, then fights with a quiet room among them, La Delegada, the antechamber.
   const last = spec.rooms - 1, middle = Array.from({ length: last - 2 }, (_, i) => i + 1);
-  const quiet = new Set(shuffled(middle).slice(0, spec.rooms >= 12 ? 2 : 1));
+  // The puzzle takes a quiet room's place, in the middle third of the way and, where the way allows, on a straight
+  // stretch of it (its room is long that way). Chosen from the seed alone: the dice below fall as they always did.
+  const straight = (i: number) => path[i + 1].x - path[i].x === path[i].x - path[i - 1].x && path[i + 1].z - path[i].z === path[i].z - path[i - 1].z;
+  const central = PUZZLES[phase] ? middle.filter(i => i >= Math.floor(last / 3) && i <= Math.ceil(last * 2 / 3)) : [];
+  const fair = central.filter(straight), puzzleAt = central.length ? (fair.length ? fair : central)[own % (fair.length || central.length)] : -1;
+  const quiet = new Set(shuffled(middle).filter(i => i !== puzzleAt).slice(0, (spec.rooms >= 12 ? 2 : 1) - (puzzleAt < 0 ? 0 : 1)));
   const fights = shuffled(spec.fights);
   let fought = 0;
   const sizes = [5, 7, 9] as const;
@@ -211,6 +232,11 @@ export function floorFor(seed: number, day: number, phase: CastlePhaseId): Castl
     if (i === 0) add(node, 'corridor', 5, 5, true, order);
     else if (i === last) add(node, 'antechamber', 5, 5, true, order);
     else if (i === last - 1) add(node, 'elite', 9, 9, true, order, spec.elite);
+    else if (i === puzzleAt) {
+      // Long the way it is crossed when the way runs straight through it; square when it turns.
+      const along = straight(i), across = path[i + 1].x !== node.x;
+      add(node, 'puzzle', along && across ? 11 : along ? 7 : 9, along && !across ? 11 : along ? 7 : 9, true, order);
+    }
     else if (quiet.has(i)) { const long = random() < .5; add(node, 'corridor', long ? 9 : 5, long ? 5 : 9, true, order); }
     else add(node, 'fight', pick(sizes.slice(1)), pick(sizes.slice(1)), true, order, fights[fought++ % fights.length]);
     if (i) links.push([i - 1, i]);
@@ -219,6 +245,8 @@ export function floorFor(seed: number, day: number, phase: CastlePhaseId): Castl
   const sides: RoomKind[] = ['rest', 'find', ...phase >= 2 ? ['fight' as const] : []];
   for (const parent of shuffled(middle)) {
     if (!sides.length) break;
+    // Nothing opens off the puzzle's room: its two doors are the way in and the way on.
+    if (parent === puzzleAt) continue;
     const free = shuffled(around(path[parent])).find(n => !used.has(key(n)));
     if (!free) continue;
     used.add(key(free));
@@ -239,9 +267,28 @@ export function floorFor(seed: number, day: number, phase: CastlePhaseId): Castl
     const room = rooms[id], other = rooms[towards].cell, dx = Math.sign(room.cell.x - other.x), dz = Math.sign(room.cell.z - other.z);
     return { x: room.cell.x + dx * (room.rect.w - 1) / 2, z: room.cell.z + dz * (room.rect.d - 1) / 2 };
   };
+  // The puzzle's places, from its room and the two corridors that meet it (each two cells wide, from centre to centre).
+  const puzzle = ((): CastlePuzzle | undefined => {
+    if (puzzleAt < 0) return undefined;
+    const room = rooms[puzzleAt], { cell, rect } = room;
+    const step = (to: Cell): Cell => ({ x: Math.sign(to.x - cell.x), z: Math.sign(to.z - cell.z) });
+    const out = step(rooms[puzzleAt + 1].cell), back = step(rooms[puzzleAt - 1].cell);
+    const half = (s: Cell) => s.x ? (rect.w - 1) / 2 : (rect.d - 1) / 2;
+    /** The two cells of a corridor's width `far` cells from the centre towards `s`, and the `n`th cell beside them. */
+    const pair = (s: Cell, far: number): Cell[] => [0, 1].map(k => ({ x: cell.x + s.x * far + (s.x ? 0 : k), z: cell.z + s.z * far + (s.z ? 0 : k) }));
+    const beside = (s: Cell, far: number, n: number): Cell => ({ x: cell.x + s.x * far + (s.x ? 0 : n), z: cell.z + s.z * far + (s.z ? 0 : n) });
+    // A side wall neither door is in, for the board.
+    const side = [{ x: 0, z: -1 }, { x: -1, z: 0 }, { x: 1, z: 0 }, { x: 0, z: 1 }].find(s => !(s.x === out.x && s.z === out.z) && !(s.x === back.x && s.z === back.z))!;
+    return {
+      id: PUZZLES[phase]!, room: puzzleAt, out,
+      gate: pair(out, half(out) + 1), door: pair(out, half(out)), entry: pair(back, half(back))[0],
+      touch: [beside(out, half(out), -1), beside(out, half(out), 2)],
+      board: beside(side, half(side), 0), read: beside(side, half(side) - 1, 0),
+    };
+  })();
   return {
     phase, seed: own, grid: open.map(row => row.map(cell => cell ? '.' : '#').join('')), rooms, halls,
-    spawn: { ...rooms[0].cell }, back: far(0, 1), exit: far(last, last - 1),
+    spawn: { ...rooms[0].cell }, back: far(0, 1), exit: far(last, last - 1), ...puzzle ? { puzzle } : {},
   };
 }
 /** The room `cell` is in, if any (a corridor between two is none). */
@@ -258,20 +305,22 @@ export const roomId = (room: CastleRoom) => `castillo-sala-${room.id}`;
  * The Queen's pupils (docs/castle.md § Bestiary), gum in the shape of a pupil, all eight: El
  * Repetidor, El Empollón, La Chivata, Los Gemelos (two `gemelo`) and La Delegada from the first
  * year; El Ausente and El Castigado from the second; El Montón (`monton`, the one designed as El
- * Nuevo) in the third.
+ * Nuevo) in the third. Four more in the second and third floors' own rooms (2026-11-27): the Párvulos of
+ * La Fila and El Pelota, who fall to a blow, and El Estirón and El Mayor, who do not.
  */
-export type PupilKind = 'repetidor' | 'empollon' | 'chivata' | 'gemelo' | 'delegada' | 'ausente' | 'castigado' | 'monton';
+export type PupilKind = 'repetidor' | 'empollon' | 'chivata' | 'gemelo' | 'delegada' | 'ausente' | 'castigado' | 'monton' | 'parvulo' | 'pelota' | 'estiron' | 'mayor';
 /**
  * Everyone who fights in the castle. `atril` and `mano` are things with their own PV that never
  * take a turn and never hold up the win: Aurelià's lectern, the Queen's two hands, the Pompa she
  * blows. `directiva` is each of Mar, Montse and Pilar.
  */
 export type CastleKind = PupilKind | 'aurelia' | 'atril' | 'directiva' | 'reina' | 'mano' | 'pompa';
-export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'ausente', 'castigado', 'monton', 'aurelia', 'atril', 'directiva', 'reina', 'mano', 'pompa'] as const satisfies readonly CastleKind[];
+export const CASTLE_KINDS = ['repetidor', 'empollon', 'chivata', 'gemelo', 'delegada', 'ausente', 'castigado', 'monton', 'parvulo', 'pelota', 'estiron', 'mayor', 'aurelia', 'atril', 'directiva', 'reina', 'mano', 'pompa'] as const satisfies readonly CastleKind[];
 export const isCastle = (kind?: string): kind is CastleKind => !!kind && (CASTLE_KINDS as readonly string[]).includes(kind);
 export const CASTLE_NAMES: Record<CastleKind, string> = {
   repetidor: 'El Repetidor', empollon: 'El Empollón', chivata: 'La Chivata', gemelo: 'Gemelo', delegada: 'La Delegada',
   ausente: 'El Ausente', castigado: 'El Castigado', monton: 'El Montón',
+  parvulo: 'Párvulo', pelota: 'El Pelota', estiron: 'El Estirón', mayor: 'El Mayor',
   aurelia: 'Aurelià', atril: 'El Atril', directiva: 'Dirección', reina: 'La Reina Bubbaloo', mano: 'Mano', pompa: 'La Pompa',
 };
 /** Who comes out in each room's fight, in the order they stand. */
@@ -287,21 +336,30 @@ export const CASTLE_FIGHTS: Record<RoomEncounter, readonly PupilKind[]> = {
   'alumnos-2d': ['ausente', 'repetidor'],
   // El Empollón with El Castigado (docs/castle.md § Three years): no blow twice, and it must fall in one.
   'alumnos-2e': ['empollon', 'castigado'],
+  // La Fila with El Repetidor: three that fall to one blow on everyone, while the shove told a turn ahead is held.
+  'alumnos-2f': ['parvulo', 'parvulo', 'parvulo', 'parvulo', 'repetidor'],
+  // El Pelota with El Estirón: one grows every turn, the other mends it and makes it stronger still.
+  'alumnos-2g': ['estiron', 'pelota'],
   'delegada-2': ['delegada', 'gemelo', 'gemelo', 'chivata'],
   'alumnos-3a': ['chivata', 'chivata', 'repetidor'],
   'alumnos-3b': ['empollon', 'repetidor', 'chivata'],
   'alumnos-3c': ['gemelo', 'gemelo', 'empollon'],
   // El Montón with La Chivata: whatever it was shown comes back, and her mark makes it 2.5 times as hard.
   'alumnos-3d': ['monton', 'chivata'],
+  // El Mayor and his row: he brings another little one every other turn, and each one standing makes his blow harder.
+  'alumnos-3e': ['mayor', 'parvulo', 'parvulo'],
+  // El Estirón, El Pelota and La Chivata: the floor's hard room, three "who first" at once.
+  'alumnos-3f': ['estiron', 'pelota', 'chivata'],
   'delegada-3': ['delegada', 'gemelo', 'gemelo'],
 };
 /** Each fight by name, for the development picker (src/jump-menu.ts). */
 export const CASTLE_FIGHT_NAMES: Record<CastleEncounter, string> = {
   'alumnos-1a': 'Chivata y Repetidor · 1.º', 'alumnos-1b': 'Empollón y Chivata · 1.º', 'alumnos-1c': 'Los Gemelos · 1.º', 'delegada-1': 'La Delegada · 1.º',
   'alumnos-2a': 'Chivata, Repetidor y Empollón · 2.º', 'alumnos-2b': 'Empollones y Chivata · 2.º', 'alumnos-2c': 'Gemelos y Repetidor · 2.º',
-  'alumnos-2d': 'Ausente y Repetidor · 2.º', 'alumnos-2e': 'Empollón y Castigado · 2.º', 'delegada-2': 'La Delegada · 2.º',
+  'alumnos-2d': 'Ausente y Repetidor · 2.º', 'alumnos-2e': 'Empollón y Castigado · 2.º',
+  'alumnos-2f': 'La Fila y Repetidor · 2.º', 'alumnos-2g': 'Pelota y Estirón · 2.º', 'delegada-2': 'La Delegada · 2.º',
   'alumnos-3a': 'Chivatas y Repetidor · 3.º', 'alumnos-3b': 'Empollón, Repetidor y Chivata · 3.º', 'alumnos-3c': 'Gemelos y Empollón · 3.º',
-  'alumnos-3d': 'Montón y Chivata · 3.º', 'delegada-3': 'La Delegada · 3.º',
+  'alumnos-3d': 'Montón y Chivata · 3.º', 'alumnos-3e': 'El Mayor y su fila · 3.º', 'alumnos-3f': 'Estirón, Pelota y Chivata · 3.º', 'delegada-3': 'La Delegada · 3.º',
   aurelia: 'Aurelià', direccion: 'El Equipo de dirección', reina: 'La Reina Bubbaloo', 'reina-vuelta': 'La Reina, con el artilugio',
 };
 /**
@@ -337,7 +395,7 @@ export const STRONG_LIGHTS = ['encarnado-1', 'encarnado-2', 'encarnado-3', 'enca
  * Eco de luz the first time it is beaten (Aitor, 2026-11-21: more ecos, so some three quarters of the jar
  * can be had by the end): flags `luz-alumnos-1a`… (docs/castle.md § Ecos of the rooms).
  */
-export const ROOM_LIGHTS = ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1', 'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'delegada-2', 'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'delegada-3'] as const;
+export const ROOM_LIGHTS = ['alumnos-1a', 'alumnos-1b', 'alumnos-1c', 'delegada-1', 'alumnos-2a', 'alumnos-2b', 'alumnos-2c', 'alumnos-2d', 'alumnos-2e', 'alumnos-2f', 'alumnos-2g', 'delegada-2', 'alumnos-3a', 'alumnos-3b', 'alumnos-3c', 'alumnos-3d', 'alumnos-3e', 'alumnos-3f', 'delegada-3'] as const;
 /** The group the `n`th of the night's hunters (`night-n`) brings, on `phase`'s floor. */
 export function nightGroup(n: number, phase: CastlePhaseId): RoomEncounter {
   const spec = castlePhase(phase), groups = [...spec.fights, spec.elite];
@@ -350,7 +408,7 @@ export const yearOf = (encounter: string): Year => (Number(/-(\d)/.exec(encounte
 export const castlePhaseOf = (encounter: CastleEncounter): CastlePhaseId => encounter === 'aurelia' ? 1 : encounter === 'direccion' ? 2 : encounter === 'reina' || encounter === 'reina-vuelta' ? 3 : yearOf(encounter);
 export const YEARS: Record<Year, string> = { 1: 'Fresco', 2: 'Con relleno', 3: 'Rancio' };
 /** How big each stands, against the palace minion they are drawn from for now (placeholders: none has a model of its own yet). */
-export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, ausente: .72, castigado: .9, monton: .78, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25, pompa: 1.5 };
+export const CASTLE_SIZES: Record<CastleKind, number> = { repetidor: 1.15, empollon: .8, chivata: .62, gemelo: .7, delegada: .95, ausente: .72, castigado: .9, monton: .78, parvulo: .5, pelota: .7, estiron: 1, mayor: 1.1, aurelia: 1.35, atril: .55, directiva: 1.1, reina: 2.3, mano: 1.25, pompa: 1.5 };
 /** The management team, in the order they stand and act, and the element each starts with. */
 export const DIRECTIVAS = [
   { id: 'mar', name: 'Mar', element: 'fuego' },
@@ -401,6 +459,13 @@ export type Hand = keyof typeof HANDS;
  * the blow was on everyone, to everyone, with what it carried: a fire, water (always on everyone), a
  * shock, or `sangre` stacks of Sangrado.
  *
+ * The four of 2026-11-27. A Párvulo tugs for `tiron`. El Pelota does not strike while anyone of his is bigger than
+ * him: Peloteo gives the biggest `peloteoCura` of its PV back and `peloteo` Fuerza for good, up to `peloteoMost`; alone,
+ * he pinches (`senalar`); confused, his Peloteo goes to whoever of the party is lowest. El Estirón strikes `zancada`
+ * and grows after each turn of his own, `estiron` more of his blow a step, up to `estironMost` steps; at the top his
+ * next turn is a Desplome, told, `desplome` on everyone, and he is back to no steps at all. El Mayor brings a Párvulo every other turn while fewer than `fila` stand,
+ * and tells an Arremete: `arremete`, and `jaleo` more of it for each Párvulo standing when it lands.
+ *
  * Aurelià. Phases at `carrera` and `recta` of his PV. With El Atril standing he takes `atril` of
  * everything. Dictado `dictado` on everyone, Pregunta `pregunta` on one (answered by holding on, the
  * next blow on him lands `expuesto` times as hard), Castigo `castigo` on whoever repeated a kind of
@@ -423,7 +488,8 @@ export type Hand = keyof typeof HANDS;
  * herself in the next of her five. Pegote `pegote` on one. Each hand standing takes `mano` off what
  * reaches her; Aplastar `aplastar`. La Pompa is a thing with its own PV (PROFILES `pompa`): while it
  * stands she takes `pompaTras` of everything; burst, it costs her a turn and `pompaRota` of her PV;
- * after `pompaRounds` rounds it is `pompaBlow` on everyone.
+ * after `pompaRounds` rounds it is `pompaBlow` on everyone, and on each round it grows its skin drips
+ * a pegote on one of the party, `pompaGotea` of hers (no turn of hers goes by empty).
  * With Aitor held, his blow on Gerard is `aitor`, and `aitorGrows` more of it each turn she has him. On
  * her way back she has `reinaVuelta` of her PV.
  */
@@ -432,12 +498,13 @@ export const CASTLE = {
   empujon: 54, crust: 2, crusted: .3, repaso: 32, learned: .3, noSabe: 1.5, chivatazo: 2.5, senalar: 16, gemelo: 23, levantar: .4, orden: 12,
   salto: .5, derrame: 32,
   presente: 80, rabia: 3, revienta: 150, arrimarse: 14, copia: 1.2, sangre: 2,
+  tiron: 26, peloteo: 4, peloteoMost: 12, peloteoCura: .4, zancada: 20, estiron: .15, estironMost: 3, desplome: 70, fila: 3, arremete: 34, jaleo: .4,
   carrera: .65, recta: .3, atril: .5, dictado: 22, pregunta: 104, expuesto: 1.5, castigo: 40, castigoLeve: 28,
   vuelta: 20, sprint: 24, ritmo: 2, expulsion: 30, expulsado: 2, record: 80, recordRounds: 2,
   expediente: 18, horario: 6, circular: 16, conducida: 1.8, actaEvery: 4, resolucion: 85, cargoEvery: 4, voto: 1.3,
   respaldo: .2, respaldoBelow: .5, respaldoEvery: 2, readmision: .25, readmisionTurns: 2,
-  manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 74, mano: .25, aplastar: 44,
-  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, aitor: 30, aitorGrows: .35, reinaVuelta: .7, reinaFuria: 1, reinaVueltaPv: 2.5,
+  manos: .7, pompa: .4, toma: .1, gum: .25, capa: .06, pegote: 70, mano: .25, aplastar: 44,
+  pompaRounds: 3, pompaBlow: 155, pompaTras: .375, pompaRota: .12, pompaGotea: .3, aitor: 30, aitorGrows: .35, reinaVuelta: .7, reinaFuria: 1, reinaVueltaPv: 2.5,
 };
 /** `reinaFuria`: how much harder her hands and her pegotes land on the way back (not La Pompa, not Aitor's blows); `reinaVueltaPv`: her whole PV on the way back, times the first fight's. */
 /** How much of her PV the Queen has when the party comes back with the artilugio (70 % since 2026-11-26, so her hands come out again first; it was 40 %). */
@@ -501,6 +568,8 @@ export interface CastleMark {
   /** A second-year pupil's filling has spilled on the others (it fell). */
   spilled?: true;
   away?: boolean; back?: number; rage?: number; form?: MontonForm; copied?: number; all?: boolean;
+  /** El Estirón: the steps it has grown (`CASTLE.estironMost` at most). El Mayor: the Párvulos he has brought so far. */
+  grown?: number; brought?: number;
   /** Out on the Meridiana at night: how much harder it hits and holds than inside (`NightFight.might`). */
   might?: number;
   /** An Encarnado (`STRONG`): harder than its kind, and worth an Eco de luz with its group. */

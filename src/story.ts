@@ -26,11 +26,11 @@ import { APSE, BEAM, DOOR as LUCA_DOOR, INTERIOR, LINES_LUCA, LOOKS, LUCA_SCALE,
 import { trace, turned, type Facing } from './espejos.ts';
 import { BEACH, CAMP, CAMP_FREED, CAMP_HUNTERS, LINES_UNI, PLACES_CAMP, PLACES_UNI, TAG, UNI_FRIENDS, UNI_SCALE, lockOpens, type UniFriend } from './friends/universidad.ts';
 import type { Board } from './parcelas.ts';
-import { CASTLE_BOSSES, ROOM_LIGHTS, STRONG, STRONG_LIGHTS, castleEntry, castlePhaseAt, extraSlots, growthStage, isCastlePlace, levelCap, nightGroup, type CastleEncounter, type CastlePhaseId, type GrowthStage, type NightFight } from './castle.ts';
+import { CASTLE_BOSSES, PUZZLE_LIGHTS, ROOM_LIGHTS, STRONG, STRONG_LIGHTS, castleEntry, castlePhaseAt, extraSlots, growthStage, isCastlePlace, levelCap, nightGroup, type CastleEncounter, type CastlePhaseId, type GrowthStage, type NightFight } from './castle.ts';
 import { nightMight } from './night.ts';
 import { castleEnvironmentFor } from './castle-floor.ts';
 import { castleZone, isCastleZone } from './castle-mood.ts';
-import { LINES_CASTLE, castleBattle, castleEnding, castleFears, castleGate, castleInteract, castleInteractions, castleNear, castleRedirect, castleTriggers, freshCastle, strongOpen, strongRoom, strongWon, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
+import { LINES_CASTLE, castleBattle, castleBlocked, castleEnding, castleFears, castleGate, castleHorario, castleInteract, castleInteractions, castleNear, castlePencil, castlePuzzle, castleRedirect, castleSquared, castleTriggers, freshCastle, strongOpen, strongRoom, strongWon, type CastleHost, type CastleRun, type EndingChoice } from './castle-story.ts';
 import { CALLE, FEARS, LINES_NURIA, MAZE, NURIA_SCALE, PLACES_NURIA, STREET, migrateBeaten, type FearEncounter } from './friends/nuria.ts';
 import type { CatId } from './cats';
 import { COSTS, DAY_END, DAY_START, EVENING, EVENINGS, LATE, NIGHT, WOKE_LATE, boostOf, dusk, freshDays, isBoost, isNight, readDays, spread, stage, type Activity, type BoostId, type Days, type EveningId } from './days.ts';
@@ -86,7 +86,9 @@ export const STORY_FLAGS = [
   // The Encarnados beaten, one Eco de luz each (src/castle.ts `STRONG_LIGHTS`).
   'luz-encarnado-1', 'luz-encarnado-2', 'luz-encarnado-3', 'luz-encarnado-4', 'luz-encarnado-5', 'luz-encarnado-6',
   // Each castle room's first win, one Eco de luz each (src/castle.ts `ROOM_LIGHTS`).
-  'luz-alumnos-1a', 'luz-alumnos-1b', 'luz-alumnos-1c', 'luz-delegada-1', 'luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-delegada-2', 'luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-delegada-3',
+  'luz-alumnos-1a', 'luz-alumnos-1b', 'luz-alumnos-1c', 'luz-delegada-1', 'luz-alumnos-2a', 'luz-alumnos-2b', 'luz-alumnos-2c', 'luz-alumnos-2d', 'luz-alumnos-2e', 'luz-alumnos-2f', 'luz-alumnos-2g', 'luz-delegada-2', 'luz-alumnos-3a', 'luz-alumnos-3b', 'luz-alumnos-3c', 'luz-alumnos-3d', 'luz-alumnos-3e', 'luz-alumnos-3f', 'luz-delegada-3',
+  // The castle's two closed doors, solved once and for good, an Eco de luz each (src/castle.ts `PUZZLE_LIGHTS`).
+  'luz-horario', 'luz-pica-pared',
 ] as const;
 export type StoryFlag = typeof STORY_FLAGS[number];
 /**
@@ -97,7 +99,7 @@ const RENAMED_FLAGS: Record<string, StoryFlag> = { noista: 'matemagico', 'luz-ni
 /** Only flags this version knows, renamed ones under their new name. */
 const knownFlags = (flags: Iterable<string>) => new Set([...flags].map(f => RENAMED_FLAGS[f] ?? f).filter((f): f is StoryFlag => (STORY_FLAGS as readonly string[]).includes(f)));
 /** Whose lights can be won. */
-export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar', ...STRONG_LIGHTS, ...ROOM_LIGHTS] as const;
+export const LIGHTS = ['nuria', 'uri', 'anna-alvaro', 'miquel-sarah', 'soraya', 'nico', 'joan', 'marta', 'emilie', 'luca', 'aurelia', 'mar', 'montse', 'pilar', ...STRONG_LIGHTS, ...ROOM_LIGHTS, ...PUZZLE_LIGHTS] as const;
 export type LightId = typeof LIGHTS[number];
 /** The friends' lights, each worth `FRIEND_ECOS` ecos (src/ecos.ts); the castle's are worth one. */
 export const FRIEND_LIGHTS: readonly LightId[] = LIGHTS.slice(0, LIGHTS.indexOf('aurelia'));
@@ -138,6 +140,8 @@ export type StoryEvent =
   | { type: 'parcelas'; outcome: 'lit' | 'tent' | 'black'; board: Board; solved: boolean }
   /** Words tried on the pool gate's padlock (src/candado-ui.ts). */
   | { type: 'candado'; numbers: number[] }
+  /** The second floor's timetable handed in full (src/horario-ui.ts). */
+  | { type: 'horario'; board: number[] }
   /** Bernat's box solved (src/portal-ui.ts): the artilugio crosses to the real flat. */
   | { type: 'portal' }
   /** The party walked in through home's portal from the street (src/night.ts: at night, the day is over). */
@@ -197,6 +201,8 @@ export type StoryEffect =
   | { kind: 'parcelas'; board?: Board }
   /** The pool gate's padlock opens on screen: three wheels of numbers (src/candado-ui.ts). */
   | { kind: 'candado' }
+  /** The second floor's timetable opens on screen (src/horario-ui.ts). */
+  | { kind: 'horario' }
   /** The photo with the melon: a flash and the scene held as a photo with its caption (docs/quests/universidad.md). */
   | { kind: 'photo'; caption: string }
   /** The camera turns to a named anchor of the scene (the palace) or frames `cell`, `height` metres of view; back to Gerard with neither. */
@@ -1325,8 +1331,14 @@ export class Story {
   }
   /** Who walks beside Gerard here and now, if anyone. */
   get partner(): Partner | undefined { return this.adult ? 'aitor' : this.companion !== 'none' ? 'bernat' : undefined; }
+  /** Today's timetable and what is pencilled on it, and the pencil kept for the next look (src/horario-ui.ts). */
+  get horario() { return castleHorario(this.castleHost); }
+  pencil(tried: number[]) { castlePencil(this.castleHost, tried); }
+  /** The puzzle standing on a castle floor today, if nobody has solved it (src/game.ts draws its door and what keeps it). */
+  puzzle(environment: EnvironmentId) { return castlePuzzle(this.castleHost, environment); }
   /** Cells the story keeps shut in a scene (the stuck back door of the wrapper room). */
   blocked(environment: EnvironmentId): Cell[] {
+    if (isCastlePlace(environment)) return castleBlocked(this.castleHost, environment);
     if (environment === BEACH && (this.uni.chase || this.uni.spiral)) return TENTACLES.map(c => ({ ...c }));
     // The pool's gate stays padlocked until the numbers of the maze's three words are put on it, the merendero's steel door until every pitch is found.
     if (environment === ALEGIA) return PLACES_MARTA.piano.cells.map(c => ({ ...c }));
@@ -1880,6 +1892,8 @@ export class Story {
         return this.portalSolved();
       case 'candado':
         return this.tryLock(event.numbers);
+      case 'horario':
+        return castleSquared(this.castleHost, event.board);
       case 'south':
         if (this.companion !== 'follow' || this.has('dejavu') || !this.set('bernat-stalled')) return [];
         this.tugs = 0;

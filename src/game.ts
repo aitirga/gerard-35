@@ -75,10 +75,11 @@ import { createStreetShift, toCalle } from './street-shift';
 import { BROOD_ENCOUNTERS, BROOD_RINGS, FEAR_ENCOUNTERS, type BroodEncounter } from './battle';
 import type { FearEncounter } from './friends/nuria';
 import { seatDirectiva } from './direccion-seated';
-import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECCION_MEETING, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleKind, type NightFight, type RoomEncounter } from './castle';
+import { CASTLE_FIGHTS, CASTLE_SIZES, DIRECCION_MEETING, DIRECTIVAS, castlePhaseAt, isCastleEncounter, isCastlePlace, yearOf, type CastleEncounter, type CastleFloor, type CastleKind, type CastlePuzzle, type NightFight, type RoomEncounter } from './castle';
+import { PICA, createPica, stepPica, type Pica } from './pica-pared';
 import { isCastleZone } from './castle-mood';
 import { createFloorStreet, roomGroups, roomTag, syncFloor } from './castle-pupils';
-import { castleFigure, castleModel, castleModelSettled, encarnar, figureClips, foeFigure, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
+import { castleFigure, castleModel, castleModelSettled, encarnar, fightFigures, figureClips, glowAtNight, loadCastleModels, type FigureClips } from './castle-models';
 import { aitorTaken } from './castle-fight';
 import { BUBBLES, LEASH, PLACES } from './chapter-1';
 import { PLACES_2 } from './chapter-2';
@@ -721,7 +722,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     nightHunt = undefined;
   }
   function huntAtNight(dt: number) {
-    if (isCastlePlace(environment.id)) { huntIndoors(dt); return; }
+    if (isCastlePlace(environment.id)) { huntIndoors(dt); stepDoor(dt); return; }
+    endDoor();
     if (environment.id !== 'meridiana-calle' || !story.nightOut) { if (nightHunt) endNightHunt(); return; }
     if (!nightHunt) {
       const base = nightTier(stage(story.spread)), tier = { ...base, ...base.every ? { every: base.every / NIGHT_DEV.crowd } : {} };
@@ -743,6 +745,143 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     }
     stepHunt(dt, scenery.cars());
   }
+  // ——— The castle's closed doors (docs/castle.md § The closed doors) ———————————————————————————————
+  /**
+   * What a floor's puzzle is in the room: the door shut with her gum across the corridor on (it comes
+   * away when the puzzle is solved, and is not there on a later day), the timetable's board on the
+   * wall (El horario), and the great Castigado counting against the door (Pica pared: src/pica-pared.ts).
+   */
+  let door: {
+    scene: string; root: pc.Entity; materials: pc.StandardMaterial[]; seal: pc.Entity; shut: number;
+    it?: { model: pc.Entity; clips?: FigureClips; pica: Pica; yaw: number; lamp: pc.Entity; down: number; out: number };
+  } | undefined;
+  function endDoor() {
+    if (!door) return;
+    door.root.destroy(); door.materials.forEach(m => m.destroy()); door = undefined;
+  }
+  /** How tall the great Castigado stands over a pupil of its kind. */
+  const GREAT = 2.3;
+  function buildDoor(floor: CastleFloor, plan: CastlePuzzle, scene: string, standing: boolean) {
+    const root = new pc.Entity('Puerta cerrada'); castRoot.addChild(root);
+    const materials: pc.StandardMaterial[] = [];
+    const paint = (hex: string, gloss = .3, glow = 0) => {
+      const m = new pc.StandardMaterial(); m.diffuse.fromString(hex); m.gloss = gloss; m.useMetalness = false;
+      if (glow) { m.emissive.fromString(hex); m.emissiveIntensity = glow; }
+      m.update(); materials.push(m); return m;
+    };
+    const piece = (parent: pc.Entity, name: string, m: pc.Material, at: [number, number, number], size: [number, number, number], type: 'box' | 'sphere' = 'box') => {
+      const e = new pc.Entity(name); e.addComponent('render', { type, material: m, castShadows: true, receiveShadows: true });
+      e.setLocalPosition(...at); e.setLocalScale(...size); parent.addChild(e); return e;
+    };
+    // Her gum over the doorway: saturated where it is fresh, old and dull on the third floor (src/castle-floor.ts `her`).
+    const gum = paint(floor.phase === 3 ? '#b8708e' : '#ff6fae', .85, .06), across = plan.out.x !== 0;
+    const mid = (cells: readonly Cell[]) => { const a = scenery.toWorld(cells[0].x, cells[0].z), b = scenery.toWorld(cells[1].x, cells[1].z); return new pc.Vec3((a.x + b.x) / 2, scenery.groundHeight(a.x, a.z), (a.z + b.z) / 2); };
+    const seal = new pc.Entity('Sello de chicle'); seal.setPosition(mid(plan.gate)); root.addChild(seal);
+    // Its own +x runs along the corridor, away from the room: the gum is a skin across it, swollen towards the room.
+    seal.setLocalEulerAngles(0, across ? 0 : -90, 0);
+    const far = plan.out.x || plan.out.z, deep = paint(floor.phase === 3 ? '#8f4f6c' : '#d94a8c', .8, .04);
+    piece(seal, 'Chicle de la puerta', deep, [-far * .25, .95, 0], [.22, 1.9, 2.02]);
+    for (let i = 0; i < 9; i++) {
+      const row = Math.floor(i / 3), column = i % 3, wobble = ((i * 37) % 11) / 11;
+      piece(seal, 'Chicle de la puerta', i % 4 ? gum : deep, [-far * (.36 + wobble * .08), .36 + row * .62 + wobble * .1, -.66 + column * .66 + (row % 2 ? .12 : -.08)], [.42, .78 + wobble * .2, .86], 'sphere');
+    }
+    // What has run down from it onto the floor.
+    for (let i = 0; i < 3; i++) piece(seal, 'Chicle de la puerta', deep, [-far * (.7 + i * .22), .02, -.6 + i * .55], [.5 - i * .1, .04, .34], 'sphere');
+    if (plan.id === 'horario') {
+      // The office's seal on it, and the sheet's board by the side wall, on its own legs, with a lamp of its own.
+      const paper = paint('#ece6d2', .1, .3), stamp = paint('#e8742c', .2, .35), cork = paint('#8a6a43', .08), frame = paint('#4d4a45', .2);
+      piece(seal, 'Sello de secretaría', paper, [-far * .6, 1.22, .05], [.03, .36, .52]);
+      piece(seal, 'Tampón', stamp, [-far * .62, 1.16, .16], [.03, .13, .17]);
+      const side = { x: plan.board.x - plan.read.x, z: plan.board.z - plan.read.z };
+      const at = scenery.toWorld(plan.board.x + side.x * .34, plan.board.z + side.z * .34);
+      const board = new pc.Entity('Tablón del horario'); board.setPosition(at.x, scenery.groundHeight(at.x, at.z), at.z);
+      // Its own +x runs towards the wall it stands by.
+      board.setLocalEulerAngles(0, side.x ? 0 : -90, 0); root.addChild(board);
+      const wall = side.x || side.z;
+      for (const leg of [-.85, .85]) piece(board, 'Pata', frame, [0, .55, leg], [.07, 1.1, .07]);
+      piece(board, 'Marco', frame, [0, 1.05, 0], [.07, .98, 1.9]);
+      piece(board, 'Corcho', cork, [-wall * .03, 1.05, 0], [.06, .86, 1.78]);
+      piece(board, 'Hoja del horario', paper, [-wall * .065, 1.07, 0], [.02, .66, .9]);
+      piece(board, 'Chincheta', stamp, [-wall * .085, 1.36, 0], [.04, .06, .06], 'sphere');
+      const lamp = new pc.Entity('Luz del tablón');
+      lamp.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#ffd9a0'), intensity: 1.2, range: 4.2, castShadows: false });
+      lamp.setLocalPosition(-wall * .9, 1.9, 0); board.addChild(lamp);
+    }
+    door = { scene, root, materials, seal, shut: standing ? 1 : 0 };
+    seal.enabled = standing;
+  }
+  /** The great Castigado, once its figure is at hand (never the minion in its place): against the door, its back to the room. */
+  function standGreat(floor: CastleFloor, plan: CastlePuzzle, standing: boolean) {
+    const figure = castleFigure('castigado', 3);
+    if (!castleModelSettled(figure)) { void loadCastleModels(app, [figure]); return; }
+    if (!castleModel(figure)) return;
+    const a = scenery.toWorld(plan.door[0].x, plan.door[0].z), b = scenery.toWorld(plan.door[1].x, plan.door[1].z);
+    const model = new pc.Entity('El gran Castigado'), clips: FigureClips[] = [];
+    model.addChild(castleBody('castigado', figure, clips));
+    model.setPosition((a.x + b.x) / 2, scenery.groundHeight(a.x, a.z), (a.z + b.z) / 2); door!.root.addChild(model);
+    const out = facingToward(plan.out.x, plan.out.z);
+    const lamp = new pc.Entity('Luz del gran Castigado');
+    lamp.addComponent('light', { type: 'omni', color: new pc.Color().fromString('#e6c9c2'), intensity: .7, range: 7, castShadows: false });
+    lamp.setLocalPosition(0, 1.5, 0); model.addChild(lamp);
+    door!.it = { model, ...clips[0] ? { clips: clips[0] } : {}, pica: createPica(floor.seed), yaw: out, lamp, down: standing ? 0 : 1, out };
+  }
+  /** One frame of a floor's closed door: it is built with the floor, comes away when its puzzle is solved, and Pica pared's count runs. */
+  function stepDoor(dt: number) {
+    const floor = environment.palace?.floor, plan = floor?.puzzle;
+    if (!floor || !plan) { endDoor(); return; }
+    const scene = `${environment.id}:${floor.seed}`, standing = !!story.puzzle(environment.id);
+    if (!door || door.scene !== scene) { endDoor(); buildDoor(floor, plan, scene, standing); }
+    const d = door!, moving = !reducedMotion.matches;
+    // Solved: the gum over the doorway lets go and runs down into the floor.
+    if (!standing && d.shut > 0) {
+      if (d.shut === 1) { callbacks.onSound('fizzle', { volume: .7 }); effects.emit('poof', d.seal.getPosition().clone().add(new pc.Vec3(0, 1, 0)), 22, .7); }
+      d.shut = moving ? Math.max(0, d.shut - dt / 1.1) : 0;
+      d.seal.setLocalScale(1, Math.max(.001, d.shut), 1);
+      if (d.shut <= 0) d.seal.enabled = false;
+    }
+    if (plan.id === 'pica-pared' && !d.it) standGreat(floor, plan, standing);
+    const it = d.it;
+    if (!it) return;
+    const room = floor.rooms[plan.room].rect, inside = (at: Cell) => at.x >= room.x - .5 && at.z >= room.z - .5 && at.x <= room.x + room.w - .5 && at.z <= room.z + room.d - .5;
+    const past = (at: Cell) => inside(at) && Math.hypot(at.x - plan.entry.x, at.z - plan.entry.z) > PICA.line;
+    if (standing && !battle && !cutscene && !paused) {
+      const mate = mateHere(), aitor = mate && free ? free : undefined;
+      const walkers = [
+        { watched: past(movement.position), moving: movement.walking, running: running() },
+        ...aitor ? [{ watched: past(aitor.position), moving: aitor.walking, running: partnerRunning && story.canRun }] : [],
+      ];
+      const { turned, caught } = stepPica(it.pica, dt, walkers);
+      if (turned === 'tell' && inside(movement.position)) callbacks.onSound('creak', { volume: .5 });
+      if (turned === 'look' && inside(movement.position)) callbacks.onSound('crack', { volume: .6 });
+      for (const who of caught) {
+        // Seen moving: a pull, and they are back at the door they came in by.
+        const walker = who === 0 ? movement : aitor!, was = scenery.toWorld(walker.position.x, walker.position.z);
+        effects.emit('poof', new pc.Vec3(was.x, scenery.groundHeight(was.x, was.z) + .6, was.z), 14, .5);
+        walker.teleport(environment.grid, who === 0 ? { ...plan.entry } : nearestWalkable(plan.entry));
+        if (who === 0) {
+          walker.walking = false;
+          if (mate && !aitor) placeMate(mate);
+          cameraTarget.copy(scenery.toWorld(movement.cell.x, movement.cell.z));
+        }
+        callbacks.onSound('fizzle', { volume: .8 });
+        // Aitor says what he saw, the first time (the game's own way of telling: a person, in passing).
+        if (it.pica.caught === caught.length && mate) tetherLine = { text: who === 0 ? 'Se ha girado y aún andabas.' : 'Me ha visto moverme.', until: clock + 3.2 };
+      }
+    }
+    // Its back to the room while it counts, its shoulders up before it turns, its face to the room while it looks; solved, it slides down the door.
+    const looking = standing && it.pica.phase === 'look', telling = standing && it.pica.phase === 'tell';
+    const aim = looking ? it.out + 180 : it.out, turn = ((aim - it.yaw + 540) % 360) - 180;
+    it.yaw += moving ? turn * Math.min(1, dt * 14) : turn;
+    it.down = moving ? Math.min(1, it.down + (standing ? -1 : dt / 1.6)) : standing ? 0 : 1;
+    if (standing) it.down = 0;
+    const rise = telling ? 1 + Math.min(1, it.pica.since / PICA.tell) * .07 : 1, low = 1 - it.down * .82;
+    it.model.setLocalEulerAngles(it.down * 10, it.yaw, 0);
+    it.model.setLocalScale(GREAT * (1 + it.down * .35), GREAT * rise * low, GREAT * (1 + it.down * .35));
+    it.lamp.light!.intensity = looking ? 2.2 : telling ? 1.1 : standing ? .7 : .35;
+    // Its clip runs even while it stands still: a figure never posed is not drawn.
+    it.clips?.play('rest', moving ? 1 : 0); it.clips?.tick?.(dt);
+  }
+
   /**
    * A floor of the castle (src/castle-pupils.ts, docs/castle.md § The generated floor): each room's
    * pupils are bodies of their own, and hunt the party as they do out on the Meridiana at night. The
@@ -2760,7 +2899,7 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
       return loadGlb(app, SOBREMESA_URL).then(model => battleScene.setSobremesa(model), error => console.warn('La Sobremesa:', error)).then(() => setBattle(next, effect, onImpact));
     }
     // The castle's pupils and Fran with a figure of their own (src/castle-models.ts): the fight waits for the files the first time.
-    const figures = next && !battle ? next.foes.flatMap(f => foeFigure(f.kind, f.castle?.year, f.id) ?? []) : [];
+    const figures = next && !battle ? fightFigures(next.foes) : [];
     if (figures.some(id => !castleModelSettled(id))) return loadCastleModels(app, figures).then(() => setBattle(next, effect, onImpact));
     if (next && !battle) {
       // What was measured on the way down has calibrated the model before its fight (src/modelo.ts).
@@ -3729,6 +3868,8 @@ export async function createGame(canvas: HTMLCanvasElement, callbacks: GameCallb
     lighting: lighting(app),
     /** Development and screenshots: whoever is leading the party now (Haru to Nuria's door), if anyone. */
     get guide(): Readonly<Guide> | undefined { return guiding?.walk; },
+    /** Development and screenshots: a castle floor's closed door (docs/castle.md § The closed doors): whether it is still shut, and how Pica pared's count stands. */
+    get door() { return door && { shut: door.shut > 0, ...door.it ? { phase: door.it.pica.phase, caught: door.it.pica.caught } : {} }; },
     /** The fourth wall (docs/quests/bernat.md): Gerard, Aitor and whoever is there look at the camera for `seconds`. */
     stare(seconds = 3.5) { staringUntil = clock + seconds; return new Promise<void>(resolve => setTimeout(resolve, seconds * 1000)); },
     /** The artilugio in Gerard's hands: his figure's in the street, his copy's in a fight (src/artilugio-held.ts). */

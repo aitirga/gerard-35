@@ -106,6 +106,11 @@ export const PROFILES = {
   ausente: base(140, 13, 9, 9, 9),
   castigado: base(160, 12, 9, 11, 10),
   monton: base(250, 12, 12, 10, 10),
+  // The four of 2026-11-27: a Párvulo and El Pelota fall to one blow; El Estirón and El Mayor last.
+  parvulo: base(32, 8, 8, 7, 7),
+  pelota: base(90, 8, 10, 8, 10),
+  estiron: base(210, 13, 9, 10, 10),
+  mayor: base(180, 14, 9, 11, 10),
   // 2026-11-21 (it was 420 PV, 14 Fuerza): it asks for ánimas. With Nuria's and one side mission's it is lost more
   // often than won; with two it can be won, and with all five it is won in some nine rounds (docs/fight-sim.md § Power and the castle).
   aurelia: base(411, 25, 11, 14, 11),

@@ -59,7 +59,7 @@ export const FOE_XP: Record<FoeKind, number> = {
   // Las cuerdas: a quality each platform, and La Voz at the centre.
   lealtad: 40, eco: 12, cristalino: 45, directo: 50, voz: 110,
   // The castle: the Queen's pupils, and her bosses. A lectern and a hand are things: nothing of their own.
-  repetidor: 22, empollon: 20, chivata: 14, gemelo: 14, delegada: 40, ausente: 18, castigado: 20, monton: 22,
+  repetidor: 22, empollon: 20, chivata: 14, gemelo: 14, delegada: 40, ausente: 18, castigado: 20, monton: 22, parvulo: 5, pelota: 12, estiron: 22, mayor: 26,
   aurelia: 140, atril: 0, directiva: 60, reina: 0, mano: 0, pompa: 0,
   // Emilie's model: the section's small fights, and El que no converge at the bottom.
   'celda-seca': 12, oscilacion: 18, atomo: 20, 'no-converge': 100,

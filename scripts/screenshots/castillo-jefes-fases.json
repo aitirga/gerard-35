@@ -1,0 +1,347 @@
+{
+  "title": "El castillo: Dirección y la Reina, fase a fase",
+  "description": "docs/castle-bosses.md § Mar, Montse and Pilar, § La Reina Bubbaloo. Each phase of the two bosses from the fight tester's moments (Gerard in Matemágico, Aitor in Papagato, free maná, no PV lost, the party holding on each round so the foes' turns show): Dirección's tells, the Acta signed and its Resolución, two left, Voto de calidad and En funciones; the Queen's layers, her hands and La Pompa, with the pegote it drips while it grows. Run it with --gpu.",
+  "steps": [
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22direccion%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "shot": "direccion-avisos",
+      "delay": 1500,
+      "caption": "Dirección, first round: each says what she will do on her plate, and what undoes her folder shows as her weakness"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-ronda-2",
+      "delay": 900,
+      "caption": "A round on, the party holding on: what landed, and the next three moves told"
+    },
+    {
+      "eval": "ui.jumpTo('direccion-tres')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-acta",
+      "delay": 900,
+      "caption": "The Acta's round: «Firma» on the three plates"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Acta')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "direccion-firma",
+      "caption": "Each signs on her turn"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-resolucion-avisada",
+      "delay": 900,
+      "caption": "Signed by the three: Mar tells the Resolución for her next turn"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Resolución')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "direccion-resolucion",
+      "caption": "«Resolución» on everyone, the party holding on"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "eval": "ui.jumpTo('direccion-dos')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-dos",
+      "delay": 900,
+      "caption": "Two left: a lamp out, and the folder of the one who fell passed on"
+    },
+    {
+      "eval": "ui.jumpTo('direccion-una')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-voto",
+      "delay": 900,
+      "caption": "Mar alone: «Voto de calidad», the three elements in one"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-voto-golpe",
+      "delay": 900,
+      "caption": "Her round, alone"
+    },
+    {
+      "eval": "ui.jumpTo('direccion-funciones')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "direccion-funciones",
+      "delay": 900,
+      "caption": "Montse alone: «En funciones»"
+    },
+    {
+      "open": "/?story=castle&solo=1&fight=%7B%22adult%22%3Atrue%2C%22partner%22%3Atrue%2C%22wear%22%3A%7B%22gerard%22%3A%22matemagico%22%2C%22aitor%22%3A%22papagato%22%7D%2C%22animas%22%3A%5B%22matemagico%22%2C%22papagato%22%2C%22tecnopata%22%5D%2C%22friends%22%3A%5B%22nuria%22%2C%22universidad%22%2C%22marta%22%5D%2C%22encounter%22%3A%22reina-vuelta%22%2C%22foes%22%3A1%2C%22free%22%3Atrue%2C%22immune%22%3Atrue%7D"
+    },
+    {
+      "until": "window.gerard && window.gerard.battleUI.fight",
+      "timeout": 180000
+    },
+    {
+      "eval": "navigator.getGamepads = () => []; window.ui = window.gerard.battleUI; window.ready = () => ui.fight && ui.fight.phase === 'player' && !ui.fight.busy && !document.querySelector('#battle[data-entering]') && document.activeElement?.matches('.command-trigger'); window.cmd = id => document.querySelector('[data-command=\"' + id + '\"] .command-trigger').click(); window.foe = kind => ui.live.foes.find(f => f.kind === kind && f.hp > 0); window.closeUp = (id, d) => { const p = window.gerard.game.fighterAt(id); window.gerard.game.frame({ x: p.x, y: p.y, z: p.z }, d || 4.2); }; window.called = name => { const el = document.querySelector('.move-callout'); return !!el && !el.hidden && [name, '«' + name + '»'].includes(el.querySelector('strong')?.textContent); }; window.hold = () => { const from = ui.live.round; let last = 0; window.held = false; const tick = () => { if (!ui.fight) return; if (ui.live.round > from && window.ready()) { window.held = true; return; } if (window.ready() && Date.now() - last > 1500) { last = Date.now(); window.cmd('defend'); } setTimeout(tick, 250); }; tick(); };"
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 180000
+    },
+    {
+      "eval": "ui.jumpTo('reina-chicle')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-chicle",
+      "delay": 1500,
+      "caption": "The Queen, El chicle: wrapped in her first layer, the five of her crown lit"
+    },
+    {
+      "eval": "ui.tweak(s => { const q = s.foes.find(f => f.kind === 'reina'); q.castle.peeled = [...q.castle.peeled ?? [], q.castle.gum]; delete q.castle.gum; })"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Otra capa')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-otra-capa",
+      "caption": "A layer torn off: «Otra capa», her turn goes into wrapping herself in the next"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-capa-relleno",
+      "delay": 900,
+      "caption": "The next layer has a filling, and her plate says what undoes it"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Pegote')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-pegote",
+      "caption": "«Pegote», carrying the layer's filling"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "eval": "ui.jumpTo('reina-manos')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-manos-avisa",
+      "delay": 1500,
+      "caption": "Las manos: two hands out of the floor, each a thing to break. One holds, one crushes: what the first will do is told"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('Atrapar')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-atrapar",
+      "caption": "«Atrapar» on someone holding on: «No lo coge»"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-manos-ronda",
+      "delay": 900,
+      "caption": "And the next is told: «Aplastar»"
+    },
+    {
+      "eval": "ui.jumpTo('reina-pompa')"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "until": "window.ready()",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('La Pompa')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-pompa-empieza",
+      "caption": "La pompa: she starts to blow it, a thing with its own PV in front of her"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-pompa-crece",
+      "delay": 900,
+      "caption": "«Revienta en N» on its plate; behind it she takes less than half"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('La Pompa')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-pompa-gotea",
+      "caption": "While it grows its skin drips a pegote on someone: no turn of hers goes by empty"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-pompa-tensa",
+      "delay": 900,
+      "caption": "Its last round"
+    },
+    {
+      "eval": "window.hold()"
+    },
+    {
+      "until": "window.called('La Pompa')",
+      "timeout": 90000
+    },
+    {
+      "wait": 350
+    },
+    {
+      "shot": "reina-pompa-revienta",
+      "caption": "Left alone, it goes off on everyone"
+    },
+    {
+      "until": "window.held",
+      "timeout": 120000
+    },
+    {
+      "shot": "reina-tras-la-pompa",
+      "delay": 900,
+      "caption": "After it"
+    }
+  ]
+}

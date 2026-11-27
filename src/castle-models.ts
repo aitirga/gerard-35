@@ -12,7 +12,7 @@ import * as pc from 'playcanvas';
 import { CREATURES, buildCreature } from './character-model';
 import type { FoeKind } from './battle';
 import { BOSS_FIGURES } from './foe-bodies';
-import { DIRECTIVAS, isCastle, type CastleKind, type Year } from './castle';
+import { CASTLE_SIZES, DIRECTIVAS, isCastle, type CastleKind, type Year } from './castle';
 
 /** A monster of `just character-3d`: Meshy's rigged model, its clips and its height in metres. */
 interface MonsterSpec { id: string; name: string; glb: string; clips: Record<string, string>; height: number }
@@ -36,8 +36,17 @@ export function castleFigure(kind: CastleKind, year?: Year, who?: string) {
   if (kind === 'repetidor' && year === 2) return 'repetidor-segundo';
   if (kind === 'repetidor' && year === 3) return 'repetidor-tercero';
   if (kind === 'directiva') return DIRECTIVAS.find(d => d.id === who)?.id ?? DIRECTIVAS[0].id;
+  // The Queen's hands are her arm's figure (src/queen-hands.ts, chapter 1's ambush), standing on its cut end out of the floor.
+  if (kind === 'mano') return QUEEN_ARM;
   return kind;
 }
+/** The Queen's arm (`just character-3d reina-brazo`): each of her two hands in her fight, and what a fight with her loads with her. */
+export const QUEEN_ARM = 'reina-brazo';
+/** Every figure a fight with these foes needs loaded before it starts: each foe's own, and her hands with the Queen (they come out of the floor mid-fight). */
+export const fightFigures = (foes: readonly { kind?: FoeKind; id: string; castle?: { year?: Year } }[]) => [
+  ...foes.flatMap(f => foeFigure(f.kind, f.castle?.year, f.id) ?? []),
+  ...foes.some(f => f.kind === 'reina') ? [QUEEN_ARM] : [],
+];
 
 /** The figure a foe fights as, if it has one: a castle foe's (`castleFigure`) or a boss's (BOSS_FIGURES). */
 export function foeFigure(kind: FoeKind | undefined, year?: Year, who?: string) {
@@ -109,8 +118,41 @@ export function loadCastleModel(app: pc.AppBase, id: string): Promise<CastleMode
 }
 /** Loads every figure `ids` needs; resolves when each has loaded, failed or has no file. */
 export const loadCastleModels = (app: pc.AppBase, ids: readonly string[]) => Promise.all([...new Set(ids)].map(id => loadCastleModel(app, id)));
-/** The figure `id` if it is loaded (undefined while it loads, or if it has none). */
-export const castleModel = (id: string) => loaded.get(id) ?? undefined;
+/**
+ * La Pompa (docs/castle-bosses.md § La Reina Bubbaloo) has no file: it is a bubble of her gum, made here. A skin of her
+ * pink that lets the stage through, a second one inside it for depth, and the knot of gum it is blown from on the floor.
+ * As any figure, it stands in a holder the minion's height at scale 1.
+ */
+const BUBBLE = 'pompa';
+function bubble(): CastleModel {
+  const gum = (name: string, colour: string, opacity: number, glow: number) => {
+    const m = new pc.StandardMaterial();
+    m.name = name; m.diffuse = new pc.Color().fromString(colour); m.emissive = new pc.Color().fromString('#ff3d8b'); m.emissiveIntensity = glow;
+    m.gloss = .92; m.metalness = 0; m.useMetalness = true;
+    if (opacity < 1) { m.blendType = pc.BLEND_NORMAL; m.opacity = opacity; m.depthWrite = false; }
+    m.update();
+    return m;
+  };
+  const figure = new pc.Entity(FIGURE);
+  const ball = (name: string, material: pc.StandardMaterial, at: [number, number, number], size: [number, number, number]) => {
+    const e = new pc.Entity(name);
+    e.addComponent('render', { type: 'sphere', material, castShadows: false, receiveShadows: false });
+    e.setLocalPosition(...at); e.setLocalScale(...size);
+    figure.addChild(e);
+  };
+  const d = MINION_HEIGHT;
+  ball('Piel', gum('Piel de La Pompa', '#ff9cc9', .46, .3), [0, d * .56, 0], [d, d, d]);
+  ball('Dentro', gum('Dentro de La Pompa', '#ff5fa2', .22, .55), [0, d * .52, 0], [d * .78, d * .78, d * .78]);
+  ball('Nudo', gum('Nudo de La Pompa', '#e0457f', 1, .12), [0, d * .04, 0], [d * .34, d * .16, d * .34]);
+  const template = new pc.Entity('La Pompa');
+  template.addChild(figure); template.enabled = false;
+  return { template, size: CASTLE_SIZES.pompa, clips: new Map() };
+}
+/** The figure `id` if it is loaded (undefined while it loads, or if it has none). La Pompa is made the first time it is asked for. */
+export const castleModel = (id: string) => {
+  if (id === BUBBLE && !loaded.has(id)) loaded.set(id, bubble());
+  return loaded.get(id) ?? undefined;
+};
 /** Whether `id` is settled: loaded, failed, or with no file to load. */
 export const castleModelSettled = (id: string) => !specOf(id) || loaded.has(id);
 

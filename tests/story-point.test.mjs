@@ -1,4 +1,4 @@
-import { CASTLE_LIGHTS, ROOM_LIGHTS, STRONG_LIGHTS } from '../src/castle.ts';
+import { CASTLE_LIGHTS, PUZZLE_LIGHTS, ROOM_LIGHTS, STRONG_LIGHTS } from '../src/castle.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BUILDS, MISSIONS, MISSION_IDS, missionOf, storyPoint, storyRows } from '../src/battle-sim.ts';
@@ -10,7 +10,7 @@ test('every mission fight is a real fight, and the missions give every light the
   for (const id of MISSION_IDS) for (const fight of MISSIONS[id].fights) { assert.ok(FEAR_ENCOUNTERS.includes(fight), fight); assert.equal(missionOf(fight), id); }
   // The rest are the castle's: those its bosses give back (src/castle.ts).
   // And the Encarnados', which nobody gives: they are taken, one a day (src/castle.ts `STRONG_LIGHTS`).
-  assert.equal(MISSION_IDS.reduce((sum, id) => sum + MISSIONS[id].lights, 0) + Object.values(CASTLE_LIGHTS).flat().length + STRONG_LIGHTS.length + ROOM_LIGHTS.length, LIGHTS.length);
+  assert.equal(MISSION_IDS.reduce((sum, id) => sum + MISSIONS[id].lights, 0) + Object.values(CASTLE_LIGHTS).flat().length + STRONG_LIGHTS.length + ROOM_LIGHTS.length + PUZZLE_LIGHTS.length, LIGHTS.length);
 });
 
 test('the introduction has nothing behind it; an open mission has the introduction and whatever was done before', () => {
