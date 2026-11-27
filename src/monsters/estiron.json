@@ -1,0 +1,11 @@
+{
+  "id": "estiron",
+  "name": "El Estirón",
+  "glb": "models/monsters/estiron.glb",
+  "clips": {
+    "walking": "models/monsters/estiron-walking.glb",
+    "running": "models/monsters/estiron-running.glb",
+    "actions": "models/monsters/estiron-actions.glb"
+  },
+  "height": 1.9
+}
